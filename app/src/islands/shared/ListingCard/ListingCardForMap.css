@@ -365,7 +365,7 @@
 .listing-card-header-row {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: baseline;
   gap: 8px;
   margin-bottom: 0;
 }
@@ -390,7 +390,9 @@
 
 .listing-card-price-section {
   flex-shrink: 0;
-  text-align: right;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
 }
 
 .listing-card-price-highlight {
@@ -404,9 +406,8 @@
 .listing-card-price-subtext {
   font-family: 'Lato', sans-serif;
   font-weight: 300;
-  font-size: 10px;
+  font-size: 11px;
   color: #666;
-  margin-top: -3px;
 }
 
 .listing-card-location {
