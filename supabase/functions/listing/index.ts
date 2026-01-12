@@ -93,7 +93,7 @@ interface SupabaseOnlyConfig {
 }
 
 // Actions that only need Supabase config (no Bubble API calls)
-const SUPABASE_ONLY_ACTIONS: ReadonlySet<string> = new Set(["createMockupProposal"]);
+const SUPABASE_ONLY_ACTIONS: ReadonlySet<string> = new Set(["createMockupProposal", "delete"]);
 
 /**
  * Get configuration based on action requirements

@@ -1,0 +1,1078 @@
+/**
+ * Create Suggested Proposal Page Styles
+ *
+ * All classes prefixed with csp- to avoid conflicts
+ * Adapted from external create-suggested-proposals-internal repo
+ */
+
+/* ============================================
+   MAIN LAYOUT
+   ============================================ */
+
+.csp-main {
+  min-height: calc(100vh - 200px);
+  background-color: #f5f5f5;
+  padding: 30px 0;
+}
+
+.csp-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 30px 20px;
+  background-color: #FFFFFF;
+  border-radius: 10px;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+
+.csp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 30px;
+}
+
+.csp-header-left {
+  flex: 1;
+}
+
+.csp-title {
+  font-size: 36px;
+  font-weight: 400;
+  color: #4D4D4D;
+  margin: 0 0 5px 0;
+}
+
+.csp-subtitle {
+  font-size: 14px;
+  color: #858585;
+  margin: 0;
+}
+
+/* ============================================
+   PROGRESS STEPS
+   ============================================ */
+
+.csp-steps-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 40px;
+  padding: 20px;
+}
+
+.csp-step-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.csp-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.csp-step-indicator {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  background-color: #E0E0E0;
+  border: 4px solid #E0E0E0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+}
+
+.csp-step.active .csp-step-indicator,
+.csp-step.completed .csp-step-indicator {
+  background-color: #8A2BE2;
+  border-color: #E0E0E0;
+}
+
+.csp-step-number {
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.csp-step-check {
+  color: #FFFFFF;
+}
+
+.csp-step-label {
+  font-size: 14px;
+  color: #858585;
+}
+
+.csp-step.active .csp-step-label,
+.csp-step.completed .csp-step-label {
+  color: #4D4D4D;
+  font-weight: 700;
+}
+
+.csp-step-connector {
+  width: 60px;
+  height: 2px;
+  background-color: #E0E0E0;
+}
+
+/* ============================================
+   CONTENT LAYOUT
+   ============================================ */
+
+.csp-content-wrapper {
+  display: flex;
+  gap: 30px;
+  margin-bottom: 30px;
+}
+
+.csp-left-panel {
+  flex: 1;
+}
+
+.csp-right-panel {
+  width: 400px;
+  background-color: #FAFAFA;
+  border: 1px solid #E0E0E0;
+  border-radius: 10px;
+  padding: 20px;
+}
+
+/* ============================================
+   STEP SECTIONS
+   ============================================ */
+
+.csp-step-section {
+  border: 2px solid #8A2BE2;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.csp-section-header {
+  margin-bottom: 20px;
+}
+
+.csp-section-header h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #4D4D4D;
+  margin: 0;
+}
+
+/* ============================================
+   SEARCH COMPONENTS
+   ============================================ */
+
+.csp-search-container {
+  margin-bottom: 20px;
+}
+
+.csp-search-container label {
+  display: block;
+  font-size: 14px;
+  color: #4D4D4D;
+  margin-bottom: 8px;
+}
+
+.csp-search-input-wrapper {
+  position: relative;
+}
+
+.csp-search-input {
+  width: 100%;
+  padding: 12px 40px 12px 15px;
+  font-size: 14px;
+  color: #252525;
+  background-color: #FFFFFF;
+  border: 1px solid #858585;
+  border-radius: 3px;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.csp-search-input::placeholder {
+  color: #B5B5B5;
+}
+
+.csp-search-input:focus {
+  border-color: #8A2BE2;
+}
+
+.csp-search-input:disabled {
+  background-color: #F5F5F5;
+  cursor: not-allowed;
+}
+
+.csp-btn-clear-search {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #B5B5B5;
+  padding: 4px;
+}
+
+.csp-btn-clear-search:hover {
+  color: #858585;
+}
+
+/* Search Results */
+.csp-search-results {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #E0E0E0;
+  border-radius: 3px;
+  margin-top: 10px;
+  background-color: #FFFFFF;
+}
+
+.csp-search-result-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 12px 15px;
+  cursor: pointer;
+  border-bottom: 1px solid #E0E0E0;
+  transition: background-color 0.2s;
+}
+
+.csp-search-result-item:last-child {
+  border-bottom: none;
+}
+
+.csp-search-result-item:hover {
+  background-color: #F5F5F5;
+}
+
+.csp-thumbnail {
+  width: 50px;
+  height: 50px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.csp-user-thumbnail {
+  border-radius: 50%;
+}
+
+.csp-search-result-info h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #252525;
+  margin: 0 0 4px 0;
+}
+
+.csp-search-result-info p {
+  font-size: 12px;
+  color: #858585;
+  margin: 0;
+}
+
+.csp-listing-details-row {
+  font-size: 12px;
+  color: #858585;
+  margin-top: 4px;
+}
+
+.csp-loading,
+.csp-no-results {
+  padding: 20px;
+  text-align: center;
+  color: #858585;
+  font-size: 14px;
+}
+
+/* ============================================
+   SELECTED ITEM CARD
+   ============================================ */
+
+.csp-selected-item-card {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+  border: 1px solid #6B6868;
+  border-radius: 5px;
+  position: relative;
+  background-color: #FAFAFA;
+}
+
+.csp-item-photos {
+  display: flex;
+  gap: 5px;
+}
+
+.csp-item-photo {
+  width: 60px;
+  height: 60px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.csp-user-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.csp-user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.csp-item-details {
+  flex: 1;
+}
+
+.csp-item-details h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #252525;
+  margin: 0 0 4px 0;
+}
+
+.csp-item-subtitle {
+  font-size: 13px;
+  color: #6B6868;
+  margin: 0 0 2px 0;
+}
+
+.csp-item-meta {
+  font-size: 12px;
+  color: #858585;
+  margin: 0;
+}
+
+.csp-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #FFFFFF;
+  background-color: #8A2BE2;
+  border-radius: 3px;
+  margin-top: 5px;
+}
+
+.csp-btn-remove {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #B5B5B5;
+  padding: 4px;
+}
+
+.csp-btn-remove:hover {
+  color: #FF5555;
+}
+
+.csp-btn-select-user {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #FFFFFF;
+  background-color: #31135D;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.csp-btn-select-user:hover {
+  background-color: #9DA9E8;
+}
+
+/* ============================================
+   WARNING MESSAGE
+   ============================================ */
+
+.csp-warning-message {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 15px;
+  background-color: #FFF3CD;
+  border: 1px solid #FFCA2C;
+  border-radius: 5px;
+  margin-top: 15px;
+  color: #856404;
+  font-size: 14px;
+}
+
+/* ============================================
+   FORM ELEMENTS
+   ============================================ */
+
+.csp-user-info-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.csp-form-group {
+  margin-bottom: 15px;
+}
+
+.csp-form-group label {
+  display: block;
+  font-size: 14px;
+  color: #4D4D4D;
+  margin-bottom: 8px;
+}
+
+.csp-guest-name-placeholder {
+  font-weight: 700;
+  color: #8A2BE2;
+}
+
+.csp-form-input,
+.csp-form-select,
+.csp-form-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: #252525;
+  background-color: #FFFFFF;
+  border: 1px solid #858585;
+  border-radius: 3px;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.csp-form-input:focus,
+.csp-form-select:focus,
+.csp-form-textarea:focus {
+  border-color: #8A2BE2;
+}
+
+.csp-form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.csp-form-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23858585' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 35px;
+}
+
+/* Checkbox */
+.csp-checkbox-group {
+  margin-top: 10px;
+}
+
+.csp-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.csp-checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #8A2BE2;
+}
+
+/* ============================================
+   CONFIG SECTIONS
+   ============================================ */
+
+.csp-config-panel {
+  /* Wrapper for all config sections */
+}
+
+.csp-config-section {
+  margin-bottom: 25px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #E0E0E0;
+}
+
+.csp-config-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.csp-config-section h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #4D4D4D;
+  margin: 0 0 15px 0;
+}
+
+/* ============================================
+   DAY SELECTOR
+   ============================================ */
+
+.csp-days-selector {
+  margin-bottom: 20px;
+}
+
+.csp-days-selector label {
+  display: block;
+  font-size: 14px;
+  color: #4D4D4D;
+  margin-bottom: 10px;
+}
+
+.csp-days-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.csp-day-btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #4D4D4D;
+  background-color: #FFFFFF;
+  border: 2px solid #E0E0E0;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.csp-day-btn:hover {
+  border-color: #8A2BE2;
+}
+
+.csp-day-btn.active {
+  color: #FFFFFF;
+  background-color: #8A2BE2;
+  border-color: #8A2BE2;
+}
+
+.csp-btn-link {
+  background: none;
+  border: none;
+  color: #8A2BE2;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.csp-btn-link:hover {
+  color: #6C7FEB;
+}
+
+/* Check-in / Check-out */
+.csp-checkin-checkout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+/* ============================================
+   PRICING SECTION
+   ============================================ */
+
+.csp-pricing-section {
+  background-color: #FFFFFF;
+  border-radius: 5px;
+  padding: 15px;
+}
+
+.csp-price-display {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.csp-price-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+.csp-price-label {
+  color: #6B6868;
+}
+
+.csp-price-value {
+  font-weight: 700;
+  color: #252525;
+}
+
+.csp-price-row.csp-separator {
+  padding-top: 10px;
+  margin-top: 5px;
+  border-top: 1px dashed #E0E0E0;
+}
+
+.csp-price-row.csp-total {
+  padding-top: 10px;
+  margin-top: 5px;
+  border-top: 2px solid #8A2BE2;
+  font-size: 16px;
+}
+
+.csp-price-row.csp-total .csp-price-value {
+  color: #8A2BE2;
+}
+
+.csp-price-row.csp-host {
+  padding-top: 10px;
+  margin-top: 5px;
+  border-top: 1px solid #E0E0E0;
+}
+
+.csp-price-row.csp-host .csp-price-value {
+  color: #28A745;
+}
+
+.csp-no-pricing {
+  color: #858585;
+  font-size: 14px;
+  font-style: italic;
+}
+
+/* ============================================
+   VALIDATION PANEL
+   ============================================ */
+
+.csp-validation-panel {
+  background-color: #FFFBF0;
+  border: 1px solid #FFE0B2;
+}
+
+.csp-validation-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  background-color: #FFF8E1;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  color: #F57C00;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.csp-validation-warning svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.csp-validation-values {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.csp-validation-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.csp-validation-label {
+  color: #6B6868;
+}
+
+.csp-validation-value {
+  font-weight: 700;
+  color: #252525;
+}
+
+/* ============================================
+   PROPOSAL SUMMARY
+   ============================================ */
+
+.csp-proposal-summary {
+  background-color: #FAFAFA;
+  border: 1px solid #E0E0E0;
+  border-radius: 10px;
+  padding: 25px;
+  margin-bottom: 30px;
+}
+
+.csp-proposal-summary h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #4D4D4D;
+  margin: 0 0 20px 0;
+}
+
+.csp-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 25px;
+}
+
+.csp-summary-section {
+  padding: 15px;
+  background-color: #FFFFFF;
+  border-radius: 5px;
+}
+
+.csp-summary-section h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #8A2BE2;
+  margin: 0 0 10px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.csp-summary-item {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.csp-summary-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.csp-summary-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #252525;
+  margin: 0 0 5px 0;
+}
+
+.csp-summary-detail {
+  font-size: 13px;
+  color: #6B6868;
+  margin: 0 0 3px 0;
+}
+
+.csp-summary-section p {
+  font-size: 14px;
+  margin: 0 0 5px 0;
+  color: #4D4D4D;
+}
+
+/* ============================================
+   CONFIRMATION PANEL
+   ============================================ */
+
+.csp-confirmation-panel {
+  background-color: #E8F5E9;
+  border: 1px solid #A5D6A7;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px auto;
+  max-width: 600px;
+  text-align: center;
+}
+
+.csp-confirmation-header h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2E7D32;
+  margin: 0 0 10px 0;
+}
+
+.csp-confirmation-note {
+  font-size: 14px;
+  color: #4D4D4D;
+  margin: 0 0 15px 0;
+}
+
+/* ============================================
+   ACTION BUTTONS
+   ============================================ */
+
+.csp-action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  padding: 20px;
+}
+
+.csp-btn {
+  padding: 14px 30px;
+  font-size: 18px;
+  font-weight: 400;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.csp-btn-primary {
+  color: #FFFFFF;
+  background-color: #31135D;
+}
+
+.csp-btn-primary:hover:not(:disabled) {
+  background-color: #9DA9E8;
+}
+
+.csp-btn-primary:disabled {
+  background-color: #B5B5B5;
+  cursor: not-allowed;
+}
+
+.csp-btn-secondary {
+  color: #4D4D4D;
+  background-color: #E0E0E0;
+}
+
+.csp-btn-secondary:hover {
+  background-color: #C9C9C9;
+}
+
+.csp-btn-success {
+  color: #FFFFFF;
+  background-color: #28A745;
+}
+
+.csp-btn-success:hover:not(:disabled) {
+  background-color: #218838;
+}
+
+.csp-btn-success:disabled {
+  background-color: #94D3A2;
+  cursor: not-allowed;
+}
+
+.csp-btn-small {
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+/* ============================================
+   VALIDATION MESSAGES
+   ============================================ */
+
+.csp-validation-messages {
+  padding: 0 20px;
+  margin-bottom: 20px;
+}
+
+.csp-validation-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 15px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  font-size: 14px;
+  background-color: #F8D7DA;
+  border: 1px solid #F5C6CB;
+  color: #721C24;
+}
+
+/* ============================================
+   MODAL
+   ============================================ */
+
+.csp-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.csp-modal-content {
+  background-color: #FFFFFF;
+  border-radius: 10px;
+  padding: 40px;
+  text-align: center;
+  max-width: 450px;
+  width: 90%;
+}
+
+.csp-modal-icon {
+  margin-bottom: 20px;
+}
+
+.csp-modal-icon.csp-success {
+  color: #28A745;
+}
+
+.csp-modal-content h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #4D4D4D;
+  margin: 0 0 15px 0;
+}
+
+.csp-created-ids {
+  background-color: #F5F5F5;
+  border-radius: 5px;
+  padding: 15px;
+  margin: 15px 0;
+  text-align: left;
+}
+
+.csp-created-ids p {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: #4D4D4D;
+}
+
+.csp-created-ids p:last-child {
+  margin-bottom: 0;
+}
+
+.csp-id-value {
+  font-family: 'Courier New', monospace;
+  background-color: #E0E0E0;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.csp-modal-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 25px;
+}
+
+/* ============================================
+   LOADING OVERLAY
+   ============================================ */
+
+.csp-loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.csp-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #E0E0E0;
+  border-top-color: #8A2BE2;
+  border-radius: 50%;
+  animation: csp-spin 1s linear infinite;
+  margin-bottom: 15px;
+}
+
+@keyframes csp-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 1024px) {
+  .csp-container {
+    max-width: 95%;
+  }
+
+  .csp-content-wrapper {
+    flex-direction: column;
+  }
+
+  .csp-right-panel {
+    width: 100%;
+  }
+
+  .csp-summary-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .csp-title {
+    font-size: 28px;
+  }
+
+  .csp-steps-container {
+    flex-wrap: wrap;
+  }
+
+  .csp-step-connector {
+    display: none;
+  }
+
+  .csp-checkin-checkout {
+    grid-template-columns: 1fr;
+  }
+
+  .csp-modal-actions {
+    flex-direction: column;
+  }
+
+  .csp-action-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .csp-btn {
+    width: 100%;
+    max-width: 300px;
+    justify-content: center;
+  }
+
+  .csp-day-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 12px;
+  }
+}
+
+/* Scrollbar Styling */
+.csp-search-results::-webkit-scrollbar {
+  width: 8px;
+}
+
+.csp-search-results::-webkit-scrollbar-track {
+  background: #F5F5F5;
+}
+
+.csp-search-results::-webkit-scrollbar-thumb {
+  background: #C9C9C9;
+  border-radius: 4px;
+}
+
+.csp-search-results::-webkit-scrollbar-thumb:hover {
+  background: #B5B5B5;
+}

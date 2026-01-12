@@ -35,7 +35,7 @@ Deno.serve(async (req: Request) => {
     console.log(`[proposal] Action: ${action}`);
 
     // Validate action
-    const validActions = ['create', 'update', 'get', 'suggest'];
+    const validActions = ['create', 'update', 'get', 'suggest', 'create_suggested'];
     if (!validActions.includes(action)) {
       return new Response(
         JSON.stringify({ success: false, error: `Invalid action: ${action}` }),
@@ -112,6 +112,17 @@ Deno.serve(async (req: Request) => {
           );
         }
         result = await handleSuggest(payload, user, supabase);
+        break;
+      }
+
+      case 'create_suggested': {
+        console.log('[proposal] Loading create_suggested handler...');
+        const { handleCreateSuggested } = await import("./actions/create_suggested.ts");
+        console.log('[proposal] Create_suggested handler loaded');
+
+        // No authentication required - internal tool only
+        // Access control is handled by route protection (/_internal/* paths)
+        result = await handleCreateSuggested(payload, supabase);
         break;
       }
 
