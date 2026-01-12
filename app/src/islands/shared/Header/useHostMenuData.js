@@ -46,28 +46,28 @@ export function getHostMenuConfig(state, onSignupClick) {
       href: '/host-success',
       title: 'Success Stories',
       desc: 'Explore other hosts\' feedback',
-      icon: '/assets/icons/heart-purple.svg'
+      icon: '/assets/icons/favorite-purple.svg'
     },
     legalInfo: {
       id: 'legal',
       href: '/policies',
       title: 'Legal Information',
       desc: 'Review most important policies',
-      icon: '/assets/icons/file-text-purple.svg'
+      icon: '/assets/icons/legal-purple.svg'
     },
     faqs: {
       id: 'faq',
       href: '/faq?section=hosts',
       title: 'FAQs',
       desc: 'Frequently Asked Questions',
-      icon: '/assets/icons/message-circle-purple.svg'
+      icon: '/assets/icons/faq-purple.svg'
     },
     signUp: {
       id: 'signup',
       href: '#',
       title: 'Sign Up',
       desc: null,
-      icon: '/assets/icons/user-purple.svg',
+      icon: '/assets/icons/user-bubble-purple.svg',
       action: onSignupClick
     },
     createHouseManual: {
@@ -75,35 +75,35 @@ export function getHostMenuConfig(state, onSignupClick) {
       href: '/host-overview#house-manuals',
       title: 'Create House Manual',
       desc: 'Set up your property guide',
-      icon: '/assets/icons/book-open-purple.svg'
+      icon: '/assets/icons/house-manual-purple.svg'
     },
     manageHouseManual: {
       id: 'house-manual',
       href: '/host-overview#house-manuals',
       title: 'House Manual',
       desc: 'Set up or edit your property guide',
-      icon: '/assets/icons/book-open-purple.svg'
+      icon: '/assets/icons/house-manual-purple.svg'
     },
     listProperty: {
       id: 'list-property',
       href: '/self-listing-v2',
       title: 'List Property',
       desc: 'Create your first listing',
-      icon: '/assets/icons/list-purple.svg'
+      icon: '/assets/icons/listing-purple.svg'
     },
     manageListing: {
       id: 'manage-listing',
       href: '/host-overview',
       title: 'Manage Listing',
       desc: 'View and edit your listings',
-      icon: '/assets/icons/list-purple.svg'
+      icon: '/assets/icons/listing-purple.svg'
     },
     manageProposals: {
       id: 'manage-proposals',
       href: '/host-proposals',
       title: 'Manage Proposals',
       desc: 'Review guest proposals',
-      icon: '/assets/icons/file-text-purple.svg'
+      icon: '/assets/icons/document-purple.svg'
     }
   };
 
@@ -116,7 +116,7 @@ export function getHostMenuConfig(state, onSignupClick) {
           baseItems.legalInfo,
           baseItems.faqs
         ],
-        cta: { label: 'Sign Up', action: onSignupClick, icon: '/assets/icons/user-purple.svg' }
+        cta: { label: 'Sign Up', action: onSignupClick, icon: '/assets/icons/user-bubble-purple.svg' }
       };
 
     case HOST_MENU_STATES.NO_LISTING:
@@ -128,7 +128,7 @@ export function getHostMenuConfig(state, onSignupClick) {
           baseItems.legalInfo,
           baseItems.faqs
         ],
-        cta: { label: 'List Property', href: '/self-listing-v2', icon: '/assets/icons/list-purple.svg' }
+        cta: { label: 'List Property', href: '/self-listing-v2', icon: '/assets/icons/listing-purple.svg' }
       };
 
     case HOST_MENU_STATES.WITH_LISTING_NO_PROPOSALS:
@@ -140,7 +140,7 @@ export function getHostMenuConfig(state, onSignupClick) {
           baseItems.legalInfo,
           baseItems.faqs
         ],
-        cta: { label: 'Manage Listing', href: '/host-overview', icon: '/assets/icons/list-purple.svg' }
+        cta: { label: 'Manage Listing', href: '/host-overview', icon: '/assets/icons/listing-purple.svg' }
       };
 
     case HOST_MENU_STATES.WITH_PROPOSALS:
@@ -153,7 +153,7 @@ export function getHostMenuConfig(state, onSignupClick) {
           baseItems.legalInfo,
           baseItems.faqs
         ],
-        cta: { label: 'Manage Proposals', href: '/host-proposals', icon: '/assets/icons/file-text-purple.svg' }
+        cta: { label: 'Manage Proposals', href: '/host-proposals', icon: '/assets/icons/document-purple.svg' }
       };
 
     case HOST_MENU_STATES.WITH_LEASES:
@@ -166,7 +166,7 @@ export function getHostMenuConfig(state, onSignupClick) {
           baseItems.legalInfo,
           baseItems.faqs
         ],
-        cta: { label: 'Manage Leases', href: '/host-overview#leases', icon: '/assets/icons/key-purple.svg' }
+        cta: { label: 'Manage Leases', href: '/host-overview#leases', icon: '/assets/icons/leases-purple.svg' }
       };
 
     default:
@@ -177,7 +177,7 @@ export function getHostMenuConfig(state, onSignupClick) {
           baseItems.legalInfo,
           baseItems.faqs
         ],
-        cta: { label: 'Sign Up', action: onSignupClick, icon: '/assets/icons/user-purple.svg' }
+        cta: { label: 'Sign Up', action: onSignupClick, icon: '/assets/icons/user-bubble-purple.svg' }
       };
   }
 }
