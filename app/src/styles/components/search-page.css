@@ -2225,7 +2225,9 @@
 
 /* Marker Pulse Animation (triggered when zooming to listing) */
 .pulse {
-  animation: markerPulse 1.5s ease-in-out 2;
+  animation: markerPulse 1.5s ease-in-out infinite;
+  background: #4B47CE !important;
+  z-index: 9999 !important;
 }
 
 @keyframes markerPulse {
@@ -2234,7 +2236,7 @@
   }
   50% {
     transform: translate(-50%, -50%) scale(1.2);
-    box-shadow: 0 0 20px rgba(109, 49, 194, 0.6);
+    box-shadow: 0 0 20px rgba(75, 71, 206, 0.6);
   }
 }
 

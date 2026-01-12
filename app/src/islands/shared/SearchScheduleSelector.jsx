@@ -35,27 +35,13 @@ const CalendarIcon = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f5f3ff;
-  border: 1px solid #e0e7ff;
-  border-radius: 8px;
-  color: #6366f1;
   margin-right: 8px;
   flex-shrink: 0;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: #ede9fe;
-    border-color: #c7d2fe;
-  }
-
-  svg {
-    width: 19px;
-    height: 19px;
-  }
 
   img {
-    width: 19px;
-    height: 19px;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
   }
 `;
 
@@ -724,12 +710,10 @@ export default function SearchScheduleSelector({
     <Container className={className}>
       <SelectorRow>
         <CalendarIcon>
-          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2"/>
-            <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" strokeWidth="2"/>
-            <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
+          <img
+            src="https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1748370325535x745487629939088300/calendar-minimalistic-svgrepo-com%202.svg"
+            alt="Calendar"
+          />
         </CalendarIcon>
 
         <DaysGrid>

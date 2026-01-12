@@ -508,7 +508,7 @@ function FilterPanel({
 /**
  * PropertyCard - Individual listing card
  */
-function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfoModal, isLoggedIn, isFavorited, userId, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalForListing, selectedNightsCount }) {
+function PropertyCard({ listing, onLocationClick, onCardHover, onCardLeave, onOpenContactModal, onOpenInfoModal, isLoggedIn, isFavorited, userId, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalForListing, selectedNightsCount }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const priceInfoTriggerRef = useRef(null);
   const mobilePriceInfoTriggerRef = useRef(null);
@@ -670,11 +670,22 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
   return (
     <a
       className="listing-card"
+      data-listing-id={listingId}
       href={listingId ? `/view-split-lease/${listingId}` : '#'}
       target="_blank"
       rel="noopener noreferrer"
       style={{ textDecoration: 'none', color: 'inherit' }}
       onClick={handleCardClick}
+      onMouseEnter={() => {
+        if (onCardHover) {
+          onCardHover(listing);
+        }
+      }}
+      onMouseLeave={() => {
+        if (onCardLeave) {
+          onCardLeave();
+        }
+      }}
     >
       {/* Image Section */}
       {hasImages && (
@@ -918,6 +929,23 @@ function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactM
                 mapRef.current.zoomToListing(listing.id);
               }
             }}
+            onCardHover={(listing) => {
+              if (mapRef.current) {
+                mapRef.current.highlightListing(listing.id);
+              }
+            }}
+            onCardLeave={() => {
+              // Delay stopPulse to allow hovering to map without losing pulse
+              if (pulseTimeoutRef.current) {
+                clearTimeout(pulseTimeoutRef.current);
+              }
+              pulseTimeoutRef.current = setTimeout(() => {
+                if (mapRef.current) {
+                  mapRef.current.stopPulse();
+                }
+                pulseTimeoutRef.current = null;
+              }, 150); // Short delay to allow transition to map
+            }}
             onOpenContactModal={onOpenContactModal}
             onOpenInfoModal={onOpenInfoModal}
             isLoggedIn={isLoggedIn}
@@ -1041,6 +1069,7 @@ export default function SearchPage() {
   const fetchInProgressRef = useRef(false); // Track if fetch is already in progress
   const lastFetchParamsRef = useRef(null); // Track last fetch parameters to prevent duplicates
   const menuRef = useRef(null); // Ref for hamburger menu dropdown
+  const pulseTimeoutRef = useRef(null); // Track delayed stopPulse for hover transition to map
 
   // Parse URL parameters for initial filter state
   const urlFilters = parseUrlToFilters();
@@ -1705,6 +1734,33 @@ export default function SearchPage() {
         return;
       }
 
+      // When "all" boroughs is selected, clear neighborhoods and load all
+      if (selectedBorough === 'all') {
+        console.log('[DEBUG] All boroughs selected - loading all neighborhoods');
+        try {
+          const { data, error } = await supabase
+            .schema('reference_table')
+            .from('zat_geo_hood_mediumlevel')
+            .select('_id, Display, "Geo-Borough"')
+            .order('Display', { ascending: true });
+
+          if (error) throw error;
+
+          const formattedNeighborhoods = data.map(n => ({
+            id: n._id,
+            name: n.Display,
+            value: n._id
+          }));
+
+          setNeighborhoods(formattedNeighborhoods);
+          setSelectedNeighborhoods([]); // Clear neighborhood selection when switching to all boroughs
+          console.log('[DEBUG] Loaded all neighborhoods:', formattedNeighborhoods.length);
+        } catch (error) {
+          console.error('Failed to load all neighborhoods:', error);
+        }
+        return;
+      }
+
       const borough = boroughs.find(b => b.value === selectedBorough);
       if (!borough) {
         console.warn('[DEBUG] Borough not found for value:', selectedBorough);
@@ -1807,9 +1863,6 @@ export default function SearchPage() {
     setError(null);
 
     try {
-      const borough = boroughs.find(b => b.value === selectedBorough);
-      if (!borough) throw new Error('Borough not found');
-
       // Build query
       // CRITICAL FIX: Use Complete=true instead of Active=true to match Bubble's filter logic
       // Bubble shows listings where Complete=true AND (Active=true OR Active IS NULL)
@@ -1820,9 +1873,16 @@ export default function SearchPage() {
         .select('*')
         .eq('"Complete"', true)
         .or('"Active".eq.true,"Active".is.null')
-        .eq('"Location - Borough"', borough.id)
         .or('"Location - Address".not.is.null,"Location - slightly different address".not.is.null')
         .not('"Features - Photos"', 'is', null);
+
+      // Apply borough filter (skip if "all" is selected)
+      if (selectedBorough && selectedBorough !== 'all') {
+        const borough = boroughs.find(b => b.value === selectedBorough);
+        if (borough) {
+          query = query.eq('"Location - Borough"', borough.id);
+        }
+      }
 
       // Apply week pattern filter
       if (weekPattern !== 'every-week') {
@@ -2399,6 +2459,66 @@ export default function SearchPage() {
 
   const handleCloseAIResearchModal = () => {
     setIsAIResearchModalOpen(false);
+  };
+
+  // Scroll to listing card when marker is clicked
+  // Ensures the listing is loaded (lazy-loading) before scrolling
+  const scrollToListingCard = (listing) => {
+    const listingId = listing.id || listing._id;
+    console.log('[scrollToListingCard] Looking for listing:', listingId);
+
+    // First check if the listing card already exists in the DOM
+    let listingCard = document.querySelector(`[data-listing-id="${listingId}"]`);
+    console.log('[scrollToListingCard] Initial card search result:', listingCard);
+
+    if (listingCard) {
+      // Card exists, scroll to it
+      listingCard.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      });
+
+      // Add a brief highlight effect to the card
+      listingCard.classList.add('listing-card--highlighted');
+      setTimeout(() => {
+        listingCard.classList.remove('listing-card--highlighted');
+      }, 2000);
+    } else {
+      // Card not in DOM - might not be lazy-loaded yet
+      // Find the listing's position in allListings and load up to that point
+      const listingIndex = allListings.findIndex(l => (l.id || l._id) === listingId);
+      console.log('[scrollToListingCard] Listing index in allListings:', listingIndex);
+
+      if (listingIndex >= 0) {
+        // Load listings up to and including the clicked one
+        const needToLoad = listingIndex + 1;
+        if (needToLoad > loadedCount) {
+          console.log('[scrollToListingCard] Loading more listings to show card. Need:', needToLoad, 'Currently loaded:', loadedCount);
+          setDisplayedListings(allListings.slice(0, needToLoad));
+          setLoadedCount(needToLoad);
+
+          // Wait for React to render the new cards, then scroll
+          setTimeout(() => {
+            const newListingCard = document.querySelector(`[data-listing-id="${listingId}"]`);
+            console.log('[scrollToListingCard] After load, found card:', newListingCard);
+
+            if (newListingCard) {
+              newListingCard.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+              });
+
+              newListingCard.classList.add('listing-card--highlighted');
+              setTimeout(() => {
+                newListingCard.classList.remove('listing-card--highlighted');
+              }, 2000);
+            }
+          }, 100); // Small delay to allow React to render
+        }
+      } else {
+        console.warn('[scrollToListingCard] Listing not found in allListings:', listingId);
+      }
+    }
   };
 
   // Create Proposal modal handlers
@@ -3041,11 +3161,14 @@ export default function SearchPage() {
                   {boroughs.length === 0 ? (
                     <option value="">Loading...</option>
                   ) : (
-                    boroughs.map(borough => (
-                      <option key={borough.id} value={borough.value}>
-                        {borough.name}
-                      </option>
-                    ))
+                    <>
+                      <option value="all">All Boroughs</option>
+                      {boroughs.map(borough => (
+                        <option key={borough.id} value={borough.value}>
+                          {borough.name}
+                        </option>
+                      ))}
+                    </>
                   )}
                 </select>
               </div>
@@ -3161,11 +3284,14 @@ export default function SearchPage() {
                 {boroughs.length === 0 ? (
                   <option value="">Loading...</option>
                 ) : (
-                  boroughs.map(borough => (
-                    <option key={borough.id} value={borough.value}>
-                      {borough.name}
-                    </option>
-                  ))
+                  <>
+                    <option value="all">All Boroughs</option>
+                    {boroughs.map(borough => (
+                      <option key={borough.id} value={borough.value}>
+                        {borough.name}
+                      </option>
+                    ))}
+                  </>
                 )}
               </select>
             </div>
@@ -3235,7 +3361,7 @@ export default function SearchPage() {
           {/* Results header with listings count and sort - hidden when mobile or desktop header is collapsed */}
           <div className={`results-header ${mobileHeaderHidden ? 'results-header--hidden' : ''} ${desktopHeaderCollapsed ? 'results-header--desktop-hidden' : ''}`}>
             <span className="results-count">
-              <strong>{allListings.length} listings</strong> in {boroughs.find(b => b.value === selectedBorough)?.name || 'NYC'}
+              <strong>{allListings.length} listings</strong> in {selectedBorough === 'all' ? 'NYC' : (boroughs.find(b => b.value === selectedBorough)?.name || 'NYC')}
             </span>
             <select
               className="sort-select"
@@ -3327,7 +3453,22 @@ export default function SearchPage() {
         </section>
 
         {/* RIGHT COLUMN: Map with integrated header */}
-        <section className="map-column">
+        <section
+          className="map-column"
+          onMouseEnter={() => {
+            // Cancel pending stopPulse when hovering to map - keep pulse alive
+            if (pulseTimeoutRef.current) {
+              clearTimeout(pulseTimeoutRef.current);
+              pulseTimeoutRef.current = null;
+            }
+          }}
+          onMouseLeave={() => {
+            // Stop pulse when leaving map area entirely
+            if (mapRef.current) {
+              mapRef.current.stopPulse();
+            }
+          }}
+        >
           {/* Integrated Logo and Hamburger Menu */}
           <div className="map-header">
             <a href="/" className="map-logo">
@@ -3421,6 +3562,7 @@ export default function SearchPage() {
             selectedBorough={selectedBorough}
             onMarkerClick={(listing) => {
               console.log('Marker clicked:', listing.title);
+              scrollToListingCard(listing);
             }}
             onMessageClick={(listing) => {
               console.log('[SearchPage] Map card message clicked for:', listing?.id);
@@ -3546,6 +3688,9 @@ export default function SearchPage() {
               selectedBorough={selectedBorough}
               onMarkerClick={(listing) => {
                 console.log('Marker clicked:', listing.title);
+                // Close mobile map and scroll to listing
+                setIsMobileMapVisible(false);
+                setTimeout(() => scrollToListingCard(listing), 300);
               }}
               onMessageClick={(listing) => {
                 console.log('[SearchPage] Mobile map card message clicked for:', listing?.id);
