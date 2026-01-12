@@ -1,33 +1,64 @@
 /**
  * Guest Proposals Page Styles
  *
- * V3 Soft Design - Modernized UI
- * - List-detail layout pattern
- * - Soft purple accents with rounded corners
- * - 40x40 day pills with 10px radius
- * - 28px bold purple pricing
+ * V4 Elderly-Friendly Design
+ * - Larger base fonts (17px) for readability
+ * - Higher contrast text colors (#111, #374151)
+ * - Larger touch targets (48px minimum)
+ * - 52x52 day pills with 12px radius
+ * - 36px bold purple pricing
+ * - 2px borders for visual clarity
  */
 
 /* ============================================================================
-   DESIGN SYSTEM VARIABLES
+   DESIGN SYSTEM VARIABLES - ELDERLY-FRIENDLY
    ============================================================================ */
 
 :root {
+  /* Primary Brand Colors */
   --gp-purple-dark: #31135D;
   --gp-purple-primary: #6D31C2;
   --gp-purple-light: #8C68EE;
   --gp-purple-bg: #f8f5ff;
-  --gp-text: #1a1a1a;
-  --gp-text-secondary: #666;
-  --gp-text-muted: #999;
-  --gp-border: #e8e8e8;
-  --gp-border-light: #f0f0f0;
-  --gp-bg: #fafafa;
+
+  /* Text Colors - HIGH CONTRAST for readability */
+  --gp-text: #111111;              /* Near black for maximum contrast */
+  --gp-text-secondary: #374151;    /* Dark gray, WCAG AAA compliant */
+  --gp-text-muted: #4b5563;        /* Medium gray, still readable */
+
+  /* Background & Border - Slightly darker for clarity */
+  --gp-border: #d1d5db;
+  --gp-border-light: #e5e7eb;
+  --gp-bg: #f9fafb;
   --gp-white: #fff;
-  --gp-success: #059669;
-  --gp-success-bg: #ecfdf5;
-  --gp-danger: #dc2626;
-  --gp-danger-bg: #fef2f2;
+
+  /* Semantic Colors - High Contrast */
+  --gp-success: #047857;           /* Darker green for better contrast */
+  --gp-success-bg: #d1fae5;
+  --gp-danger: #b91c1c;            /* Darker red */
+  --gp-danger-bg: #fee2e2;
+  --gp-warning: #b45309;           /* Darker orange */
+  --gp-warning-bg: #fef3c7;
+
+  /* Typography - LARGER BASE SIZES */
+  --gp-font-size-sm: 15px;         /* Was 13px */
+  --gp-font-size-base: 17px;       /* Was 14px - comfortable reading */
+  --gp-font-size-md: 18px;         /* Was 15px */
+  --gp-font-size-lg: 22px;         /* Was 18px */
+  --gp-font-size-xl: 28px;         /* Was 22px */
+  --gp-font-size-2xl: 36px;        /* Was 28px */
+  --gp-font-size-label: 14px;      /* For small labels */
+
+  /* Line Heights - MORE GENEROUS */
+  --gp-line-height-tight: 1.3;
+  --gp-line-height-normal: 1.6;
+  --gp-line-height-relaxed: 1.8;
+
+  /* Minimum Touch Target */
+  --gp-min-touch-target: 48px;
+
+  /* Focus States - VERY VISIBLE */
+  --gp-focus-ring: 0 0 0 4px rgba(109, 49, 194, 0.5);
 }
 
 /* ============================================================================
@@ -55,10 +86,10 @@
 }
 
 .page-title {
-  font-size: 22px;
+  font-size: var(--gp-font-size-xl);
   font-weight: 700;
   color: var(--gp-purple-dark);
-  margin-bottom: 24px;
+  margin-bottom: 32px;
 }
 
 /* ============================================================================
@@ -139,32 +170,45 @@
 
 .empty-state {
   text-align: center;
-  padding: 60px 24px;
+  padding: 48px 24px;
   background: var(--gp-white);
-  border: 1px solid var(--gp-border);
-  border-radius: 16px;
+  border: 2px solid var(--gp-border);
+  border-radius: 20px;
 }
 
 .empty-state h2 {
-  font-size: 18px;
-  font-weight: 600;
+  font-size: var(--gp-font-size-lg);
+  font-weight: 700;
   color: var(--gp-text);
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .empty-state p {
-  font-size: 14px;
+  font-size: var(--gp-font-size-base);
   color: var(--gp-text-secondary);
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+  line-height: var(--gp-line-height-relaxed);
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .empty-state .empty-subtext {
   color: var(--gp-text-muted);
-  margin-bottom: 24px;
+  margin-bottom: 32px;
 }
 
 .empty-icon {
-  display: none;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 24px;
+  background: var(--gp-purple-bg);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  color: var(--gp-purple-primary);
 }
 
 /* ============================================================================
@@ -187,9 +231,9 @@
 
 .selector-header h2 {
   font-family: 'Inter', sans-serif;
-  font-size: 22px;
+  font-size: var(--gp-font-size-xl);
   font-weight: 700;
-  line-height: 1.31;
+  line-height: var(--gp-line-height-tight);
   color: var(--gp-purple-dark);
   margin: 0;
 }
@@ -213,13 +257,14 @@
 .proposal-row {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 16px 20px;
+  gap: 20px;
+  padding: 20px 24px;
   background: var(--gp-white);
-  border: 1px solid var(--gp-border);
-  border-radius: 12px;
+  border: 2px solid var(--gp-border);
+  border-radius: 16px;
   cursor: pointer;
   transition: all 0.2s;
+  min-height: 88px;
 }
 
 .proposal-row:hover {
@@ -229,14 +274,15 @@
 
 .proposal-row.active {
   border-color: var(--gp-purple-primary);
-  border-width: 2px;
+  border-width: 3px;
   background: var(--gp-purple-bg);
+  box-shadow: 0 0 0 4px rgba(109, 49, 194, 0.15);
 }
 
 .proposal-thumb {
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
   object-fit: cover;
   flex-shrink: 0;
   background-color: var(--gp-border-light);
@@ -249,36 +295,40 @@
 
 .proposal-name {
   font-weight: 600;
-  font-size: 14px;
+  font-size: var(--gp-font-size-md);
   color: var(--gp-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: var(--gp-line-height-tight);
+  margin-bottom: 4px;
 }
 
 .proposal-meta {
-  font-size: 13px;
+  font-size: var(--gp-font-size-base);
   color: var(--gp-text-secondary);
 }
 
 .proposal-status {
-  font-size: 12px;
-  font-weight: 500;
+  font-size: var(--gp-font-size-sm);
+  font-weight: 600;
   color: var(--gp-text-muted);
-  padding: 4px 10px;
+  padding: 8px 16px;
   background: var(--gp-border-light);
   border-radius: 20px;
   white-space: nowrap;
 }
 
 .proposal-status.attention {
-  color: var(--gp-purple-primary);
+  color: var(--gp-purple-dark);
   background: var(--gp-purple-bg);
+  border: 1px solid var(--gp-purple-primary);
 }
 
 .proposal-status.success {
   color: var(--gp-success);
   background: var(--gp-success-bg);
+  border: 1px solid var(--gp-success);
 }
 
 /* ============================================================================
@@ -295,8 +345,8 @@
 
 .detail-section {
   background: var(--gp-white);
-  border: 1px solid var(--gp-border);
-  border-radius: 16px;
+  border: 2px solid var(--gp-border);
+  border-radius: 20px;
   overflow: hidden;
 }
 
@@ -307,11 +357,11 @@
 .status-banner {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px 24px;
+  gap: 16px;
+  padding: 20px 24px;
   background: var(--gp-purple-bg);
-  border-bottom: 1px solid var(--gp-border);
-  font-size: 14px;
+  border-bottom: 2px solid var(--gp-border);
+  font-size: var(--gp-font-size-md);
   animation: fadeIn 0.3s ease-in-out;
 }
 
@@ -328,13 +378,14 @@
 }
 
 .status-icon {
-  width: 24px;
-  height: 24px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 18px;
+  font-weight: 700;
   background: var(--gp-purple-primary);
   color: white;
   flex-shrink: 0;
@@ -385,15 +436,15 @@
 .detail-header {
   display: flex;
   align-items: flex-start;
-  gap: 20px;
-  padding: 24px;
+  gap: 24px;
+  padding: 32px 24px;
   border-bottom: 1px solid var(--gp-border-light);
 }
 
 .detail-image {
-  width: 80px;
-  height: 60px;
-  border-radius: 10px;
+  width: 100px;
+  height: 75px;
+  border-radius: 12px;
   object-fit: cover;
   flex-shrink: 0;
 }
@@ -403,30 +454,32 @@
 }
 
 .detail-title {
-  font-size: 18px;
-  font-weight: 600;
+  font-size: var(--gp-font-size-lg);
+  font-weight: 700;
   color: var(--gp-purple-dark);
-  margin-bottom: 4px;
+  margin-bottom: 8px;
+  line-height: var(--gp-line-height-tight);
 }
 
 .detail-location {
-  font-size: 14px;
+  font-size: var(--gp-font-size-base);
   color: var(--gp-text-secondary);
 }
 
 .detail-host {
   text-align: right;
+  flex-shrink: 0;
 }
 
 .detail-host .host-name {
   font-weight: 600;
-  font-size: 14px;
+  font-size: var(--gp-font-size-md);
   color: var(--gp-text);
 }
 
 .detail-host .host-label {
   color: var(--gp-text-muted);
-  font-size: 12px;
+  font-size: var(--gp-font-size-sm);
 }
 
 /* ============================================================================
@@ -435,29 +488,33 @@
 
 .links-row {
   display: flex;
-  gap: 8px;
-  padding: 16px 24px;
+  gap: 12px;
+  padding: 20px 24px;
   border-bottom: 1px solid var(--gp-border-light);
   background: var(--gp-bg);
   flex-wrap: wrap;
 }
 
 .link-item {
-  font-size: 13px;
-  font-weight: 500;
+  font-size: var(--gp-font-size-base);
+  font-weight: 600;
   color: var(--gp-purple-primary);
   text-decoration: none;
-  padding: 6px 14px;
-  border-radius: 20px;
+  padding: 12px 20px;
+  border-radius: 24px;
   transition: all 0.15s;
   cursor: pointer;
   background: transparent;
   border: none;
   font-family: inherit;
+  min-height: var(--gp-min-touch-target);
+  display: inline-flex;
+  align-items: center;
 }
 
 .link-item:hover {
   background: var(--gp-purple-bg);
+  text-decoration: underline;
 }
 
 /* ============================================================================
@@ -473,40 +530,41 @@
 }
 
 .info-item {
-  padding: 20px 24px;
+  padding: 24px;
   background: var(--gp-white);
 }
 
 .info-label {
-  font-size: 11px;
-  font-weight: 500;
+  font-size: var(--gp-font-size-label);
+  font-weight: 600;
   color: var(--gp-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .info-value {
-  font-size: 15px;
-  font-weight: 600;
+  font-size: var(--gp-font-size-md);
+  font-weight: 700;
   color: var(--gp-text);
+  line-height: var(--gp-line-height-tight);
 }
 
 /* ============================================================================
-   DAYS ROW - V3 Style (40x40 pills with summary)
+   DAYS ROW - V4 Style (52x52 pills with summary - elderly-friendly)
    ============================================================================ */
 
 .days-row {
   display: flex;
   align-items: center;
-  padding: 20px 24px;
+  padding: 24px;
   border-bottom: 1px solid var(--gp-border-light);
-  gap: 16px;
+  gap: 20px;
 }
 
 .days-label {
-  font-size: 11px;
-  font-weight: 500;
+  font-size: var(--gp-font-size-label);
+  font-weight: 600;
   color: var(--gp-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -514,21 +572,21 @@
 
 .days-pills {
   display: flex;
-  gap: 8px;
+  gap: 12px;
 }
 
 .day-pill {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--gp-font-size-base);
+  font-weight: 700;
   background: var(--gp-bg);
   color: var(--gp-text-muted);
-  border: 1px solid var(--gp-border);
+  border: 2px solid var(--gp-border);
   transition: all 0.15s;
 }
 
@@ -544,25 +602,26 @@
 }
 
 .days-count {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--gp-font-size-md);
+  font-weight: 700;
   color: var(--gp-text);
 }
 
 .days-range {
-  font-size: 12px;
+  font-size: var(--gp-font-size-sm);
   color: var(--gp-text-secondary);
+  margin-top: 2px;
 }
 
 /* ============================================================================
-   PRICING ROW - V3 Style (28px bold purple total)
+   PRICING ROW - V4 Style (36px bold purple total - elderly-friendly)
    ============================================================================ */
 
 .pricing-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 24px;
+  padding: 24px;
   border-bottom: 1px solid var(--gp-border-light);
   background: var(--gp-bg);
 }
@@ -570,8 +629,8 @@
 .pricing-breakdown {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 14px;
+  gap: 12px;
+  font-size: var(--gp-font-size-md);
   color: var(--gp-text-secondary);
 }
 
@@ -580,13 +639,13 @@
 }
 
 .pricing-total-label {
-  font-size: 13px;
+  font-size: var(--gp-font-size-base);
   color: var(--gp-text-secondary);
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 
 .pricing-total {
-  font-size: 28px;
+  font-size: var(--gp-font-size-2xl);
   font-weight: 700;
   color: var(--gp-purple-primary);
 }
@@ -598,21 +657,21 @@
 .progress-row {
   display: flex;
   align-items: center;
-  padding: 24px;
+  padding: 32px 24px;
   border-bottom: 1px solid var(--gp-border-light);
-  gap: 4px;
+  gap: 8px;
 }
 
 .progress-step {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   flex: 1;
 }
 
 .progress-dot {
-  width: 10px;
-  height: 10px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   background: var(--gp-border);
   flex-shrink: 0;
@@ -625,9 +684,9 @@
 
 .progress-step.current .progress-dot {
   background: var(--gp-purple-primary);
-  width: 12px;
-  height: 12px;
-  box-shadow: 0 0 0 4px rgba(109, 49, 194, 0.15);
+  width: 18px;
+  height: 18px;
+  box-shadow: 0 0 0 6px rgba(109, 49, 194, 0.2);
 }
 
 .progress-step.cancelled .progress-dot {
@@ -636,9 +695,9 @@
 
 .progress-line {
   flex: 1;
-  height: 2px;
+  height: 3px;
   background: var(--gp-border);
-  border-radius: 1px;
+  border-radius: 2px;
 }
 
 .progress-step.completed .progress-line {
@@ -646,8 +705,8 @@
 }
 
 .progress-label {
-  font-size: 12px;
-  font-weight: 500;
+  font-size: var(--gp-font-size-sm);
+  font-weight: 600;
   color: var(--gp-text-muted);
   white-space: nowrap;
 }
@@ -658,23 +717,23 @@
 }
 
 /* ============================================================================
-   ACTIONS ROW - V3 Style (modern buttons)
+   ACTIONS ROW - V4 Style (larger touch targets - elderly-friendly)
    ============================================================================ */
 
 .actions-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  padding: 24px;
+  gap: 16px;
+  padding: 32px 24px;
   align-items: center;
 }
 
-/* V3 Button base styles */
+/* V4 Button base styles - larger touch targets */
 .actions-row .btn {
-  padding: 12px 20px;
-  font-size: 14px;
+  padding: 16px 24px;
+  font-size: var(--gp-font-size-base);
   font-weight: 600;
-  border-radius: 10px;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.15s;
   text-decoration: none;
@@ -682,11 +741,13 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  border: none;
+  border: 2px solid transparent;
   font-family: inherit;
   white-space: nowrap;
   flex: 0 0 auto;
   width: auto;
+  min-height: var(--gp-min-touch-target);
+  min-width: 120px;
 }
 
 .actions-row .btn-primary {
@@ -1524,13 +1585,22 @@
 }
 
 /* ============================================================================
-   RESPONSIVE STYLES - V3
+   RESPONSIVE STYLES - V4 Elderly-Friendly
    ============================================================================ */
 
 @media (max-width: 900px) {
   /* Info grid: 4 columns -> 2 columns */
   .info-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .info-item:nth-child(2) {
+    border-right: none;
+  }
+
+  .info-item:nth-child(1),
+  .info-item:nth-child(2) {
+    border-bottom: 1px solid var(--gp-border-light);
   }
 
   /* Days row stacks */
@@ -1541,18 +1611,25 @@
   .days-info {
     width: 100%;
     margin-left: 0;
-    margin-top: 12px;
+    margin-top: 16px;
     text-align: left;
   }
 }
 
 @media (max-width: 768px) {
+  /* Slightly smaller fonts on tablet (still larger than V3) */
+  :root {
+    --gp-font-size-base: 16px;
+    --gp-font-size-md: 17px;
+    --gp-font-size-lg: 20px;
+  }
+
   .proposals-page {
-    padding: 1.5rem 1rem;
+    padding: 24px 16px;
   }
 
   .selector-header h2 {
-    font-size: 20px;
+    font-size: var(--gp-font-size-lg);
   }
 
   /* Detail header stacks on tablet */
@@ -1563,8 +1640,8 @@
   .detail-host {
     width: 100%;
     text-align: left;
-    margin-top: 12px;
-    padding-top: 12px;
+    margin-top: 16px;
+    padding-top: 16px;
     border-top: 1px solid var(--gp-border-light);
   }
 
@@ -1572,7 +1649,7 @@
   .links-row {
     overflow-x: auto;
     flex-wrap: nowrap;
-    padding-bottom: 12px;
+    padding-bottom: 16px;
   }
 
   .link-item {
@@ -1583,11 +1660,15 @@
   .pricing-row {
     flex-direction: column;
     align-items: flex-start;
-    gap: 16px;
+    gap: 20px;
   }
 
   .pricing-breakdown {
     flex-wrap: wrap;
+  }
+
+  .pricing-total {
+    text-align: left;
   }
 
   /* Progress labels hidden */
@@ -1601,14 +1682,14 @@
   }
 
   .actions-row .btn {
-    flex: 1;
+    flex: 1 1 calc(50% - 8px);
     min-width: 140px;
   }
 }
 
 @media (max-width: 480px) {
   .proposals-page {
-    padding: 1rem 0.75rem;
+    padding: 16px 12px;
   }
 
   .selector-header h2 {
@@ -1620,15 +1701,24 @@
     grid-template-columns: 1fr;
   }
 
-  /* Day pills smaller */
+  .info-item {
+    border-right: none;
+    border-bottom: 1px solid var(--gp-border-light);
+  }
+
+  .info-item:last-child {
+    border-bottom: none;
+  }
+
+  /* Day pills still touch-friendly at 48px */
   .day-pill {
-    width: 36px;
-    height: 36px;
-    font-size: 12px;
+    width: 48px;
+    height: 48px;
   }
 
   .days-pills {
-    gap: 4px;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 
   /* Proposal rows stack content */
@@ -1637,12 +1727,12 @@
   }
 
   .proposal-info {
-    flex: 1 1 calc(100% - 64px);
+    flex: 1 1 calc(100% - 80px);
   }
 
   .proposal-status {
     width: 100%;
-    margin-top: 8px;
+    margin-top: 12px;
     text-align: center;
   }
 
@@ -1657,49 +1747,81 @@
 }
 
 /* ============================================================================
-   VIRTUAL MEETINGS SECTION - V3 Style
+   REDUCED MOTION
+   ============================================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================================================
+   HIGH CONTRAST MODE
+   ============================================================================ */
+@media (prefers-contrast: high) {
+  :root {
+    --gp-border: #000;
+    --gp-text-muted: #374151;
+  }
+
+  .actions-row .btn {
+    border-width: 3px;
+  }
+
+  .proposal-row,
+  .detail-section {
+    border-width: 3px;
+  }
+}
+
+/* ============================================================================
+   VIRTUAL MEETINGS SECTION - V4 Style (elderly-friendly)
    Displays proposals with active virtual meetings
    ============================================================================ */
 
 .vm-section-wrapper {
-  margin-top: 32px;
+  margin-top: 40px;
 }
 
 .vm-section-heading {
-  font-size: 22px;
+  font-size: var(--gp-font-size-xl);
   font-weight: 700;
   color: var(--gp-purple-dark);
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .vm-section-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
-/* Individual VM Card - V3 Style */
+/* Individual VM Card - V4 Style */
 .vm-section-card {
   background: var(--gp-white);
-  border: 1px solid var(--gp-border);
-  border-radius: 16px;
+  border: 2px solid var(--gp-border);
+  border-radius: 20px;
   overflow: hidden;
 }
 
 .vm-section-card-content {
-  padding: 20px 24px;
+  padding: 24px;
 }
 
 /* Header row with profile icon and text */
 .vm-section-header-row {
   display: flex;
   align-items: flex-start;
-  gap: 16px;
+  gap: 20px;
 }
 
 .vm-section-profile-icon {
-  width: 48px;
-  height: 48px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
@@ -1718,28 +1840,28 @@
 }
 
 .vm-section-title {
-  font-size: 16px;
+  font-size: var(--gp-font-size-md);
   font-weight: 600;
   color: var(--gp-purple-dark);
-  line-height: 1.4;
+  line-height: var(--gp-line-height-normal);
 }
 
 .vm-section-subtitle {
-  font-size: 13px;
+  font-size: var(--gp-font-size-base);
   color: var(--gp-text-muted);
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
 .vm-section-message-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 8px;
+  gap: 12px;
+  margin-top: 12px;
 }
 
 .vm-section-message-row svg {
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
   flex-shrink: 0;
   color: var(--gp-purple-primary);
 }
@@ -1750,51 +1872,52 @@
 }
 
 .vm-section-message {
-  font-size: 13px;
+  font-size: var(--gp-font-size-base);
   color: var(--gp-text-secondary);
-  line-height: 1.4;
+  line-height: var(--gp-line-height-normal);
 }
 
 /* Date/time pills row */
 .vm-section-dates-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 16px;
-  padding-top: 16px;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 20px;
   border-top: 1px solid var(--gp-border-light);
 }
 
 .vm-section-date-pill {
   background: var(--gp-bg);
-  font-size: 13px;
-  font-weight: 500;
+  font-size: var(--gp-font-size-base);
+  font-weight: 600;
   color: var(--gp-text);
-  padding: 8px 14px;
-  border-radius: 20px;
-  border: 1px solid var(--gp-border);
+  padding: 12px 20px;
+  border-radius: 24px;
+  border: 2px solid var(--gp-border);
 }
 
-/* Action bar - V3 Style */
+/* Action bar - V4 Style */
 .vm-section-action-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 16px 24px;
+  gap: 16px;
+  padding: 20px 24px;
   background: var(--gp-bg);
   border-top: 1px solid var(--gp-border-light);
 }
 
 .vm-section-cancel-btn {
   background: transparent;
-  font-size: 14px;
+  font-size: var(--gp-font-size-base);
   font-weight: 600;
   color: var(--gp-text-secondary);
-  padding: 10px 16px;
-  border-radius: 10px;
-  border: 1px solid var(--gp-border);
+  padding: 14px 20px;
+  border-radius: 12px;
+  border: 2px solid var(--gp-border);
   cursor: pointer;
   transition: all 0.15s;
+  min-height: var(--gp-min-touch-target);
 }
 
 .vm-section-cancel-btn:hover {
@@ -1803,20 +1926,20 @@
 }
 
 /* ============================================================================
-   VM SECTION - STATE BADGES - V3 Style
+   VM SECTION - STATE BADGES - V4 Style
    ============================================================================ */
 
 .vm-section-title-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
 .vm-section-badge {
-  font-size: 12px;
-  font-weight: 500;
-  padding: 4px 10px;
+  font-size: var(--gp-font-size-sm);
+  font-weight: 600;
+  padding: 8px 16px;
   border-radius: 20px;
   white-space: nowrap;
 }
@@ -1842,17 +1965,19 @@
 }
 
 /* ============================================================================
-   VM SECTION - PRIMARY ACTION BUTTONS - V3 Style
+   VM SECTION - PRIMARY ACTION BUTTONS - V4 Style
    ============================================================================ */
 
 .vm-section-primary-btn {
-  font-size: 14px;
+  font-size: var(--gp-font-size-base);
   font-weight: 600;
-  padding: 10px 20px;
-  border-radius: 10px;
-  border: none;
+  padding: 14px 24px;
+  border-radius: 12px;
+  border: 2px solid transparent;
   cursor: pointer;
   transition: all 0.15s;
+  min-height: var(--gp-min-touch-target);
+  min-width: 120px;
 }
 
 /* Respond state - Primary purple */
@@ -1932,55 +2057,52 @@
   justify-content: flex-start;
 }
 
-/* Responsive styles for VM section */
+/* Responsive styles for VM section - V4 */
 @media (max-width: 768px) {
   .vm-section-heading {
-    font-size: 20px;
+    font-size: var(--gp-font-size-lg);
   }
 
   .vm-section-card-content {
-    padding: 16px 20px;
+    padding: 20px;
   }
 
   .vm-section-title-row {
     flex-direction: column;
     align-items: flex-start;
-    gap: 6px;
+    gap: 8px;
   }
 
   .vm-section-action-bar {
-    padding: 12px 20px;
+    padding: 16px 20px;
     flex-wrap: wrap;
   }
 
   .vm-section-primary-btn {
     flex: 1;
     min-width: 140px;
-    max-width: 250px;
+    max-width: 280px;
   }
 
   .vm-section-cancel-btn {
     width: 100%;
-    max-width: 250px;
+    max-width: 280px;
   }
 }
 
 @media (max-width: 480px) {
   .vm-section-card-content {
-    padding: 16px;
+    padding: 20px;
   }
 
-  .vm-section-title {
-    font-size: 15px;
-  }
-
-  .vm-section-message {
-    font-size: 12px;
+  .vm-section-profile-icon {
+    width: 56px;
+    height: 56px;
   }
 
   .vm-section-action-bar {
     flex-direction: column;
-    padding: 16px;
+    padding: 20px;
   }
 
   .vm-section-primary-btn,
