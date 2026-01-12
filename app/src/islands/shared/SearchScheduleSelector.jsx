@@ -51,6 +51,27 @@ const DaysGrid = styled.div`
   justify-content: center;
   align-items: center;
 
+  /* Attention animation on page load */
+  animation: attention-pulse 0.6s ease-out 0.5s both;
+
+  @keyframes attention-pulse {
+    0% {
+      transform: scale(1);
+    }
+    25% {
+      transform: scale(1.05);
+    }
+    50% {
+      transform: scale(0.98);
+    }
+    75% {
+      transform: scale(1.02);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
   @media (max-width: 768px) {
     gap: 4px;
   }
