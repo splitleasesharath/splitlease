@@ -57,7 +57,7 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 16px;
+  padding: 40px 16px;
   overflow-y: auto;
   animation: fadeIn 0.2s ease-in-out;
 }
@@ -75,7 +75,7 @@
   width: 100%;
   max-width: 480px;
   min-height: 100px;
-  max-height: 90vh;
+  max-height: calc(100vh - 80px);
   background-color: var(--gep-bg-primary);
   border-radius: var(--gep-roundness-large);
   box-sizing: border-box;
@@ -84,6 +84,8 @@
   overflow: hidden;
   box-shadow: var(--gep-shadow-modal);
   animation: modalSlideIn 0.3s ease-out;
+  display: flex;
+  flex-direction: column;
 }
 
 @keyframes modalSlideIn {
@@ -103,11 +105,12 @@
 
 .gep-main-view {
   width: 100%;
-  min-height: 200px;
-  max-height: 85vh;
+  flex: 1;
+  min-height: 0;
   background-color: var(--gep-bg-primary);
   border-radius: var(--gep-roundness);
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .gep-main-view--editing {
@@ -346,8 +349,6 @@
   padding: 16px;
   margin: 0 16px 16px;
   border-radius: var(--gep-roundness);
-  max-height: 600px;
-  overflow-y: auto;
   background-color: var(--gep-bg-secondary);
 }
 
