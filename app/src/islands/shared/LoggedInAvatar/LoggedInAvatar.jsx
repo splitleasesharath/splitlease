@@ -193,7 +193,7 @@ export default function LoggedInAvatar({
       items.push({
         id: 'profile',
         label: 'My Profile',
-        icon: '/assets/icons/user-purple.svg',
+        icon: '/assets/icons/user-bubble-purple.svg',
         path: `/account-profile/${user.id}`,
       });
     }
