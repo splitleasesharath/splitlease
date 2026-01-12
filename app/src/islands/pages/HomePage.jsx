@@ -27,7 +27,7 @@ function Hero({ onExploreRentals, onMoreDetails }) {
 
       {/* Avatar 1 (top-left): With savings badge */}
       <div className="floating-avatar avatar-1">
-        <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=400&fit=crop&crop=face" alt="Robert" />
+        <img src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=400&fit=crop" alt="Modern NYC apartment living room" />
         <a href="https://split.lease/help-center-articles/knowledge-base/brad-45-percent-off" className="notification-badge savings visible clickable">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
@@ -39,17 +39,17 @@ function Hero({ onExploreRentals, onMoreDetails }) {
 
       {/* Avatar 2 (right): Plain circle */}
       <div className="floating-avatar avatar-2">
-        <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&h=400&fit=crop&crop=face" alt="James" />
+        <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=400&fit=crop" alt="Stylish bedroom with city view" />
       </div>
 
       {/* Avatar 3 (bottom-left): Plain circle */}
       <div className="floating-avatar avatar-3">
-        <img src="https://images.unsplash.com/photo-1598550874175-4d0ef436c909?w=400&h=400&fit=crop&crop=face" alt="Catherine" />
+        <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&h=400&fit=crop" alt="Cozy furnished apartment" />
       </div>
 
       {/* Avatar 4 (right): With host feature badge */}
       <div className="floating-avatar avatar-4">
-        <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face" alt="Michael" />
+        <img src="https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=400&h=400&fit=crop" alt="Bright kitchen and dining area" />
         <a href="https://split.lease/help-center-articles/knowledge-base/host-guide-airbnb-vs-split-lease" className="notification-badge feature visible clickable">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -63,12 +63,12 @@ function Hero({ onExploreRentals, onMoreDetails }) {
 
       {/* Avatar 5 (top-center-left): Plain circle */}
       <div className="floating-avatar avatar-5">
-        <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&h=400&fit=crop&crop=face" alt="Monica" />
+        <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&h=400&fit=crop" alt="Luxury apartment interior" />
       </div>
 
       {/* Avatar 6 (bottom-right): Plain circle */}
       <div className="floating-avatar avatar-6">
-        <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=400&fit=crop&crop=face" alt="James O" />
+        <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=400&fit=crop" alt="Modern home office space" />
       </div>
 
       <div className="hero-container">
