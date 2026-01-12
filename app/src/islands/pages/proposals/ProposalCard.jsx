@@ -1232,62 +1232,23 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
 
         {/* Actions Row */}
         <div className="actions-row">
-          {/* Fallback: Show basic buttons if buttonConfig not yet loaded */}
-          {!buttonConfig && !isTerminal && !isCompleted && (
-            <>
-              {/* VM Button (Fallback) */}
-              {vmConfig.visible && (
-                <button
-                  className={`btn btn-outline ${highlightVMButton && vmConfig.view === 'request' ? 'vm-button-pulse' : ''}`}
-                  disabled={vmConfig.disabled}
-                  onClick={handleVMButtonClick}
-                >
-                  {vmConfig.label}
-                </button>
-              )}
-              <button
-                className="btn btn-ghost"
-                onClick={() => {
-                  setProposalDetailsModalInitialView('pristine');
-                  setShowProposalDetailsModal(true);
-                }}
-              >
-                Edit
-              </button>
-              <button
-                className="btn btn-danger"
-                onClick={openCancelModal}
-              >
-                Cancel
-              </button>
-            </>
-          )}
-
-          {/* Button 1: Virtual Meeting - visibility based on vmConfig (implements 8 Bubble conditionals) */}
-          {buttonConfig && vmConfig.visible && (
-            <button
-              className={`btn btn-outline ${highlightVMButton && vmConfig.view === 'request' ? 'vm-button-pulse' : ''}`}
-              disabled={vmConfig.disabled}
-              onClick={handleVMButtonClick}
-            >
+          {/* VM status as text label (for waiting/requested states) */}
+          {vmConfig.visible && vmConfig.disabled && (
+            <span className={`btn-vm-text ${vmConfig.className === 'btn-vm-requested' ? 'waiting' : ''}`}>
               {vmConfig.label}
-            </button>
+            </span>
           )}
 
-          {/* Button 2: Guest Action 1 - dynamic label from os_proposal_status.guest_action_1 */}
+          {/* Primary action button (Guest Action 1) */}
           {buttonConfig?.guestAction1?.visible && (
             buttonConfig.guestAction1.action === 'go_to_leases' ? (
-              <a
-                href="/my-leases"
-                className="btn btn-primary"
-              >
+              <a href="/my-leases" className="btn btn-primary">
                 {buttonConfig.guestAction1.label}
               </a>
             ) : (
               <button
                 className={`btn ${
                   buttonConfig.guestAction1.action === 'delete_proposal' ? 'btn-danger' :
-                  buttonConfig.guestAction1.action === 'submit_rental_app' ? 'btn-primary' :
                   'btn-primary'
                 }`}
                 onClick={() => {
@@ -1306,7 +1267,17 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
             )
           )}
 
-          {/* Button 3: Guest Action 2 - dynamic label from os_proposal_status.guest_action_2 */}
+          {/* VM action button (only when actionable, not disabled) */}
+          {vmConfig.visible && !vmConfig.disabled && (
+            <button
+              className={`btn btn-outline ${highlightVMButton && vmConfig.view === 'request' ? 'vm-button-pulse' : ''}`}
+              onClick={handleVMButtonClick}
+            >
+              {vmConfig.view === 'request' ? 'Schedule Meeting' : vmConfig.label}
+            </button>
+          )}
+
+          {/* Guest Action 2 (secondary action) */}
           {buttonConfig?.guestAction2?.visible && (
             <button
               className="btn btn-outline"
@@ -1321,7 +1292,20 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
             </button>
           )}
 
-          {/* Button 4: Cancel/Delete/Reject button - dynamic based on status */}
+          {/* Edit button (always show if not terminal/completed) */}
+          {!isTerminal && !isCompleted && (
+            <button
+              className="btn btn-ghost"
+              onClick={() => {
+                setProposalDetailsModalInitialView('pristine');
+                setShowProposalDetailsModal(true);
+              }}
+            >
+              Edit
+            </button>
+          )}
+
+          {/* Cancel/Delete button */}
           {buttonConfig?.cancelButton?.visible && (
             <button
               className={`btn ${
@@ -1343,6 +1327,13 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
               }}
             >
               {buttonConfig.cancelButton.label}
+            </button>
+          )}
+
+          {/* Fallback cancel button if no buttonConfig */}
+          {!buttonConfig && !isTerminal && !isCompleted && (
+            <button className="btn btn-danger" onClick={openCancelModal}>
+              Cancel
             </button>
           )}
         </div>

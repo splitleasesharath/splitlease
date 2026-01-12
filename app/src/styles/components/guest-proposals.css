@@ -663,11 +663,14 @@
 
 .actions-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   padding: 24px;
+  align-items: center;
 }
 
-.btn {
+/* V3 Button base styles */
+.actions-row .btn {
   padding: 12px 20px;
   font-size: 14px;
   font-weight: 600;
@@ -681,46 +684,68 @@
   gap: 8px;
   border: none;
   font-family: inherit;
+  white-space: nowrap;
 }
 
-.btn-primary {
+.actions-row .btn-primary {
   background: var(--gp-purple-primary);
   color: white;
+  border: 2px solid var(--gp-purple-primary);
 }
 
-.btn-primary:hover {
+.actions-row .btn-primary:hover {
   background: var(--gp-purple-dark);
+  border-color: var(--gp-purple-dark);
 }
 
-.btn-outline {
+.actions-row .btn-outline {
   background: transparent;
   color: var(--gp-purple-primary);
   border: 2px solid var(--gp-purple-primary);
 }
 
-.btn-outline:hover {
+.actions-row .btn-outline:hover {
   background: var(--gp-purple-bg);
 }
 
-.btn-ghost {
+.actions-row .btn-ghost {
   background: transparent;
   color: var(--gp-text-secondary);
   border: 1px solid var(--gp-border);
 }
 
-.btn-ghost:hover {
+.actions-row .btn-ghost:hover {
   border-color: var(--gp-text-secondary);
   color: var(--gp-text);
 }
 
-.btn-danger {
+.actions-row .btn-danger {
   background: transparent;
   color: var(--gp-danger);
   border: 1px solid var(--gp-danger);
 }
 
-.btn-danger:hover {
+.actions-row .btn-danger:hover {
   background: var(--gp-danger-bg);
+}
+
+/* VM button text states */
+.actions-row .btn-vm-text {
+  background: transparent;
+  border: none;
+  color: var(--gp-danger);
+  font-weight: 600;
+  padding: 12px 16px;
+  cursor: default;
+}
+
+.actions-row .btn-vm-text.waiting {
+  color: var(--gp-text-muted);
+}
+
+.actions-row .btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* ============================================================================
