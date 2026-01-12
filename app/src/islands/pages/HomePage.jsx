@@ -25,16 +25,16 @@ function Hero({ onExploreRentals, onMoreDetails }) {
     <section className="hero-section">
       {/* Floating Avatars */}
 
-      {/* Avatar 1 (top-left): With savings badge */}
+      {/* Avatar 1 (top-left): With location badge */}
       <div className="floating-avatar avatar-1">
         <img src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=400&fit=crop" alt="Modern NYC apartment living room" />
-        <a href="https://split.lease/help-center-articles/knowledge-base/brad-45-percent-off" className="notification-badge savings visible clickable">
+        <span className="notification-badge location visible">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
-            <polyline points="17 6 23 6 23 12"/>
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
           </svg>
-          Brad gets 45% off Airbnb Price
-        </a>
+          Midtown, Manhattan
+        </span>
       </div>
 
       {/* Avatar 2 (right): Plain circle */}
@@ -47,18 +47,16 @@ function Hero({ onExploreRentals, onMoreDetails }) {
         <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&h=400&fit=crop" alt="Cozy furnished apartment" />
       </div>
 
-      {/* Avatar 4 (right): With host feature badge */}
+      {/* Avatar 4 (right): With location badge */}
       <div className="floating-avatar avatar-4">
         <img src="https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=400&h=400&fit=crop" alt="Bright kitchen and dining area" />
-        <a href="https://split.lease/help-center-articles/knowledge-base/host-guide-airbnb-vs-split-lease" className="notification-badge feature visible clickable">
+        <span className="notification-badge location visible">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-            <circle cx="9" cy="7" r="4"/>
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
           </svg>
-          Same Guest, Every Time
-        </a>
+          Williamsburg, Brooklyn
+        </span>
       </div>
 
       {/* Avatar 5 (top-center-left): Plain circle */}

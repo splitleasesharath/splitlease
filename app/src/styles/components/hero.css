@@ -412,6 +412,17 @@
     animation: badge-appear-center 0.4s ease-out 3s forwards;
 }
 
+.notification-badge.location {
+    color: #4B47CE;
+    bottom: -12px;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px) scale(0.9);
+}
+
+.notification-badge.location.visible {
+    animation: badge-appear-center 0.4s ease-out 2.5s forwards;
+}
+
 @keyframes badge-appear-center {
     0% {
         opacity: 0;
