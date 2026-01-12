@@ -518,81 +518,45 @@
 }
 
 /* =====================================================
-   DAY NIGHT SELECTOR STYLES
+   DAY NIGHT SELECTOR STYLES - Matches mockup exactly
    ===================================================== */
 
 .day-night-selector {
   margin-bottom: 16px;
 }
 
-.dns-grid {
+/* Day grid - simple flex row of 7 buttons */
+.dns-day-grid {
   display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 8px;
-  background-color: var(--gep-bg-primary);
-  border-radius: var(--gep-roundness);
-  overflow-x: auto;
-  border: 1px solid var(--gep-border-color);
+  gap: 6px;
 }
 
-.dns-calendar-icon {
-  flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--gep-text-primary);
-}
-
-.dns-day-button {
-  flex-shrink: 0;
+/* Day button - matches mockup .day-btn exactly */
+.dns-day-btn {
   width: 40px;
   height: 40px;
   border: 1px solid var(--gep-border-color);
-  border-radius: var(--gep-roundness);
-  background-color: var(--gep-bg-primary);
+  border-radius: 8px;
+  background: var(--gep-bg-primary);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gep-text-secondary);
   cursor: pointer;
+  transition: all 0.15s;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
 }
 
-.dns-day-button:hover {
-  background-color: rgba(99, 102, 241, 0.1);
-}
-
-.dns-day-button--selected {
-  background-color: var(--gep-primary-color);
+.dns-day-btn:hover {
   border-color: var(--gep-primary-color);
-  color: var(--gep-bg-primary);
+  color: var(--gep-primary-color);
 }
 
-.dns-day-button--check-in {
-  border-color: #22C55E;
-  border-width: 2px;
-}
-
-.dns-day-button--check-out {
-  border-color: var(--gep-destructive-color);
-  border-width: 2px;
-}
-
-.dns-day-label {
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.dns-info-icon {
-  flex-shrink: 0;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
+.dns-day-btn--selected {
+  background: var(--gep-primary-color);
+  border-color: var(--gep-primary-color);
+  color: white;
 }
 
 /* Schedule info container - combines check-in, check-out, and summary */
@@ -637,35 +601,6 @@
 
 .dns-schedule-info-summary strong {
   color: var(--gep-primary-color);
-}
-
-.dns-day-labels {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.dns-day-label-item {
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background-color: var(--gep-bg-primary);
-  border: 1px solid var(--gep-border-color);
-}
-
-.dns-day-label-item--selected {
-  background-color: var(--gep-primary-color);
-  color: var(--gep-bg-primary);
-  border-color: var(--gep-primary-color);
-}
-
-.dns-single-letter {
-  font-size: 12px;
-  font-weight: 700;
 }
 
 /* =====================================================

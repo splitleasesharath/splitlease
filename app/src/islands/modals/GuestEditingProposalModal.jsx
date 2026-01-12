@@ -198,39 +198,20 @@ function DayNightSelector({
 
   return (
     <div className="day-night-selector">
-      {/* Day/Night Grid */}
-      <div className="dns-grid">
-        {/* Calendar icon */}
-        <div className="dns-calendar-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2"/>
-            <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" strokeWidth="2"/>
-            <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
-        </div>
-
-        {/* Day buttons */}
+      {/* Day buttons grid - matches mockup exactly */}
+      <div className="dns-day-grid">
         {days.map((day) => (
           <button
             key={day.id}
             type="button"
-            className={`dns-day-button ${isDaySelected(day.id) ? 'dns-day-button--selected' : ''} ${isCheckInDay(day) ? 'dns-day-button--check-in' : ''} ${isCheckOutDay(day) ? 'dns-day-button--check-out' : ''}`}
+            className={`dns-day-btn ${isDaySelected(day.id) ? 'dns-day-btn--selected' : ''}`}
             onClick={() => handleDayClick(day.id)}
             disabled={disabled}
             title={day.name}
           >
-            <span className="dns-day-label">{day.singleLetter}</span>
+            {day.singleLetter}
           </button>
         ))}
-
-        {/* Info icon */}
-        <div className="dns-info-icon">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="10" cy="10" r="9" stroke="#6366F1" strokeWidth="2"/>
-            <text x="10" y="14" textAnchor="middle" fontSize="12" fill="#6366F1" fontWeight="bold">i</text>
-          </svg>
-        </div>
       </div>
 
       {/* Schedule info container - combines check-in, check-out, and summary */}
@@ -246,21 +227,9 @@ function DayNightSelector({
         <div className="dns-schedule-info-divider"></div>
         <div className="dns-schedule-info-row">
           <span className="dns-schedule-info-summary">
-            <strong>{selectedDaysCount}</strong> days, <strong>{selectedNightsCount}</strong> nights
+            <strong>{selectedDaysCount}</strong> days, <strong>{selectedNightsCount}</strong> nights per week
           </span>
         </div>
-      </div>
-
-      {/* Day selection row with labels */}
-      <div className="dns-day-labels">
-        {days.map((day) => (
-          <div
-            key={`label-${day.id}`}
-            className={`dns-day-label-item ${isDaySelected(day.id) ? 'dns-day-label-item--selected' : ''}`}
-          >
-            <span className="dns-single-letter">{day.singleLetter}</span>
-          </div>
-        ))}
       </div>
     </div>
   )
