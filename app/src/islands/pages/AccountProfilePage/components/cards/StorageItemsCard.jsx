@@ -44,7 +44,7 @@ export default function StorageItemsCard({
   }
 
   return (
-    <ProfileCard title="What You'll Need to Store">
+    <ProfileCard title="What You'll Want to Store">
       <p style={{ fontSize: '14px', color: 'var(--sl-text-secondary)', marginBottom: '16px' }}>
         Select the items you typically bring with you:
       </p>
