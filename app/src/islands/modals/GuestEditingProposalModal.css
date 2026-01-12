@@ -57,7 +57,7 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 40px 16px;
+  padding: 16px;
   overflow-y: auto;
   animation: fadeIn 0.2s ease-in-out;
 }
@@ -75,7 +75,7 @@
   width: 100%;
   max-width: 480px;
   min-height: 100px;
-  max-height: calc(100vh - 80px);
+  max-height: calc(100vh - 32px);
   background-color: var(--gep-bg-primary);
   border-radius: var(--gep-roundness-large);
   box-sizing: border-box;
@@ -125,7 +125,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 24px;
+  padding: 16px 20px;
   border-bottom: 1px solid var(--gep-border-light);
   position: sticky;
   top: 0;
@@ -163,14 +163,33 @@
 }
 
 .gep-header-icon {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   background: var(--gep-primary-bg);
-  border-radius: 10px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--gep-primary-color);
+}
+
+.gep-header-back-btn {
+  width: 36px;
+  height: 36px;
+  background: var(--gep-bg-secondary);
+  border-radius: 8px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gep-text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.gep-header-back-btn:hover {
+  background: var(--gep-border-color);
+  color: var(--gep-text-primary);
 }
 
 .gep-header-title-text {
@@ -224,7 +243,7 @@
    ===================================================== */
 
 .gep-document-view {
-  padding: 24px;
+  padding: 16px 20px;
 }
 
 /* Detail rows - simple key-value pairs */
@@ -232,7 +251,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 0;
+  padding: 8px 0;
   border-bottom: 1px solid var(--gep-border-light);
 }
 
@@ -241,12 +260,12 @@
 }
 
 .gep-detail-label {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--gep-text-secondary);
 }
 
 .gep-detail-value {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--gep-text-primary);
   text-align: right;
@@ -256,39 +275,39 @@
 .gep-pricing-section {
   background: var(--gep-bg-secondary);
   border-radius: var(--gep-roundness);
-  padding: 16px;
-  margin-top: 16px;
+  padding: 12px 14px;
+  margin-top: 12px;
 }
 
 .gep-pricing-title {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--gep-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .gep-pricing-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 0;
+  padding: 6px 0;
 }
 
 .gep-pricing-row--total {
   border-top: 1px solid var(--gep-border-color);
-  margin-top: 8px;
-  padding-top: 12px;
+  margin-top: 6px;
+  padding-top: 10px;
 }
 
 .gep-pricing-label {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--gep-text-secondary);
 }
 
 .gep-pricing-value {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--gep-text-primary);
 }
@@ -299,15 +318,15 @@
 }
 
 .gep-pricing-row--total .gep-pricing-value {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--gep-primary-color);
 }
 
 /* Fees section */
 .gep-fees-section {
-  margin-top: 16px;
-  padding-top: 16px;
+  margin-top: 12px;
+  padding-top: 12px;
   border-top: 1px solid var(--gep-border-light);
 }
 
@@ -315,16 +334,16 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 6px 0;
+  padding: 4px 0;
 }
 
 .gep-fee-label {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--gep-text-muted);
 }
 
 .gep-fee-value {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--gep-text-secondary);
 }
@@ -335,9 +354,9 @@
 }
 
 .gep-disclaimer {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--gep-text-muted);
-  margin-top: 12px;
+  margin-top: 8px;
   font-style: italic;
 }
 
@@ -593,8 +612,8 @@
 
 .gep-buttons {
   display: flex;
-  gap: 12px;
-  padding: 16px 24px;
+  gap: 10px;
+  padding: 14px 20px;
   justify-content: center;
   background: var(--gep-bg-secondary);
   border-top: 1px solid var(--gep-border-light);
@@ -612,7 +631,7 @@
 }
 
 .gep-button {
-  padding: 12px 20px;
+  padding: 10px 18px;
   border-radius: var(--gep-roundness);
   font-family: var(--gep-font-primary);
   font-size: 14px;
