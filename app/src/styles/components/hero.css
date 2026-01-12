@@ -40,8 +40,6 @@
     height: 500px;
     width: auto;
     z-index: 0;
-    will-change: transform;
-    transition: transform 0.05s linear;
 }
 
 .hero-illustration-left {
