@@ -809,37 +809,71 @@ export default function GuestEditingProposalModal({
         {/* Main view for editing and reviewing */}
         {showMainView && (
           <div className={`gep-main-view ${view === 'editing' ? 'gep-main-view--editing' : ''}`}>
-            {/* Header */}
+            {/* Header - matches mockup exactly */}
             <div className="gep-header">
-              <button
-                type="button"
-                className="gep-back-button"
-                onClick={handleBack}
-                aria-label="Back"
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
+              {view === 'pristine' ? (
+                /* Pristine header: icon + title/subtitle on left, close on right */
+                <>
+                  <div className="gep-header-left">
+                    <div className="gep-header-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                        <polyline points="14,2 14,8 20,8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <div className="gep-header-title-text">Proposal Details</div>
+                      <div className="gep-header-subtitle">{listing?.title || listing?.Title || proposal?._listing?.title || 'Listing'}</div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="gep-close-button"
+                    onClick={handleClose}
+                    aria-label="Close"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="18" y1="6" x2="6" y2="18"/>
+                      <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </button>
+                </>
+              ) : (
+                /* Editing/General header: back button + centered title + close */
+                <>
+                  <button
+                    type="button"
+                    className="gep-back-button"
+                    onClick={handleBack}
+                    aria-label="Back"
+                  >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
 
-              <div className="gep-header-title">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                <h2 className="gep-title">Proposal Details</h2>
-              </div>
+                  <div className="gep-header-center">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    <h2 className="gep-title">Proposal Details</h2>
+                  </div>
 
-              <button
-                type="button"
-                className="gep-close-button"
-                onClick={handleClose}
-                aria-label="Close"
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
+                  <button
+                    type="button"
+                    className="gep-close-button"
+                    onClick={handleClose}
+                    aria-label="Close"
+                  >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+                </>
+              )}
             </div>
 
             {/* Guest comment section */}
@@ -973,8 +1007,75 @@ export default function GuestEditingProposalModal({
               </div>
             )}
 
-            {/* Breakdown details - conditionally visible */}
-            {showBreakdownDetails && (
+            {/* Pristine document view - matches mockup exactly */}
+            {view === 'pristine' && (
+              <div className="gep-document-view">
+                {/* Detail rows */}
+                <div className="gep-detail-row">
+                  <span className="gep-detail-label">Move-in</span>
+                  <span className="gep-detail-value">{formatDate(formState.moveInDate, false)}</span>
+                </div>
+                <div className="gep-detail-row">
+                  <span className="gep-detail-label">Check-in</span>
+                  <span className="gep-detail-value">{formState.checkInDay?.display || 'Not set'}</span>
+                </div>
+                <div className="gep-detail-row">
+                  <span className="gep-detail-label">Check-out</span>
+                  <span className="gep-detail-value">{formState.checkOutDay?.display || 'Not set'}</span>
+                </div>
+                <div className="gep-detail-row">
+                  <span className="gep-detail-label">Reservation Length</span>
+                  <span className="gep-detail-value">{reservationSpan.display}</span>
+                </div>
+                <div className="gep-detail-row">
+                  <span className="gep-detail-label">Weekly Pattern</span>
+                  <span className="gep-detail-value">
+                    {formState.checkInDay?.first3Letters || 'Mon'} - {formState.checkOutDay?.first3Letters || 'Fri'} ({formState.selectedNights.length} nights/week)
+                  </span>
+                </div>
+                <div className="gep-detail-row">
+                  <span className="gep-detail-label">House Rules</span>
+                  <span className="gep-detail-value">{houseRulesToDisplay.length}</span>
+                </div>
+
+                {/* Pricing Breakdown section */}
+                <div className="gep-pricing-section">
+                  <div className="gep-pricing-title">Pricing Breakdown</div>
+                  <div className="gep-pricing-row">
+                    <span className="gep-pricing-label">Price per night</span>
+                    <span className="gep-pricing-value">${(pricePerNight || 0).toFixed(2)}</span>
+                  </div>
+                  <div className="gep-pricing-row">
+                    <span className="gep-pricing-label">{getReservedLabel(listing?.rentalType || 'Nightly')}</span>
+                    <span className="gep-pricing-value">× {formState.selectedNights.length * formState.numberOfWeeks}</span>
+                  </div>
+                  <div className="gep-pricing-row gep-pricing-row--total">
+                    <span className="gep-pricing-label">Total Price for Reservation</span>
+                    <span className="gep-pricing-value">${(totalPriceForReservation || 0).toFixed(2)}</span>
+                  </div>
+                </div>
+
+                {/* Fees section */}
+                <div className="gep-fees-section">
+                  <div className="gep-fee-row">
+                    <span className="gep-fee-label">{get4WeekPriceLabel(listing?.rentalType || 'Nightly')}</span>
+                    <span className="gep-fee-value">${(priceRentPer4Weeks || 0).toFixed(2)}</span>
+                  </div>
+                  <div className="gep-fee-row">
+                    <span className="gep-fee-label">Refundable Damage Deposit*</span>
+                    <span className="gep-fee-value">${(listing?.damageDeposit || listing?.['Damage Deposit'] || 0).toFixed(2)}</span>
+                  </div>
+                  <div className="gep-fee-row">
+                    <span className="gep-fee-label">Maintenance Fee* <span className="gep-fee-note">*see terms of use</span></span>
+                    <span className="gep-fee-value">${(listing?.maintenanceFee || listing?.['Maintenance Fee'] || 0).toFixed(2)}</span>
+                  </div>
+                  <p className="gep-disclaimer">*Refundable Damage Deposit is held with Split Lease</p>
+                </div>
+              </div>
+            )}
+
+            {/* General breakdown details - for general view only */}
+            {view === 'general' && (
               <div className="gep-breakdown-details">
                 <ReservationPriceBreakdown
                   listing={listing || proposal?._listing}

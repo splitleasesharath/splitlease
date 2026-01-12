@@ -152,7 +152,37 @@
   color: var(--gep-text-primary);
 }
 
-.gep-header-title {
+/* Pristine header - left-aligned with icon */
+.gep-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.gep-header-icon {
+  width: 40px;
+  height: 40px;
+  background: var(--gep-primary-bg);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gep-primary-color);
+}
+
+.gep-header-title-text {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--gep-text-header);
+}
+
+.gep-header-subtitle {
+  font-size: 13px;
+  color: var(--gep-text-muted);
+}
+
+/* Editing/General header - centered title */
+.gep-header-center {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -184,6 +214,128 @@
   color: var(--gep-text-primary);
   line-height: 1.4;
   margin: 0;
+}
+
+/* =====================================================
+   PRISTINE DOCUMENT VIEW - Matches mockup exactly
+   ===================================================== */
+
+.gep-document-view {
+  padding: 24px;
+}
+
+/* Detail rows - simple key-value pairs */
+.gep-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--gep-border-light);
+}
+
+.gep-detail-row:last-of-type {
+  border-bottom: none;
+}
+
+.gep-detail-label {
+  font-size: 14px;
+  color: var(--gep-text-secondary);
+}
+
+.gep-detail-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--gep-text-primary);
+  text-align: right;
+}
+
+/* Pricing section */
+.gep-pricing-section {
+  background: var(--gep-bg-secondary);
+  border-radius: var(--gep-roundness);
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.gep-pricing-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gep-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.gep-pricing-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.gep-pricing-row--total {
+  border-top: 1px solid var(--gep-border-color);
+  margin-top: 8px;
+  padding-top: 12px;
+}
+
+.gep-pricing-label {
+  font-size: 14px;
+  color: var(--gep-text-secondary);
+}
+
+.gep-pricing-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--gep-text-primary);
+}
+
+.gep-pricing-row--total .gep-pricing-label {
+  font-weight: 600;
+  color: var(--gep-text-primary);
+}
+
+.gep-pricing-row--total .gep-pricing-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--gep-primary-color);
+}
+
+/* Fees section */
+.gep-fees-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--gep-border-light);
+}
+
+.gep-fee-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+}
+
+.gep-fee-label {
+  font-size: 13px;
+  color: var(--gep-text-muted);
+}
+
+.gep-fee-value {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gep-text-secondary);
+}
+
+.gep-fee-note {
+  font-size: 10px;
+  opacity: 0.8;
+}
+
+.gep-disclaimer {
+  font-size: 11px;
+  color: var(--gep-text-muted);
+  margin-top: 12px;
+  font-style: italic;
 }
 
 /* =====================================================
