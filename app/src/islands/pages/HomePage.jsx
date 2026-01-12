@@ -20,6 +20,20 @@ import {
 // ============================================================================
 
 function Hero({ onExploreRentals }) {
+  // Parallax scroll effect for illustrations
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      const leftImg = document.querySelector('.hero-illustration-left');
+      const rightImg = document.querySelector('.hero-illustration-right');
+
+      if (leftImg) leftImg.style.transform = `rotate(-2deg) translateY(${scrollY * 0.3}px)`;
+      if (rightImg) rightImg.style.transform = `translateY(${scrollY * 0.5}px)`;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
     <section className="hero-section">
