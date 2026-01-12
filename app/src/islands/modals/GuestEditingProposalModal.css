@@ -595,47 +595,48 @@
   cursor: pointer;
 }
 
-.dns-summary {
-  padding: 8px 12px;
-  margin-top: 8px;
-  background-color: var(--gep-bg-primary);
-  border-radius: var(--gep-roundness);
-  border: 1px solid var(--gep-border-color);
-}
-
-.dns-summary-text {
-  font-size: 12px;
-  color: var(--gep-text-primary);
-  margin: 0;
-}
-
-.dns-checkin-checkout {
-  padding: 8px 12px;
-  border: 1px solid var(--gep-border-color);
-  border-radius: var(--gep-roundness);
-  margin-top: 8px;
-  background-color: var(--gep-bg-primary);
-}
-
-.dns-checkbox-row {
+/* Schedule info container - combines check-in, check-out, and summary */
+.dns-schedule-info {
   display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin-bottom: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: var(--gep-bg-secondary);
+  border-radius: 8px;
 }
 
-.dns-checkbox-row:last-child {
-  margin-bottom: 0;
+.dns-schedule-info-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.dns-checkbox {
-  margin-top: 2px;
+.dns-schedule-info-label {
+  font-size: 13px;
+  color: var(--gep-text-muted);
 }
 
-.dns-checkbox-label {
-  font-size: 12px;
-  color: var(--gep-text-primary);
-  line-height: 1.4;
+.dns-schedule-info-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gep-primary-color);
+}
+
+.dns-schedule-info-divider {
+  width: 1px;
+  height: 16px;
+  background: var(--gep-border-color);
+}
+
+.dns-schedule-info-summary {
+  font-size: 13px;
+  color: var(--gep-text-muted);
+}
+
+.dns-schedule-info-summary strong {
+  color: var(--gep-primary-color);
 }
 
 .dns-day-labels {

@@ -233,39 +233,21 @@ function DayNightSelector({
         </div>
       </div>
 
-      {/* Selection summary */}
-      <div className="dns-summary">
-        <p className="dns-summary-text">
-          <strong>{selectedDaysCount}</strong> days, <strong>{selectedNightsCount}</strong> nights selected
-        </p>
-      </div>
-
-      {/* Check-in/Check-out selection */}
-      <div className="dns-checkin-checkout">
-        <div className="dns-checkbox-row">
-          <input
-            type="checkbox"
-            id="dns-checkin-checkbox"
-            checked={selectedDaysCount > 0}
-            readOnly
-            className="dns-checkbox"
-          />
-          <label htmlFor="dns-checkin-checkbox" className="dns-checkbox-label">
-            Check-in day is <strong>{checkInDay?.display || 'Not set'}</strong>
-          </label>
+      {/* Schedule info container - combines check-in, check-out, and summary */}
+      <div className="dns-schedule-info">
+        <div className="dns-schedule-info-row">
+          <span className="dns-schedule-info-label">Check-in:</span>
+          <span className="dns-schedule-info-value">{checkInDay?.display || 'Not set'}</span>
         </div>
-
-        <div className="dns-checkbox-row">
-          <input
-            type="checkbox"
-            id="dns-checkout-checkbox"
-            checked={!!checkOutDay}
-            readOnly
-            className="dns-checkbox"
-          />
-          <label htmlFor="dns-checkout-checkbox" className="dns-checkbox-label">
-            Check-out day is <strong>{checkOutDay?.display || 'Not set'}</strong>
-          </label>
+        <div className="dns-schedule-info-row">
+          <span className="dns-schedule-info-label">Check-out:</span>
+          <span className="dns-schedule-info-value">{checkOutDay?.display || 'Not set'}</span>
+        </div>
+        <div className="dns-schedule-info-divider"></div>
+        <div className="dns-schedule-info-row">
+          <span className="dns-schedule-info-summary">
+            <strong>{selectedDaysCount}</strong> days, <strong>{selectedNightsCount}</strong> nights
+          </span>
         </div>
       </div>
 
