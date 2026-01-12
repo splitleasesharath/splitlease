@@ -1657,346 +1657,289 @@
 }
 
 /* ============================================================================
-   VIRTUAL MEETINGS SECTION
+   VIRTUAL MEETINGS SECTION - V3 Style
    Displays proposals with active virtual meetings
    ============================================================================ */
 
 .vm-section-wrapper {
-  border-radius: 16px;
-  padding: 10px 5px 5px;
-  align-self: center;
-  min-width: 94%;
-  max-width: 94%;
-  margin: 20px auto;
-  background: transparent;
+  margin-top: 32px;
 }
 
 .vm-section-heading {
-  font-family: 'Inter', sans-serif;
-  font-size: 21px;
-  font-weight: 600;
-  color: var(--color-primary, #31135D);
-  line-height: 1.31;
-  margin: 0 0 10px 15px;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--gp-purple-dark);
+  margin-bottom: 16px;
 }
 
 .vm-section-list {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 12px;
 }
 
-/* Individual VM Card */
+/* Individual VM Card - V3 Style */
 .vm-section-card {
-  background-color: var(--color-primary-contrast, #FFFFFF);
-  border-radius: 5px;
-  overflow: visible;
-  margin-bottom: 0;
+  background: var(--gp-white);
+  border: 1px solid var(--gp-border);
+  border-radius: 16px;
+  overflow: hidden;
 }
 
 .vm-section-card-content {
-  background-color: rgb(255, 255, 255);
-  padding: 0 0 0 20px;
+  padding: 20px 24px;
 }
 
 /* Header row with profile icon and text */
 .vm-section-header-row {
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 5px;
-  padding: 20px 0;
-  background-color: rgb(255, 255, 255);
+  align-items: flex-start;
+  gap: 16px;
 }
 
 .vm-section-profile-icon {
   width: 48px;
   height: 48px;
-  border-radius: 20px;
+  border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
+  background: var(--gp-border-light);
 }
 
 .vm-section-profile-img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  border-radius: 20px;
+  object-fit: cover;
 }
 
 .vm-section-text-content {
-  display: flex;
-  flex-direction: column;
-  min-width: 70%;
-  flex-grow: 1;
+  flex: 1;
+  min-width: 0;
 }
 
 .vm-section-title {
-  font-family: 'Roboto', sans-serif;
-  font-size: 17px;
-  font-weight: 400;
-  color: rgb(28, 27, 31);
-  letter-spacing: 0.5px;
-  line-height: 1.5;
-  padding-left: 5px;
-  white-space: pre-wrap;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--gp-purple-dark);
+  line-height: 1.4;
 }
 
 .vm-section-subtitle {
-  font-family: 'Roboto', sans-serif;
-  font-size: 12px;
-  font-weight: 400;
-  color: rgb(107, 114, 128);
-  padding-left: 5px;
-  margin-top: -2px;
+  font-size: 13px;
+  color: var(--gp-text-muted);
+  margin-top: 2px;
 }
 
 .vm-section-message-row {
   display: flex;
-  flex-direction: row;
   align-items: center;
-  gap: 5px;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .vm-section-message-row svg {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
-  margin-left: 5px;
+  color: var(--gp-purple-primary);
+}
+
+.vm-section-message-row svg rect,
+.vm-section-message-row svg line {
+  stroke: var(--gp-purple-primary);
 }
 
 .vm-section-message {
-  font-family: 'Inter', sans-serif;
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--color-text, #424242);
-  line-height: 1;
-  padding-left: 5px;
+  font-size: 13px;
+  color: var(--gp-text-secondary);
+  line-height: 1.4;
 }
 
 /* Date/time pills row */
 .vm-section-dates-row {
   display: flex;
-  flex-direction: row;
   flex-wrap: wrap;
-  gap: 10px;
-  padding-bottom: 10px;
-  background-color: rgb(255, 255, 255);
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--gp-border-light);
 }
 
 .vm-section-date-pill {
-  background-color: rgb(210, 207, 207);
-  font-family: 'Open Sans', sans-serif;
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--color-primary, #31135D);
-  line-height: 1.5;
-  padding: 5px 10px;
+  background: var(--gp-bg);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gp-text);
+  padding: 8px 14px;
   border-radius: 20px;
-  white-space: pre-wrap;
+  border: 1px solid var(--gp-border);
 }
 
-/* Action bar */
+/* Action bar - V3 Style */
 .vm-section-action-bar {
   display: flex;
-  flex-direction: row;
   align-items: center;
-  gap: 15px;
-  background-color: rgb(247, 248, 249);
-  padding: 0 0 0 15px;
-  min-height: 70px;
+  gap: 12px;
+  padding: 16px 24px;
+  background: var(--gp-bg);
+  border-top: 1px solid var(--gp-border-light);
 }
 
 .vm-section-cancel-btn {
-  background-color: rgb(147, 146, 147);
-  font-family: 'DM Sans', sans-serif;
+  background: transparent;
   font-size: 14px;
-  font-weight: 500;
-  color: var(--color-primary-contrast, #FFFFFF);
-  text-align: center;
-  line-height: 1;
-  padding: 0 15px;
-  border-radius: 20px;
-  border: none;
-  height: 32px;
+  font-weight: 600;
+  color: var(--gp-text-secondary);
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--gp-border);
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.15s;
 }
 
 .vm-section-cancel-btn:hover {
-  background-color: rgb(127, 126, 127);
+  border-color: var(--gp-text-secondary);
+  color: var(--gp-text);
 }
 
 /* ============================================================================
-   VM SECTION - STATE BADGES
-   Visual indicators for VM state (pending, confirmed, waiting)
+   VM SECTION - STATE BADGES - V3 Style
    ============================================================================ */
 
 .vm-section-title-row {
   display: flex;
-  flex-direction: row;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
 }
 
 .vm-section-badge {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 500;
   padding: 4px 10px;
-  border-radius: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  border-radius: 20px;
   white-space: nowrap;
 }
 
 .vm-section-badge-waiting {
-  background-color: #E5E7EB;
-  color: #4B5563;
+  background: var(--gp-border-light);
+  color: var(--gp-text-muted);
 }
 
 .vm-section-badge-pending {
-  background-color: #f3e8ff;
-  color: var(--color-attention, #8C68EE);
+  background: var(--gp-purple-bg);
+  color: var(--gp-purple-primary);
 }
 
 .vm-section-badge-confirmed {
-  background-color: #ede9fe;
-  color: var(--color-accent, #5B21B6);
+  background: var(--gp-success-bg);
+  color: var(--gp-success);
 }
 
 .vm-section-badge-expired {
-  background-color: #f3e8ff;
-  color: var(--color-attention, #8C68EE);
-  border: 1px solid var(--color-attention, #8C68EE);
+  background: var(--gp-danger-bg);
+  color: var(--gp-danger);
 }
 
 /* ============================================================================
-   VM SECTION - PRIMARY ACTION BUTTONS
-   State-dependent action buttons
+   VM SECTION - PRIMARY ACTION BUTTONS - V3 Style
    ============================================================================ */
 
 .vm-section-primary-btn {
-  font-family: 'DM Sans', sans-serif;
   font-size: 14px;
-  font-weight: 500;
-  text-align: center;
-  line-height: 1;
-  padding: 0 18px;
-  border-radius: 20px;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 10px;
   border: none;
-  height: 36px;
   cursor: pointer;
-  transition: background-color 0.2s, opacity 0.2s;
+  transition: all 0.15s;
 }
 
-/* Respond state - CTA Purple (action needed) */
+/* Respond state - Primary purple */
 .vm-section-primary-btn--respond {
-  background-color: var(--color-cta, #5B5FCF);
+  background: var(--gp-purple-primary);
   color: white;
-  transition: all 0.2s ease;
 }
 
 .vm-section-primary-btn--respond:hover {
-  background-color: var(--color-cta-hover, #4B48C8);
-  box-shadow: 0 4px 12px rgba(91, 95, 207, 0.3);
+  background: var(--gp-purple-dark);
 }
 
-/* Details state - Secondary Purple */
+/* Details state - Outline */
 .vm-section-primary-btn--details {
-  background-color: var(--color-secondary, #6D31C2);
-  color: white;
-  transition: all 0.2s ease;
+  background: transparent;
+  color: var(--gp-purple-primary);
+  border: 2px solid var(--gp-purple-primary);
 }
 
 .vm-section-primary-btn--details:hover {
-  background-color: var(--color-secondary-hover, #5B21B6);
-  box-shadow: 0 4px 12px rgba(109, 49, 194, 0.3);
+  background: var(--gp-purple-bg);
 }
 
-/* Join state - Accent Purple (confirmed action) */
+/* Join state - Primary purple */
 .vm-section-primary-btn--join {
-  background-color: var(--color-accent, #5B21B6);
+  background: var(--gp-purple-primary);
   color: white;
-  transition: all 0.2s ease;
 }
 
 .vm-section-primary-btn--join:hover {
-  background-color: var(--color-accent-hover, #4C1D95);
-  box-shadow: 0 4px 12px rgba(91, 33, 182, 0.3);
+  background: var(--gp-purple-dark);
 }
 
-/* Disabled state - Gray (waiting for response) */
+/* Disabled state */
 .vm-section-primary-btn--disabled {
-  background-color: #9CA3AF;
-  color: white;
+  background: var(--gp-border);
+  color: var(--gp-text-muted);
   cursor: not-allowed;
-  opacity: 0.8;
 }
 
-.vm-section-primary-btn--disabled:hover {
-  background-color: #9CA3AF;
-}
-
-/* Expired state - Attention Purple (request new times) */
+/* Expired state - Outline danger */
 .vm-section-primary-btn--expired {
-  background-color: var(--color-attention, #8C68EE);
-  color: white;
-  transition: all 0.2s ease;
+  background: transparent;
+  color: var(--gp-purple-primary);
+  border: 2px solid var(--gp-purple-primary);
 }
 
 .vm-section-primary-btn--expired:hover {
-  background-color: var(--color-attention-hover, #7C5AD9);
-  box-shadow: 0 4px 12px rgba(140, 104, 238, 0.3);
+  background: var(--gp-purple-bg);
 }
 
 /* ============================================================================
-   VM SECTION - BOOKED DATE PILL
-   Different styling for confirmed/booked dates
+   VM SECTION - BOOKED DATE PILL - V3 Style
    ============================================================================ */
 
 .vm-section-date-pill--booked {
-  background-color: #ede9fe;
-  color: var(--color-accent, #5B21B6);
-  font-weight: 500;
+  background: var(--gp-purple-bg);
+  color: var(--gp-purple-dark);
+  border-color: var(--gp-purple-primary);
+  font-weight: 600;
 }
 
 /* Expired date pill styling */
 .vm-section-date-pill--expired {
-  background-color: #FEE2E2;
-  color: #991B1B;
+  background: var(--gp-danger-bg);
+  color: var(--gp-danger);
+  border-color: var(--gp-danger);
   text-decoration: line-through;
   opacity: 0.7;
 }
 
 /* ============================================================================
    VM SECTION - MULTI-BUTTON ACTION BAR
-   Layout for multiple buttons
    ============================================================================ */
 
 .vm-section-action-bar--multi {
   justify-content: flex-start;
-  gap: 10px;
 }
 
 /* Responsive styles for VM section */
 @media (max-width: 768px) {
-  .vm-section-wrapper {
-    min-width: 100%;
-    max-width: 100%;
-    padding: 10px;
-  }
-
   .vm-section-heading {
-    margin-left: 0;
-    font-size: 18px;
+    font-size: 20px;
   }
 
-  .vm-section-header-row {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
+  .vm-section-card-content {
+    padding: 16px 20px;
   }
 
   .vm-section-title-row {
@@ -2005,28 +1948,14 @@
     gap: 6px;
   }
 
-  .vm-section-dates-row {
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .vm-section-date-pill {
-    width: fit-content;
-  }
-
   .vm-section-action-bar {
-    padding: 15px;
-    justify-content: center;
+    padding: 12px 20px;
     flex-wrap: wrap;
   }
 
-  .vm-section-action-bar--multi {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
   .vm-section-primary-btn {
-    width: 100%;
+    flex: 1;
+    min-width: 140px;
     max-width: 250px;
   }
 
@@ -2037,33 +1966,26 @@
 }
 
 @media (max-width: 480px) {
+  .vm-section-card-content {
+    padding: 16px;
+  }
+
   .vm-section-title {
     font-size: 15px;
   }
 
   .vm-section-message {
-    font-size: 11px;
+    font-size: 12px;
   }
 
-  .vm-section-badge {
-    font-size: 10px;
-    padding: 3px 8px;
+  .vm-section-action-bar {
+    flex-direction: column;
+    padding: 16px;
   }
 
-  .vm-section-date-pill {
-    font-size: 11px;
-    padding: 4px 8px;
-  }
-
-  .vm-section-primary-btn {
-    font-size: 13px;
-    height: 34px;
-    padding: 0 14px;
-  }
-
+  .vm-section-primary-btn,
   .vm-section-cancel-btn {
-    font-size: 13px;
-    height: 30px;
+    width: 100%;
   }
 }
 
