@@ -2077,3 +2077,278 @@
 .btn-danger:hover {
   background: #B91C1C;
 }
+
+/* ============================================================================
+   PROPOSAL DETAILS MODAL - V5 Balanced
+   ============================================================================ */
+
+.proposal-details-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  overflow-y: auto;
+  background-color: rgba(107, 114, 128, 0.75);
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.proposal-details-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 16px;
+}
+
+.proposal-details-modal {
+  position: relative;
+  background: var(--gp-white);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  max-width: 480px;
+  width: 100%;
+  overflow: hidden;
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Modal Header */
+.proposal-details-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--gp-border-light);
+}
+
+.proposal-details-title {
+  font-size: var(--gp-font-size-lg);
+  font-weight: 600;
+  color: var(--gp-purple-dark);
+  margin: 0;
+}
+
+.proposal-details-close {
+  background: transparent;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  color: var(--gp-text-muted);
+  border-radius: 8px;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.proposal-details-close:hover {
+  background: var(--gp-bg);
+  color: var(--gp-text);
+}
+
+.proposal-details-close svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* Modal Content */
+.proposal-details-content {
+  padding: 24px;
+}
+
+/* Info Row */
+.proposal-details-row {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--gp-border-light);
+}
+
+.proposal-details-row:last-child {
+  border-bottom: none;
+}
+
+.proposal-details-label {
+  font-size: var(--gp-font-size-sm);
+  font-weight: 500;
+  color: var(--gp-text-muted);
+  margin-bottom: 4px;
+}
+
+.proposal-details-value {
+  font-size: var(--gp-font-size-base);
+  font-weight: 500;
+  color: var(--gp-text);
+}
+
+/* House Rules Toggle */
+.proposal-details-rules-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: var(--gp-font-size-sm);
+  font-weight: 600;
+  color: var(--gp-purple-primary);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.proposal-details-rules-toggle:hover {
+  color: var(--gp-purple-dark);
+}
+
+.proposal-details-rules-count {
+  background: var(--gp-purple-bg);
+  color: var(--gp-purple-primary);
+  font-size: var(--gp-font-size-label);
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+/* House Rules List */
+.proposal-details-rules-list {
+  margin-top: 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.proposal-details-rule-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  font-size: var(--gp-font-size-sm);
+  color: var(--gp-text-secondary);
+}
+
+.proposal-details-rule-icon {
+  flex-shrink: 0;
+}
+
+.proposal-details-loading {
+  font-size: var(--gp-font-size-sm);
+  color: var(--gp-text-muted);
+  font-style: italic;
+  padding: 8px 0;
+}
+
+/* Pricing Breakdown */
+.proposal-details-pricing {
+  background: var(--gp-bg);
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 8px;
+}
+
+.proposal-details-pricing-title {
+  font-size: var(--gp-font-size-sm);
+  font-weight: 600;
+  color: var(--gp-text);
+  margin: 0 0 16px 0;
+}
+
+.proposal-details-pricing-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.proposal-details-pricing-label {
+  font-size: var(--gp-font-size-sm);
+  color: var(--gp-text-secondary);
+}
+
+.proposal-details-pricing-value {
+  font-size: var(--gp-font-size-sm);
+  font-weight: 600;
+  color: var(--gp-text);
+}
+
+.proposal-details-pricing-divider {
+  height: 1px;
+  background: var(--gp-border);
+  margin: 8px 0;
+}
+
+.proposal-details-pricing-total {
+  padding-top: 12px;
+}
+
+.proposal-details-pricing-total .proposal-details-pricing-label {
+  font-weight: 600;
+  color: var(--gp-text);
+}
+
+.proposal-details-pricing-total .proposal-details-pricing-value {
+  font-size: var(--gp-font-size-md);
+  font-weight: 700;
+  color: var(--gp-purple-primary);
+}
+
+.proposal-details-pricing-note {
+  font-size: var(--gp-font-size-label);
+  color: var(--gp-text-muted);
+  font-style: italic;
+  margin-top: 8px;
+}
+
+/* Modal Footer */
+.proposal-details-footer {
+  padding: 16px 24px;
+  background: var(--gp-bg);
+  border-top: 1px solid var(--gp-border-light);
+}
+
+.proposal-details-footer-btn {
+  width: 100%;
+  padding: 12px 20px;
+  background: var(--gp-purple-primary);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: var(--gp-font-size-base);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.proposal-details-footer-btn:hover {
+  background: var(--gp-purple-dark);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .proposal-details-modal {
+    max-width: 100%;
+    margin: 16px;
+    border-radius: 12px;
+  }
+
+  .proposal-details-header {
+    padding: 16px 20px;
+  }
+
+  .proposal-details-content {
+    padding: 20px;
+  }
+
+  .proposal-details-pricing {
+    padding: 16px;
+  }
+
+  .proposal-details-footer {
+    padding: 16px 20px;
+  }
+}
