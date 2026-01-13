@@ -24,8 +24,18 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { loginUser, signupUser, validateTokenAndFetchUser, initiateLinkedInOAuth, handleLinkedInOAuthCallback, initiateLinkedInOAuthLogin } from '../../lib/auth.js';
-import { getLinkedInOAuthUserType } from '../../lib/secureStorage.js';
+import {
+  loginUser,
+  signupUser,
+  validateTokenAndFetchUser,
+  initiateLinkedInOAuth,
+  handleLinkedInOAuthCallback,
+  initiateLinkedInOAuthLogin,
+  initiateGoogleOAuth,
+  handleGoogleOAuthCallback,
+  initiateGoogleOAuthLogin
+} from '../../lib/auth.js';
+import { getLinkedInOAuthUserType, getGoogleOAuthUserType } from '../../lib/secureStorage.js';
 import { supabase } from '../../lib/supabase.js';
 import Toast, { useToast } from './Toast.jsx';
 
@@ -887,11 +897,14 @@ export default function SignUpLoginModal({
     }
   }, [signupData.password, signupData.confirmPassword]);
 
-  // OAuth callback detection
+  // OAuth callback detection (supports LinkedIn and Google)
   useEffect(() => {
     // Only run on initial mount
-    const storedUserType = getLinkedInOAuthUserType();
-    if (!storedUserType) return;
+    const linkedInUserType = getLinkedInOAuthUserType();
+    const googleUserType = getGoogleOAuthUserType();
+
+    // Check if this is a signup flow callback
+    if (!linkedInUserType && !googleUserType) return;
 
     // Check if we're returning from OAuth (look for access_token or code in URL hash)
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
@@ -901,18 +914,24 @@ export default function SignUpLoginModal({
 
     if (!hasAccessToken && !hasCode) return;
 
+    // Determine which provider we're handling
+    const isGoogleCallback = !!googleUserType;
+    const providerName = isGoogleCallback ? 'Google' : 'LinkedIn';
+
     // We're returning from OAuth - handle the callback
     const handleCallback = async () => {
       setIsLoading(true);
 
       showToast({
         title: 'Signing up...',
-        content: 'Connecting your LinkedIn account',
+        content: `Connecting your ${providerName} account`,
         type: 'info',
         duration: 3000
       });
 
-      const result = await handleLinkedInOAuthCallback();
+      const result = isGoogleCallback
+        ? await handleGoogleOAuthCallback()
+        : await handleLinkedInOAuthCallback();
 
       setIsLoading(false);
 
@@ -1711,7 +1730,13 @@ export default function SignUpLoginModal({
         <button
           type="button"
           style={styles.googleBtn}
-          onClick={() => alert('Google OAuth login coming soon!')}
+          onClick={async () => {
+            const result = await initiateGoogleOAuthLogin();
+            if (!result.success) {
+              setError(result.error || 'Failed to start Google login');
+            }
+          }}
+          disabled={isLoading}
         >
           <GoogleLogo />
           <span>Google</span>
@@ -1851,7 +1876,13 @@ export default function SignUpLoginModal({
         <button
           type="button"
           style={styles.googleBtn}
-          onClick={() => alert('Google OAuth signup coming soon!')}
+          onClick={async () => {
+            const result = await initiateGoogleOAuth(signupData.userType);
+            if (!result.success) {
+              setError(result.error || 'Failed to start Google signup');
+            }
+          }}
+          disabled={isLoading}
         >
           <GoogleLogo />
           <span>Google</span>
