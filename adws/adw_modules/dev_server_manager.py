@@ -9,6 +9,7 @@ import subprocess
 import re
 import time
 import logging
+from datetime import datetime
 from pathlib import Path
 from typing import Optional, Tuple
 
@@ -46,14 +47,19 @@ class DevServerManager:
             RuntimeError: If server fails to start or port not detected
         """
         if self.process is not None:
-            self.logger.warning("Dev server already running, stopping first")
+            timestamp = datetime.now().strftime('%H:%M:%S')
+            self.logger.warning(f"[{timestamp}] Dev server already running, stopping first")
             self.stop()
 
-        self.logger.info(f"Starting dev server: {' '.join(DEV_SERVER_COMMAND)}")
-        self.logger.info(f"Working directory: {self.working_dir}")
+        timestamp = datetime.now().strftime('%H:%M:%S')
+        self.logger.info(f"[{timestamp}] Starting dev server: {' '.join(DEV_SERVER_COMMAND)}")
+        self.logger.info(f"[{timestamp}] Working directory: {self.working_dir}")
 
         try:
             # Start dev server with output capture
+            timestamp = datetime.now().strftime('%H:%M:%S')
+            self.logger.info(f"[{timestamp}] Creating subprocess...")
+
             self.process = subprocess.Popen(
                 DEV_SERVER_COMMAND,
                 cwd=self.working_dir,
@@ -65,17 +71,36 @@ class DevServerManager:
                 universal_newlines=True
             )
 
+            timestamp = datetime.now().strftime('%H:%M:%S')
+            self.logger.info(f"[{timestamp}] Subprocess created (PID: {self.process.pid})")
+
             # Monitor output for ready state and port
             start_time = time.time()
             port_detected = False
             output_buffer = []
+            last_log_time = start_time
 
-            self.logger.debug("Monitoring dev server output for ready state...")
+            timestamp = datetime.now().strftime('%H:%M:%S')
+            self.logger.info(f"[{timestamp}] Monitoring output for ready state...")
 
             while time.time() - start_time < DEV_SERVER_STARTUP_TIMEOUT:
+                elapsed = time.time() - start_time
+
+                # Log progress every 5 seconds
+                if time.time() - last_log_time >= 5:
+                    timestamp = datetime.now().strftime('%H:%M:%S')
+                    self.logger.info(f"[{timestamp}] Still waiting for output... (elapsed: {elapsed:.1f}s)")
+                    last_log_time = time.time()
+
                 # Check if process died
+                timestamp = datetime.now().strftime('%H:%M:%S')
+                self.logger.debug(f"[{timestamp}] Checking if process is alive...")
+
                 if self.process.poll() is not None:
                     # Process exited
+                    timestamp = datetime.now().strftime('%H:%M:%S')
+                    self.logger.error(f"[{timestamp}] Process exited unexpectedly!")
+
                     remaining_output = self.process.stdout.read()
                     full_output = ''.join(output_buffer) + remaining_output
                     raise RuntimeError(
@@ -84,13 +109,23 @@ class DevServerManager:
                     )
 
                 # Read line from output
+                timestamp = datetime.now().strftime('%H:%M:%S')
+                self.logger.debug(f"[{timestamp}] Calling readline()...")
+
                 line = self.process.stdout.readline()
+
+                timestamp = datetime.now().strftime('%H:%M:%S')
+                self.logger.debug(f"[{timestamp}] Readline returned: {repr(line)[:100]}")
+
                 if not line:
+                    timestamp = datetime.now().strftime('%H:%M:%S')
+                    self.logger.debug(f"[{timestamp}] Empty line, sleeping 0.1s...")
                     time.sleep(0.1)
                     continue
 
                 output_buffer.append(line)
-                self.logger.debug(f"Dev server: {line.strip()}")
+                timestamp = datetime.now().strftime('%H:%M:%S')
+                self.logger.info(f"[{timestamp}] Dev server: {line.strip()}")
 
                 # Check for port in output
                 # Vite outputs: "  ➜  Local:   http://localhost:5173/"
@@ -99,11 +134,15 @@ class DevServerManager:
                     self.port = int(match.group(1))
                     self.base_url = f"http://localhost:{self.port}"
                     port_detected = True
-                    self.logger.info(f"✅ Dev server ready at {self.base_url}")
+                    timestamp = datetime.now().strftime('%H:%M:%S')
+                    self.logger.info(f"[{timestamp}] ✅ Dev server ready at {self.base_url}")
                     break
 
             if not port_detected:
                 # Timeout - dump output and fail
+                timestamp = datetime.now().strftime('%H:%M:%S')
+                self.logger.error(f"[{timestamp}] Timeout waiting for dev server!")
+
                 full_output = ''.join(output_buffer)
                 self.stop()  # Clean up
                 raise RuntimeError(
@@ -112,7 +151,12 @@ class DevServerManager:
                 )
 
             # Give server a moment to fully initialize
+            timestamp = datetime.now().strftime('%H:%M:%S')
+            self.logger.info(f"[{timestamp}] Waiting 1s for server to fully initialize...")
             time.sleep(1)
+
+            timestamp = datetime.now().strftime('%H:%M:%S')
+            self.logger.info(f"[{timestamp}] Dev server startup complete")
 
             return self.port, self.base_url
 
@@ -125,26 +169,39 @@ class DevServerManager:
     def stop(self) -> None:
         """Stop dev server gracefully."""
         if self.process is None:
-            self.logger.debug("No dev server process to stop")
+            timestamp = datetime.now().strftime('%H:%M:%S')
+            self.logger.debug(f"[{timestamp}] No dev server process to stop")
             return
 
-        self.logger.info("Stopping dev server...")
+        timestamp = datetime.now().strftime('%H:%M:%S')
+        self.logger.info(f"[{timestamp}] Stopping dev server...")
 
         try:
             # Try graceful termination first
+            timestamp = datetime.now().strftime('%H:%M:%S')
+            self.logger.info(f"[{timestamp}] Sending SIGTERM...")
             self.process.terminate()
+
             try:
+                timestamp = datetime.now().strftime('%H:%M:%S')
+                self.logger.info(f"[{timestamp}] Waiting for graceful shutdown...")
                 self.process.wait(timeout=5)
-                self.logger.info("Dev server stopped gracefully")
+
+                timestamp = datetime.now().strftime('%H:%M:%S')
+                self.logger.info(f"[{timestamp}] Dev server stopped gracefully")
             except subprocess.TimeoutExpired:
                 # Force kill if terminate didn't work
-                self.logger.warning("Dev server didn't stop gracefully, forcing kill")
+                timestamp = datetime.now().strftime('%H:%M:%S')
+                self.logger.warning(f"[{timestamp}] Dev server didn't stop gracefully, forcing kill")
                 self.process.kill()
                 self.process.wait(timeout=2)
-                self.logger.info("Dev server killed")
+
+                timestamp = datetime.now().strftime('%H:%M:%S')
+                self.logger.info(f"[{timestamp}] Dev server killed")
 
         except Exception as e:
-            self.logger.error(f"Error stopping dev server: {e}")
+            timestamp = datetime.now().strftime('%H:%M:%S')
+            self.logger.error(f"[{timestamp}] Error stopping dev server: {e}")
 
         finally:
             self.process = None
