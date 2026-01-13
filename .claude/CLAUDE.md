@@ -248,7 +248,7 @@ For ANY non-trivial task, follow this orchestration pipeline:
 │                        TASK ORCHESTRATION PIPELINE                          │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  Phase 1: CLASSIFY → task-classifier (haiku)                                │
+│  Phase 1: CLASSIFY → task-classifier (opus)                                │
 │     Input: Raw user request                                                 │
 │     Output: BUILD | DEBUG | CLEANUP | DESIGN classification + reformatted   │
 │                                                                             │
@@ -271,11 +271,11 @@ For ANY non-trivial task, follow this orchestration pipeline:
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-> **⚠️ LOCKED PIPELINE RULE**: Once `task-classifier` is invoked, ALL 4 phases MUST execute in sequence. You are **PROHIBITED** from invoking ANY other subagent (such as `mcp-tool-specialist`, `context-lookup`, `codebase-explorer`, etc.) until the pipeline completes Phase 4. The pipeline is a sealed unit — no external agents may be injected mid-sequence.
+> **⚠️ LOCKED PIPELINE RULE**: Once `task-classifier` is invoked, ALL 4 phases MUST execute in sequence. 
 
 ### Phase Transition Rules (STRICT)
 
-> **⛔ PHASE 1 → PHASE 2 CONSTRAINT**: Once `task-classifier` returns a classification, you MUST invoke **ONLY** the designated planner for that classification. No other subagent may be invoked.
+> **⛔ PHASE 1 → PHASE 2 CONSTRAINT**: Once `task-classifier` returns a classification, you MUST invoke **ONLY** the designated planner for that classification. 
 
 | Classification Result | ONLY Permitted Next Subagent |
 |----------------------|------------------------------|
@@ -285,9 +285,6 @@ For ANY non-trivial task, follow this orchestration pipeline:
 | `DESIGN` | `design-planner` — nothing else |
 
 **Prohibited actions after receiving classification:**
-- ❌ Invoking `mcp-tool-specialist` for "additional context"
-- ❌ Invoking `context-lookup` to "gather more information"
-- ❌ Invoking `codebase-explorer` to "understand the codebase better"
 - ❌ Invoking any other subagent for any reason
 - ❌ Performing direct tool calls (Grep, Glob, Read) instead of proceeding to the planner
 
@@ -305,14 +302,14 @@ For ANY non-trivial task, follow this orchestration pipeline:
 
 | Agent | Purpose | Model | Location |
 |-------|---------|-------|----------|
-| `task-classifier` | Classify as BUILD/DEBUG/CLEANUP/DESIGN | haiku | [agents/task-classifier.md](./agents/task-classifier.md) |
+| `task-classifier` | Classify as BUILD/DEBUG/CLEANUP/DESIGN | opus | [agents/task-classifier.md](./agents/task-classifier.md) |
 | `implementation-planner` | Plan new features/changes | opus | [agents/implementation-planner.md](./agents/implementation-planner.md) |
 | `debug-analyst` | Investigate bugs/issues | opus | [agents/debug-analyst.md](./agents/debug-analyst.md) |
 | `cleanup-planner` | Plan refactoring/cleanup | opus | [agents/cleanup-planner.md](./agents/cleanup-planner.md) |
 | `design-planner` | Plan UI/UX implementations | opus | [agents/design-planner.md](./agents/design-planner.md) |
 | `plan-executor` | Execute plans from .claude/plans/ | opus | [agents/plan-executor.md](./agents/plan-executor.md) |
 | `input-reviewer` | Review/judge implementations | opus | [agents/input-reviewer.md](./agents/input-reviewer.md) |
-| `context-lookup` | Read-only codebase analysis | haiku | [agents/context-lookup.md](./agents/context-lookup.md) |
+| `context-lookup` | Read-only codebase analysis | opus | [agents/context-lookup.md](./agents/context-lookup.md) |
 
 ### Simple Questions
 
@@ -330,7 +327,7 @@ For **lookup, exploration, or research tasks** that do NOT modify code, **skip t
 
 **No classification, planning, or review needed** — just invoke the lookup subagent and return the result.
 
-> **Preferred agent for most lookups**: Use `context-lookup` (haiku model) for fast, read-only information retrieval. It is optimized for answering questions about existing code without modification.
+> **Preferred agent for most lookups**: Use `context-lookup` (sonet model) for fast, read-only information retrieval. It is optimized for answering questions about existing code without modification.
 
 ### Mandatory Subagent Invocation Rules (For Code-Modifying Tasks)
 
@@ -343,17 +340,14 @@ For **lookup, exploration, or research tasks** that do NOT modify code, **skip t
 | Refactoring, cleanup, consolidation | `task-classifier` → `cleanup-planner` → `plan-executor` → `input-reviewer` | Any CLEANUP task |
 | UI/UX implementation from visual references | `task-classifier` → `design-planner` → `plan-executor` → `input-reviewer` | Any DESIGN task |
 
-> **⛔ LOCKED PIPELINE**: Once `task-classifier` begins, you MUST complete all 4 phases. You are **PROHIBITED** from invoking any other subagent (e.g., `mcp-tool-specialist`, `context-lookup`, `codebase-explorer`) until the pipeline completes.
-
 ### Subagents Outside the Pipeline
 
-These subagents may ONLY be invoked **before** starting the pipeline or **after** the pipeline completes Phase 4:
 
 | Subagent | When to Use |
 |----------|-------------|
-| `mcp-tool-specialist` | Any MCP operation (Supabase, Playwright, etc.) — NEVER mid-pipeline |
-| `context-lookup` | Read-only codebase analysis — NEVER mid-pipeline |
-| `codebase-explorer` / `Explore` | Codebase exploration — NEVER mid-pipeline |
+| `mcp-tool-specialist` | Any MCP operation (Supabase, Playwright, etc.) |
+| `context-lookup` | Read-only codebase analysis |
+| `codebase-explorer` / `Explore` | Codebase exploration |
 
 **Violation of these rules is unacceptable.** If uncertain whether a task is "trivial" or "non-trivial," default to using the orchestration pipeline.
 
