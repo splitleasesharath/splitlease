@@ -135,7 +135,7 @@ class DevServerManager:
                     self.base_url = f"http://localhost:{self.port}"
                     port_detected = True
                     timestamp = datetime.now().strftime('%H:%M:%S')
-                    self.logger.info(f"[{timestamp}] ✅ Dev server ready at {self.base_url}")
+                    self.logger.info(f"[{timestamp}] [OK] Dev server ready at {self.base_url}")
                     break
 
             if not port_detected:

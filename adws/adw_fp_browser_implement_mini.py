@@ -170,13 +170,13 @@ def process_chunks_mini(chunks: list, plan_file: Path, working_dir: Path, dev_se
 
         # Step 1: Implement chunk
         if not implement_chunk(chunk, plan_file, working_dir):
-            print(f"⏭️  Chunk {chunk.number} implementation failed, skipping")
+            print(f"  Chunk {chunk.number} implementation failed, skipping")
             logger.log(f"Chunk {chunk.number} implementation FAILED - skipping", to_stdout=False)
             state.skipped_chunks += 1
             continue
 
         logger.log(f"Chunk {chunk.number} implementation succeeded", to_stdout=False)
-        print(f"✅ Implementation complete")
+        print(f"[OK] Implementation complete")
 
         # Step 2: Determine which page to test
         page_path = determine_page_path(chunk)
@@ -186,7 +186,7 @@ def process_chunks_mini(chunks: list, plan_file: Path, working_dir: Path, dev_se
         localhost_url = dev_server.get_url(page_path)
         production_url = f"{PRODUCTION_BASE_URL}{page_path}"
 
-        print(f"\n🔍 Validating changes:")
+        print(f"\n[TEST] Validating changes:")
         print(f"   Localhost:  {localhost_url}")
         print(f"   Production: {production_url}")
 
@@ -215,25 +215,25 @@ def process_chunks_mini(chunks: list, plan_file: Path, working_dir: Path, dev_se
         # Step 4: Commit or rollback based on validation result
         if validation_passed:
             logger.log(f"Chunk {chunk.number} validation PASSED", to_stdout=False)
-            print(f"\n✅ Validation PASSED")
+            print(f"\n[OK] Validation PASSED")
             print(f"   Verdict: {result.verdict}")
             print(f"   Confidence: {result.confidence}%")
             print(f"   Summary: {result.summary}")
 
             if commit_chunk(chunk, working_dir):
                 state.completed_chunks += 1
-                print(f"✅ Chunk {chunk.number} COMPLETED (committed to git)")
+                print(f"[OK] Chunk {chunk.number} COMPLETED (committed to git)")
                 logger.log(f"Chunk {chunk.number} COMPLETED - committed to git", to_stdout=False)
             else:
                 # Commit failed - try to rollback
                 rollback_chunk(chunk, working_dir)
                 state.failed_chunks += 1
-                print(f"❌ Chunk {chunk.number} FAILED (commit error)")
+                print(f"[FAIL] Chunk {chunk.number} FAILED (commit error)")
                 logger.log(f"Chunk {chunk.number} FAILED - commit error, rolled back", to_stdout=False)
         else:
             # Validation failed - rollback
             logger.log(f"Chunk {chunk.number} validation FAILED - rolling back", to_stdout=False)
-            print(f"\n❌ Validation FAILED")
+            print(f"\n[FAIL] Validation FAILED")
             print(f"   Verdict: {result.verdict}")
             print(f"   Confidence: {result.confidence}%")
             print(f"   Summary: {result.summary}")
@@ -245,7 +245,7 @@ def process_chunks_mini(chunks: list, plan_file: Path, working_dir: Path, dev_se
 
             rollback_chunk(chunk, working_dir)
             state.skipped_chunks += 1
-            print(f"⏭️  Chunk {chunk.number} SKIPPED (rolled back)")
+            print(f"  Chunk {chunk.number} SKIPPED (rolled back)")
             logger.log(f"Chunk {chunk.number} SKIPPED - validation failed, rolled back", to_stdout=False)
 
     return state
@@ -297,7 +297,7 @@ def main():
 
     # Validate plan file exists
     if not plan_file.exists():
-        print(f"\n❌ Plan file not found: {plan_file}")
+        print(f"\n[FAIL] Plan file not found: {plan_file}")
         logger.log_error(
             FileNotFoundError(f"Plan file not found: {plan_file}"),
             context="Plan file validation"
@@ -305,8 +305,8 @@ def main():
         logger.finalize()
         sys.exit(1)
 
-    print(f"✅ Plan file found: {plan_file.name}")
-    print(f"✅ Working directory: {working_dir}")
+    print(f"[OK] Plan file found: {plan_file.name}")
+    print(f"[OK] Working directory: {working_dir}")
     logger.log(f"Plan file validated: {plan_file.name}", to_stdout=False)
     logger.log(f"Working directory: {working_dir}", to_stdout=False)
 
@@ -321,18 +321,18 @@ def main():
 
         logger.log_section("EXTRACTING CHUNKS FROM PLAN", to_stdout=False)
         chunks = extract_chunks_from_plan(plan_file)
-        print(f"✅ Extracted {len(chunks)} chunks")
+        print(f"[OK] Extracted {len(chunks)} chunks")
         logger.log(f"Extracted {len(chunks)} chunks", to_stdout=False)
 
         # Filter chunks if --chunks argument provided
         if args.chunks:
             requested_chunks = [int(x.strip()) for x in args.chunks.split(',')]
             chunks = [c for c in chunks if c.number in requested_chunks]
-            print(f"🔍 Filtered to {len(chunks)} chunks: {requested_chunks}")
+            print(f"[TEST] Filtered to {len(chunks)} chunks: {requested_chunks}")
             logger.log(f"Filtered to {len(chunks)} chunks: {requested_chunks}", to_stdout=False)
 
             if not chunks:
-                print(f"\n❌ No chunks matched filter: {requested_chunks}")
+                print(f"\n[FAIL] No chunks matched filter: {requested_chunks}")
                 logger.log(f"No chunks matched filter: {requested_chunks}", to_stdout=False)
                 print("Available chunks:")
                 all_chunks = extract_chunks_from_plan(plan_file)
@@ -366,7 +366,7 @@ def main():
         dev_server = DevServerManager(app_dir, dev_logger)
         port, base_url = dev_server.start()
 
-        print(f"✅ Dev server running at {base_url}")
+        print(f"[OK] Dev server running at {base_url}")
         logger.log(f"Dev server started successfully", to_stdout=False)
         logger.log(f"Port: {port}", to_stdout=False)
         logger.log(f"Base URL: {base_url}", to_stdout=False)
@@ -382,9 +382,9 @@ def main():
         print("MINI ORCHESTRATOR COMPLETE")
         print(f"{'='*60}")
         print(f"Total chunks: {state.total_chunks}")
-        print(f"✅ Completed: {state.completed_chunks}")
-        print(f"⏭️  Skipped: {state.skipped_chunks}")
-        print(f"❌ Failed: {state.failed_chunks}")
+        print(f"[OK] Completed: {state.completed_chunks}")
+        print(f"  Skipped: {state.skipped_chunks}")
+        print(f"[FAIL] Failed: {state.failed_chunks}")
 
         logger.log_summary(
             total_chunks=state.total_chunks,
@@ -406,7 +406,7 @@ def main():
             step="Mini orchestrator crashed",
             error=str(e)[:100]
         )
-        print(f"\n❌ Mini orchestrator failed: {e}")
+        print(f"\n[FAIL] Mini orchestrator failed: {e}")
         logger.log_error(e, context="Main mini orchestrator loop")
         logger.finalize()
         sys.exit(1)
@@ -419,7 +419,7 @@ def main():
             print(f"{'='*60}")
             logger.log_section("DEV SERVER CLEANUP", to_stdout=False)
             dev_server.stop()
-            print("✅ Dev server stopped")
+            print("[OK] Dev server stopped")
             logger.log("Dev server stopped", to_stdout=False)
 
 
