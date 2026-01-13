@@ -7,6 +7,7 @@ import json
 import re
 import logging
 import time
+import shutil
 from typing import Optional, List, Dict, Any, Tuple, Final
 from dotenv import load_dotenv
 from .data_types import (
@@ -18,12 +19,26 @@ from .data_types import (
     ModelSet,
     RetryCode,
 )
+from .gemini_agent import prompt_gemini_agent
 
 # Load environment variables
 load_dotenv()
 
 # Get Claude Code CLI path from environment
 CLAUDE_PATH = os.getenv("CLAUDE_CODE_PATH", "claude")
+GEMINI_PATH = os.getenv("GEMINI_CODE_PATH", "gemini")
+
+# Gemini model overrides
+GEMINI_BASE_MODEL = os.getenv("GEMINI_BASE_MODEL", "gemini-3-flash-preview")
+GEMINI_HEAVY_MODEL = os.getenv("GEMINI_HEAVY_MODEL", "gemini-3-flash-preview")
+
+# Get default provider from environment
+ADW_PROVIDER = os.getenv("ADW_PROVIDER", "gemini").lower()
+
+# STRICT MODE: If this is True, the agent will ONLY use Gemini regardless of environment
+STRICT_GEMINI = os.getenv("STRICT_GEMINI", "true").lower() == "true"
+if STRICT_GEMINI:
+    ADW_PROVIDER = "gemini"
 
 # Model selection mapping for slash commands
 # Maps each command to its model configuration for base and heavy model sets
@@ -145,18 +160,30 @@ def truncate_output(
     return output[:truncate_at] + suffix
 
 
-def check_claude_installed() -> Optional[str]:
-    """Check if Claude Code CLI is installed. Return error message if not."""
+def check_agent_installed(provider: str = ADW_PROVIDER) -> Optional[str]:
+    """Check if the agent CLI (Claude or Gemini) is installed. Return error message if not."""
+    path = GEMINI_PATH if provider == "gemini" else CLAUDE_PATH
+    name = "Gemini CLI" if provider == "gemini" else "Claude Code CLI"
+    
+    # Use shutil.which to verify existence in PATH (handles .cmd/.exe on Windows)
+    if not shutil.which(path):
+        return f"Error: {name} is not installed or not in PATH. Expected at: {path}"
+
     try:
+        # On Windows, shell=True is often required to execute .cmd/.bat scripts correctly via subprocess
         result = subprocess.run(
-            [CLAUDE_PATH, "--version"], capture_output=True, text=True, encoding='utf-8'
+            [path, "--version"], 
+            capture_output=True, 
+            text=True, 
+            encoding='utf-8',
+            shell=(os.name == 'nt')
         )
         if result.returncode != 0:
             return (
-                f"Error: Claude Code CLI is not installed. Expected at: {CLAUDE_PATH}"
+                f"Error: {name} is not installed or returned an error. Expected at: {path}"
             )
-    except FileNotFoundError:
-        return f"Error: Claude Code CLI is not installed. Expected at: {CLAUDE_PATH}"
+    except Exception as e:
+        return f"Error: {name} is not installed. Exception: {e}"
     return None
 
 
@@ -303,15 +330,23 @@ def prompt_claude_code_with_retry(
 
 
 def prompt_claude_code(request: AgentPromptRequest) -> AgentPromptResponse:
-    """Execute Claude Code with the given prompt configuration.
+    """Execute AI agent (Claude or Gemini) with the given prompt configuration.
 
     Passes the prompt via stdin instead of command-line arguments to avoid
     shell interpretation issues with special characters, JSON, etc.
     This is especially important on Windows when cwd is set.
     """
+    
+    # Re-check provider and strict mode to ensure we respect late environment changes
+    provider = os.getenv("ADW_PROVIDER", ADW_PROVIDER).lower()
+    strict_gemini = os.getenv("STRICT_GEMINI", str(STRICT_GEMINI)).lower() == "true"
+    if strict_gemini:
+        provider = "gemini"
+        
+    agent_name = "Gemini" if provider == "gemini" else "Claude Code"
 
-    # Check if Claude Code CLI is installed
-    error_msg = check_claude_installed()
+    # Check if AI agent CLI is installed
+    error_msg = check_agent_installed(provider)
     if error_msg:
         return AgentPromptResponse(
             output=error_msg,
@@ -323,7 +358,7 @@ def prompt_claude_code(request: AgentPromptRequest) -> AgentPromptResponse:
     # Validate prompt is not empty
     if not request.prompt or not request.prompt.strip():
         return AgentPromptResponse(
-            output="Error: Empty prompt provided",
+            output=f"Error: Empty prompt provided to {agent_name}",
             success=False,
             session_id=None,
             retry_code=RetryCode.NONE,
@@ -340,20 +375,61 @@ def prompt_claude_code(request: AgentPromptRequest) -> AgentPromptResponse:
     # Build command - use stdin for prompt instead of -p flag
     # This prevents shell interpretation issues with special characters, JSON, etc.
     # especially on Windows when cwd is set
-    cmd = [CLAUDE_PATH]
-    cmd.extend(["--model", request.model])
-    cmd.extend(["--output-format", "stream-json"])
-    cmd.append("--verbose")
+    if provider == "gemini":
+        # Use Gemini SDK if GEMINIAPIKEY is present, otherwise fallback to CLI
+        if os.getenv("GEMINIAPIKEY"):
+            model = request.model
+            if model == "sonnet":
+                model = os.getenv("GEMINI_BASE_MODEL", GEMINI_BASE_MODEL)
+            elif model == "opus":
+                model = os.getenv("GEMINI_HEAVY_MODEL", GEMINI_HEAVY_MODEL)
+            
+            # Map 'auto' or default versions to the SDK expected names if needed
+            if model == "gemini-1.5-flash":
+                model = "gemini-1.5-flash"
+            elif model == "gemini-1.5-pro":
+                model = "gemini-1.5-pro"
+            elif model in ["auto", "gemini-2.0-flash-exp", "gemini-3.0-flash", "gemini-3-flash"]:
+                model = "gemini-3-flash-preview"
+            elif model in ["gemini-2.0-pro-exp", "gemini-3.0-pro", "gemini-3-pro"]:
+                model = "gemini-3-pro-preview"
+                
+            return prompt_gemini_agent(
+                prompt=request.prompt,
+                model_name=model
+            )
+        
+        # Fallback to CLI if no API key
+        cmd = [GEMINI_PATH]
+        # Map Claude models to Gemini if necessary, or just use as provided
+        model = request.model
+        if model == "sonnet":
+            model = os.getenv("GEMINI_BASE_MODEL", GEMINI_BASE_MODEL)
+        elif model == "opus":
+            model = os.getenv("GEMINI_HEAVY_MODEL", GEMINI_HEAVY_MODEL)
+            
+        cmd.extend(["--model", model])
+        cmd.extend(["--output-format", "stream-json"])
+        
+        # Gemini uses --yolo or --approval-mode=yolo for auto-approval
+        if request.dangerously_skip_permissions:
+            cmd.append("--yolo")
+    else:
+        cmd = [CLAUDE_PATH]
+        cmd.extend(["--model", request.model])
+        cmd.extend(["--output-format", "stream-json"])
+        cmd.append("--verbose")
+
+        # Add dangerous skip permissions flag if enabled
+        if request.dangerously_skip_permissions:
+            cmd.append("--dangerously-skip-permissions")
 
     # Check for MCP config in working directory
     if request.working_dir:
         mcp_config_path = os.path.join(request.working_dir, ".mcp.json")
         if os.path.exists(mcp_config_path):
+            # Gemini CLI also supports --mcp-config
             cmd.extend(["--mcp-config", mcp_config_path])
-
-    # Add dangerous skip permissions flag if enabled
-    if request.dangerously_skip_permissions:
-        cmd.append("--dangerously-skip-permissions")
 
     # Set up environment with only required variables
     env = get_claude_env()
@@ -372,6 +448,7 @@ def prompt_claude_code(request: AgentPromptRequest) -> AgentPromptResponse:
                 encoding='utf-8',
                 env=env,
                 cwd=request.working_dir,  # Use working_dir if provided
+                shell=(os.name == 'nt'),  # Required on Windows for npm-installed binaries like gemini.cmd
             )
 
         if result.returncode == 0:
@@ -392,7 +469,7 @@ def prompt_claude_code(request: AgentPromptRequest) -> AgentPromptResponse:
 
                 # Handle error_during_execution case where there's no result field
                 if subtype == "error_during_execution":
-                    error_msg = "Error during execution: Agent encountered an error and did not return a result"
+                    error_msg = f"Error during execution: {agent_name} encountered an error and did not return a result"
                     return AgentPromptResponse(
                         output=error_msg,
                         success=False,
@@ -414,7 +491,7 @@ def prompt_claude_code(request: AgentPromptRequest) -> AgentPromptResponse:
                 )
             else:
                 # No result message found, try to extract meaningful error
-                error_msg = "No result message found in Claude Code output"
+                error_msg = f"No result message found in {agent_name} output"
 
                 # Try to get the last few lines of output for context
                 try:
@@ -435,7 +512,7 @@ def prompt_claude_code(request: AgentPromptRequest) -> AgentPromptResponse:
                                         if isinstance(content, list) and content:
                                             text = content[0].get("text", "")
                                             if text:
-                                                error_msg = f"Claude Code output: {text[:500]}"  # Truncate
+                                                error_msg = f"{agent_name} output: {text[:500]}"  # Truncate
                                                 break
                                 except:
                                     pass
@@ -492,15 +569,15 @@ def prompt_claude_code(request: AgentPromptRequest) -> AgentPromptResponse:
                 pass
 
             if error_from_jsonl:
-                error_msg = f"Claude Code error: {error_from_jsonl}"
+                error_msg = f"{agent_name} error: {error_from_jsonl}"
             elif stdout_msg and not stderr_msg:
-                error_msg = f"Claude Code error: {stdout_msg}"
+                error_msg = f"{agent_name} error: {stdout_msg}"
             elif stderr_msg and not stdout_msg:
-                error_msg = f"Claude Code error: {stderr_msg}"
+                error_msg = f"{agent_name} error: {stderr_msg}"
             elif stdout_msg and stderr_msg:
-                error_msg = f"Claude Code error: {stderr_msg}\nStdout: {stdout_msg}"
+                error_msg = f"{agent_name} error: {stderr_msg}\nStdout: {stdout_msg}"
             else:
-                error_msg = f"Claude Code error: Command failed with exit code {result.returncode}"
+                error_msg = f"{agent_name} error: Command failed with exit code {result.returncode}"
 
             # Always truncate error messages to prevent huge outputs
             return AgentPromptResponse(
@@ -511,7 +588,7 @@ def prompt_claude_code(request: AgentPromptRequest) -> AgentPromptResponse:
             )
 
     except subprocess.TimeoutExpired:
-        error_msg = "Error: Claude Code command timed out after 5 minutes"
+        error_msg = f"Error: {agent_name} command timed out after 5 minutes"
         return AgentPromptResponse(
             output=error_msg,
             success=False,
@@ -519,7 +596,7 @@ def prompt_claude_code(request: AgentPromptRequest) -> AgentPromptResponse:
             retry_code=RetryCode.TIMEOUT_ERROR,
         )
     except Exception as e:
-        error_msg = f"Error executing Claude Code: {e}"
+        error_msg = f"Error executing {agent_name}: {e}"
         return AgentPromptResponse(
             output=error_msg,
             success=False,

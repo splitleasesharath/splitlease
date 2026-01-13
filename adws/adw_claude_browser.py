@@ -1,6 +1,6 @@
 #!/usr/bin/env -S uv run
 # /// script
-# dependencies = ["python-dotenv", "pydantic", "psutil"]
+# dependencies = ["python-dotenv", "pydantic", "psutil>=5.9.0"]
 # ///
 
 """
@@ -34,6 +34,10 @@ from adw_modules.utils import setup_logger, check_env_vars, make_adw_id
 
 # Load environment variables
 load_dotenv()
+
+# Force this script to use Claude provider locally
+os.environ["ADW_PROVIDER"] = "claude"
+os.environ["STRICT_GEMINI"] = "false"
 
 # Get Claude Code CLI path from environment
 CLAUDE_PATH = os.getenv("CLAUDE_CODE_PATH", "claude")

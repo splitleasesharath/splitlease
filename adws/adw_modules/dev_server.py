@@ -16,6 +16,7 @@ import os
 import psutil
 from pathlib import Path
 from typing import Optional
+from .config import DEV_SERVER_DEFAULT_PORT, DEV_SERVER_COMMAND
 
 
 def is_port_in_use(port: int, host: str = "localhost") -> bool:
@@ -229,7 +230,7 @@ def start_dev_server(working_dir: Path, logger: logging.Logger) -> Optional[subp
     Returns:
         Subprocess.Popen instance if started, None if already running
     """
-    port = 8000
+    port = DEV_SERVER_DEFAULT_PORT
 
     # Check if already running
     if is_port_in_use(port):
@@ -243,7 +244,7 @@ def start_dev_server(working_dir: Path, logger: logging.Logger) -> Optional[subp
     creation_flags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
 
     process = subprocess.Popen(
-        ["bun", "run", "dev"],
+        DEV_SERVER_COMMAND,
         cwd=working_dir,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -275,7 +276,7 @@ def ensure_dev_server(working_dir: Path, logger: logging.Logger) -> Optional[sub
     Returns:
         Subprocess.Popen instance if we started it, None if already running
     """
-    port = 8000
+    port = DEV_SERVER_DEFAULT_PORT
 
     if is_port_in_use(port):
         logger.info("✓ Dev server is running")
@@ -331,50 +332,35 @@ def stop_dev_server(process: Optional[subprocess.Popen], logger: logging.Logger)
         logger.error(f"Error stopping dev server: {e}")
 
 
-def ensure_dev_server_single_attempt(working_dir: Path, port: int, logger: logging.Logger) -> subprocess.Popen:
-    """Ensure dev server is running with deterministic port cleanup.
+def ensure_dev_server_single_attempt(working_dir: Path, port: int = DEV_SERVER_DEFAULT_PORT, logger: logging.Logger = None) -> Optional[subprocess.Popen]:
+    """Ensure dev server is running, trusting existing process if available.
 
-    This is the DETERMINISTIC approach:
-    1. ALWAYS kill any process on the target port (no checking, just kill)
-    2. Wait for port to be fully released
-    3. Start dev server
+    1. Check if something is already responding on the port
+    2. If yes, return None (success, using existing)
+    3. If no, clear the port and start new server
     4. Verify server started successfully
-    5. Fail fast with clear error if any step fails
 
     Args:
         working_dir: Project root directory
-        port: Port to run on (typically 8000)
+        port: Port to run on (defaults to DEV_SERVER_DEFAULT_PORT)
         logger: Logger instance
 
     Returns:
-        Subprocess.Popen instance of the running dev server
-
-    Raises:
-        RuntimeError: If port cannot be cleared or dev server fails to start
+        Subprocess.Popen instance of the new dev server, or None if using existing
     """
-    logger.info(f"=== DETERMINISTIC DEV SERVER STARTUP (Port {port}) ===")
+    logger.info(f"=== DEV SERVER CHECK (Port {port}) ===")
 
-    # STEP 1: ALWAYS attempt to clear the port (even if it appears free)
-    logger.info(f"Forcefully clearing port {port}...")
-    print(f"🔧 Forcefully clearing port {port}...")
+    # STEP 0: Check if something is already on the port and responding
+    if is_port_in_use(port):
+        logger.info(f"Dev server already detected on port {port}. Using existing instance.")
+        print(f"✅ Dev server already running at http://localhost:{port}")
+        return None
 
-    # Check if anything is on the port
-    port_was_in_use = is_port_in_use(port)
+    # STEP 1: Port is not responding, attempt to clear it just in case of zombies
+    logger.info(f"Port {port} not responding. Forcefully clearing...")
+    print(f"🔧 Port {port} not responding - clearing any zombies...")
 
-    if port_was_in_use:
-        logger.info(f"Port {port} is in use - killing processes")
-        print(f"⚠️  Port {port} is occupied - killing processes...")
-
-        if not kill_process_on_port(port, logger):
-            error_msg = f"Failed to clear port {port} - cannot start dev server"
-            logger.error(error_msg)
-            raise RuntimeError(error_msg)
-
-        print(f"✓ Port {port} cleared")
-        logger.info(f"Port {port} successfully cleared")
-    else:
-        logger.info(f"Port {port} is free")
-        print(f"✓ Port {port} is free")
+    kill_process_on_port(port, logger)
 
     # STEP 2: Wait for OS to fully release the port
     logger.info("Waiting for port to be fully released...")

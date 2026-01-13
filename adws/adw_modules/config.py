@@ -11,13 +11,13 @@ across orchestrator, browser, and validation scripts.
 
 # Dev server will be started dynamically and port will be detected
 # Default port to try first (Vite's default)
-DEV_SERVER_DEFAULT_PORT = 5173
+DEV_SERVER_DEFAULT_PORT = 8000
 
 # Timeout for dev server startup (seconds)
 DEV_SERVER_STARTUP_TIMEOUT = 30
 
 # Command to start dev server
-DEV_SERVER_COMMAND = ["bun", "run", "dev"]
+DEV_SERVER_COMMAND = ["bun", "run", "dev", "--", "--port", "8000", "--strictPort"]
 
 # Pattern to detect dev server ready state in output
 # Vite outputs with ANSI codes: "[32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5173[22m/[39m"

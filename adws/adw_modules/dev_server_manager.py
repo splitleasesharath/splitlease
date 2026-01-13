@@ -19,6 +19,7 @@ from .config import (
     DEV_SERVER_READY_PATTERN,
     DEV_SERVER_DEFAULT_PORT
 )
+from .dev_server import kill_process_on_port, is_port_in_use
 
 
 class DevServerManager:
@@ -48,12 +49,27 @@ class DevServerManager:
         """
         if self.process is not None:
             timestamp = datetime.now().strftime('%H:%M:%S')
-            self.logger.warning(f"[{timestamp}] Dev server already running, stopping first")
-            self.stop()
+            self.logger.warning(f"[{timestamp}] Dev server process already managed by this instance")
+            return self.port, self.base_url
 
         timestamp = datetime.now().strftime('%H:%M:%S')
+        
+        # Check if a server is already running on the target port
+        if is_port_in_use(DEV_SERVER_DEFAULT_PORT):
+            self.logger.info(f"[{timestamp}] Dev server already detected on port {DEV_SERVER_DEFAULT_PORT}. Using existing instance.")
+            self.port = DEV_SERVER_DEFAULT_PORT
+            self.base_url = f"http://localhost:{self.port}"
+            return self.port, self.base_url
+
+        self.logger.info(f"[{timestamp}] Dev server not detected on port {DEV_SERVER_DEFAULT_PORT}. Starting new instance.")
         self.logger.info(f"[{timestamp}] Starting dev server: {' '.join(DEV_SERVER_COMMAND)}")
         self.logger.info(f"[{timestamp}] Working directory: {self.working_dir}")
+
+        # Kill existing process on default port to start fresh (only if we didn't find one responding above)
+        # We still clear the range if we are starting a fresh one to avoid zombie ports
+        self.logger.info(f"[{timestamp}] Forcefully clearing port range {DEV_SERVER_DEFAULT_PORT}-{DEV_SERVER_DEFAULT_PORT+10} to ensure fresh startup...")
+        for p in range(DEV_SERVER_DEFAULT_PORT, DEV_SERVER_DEFAULT_PORT + 11):
+            kill_process_on_port(p, self.logger)
 
         try:
             # Start dev server with output capture
@@ -135,7 +151,13 @@ class DevServerManager:
 
                 match = re.search(DEV_SERVER_READY_PATTERN, clean_line)
                 if match:
-                    self.port = int(match.group(1))
+                    detected_port = int(match.group(1))
+                    if detected_port != DEV_SERVER_DEFAULT_PORT:
+                        self.logger.error(f"Dev server started on port {detected_port}, but {DEV_SERVER_DEFAULT_PORT} was expected. Strict port enforcement failed.")
+                        self.stop()
+                        raise RuntimeError(f"Dev server started on port {detected_port}, but {DEV_SERVER_DEFAULT_PORT} was expected.")
+                    
+                    self.port = detected_port
                     self.base_url = f"http://localhost:{self.port}"
                     port_detected = True
                     timestamp = datetime.now().strftime('%H:%M:%S')
