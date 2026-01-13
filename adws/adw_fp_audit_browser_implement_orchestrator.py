@@ -113,8 +113,8 @@ def extract_chunks_from_plan(plan_file: Path) -> List[ChunkData]:
         line_match = re.search(r'\*\*Lines?:\*\*\s+(.+)', section)
         line_number = line_match.group(1).strip() if line_match else None
 
-        # Extract affected pages
-        affected_pages_match = re.search(r'\*\*Affected Pages:\*\*\s+(.+)', section)
+        # Extract affected pages (supports both "Affected Pages" and "Expected Affected Pages")
+        affected_pages_match = re.search(r'\*\*(?:Expected )?Affected Pages:\*\*\s+(.+)', section)
         affected_pages = affected_pages_match.group(1).strip() if affected_pages_match else None
 
         # Extract code blocks (look for ```javascript or ```typescript blocks)

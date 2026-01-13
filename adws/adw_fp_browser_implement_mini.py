@@ -125,6 +125,16 @@ def infer_page_from_file_path(file_path: str) -> str:
         if component_key in file_path_lower:
             return page_path
 
+    # Data files - map to pages that use them
+    data_file_mapping = {
+        "helpcenterdata": "/help-center",
+        "faqdata": "/faq",
+    }
+
+    for data_key, page_path in data_file_mapping.items():
+        if data_key in file_path_lower:
+            return page_path
+
     # Logic files - default to homepage (they affect multiple pages)
     if "/logic/" in file_path_lower:
         return "/"
