@@ -20,8 +20,9 @@ DEV_SERVER_STARTUP_TIMEOUT = 30
 DEV_SERVER_COMMAND = ["bun", "run", "dev"]
 
 # Pattern to detect dev server ready state in output
-# Vite outputs: "Local:   http://localhost:5173/"
-DEV_SERVER_READY_PATTERN = r"Local:\s+http://localhost:(\d+)"
+# Vite outputs with ANSI codes: "[32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5173[22m/[39m"
+# This pattern strips ANSI codes and Unicode chars to match "localhost:PORT"
+DEV_SERVER_READY_PATTERN = r"http://localhost:(\d+)"
 
 # ============================================================================
 # BROWSER VALIDATION CONFIGURATION
