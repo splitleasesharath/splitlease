@@ -358,7 +358,12 @@ def main():
             handler.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
             dev_logger.addHandler(handler)
 
-        dev_server = DevServerManager(working_dir, dev_logger)
+        # Dev server must run from app/ directory
+        app_dir = working_dir / "app"
+        if not app_dir.exists():
+            raise RuntimeError(f"app/ directory not found at: {app_dir}")
+
+        dev_server = DevServerManager(app_dir, dev_logger)
         port, base_url = dev_server.start()
 
         print(f"✅ Dev server running at {base_url}")
