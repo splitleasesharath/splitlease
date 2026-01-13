@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { redirectToLogin, loginUser, signupUser, logoutUser, validateTokenAndFetchUser, isProtectedPage, getAuthToken, getFirstName, getAvatarUrl, checkUrlForAuthError } from '../../lib/auth.js';
 import { SIGNUP_LOGIN_URL, SEARCH_URL, HOST_OVERVIEW_URL } from '../../lib/constants.js';
-import { getUserType as getStoredUserType, getAuthState } from '../../lib/secureStorage.js';
+import { getUserType as getStoredUserType, getAuthState, getUserId } from '../../lib/secureStorage.js';
 import { supabase } from '../../lib/supabase.js';
 import CreateDuplicateListingModal from './CreateDuplicateListingModal/CreateDuplicateListingModal.jsx';
 import LoggedInAvatar from './LoggedInAvatar/LoggedInAvatar.jsx';
@@ -213,11 +213,14 @@ export default function Header({ autoShowLogin = false }) {
             } else {
               // Validation failed but we have a valid session - set basic info from session
               // CRITICAL: Include userId and userType so useHostMenuData and LoggedInAvatar can function
+              // Use Bubble-format user_id from metadata (or localStorage) for downstream queries
+              // Fallback to Supabase UUID only if neither is available
               console.log('[Header] User profile fetch failed, using session data');
               if (session?.user) {
+                const bubbleUserId = session.user.user_metadata?.user_id || getUserId() || session.user.id;
                 setCurrentUser({
-                  userId: session.user.id,
-                  id: session.user.id,
+                  userId: bubbleUserId,
+                  id: bubbleUserId,
                   firstName: session.user.user_metadata?.first_name || session.user.email?.split('@')[0] || 'User',
                   email: session.user.email,
                   userType: session.user.user_metadata?.user_type || null,
