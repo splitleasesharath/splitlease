@@ -179,7 +179,7 @@ def validate_chunk_with_retry(
                 if attempt < max_retries:
                     wait_time = VALIDATION_RETRY_BACKOFF_BASE ** attempt
                     logger.log(f"ERROR verdict, retrying in {wait_time}s...", to_stdout=False)
-                    print(f"⏳ Got ERROR verdict, retrying in {wait_time}s...")
+                    print(f"[WAIT] Got ERROR verdict, retrying in {wait_time}s...")
                     time.sleep(wait_time)
                     continue
                 else:
@@ -220,12 +220,12 @@ def validate_chunk_with_retry(
 
         except Exception as e:
             logger.log(f"Attempt {attempt} raised exception: {e}", to_stdout=False)
-            print(f"💥 Attempt {attempt} crashed: {e}")
+            print(f"[ERROR] Attempt {attempt} crashed: {e}")
 
             if attempt < max_retries:
                 wait_time = VALIDATION_RETRY_BACKOFF_BASE ** attempt
                 logger.log(f"Retrying in {wait_time}s...", to_stdout=False)
-                print(f"⏳ Retrying in {wait_time}s...")
+                print(f"[WAIT] Retrying in {wait_time}s...")
                 time.sleep(wait_time)
             else:
                 logger.log(f"Max retries reached after exception", to_stdout=False)

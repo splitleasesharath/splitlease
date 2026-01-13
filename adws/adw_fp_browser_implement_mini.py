@@ -150,7 +150,7 @@ def process_chunks_mini(chunks: list, plan_file: Path, working_dir: Path, dev_se
         chunks: List of chunks to process
         plan_file: Path to plan file
         working_dir: Working directory
-        dev_server: Dev server manager instance (already started)
+        dev_server: Dev server manager instance (NOT started - will start per chunk)
         logger: RunLogger instance for logging
 
     Returns:
@@ -165,7 +165,6 @@ def process_chunks_mini(chunks: list, plan_file: Path, working_dir: Path, dev_se
     print("CHUNK PROCESSING")
     print(f"{'='*60}")
     print(f"Total chunks: {len(chunks)}")
-    print(f"Dev server: {dev_server.base_url}")
 
     for chunk in chunks:
         state.current_chunk = chunk.number
@@ -188,75 +187,98 @@ def process_chunks_mini(chunks: list, plan_file: Path, working_dir: Path, dev_se
         logger.log(f"Chunk {chunk.number} implementation succeeded", to_stdout=False)
         print(f"[OK] Implementation complete")
 
-        # Step 2: Determine which page to test
-        page_path = determine_page_path(chunk)
-        logger.log(f"Testing page: {page_path}", to_stdout=False)
+        # Step 2: Start dev server for this chunk
+        print(f"\n[START] Starting dev server for validation...")
+        logger.log_section(f"DEV SERVER - CHUNK {chunk.number}", to_stdout=False)
 
-        # Build full URLs
-        localhost_url = dev_server.get_url(page_path)
-        production_url = f"{PRODUCTION_BASE_URL}{page_path}"
+        try:
+            port, base_url = dev_server.start()
+            print(f"[OK] Dev server running at {base_url}")
+            logger.log(f"Dev server started: {base_url}", to_stdout=False)
+        except Exception as e:
+            print(f"[FAIL] Dev server failed to start: {e}")
+            logger.log(f"Dev server startup FAILED: {e}", to_stdout=False)
+            state.failed_chunks += 1
+            continue
 
-        print(f"\n[TEST] Validating changes:")
-        print(f"   Localhost:  {localhost_url}")
-        print(f"   Production: {production_url}")
+        try:
+            # Step 3: Determine which page to test
+            page_path = determine_page_path(chunk)
+            logger.log(f"Testing page: {page_path}", to_stdout=False)
 
-        logger.log(f"Localhost URL: {localhost_url}", to_stdout=False)
-        logger.log(f"Production URL: {production_url}", to_stdout=False)
+            # Build full URLs
+            localhost_url = dev_server.get_url(page_path)
+            production_url = f"{PRODUCTION_BASE_URL}{page_path}"
 
-        # Step 3: Validate with browser (with retry logic built-in)
-        additional_context = {}
-        if chunk.affected_pages and chunk.affected_pages.upper() != "AUTO":
-            page_urls = [url.strip() for url in chunk.affected_pages.split(',')]
-            if len(page_urls) > 1:
-                additional_context["additional_pages"] = page_urls[1:]
+            print(f"\n[TEST] Validating changes:")
+            print(f"   Localhost:  {localhost_url}")
+            print(f"   Production: {production_url}")
 
-        validation_passed, result = validate_chunk_with_retry(
-            localhost_url,
-            production_url,
-            chunk.number,
-            chunk.title,
-            chunk.file_path,
-            chunk.line_number,
-            working_dir,
-            logger,
-            additional_context
-        )
+            logger.log(f"Localhost URL: {localhost_url}", to_stdout=False)
+            logger.log(f"Production URL: {production_url}", to_stdout=False)
 
-        # Step 4: Commit or rollback based on validation result
-        if validation_passed:
-            logger.log(f"Chunk {chunk.number} validation PASSED", to_stdout=False)
-            print(f"\n[OK] Validation PASSED")
-            print(f"   Verdict: {result.verdict}")
-            print(f"   Confidence: {result.confidence}%")
-            print(f"   Summary: {result.summary}")
+            # Step 4: Validate with browser (with retry logic built-in)
+            additional_context = {}
+            if chunk.affected_pages and chunk.affected_pages.upper() != "AUTO":
+                page_urls = [url.strip() for url in chunk.affected_pages.split(',')]
+                if len(page_urls) > 1:
+                    additional_context["additional_pages"] = page_urls[1:]
 
-            if commit_chunk(chunk, working_dir):
-                state.completed_chunks += 1
-                print(f"[OK] Chunk {chunk.number} COMPLETED (committed to git)")
-                logger.log(f"Chunk {chunk.number} COMPLETED - committed to git", to_stdout=False)
+            validation_passed, result = validate_chunk_with_retry(
+                localhost_url,
+                production_url,
+                chunk.number,
+                chunk.title,
+                chunk.file_path,
+                chunk.line_number,
+                working_dir,
+                logger,
+                additional_context
+            )
+
+            # Step 5: Commit or rollback based on validation result
+            if validation_passed:
+                logger.log(f"Chunk {chunk.number} validation PASSED", to_stdout=False)
+                print(f"\n[OK] Validation PASSED")
+                print(f"   Verdict: {result.verdict}")
+                print(f"   Confidence: {result.confidence}%")
+                print(f"   Summary: {result.summary}")
+
+                if commit_chunk(chunk, working_dir):
+                    state.completed_chunks += 1
+                    print(f"[OK] Chunk {chunk.number} COMPLETED (committed to git)")
+                    logger.log(f"Chunk {chunk.number} COMPLETED - committed to git", to_stdout=False)
+                else:
+                    # Commit failed - try to rollback
+                    rollback_chunk(chunk, working_dir)
+                    state.failed_chunks += 1
+                    print(f"[FAIL] Chunk {chunk.number} FAILED (commit error)")
+                    logger.log(f"Chunk {chunk.number} FAILED - commit error, rolled back", to_stdout=False)
             else:
-                # Commit failed - try to rollback
+                # Validation failed - rollback
+                logger.log(f"Chunk {chunk.number} validation FAILED - rolling back", to_stdout=False)
+                print(f"\n[FAIL] Validation FAILED")
+                print(f"   Verdict: {result.verdict}")
+                print(f"   Confidence: {result.confidence}%")
+                print(f"   Summary: {result.summary}")
+
+                if result.differences:
+                    print(f"   Differences ({len(result.differences)}):")
+                    for diff in result.differences:
+                        print(f"     - [{diff.severity.upper()}] {diff.type}: {diff.description}")
+
                 rollback_chunk(chunk, working_dir)
-                state.failed_chunks += 1
-                print(f"[FAIL] Chunk {chunk.number} FAILED (commit error)")
-                logger.log(f"Chunk {chunk.number} FAILED - commit error, rolled back", to_stdout=False)
-        else:
-            # Validation failed - rollback
-            logger.log(f"Chunk {chunk.number} validation FAILED - rolling back", to_stdout=False)
-            print(f"\n[FAIL] Validation FAILED")
-            print(f"   Verdict: {result.verdict}")
-            print(f"   Confidence: {result.confidence}%")
-            print(f"   Summary: {result.summary}")
+                state.skipped_chunks += 1
+                print(f"  Chunk {chunk.number} SKIPPED (rolled back)")
+                logger.log(f"Chunk {chunk.number} SKIPPED - validation failed, rolled back", to_stdout=False)
 
-            if result.differences:
-                print(f"   Differences ({len(result.differences)}):")
-                for diff in result.differences:
-                    print(f"     - [{diff.severity.upper()}] {diff.type}: {diff.description}")
-
-            rollback_chunk(chunk, working_dir)
-            state.skipped_chunks += 1
-            print(f"  Chunk {chunk.number} SKIPPED (rolled back)")
-            logger.log(f"Chunk {chunk.number} SKIPPED - validation failed, rolled back", to_stdout=False)
+        finally:
+            # CRITICAL: Stop dev server after each chunk to release the port
+            print(f"\n[STOP] Stopping dev server (releasing port {dev_server.port})...")
+            logger.log(f"Stopping dev server for Chunk {chunk.number}", to_stdout=False)
+            dev_server.stop()
+            print(f"[OK] Port {port} released")
+            logger.log(f"Dev server stopped, port released", to_stdout=False)
 
     return state
 
@@ -353,13 +375,7 @@ def main():
                 logger.finalize()
                 sys.exit(1)
 
-        # START DEV SERVER (critical step)
-        print(f"\n{'='*60}")
-        print("STARTING DEV SERVER")
-        print(f"{'='*60}")
-
-        logger.log_section("DEV SERVER STARTUP", to_stdout=False)
-
+        # CREATE DEV SERVER MANAGER (but don't start yet - will start per chunk)
         # Create a simple logger for dev server manager
         dev_logger = logging.getLogger("dev_server")
         dev_logger.setLevel(logging.INFO)
@@ -374,14 +390,9 @@ def main():
             raise RuntimeError(f"app/ directory not found at: {app_dir}")
 
         dev_server = DevServerManager(app_dir, dev_logger)
-        port, base_url = dev_server.start()
+        logger.log(f"Dev server manager created (will start per chunk)", to_stdout=False)
 
-        print(f"[OK] Dev server running at {base_url}")
-        logger.log(f"Dev server started successfully", to_stdout=False)
-        logger.log(f"Port: {port}", to_stdout=False)
-        logger.log(f"Base URL: {base_url}", to_stdout=False)
-
-        # Process chunks with dev server running
+        # Process chunks (each chunk will start/stop dev server)
         logger.log_section("CHUNK PROCESSING", to_stdout=False)
         logger.log(f"Processing {len(chunks)} chunks", to_stdout=False)
 
