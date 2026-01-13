@@ -1445,7 +1445,9 @@ export async function handleLinkedInOAuthCallback() {
 
   // Check if this is a fresh OAuth session (from LinkedIn)
   const user = session.user;
-  const isLinkedInProvider = user?.app_metadata?.provider === 'linkedin_oidc';
+  const isLinkedInProvider =
+    user?.app_metadata?.provider === 'linkedin_oidc' ||
+    user?.app_metadata?.providers?.includes('linkedin_oidc');
 
   if (!isLinkedInProvider) {
     return { success: false, error: 'Not a LinkedIn OAuth session' };
@@ -1589,7 +1591,9 @@ export async function handleLinkedInOAuthLoginCallback() {
 
     // Check if this is a fresh OAuth session (from LinkedIn)
     const user = session.user;
-    const isLinkedInProvider = user?.app_metadata?.provider === 'linkedin_oidc';
+    const isLinkedInProvider =
+      user?.app_metadata?.provider === 'linkedin_oidc' ||
+      user?.app_metadata?.providers?.includes('linkedin_oidc');
 
     if (!isLinkedInProvider) {
       clearLinkedInOAuthLoginFlow();
@@ -1733,7 +1737,9 @@ export async function handleGoogleOAuthCallback() {
 
   // Check if this is a fresh OAuth session (from Google)
   const user = session.user;
-  const isGoogleProvider = user?.app_metadata?.provider === 'google';
+  const isGoogleProvider =
+    user?.app_metadata?.provider === 'google' ||
+    user?.app_metadata?.providers?.includes('google');
 
   if (!isGoogleProvider) {
     return { success: false, error: 'Not a Google OAuth session' };
@@ -1877,7 +1883,9 @@ export async function handleGoogleOAuthLoginCallback() {
 
     // Check if this is a fresh OAuth session (from Google)
     const user = session.user;
-    const isGoogleProvider = user?.app_metadata?.provider === 'google';
+    const isGoogleProvider =
+      user?.app_metadata?.provider === 'google' ||
+      user?.app_metadata?.providers?.includes('google');
 
     if (!isGoogleProvider) {
       clearGoogleOAuthLoginFlow();
