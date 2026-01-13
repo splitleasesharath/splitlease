@@ -26,6 +26,7 @@ Example:
 
 import sys
 import argparse
+import logging
 from pathlib import Path
 from typing import List, Optional
 from dataclasses import dataclass
@@ -38,6 +39,9 @@ from adw_modules.webhook import notify_success, notify_failure, notify_in_progre
 from adw_modules.agent import prompt_claude_code
 from adw_modules.data_types import AgentPromptRequest
 from adw_modules.run_logger import create_run_logger
+from adw_modules.config import PRODUCTION_BASE_URL
+from adw_modules.dev_server_manager import DevServerManager
+from adw_modules.chunk_validation import validate_chunk_with_retry
 
 
 @dataclass
@@ -421,263 +425,138 @@ def infer_validation_context(chunk: ChunkData) -> dict:
     }
 
 
-def validate_with_browser(chunk: ChunkData, working_dir: Path, logger, port: int = 8000) -> bool:
-    """Validate chunk changes using browser automation.
+def determine_page_path(chunk: ChunkData) -> str:
+    """Determine which page path to test for this chunk.
+
+    Priority:
+    1. chunk.affected_pages (from plan, if not "AUTO")
+    2. Inferred from chunk.file_path (file path analysis)
+    3. Default to "/" (homepage)
+
+    Args:
+        chunk: Chunk being validated
+
+    Returns:
+        Page path starting with / (e.g., "/search", "/view-split-lease")
+    """
+    # If plan specifies affected pages
+    if chunk.affected_pages and chunk.affected_pages.upper() != "AUTO":
+        # Parse first page from comma-separated list
+        page_urls = [url.strip() for url in chunk.affected_pages.split(',')]
+        primary_page = page_urls[0]
+        return primary_page
+
+    # Otherwise infer from file path
+    return infer_page_from_file_path(chunk.file_path)
+
+
+def infer_page_from_file_path(file_path: str) -> str:
+    """Infer page path from file path.
+
+    Args:
+        file_path: File path like "app/src/islands/pages/SearchPage.jsx"
+
+    Returns:
+        Page path like "/search"
+    """
+    file_path_lower = file_path.lower()
+
+    # Page mapping based on file names
+    page_mapping = {
+        "searchpage": "/search",
+        "viewsplitleasepage": "/view-split-lease",
+        "accountprofilepage": "/account-profile",
+        "listingdashboardpage": "/listing-dashboard",
+        "hostproposalspage": "/host-proposals",
+        "guestproposalspage": "/guest-proposals",
+        "selflistingpage": "/self-listing",
+        "favoritelistingspage": "/favorite-listings",
+        "faqpage": "/faq",
+        "messagespage": "/messages",
+        "editlistingpage": "/edit-listing",
+        "helppage": "/help-center",
+        "homepage": "/",
+    }
+
+    # Check for page component matches
+    for page_key, page_path in page_mapping.items():
+        if page_key in file_path_lower:
+            return page_path
+
+    # Shared components - default to page that uses them most
+    shared_component_mapping = {
+        "loggedinavatar": "/account-profile",
+        "hostscheduleselector": "/self-listing",
+        "searchscheduleselector": "/search",
+        "createproposalflow": "/view-split-lease",
+        "googlemap": "/search",
+        "pricingeditsection": "/edit-listing",
+    }
+
+    for component_key, page_path in shared_component_mapping.items():
+        if component_key in file_path_lower:
+            return page_path
+
+    # Data files - map to pages that use them
+    data_file_mapping = {
+        "helpcenterdata": "/help-center",
+        "faqdata": "/faq",
+    }
+
+    for data_key, page_path in data_file_mapping.items():
+        if data_key in file_path_lower:
+            return page_path
+
+    # Logic files - default to homepage (they affect multiple pages)
+    if "/logic/" in file_path_lower:
+        return "/"
+
+    # Unknown - default to homepage
+    return "/"
+
+
+def validate_with_browser(
+    chunk: ChunkData,
+    localhost_url: str,
+    production_url: str,
+    working_dir: Path,
+    logger,
+    additional_context: Optional[dict] = None
+):
+    """Validate chunk changes using the shared validation module.
+
+    This uses `validate_chunk_with_retry`, which:
+    - Logs the full prompt
+    - Executes the stateless browser worker
+    - Parses structured JSON into ValidationResult
+    - Retries on ERROR verdicts (not FAIL)
 
     Args:
         chunk: Chunk that was just implemented
+        localhost_url: Full localhost URL (e.g., http://localhost:8009/help-center)
+        production_url: Full production URL (e.g., https://www.split.lease/help-center)
         working_dir: Working directory
-        logger: RunLogger instance for logging validation details
-        port: Dev server port (default: 8000)
+        logger: RunLogger instance
+        additional_context: Optional dict (e.g., {"additional_pages": [...]})
 
     Returns:
-        True if validation passed, False if site is broken
+        Tuple of (passed: bool, result: ValidationResult)
     """
-    # Determine which page(s) to test
-    # Priority: affected_pages from plan > inferred from file path
-    if chunk.affected_pages and chunk.affected_pages.upper() != "AUTO":
-        # Parse comma-separated URLs from plan
-        page_urls = [url.strip() for url in chunk.affected_pages.split(',')]
-        primary_page = page_urls[0]  # Test the first page
+    print(f"\n[TEST] Validating changes:")
+    print(f"   Localhost:  {localhost_url}")
+    print(f"   Production: {production_url}")
 
-        # Still use inference to get specific tests and user flow
-        inferred_context = infer_validation_context(chunk)
-
-        # Build context using explicit page but inferred tests
-        context = {
-            "page_url": primary_page,
-            "page_name": f"{primary_page} (from plan)",
-            "requires_auth": primary_page not in ["/", "/search", "/faq", "/view-split-lease"],
-            "specific_tests": inferred_context["specific_tests"],  # Reuse inferred tests
-            "user_flow": inferred_context["user_flow"]  # Reuse inferred flow
-        }
-
-        # If multiple pages affected, note in context
-        if len(page_urls) > 1:
-            context["additional_pages"] = page_urls[1:]
-    else:
-        # Fallback to inference when affected_pages is AUTO or missing
-        context = infer_validation_context(chunk)
-
-    notify_in_progress(
-        step=f"Validating Chunk {chunk.number}",
-        details=f"Testing on {context['page_name']}",
-        metadata={
-            "page": context["page_url"],
-            "tests": len(context["specific_tests"])
-        }
+    return validate_chunk_with_retry(
+        localhost_url,
+        production_url,
+        chunk.number,
+        chunk.title,
+        chunk.file_path,
+        chunk.line_number,
+        working_dir,
+        logger,
+        additional_context or {}
     )
-
-    print(f"\n{'='*60}")
-    print(f"VALIDATING CHUNK {chunk.number} WITH BROWSER")
-    print(f"{'='*60}")
-    print(f"Page: {context['page_name']} ({context['page_url']})")
-    print(f"Specific tests: {len(context['specific_tests'])}")
-    if "additional_pages" in context:
-        print(f"Note: Also affects {', '.join(context['additional_pages'])}")
-
-    # Log validation details
-    logger.log_section("BROWSER VALIDATION CONTEXT", to_stdout=False)
-    logger.log(f"Testing page: {context['page_name']}", to_stdout=False)
-    logger.log(f"URL: http://localhost:{port}{context['page_url']}", to_stdout=False)
-    logger.log(f"Requires auth: {context['requires_auth']}", to_stdout=False)
-    logger.log(f"Specific tests: {len(context['specific_tests'])}", to_stdout=False)
-
-    for i, test in enumerate(context['specific_tests'], 1):
-        logger.log(f"  Test {i}: {test}", to_stdout=False)
-
-    if "additional_pages" in context:
-        logger.log(f"Additional affected pages: {', '.join(context['additional_pages'])}", to_stdout=False)
-
-    if "user_flow" in context:
-        logger.log(f"User flow description: {context['user_flow']}", to_stdout=False)
-
-    # Build validation actions list (starting from step 3)
-    actions_list = "\n".join(f"{i+3}. {test}" for i, test in enumerate(context["specific_tests"]))
-
-    # Build additional pages note if applicable
-    additional_pages_section = ""
-    if "additional_pages" in context:
-        other_pages = ", ".join(context['additional_pages'])
-        additional_pages_section = f"\n\n**Also affects:** {other_pages}"
-
-    # Build auth instruction
-    auth_step = "2. Log in with test credentials" if context['requires_auth'] else "2. (No login required)"
-
-    # Calculate final step number
-    final_step = len(context['specific_tests']) + 3
-
-    validation_prompt = f"""I want you to visually inspect simultaneously http://localhost:{port}{context['page_url']} and https://www.split.lease{context['page_url']} and identify any differences you can find between these two pages.
-
-**Context:**
-This is a functional programming refactoring validation for "{chunk.title}".
-- Refactored file: {chunk.file_path}:{chunk.line_number}{additional_pages_section}
-
-**Your Task:**
-Compare the localhost (development) version against the live production site and report any differences in:
-- Visual appearance (layout, styling, spacing, colors)
-- Interactive elements (buttons, forms, dropdowns, etc.)
-- Functionality (does everything work the same way?)
-- Console errors (are there new errors in localhost that don't appear in production?)
-
-**Expected Outcome:**
-The two pages should be functionally identical. The refactoring should not have introduced any visual or functional differences.
-
-**Report Format:**
-
-If pages are identical:
----
-VALIDATION PASSED
-✓ No visual differences detected
-✓ All interactive elements behave identically
-✓ No new console errors in localhost
-✓ Pages are functionally equivalent
----
-
-If differences found:
----
-VALIDATION FAILED
-Differences detected:
-- [List specific differences you observed]
-- [Any console errors unique to localhost]
-- [Any functional behavior changes]
----
-
-IMPORTANT: Only report differences. Do NOT attempt to fix any issues you find.
-"""
-
-    # Log the full validation prompt being sent
-    logger.log_section("VALIDATION PROMPT", to_stdout=False)
-    logger.log(validation_prompt, to_stdout=False)
-    logger.log_separator(to_stdout=False)
-
-    # Import browser automation with dev server management
-    import subprocess
-    import sys
-    import tempfile
-
-    # Call adw_claude_browser.py script which handles dev server internally
-    adw_browser_script = working_dir / "adws" / "adw_claude_browser.py"
-
-    try:
-        # Run the browser script - it handles dev server startup/cleanup internally
-        # Note: context['page_url'] is actually a path (e.g., '/search'), not a full URL
-        full_url = f"http://localhost:{port}{context['page_url']}"
-        print(f"📋 Executing browser validation script...")
-        print(f"🌐 Testing URL: {full_url}")
-
-        logger.log_section("BROWSER SCRIPT EXECUTION", to_stdout=False)
-        logger.log(f"Browser script path: {adw_browser_script}", to_stdout=False)
-        logger.log(f"Full test URL: {full_url}", to_stdout=False)
-
-        # Write prompt to temporary file to avoid Windows command-line length limits
-        logger.log(f"Creating temporary prompt file...", to_stdout=False)
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as tmp:
-            tmp.write(validation_prompt)
-            prompt_file = tmp.name
-
-        logger.log(f"Prompt file created: {prompt_file}", to_stdout=False)
-        logger.log(f"Prompt length: {len(validation_prompt)} characters", to_stdout=False)
-        logger.log(f"Prompt preview (first 200 chars): {validation_prompt[:200]}", to_stdout=False)
-
-        try:
-            logger.log(f"Starting subprocess: uv run {adw_browser_script} @{prompt_file}", to_stdout=False)
-            logger.log(f"Working directory: {working_dir}", to_stdout=False)
-            logger.log(f"Timeout: 600 seconds", to_stdout=False)
-
-            result = subprocess.run(
-                ["uv", "run", str(adw_browser_script), f"@{prompt_file}"],
-                cwd=working_dir,
-                capture_output=True,
-                text=True,
-                timeout=600,  # 10 minute timeout for browser + server startup
-                encoding='utf-8',
-                errors='replace'  # Handle encoding errors gracefully
-            )
-
-            logger.log(f"Subprocess completed with return code: {result.returncode}", to_stdout=False)
-            logger.log(f"STDOUT length: {len(result.stdout)} characters", to_stdout=False)
-            logger.log(f"STDERR length: {len(result.stderr)} characters", to_stdout=False)
-        finally:
-            # Clean up temp file
-            import os
-            try:
-                os.unlink(prompt_file)
-                logger.log(f"Temp file cleaned up: {prompt_file}", to_stdout=False)
-            except Exception as cleanup_err:
-                logger.log(f"Failed to cleanup temp file: {cleanup_err}", to_stdout=False)
-
-        success = result.returncode == 0
-        output = result.stdout if success else result.stderr
-
-        if not success:
-            # Log detailed error information
-            print(f"\n[FAIL] Browser script failed with exit code {result.returncode}")
-            print(f"STDOUT: {result.stdout[:500]}")
-            print(f"STDERR: {result.stderr[:500]}")
-
-            logger.log(f"Browser script exit code: {result.returncode}", to_stdout=False)
-            logger.log(f"FULL STDOUT:", to_stdout=False)
-            logger.log(result.stdout, to_stdout=False)
-            logger.log(f"FULL STDERR:", to_stdout=False)
-            logger.log(result.stderr, to_stdout=False)
-
-            notify_failure(
-                step=f"Chunk {chunk.number} browser automation failed",
-                error=f"Exit code {result.returncode}: {output[:100]}"
-            )
-            return False
-
-        # Check if validation passed
-        logger.log(f"Checking validation result in output...", to_stdout=False)
-        logger.log(f"Output preview (first 500 chars): {output[:500]}", to_stdout=False)
-
-        if "VALIDATION PASSED" in output.upper():
-            print(f"[OK] Validation passed!")
-            logger.log("[OK] Validation PASSED", to_stdout=False)
-            logger.log(f"Full validation output:", to_stdout=False)
-            logger.log(output, to_stdout=False)
-
-            notify_success(
-                step=f"Chunk {chunk.number} passed all tests",
-                details=None
-            )
-            return True
-        else:
-            print(f"[FAIL] Validation failed - site may be broken")
-            logger.log("[FAIL] Validation FAILED - site may be broken", to_stdout=False)
-
-            notify_failure(
-                step=f"Chunk {chunk.number} broke the site",
-                error=output[:100]
-            )
-            print(f"\nVALIDATION OUTPUT:")
-            print(output)
-
-            logger.log("Full validation failure output:", to_stdout=False)
-            logger.log(output, to_stdout=False)
-
-            return False
-
-    except subprocess.TimeoutExpired:
-        print(f"[TIMEOUT] Browser validation timed out after 10 minutes")
-        logger.log("[TIMEOUT] Browser validation timed out after 10 minutes", to_stdout=False)
-        logger.log("This may indicate browser script is stuck or waiting for user input", to_stdout=False)
-
-        notify_failure(
-            step=f"Chunk {chunk.number} validation timed out",
-            error="Browser took >10 minutes"
-        )
-        return False
-    except Exception as e:
-        print(f"💥 Browser validation crashed: {e}")
-        logger.log(f"Browser validation crashed: {e}", to_stdout=False)
-
-        notify_failure(
-            step=f"Chunk {chunk.number} validation crashed",
-            error=str(e)[:100]
-        )
-        return False
 
 
 def commit_chunk(chunk: ChunkData, working_dir: Path) -> bool:
@@ -784,13 +663,20 @@ def rollback_chunk(chunk: ChunkData, working_dir: Path) -> bool:
         return False
 
 
-def process_chunks(chunks: List[ChunkData], plan_file: Path, working_dir: Path, logger) -> OrchestratorState:
+def process_chunks(
+    chunks: List[ChunkData],
+    plan_file: Path,
+    working_dir: Path,
+    dev_server: DevServerManager,
+    logger
+) -> OrchestratorState:
     """Process all chunks in sequence.
 
     Args:
         chunks: List of chunks to process
         plan_file: Path to plan file
         working_dir: Working directory
+        dev_server: Dev server manager instance (NOT started - will start per chunk)
         logger: RunLogger instance for logging
 
     Returns:
@@ -825,30 +711,93 @@ def process_chunks(chunks: List[ChunkData], plan_file: Path, working_dir: Path, 
 
         logger.log(f"Chunk {chunk.number} implementation succeeded", to_stdout=False)
 
-        # Step 2: Validate with browser
-        logger.log(f"Validating Chunk {chunk.number} with browser", to_stdout=False)
-        validation_passed = validate_with_browser(chunk, working_dir, logger)
+        # Step 2: Start dev server for this chunk
+        print(f"\n[START] Starting dev server for validation...")
+        logger.log_section(f"DEV SERVER - CHUNK {chunk.number}", to_stdout=False)
 
-        # Step 3: Commit or rollback
-        if validation_passed:
-            logger.log(f"Chunk {chunk.number} validation PASSED", to_stdout=False)
-            if commit_chunk(chunk, working_dir):
-                state.completed_chunks += 1
-                print(f" Chunk {chunk.number} COMPLETED")
-                logger.log(f"Chunk {chunk.number} COMPLETED - committed to git", to_stdout=False)
+        try:
+            port, base_url = dev_server.start()
+            print(f"[OK] Dev server running at {base_url}")
+            logger.log(f"Dev server started: {base_url}", to_stdout=False)
+        except Exception as e:
+            print(f"[FAIL] Dev server failed to start: {e}")
+            logger.log(f"Dev server startup FAILED: {e}", to_stdout=False)
+            state.failed_chunks += 1
+            continue
+
+        try:
+            # Step 3: Determine which page to test
+            page_path = determine_page_path(chunk)
+            logger.log(f"Testing page: {page_path}", to_stdout=False)
+
+            # Build full URLs
+            localhost_url = dev_server.get_url(page_path)
+            production_url = f"{PRODUCTION_BASE_URL}{page_path}"
+
+            logger.log(f"Localhost URL: {localhost_url}", to_stdout=False)
+            logger.log(f"Production URL: {production_url}", to_stdout=False)
+
+            # Additional context for multi-page plan entries
+            additional_context = {}
+            if chunk.affected_pages and chunk.affected_pages.upper() != "AUTO":
+                page_urls = [url.strip() for url in chunk.affected_pages.split(',')]
+                if len(page_urls) > 1:
+                    additional_context["additional_pages"] = page_urls[1:]
+
+            # Step 4: Validate with browser (shared module with retry + JSON parsing)
+            logger.log(f"Validating Chunk {chunk.number} with browser", to_stdout=False)
+            validation_passed, result = validate_with_browser(
+                chunk,
+                localhost_url,
+                production_url,
+                working_dir,
+                logger,
+                additional_context
+            )
+
+            # Step 5: Commit or rollback
+            if validation_passed:
+                logger.log(f"Chunk {chunk.number} validation PASSED", to_stdout=False)
+                print(f"\n[OK] Validation PASSED")
+                print(f"   Verdict: {result.verdict}")
+                print(f"   Confidence: {result.confidence}%")
+                print(f"   Summary: {result.summary}")
+
+                if commit_chunk(chunk, working_dir):
+                    state.completed_chunks += 1
+                    print(f" Chunk {chunk.number} COMPLETED")
+                    logger.log(f"Chunk {chunk.number} COMPLETED - committed to git", to_stdout=False)
+                else:
+                    # Commit failed - try to rollback
+                    rollback_chunk(chunk, working_dir)
+                    state.failed_chunks += 1
+                    print(f" Chunk {chunk.number} FAILED (commit error)")
+                    logger.log(f"Chunk {chunk.number} FAILED - commit error, rolled back", to_stdout=False)
             else:
-                # Commit failed - try to rollback
+                # Validation failed - rollback
+                logger.log(f"Chunk {chunk.number} validation FAILED - rolling back", to_stdout=False)
+                print(f"\n[FAIL] Validation FAILED")
+                print(f"   Verdict: {result.verdict}")
+                print(f"   Confidence: {result.confidence}%")
+                print(f"   Summary: {result.summary}")
+
+                if getattr(result, "differences", None):
+                    print(f"   Differences ({len(result.differences)}):")
+                    for diff in result.differences:
+                        print(f"     - [{diff.severity.upper()}] {diff.type}: {diff.description}")
+
                 rollback_chunk(chunk, working_dir)
-                state.failed_chunks += 1
-                print(f" Chunk {chunk.number} FAILED (commit error)")
-                logger.log(f"Chunk {chunk.number} FAILED - commit error, rolled back", to_stdout=False)
-        else:
-            # Validation failed - rollback
-            logger.log(f"Chunk {chunk.number} validation FAILED - rolling back", to_stdout=False)
-            rollback_chunk(chunk, working_dir)
-            state.skipped_chunks += 1
-            print(f"  Chunk {chunk.number} SKIPPED (validation failed)")
-            logger.log(f"Chunk {chunk.number} SKIPPED - validation failed", to_stdout=False)
+                state.skipped_chunks += 1
+                print(f"  Chunk {chunk.number} SKIPPED (rolled back)")
+                logger.log(f"Chunk {chunk.number} SKIPPED - validation failed, rolled back", to_stdout=False)
+
+        finally:
+            # CRITICAL: Stop dev server after each chunk to release the port
+            print(f"\n[STOP] Stopping dev server (releasing port {dev_server.port})...")
+            logger.log(f"Stopping dev server for Chunk {chunk.number}", to_stdout=False)
+            dev_server.stop()
+            print(f"[OK] Port {port} released")
+            logger.log(f"Dev server stopped, port released", to_stdout=False)
 
     return state
 
@@ -878,6 +827,7 @@ def main():
         logger.log(f"Chunks filter: {args.chunks}", to_stdout=False)
 
     working_dir = Path.cwd()
+    dev_server = None
 
     try:
         # Phase 1: Run audit and generate plan
@@ -914,10 +864,26 @@ def main():
                 logger.finalize()
                 sys.exit(1)
 
+        # CREATE DEV SERVER MANAGER (but don't start yet - will start per chunk)
+        dev_logger = logging.getLogger("dev_server")
+        dev_logger.setLevel(logging.INFO)
+        if not dev_logger.handlers:
+            handler = logging.StreamHandler()
+            handler.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
+            dev_logger.addHandler(handler)
+
+        # Dev server must run from app/ directory
+        app_dir = working_dir / "app"
+        if not app_dir.exists():
+            raise RuntimeError(f"app/ directory not found at: {app_dir}")
+
+        dev_server = DevServerManager(app_dir, dev_logger)
+        logger.log("Dev server manager created (will start per chunk)", to_stdout=False)
+
         # Phase 2: Process chunks
         logger.log_section("PHASE 2: CHUNK PROCESSING", to_stdout=False)
         logger.log(f"Processing {len(chunks)} chunks", to_stdout=False)
-        state = process_chunks(chunks, plan_file, working_dir, logger)
+        state = process_chunks(chunks, plan_file, working_dir, dev_server, logger)
 
         # Final summary
         print(f"\n{'='*60}")
@@ -952,6 +918,12 @@ def main():
         logger.log_error(e, context="Main orchestrator loop")
         logger.finalize()
         sys.exit(1)
+    finally:
+        # Safety net: stop dev server if it's somehow still running
+        if dev_server is not None and dev_server.is_running():
+            logger.log_section("DEV SERVER CLEANUP", to_stdout=False)
+            dev_server.stop()
+            logger.log("Dev server stopped", to_stdout=False)
 
 
 if __name__ == "__main__":
