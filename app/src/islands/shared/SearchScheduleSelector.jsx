@@ -26,18 +26,23 @@ const SelectorRow = styled.div`
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin: 0 0 5px 0;
+  margin: 0;
 `;
 
 const CalendarIcon = styled.div`
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 36px;
   margin-right: 8px;
   flex-shrink: 0;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
 `;
 
 const DaysGrid = styled.div`
@@ -52,23 +57,23 @@ const DaysGrid = styled.div`
 `;
 
 const DayCell = styled.button`
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  min-height: 36px;
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  min-height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: "Inter", Helvetica, Arial, sans-serif;
   font-weight: 600;
   font-size: 14px;
-  line-height: 16px;
+  line-height: 17px;
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 0;
   cursor: ${props => props.$isDragging ? 'grabbing' : 'pointer'};
   transition: transform 0.15s ease-in-out, background 0.2s ease-in-out;
-  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: none;
   box-sizing: border-box;
 
   /* Error state styling */
@@ -85,7 +90,7 @@ const DayCell = styled.button`
 
   /* Normal selected/unselected state (no error) */
   ${props => !props.$hasError && `
-    background-color: ${props.$isSelected ? '#4B47CE' : '#b2b2b2'};
+    background-color: ${props.$isSelected ? '#4B47CE' : '#B2B2B2'};
     color: #ffffff;
   `}
 
@@ -103,14 +108,14 @@ const DayCell = styled.button`
   }
 
   @media (max-width: 768px) {
-    width: 36px;
-    height: 36px;
+    width: 34px;
+    height: 34px;
     font-size: 14px;
   }
 
   @media (max-width: 480px) {
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
     font-size: 13px;
   }
 `;
@@ -118,12 +123,16 @@ const DayCell = styled.button`
 const InfoContainer = styled.div`
   min-height: 24px;
   max-width: 450px;
-  display: flex;
+  display: none;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   gap: 8px;
   margin: 5px 0 16px 0;
+
+  @media (max-width: 768px) {
+    display: flex;
+  }
 `;
 
 const InfoText = styled.p`
@@ -629,6 +638,9 @@ export default function SearchScheduleSelector({
         dayIndices: selectedDaysArray,
         urlParam: daysParam
       });
+
+      // Dispatch custom event for other components to listen to
+      window.dispatchEvent(new CustomEvent('daysSelected', { detail: { days: selectedDaysArray } }));
     } else {
       // Remove parameter if no days selected
       const url = new URL(window.location);
@@ -699,10 +711,8 @@ export default function SearchScheduleSelector({
       <SelectorRow>
         <CalendarIcon>
           <img
-            src="https://c.animaapp.com/meh6k861XoGXNn/img/calendar-minimalistic-svgrepo-com-202-svg.svg"
+            src="https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1748370325535x745487629939088300/calendar-minimalistic-svgrepo-com%202.svg"
             alt="Calendar"
-            width="36"
-            height="36"
           />
         </CalendarIcon>
 

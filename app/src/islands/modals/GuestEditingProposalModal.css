@@ -1,40 +1,45 @@
 /* Guest Editing Proposal Modal Component Styles */
-/* Based on Bubble.io element specifications */
+/* V5 Balanced Design - Matching Guest Proposals Page */
 
 /* Import Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Martel:wght@900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 /* =====================================================
-   CSS VARIABLES
+   CSS VARIABLES - V5 Balanced Design
    ===================================================== */
 
 :root {
-  /* Guest Editing Proposal Colors */
+  /* Guest Editing Proposal Colors - V5 Purple Theme */
   --gep-bg-primary: #FFFFFF;
-  --gep-bg-secondary: #DFDFF6;
-  --gep-bg-surface: #8C97C7;
-  --gep-text-primary: #424242;
-  --gep-text-header: #000000;
-  --gep-border-color: #6B6B6B;
-  --gep-border-destructive: #FF0000;
-  --gep-primary-color: #6366F1;
-  --gep-primary-hover: #4F46E5;
-  --gep-destructive-color: #FF0000;
-  --gep-destructive-hover: #DC2626;
-  --gep-font-martel: 'Martel', serif;
-  --gep-font-lato: 'Lato', sans-serif;
-  --gep-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.15);
-  --gep-roundness: 5px;
-  --gep-roundness-large: 10px;
+  --gep-bg-secondary: #fafafa;
+  --gep-bg-surface: #6B4EFF;
+  --gep-text-primary: #1a1a1a;
+  --gep-text-secondary: #4b5563;
+  --gep-text-muted: #6b7280;
+  --gep-text-header: #31135D;
+  --gep-border-color: #e5e5e5;
+  --gep-border-light: #f0f0f0;
+  --gep-border-destructive: #DC2626;
+  --gep-primary-color: #6B4EFF;
+  --gep-primary-hover: #31135D;
+  --gep-primary-bg: #f3f0ff;
+  --gep-destructive-color: #DC2626;
+  --gep-destructive-hover: #B91C1C;
+  --gep-destructive-bg: #fef2f2;
+  --gep-font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --gep-shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.2);
+  --gep-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --gep-roundness: 10px;
+  --gep-roundness-large: 16px;
 
-  /* Reservation Price Breakdown Colors */
-  --rpb-bg-primary: #DFDFF6;
+  /* Reservation Price Breakdown Colors - V5 Theme */
+  --rpb-bg-primary: #fafafa;
   --rpb-bg-white: #FFFFFF;
-  --rpb-text-primary: #424242;
-  --rpb-text-header: #000000;
-  --rpb-border-color: #6B6B6B;
-  --rpb-font-martel: 'Martel', serif;
-  --rpb-font-lato: 'Lato', sans-serif;
+  --rpb-text-primary: #1a1a1a;
+  --rpb-text-secondary: #4b5563;
+  --rpb-text-header: #31135D;
+  --rpb-border-color: #e5e5e5;
+  --rpb-font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 /* =====================================================
@@ -47,31 +52,49 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(107, 114, 128, 0.75);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 20px;
+  padding: 16px;
   overflow-y: auto;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* =====================================================
-   MAIN COMPONENT CONTAINER
+   MAIN COMPONENT CONTAINER - V5 Balanced
    ===================================================== */
 
 .guest-editing-proposal {
   width: 100%;
-  max-width: 500px;
+  max-width: 480px;
   min-height: 100px;
   max-height: 90vh;
   background-color: var(--gep-bg-primary);
   border-radius: var(--gep-roundness-large);
   box-sizing: border-box;
-  font-family: var(--gep-font-lato);
+  font-family: var(--gep-font-primary);
   position: relative;
   overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--gep-shadow-modal);
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* =====================================================
@@ -92,15 +115,15 @@
 }
 
 /* =====================================================
-   HEADER SECTION
+   HEADER SECTION - V5 Balanced
    ===================================================== */
 
 .gep-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px;
-  border-bottom: 1px solid var(--gep-border-color);
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--gep-border-light);
   position: sticky;
   top: 0;
   background-color: var(--gep-bg-primary);
@@ -117,15 +140,16 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--gep-text-primary);
-  border-radius: 50%;
-  transition: background-color 0.2s ease;
+  color: var(--gep-text-muted);
+  border-radius: 8px;
+  transition: all 0.15s ease;
   flex-shrink: 0;
 }
 
 .gep-back-button:hover,
 .gep-close-button:hover {
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: var(--gep-bg-secondary);
+  color: var(--gep-text-primary);
 }
 
 .gep-header-title {
@@ -137,9 +161,9 @@
 }
 
 .gep-title {
-  font-family: var(--gep-font-martel);
-  font-weight: 900;
-  font-size: 20px;
+  font-family: var(--gep-font-primary);
+  font-weight: 600;
+  font-size: 18px;
   color: var(--gep-text-header);
   margin: 0;
 }
@@ -411,15 +435,16 @@
 }
 
 /* =====================================================
-   BUTTONS SECTION
+   BUTTONS SECTION - V5 Balanced
    ===================================================== */
 
 .gep-buttons {
   display: flex;
   gap: 12px;
-  padding: 16px;
+  padding: 16px 24px;
   justify-content: center;
-  border-top: 1px solid var(--gep-border-color);
+  background: var(--gep-bg-secondary);
+  border-top: 1px solid var(--gep-border-light);
 }
 
 /* Vertical stacking for pristine state buttons */
@@ -434,19 +459,19 @@
 }
 
 .gep-button {
-  padding: 12px 24px;
+  padding: 12px 20px;
   border-radius: var(--gep-roundness);
-  font-family: var(--gep-font-lato);
+  font-family: var(--gep-font-primary);
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
-  min-width: 140px;
+  transition: all 0.15s ease;
+  min-width: 120px;
 }
 
 .gep-button--primary {
   background-color: var(--gep-primary-color);
-  color: var(--gep-bg-primary);
+  color: white;
   border: none;
 }
 
@@ -456,12 +481,13 @@
 
 .gep-button--secondary {
   background-color: transparent;
-  color: var(--gep-text-primary);
+  color: var(--gep-text-secondary);
   border: 1px solid var(--gep-border-color);
 }
 
 .gep-button--secondary:hover {
-  background-color: rgba(0, 0, 0, 0.05);
+  border-color: var(--gep-text-secondary);
+  color: var(--gep-text-primary);
 }
 
 .gep-button--outline {
@@ -471,7 +497,7 @@
 }
 
 .gep-button--outline:hover {
-  background-color: rgba(99, 102, 241, 0.1);
+  background-color: var(--gep-primary-bg);
 }
 
 .gep-button--destructive-outline {
@@ -481,7 +507,7 @@
 }
 
 .gep-button--destructive-outline:hover {
-  background-color: rgba(255, 0, 0, 0.1);
+  background-color: var(--gep-destructive-bg);
 }
 
 /* Cancel section */
@@ -820,62 +846,68 @@
 }
 
 /* =====================================================
-   RESERVATION PRICE BREAKDOWN STYLES
+   RESERVATION PRICE BREAKDOWN STYLES - V5 Balanced
    ===================================================== */
 
 .reservation-price-breakdown {
   width: 100%;
   min-height: 100px;
   max-height: 750px;
-  padding: 16px;
-  background-color: var(--rpb-bg-primary);
-  border: 1px solid var(--rpb-border-color);
-  border-radius: 3px;
+  padding: 24px;
+  background-color: var(--gep-bg-primary);
+  border: none;
+  border-radius: var(--gep-roundness);
   box-sizing: border-box;
   overflow: auto;
 }
 
 .rpb-header {
-  font-family: var(--rpb-font-martel);
-  font-weight: 900;
-  font-size: 20px;
+  font-family: var(--rpb-font-primary);
+  font-weight: 600;
+  font-size: 18px;
   color: var(--rpb-text-header);
-  text-align: center;
+  text-align: left;
   line-height: 1.5;
   letter-spacing: 0;
-  margin: 0 0 16px 0;
+  margin: 0 0 20px 0;
   width: 100%;
-  max-width: 400px;
-  margin-left: auto;
-  margin-right: auto;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--gep-border-light);
 }
 
 .rpb-row {
-  width: 95%;
-  margin: 0 auto 8px auto;
-  min-height: 27px;
+  width: 100%;
+  margin: 0 0 0 0;
+  min-height: 24px;
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   border-radius: 0;
-  padding: 4px 8px;
+  padding: 12px 0;
   box-sizing: border-box;
+  border-bottom: 1px solid var(--gep-border-light);
+}
+
+.rpb-row:last-of-type {
+  border-bottom: none;
 }
 
 .rpb-row--white {
-  background-color: var(--rpb-bg-white);
+  background-color: var(--rpb-bg-primary);
   border-radius: var(--gep-roundness);
+  padding: 16px;
+  margin: 8px 0;
 }
 
 .rpb-label {
-  font-family: var(--rpb-font-lato);
-  font-weight: 700;
-  font-size: 16px;
-  color: var(--rpb-text-primary);
-  line-height: 1.25;
-  letter-spacing: -1px;
-  word-spacing: 1px;
+  font-family: var(--rpb-font-primary);
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--rpb-text-secondary);
+  line-height: 1.4;
+  letter-spacing: 0;
+  word-spacing: 0;
   flex: 0 1 auto;
   min-width: 30%;
   max-width: 70%;
@@ -883,25 +915,26 @@
 
 .rpb-label--regular {
   font-weight: 400;
-  font-size: 14px;
-  letter-spacing: 0;
-  word-spacing: 0;
+  font-size: 13px;
+  color: var(--gep-text-muted);
 }
 
 .rpb-label--large {
-  font-size: 18px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--rpb-text-primary);
 }
 
 .rpb-label--small {
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .rpb-value {
-  font-family: var(--rpb-font-lato);
-  font-weight: 700;
-  font-size: 16px;
+  font-family: var(--rpb-font-primary);
+  font-weight: 600;
+  font-size: 14px;
   color: var(--rpb-text-primary);
-  line-height: 1.25;
+  line-height: 1.4;
   letter-spacing: 0;
   text-align: right;
   flex: 0 1 auto;
@@ -910,50 +943,56 @@
 }
 
 .rpb-value--regular {
-  font-weight: 400;
+  font-weight: 500;
 }
 
 .rpb-value--large {
-  font-size: 18px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gep-primary-color);
 }
 
 .rpb-value--small {
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .rpb-asterisk {
   font-size: 10px;
   vertical-align: super;
+  color: var(--gep-text-muted);
 }
 
 .rpb-small-text {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 400;
+  color: var(--gep-text-muted);
 }
 
 .rpb-divider {
   width: 100%;
-  height: 2px;
-  background: linear-gradient(to right, transparent, var(--rpb-border-color), transparent);
-  margin: 12px 0;
+  height: 1px;
+  background: var(--gep-border-color);
+  margin: 8px 0;
   border: none;
 }
 
 .rpb-divider--thick {
-  height: 3px;
+  height: 1px;
+  margin: 16px 0;
 }
 
 .rpb-disclaimer {
-  font-family: var(--rpb-font-lato);
+  font-family: var(--rpb-font-primary);
   font-weight: 400;
-  font-size: 14px;
-  color: var(--rpb-text-primary);
-  line-height: 1.25;
-  letter-spacing: -1px;
-  word-spacing: 1px;
-  width: 95%;
-  margin: 12px auto 0 auto;
-  padding: 4px 8px;
+  font-size: 12px;
+  color: var(--gep-text-muted);
+  line-height: 1.5;
+  letter-spacing: 0;
+  word-spacing: 0;
+  width: 100%;
+  margin: 16px 0 0 0;
+  padding: 0;
+  font-style: italic;
 }
 
 .rpb-house-rules-label {
@@ -1121,7 +1160,7 @@
   display: block !important;
 }
 
-/* Scrollbar styling */
+/* Scrollbar styling - V5 Balanced */
 .gep-main-view::-webkit-scrollbar,
 .gep-editing-portion::-webkit-scrollbar,
 .gep-breakdown-details::-webkit-scrollbar,
@@ -1134,6 +1173,7 @@
 .gep-breakdown-details::-webkit-scrollbar-track,
 .reservation-price-breakdown::-webkit-scrollbar-track {
   background: var(--gep-bg-secondary);
+  border-radius: 3px;
 }
 
 .gep-main-view::-webkit-scrollbar-thumb,
@@ -1148,5 +1188,5 @@
 .gep-editing-portion::-webkit-scrollbar-thumb:hover,
 .gep-breakdown-details::-webkit-scrollbar-thumb:hover,
 .reservation-price-breakdown::-webkit-scrollbar-thumb:hover {
-  background: var(--gep-text-primary);
+  background: var(--gep-primary-color);
 }

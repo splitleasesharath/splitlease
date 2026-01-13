@@ -142,6 +142,11 @@
 /_internal-test/  /_internal-test.html  200
 /_internal-test.html  /_internal-test.html  200
 
+# /_internal/create-suggested-proposal
+/_internal/create-suggested-proposal  /create-suggested-proposal.html  200
+/_internal/create-suggested-proposal/  /create-suggested-proposal.html  200
+/_internal/create-suggested-proposal.html  /create-suggested-proposal.html  200
+
 # /_email-sms-unit
 /_email-sms-unit  /_email-sms-unit.html  200
 /_email-sms-unit/  /_email-sms-unit.html  200
