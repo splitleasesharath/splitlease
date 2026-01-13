@@ -158,7 +158,7 @@ def validate_chunk_with_retry(
     # Retry loop
     for attempt in range(1, max_retries + 1):
         logger.log(f"Validation attempt {attempt}/{max_retries}", to_stdout=False)
-        print(f"🔍 Validation attempt {attempt}/{max_retries}...")
+        print(f"[TEST] Validation attempt {attempt}/{max_retries}...")
 
         try:
             # Execute validation
@@ -184,7 +184,7 @@ def validate_chunk_with_retry(
                     continue
                 else:
                     logger.log(f"Max retries reached with ERROR verdict", to_stdout=False)
-                    print(f"❌ Max retries reached with ERROR verdict")
+                    print(f"[FAIL] Max retries reached with ERROR verdict")
                     notify_failure(
                         step=f"Chunk {chunk_number} validation failed",
                         error=f"ERROR after {max_retries} attempts: {result.summary}"
@@ -193,16 +193,16 @@ def validate_chunk_with_retry(
 
             # PASS or FAIL verdict - return immediately
             if result.passed:
-                logger.log(f"✅ Validation PASSED", to_stdout=False)
-                print(f"✅ Validation PASSED!")
+                logger.log(f"[OK] Validation PASSED", to_stdout=False)
+                print(f"[OK] Validation PASSED!")
                 print(f"   {result.summary}")
                 notify_success(
                     step=f"Chunk {chunk_number} validation passed",
                     details=result.summary
                 )
             else:
-                logger.log(f"❌ Validation FAILED", to_stdout=False)
-                print(f"❌ Validation FAILED!")
+                logger.log(f"[FAIL] Validation FAILED", to_stdout=False)
+                print(f"[FAIL] Validation FAILED!")
                 print(f"   {result.summary}")
                 if result.differences:
                     print(f"   Differences ({len(result.differences)}):")
@@ -229,7 +229,7 @@ def validate_chunk_with_retry(
                 time.sleep(wait_time)
             else:
                 logger.log(f"Max retries reached after exception", to_stdout=False)
-                print(f"❌ Max retries reached after exception")
+                print(f"[FAIL] Max retries reached after exception")
                 notify_failure(
                     step=f"Chunk {chunk_number} validation crashed",
                     error=str(e)[:100]
