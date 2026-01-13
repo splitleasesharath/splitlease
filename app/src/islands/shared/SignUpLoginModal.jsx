@@ -949,9 +949,20 @@ export default function SignUpLoginModal({
 
         // Redirect to profile page
         setTimeout(() => {
-          console.log('[SignUpModal] Redirecting to profile with user_id:', result.data.user_id);
-          console.log('[SignUpModal] Full result.data:', JSON.stringify(result.data, null, 2));
-          window.location.href = `/account-profile/${result.data.user_id}`;
+          const userId = result.data?.user_id;
+          console.log('[SignUpModal] Redirecting to profile with user_id:', userId);
+          console.log('[SignUpModal] Full result:', JSON.stringify(result, null, 2));
+          console.log('[SignUpModal] result.data:', JSON.stringify(result.data, null, 2));
+          console.log('[SignUpModal] userId is undefined?', userId === undefined);
+          console.log('[SignUpModal] userId type:', typeof userId);
+
+          if (!userId) {
+            console.error('[SignUpModal] ERROR: user_id is missing from result.data!');
+            console.error('[SignUpModal] This will cause a redirect to wrong page');
+            return;
+          }
+
+          window.location.href = `/account-profile/${userId}`;
         }, 1500);
       } else if (result.isDuplicate) {
         // Show duplicate email confirmation modal
