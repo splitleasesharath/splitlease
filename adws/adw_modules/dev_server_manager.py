@@ -128,8 +128,12 @@ class DevServerManager:
                 self.logger.info(f"[{timestamp}] Dev server: {line.strip()}")
 
                 # Check for port in output
-                # Vite outputs: "  ➜  Local:   http://localhost:5173/"
-                match = re.search(DEV_SERVER_READY_PATTERN, line)
+                # Vite outputs with ANSI codes: "[32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5173[22m/[39m"
+                # Strip ANSI escape codes before regex matching
+                ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+                clean_line = ansi_escape.sub('', line)
+
+                match = re.search(DEV_SERVER_READY_PATTERN, clean_line)
                 if match:
                     self.port = int(match.group(1))
                     self.base_url = f"http://localhost:{self.port}"
