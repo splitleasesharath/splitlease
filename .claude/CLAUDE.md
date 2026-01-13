@@ -16,6 +16,43 @@ A flexible rental marketplace for NYC properties enabling split scheduling, repe
 
 ---
 
+## MCP Servers
+
+Two Supabase MCP servers are configured for database operations:
+
+| Server | Purpose | When to Use |
+|--------|---------|-------------|
+| **supabase-dev** | Development database | **DEFAULT** - Use for all development, testing, and most operations |
+| **supabase-live** | Production database | **RARE** - Only when explicitly specified or for production-critical operations |
+
+### MCP Usage Rules
+
+1. **Default to `supabase-dev`**: Unless explicitly told otherwise, always use the dev MCP server
+2. **Rare live access**: Only invoke `supabase-live` when:
+   - User explicitly requests production database access
+   - Deploying verified changes to production
+   - Debugging production-specific issues (with extreme caution)
+3. **Always use `mcp-tool-specialist` subagent**: All MCP tool invocations (Supabase, Playwright, etc.) MUST go through the `mcp-tool-specialist` subagent - never invoke MCP tools directly
+
+### Example Usage
+
+```javascript
+// ✅ CORRECT - Default to dev, through mcp-tool-specialist subagent
+Task tool → mcp-tool-specialist → supabase-dev (list_tables)
+
+// ✅ CORRECT - Explicit production request
+User: "Check production database tables"
+Task tool → mcp-tool-specialist → supabase-live (list_tables)
+
+// ❌ WRONG - Direct MCP invocation
+mcp__supabase-dev__list_tables() // Never call directly!
+
+// ❌ WRONG - Assuming production without explicit request
+Task tool → mcp-tool-specialist → supabase-live (apply_migration)
+```
+
+---
+
 ## Commands
 
 ```bash
@@ -353,4 +390,4 @@ For **lookup, exploration, or research tasks** that do NOT modify code, **skip t
 
 ---
 
-**VERSION**: 11.3 | **UPDATED**: 2026-01-07
+**VERSION**: 11.4 | **UPDATED**: 2026-01-13
