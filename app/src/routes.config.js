@@ -371,13 +371,14 @@ export const apiRoutes = [
 ];
 
 // Routes to explicitly exclude from Cloudflare Functions
-export const excludedFromFunctions = routes
-  .filter(r => r.excludeFromFunctions)
-  .map(r => [r.path, `${r.path}/*`])
-  .flat();
-
-// Add default exclusions
-excludedFromFunctions.push('/guest-proposals', '/guest-proposals/*');
+export const excludedFromFunctions = [
+  ...routes
+    .filter(r => r.excludeFromFunctions)
+    .map(r => [r.path, `${r.path}/*`])
+    .flat(),
+  '/guest-proposals',
+  '/guest-proposals/*'
+];
 
 /**
  * Get all routes that require _internal/ directory handling
