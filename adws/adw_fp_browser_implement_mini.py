@@ -34,8 +34,12 @@ from datetime import datetime
 # Add adws to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from adw_modules.webhook import notify_success, notify_failure, notify_in_progress
+from adw_modules.webhook import notify_success, notify_failure
 from adw_modules.run_logger import RunLogger
+from adw_modules.config import PRODUCTION_BASE_URL
+from adw_modules.dev_server_manager import DevServerManager
+from adw_modules.chunk_validation import validate_chunk_with_retry
+from adw_modules.validation_parser import ValidationResult
 
 # Import chunk processing functions from the full orchestrator
 from adw_fp_audit_browser_implement_orchestrator import (
@@ -43,19 +47,99 @@ from adw_fp_audit_browser_implement_orchestrator import (
     OrchestratorState,
     extract_chunks_from_plan,
     implement_chunk,
-    validate_with_browser,
     commit_chunk,
     rollback_chunk
 )
 
 
-def process_chunks_mini(chunks: list, plan_file: Path, working_dir: Path, logger) -> OrchestratorState:
+def determine_page_path(chunk: ChunkData) -> str:
+    """Determine which page path to test for this chunk.
+
+    Priority:
+    1. chunk.affected_pages (from plan, if not "AUTO")
+    2. Inferred from chunk.file_path (file path analysis)
+    3. Default to "/" (homepage)
+
+    Args:
+        chunk: Chunk being validated
+
+    Returns:
+        Page path starting with / (e.g., "/search", "/view-split-lease")
+    """
+    # If plan specifies affected pages
+    if chunk.affected_pages and chunk.affected_pages.upper() != "AUTO":
+        # Parse first page from comma-separated list
+        page_urls = [url.strip() for url in chunk.affected_pages.split(',')]
+        primary_page = page_urls[0]
+        return primary_page
+
+    # Otherwise infer from file path
+    return infer_page_from_file_path(chunk.file_path)
+
+
+def infer_page_from_file_path(file_path: str) -> str:
+    """Infer page path from file path.
+
+    Args:
+        file_path: File path like "app/src/islands/pages/SearchPage.jsx"
+
+    Returns:
+        Page path like "/search"
+    """
+    file_path_lower = file_path.lower()
+
+    # Page mapping based on file names
+    page_mapping = {
+        "searchpage": "/search",
+        "viewsplitleasepage": "/view-split-lease",
+        "accountprofilepage": "/account-profile",
+        "listingdashboardpage": "/listing-dashboard",
+        "hostproposalspage": "/host-proposals",
+        "guestproposalspage": "/guest-proposals",
+        "selflistingpage": "/self-listing",
+        "favoritelistingspage": "/favorite-listings",
+        "faqpage": "/faq",
+        "messagespage": "/messages",
+        "editlistingpage": "/edit-listing",
+        "helppage": "/help-center",
+        "homepage": "/",
+    }
+
+    # Check for page component matches
+    for page_key, page_path in page_mapping.items():
+        if page_key in file_path_lower:
+            return page_path
+
+    # Shared components - default to page that uses them most
+    shared_component_mapping = {
+        "loggedinavatar": "/account-profile",
+        "hostscheduleselector": "/self-listing",
+        "searchscheduleselector": "/search",
+        "createproposalflow": "/view-split-lease",
+        "googlemap": "/search",
+        "pricingeditsection": "/edit-listing",
+    }
+
+    for component_key, page_path in shared_component_mapping.items():
+        if component_key in file_path_lower:
+            return page_path
+
+    # Logic files - default to homepage (they affect multiple pages)
+    if "/logic/" in file_path_lower:
+        return "/"
+
+    # Unknown - default to homepage
+    return "/"
+
+
+def process_chunks_mini(chunks: list, plan_file: Path, working_dir: Path, dev_server: DevServerManager, logger) -> OrchestratorState:
     """Process all chunks in sequence (mini version without audit).
 
     Args:
         chunks: List of chunks to process
         plan_file: Path to plan file
         working_dir: Working directory
+        dev_server: Dev server manager instance (already started)
         logger: RunLogger instance for logging
 
     Returns:
@@ -70,36 +154,74 @@ def process_chunks_mini(chunks: list, plan_file: Path, working_dir: Path, logger
     print("CHUNK PROCESSING")
     print(f"{'='*60}")
     print(f"Total chunks: {len(chunks)}")
+    print(f"Dev server: {dev_server.base_url}")
 
     for chunk in chunks:
         state.current_chunk = chunk.number
 
         print(f"\n{'-'*60}")
-        print(f"CHUNK {chunk.number}/{len(chunks)}")
+        print(f"CHUNK {chunk.number}/{len(chunks)}: {chunk.title}")
         print(f"{'-'*60}")
+        print(f"File: {chunk.file_path}:{chunk.line_number}")
 
         logger.log(f"Starting Chunk {chunk.number}/{len(chunks)}: {chunk.title}", to_stdout=False)
         logger.log(f"File: {chunk.file_path}:{chunk.line_number}", to_stdout=False)
 
         # Step 1: Implement chunk
         if not implement_chunk(chunk, plan_file, working_dir):
-            print(f"  Chunk {chunk.number} implementation failed, skipping")
+            print(f"⏭️  Chunk {chunk.number} implementation failed, skipping")
             logger.log(f"Chunk {chunk.number} implementation FAILED - skipping", to_stdout=False)
             state.skipped_chunks += 1
             continue
 
         logger.log(f"Chunk {chunk.number} implementation succeeded", to_stdout=False)
+        print(f"✅ Implementation complete")
 
-        # Step 2: Validate with browser
-        logger.log(f"Validating Chunk {chunk.number} with browser", to_stdout=False)
-        validation_passed = validate_with_browser(chunk, working_dir, logger)
+        # Step 2: Determine which page to test
+        page_path = determine_page_path(chunk)
+        logger.log(f"Testing page: {page_path}", to_stdout=False)
 
-        # Step 3: Commit or rollback
+        # Build full URLs
+        localhost_url = dev_server.get_url(page_path)
+        production_url = f"{PRODUCTION_BASE_URL}{page_path}"
+
+        print(f"\n🔍 Validating changes:")
+        print(f"   Localhost:  {localhost_url}")
+        print(f"   Production: {production_url}")
+
+        logger.log(f"Localhost URL: {localhost_url}", to_stdout=False)
+        logger.log(f"Production URL: {production_url}", to_stdout=False)
+
+        # Step 3: Validate with browser (with retry logic built-in)
+        additional_context = {}
+        if chunk.affected_pages and chunk.affected_pages.upper() != "AUTO":
+            page_urls = [url.strip() for url in chunk.affected_pages.split(',')]
+            if len(page_urls) > 1:
+                additional_context["additional_pages"] = page_urls[1:]
+
+        validation_passed, result = validate_chunk_with_retry(
+            localhost_url,
+            production_url,
+            chunk.number,
+            chunk.title,
+            chunk.file_path,
+            chunk.line_number,
+            working_dir,
+            logger,
+            additional_context
+        )
+
+        # Step 4: Commit or rollback based on validation result
         if validation_passed:
             logger.log(f"Chunk {chunk.number} validation PASSED", to_stdout=False)
+            print(f"\n✅ Validation PASSED")
+            print(f"   Verdict: {result.verdict}")
+            print(f"   Confidence: {result.confidence}%")
+            print(f"   Summary: {result.summary}")
+
             if commit_chunk(chunk, working_dir):
                 state.completed_chunks += 1
-                print(f"✅ Chunk {chunk.number} COMPLETED")
+                print(f"✅ Chunk {chunk.number} COMPLETED (committed to git)")
                 logger.log(f"Chunk {chunk.number} COMPLETED - committed to git", to_stdout=False)
             else:
                 # Commit failed - try to rollback
@@ -110,10 +232,20 @@ def process_chunks_mini(chunks: list, plan_file: Path, working_dir: Path, logger
         else:
             # Validation failed - rollback
             logger.log(f"Chunk {chunk.number} validation FAILED - rolling back", to_stdout=False)
+            print(f"\n❌ Validation FAILED")
+            print(f"   Verdict: {result.verdict}")
+            print(f"   Confidence: {result.confidence}%")
+            print(f"   Summary: {result.summary}")
+
+            if result.differences:
+                print(f"   Differences ({len(result.differences)}):")
+                for diff in result.differences:
+                    print(f"     - [{diff.severity.upper()}] {diff.type}: {diff.description}")
+
             rollback_chunk(chunk, working_dir)
             state.skipped_chunks += 1
-            print(f"⏭️  Chunk {chunk.number} SKIPPED (validation failed)")
-            logger.log(f"Chunk {chunk.number} SKIPPED - validation failed", to_stdout=False)
+            print(f"⏭️  Chunk {chunk.number} SKIPPED (rolled back)")
+            logger.log(f"Chunk {chunk.number} SKIPPED - validation failed, rolled back", to_stdout=False)
 
     return state
 
@@ -177,6 +309,9 @@ def main():
     logger.log(f"Plan file validated: {plan_file.name}", to_stdout=False)
     logger.log(f"Working directory: {working_dir}", to_stdout=False)
 
+    # Start dev server ONCE before processing chunks
+    dev_server = None
+
     try:
         # Extract chunks from plan
         print(f"\n{'='*60}")
@@ -207,10 +342,26 @@ def main():
                 logger.finalize()
                 sys.exit(1)
 
-        # Process chunks
+        # START DEV SERVER (critical step)
+        print(f"\n{'='*60}")
+        print("STARTING DEV SERVER")
+        print(f"{'='*60}")
+
+        logger.log_section("DEV SERVER STARTUP", to_stdout=False)
+
+        dev_server = DevServerManager(working_dir, logger.logger)
+        port, base_url = dev_server.start()
+
+        print(f"✅ Dev server running at {base_url}")
+        logger.log(f"Dev server started successfully", to_stdout=False)
+        logger.log(f"Port: {port}", to_stdout=False)
+        logger.log(f"Base URL: {base_url}", to_stdout=False)
+
+        # Process chunks with dev server running
         logger.log_section("CHUNK PROCESSING", to_stdout=False)
         logger.log(f"Processing {len(chunks)} chunks", to_stdout=False)
-        state = process_chunks_mini(chunks, plan_file, working_dir, logger)
+
+        state = process_chunks_mini(chunks, plan_file, working_dir, dev_server, logger)
 
         # Final summary
         print(f"\n{'='*60}")
@@ -245,6 +396,17 @@ def main():
         logger.log_error(e, context="Main mini orchestrator loop")
         logger.finalize()
         sys.exit(1)
+
+    finally:
+        # ALWAYS stop dev server in finally block
+        if dev_server is not None and dev_server.is_running():
+            print(f"\n{'='*60}")
+            print("STOPPING DEV SERVER")
+            print(f"{'='*60}")
+            logger.log_section("DEV SERVER CLEANUP", to_stdout=False)
+            dev_server.stop()
+            print("✅ Dev server stopped")
+            logger.log("Dev server stopped", to_stdout=False)
 
 
 if __name__ == "__main__":
