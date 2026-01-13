@@ -612,7 +612,7 @@ IMPORTANT: Only report differences. Do NOT attempt to fix any issues you find.
 
         if not success:
             # Log detailed error information
-            print(f"\n❌ Browser script failed with exit code {result.returncode}")
+            print(f"\n[FAIL] Browser script failed with exit code {result.returncode}")
             print(f"STDOUT: {result.stdout[:500]}")
             print(f"STDERR: {result.stderr[:500]}")
 
@@ -633,8 +633,8 @@ IMPORTANT: Only report differences. Do NOT attempt to fix any issues you find.
         logger.log(f"Output preview (first 500 chars): {output[:500]}", to_stdout=False)
 
         if "VALIDATION PASSED" in output.upper():
-            print(f"✅ Validation passed!")
-            logger.log("✅ Validation PASSED", to_stdout=False)
+            print(f"[OK] Validation passed!")
+            logger.log("[OK] Validation PASSED", to_stdout=False)
             logger.log(f"Full validation output:", to_stdout=False)
             logger.log(output, to_stdout=False)
 
@@ -644,8 +644,8 @@ IMPORTANT: Only report differences. Do NOT attempt to fix any issues you find.
             )
             return True
         else:
-            print(f"❌ Validation failed - site may be broken")
-            logger.log("❌ Validation FAILED - site may be broken", to_stdout=False)
+            print(f"[FAIL] Validation failed - site may be broken")
+            logger.log("[FAIL] Validation FAILED - site may be broken", to_stdout=False)
 
             notify_failure(
                 step=f"Chunk {chunk.number} broke the site",
@@ -660,8 +660,8 @@ IMPORTANT: Only report differences. Do NOT attempt to fix any issues you find.
             return False
 
     except subprocess.TimeoutExpired:
-        print(f"⏱️ Browser validation timed out after 10 minutes")
-        logger.log("⏱️ Browser validation timed out after 10 minutes", to_stdout=False)
+        print(f"[TIMEOUT] Browser validation timed out after 10 minutes")
+        logger.log("[TIMEOUT] Browser validation timed out after 10 minutes", to_stdout=False)
         logger.log("This may indicate browser script is stuck or waiting for user input", to_stdout=False)
 
         notify_failure(
@@ -713,7 +713,7 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 
         if not status_result.stdout.strip():
             # No changes - skip commit but return success
-            print(f"  ⚠️  No changes detected for {chunk.file_path} - chunk may already be implemented")
+            print(f"  [WARN]  No changes detected for {chunk.file_path} - chunk may already be implemented")
             notify_success(
                 step=f"Chunk {chunk.number} - no changes needed (already implemented)",
                 details=None
