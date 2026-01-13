@@ -139,56 +139,57 @@ export function calculateCheckInOutDays(selectedDays) {
  * @returns {object} Validation result
  */
 export function validateScheduleSelection(selectedDays, listing) {
-  const result = {
-    valid: true,
-    errors: [],
-    warnings: [],
-    showTutorial: false,
-    nightsCount: selectedDays.length,
-    isContiguous: false
-  };
-
   // Check if days are selected
   if (!selectedDays || selectedDays.length === 0) {
-    result.valid = false;
-    result.errors.push('Please select at least one day');
-    return result;
+    return {
+      valid: false,
+      errors: ['Please select at least one day'],
+      warnings: [],
+      showTutorial: false,
+      nightsCount: 0,
+      isContiguous: false
+    };
   }
 
-  // Check contiguous requirement (CRITICAL)
-  result.isContiguous = isContiguousSelection(selectedDays);
-  if (!result.isContiguous) {
-    result.valid = false;
-    result.showTutorial = true;
-    result.errors.push('Please check for contiguous nights to continue with your proposal');
-    return result;
+  const isContiguous = isContiguousSelection(selectedDays);
+  
+  if (!isContiguous) {
+    return {
+      valid: false,
+      errors: ['Please check for contiguous nights to continue with your proposal'],
+      warnings: [],
+      showTutorial: true,
+      nightsCount: selectedDays.length,
+      isContiguous: false
+    };
   }
 
-  // Check against minimum nights
-  if (listing['Minimum Nights'] && selectedDays.length < listing['Minimum Nights']) {
-    result.warnings.push(`Host prefers at least ${listing['Minimum Nights']} nights per week`);
-  }
+  const warnings = [
+    listing['Minimum Nights'] && selectedDays.length < listing['Minimum Nights']
+      ? `Host prefers at least ${listing['Minimum Nights']} nights per week`
+      : null,
+    listing['Maximum Nights'] && selectedDays.length > listing['Maximum Nights']
+      ? `Host prefers at most ${listing['Maximum Nights']} nights per week`
+      : null
+  ].filter(Boolean);
 
-  // Check against maximum nights
-  if (listing['Maximum Nights'] && selectedDays.length > listing['Maximum Nights']) {
-    result.warnings.push(`Host prefers at most ${listing['Maximum Nights']} nights per week`);
-  }
+  const unavailableDays = listing['Days Not Available'];
+  const hasUnavailableSelected = Array.isArray(unavailableDays) && selectedDays.some(day => 
+    unavailableDays.includes(DAY_NAMES[day])
+  );
 
-  // Check against Days Not Available
-  if (listing['Days Not Available'] && Array.isArray(listing['Days Not Available'])) {
-    const unavailableDays = listing['Days Not Available'];
-    const unavailableSelected = selectedDays.filter(day => {
-      const dayName = DAY_NAMES[day];
-      return unavailableDays.includes(dayName);
-    });
+  const errors = hasUnavailableSelected 
+    ? ['Some selected days are not available for this listing'] 
+    : [];
 
-    if (unavailableSelected.length > 0) {
-      result.valid = false;
-      result.errors.push('Some selected days are not available for this listing');
-    }
-  }
-
-  return result;
+  return {
+    valid: errors.length === 0,
+    errors,
+    warnings,
+    showTutorial: false,
+    nightsCount: selectedDays.length,
+    isContiguous: true
+  };
 }
 
 /**
