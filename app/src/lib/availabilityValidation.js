@@ -34,13 +34,7 @@ export function isContiguousSelection(selectedDays) {
   if (sorted.length >= 6) return true;
 
   // Check for standard contiguous sequence (no wrap around)
-  let isStandardContiguous = true;
-  for (let i = 1; i < sorted.length; i++) {
-    if (sorted[i] !== sorted[i - 1] + 1) {
-      isStandardContiguous = false;
-      break;
-    }
-  }
+  const isStandardContiguous = sorted.every((day, i) => i === 0 || day === sorted[i - 1] + 1);
 
   if (isStandardContiguous) return true;
 
@@ -61,10 +55,10 @@ export function isContiguousSelection(selectedDays) {
     const maxNotSelected = Math.max(...notSelectedDays);
 
     // Generate expected contiguous range for not-selected days
-    const expectedNotSelected = [];
-    for (let i = minNotSelected; i <= maxNotSelected; i++) {
-      expectedNotSelected.push(i);
-    }
+    const expectedNotSelected = Array.from(
+      { length: maxNotSelected - minNotSelected + 1 },
+      (_, i) => minNotSelected + i
+    );
 
     // If not-selected days are contiguous, then selected days wrap around properly
     const notSelectedContiguous = notSelectedDays.length === expectedNotSelected.length &&
