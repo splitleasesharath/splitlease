@@ -91,10 +91,10 @@ export function isScheduleContiguous({ selectedDayIndices }) {
     const maxNotSelected = Math.max(...notSelectedDays)
 
     // Generate expected contiguous range for not-selected days
-    const expectedNotSelected = []
-    for (let i = minNotSelected; i <= maxNotSelected; i++) {
-      expectedNotSelected.push(i)
-    }
+    const expectedNotSelected = Array.from(
+      { length: maxNotSelected - minNotSelected + 1 },
+      (_, i) => minNotSelected + i
+    )
 
     // If not-selected days are contiguous, then selected days wrap around properly
     const notSelectedContiguous = notSelectedDays.length === expectedNotSelected.length &&
