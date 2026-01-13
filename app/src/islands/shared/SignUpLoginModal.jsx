@@ -962,7 +962,7 @@ export default function SignUpLoginModal({
             return;
           }
 
-          window.location.href = `/account-profile/${userId}`;
+          window.location.href = '/account-profile';
         }, 1500);
       } else if (result.isDuplicate) {
         // Show duplicate email confirmation modal
@@ -1425,7 +1425,7 @@ export default function SignUpLoginModal({
       // Step 3: Generate magic link
       console.log('[handleMagicLink] User found, generating magic link');
 
-      const redirectTo = `${window.location.origin}/account-profile/${userData._id}`;
+      const redirectTo = `${window.location.origin}/account-profile`;
 
       const { data: magicLinkData, error: magicLinkError } = await supabase.functions.invoke('auth-user', {
         body: {

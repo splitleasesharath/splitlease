@@ -2171,7 +2171,7 @@ export default function ViewSplitLeasePage() {
                   </button>
                   {listing.host?.userId && (
                     <button
-                      onClick={() => window.location.href = `/account-profile/${listing.host.userId}`}
+                      onClick={() => window.location.href = '/account-profile'}
                       style={{
                         padding: isMobile ? '0.375rem 0.75rem' : '0.5rem 1rem',
                         background: 'transparent',

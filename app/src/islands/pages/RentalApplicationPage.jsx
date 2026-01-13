@@ -32,7 +32,7 @@ export default function RentalApplicationPage() {
     }
 
     if (userId) {
-      window.location.replace(`/account-profile/${userId}?${redirectParams.toString()}`);
+      window.location.replace(`/account-profile?${redirectParams.toString()}`);
     } else {
       // Not logged in - redirect to home (route is protected anyway)
       window.location.replace('/');

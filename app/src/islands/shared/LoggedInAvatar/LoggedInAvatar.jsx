@@ -194,7 +194,7 @@ export default function LoggedInAvatar({
         id: 'profile',
         label: 'My Profile',
         icon: '/assets/icons/user-purple.svg',
-        path: `/account-profile/${user.id}`,
+        path: '/account-profile',
       });
     }
 
@@ -323,7 +323,7 @@ export default function LoggedInAvatar({
         icon: '/assets/icons/clipboard-purple.svg',
         path: effectiveUserType === NORMALIZED_USER_TYPES.HOST
           ? '/account'
-          : `/account-profile/${user.id}?section=rental-application`,
+          : `/account-profile?section=rental-application`,
       });
     }
 

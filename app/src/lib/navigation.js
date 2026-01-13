@@ -137,12 +137,8 @@ export function getSearchUrl(filters = {}) {
  * Navigate to account profile
  * @param {string} userId - The user ID
  */
-export function goToProfile(userId) {
-  if (!userId) {
-    console.error('goToProfile: userId is required');
-    return;
-  }
-  window.location.href = `/account-profile/${userId}`;
+export function goToProfile() {
+  window.location.href = '/account-profile';
 }
 
 /**
@@ -207,16 +203,6 @@ export function goToFavorites() {
 export function goToRentalApplication(proposalId, options = {}) {
   const { openModal = true, scrollToSection = true } = options;
 
-  // Get current user ID from session
-  const userId = getSessionId();
-
-  if (!userId) {
-    console.error('goToRentalApplication: userId is required (user not logged in)');
-    // Redirect to login or home
-    window.location.href = '/';
-    return;
-  }
-
   const params = new URLSearchParams();
 
   if (scrollToSection) {
@@ -232,7 +218,7 @@ export function goToRentalApplication(proposalId, options = {}) {
   }
 
   const queryString = params.toString();
-  window.location.href = `/account-profile/${userId}${queryString ? '?' + queryString : ''}`;
+  window.location.href = `/account-profile${queryString ? '?' + queryString : ''}`;
 }
 
 /**

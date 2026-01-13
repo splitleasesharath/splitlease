@@ -96,8 +96,7 @@ export const routes = [
     aliases: ['/account-profile.html'],
     protected: true,
     cloudflareInternal: false,
-    hasDynamicSegment: true,
-    dynamicPattern: '/account-profile/:userId'
+    hasDynamicSegment: false
   },
 
   // ===== HELP CENTER (SPECIAL HANDLING) =====
