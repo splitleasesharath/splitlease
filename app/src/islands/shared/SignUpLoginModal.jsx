@@ -949,6 +949,8 @@ export default function SignUpLoginModal({
 
         // Redirect to profile page
         setTimeout(() => {
+          console.log('[SignUpModal] Redirecting to profile with user_id:', result.data.user_id);
+          console.log('[SignUpModal] Full result.data:', JSON.stringify(result.data, null, 2));
           window.location.href = `/account-profile/${result.data.user_id}`;
         }, 1500);
       } else if (result.isDuplicate) {

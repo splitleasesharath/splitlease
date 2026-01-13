@@ -1796,6 +1796,12 @@ export async function handleGoogleOAuthCallback() {
     // Clear OAuth storage keys
     clearGoogleOAuthUserType();
 
+    // DEBUG: Log what we received from Edge Function
+    console.log('[Auth] Edge Function response:', JSON.stringify(data.data, null, 2));
+    console.log('[Auth] user_id from Edge Function:', data.data.user_id);
+    console.log('[Auth] supabase_user_id:', data.data.supabase_user_id);
+    console.log('[Auth] Supabase session user.id:', session.user.id);
+
     // Store session data
     setAuthToken(session.access_token);
     setSessionId(data.data.user_id);
