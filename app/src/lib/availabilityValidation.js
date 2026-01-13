@@ -96,13 +96,7 @@ export function calculateCheckInOutDays(selectedDays) {
 
   if (hasZero && hasSix) {
     // Find gap to determine actual start/end
-    let gapIndex = -1;
-    for (let i = 1; i < sorted.length; i++) {
-      if (sorted[i] !== sorted[i - 1] + 1) {
-        gapIndex = i;
-        break;
-      }
-    }
+    const gapIndex = sorted.findIndex((day, i) => i > 0 && day !== sorted[i - 1] + 1);
 
     if (gapIndex !== -1) {
       // Wrapped selection: check-in is after the gap (first day in wrap)
