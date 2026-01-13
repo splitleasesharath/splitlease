@@ -368,7 +368,10 @@ export function useAccountProfilePageLogic() {
       if (storageError) {
         console.error('Error fetching storage items:', storageError);
       } else {
-        setStorageItemsList(storage || []);
+        // Filter out deprecated storage options
+        const excludedItems = ['ID / Wallet / Money', 'Luggage', 'Portable Massager', 'Protein', 'Sound System', 'TV'];
+        const filteredStorage = (storage || []).filter(item => !excludedItems.includes(item.Name));
+        setStorageItemsList(filteredStorage);
       }
     } catch (err) {
       console.error('Error fetching reference data:', err);

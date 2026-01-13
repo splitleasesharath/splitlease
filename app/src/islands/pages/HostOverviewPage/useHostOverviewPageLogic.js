@@ -177,12 +177,13 @@ export function useHostOverviewPageLogic() {
         );
       }
 
-      // 2. Fetch from listing table where Host User = userId or Created By = userId
+      // 2. Fetch from listing table where Host User = hostAccountId or Created By = hostAccountId
       // Using RPC function to handle column names with special characters
-      if (userId) {
+      // IMPORTANT: hostAccountId is the Bubble-format user._id, which is what listings use
+      if (hostAccountId) {
         fetchPromises.push(
           supabase
-            .rpc('get_host_listings', { host_user_id: userId })
+            .rpc('get_host_listings', { host_user_id: hostAccountId })
             .then(result => {
               console.log('[HostOverview] listing query result:', result);
               return { type: 'listing_rpc', ...result };
@@ -195,12 +196,13 @@ export function useHostOverviewPageLogic() {
       }
 
       // 3. Fetch listing IDs from user.Listings array
-      if (userId) {
+      // IMPORTANT: user table uses Bubble-format _id (hostAccountId)
+      if (hostAccountId) {
         fetchPromises.push(
           supabase
             .from('user')
             .select('Listings')
-            .eq('_id', userId)
+            .eq('_id', hostAccountId)
             .maybeSingle()
             .then(result => ({ type: 'user_listings', ...result }))
             .catch(err => {
