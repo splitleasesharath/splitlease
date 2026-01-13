@@ -73,7 +73,7 @@ export const formatBedroomBathroom = (bedrooms, bathrooms, kitchenType) => {
   // Add bathroom information (if > 0)
   if (bathrooms > 0) {
     const bathroomDisplay = getBathroomDisplay(bathrooms);
-    parts.push(bathroomDisplay);
+    // Declarative: const arr = [cond && item].filter(Boolean);
   }
 
   // CONDITIONAL 4: Add kitchen type only if provided
