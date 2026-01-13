@@ -28,6 +28,7 @@ Example:
 
 import sys
 import argparse
+import logging
 from pathlib import Path
 from datetime import datetime
 
@@ -349,7 +350,15 @@ def main():
 
         logger.log_section("DEV SERVER STARTUP", to_stdout=False)
 
-        dev_server = DevServerManager(working_dir, logger.logger)
+        # Create a simple logger for dev server manager
+        dev_logger = logging.getLogger("dev_server")
+        dev_logger.setLevel(logging.INFO)
+        if not dev_logger.handlers:
+            handler = logging.StreamHandler()
+            handler.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
+            dev_logger.addHandler(handler)
+
+        dev_server = DevServerManager(working_dir, dev_logger)
         port, base_url = dev_server.start()
 
         print(f"✅ Dev server running at {base_url}")
