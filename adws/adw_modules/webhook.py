@@ -34,19 +34,19 @@ def send_slack_notification(message: WebhookMessage) -> bool:
     webhook_url = os.getenv("SHARATHPLAYGROUND")
 
     if not webhook_url:
-        print("⚠️  SHARATHPLAYGROUND webhook not configured")
+        print("[WARN]  SHARATHPLAYGROUND webhook not configured")
         return False
 
     # Status emoji mapping
     status_emoji = {
-        "started": "🚀",
-        "in_progress": "⚙️",
-        "success": "✅",
-        "failure": "❌",
-        "rollback": "⏪"
+        "started": "[START]",
+        "in_progress": "[PROG]",
+        "success": "[OK]",
+        "failure": "[FAIL]",
+        "rollback": "[ROLLBACK]"
     }
 
-    emoji = status_emoji.get(message.status, "ℹ️")
+    emoji = status_emoji.get(message.status, "[INFO]")
 
     # Build single-line message
     text = f"{emoji} {message.step}"
@@ -68,17 +68,17 @@ def send_slack_notification(message: WebhookMessage) -> bool:
 
         with urllib.request.urlopen(req, timeout=10) as response:
             if response.status == 200:
-                print(f"✅ Webhook sent: {text}")
+                print(f"[OK] Webhook sent: {text}")
                 return True
             else:
-                print(f"⚠️  Webhook returned {response.status}")
+                print(f"[WARN]  Webhook returned {response.status}")
                 return False
 
     except urllib.error.URLError as e:
-        print(f"❌ Webhook failed: {e}")
+        print(f"[FAIL] Webhook failed: {e}")
         return False
     except Exception as e:
-        print(f"❌ Webhook error: {e}")
+        print(f"[FAIL] Webhook error: {e}")
         return False
 
 
