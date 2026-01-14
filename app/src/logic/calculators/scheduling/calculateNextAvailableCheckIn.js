@@ -1,3 +1,5 @@
+import { getNextOccurrenceOfDay } from './getNextOccurrenceOfDay.js'
+
 /**
  * Calculate the next available check-in date based on selected day-of-week and minimum date.
  * Smart default calculation for move-in dates.
@@ -50,24 +52,10 @@ export function calculateNextAvailableCheckIn({ selectedDayIndices, minDate }) {
   }
 
   // Get the first selected day (check-in day of week)
-  // Days should already be sorted, but sort to be safe
   const sortedDays = [...selectedDayIndices].sort((a, b) => a - b)
   const firstDayOfWeek = sortedDays[0]
 
-  // Get the day of week for the minimum date
-  const minDayOfWeek = minDateObj.getDay()
-
-  // Calculate days to add to get to the next occurrence of the first selected day
-  const daysToAdd = (firstDayOfWeek - minDayOfWeek + 7) % 7
-
-  // If daysToAdd is 0, we're already on the right day
-  if (daysToAdd === 0) {
-    return minDateObj.toISOString().split('T')[0]
-  }
-
-  // Add the days to get to the next occurrence of the selected day
-  const nextCheckInDate = new Date(minDateObj)
-  nextCheckInDate.setDate(minDateObj.getDate() + daysToAdd)
+  const nextCheckInDate = getNextOccurrenceOfDay(minDateObj, firstDayOfWeek)
 
   return nextCheckInDate.toISOString().split('T')[0]
 }
