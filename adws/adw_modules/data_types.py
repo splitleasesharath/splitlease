@@ -156,6 +156,7 @@ class AgentPromptRequest(BaseModel):
     dangerously_skip_permissions: bool = False
     output_file: str
     working_dir: Optional[str] = None
+    mcp_session: Optional[str] = None  # MCP server name for Playwright sessions
 
 
 class AgentPromptResponse(BaseModel):
