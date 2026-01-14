@@ -8,21 +8,16 @@ across orchestrator, browser, and validation scripts.
 # ============================================================================
 # DEV SERVER CONFIGURATION
 # ============================================================================
+# Port 8010 is hardcoded for ADW testing workflows.
+# Dev server management uses npm scripts from app/package.json:
+#   - bun run dev:test           (start on port 8010 with --strictPort)
+#   - bun run dev:test:stop      (kill port 8010)
+#   - bun run dev:test:restart   (stop + start)
+#
+# See: adws/adw_modules/dev_server.py for implementation
 
-# Dev server will be started dynamically and port will be detected
-# Default port to try first (Vite's default)
-DEV_SERVER_DEFAULT_PORT = 8000
-
-# Timeout for dev server startup (seconds)
+# Timeout for dev server startup (seconds) - used by restart_dev_server_on_port_8010()
 DEV_SERVER_STARTUP_TIMEOUT = 30
-
-# Command to start dev server
-DEV_SERVER_COMMAND = ["bun", "run", "dev", "--", "--port", "8000", "--strictPort"]
-
-# Pattern to detect dev server ready state in output
-# Vite outputs with ANSI codes: "[32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5173[22m/[39m"
-# This pattern strips ANSI codes and Unicode chars to match "localhost:PORT"
-DEV_SERVER_READY_PATTERN = r"http://localhost:(\d+)"
 
 # ============================================================================
 # BROWSER VALIDATION CONFIGURATION
@@ -51,8 +46,8 @@ VALIDATION_RETRY_BACKOFF_BASE = 2  # Results in 2s, 4s, 8s delays
 # Production base URL for comparison
 PRODUCTION_BASE_URL = "https://www.split.lease"
 
-# Localhost base URL template (port will be injected)
-LOCALHOST_BASE_URL_TEMPLATE = "http://localhost:{port}"
+# Localhost base URL (port 8010 hardcoded for ADW testing)
+LOCALHOST_BASE_URL = "http://localhost:8010"
 
 # ============================================================================
 # LOGGING CONFIGURATION
