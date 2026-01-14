@@ -3,7 +3,7 @@ Compare the refactored version of {page_path} against live production.
 You have Playwright MCP session: {mcp_session} ({auth_type} page)
 
 **Steps:**
-1. Navigate to LIVE: https://splitlease.com{page_path}
+1. Navigate to LIVE: https://split.lease{page_path}
 2. Wait for load: browser_wait_for(time=2)
 3. Take LIVE screenshot: browser_take_screenshot(fullPage=true) 
 4. Navigate to DEV: http://localhost:{port}{page_path}

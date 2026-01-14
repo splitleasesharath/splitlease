@@ -11,7 +11,7 @@ The workflow consists of three main phases:
 
 1.  **Opus Audit:** Opus (Claude 3.5 Sonnet/Opus) audits a specified directory to identify code issues and refactoring opportunities. It traces these issues to affected pages and groups them accordingly.
 2.  **Gemini Implementation:** Gemini (Gemini 1.5 Pro/Flash) implements the refactoring plan page-by-page.
-3.  **Playwright Visual Check:** After each page's chunks are implemented, Playwright performs a visual comparison between the dev server (localhost) and the live production site (splitlease.com).
+3.  **Playwright Visual Check:** After each page's chunks are implemented, Playwright performs a visual comparison between the dev server (localhost) and the live production site (split.lease).
     -   **PASS:** Git commit the changes.
     -   **FAIL:** Git reset --hard to revert changes and move to the next page group.
 
@@ -35,7 +35,7 @@ The workflow consists of three main phases:
     - Start the dev server (port 8010).
     - For each **PAGE GROUP**:
         1. Invoke Gemini to implement all chunks for that page.
-        2. Run Playwright visual check comparing `localhost:8010` vs `splitlease.com`.
+        2. Run Playwright visual check comparing `localhost:8010` vs `split.lease`.
         3. If **PASS** -> `git commit`.
         4. If **FAIL** -> `git reset --hard`.
     - Notify Slack (SHARATHPLAYGROUND) with results.
@@ -82,7 +82,7 @@ Structure:
 Compare the refactored version of {page_path} against live production.
 
 **Steps:**
-1. Navigate to LIVE: https://splitlease.com{page_path}
+1. Navigate to LIVE: https://split.lease{page_path}
 2. Take LIVE screenshot.
 3. Navigate to DEV: http://localhost:8010{page_path}
 4. Take DEV screenshot.

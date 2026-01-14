@@ -8,7 +8,7 @@ This session is already authenticated as a {{AUTH_TYPE}} user.
 
 ## Your Mission
 
-1. Navigate to LIVE: https://splitlease.com{{PAGE_PATH}}
+1. Navigate to LIVE: https://split.lease{{PAGE_PATH}}
 2. Wait for page load: browser_wait_for with networkidle
 3. Verify page loaded correctly (not redirected to login)
 4. Capture LIVE snapshot: browser_snapshot

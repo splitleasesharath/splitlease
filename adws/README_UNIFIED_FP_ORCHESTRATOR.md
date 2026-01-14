@@ -39,7 +39,7 @@ The Unified FP Refactor Orchestrator consolidates three separate workflows into 
 
 3. **REVIEW PHASE (Gemini Flash + Playwright MCP)**
    - Starts dev server on port 8010
-   - Captures LIVE (splitlease.com) vs DEV (localhost:8010) screenshots
+   - Captures LIVE (split.lease) vs DEV (localhost:8010) screenshots
    - Uses appropriate MCP session (host/guest/public) based on page auth
    - Compares visual parity
 
@@ -385,7 +385,7 @@ For each page group:
    | Public pages | `null` (default MCP) | Public |
 
 3. **Concurrent URL Construction**
-   - LIVE: `https://splitlease.com{page_path}`
+   - LIVE: `https://split.lease{page_path}`
    - DEV: `http://localhost:8010{page_path}`
 
 4. **Playwright Actions**
