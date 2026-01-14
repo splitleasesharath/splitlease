@@ -26,7 +26,7 @@ All steps send real-time updates to Slack via webhook.
 
 ### Prerequisites
 
-1. **Dev server running**: `bun run dev` (http://localhost:8000)
+1. **Dev server running**: `bun run dev` (http://localhost:8010)
 2. **SHARATHPLAYGROUND webhook**: Set in environment variables
 3. **CLAUDE_CODE_PATH**: Path to Claude CLI (set in .env)
 
@@ -163,7 +163,7 @@ The orchestrator doesn't just "check if the page loads" — it infers **which pa
 
 **Browser Prompt:**
 ```
-Navigate to: http://localhost:8000/account-profile
+Navigate to: http://localhost:8010/account-profile
 
 You MUST test the specific functionality that could break:
    1. Click the user avatar/menu to open dropdown
@@ -351,7 +351,7 @@ This will process all 110+ chunks. Monitor Slack for progress.
 
 ### Browser validation always fails
 - **Check**: Is dev server running? (`bun run dev`)
-- **Check**: Is localhost:8000 accessible?
+- **Check**: Is localhost:8010 accessible?
 - **Check**: Are test credentials configured?
 
 ### Chunks not extracted
