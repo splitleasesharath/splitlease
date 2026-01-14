@@ -1,6 +1,6 @@
 #!/usr/bin/env -S uv run
 # /// script
-# dependencies = ["python-dotenv", "pydantic", "psutil>=5.9.0"]
+# dependencies = ["python-dotenv", "pydantic"]
 # ///
 
 """
@@ -89,7 +89,7 @@ def run_claude_browser(prompt: str, logger: logging.Logger, dev_server_process: 
 def main():
     """Main entry point."""
     from pathlib import Path
-    from adw_modules.dev_server import ensure_dev_server_single_attempt, stop_dev_server
+    from adw_modules.dev_server import restart_dev_server_on_port_8010, stop_dev_server
     from adw_modules.run_logger import create_run_logger
 
     # Parse command line args
@@ -161,20 +161,21 @@ def main():
     # This happens BEFORE agent invocation, outside the agent loop
     working_dir = Path.cwd()
     dev_server_process = None
-    port = 8000  # Hardcoded port for deterministic behavior
+    # Port 8010 is hardcoded in restart_dev_server_on_port_8010
 
     try:
         print(f"\n{'='*60}")
-        print("PRE-FLIGHT: DEV SERVER CHECK")
+        print("PRE-FLIGHT: DEV SERVER CHECK (PORT 8010)")
         print(f"{'='*60}\n")
 
         run_logger.log_section("PRE-FLIGHT: DEV SERVER CHECK", to_stdout=False)
-        run_logger.log(f"Target port: {port}", to_stdout=False)
+        run_logger.log("Target port: 8010", to_stdout=False)
 
         # Ensure dev server is running (deterministic port cleanup)
-        dev_server_process = ensure_dev_server_single_attempt(working_dir, port, logger)
+        app_dir = working_dir / "app"
+        dev_server_process = restart_dev_server_on_port_8010(app_dir, logger)
 
-        run_logger.log(f"Dev server started successfully on port {port}", to_stdout=False)
+        run_logger.log("Dev server started successfully on port 8010", to_stdout=False)
 
         print(f"\n{'='*60}")
         print("AGENT INVOCATION")
