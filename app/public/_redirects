@@ -1,6 +1,6 @@
 # Cloudflare Pages redirects and rewrites
 # AUTO-GENERATED from routes.config.js - DO NOT EDIT MANUALLY
-# Generated: 2026-01-10T15:04:01.138Z
+# Generated: 2026-01-14T12:26:20.275Z
 #
 # See: https://developers.cloudflare.com/pages/configuration/redirects/
 
@@ -23,7 +23,9 @@
 /guest-proposals/*  /_internal/guest-proposals-view  200
 
 # /account-profile → account-profile.html
-/account-profile/*  /account-profile.html  200
+/account-profile  /_internal/account-profile-view  200
+/account-profile/  /_internal/account-profile-view  200
+/account-profile/*  /_internal/account-profile-view  200
 
 # /help-center/:category → help-center-category.html (wildcard only, base handled separately)
 /help-center/*  /_internal/help-center-category-view  200

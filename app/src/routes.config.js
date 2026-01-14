@@ -95,8 +95,10 @@ export const routes = [
     file: 'account-profile.html',
     aliases: ['/account-profile.html'],
     protected: true,
-    cloudflareInternal: false,
-    hasDynamicSegment: false
+    cloudflareInternal: true,
+    internalName: 'account-profile-view',
+    hasDynamicSegment: true,
+    dynamicPattern: '/account-profile/:userId'
   },
 
   // ===== HELP CENTER (SPECIAL HANDLING) =====
