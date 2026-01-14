@@ -464,7 +464,7 @@ def prompt_claude_code(request: AgentPromptRequest) -> AgentPromptResponse:
             # Convert JSONL to JSON array file
             json_file = convert_jsonl_to_json(request.output_file)
 
-            if result_message:
+            if result_message and "result" in result_message:
                 # Extract session_id from result message
                 session_id = result_message.get("session_id")
 
