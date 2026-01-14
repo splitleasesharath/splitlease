@@ -1,6 +1,6 @@
 #!/usr/bin/env -S uv run
 # /// script
-# dependencies = ["python-dotenv", "pydantic", "psutil>=5.9.0", "google-genai"]
+# dependencies = ["python-dotenv", "pydantic", "google-genai"]
 # ///
 
 """
@@ -38,7 +38,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from adw_modules.webhook import notify_success, notify_failure
 from adw_modules.run_logger import RunLogger
 from adw_modules.config import PRODUCTION_BASE_URL
-from adw_modules.dev_server_manager import DevServerManager
+from adw_modules.dev_server import DevServerManager
 from adw_modules.chunk_validation import validate_chunk_with_retry
 from adw_modules.validation_parser import ValidationResult
 

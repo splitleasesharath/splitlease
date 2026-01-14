@@ -1,6 +1,6 @@
 #!/usr/bin/env -S uv run
 # /// script
-# dependencies = ["python-dotenv", "pydantic", "psutil>=5.9.0", "google-genai"]
+# dependencies = ["python-dotenv", "pydantic", "google-genai"]
 # ///
 
 """
@@ -40,7 +40,7 @@ from adw_modules.agent import prompt_claude_code
 from adw_modules.data_types import AgentPromptRequest
 from adw_modules.run_logger import create_run_logger
 from adw_modules.config import PRODUCTION_BASE_URL
-from adw_modules.dev_server_manager import DevServerManager
+from adw_modules.dev_server import DevServerManager
 from adw_modules.chunk_validation import validate_chunk_with_retry
 
 
