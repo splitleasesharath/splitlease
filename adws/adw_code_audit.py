@@ -64,20 +64,41 @@ Group chunks by affected page group.
     print(f"Target: {target_path}")
     print(f"Plan will be saved to: {plan_file}")
 
-    request = AgentPromptRequest(
-        prompt=prompt,
-        adw_id=f"code_audit_{timestamp}",
-        agent_name="opus_auditor",
-        model="opus",
-        output_file=str(output_file),
-        working_dir=str(working_dir),
-        dangerously_skip_permissions=True
-    )
+    # CRITICAL: Disable STRICT_GEMINI mode to allow Claude Opus
+    # Save original value and restore after audit
+    original_strict_gemini = os.environ.get("STRICT_GEMINI")
+    original_adw_provider = os.environ.get("ADW_PROVIDER")
 
-    # Using Claude Opus for comprehensive code audit
-    # Opus provides thorough analysis and better chunking organization
-    
-    response = prompt_claude_code(request)
+    try:
+        # Force Claude provider for audit
+        os.environ["STRICT_GEMINI"] = "false"
+        os.environ["ADW_PROVIDER"] = "claude"
+
+        request = AgentPromptRequest(
+            prompt=prompt,
+            adw_id=f"code_audit_{timestamp}",
+            agent_name="opus_auditor",
+            model="opus",
+            output_file=str(output_file),
+            working_dir=str(working_dir),
+            dangerously_skip_permissions=True
+        )
+
+        # Using Claude Opus for comprehensive code audit
+        # Opus provides thorough analysis and better chunking organization
+
+        response = prompt_claude_code(request)
+    finally:
+        # Restore original environment
+        if original_strict_gemini is None:
+            os.environ.pop("STRICT_GEMINI", None)
+        else:
+            os.environ["STRICT_GEMINI"] = original_strict_gemini
+
+        if original_adw_provider is None:
+            os.environ.pop("ADW_PROVIDER", None)
+        else:
+            os.environ["ADW_PROVIDER"] = original_adw_provider
 
     if not response.success:
         print(f"\nAudit failed: {response.output}")
