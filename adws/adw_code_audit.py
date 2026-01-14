@@ -60,22 +60,22 @@ Group chunks by affected page group.
     output_file = working_dir / agent_dir / "raw_output.jsonl"
     (working_dir / agent_dir).mkdir(parents=True, exist_ok=True)
 
-    print(f"\nStarting Gemini Flash audit agent...")
+    print(f"\nStarting Claude Opus audit agent...")
     print(f"Target: {target_path}")
     print(f"Plan will be saved to: {plan_file}")
 
     request = AgentPromptRequest(
         prompt=prompt,
         adw_id=f"code_audit_{timestamp}",
-        agent_name="gemini_auditor",
-        model="gemini-3-flash-preview",
+        agent_name="opus_auditor",
+        model="opus",
         output_file=str(output_file),
         working_dir=str(working_dir),
         dangerously_skip_permissions=True
     )
 
-    # Using Gemini Flash exclusively for code audit
-    # Model is explicitly set to avoid quota issues with heavier models
+    # Using Claude Opus for comprehensive code audit
+    # Opus provides thorough analysis and better chunking organization
     
     response = prompt_claude_code(request)
 

@@ -4,6 +4,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port 8000",
+    "dev:test": "vite --port 8010 --strictPort",
+    "dev:test:stop": "node scripts/kill-port.js 8010",
+    "dev:test:restart": "bun run dev:test:stop && bun run dev:test",
     "generate-routes": "node scripts/generate-redirects.js",
     "prebuild": "bun run generate-routes",
     "build": "vite build",

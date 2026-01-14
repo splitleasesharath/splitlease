@@ -1,77 +1,47 @@
 #!/usr/bin/env node
-/**
- * Kill process on specified port - Cross-platform
- * Usage: node scripts/kill-port.js <port>
- */
-
-import { execSync } from 'child_process';
-import { platform } from 'os';
+const { execSync } = require('child_process');
 
 const port = process.argv[2];
-
 if (!port) {
-  console.error('Usage: node scripts/kill-port.js <port>');
+  console.error('Usage: node kill-port.js <port>');
   process.exit(1);
 }
 
-console.log(`🔧 Killing process on port ${port}...`);
-
 try {
-  if (platform() === 'win32') {
-    // Windows: Use netstat + taskkill
-    try {
-      const netstatOutput = execSync(`netstat -ano | findstr :${port}`, { encoding: 'utf-8' });
-      const lines = netstatOutput.split('\n');
+  if (process.platform === 'win32') {
+    // Windows: Find and kill process using port
+    const cmd = `netstat -ano | findstr :${port}`;
+    const result = execSync(cmd, { encoding: 'utf8' });
+    const lines = result.split('\n');
 
-      const pids = new Set();
-      for (const line of lines) {
-        if (line.includes('LISTENING')) {
-          const parts = line.trim().split(/\s+/);
-          const pid = parts[parts.length - 1];
-          if (pid && !isNaN(pid)) {
-            pids.add(pid);
-          }
-        }
+    const pids = new Set();
+    lines.forEach(line => {
+      const match = line.match(/LISTENING\s+(\d+)/);
+      if (match) pids.add(match[1]);
+    });
+
+    pids.forEach(pid => {
+      try {
+        execSync(`taskkill /PID ${pid} /F`, { stdio: 'ignore' });
+        console.log(`Killed process ${pid} on port ${port}`);
+      } catch (e) {
+        // Process might have already exited
       }
-
-      if (pids.size === 0) {
-        console.log(`✓ No process found on port ${port}`);
-        process.exit(0);
-      }
-
-      for (const pid of pids) {
-        console.log(`  Killing PID ${pid}...`);
-        execSync(`taskkill /F /PID ${pid}`, { stdio: 'ignore' });
-      }
-
-      console.log(`✓ Killed ${pids.size} process(es) on port ${port}`);
-    } catch (e) {
-      console.log(`✓ Port ${port} is free`);
-    }
+    });
   } else {
-    // Unix/Mac: Use lsof
-    try {
-      const lsofOutput = execSync(`lsof -ti :${port}`, { encoding: 'utf-8' });
-      const pids = lsofOutput.trim().split('\n').filter(Boolean);
+    // Unix: Use lsof
+    const cmd = `lsof -ti:${port}`;
+    const result = execSync(cmd, { encoding: 'utf8' });
+    const pids = result.trim().split('\n').filter(Boolean);
 
-      if (pids.length === 0) {
-        console.log(`✓ No process found on port ${port}`);
-        process.exit(0);
-      }
-
-      for (const pid of pids) {
-        console.log(`  Killing PID ${pid}...`);
-        execSync(`kill -9 ${pid}`, { stdio: 'ignore' });
-      }
-
-      console.log(`✓ Killed ${pids.length} process(es) on port ${port}`);
-    } catch (e) {
-      console.log(`✓ Port ${port} is free`);
-    }
+    pids.forEach(pid => {
+      execSync(`kill -9 ${pid}`, { stdio: 'ignore' });
+      console.log(`Killed process ${pid} on port ${port}`);
+    });
   }
 
-  process.exit(0);
-} catch (error) {
-  console.error(`✗ Error killing process on port ${port}:`, error.message);
-  process.exit(1);
+  console.log(`Port ${port} is now free`);
+} catch (e) {
+  // Port might already be free
+  console.log(`No process found on port ${port}`);
 }
