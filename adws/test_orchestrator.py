@@ -36,10 +36,12 @@ def test_audit(target_path: str):
     print("TESTING: Code Audit (Claude Opus)")
     print("="*60)
 
-    cmd = ["uv", "run", "adw_code_audit.py", target_path]
+    # Run from project root so plan file is created at correct location
+    project_root = Path(__file__).parent.parent
+    cmd = ["uv", "run", "adws/adw_code_audit.py", target_path]
     print(f"Running: {' '.join(cmd)}\n")
 
-    subprocess.run(cmd, cwd=Path(__file__).parent)
+    subprocess.run(cmd, cwd=project_root)
 
 
 def test_chunks(plan_file: str):
