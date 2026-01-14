@@ -116,8 +116,13 @@ def test_implement(plan_file: str, chunk_number: int = None):
         print("\n[FAILURE] Implementation failed")
 
 
-def test_visual(page_path: str):
-    """Test visual regression functionality."""
+def test_visual(page_path: str, use_claude: bool = False):
+    """Test visual regression functionality.
+
+    Args:
+        page_path: URL path to test (e.g., "/search")
+        use_claude: If True, use Claude instead of Gemini (avoids quota issues)
+    """
     print("="*60)
     print("TESTING: Visual Regression Check")
     print("="*60)
@@ -127,6 +132,9 @@ def test_visual(page_path: str):
     from adw_modules.dev_server import DevServerManager
     from adw_modules.page_classifier import HOST_PAGES, GUEST_PAGES, SHARED_PROTECTED_PAGES
     import logging
+
+    if use_claude:
+        print("Using Claude (not Gemini) for visual check")
 
     # Setup dev server
     working_dir = Path.cwd()
@@ -165,7 +173,8 @@ def test_visual(page_path: str):
             page_path=page_path,
             mcp_session=mcp_session,
             auth_type=auth_type,
-            port=port
+            port=port,
+            use_claude=use_claude
         )
 
         print(f"\nResult: {result.get('visualParity')}")
@@ -266,9 +275,14 @@ def main():
 
     elif component == "visual":
         if not args:
-            print("Usage: test_orchestrator.py visual <page_path>")
+            print("Usage: test_orchestrator.py visual <page_path> [--use-claude]")
             sys.exit(1)
-        test_visual(args[0])
+        use_claude = "--use-claude" in args
+        page_path = args[0] if args[0] != "--use-claude" else args[1] if len(args) > 1 else None
+        if not page_path:
+            print("Usage: test_orchestrator.py visual <page_path> [--use-claude]")
+            sys.exit(1)
+        test_visual(page_path, use_claude=use_claude)
 
     elif component == "dev-server":
         test_dev_server()
