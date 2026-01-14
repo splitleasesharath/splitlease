@@ -196,9 +196,30 @@ def parse_jsonl_output(
         Tuple of (all_messages, result_message) where result_message is None if not found
     """
     try:
+        messages = []
         with open(output_file, "r", encoding='utf-8') as f:
-            # Read all lines and parse each as JSON
-            messages = [json.loads(line) for line in f if line.strip()]
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    # Standard path: try to parse line as pure JSON
+                    data = json.loads(line)
+                    messages.append(data)
+                except json.JSONDecodeError:
+                    # Robust path: handles cases where CLI tools output warnings 
+                    # or authentication messages prefixed to the JSON stream.
+                    if '{"type":' in line:
+                        try:
+                            json_start = line.find('{"type":')
+                            json_data = line[json_start:]
+                            data = json.loads(json_data)
+                            messages.append(data)
+                        except:
+                            continue
+                    else:
+                        # Skip lines that are purely log/warning text
+                        continue
 
             # Find the result message (should be the last one)
             result_message = None
@@ -376,37 +397,21 @@ def prompt_claude_code(request: AgentPromptRequest) -> AgentPromptResponse:
     # This prevents shell interpretation issues with special characters, JSON, etc.
     # especially on Windows when cwd is set
     if provider == "gemini":
-        # Use Gemini SDK if GEMINIAPIKEY is present, otherwise fallback to CLI
-        if os.getenv("GEMINIAPIKEY"):
-            model = request.model
-            if model == "sonnet":
-                model = os.getenv("GEMINI_BASE_MODEL", GEMINI_BASE_MODEL)
-            elif model == "opus":
-                model = os.getenv("GEMINI_HEAVY_MODEL", GEMINI_HEAVY_MODEL)
-            
-            # Map 'auto' or default versions to the SDK expected names if needed
-            if model == "gemini-1.5-flash":
-                model = "gemini-1.5-flash"
-            elif model == "gemini-1.5-pro":
-                model = "gemini-1.5-pro"
-            elif model in ["auto", "gemini-2.0-flash-exp", "gemini-3.0-flash", "gemini-3-flash"]:
-                model = "gemini-3-flash-preview"
-            elif model in ["gemini-2.0-pro-exp", "gemini-3.0-pro", "gemini-3-pro"]:
-                model = "gemini-3-pro-preview"
-                
-            return prompt_gemini_agent(
-                prompt=request.prompt,
-                model_name=model
-            )
-        
-        # Fallback to CLI if no API key
+        # Always use CLI for Gemini to support MCP and consistent execution
         cmd = [GEMINI_PATH]
+        
         # Map Claude models to Gemini if necessary, or just use as provided
         model = request.model
         if model == "sonnet":
             model = os.getenv("GEMINI_BASE_MODEL", GEMINI_BASE_MODEL)
         elif model == "opus":
             model = os.getenv("GEMINI_HEAVY_MODEL", GEMINI_HEAVY_MODEL)
+            
+        # Fix common incorrect model names from environment
+        if model == "gemini-3-flash":
+            model = "gemini-3-flash-preview"
+        elif model == "gemini-3-pro":
+            model = "gemini-3-pro-preview"
             
         cmd.extend(["--model", model])
         cmd.extend(["--output-format", "stream-json"])
@@ -425,10 +430,10 @@ def prompt_claude_code(request: AgentPromptRequest) -> AgentPromptResponse:
             cmd.append("--dangerously-skip-permissions")
 
     # Check for MCP config in working directory
-    if request.working_dir:
+    # Only supported by Claude Code CLI
+    if provider != "gemini" and request.working_dir:
         mcp_config_path = os.path.join(request.working_dir, ".mcp.json")
         if os.path.exists(mcp_config_path):
-            # Gemini CLI also supports --mcp-config
             cmd.extend(["--mcp-config", mcp_config_path])
 
     # Set up environment with only required variables
@@ -490,7 +495,46 @@ def prompt_claude_code(request: AgentPromptRequest) -> AgentPromptResponse:
                     retry_code=RetryCode.NONE,  # No retry needed for successful or non-retryable errors
                 )
             else:
-                # No result message found, try to extract meaningful error
+                # No result message found, try to reconstruct from assistant messages
+                # (Common for Gemini CLI streaming output)
+                reconstructed_text = ""
+                session_id = None
+                
+                for msg in messages:
+                    # Capture session_id if we see an init message
+                    if msg.get("type") == "init":
+                        session_id = msg.get("session_id")
+                        continue
+                        
+                    # Look for assistant messages
+                    if msg.get("type") == "message" and msg.get("role") == "assistant":
+                        # 1. Handle simple content string (legacy/other providers)
+                        content = msg.get("content")
+                        if isinstance(content, str):
+                            reconstructed_text += content
+                        
+                        # 2. Handle complex message structure with content parts (Gemini CLI)
+                        # The structure is: {"type":"message", "message":{"content":[{"text":"..."}]}}
+                        inner_msg = msg.get("message")
+                        if isinstance(inner_msg, dict):
+                            msg_content = inner_msg.get("content")
+                            # It could be a list of parts or a string
+                            if isinstance(msg_content, list):
+                                for part in msg_content:
+                                    if isinstance(part, dict) and "text" in part:
+                                        reconstructed_text += part["text"]
+                            elif isinstance(msg_content, str):
+                                reconstructed_text += msg_content
+                                
+                if reconstructed_text:
+                    return AgentPromptResponse(
+                        output=reconstructed_text.strip(),
+                        success=True,
+                        session_id=session_id,
+                        retry_code=RetryCode.NONE,
+                    )
+
+                # No reconstructed text, try to extract meaningful error
                 error_msg = f"No result message found in {agent_name} output"
 
                 # Try to get the last few lines of output for context

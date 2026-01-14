@@ -91,6 +91,8 @@ def main():
     from pathlib import Path
     from adw_modules.dev_server import restart_dev_server_on_port_8010, stop_dev_server
     from adw_modules.run_logger import create_run_logger
+    import json
+    import time
 
     # Parse command line args
     if len(sys.argv) < 2:
@@ -173,6 +175,28 @@ def main():
 
         # Ensure dev server is running (deterministic port cleanup)
         app_dir = working_dir / "app"
+        
+        # #region agent log
+        try:
+            with open(r"c:\Users\Split Lease\Documents\Split Lease - Dev\.cursor\debug.log", "a") as f:
+                f.write(json.dumps({
+                    "sessionId": "debug-session",
+                    "runId": "run1",
+                    "hypothesisId": "H1",
+                    "location": "adw_claude_browser.py:175",
+                    "message": "Calculating app_dir",
+                    "data": {
+                        "working_dir": str(working_dir),
+                        "app_dir": str(app_dir),
+                        "app_dir_exists": app_dir.exists(),
+                        "app_dir_is_dir": app_dir.is_dir() if app_dir.exists() else False
+                    },
+                    "timestamp": time.time() * 1000
+                }) + "\n")
+        except Exception:
+            pass
+        # #endregion
+
         dev_server_process = restart_dev_server_on_port_8010(app_dir, logger)
 
         run_logger.log("Dev server started successfully on port 8010", to_stdout=False)

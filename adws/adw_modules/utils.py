@@ -262,6 +262,11 @@ def get_safe_subprocess_env() -> Dict[str, str]:
     safe_env_vars["CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR"] = os.getenv(
         "CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR", "true"
     )
+    
+    # Gemini Configuration
+    gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("GEMINIAPIKEY")
+    if gemini_key:
+        safe_env_vars["GEMINI_API_KEY"] = gemini_key
 
     # Agent Cloud Sandbox Environment (optional)
     e2b_key = os.getenv("E2B_API_KEY")

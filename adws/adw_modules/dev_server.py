@@ -14,6 +14,7 @@ import time
 import logging
 import socket
 import os
+import json
 from pathlib import Path
 from typing import Optional
 
@@ -63,6 +64,26 @@ def restart_dev_server_on_port_8010(app_dir: Path, logger: logging.Logger) -> Op
 
     # Use CREATE_NO_WINDOW on Windows to prevent console popup
     creation_flags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
+
+    # #region agent log
+    try:
+        with open(r"c:\Users\Split Lease\Documents\Split Lease - Dev\.cursor\debug.log", "a") as f:
+            f.write(json.dumps({
+                "sessionId": "debug-session",
+                "runId": "run1",
+                "hypothesisId": "H1",
+                "location": "adw_modules/dev_server.py:68",
+                "message": "About to subprocess.Popen",
+                "data": {
+                    "cwd": str(app_dir),
+                    "cwd_exists": app_dir.exists(),
+                    "cwd_is_dir": app_dir.is_dir() if app_dir.exists() else False
+                },
+                "timestamp": time.time() * 1000
+            }) + "\n")
+    except Exception:
+        pass
+    # #endregion
 
     process = subprocess.Popen(
         ["bun", "run", "dev:test:restart"],

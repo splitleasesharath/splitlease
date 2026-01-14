@@ -1,0 +1,47 @@
+{
+  "mcpServers": {
+    "supabase-dev": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?project_ref=qzsmhgyojmwvtjmnrdea"
+    },
+	"supabase-live": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?project_ref=qcfifybkaddcoimjroca"
+    },
+	"shadcn": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "shadcn@latest",
+        "mcp"
+      ],
+      "env": {}
+    },
+	"playwright-host": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "@playwright/mcp@latest",
+        "--user-data-dir",
+        "C:\\Users\\Split Lease\\AppData\\Local\\ms-playwright\\mcp-chrome-host"
+      ],
+      "env": {}
+    },
+	"playwright-guest": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "@playwright/mcp@latest",
+        "--user-data-dir",
+        "C:\\Users\\Split Lease\\AppData\\Local\\ms-playwright\\mcp-chrome-guest"
+      ],
+      "env": {}
+    }
+  }
+}

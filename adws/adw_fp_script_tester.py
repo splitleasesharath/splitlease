@@ -19,6 +19,7 @@ Example:
 """
 
 import sys
+import json
 import os
 import argparse
 import subprocess
@@ -35,11 +36,32 @@ from adw_modules.utils import setup_logger, make_adw_id
 class TestRunner:
     def __init__(self, script_name: str):
         self.script_name = script_name
-        self.working_dir = Path.cwd()
+        
+        # Determine project root by looking for package.json
+        # This ensures tests run from the project root even if invoked from a subdirectory
+        path = Path(__file__).resolve().parent
+        found_root = False
+        while path.parent != path:  # Stop at system root
+            if (path / "package.json").exists():
+                self.working_dir = path
+                found_root = True
+                break
+            path = path.parent
+            
+        if not found_root:
+            # Fallback to CWD if package.json not found
+            self.working_dir = Path.cwd()
+            
         self.timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
         self.adw_id = f"test_{script_name[:5]}_{self.timestamp[-4:]}"
         self.logger = setup_logger(self.adw_id, trigger_type="tester")
         self.temp_files = []
+        # #region agent log
+        try:
+            with open(r"c:\Users\Split Lease\Documents\Split Lease - Dev\.cursor\debug.log", "a") as f: 
+                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"fix-cwd","location":"TestRunner.__init__","message":"Resolved working_dir","data":{"working_dir":str(self.working_dir)},"timestamp":int(time.time()*1000)}) + "\n")
+        except Exception: pass
+        # #endregion
 
     def cleanup(self):
         """Remove temporary files created during testing."""
@@ -113,6 +135,12 @@ class TestRunner:
         script_path = Path(__file__).parent / "adw_fp_implement.py"
         # 1. Create a mock target file
         mock_target = self.working_dir / "app" / "tester_mock_file.js"
+        # #region agent log
+        try:
+            with open(r"c:\Users\Split Lease\Documents\Split Lease - Dev\.cursor\debug.log", "a") as f: 
+                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"fix-cwd","location":"test_adw_fp_implement","message":"Attempting to write mock file","data":{"mock_target":str(mock_target),"parent_exists":mock_target.parent.exists()}, "timestamp":int(time.time()*1000)}) + "\n")
+        except Exception: pass
+        # #endregion
         mock_content = "// Initial content\nfunction test() {\n  console.log('hello');\n}\n"
         mock_target.write_text(mock_content)
         self.temp_files.append(str(mock_target))
