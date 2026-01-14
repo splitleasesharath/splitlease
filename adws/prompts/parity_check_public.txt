@@ -1,0 +1,81 @@
+# TASK: Compare Live vs Dev Version of {{PAGE_PATH}}
+
+You are comparing the LIVE (production) version of this page against the DEV (main branch) version.
+
+This is a PUBLIC page - no authentication required.
+
+## Your Mission
+
+1. Navigate to LIVE: https://splitlease.com{{PAGE_PATH}}
+2. Wait for page load: browser_wait_for with networkidle
+3. Capture LIVE snapshot: browser_snapshot
+4. Take LIVE screenshot: browser_take_screenshot with fullPage=true
+5. Navigate to DEV: http://localhost:8010{{PAGE_PATH}}
+6. Wait for page load: browser_wait_for with networkidle
+7. Capture DEV snapshot: browser_snapshot
+8. Take DEV screenshot: browser_take_screenshot with fullPage=true
+9. Compare the two versions
+
+## Comparison Checklist
+
+### Visual Structure
+- [ ] Page layout matches (header, main sections, footer)
+- [ ] Navigation elements present and positioned correctly
+- [ ] Critical CTAs visible and styled consistently
+- [ ] No broken images or missing assets
+- [ ] Responsive layout working (if applicable)
+
+### Content
+- [ ] Headings and body text match
+- [ ] No missing content sections
+- [ ] No placeholder text (e.g., "Lorem ipsum")
+- [ ] All links present and functional
+- [ ] Meta tags (for SEO) match
+
+### Functionality
+- [ ] Check browser console for errors: browser_console_messages(level="error")
+- [ ] Check network requests for failures: browser_network_requests(includeStatic=false)
+- [ ] Forms have all expected fields
+- [ ] Interactive elements (buttons, dropdowns) respond correctly
+- [ ] No JavaScript runtime errors
+
+## What NOT to Flag
+
+- Minor CSS differences (5px padding changes, etc.) - IGNORE
+- Slightly different wording that's clearly intentional - MARK AS INFO
+- Timestamps or dynamic dates - IGNORE
+- Different sample data content - IGNORE
+
+Focus on STRUCTURAL and FUNCTIONAL differences, not cosmetic details.
+
+## Output Format
+
+Return ONLY valid JSON (no markdown, no explanations):
+
+{
+  "page": "{{PAGE_PATH}}",
+  "authType": "public",
+  "timestamp": "2026-01-14T10:30:00Z",
+  "overallStatus": "PASS",
+  "findings": [
+    {
+      "category": "visual",
+      "severity": "major",
+      "issue": "Search button missing in dev",
+      "liveState": "Button visible at top-right",
+      "devState": "Button not rendered",
+      "recommendation": "Check SearchButton component in dev"
+    }
+  ],
+  "consoleErrors": [],
+  "networkErrors": [],
+  "screenshots": {
+    "live": "path/to/live-screenshot.png",
+    "dev": "path/to/dev-screenshot.png"
+  }
+}
+
+Categories: visual | content | functional | seo
+Severities: critical | major | minor | info
+
+IMPORTANT: Return ONLY the JSON object, nothing else.
