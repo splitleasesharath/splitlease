@@ -415,7 +415,12 @@ def prompt_claude_code(request: AgentPromptRequest) -> AgentPromptResponse:
             
         cmd.extend(["--model", model])
         cmd.extend(["--output-format", "stream-json"])
-        
+
+        # Add MCP session support for Gemini CLI
+        # Use --allowed-mcp-server-names to enable specific MCP server(s)
+        if request.mcp_session:
+            cmd.extend(["--allowed-mcp-server-names", request.mcp_session])
+
         # Gemini uses --yolo or --approval-mode=yolo for auto-approval
         if request.dangerously_skip_permissions:
             cmd.append("--yolo")

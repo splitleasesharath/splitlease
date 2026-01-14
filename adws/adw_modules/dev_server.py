@@ -94,8 +94,9 @@ def restart_dev_server_on_port_8010(app_dir: Path, logger: logging.Logger) -> Op
         creationflags=creation_flags
     )
 
-    # Wait for server to be ready (max 30 seconds)
-    max_wait = 30
+    # Wait for server to be ready (max 60 seconds)
+    # Increased timeout for cases where Vite needs to install deps or compile
+    max_wait = 60
     for i in range(max_wait):
         if is_port_8010_responding():
             logger.info(f"Dev server started successfully (took {i+1}s)")
@@ -104,9 +105,9 @@ def restart_dev_server_on_port_8010(app_dir: Path, logger: logging.Logger) -> Op
         time.sleep(1)
 
     # Server didn't start in time
-    logger.error("Dev server failed to start within 30 seconds")
+    logger.error("Dev server failed to start within 60 seconds")
     process.terminate()
-    raise RuntimeError("Dev server failed to start on port 8010 within 30 seconds")
+    raise RuntimeError("Dev server failed to start on port 8010 within 60 seconds")
 
 
 def stop_dev_server(process: Optional[subprocess.Popen], logger: logging.Logger) -> None:
