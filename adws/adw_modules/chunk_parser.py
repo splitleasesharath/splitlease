@@ -35,24 +35,33 @@ def extract_page_groups(plan_file: Path) -> Dict[str, List[ChunkData]]:
     content = plan_file.read_text(encoding='utf-8')
     groups = {}
 
-    # Pattern to match ## PAGE GROUP: /path, /path2 (Chunks: 1, 2)
+    # Pattern to match ## PAGE GROUP: <pages> (Chunks: N, M)
     # Capture everything between "PAGE GROUP: " and " (Chunks:"
-    group_sections = re.split(r'\n## PAGE GROUP: ([^(]+)\s*\(Chunks:', content)
+    # The ([^(]+) captures page paths like "/search, /view" or "AUTO (Shared/Utility)"
+    group_sections = re.split(r'(?:^|\n)## PAGE GROUP: ([^(]+(?:\([^)]+\))?)\s*\(Chunks:', content)
 
     if len(group_sections) > 1:
-        # We found group headers
+        # We found group headers - sections alternate: [preamble, pages1, content1, pages2, content2, ...]
         for i in range(1, len(group_sections), 2):
-            # Parse the page list (e.g., "/search, /view-split-lease, /favorites")
+            # Parse the page list (e.g., "/search, /view-split-lease, /favorites" or "AUTO (Shared/Utility)")
             pages_str = group_sections[i].strip()
-            # Use first page as the key for the group
-            first_page = pages_str.split(',')[0].strip()
+
+            # Use first page as the key for the group, handling both formats
+            if pages_str.startswith('AUTO') or pages_str.startswith('SHARED'):
+                first_page = pages_str  # Keep as-is for special groups
+            else:
+                first_page = pages_str.split(',')[0].strip()
+
             group_content = group_sections[i+1] if i+1 < len(group_sections) else ""
 
             # Extract chunks from this group content
             chunks = parse_chunks(group_content)
             if chunks:
-                # Store with the full page list as key for clarity
-                groups[first_page] = chunks
+                # Store with the first page as key, merging if key already exists
+                if first_page in groups:
+                    groups[first_page].extend(chunks)
+                else:
+                    groups[first_page] = chunks
     else:
         # Fallback: parse all chunks and group by affected_pages metadata
         all_chunks = parse_chunks(content)
