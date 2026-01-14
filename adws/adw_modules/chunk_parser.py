@@ -25,29 +25,34 @@ class ChunkData:
 def extract_page_groups(plan_file: Path) -> Dict[str, List[ChunkData]]:
     """
     Parse plan file and group chunks by affected page.
-    
+
     Args:
         plan_file: Path to the refactoring plan markdown file
-        
+
     Returns:
         Dictionary mapping page paths to list of chunks
     """
     content = plan_file.read_text(encoding='utf-8')
     groups = {}
-    
-    # Pattern to match ## PAGE GROUP: /path (Chunks: 1, 2)
-    group_sections = re.split(r'\n## PAGE GROUP: ([^\s\(]+)', content)
-    
+
+    # Pattern to match ## PAGE GROUP: /path, /path2 (Chunks: 1, 2)
+    # Capture everything between "PAGE GROUP: " and " (Chunks:"
+    group_sections = re.split(r'\n## PAGE GROUP: ([^(]+)\s*\(Chunks:', content)
+
     if len(group_sections) > 1:
         # We found group headers
         for i in range(1, len(group_sections), 2):
-            page_path = group_sections[i].strip()
-            group_content = group_sections[i+1]
-            
+            # Parse the page list (e.g., "/search, /view-split-lease, /favorites")
+            pages_str = group_sections[i].strip()
+            # Use first page as the key for the group
+            first_page = pages_str.split(',')[0].strip()
+            group_content = group_sections[i+1] if i+1 < len(group_sections) else ""
+
             # Extract chunks from this group content
             chunks = parse_chunks(group_content)
             if chunks:
-                groups[page_path] = chunks
+                # Store with the full page list as key for clarity
+                groups[first_page] = chunks
     else:
         # Fallback: parse all chunks and group by affected_pages metadata
         all_chunks = parse_chunks(content)
@@ -57,7 +62,7 @@ def extract_page_groups(plan_file: Path) -> Dict[str, List[ChunkData]]:
             if primary_page not in groups:
                 groups[primary_page] = []
             groups[primary_page].append(chunk)
-            
+
     return groups
 
 
