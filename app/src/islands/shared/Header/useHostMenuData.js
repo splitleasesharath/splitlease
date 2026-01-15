@@ -34,7 +34,7 @@ export const HOST_FEATURED_CONTENT = {
     title: 'Become a Host',
     desc: 'List your property and start earning with flexible scheduling.',
     cta: 'Get Started',
-    ctaHref: '/list-with-us',
+    ctaHref: '/self-listing-v2',
     image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=260&fit=crop&q=80'
   },
   [HOST_MENU_STATES.NO_LISTING]: {
