@@ -323,22 +323,29 @@ export function getLastPhoto(listing, photos = []) {
 
 /**
  * Get address string from listing
+ *
+ * Location - Address JSON structure: { address: "Full Address String", lat, lng }
+ * Note: Location - City contains a Bubble FK ID, not a city name - never display it directly
  */
 export function getAddressString(listing) {
   if (!listing) return '';
 
-  const address = listing['Location - Address'];
-  if (typeof address === 'object' && address !== null) {
-    return [
-      address.street,
-      address.city,
-      address.state,
-      address.zipCode
-    ].filter(Boolean).join(', ');
+  const locationAddress = listing['Location - Address'];
+  if (typeof locationAddress === 'object' && locationAddress !== null) {
+    // Primary: use the full formatted address string if available
+    if (locationAddress.address) {
+      return locationAddress.address;
+    }
+    // Fallback: try individual address components (some records may have these)
+    const parts = [
+      locationAddress.number,
+      locationAddress.street
+    ].filter(Boolean).join(' ');
+    if (parts) return parts;
   }
 
+  // Final fallback: use State and Zip only (Location - City is a Bubble FK ID)
   return [
-    listing['Location - City'],
     listing['Location - State'],
     listing['Location - Zip Code']
   ].filter(Boolean).join(', ');
