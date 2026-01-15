@@ -1,0 +1,6 @@
+{
+  "imports": {
+    "qrcode": "npm:qrcode@1.5.3",
+    "canvas": "https://deno.land/x/canvas@v1.4.2/mod.ts"
+  }
+}
