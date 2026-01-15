@@ -130,15 +130,17 @@ class RunLogger:
         self.log(f"\nLog saved to: {self.log_file.relative_to(Path.cwd())}")
 
 
-def create_run_logger(run_type: str, timestamp: Optional[str] = None) -> RunLogger:
-    """Create a run logger for the current working directory.
+def create_run_logger(run_type: str, timestamp: Optional[str] = None, working_dir: Optional[Path] = None) -> RunLogger:
+    """Create a run logger.
 
     Args:
         run_type: Type of run (e.g., "fp_audit", "fp_orchestrator")
         timestamp: Optional timestamp string (YYYYMMDDHHMMSS)
+        working_dir: Optional working directory (defaults to cwd if not provided)
 
     Returns:
         Configured RunLogger instance
     """
-    log_dir = Path.cwd() / "adws" / "adw_run_logs"
+    base_dir = Path(working_dir) if working_dir else Path.cwd()
+    log_dir = base_dir / "adws" / "adw_run_logs"
     return RunLogger(log_dir, run_type, timestamp)

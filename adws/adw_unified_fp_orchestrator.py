@@ -120,9 +120,15 @@ def main():
     parser.add_argument("--audit-type", default="general", help="Type of audit (default: general)")
 
     args = parser.parse_args()
-    working_dir = Path.cwd()
+
+    # CRITICAL: working_dir must be the PROJECT ROOT (Split Lease - Dev), not adws/
+    # This allows Gemini agent to access files in app/, Documentation/, etc.
+    # The orchestrator script is in adws/, so we go up one level.
+    script_dir = Path(__file__).parent.resolve()
+    working_dir = script_dir.parent  # Project root: Split Lease - Dev
+
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-    logger = create_run_logger("unified_fp_refactor", timestamp)
+    logger = create_run_logger("unified_fp_refactor", timestamp, working_dir)
 
     try:
         # PHASE 1: AUDIT (Claude Opus)
@@ -196,6 +202,13 @@ def main():
                 subprocess.run(["git", "reset", "--hard", "HEAD"], cwd=working_dir, check=False)
                 stats["failed"] += 1
                 count += 1
+
+                # Notify failure via webhook
+                chunk_ids = ", ".join([str(c.number) for c in chunks])
+                notify_failure(
+                    step=f"Implementation failed on {page_path}",
+                    error=f"Chunks {chunk_ids} failed during Gemini implementation"
+                )
                 continue
 
             # 4b. Start dev server
@@ -207,6 +220,11 @@ def main():
                 subprocess.run(["git", "reset", "--hard", "HEAD"], cwd=working_dir, check=False)
                 stats["failed"] += 1
                 count += 1
+
+                notify_failure(
+                    step=f"Dev server failed for {page_path}",
+                    error=str(e)
+                )
                 continue
 
             try:
