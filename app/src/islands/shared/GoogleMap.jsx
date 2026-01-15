@@ -996,9 +996,32 @@ const GoogleMap = forwardRef(({
         text-align: center;
       `;
 
-      // HOVER EFFECTS TEMPORARILY REMOVED TO ISOLATE BUNCHING BUG
-      // TODO: Re-implement hover effects after fixing positioning bug
-      // Previous implementation was overwriting transform position from draw()
+      // In marker creation, add proper hover handling
+      const handleMarkerHover = (listing, isEntering) => {
+        if (!listing || !googleMapRef.current) return;
+
+        const marker = markersRef.current.find(m => m.listingId === listing.id);
+        if (!marker) return;
+
+        if (isEntering) {
+          // Scale up marker
+          priceTag.style.zIndex = String(google.maps.Marker.MAX_ZINDEX + 1);
+          // Show info window or tooltip
+          if (infoWindowRef.current) {
+            infoWindowRef.current.setContent(renderMarkerTooltip(listing));
+            infoWindowRef.current.open(googleMapRef.current, marker);
+          }
+        } else {
+          // Reset marker
+          priceTag.style.zIndex = color === '#5B21B6' ? '1002' : '1001';
+          if (infoWindowRef.current) {
+            infoWindowRef.current.close();
+          }
+        }
+      };
+
+      priceTag.addEventListener('mouseenter', () => handleMarkerHover(listing, true));
+      priceTag.addEventListener('mouseleave', () => handleMarkerHover(listing, false));
 
       // Use ref to always call latest handlePinClick (avoids stale closure issue)
       priceTag.addEventListener('click', (e) => {
