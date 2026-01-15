@@ -2,14 +2,20 @@
 Webhook notification module for ADWs.
 
 Provides deterministic status updates to Slack via webhook.
+Format: <hostname> says <process> completed/failed
 """
 
 import os
 import json
+import socket
 from typing import Optional, Dict, Any
 from dataclasses import dataclass
 import urllib.request
 import urllib.error
+
+
+# Get hostname once at module load
+HOSTNAME = socket.gethostname()
 
 
 @dataclass
@@ -25,6 +31,8 @@ class WebhookMessage:
 def send_slack_notification(message: WebhookMessage) -> bool:
     """Send notification to Slack webhook.
 
+    Format: <hostname> says <step> completed/failed/started
+
     Args:
         message: WebhookMessage with status and details
 
@@ -34,27 +42,26 @@ def send_slack_notification(message: WebhookMessage) -> bool:
     webhook_url = os.getenv("SHARATHPLAYGROUND")
 
     if not webhook_url:
-        print("[WARN]  SHARATHPLAYGROUND webhook not configured")
+        print("[WARN] SHARATHPLAYGROUND webhook not configured")
         return False
 
-    # Status emoji mapping
-    status_emoji = {
-        "started": "[START]",
-        "in_progress": "[PROG]",
-        "success": "[OK]",
-        "failure": "[FAIL]",
-        "rollback": "[ROLLBACK]"
+    # Status verb mapping
+    status_verb = {
+        "started": "started",
+        "in_progress": "running",
+        "success": "completed",
+        "failure": "failed",
+        "rollback": "rolled back"
     }
 
-    emoji = status_emoji.get(message.status, "[INFO]")
+    verb = status_verb.get(message.status, message.status)
 
-    # Build single-line message
-    text = f"{emoji} {message.step}"
+    # Build single-line message: <hostname> says <step> <verb>
+    text = f"{HOSTNAME} says {message.step} {verb}"
 
     # Add error snippet on same line if failure
     if message.error and message.status == "failure":
-        # Truncate error to first 100 chars, remove newlines
-        error_snippet = message.error[:100].replace("\n", " ")
+        error_snippet = message.error[:80].replace("\n", " ")
         text += f" - {error_snippet}"
 
     payload = {"text": text}
@@ -68,10 +75,10 @@ def send_slack_notification(message: WebhookMessage) -> bool:
 
         with urllib.request.urlopen(req, timeout=10) as response:
             if response.status == 200:
-                print(f"[OK] Webhook sent: {text}")
+                print(f"[Slack] {text}")
                 return True
             else:
-                print(f"[WARN]  Webhook returned {response.status}")
+                print(f"[WARN] Webhook returned {response.status}")
                 return False
 
     except urllib.error.URLError as e:
