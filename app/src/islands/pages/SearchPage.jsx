@@ -10,6 +10,7 @@ import LoggedInAvatar from '../shared/LoggedInAvatar/LoggedInAvatar.jsx';
 import FavoriteButton from '../shared/FavoriteButton';
 import CreateProposalFlowV2, { clearProposalDraft } from '../shared/CreateProposalFlowV2.jsx';
 import { isGuest } from '../../logic/rules/users/isGuest.js';
+import { isHost } from '../../logic/rules/users/isHost.js';
 import { supabase } from '../../lib/supabase.js';
 import { fetchProposalsByGuest, fetchLastProposalDefaults } from '../../lib/proposalDataFetcher.js';
 import { fetchZatPriceConfiguration } from '../../lib/listingDataFetcher.js';
@@ -2931,6 +2932,14 @@ export default function SearchPage() {
     return userIsGuest && hasExistingProposals;
   }, [isLoggedIn, currentUser]);
 
+  // Determine if "Message" button should be visible on listing cards
+  // Hidden for logged-in host users (hosts shouldn't message other hosts)
+  const showMessageButton = useMemo(() => {
+    if (!isLoggedIn || !currentUser) return true; // Show for guests (not logged in)
+    const userIsHost = isHost({ userType: currentUser.userType });
+    return !userIsHost;
+  }, [isLoggedIn, currentUser]);
+
   // Render
   return (
     <div className="search-page">
@@ -3560,6 +3569,7 @@ export default function SearchPage() {
               setAuthModalView('signup');
               setIsAuthModalOpen(true);
             }}
+            showMessageButton={showMessageButton}
           />
         </section>
       </main>
@@ -3689,6 +3699,7 @@ export default function SearchPage() {
                 setAuthModalView('signup');
                 setIsAuthModalOpen(true);
               }}
+              showMessageButton={showMessageButton}
             />
           </div>
         </div>

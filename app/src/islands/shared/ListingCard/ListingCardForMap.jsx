@@ -28,6 +28,7 @@ import './ListingCardForMap.css';
  * @param {Function} props.onToggleFavorite - Callback when favorite state changes: (listingId, listingTitle, newState) => void
  * @param {string} props.userId - Current user ID for favorite API calls
  * @param {Function} props.onRequireAuth - Callback to show login modal if not authenticated
+ * @param {boolean} props.showMessageButton - Whether to show the message button (hidden for host users)
  */
 export default function ListingCardForMap({
   listing,
@@ -39,7 +40,8 @@ export default function ListingCardForMap({
   isFavorited = false,
   onToggleFavorite,
   userId = null,
-  onRequireAuth = null
+  onRequireAuth = null,
+  showMessageButton = true
 }) {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
@@ -225,12 +227,14 @@ export default function ListingCardForMap({
             >
               View Details
             </button>
-            <button
-              className="listing-card-send-message-btn"
-              onClick={handleMessage}
-            >
-              Message
-            </button>
+            {showMessageButton && (
+              <button
+                className="listing-card-send-message-btn"
+                onClick={handleMessage}
+              >
+                Message
+              </button>
+            )}
           </div>
         </div>
       </div>

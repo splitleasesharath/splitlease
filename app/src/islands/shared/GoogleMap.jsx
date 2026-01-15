@@ -119,7 +119,8 @@ const GoogleMap = forwardRef(({
   onToggleFavorite = null, // Callback when favorite button is clicked: (listingId, listingTitle, newState) => void
   userId = null,           // Current user ID for favorite button API calls
   onRequireAuth = null,    // Callback to show login modal if not authenticated
-  selectedNightsCount = 0  // Number of nights selected for dynamic price calculation
+  selectedNightsCount = 0, // Number of nights selected for dynamic price calculation
+  showMessageButton = true // Whether to show message button (hidden for host users)
 }, ref) => {
   console.log('🗺️ GoogleMap: Component rendered with props:', {
     listingsCount: listings.length,
@@ -1172,6 +1173,7 @@ const GoogleMap = forwardRef(({
                 onToggleFavorite={onToggleFavorite}
                 userId={userId}
                 onRequireAuth={onRequireAuth}
+                showMessageButton={showMessageButton}
               />
             );
           })()}
