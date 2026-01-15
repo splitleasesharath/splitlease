@@ -58,6 +58,21 @@ import {
 } from '../../logic/index.js'
 
 /**
+ * Extract unique photo IDs from an array of listings.
+ * @param {Array} listings - Array of listing objects
+ * @returns {Array} Array of unique photo IDs
+ */
+function extractPhotoIdsFromListings(listings) {
+  const photoIds = new Set()
+  listings.forEach((listing) => {
+    const photosField = listing['Features - Photos']
+    const parsed = parseJsonArray(photosField)
+    parsed.forEach((id) => photoIds.add(id))
+  })
+  return Array.from(photoIds)
+}
+
+/**
  * Main SearchPage logic hook.
  *
  * @returns {object} Pre-calculated state and handlers for SearchPage component.
@@ -218,25 +233,8 @@ export function useSearchPageLogic() {
       console.log('📊 fetchAllActiveListings: Supabase returned', data.length, 'active listings')
 
       // Batch fetch photos
-      const allPhotoIds = new Set()
-      data.forEach((listing) => {
-        const photosField = listing['Features - Photos']
-        if (Array.isArray(photosField)) {
-          photosField.forEach((id) => allPhotoIds.add(id))
-        } else if (typeof photosField === 'string') {
-          try {
-            const parsed = JSON.parse(photosField)
-            if (Array.isArray(parsed)) {
-              parsed.forEach((id) => allPhotoIds.add(id))
-            }
-          } catch (e) {
-            // Ignore parse errors
-          }
-        }
-      })
-
-      console.log('📷 fetchAllActiveListings: Collected', allPhotoIds.size, 'unique photo IDs')
-      const photoIdsArray = Array.from(allPhotoIds)
+      const photoIdsArray = extractPhotoIdsFromListings(data)
+      console.log('📷 fetchAllActiveListings: Collected', photoIdsArray.length, 'unique photo IDs')
       console.log('📷 fetchAllActiveListings: Sample photo IDs:', photoIdsArray.slice(0, 3))
 
       const photoMap = await fetchPhotoUrls(photoIdsArray)
@@ -373,25 +371,8 @@ export function useSearchPageLogic() {
       console.log('📊 SearchPage: Supabase query returned', data.length, 'listings')
 
       // Batch fetch photos
-      const allPhotoIds = new Set()
-      data.forEach((listing) => {
-        const photosField = listing['Features - Photos']
-        if (Array.isArray(photosField)) {
-          photosField.forEach((id) => allPhotoIds.add(id))
-        } else if (typeof photosField === 'string') {
-          try {
-            const parsed = JSON.parse(photosField)
-            if (Array.isArray(parsed)) {
-              parsed.forEach((id) => allPhotoIds.add(id))
-            }
-          } catch (e) {
-            // Ignore parse errors
-          }
-        }
-      })
-
-      console.log('📷 fetchListings: Collected', allPhotoIds.size, 'unique photo IDs')
-      const photoIdsArray = Array.from(allPhotoIds)
+      const photoIdsArray = extractPhotoIdsFromListings(data)
+      console.log('📷 fetchListings: Collected', photoIdsArray.length, 'unique photo IDs')
       console.log('📷 fetchListings: Sample photo IDs:', photoIdsArray.slice(0, 3))
 
       const photoMap = await fetchPhotoUrls(photoIdsArray)
