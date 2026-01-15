@@ -433,6 +433,7 @@
 
 .dropdown-cta:hover {
     background: rgba(124, 58, 237, 0.08);
+    color: var(--primary-color, #31135D);
 }
 
 .nav-link {
