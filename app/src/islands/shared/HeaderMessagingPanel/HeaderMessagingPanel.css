@@ -287,6 +287,7 @@
 /* Self-contained MessageBubble styles for header panel */
 .header-messaging-panel__messages .message-bubble {
   max-width: 85%;
+  min-width: 0;
   display: flex;
   flex-direction: column;
 }
@@ -302,6 +303,7 @@
 .header-messaging-panel__messages .message-bubble--splitbot {
   align-self: center;
   max-width: 90%;
+  min-width: 0;
 }
 
 .header-messaging-panel__messages .message-bubble__sender {
@@ -317,7 +319,8 @@
   border-radius: 16px;
   min-width: 0;
   max-width: 100%;
-  overflow: hidden;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .header-messaging-panel__messages .message-bubble--incoming .message-bubble__content {
