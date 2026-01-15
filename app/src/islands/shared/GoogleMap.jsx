@@ -25,6 +25,7 @@ import { DEFAULTS, COLORS, getBoroughMapConfig } from '../../lib/constants.js';
 import ListingCardForMap from './ListingCard/ListingCardForMap.jsx';
 import { supabase } from '../../lib/supabase.js';
 import { fetchPhotoUrls, extractPhotos } from '../../lib/supabaseUtils.js';
+import { calculatePrice } from '../../lib/scheduleSelector/priceCalculations.js';
 
 /**
  * MapLegend - Shows marker color meanings and toggle
@@ -117,7 +118,8 @@ const GoogleMap = forwardRef(({
   favoritedListingIds = new Set(), // Set of favorited listing IDs
   onToggleFavorite = null, // Callback when favorite button is clicked: (listingId, listingTitle, newState) => void
   userId = null,           // Current user ID for favorite button API calls
-  onRequireAuth = null     // Callback to show login modal if not authenticated
+  onRequireAuth = null,    // Callback to show login modal if not authenticated
+  selectedNightsCount = 0  // Number of nights selected for dynamic price calculation
 }, ref) => {
   console.log('🗺️ GoogleMap: Component rendered with props:', {
     listingsCount: listings.length,
@@ -146,6 +148,28 @@ const GoogleMap = forwardRef(({
   const [showAllListings, setShowAllListings] = useState(true);
   const lastMarkersUpdateRef = useRef(null); // Track last marker update to prevent duplicates
   const handlePinClickRef = useRef(null); // Ref to always have latest handlePinClick
+
+  /**
+   * Calculate dynamic price for a listing based on selected nights count
+   * Uses the same calculation as PropertyCard in SearchPage
+   * Falls back to starting price if no nights selected or calculation fails
+   */
+  const getDisplayPrice = useCallback((listing) => {
+    // If no nights selected, show starting price
+    if (selectedNightsCount < 1) {
+      return listing.price?.starting || listing['Starting nightly price'] || 0;
+    }
+
+    try {
+      // Create mock nights array (calculatePrice only uses .length)
+      const mockNightsArray = Array(selectedNightsCount).fill({ nightNumber: 0 });
+      const priceBreakdown = calculatePrice(mockNightsArray, listing, 13, null);
+      return priceBreakdown.pricePerNight || listing.price?.starting || listing['Starting nightly price'] || 0;
+    } catch (error) {
+      // Fallback to starting price on error
+      return listing.price?.starting || listing['Starting nightly price'] || 0;
+    }
+  }, [selectedNightsCount]);
 
   // Listing card state
   const [selectedListingForCard, setSelectedListingForCard] = useState(null);
@@ -697,9 +721,14 @@ const GoogleMap = forwardRef(({
             lng: listing.coordinates.lng
           };
 
+          // Calculate dynamic price based on selected nights
+          const displayPrice = getDisplayPrice(listing);
+
           console.log(`✅ GoogleMap: Creating ${simpleMode ? 'simple' : 'purple'} marker for listing ${listing.id}:`, {
             position,
-            price: listing.price?.starting || listing['Starting nightly price'],
+            displayPrice,
+            startingPrice: listing.price?.starting || listing['Starting nightly price'],
+            selectedNightsCount,
             title: listing.title,
             simpleMode
           });
@@ -710,7 +739,7 @@ const GoogleMap = forwardRef(({
             : createPriceMarker(
                 map,
                 position,
-                listing.price?.starting || listing['Starting nightly price'] || 0,
+                displayPrice,
                 COLORS.SECONDARY, // Purple - search results
                 listing
               );
@@ -790,9 +819,14 @@ const GoogleMap = forwardRef(({
             lng: listing.coordinates.lng
           };
 
+          // Calculate dynamic price based on selected nights
+          const displayPrice = getDisplayPrice(listing);
+
           console.log(`✅ GoogleMap: Creating grey marker for listing ${listing.id}:`, {
             position,
-            price: listing.price?.starting || listing['Starting nightly price'],
+            displayPrice,
+            startingPrice: listing.price?.starting || listing['Starting nightly price'],
+            selectedNightsCount,
             title: listing.title
           });
 
@@ -800,7 +834,7 @@ const GoogleMap = forwardRef(({
           const marker = createPriceMarker(
             map,
             position,
-            listing.price?.starting || listing['Starting nightly price'] || 0,
+            displayPrice,
             COLORS.MUTED, // Grey - all active listings
             listing
           );
@@ -861,7 +895,7 @@ const GoogleMap = forwardRef(({
 
     // Render markers immediately without lazy loading
     createMarkers();
-  }, [listings, filteredListings, mapLoaded, showAllListings]);
+  }, [listings, filteredListings, mapLoaded, showAllListings, selectedNightsCount, getDisplayPrice]);
 
   // Recenter map when borough changes
   useEffect(() => {

@@ -19,40 +19,94 @@ import {
 // INTERNAL COMPONENT: Hero Section
 // ============================================================================
 
-function Hero({ onExploreRentals }) {
+function Hero({ onExploreRentals, onMoreDetails }) {
 
   return (
     <section className="hero-section">
-      {/* Mobile-only floating Empire State Building */}
-      <img
-        src="https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=768,h=777,f=auto,dpr=1,fit=contain/f1754342803901x992060741248266000/ChatGPT_Image_Aug_4__2025__06_20_44_PM-removebg-preview.png"
-        alt="Empire State Building"
-        className="mobile-empire-state"
-      />
-      <div className="hero-content-wrapper">
-        <img
-          src="/assets/images/hero-left.png"
-          alt="Brooklyn Bridge illustration"
-          className="hero-illustration hero-illustration-left"
-        />
-        <img
-          src="/assets/images/hero-right.png"
-          alt="Empire State Building illustration"
-          className="hero-illustration hero-illustration-right"
-        />
-        <div className="hero-content">
-          <h1 className="hero-title">
-            Ongoing Rentals <span className="mobile-break">for Repeat Stays</span>
-          </h1>
-          <p className="hero-subtitle">
-            Discover flexible rental options in NYC.
-            <br />
-            Only pay for the nights you need.
-          </p>
+      {/* Floating Avatars */}
 
-          <button className="hero-cta-button" onClick={onExploreRentals}>
+      {/* Avatar 1 (top-left): With location badge */}
+      <div className="floating-avatar avatar-1">
+        <img src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=400&fit=crop" alt="Modern NYC apartment living room" />
+        <span className="notification-badge location visible">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+          Midtown, Manhattan
+        </span>
+      </div>
+
+      {/* Avatar 2 (right): Plain circle */}
+      <div className="floating-avatar avatar-2">
+        <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=400&fit=crop" alt="Stylish bedroom with city view" />
+      </div>
+
+      {/* Avatar 3 (bottom-left): Plain circle */}
+      <div className="floating-avatar avatar-3">
+        <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&h=400&fit=crop" alt="Cozy furnished apartment" />
+      </div>
+
+      {/* Avatar 4 (right): With location badge */}
+      <div className="floating-avatar avatar-4">
+        <img src="https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=400&h=400&fit=crop" alt="Bright kitchen and dining area" />
+        <span className="notification-badge location visible">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+          Williamsburg, Brooklyn
+        </span>
+      </div>
+
+      {/* Avatar 5 (top-center-left): Plain circle */}
+      <div className="floating-avatar avatar-5">
+        <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&h=400&fit=crop" alt="Luxury apartment interior" />
+      </div>
+
+      {/* Avatar 6 (bottom-right): Plain circle */}
+      <div className="floating-avatar avatar-6">
+        <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=400&fit=crop" alt="Modern home office space" />
+      </div>
+
+      <div className="hero-container">
+        <div className="hero-badge">Ongoing Rentals for Repeat Stays</div>
+
+        <h1 className="hero-title">
+          Your NYC Home Base
+          <span className="savings">45% Less Than Airbnb</span>
+        </h1>
+
+        <p className="hero-subtitle">
+          Discover flexible rental options in NYC. Only pay for the nights you need.
+          Same space every visit. Leave your belongings.
+        </p>
+
+        {/* SearchScheduleSelector mount point */}
+        <div id="hero-schedule-selector" className="schedule-selector-wrapper"></div>
+
+        <div className="hero-cta">
+          <button className="cta-button cta-primary" onClick={onExploreRentals}>
             Explore Rentals
           </button>
+          <button className="cta-button cta-secondary" onClick={onMoreDetails}>
+            More Details
+          </button>
+        </div>
+
+        <div className="hero-stats">
+          <div className="stat-item">
+            <div className="stat-value">2,400+</div>
+            <div className="stat-label">NYC Multi-Locals</div>
+          </div>
+          <div className="stat-item">
+            <div className="stat-value">$18K</div>
+            <div className="stat-label">Avg Yearly Savings</div>
+          </div>
+          <div className="stat-item">
+            <div className="stat-value">200+</div>
+            <div className="stat-label">NYC Listings</div>
+          </div>
         </div>
       </div>
     </section>
@@ -564,39 +618,25 @@ export default function HomePage() {
     checkAuth();
   }, []);
 
-  // Mount SearchScheduleSelector component in hero section above Explore Rentals button
+  // Mount SearchScheduleSelector component in hero section
   useEffect(() => {
-    const mountPoint = document.createElement('div');
-    mountPoint.id = 'home-schedule-selector-mount';
-    mountPoint.style.display = 'flex';
-    mountPoint.style.justifyContent = 'center';
-    mountPoint.style.marginBottom = '20px';
+    const mountPoint = document.getElementById('hero-schedule-selector');
+    if (!mountPoint) return;
 
-    const heroContent = document.querySelector('.hero-content');
-    const exploreButton = document.querySelector('.hero-cta-button');
+    const root = createRoot(mountPoint);
+    root.render(
+      <SearchScheduleSelector
+        onSelectionChange={(days) => {
+          console.log('Selected days on home page:', days);
+          setSelectedDays(days.map(d => d.index));
+        }}
+        onError={(error) => console.error('SearchScheduleSelector error:', error)}
+      />
+    );
 
-    if (heroContent && exploreButton) {
-      heroContent.insertBefore(mountPoint, exploreButton);
-
-      const root = createRoot(mountPoint);
-      root.render(
-        <SearchScheduleSelector
-          onSelectionChange={(days) => {
-            console.log('Selected days on home page:', days);
-            // Just update state, don't auto-navigate
-            setSelectedDays(days.map(d => d.index));
-          }}
-          onError={(error) => console.error('SearchScheduleSelector error:', error)}
-        />
-      );
-
-      return () => {
-        root.unmount();
-        if (mountPoint.parentNode) {
-          mountPoint.parentNode.removeChild(mountPoint);
-        }
-      };
-    }
+    return () => {
+      root.unmount();
+    };
   }, []);
 
   const handleExploreRentals = () => {
@@ -612,6 +652,14 @@ export default function HomePage() {
     }
   };
 
+  const handleMoreDetails = () => {
+    // Scroll to ValuePropositions section
+    const section = document.querySelector('.value-props');
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   const handleOpenAIResearchModal = () => {
     setIsAIResearchModalOpen(true);
   };
@@ -624,7 +672,7 @@ export default function HomePage() {
     <div className="home-page">
       <Header />
 
-      <Hero onExploreRentals={handleExploreRentals} />
+      <Hero onExploreRentals={handleExploreRentals} onMoreDetails={handleMoreDetails} />
 
       <ValuePropositions />
 

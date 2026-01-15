@@ -2,173 +2,11 @@
  * HostProfileModal Component
  *
  * Shows host profile with verification badges and featured listings
- * Based on Bubble's Host Profile popup design
+ * Styled to match Guest Proposals V5 Balanced Design System
  */
 
 import ExternalReviews from '../shared/ExternalReviews.jsx';
-
-// Inline styles to match Bubble design
-const styles = {
-  overlay: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 2002,
-    backgroundColor: 'rgba(0, 0, 0, 0.38)',
-    display: 'flex',
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-    paddingTop: '100px',
-    overflowY: 'auto'
-  },
-  modal: {
-    background: '#FFFFFF',
-    borderRadius: '5px',
-    boxShadow: 'rgba(0, 0, 0, 0.38) 0px -10px 80px 0px',
-    width: 'calc(100% - 20px)',
-    maxWidth: '500px',
-    position: 'relative',
-    padding: '20px',
-    marginBottom: '20px'
-  },
-  hostSection: {
-    display: 'flex',
-    gap: '20px',
-    marginBottom: '20px'
-  },
-  hostPhoto: {
-    width: '80px',
-    height: '80px',
-    borderRadius: '50%',
-    objectFit: 'cover',
-    flexShrink: 0
-  },
-  hostPhotoPlaceholder: {
-    width: '80px',
-    height: '80px',
-    borderRadius: '50%',
-    background: '#E5E7EB',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '28px',
-    fontWeight: '600',
-    color: '#6B7280',
-    flexShrink: 0
-  },
-  hostName: {
-    fontFamily: "'Open Sans', sans-serif",
-    fontSize: '16px',
-    fontWeight: '600',
-    color: '#424242',
-    marginBottom: '8px'
-  },
-  verificationList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px'
-  },
-  verificationItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    fontSize: '13px',
-    color: '#424242'
-  },
-  verificationIcon: {
-    width: '16px',
-    height: '16px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  verifiedText: {
-    color: '#22C55E',
-    fontWeight: '500'
-  },
-  unverifiedText: {
-    color: '#DC2626',
-    fontWeight: '500'
-  },
-  featuredSection: {
-    borderTop: '1px solid #E5E7EB',
-    paddingTop: '15px',
-    marginTop: '10px'
-  },
-  featuredTitle: {
-    fontFamily: "'Open Sans', sans-serif",
-    fontSize: '14px',
-    fontWeight: '600',
-    color: '#424242',
-    marginBottom: '12px'
-  },
-  listingCard: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    padding: '10px',
-    background: '#F9FAFB',
-    borderRadius: '8px',
-    border: '1px solid #E5E7EB'
-  },
-  listingPhoto: {
-    width: '60px',
-    height: '60px',
-    borderRadius: '8px',
-    objectFit: 'cover',
-    flexShrink: 0
-  },
-  listingPhotoPlaceholder: {
-    width: '60px',
-    height: '60px',
-    borderRadius: '8px',
-    background: '#E5E7EB',
-    flexShrink: 0
-  },
-  listingInfo: {
-    flex: 1,
-    minWidth: 0
-  },
-  listingName: {
-    fontSize: '14px',
-    fontWeight: '500',
-    color: '#4F46E5',
-    textDecoration: 'none',
-    display: 'block',
-    marginBottom: '4px',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap'
-  },
-  listingLocation: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    fontSize: '12px',
-    color: '#6B7280'
-  },
-  locationIcon: {
-    color: '#EF4444'
-  },
-  closeButtonContainer: {
-    marginTop: '20px',
-    display: 'flex',
-    justifyContent: 'center'
-  },
-  closeButtonMain: {
-    background: '#6D31C2',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    padding: '12px 48px',
-    fontSize: '16px',
-    fontWeight: '500',
-    cursor: 'pointer',
-    transition: 'background 0.2s'
-  }
-};
+import '../../styles/components/host-profile-modal.css';
 
 // LinkedIn icon SVG
 const LinkedInIcon = () => (
@@ -232,81 +70,68 @@ export default function HostProfileModal({ host, listing, onClose }) {
   // Get listing photo
   const listingPhotoUrl = listing?.featuredPhotoUrl || listing?.['Features - Photos']?.[0] || null;
 
+  // Verification items data
+  const verificationItems = [
+    { icon: <LinkedInIcon />, label: 'LinkedIn', verified: host['linkedIn verification'] },
+    { icon: <PhoneIcon />, label: 'Phone', verified: host['Phone Number Verified'] },
+    { icon: <EmailIcon />, label: 'Email', verified: host['Email - Verified'] },
+    { icon: <IdentityIcon />, label: 'Identity', verified: host['Identity Verified'] },
+  ];
+
   return (
-    <div style={styles.overlay} onClick={onClose}>
-      <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+    <div className="host-profile-overlay" onClick={onClose}>
+      <div className="host-profile-modal" onClick={(e) => e.stopPropagation()}>
         {/* Host section with photo and verification */}
-        <div style={styles.hostSection}>
+        <div className="hpm-host-section">
           {/* Host Photo */}
           {photoUrl ? (
-            <img src={photoUrl} alt={displayName} style={styles.hostPhoto} />
+            <img src={photoUrl} alt={displayName} className="hpm-host-photo" />
           ) : (
-            <div style={styles.hostPhotoPlaceholder}>
+            <div className="hpm-host-photo-placeholder">
               {hostFirstName.charAt(0) || 'H'}
             </div>
           )}
 
           {/* Host Info and Verification */}
-          <div>
-            <div style={styles.hostName}>Host: {displayName}</div>
-            <div style={styles.verificationList}>
-              {/* LinkedIn */}
-              <div style={styles.verificationItem}>
-                <span style={styles.verificationIcon}><LinkedInIcon /></span>
-                <span>Linkedin</span>
-                <span style={host['linkedIn verification'] ? styles.verifiedText : styles.unverifiedText}>
-                  {host['linkedIn verification'] ? 'Verified' : 'Unverified'}
-                </span>
-              </div>
-              {/* Phone */}
-              <div style={styles.verificationItem}>
-                <span style={styles.verificationIcon}><PhoneIcon /></span>
-                <span>Number</span>
-                <span style={host['Phone Number Verified'] ? styles.verifiedText : styles.unverifiedText}>
-                  {host['Phone Number Verified'] ? 'Verified' : 'Unverified'}
-                </span>
-              </div>
-              {/* Email */}
-              <div style={styles.verificationItem}>
-                <span style={styles.verificationIcon}><EmailIcon /></span>
-                <span>Email</span>
-                <span style={host['Email - Verified'] ? styles.verifiedText : styles.unverifiedText}>
-                  {host['Email - Verified'] ? 'Verified' : 'Unverified'}
-                </span>
-              </div>
-              {/* Identity */}
-              <div style={styles.verificationItem}>
-                <span style={styles.verificationIcon}><IdentityIcon /></span>
-                <span>Identity</span>
-                <span style={host['Identity Verified'] ? styles.verifiedText : styles.unverifiedText}>
-                  {host['Identity Verified'] ? 'Verified' : 'Unverified'}
-                </span>
-              </div>
+          <div className="hpm-host-info">
+            <div className="hpm-host-name">Host: {displayName}</div>
+            <div className="hpm-verification-list">
+              {verificationItems.map(({ icon, label, verified }) => (
+                <div key={label} className="hpm-verification-item">
+                  <span className="hpm-verification-icon">{icon}</span>
+                  <span className="hpm-verification-label">{label}</span>
+                  <span className={`hpm-verification-status ${verified ? 'verified' : 'unverified'}`}>
+                    {verified ? 'Verified' : 'Unverified'}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
 
         {/* Featured Listings */}
         {listing && (
-          <div style={styles.featuredSection}>
-            <div style={styles.featuredTitle}>Featured Listings from {hostFirstName.charAt(0)}. {hostLastInitial}.</div>
-            <div style={styles.listingCard}>
+          <div className="hpm-featured-section">
+            <div className="hpm-featured-title">
+              Featured Listings from {hostFirstName.charAt(0)}. {hostLastInitial}.
+            </div>
+            <div className="hpm-listing-card">
               {listingPhotoUrl ? (
-                <img src={listingPhotoUrl} alt={listing.Name} style={styles.listingPhoto} />
+                <img src={listingPhotoUrl} alt={listing.Name} className="hpm-listing-photo" />
               ) : (
-                <div style={styles.listingPhotoPlaceholder} />
+                <div className="hpm-listing-photo-placeholder" />
               )}
-              <div style={styles.listingInfo}>
+              <div className="hpm-listing-info">
                 <a
                   href={`/view-split-lease/${listing._id}`}
-                  style={styles.listingName}
+                  className="hpm-listing-name"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
                   {listing.Name}
                 </a>
-                <div style={styles.listingLocation}>
-                  <span style={styles.locationIcon}><LocationIcon /></span>
+                <div className="hpm-listing-location">
+                  <span className="hpm-location-icon"><LocationIcon /></span>
                   <span>{listingLocation}</span>
                 </div>
               </div>
@@ -315,16 +140,15 @@ export default function HostProfileModal({ host, listing, onClose }) {
         )}
 
         {/* External Reviews */}
-        {listing && <ExternalReviews listingId={listing._id} />}
+        {listing && (
+          <div className="hpm-reviews-section">
+            <ExternalReviews listingId={listing._id} />
+          </div>
+        )}
 
         {/* Close Button */}
-        <div style={styles.closeButtonContainer}>
-          <button
-            style={styles.closeButtonMain}
-            onClick={onClose}
-            onMouseEnter={(e) => e.target.style.background = '#5A28A0'}
-            onMouseLeave={(e) => e.target.style.background = '#6D31C2'}
-          >
+        <div className="hpm-footer">
+          <button className="hpm-close-button" onClick={onClose}>
             Close
           </button>
         </div>

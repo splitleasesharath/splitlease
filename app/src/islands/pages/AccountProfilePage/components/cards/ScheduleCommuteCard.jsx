@@ -90,21 +90,29 @@ export default function ScheduleCommuteCard({
       </div>
 
       <div className="profile-form-group">
-        <label className="profile-form-label" htmlFor="transportationType">
-          How will you commute?
+        <label className="profile-form-label">
+          How do you get to your Split Lease?
         </label>
-        <select
-          id="transportationType"
-          className="profile-form-select"
-          value={transportationType}
-          onChange={(e) => onFieldChange('transportationType', e.target.value)}
-        >
-          {transportationOptions.map(option => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+        <div className="transport-icon-selector">
+          {transportationOptions
+            .filter(option => option.value) // Exclude empty placeholder option
+            .map(option => {
+              const IconComponent = TRANSPORT_ICONS[option.value] || Compass;
+              const isSelected = transportationType === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={`transport-icon-btn ${isSelected ? 'transport-icon-btn--selected' : ''}`}
+                  onClick={() => onFieldChange('transportationType', option.value)}
+                  title={option.label}
+                >
+                  <IconComponent size={24} />
+                  <span className="transport-icon-label">{option.label}</span>
+                </button>
+              );
+            })}
+        </div>
       </div>
     </ProfileCard>
   );

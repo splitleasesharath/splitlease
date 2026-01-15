@@ -19,10 +19,14 @@ const publicDir = path.resolve(__dirname, '../public');
  * Generates Cloudflare Pages _redirects file from Route Registry
  */
 function generateRedirects() {
+  // Count routes upfront for the header (avoids timestamp-based merge conflicts)
+  const dynamicRouteCount = routes.filter(r => r.hasDynamicSegment && !r.devOnly).length;
+  const staticRouteCount = routes.filter(r => !r.hasDynamicSegment && !r.devOnly).length;
+
   const lines = [
     '# Cloudflare Pages redirects and rewrites',
     '# AUTO-GENERATED from routes.config.js - DO NOT EDIT MANUALLY',
-    `# Generated: ${new Date().toISOString()}`,
+    `# Routes: ${dynamicRouteCount} dynamic, ${staticRouteCount} static`,
     '#',
     '# See: https://developers.cloudflare.com/pages/configuration/redirects/',
     ''

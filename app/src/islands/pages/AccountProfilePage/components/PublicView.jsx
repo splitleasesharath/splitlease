@@ -11,10 +11,10 @@ import React from 'react';
 import AboutCard from './cards/AboutCard.jsx';
 import WhySplitLeaseCard from './cards/WhySplitLeaseCard.jsx';
 import MyRequirementsCard from './cards/MyRequirementsCard.jsx';
-import ScheduleCommuteCard from './cards/ScheduleCommuteCard.jsx';
+import ScheduleCard from './cards/ScheduleCard.jsx';
+import TransportCard from './cards/TransportCard.jsx';
 import ReasonsCard from './cards/ReasonsCard.jsx';
 import StorageItemsCard from './cards/StorageItemsCard.jsx';
-import VideoIntroCard from './cards/VideoIntroCard.jsx';
 import ListingsCard from './cards/ListingsCard.jsx';
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -47,7 +47,6 @@ export default function PublicView({
   const transportationType = profileData?.['Transportation'] || '';
   const goodGuestReasons = profileData?.['Good Guest Reasons'] || [];
   const storageItems = profileData?.['storage'] || [];
-  const videoUrl = profileData?.['Video Intro URL'] || null;
   const firstName = profileData?.['Name - First'] || 'this guest';
 
   // Transportation options for display
@@ -84,10 +83,17 @@ export default function PublicView({
         />
       )}
 
-      {/* Guest-only: Schedule & Commute */}
-      {!isHostUser && (selectedDays.length > 0 || transportationType) && (
-        <ScheduleCommuteCard
+      {/* Guest-only: Schedule */}
+      {!isHostUser && selectedDays.length > 0 && (
+        <ScheduleCard
           selectedDays={selectedDays}
+          readOnly={true}
+        />
+      )}
+
+      {/* Guest-only: Transport */}
+      {!isHostUser && transportationType && (
+        <TransportCard
           transportationType={transportationType}
           transportationOptions={transportationOptions}
           readOnly={true}
@@ -118,14 +124,6 @@ export default function PublicView({
           listings={hostListings}
           loading={false}
           onListingClick={onListingClick}
-          readOnly={true}
-        />
-      )}
-
-      {/* Video Introduction - Always shown */}
-      {videoUrl && (
-        <VideoIntroCard
-          videoUrl={videoUrl}
           readOnly={true}
         />
       )}

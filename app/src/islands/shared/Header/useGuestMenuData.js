@@ -50,28 +50,28 @@ export function getGuestMenuConfig(state, onSignupClick) {
       href: SEARCH_URL,
       title: 'Explore Rentals',
       desc: 'See available listings!',
-      icon: '/assets/icons/list-purple.svg'
+      icon: '/assets/icons/listing-purple.svg'
     },
     successStories: {
       id: 'success',
       href: '/guest-success',
       title: 'Success Stories',
       desc: 'Explore other guests\' feedback',
-      icon: '/assets/icons/heart-purple.svg'
+      icon: '/assets/icons/favorite-purple.svg'
     },
     faqs: {
       id: 'faq',
       href: '/faq?section=travelers',
       title: 'FAQs',
       desc: 'Frequently Asked Questions',
-      icon: '/assets/icons/message-circle-purple.svg'
+      icon: '/assets/icons/faq-purple.svg'
     },
     signUp: {
       id: 'signup',
       href: '#',
       title: 'Sign Up',
       desc: null,
-      icon: '/assets/icons/user-purple.svg',
+      icon: '/assets/icons/user-bubble-purple.svg',
       action: onSignupClick
     },
     rentalApplication: {
@@ -93,21 +93,21 @@ export function getGuestMenuConfig(state, onSignupClick) {
       href: '/favorite-listings',
       title: 'Favorite Listings',
       desc: 'View your saved listings',
-      icon: '/assets/icons/heart-purple.svg'
+      icon: '/assets/icons/favorite-purple.svg'
     },
     manageProposals: {
       id: 'manage-proposals',
       href: '/guest-proposals',
       title: 'Manage Proposals',
       desc: 'Track your booking requests',
-      icon: '/assets/icons/file-text-purple.svg'
+      icon: '/assets/icons/document-purple.svg'
     },
     manageLeases: {
       id: 'manage-leases',
       href: '/guest-proposals#leases',
       title: 'Manage Leases',
       desc: 'View your active leases',
-      icon: '/assets/icons/key-purple.svg'
+      icon: '/assets/icons/leases-purple.svg'
     }
   };
 
@@ -119,7 +119,7 @@ export function getGuestMenuConfig(state, onSignupClick) {
           baseItems.successStories,
           baseItems.faqs
         ],
-        cta: { label: 'Sign Up', action: onSignupClick, icon: '/assets/icons/user-purple.svg' }
+        cta: { label: 'Sign Up', action: onSignupClick, icon: '/assets/icons/user-bubble-purple.svg' }
       };
 
     case GUEST_MENU_STATES.NO_PROPOSALS_NO_APP:
@@ -131,7 +131,7 @@ export function getGuestMenuConfig(state, onSignupClick) {
           baseItems.favoriteListings,
           baseItems.faqs
         ],
-        cta: { label: 'Explore Rentals', href: SEARCH_URL, icon: '/assets/icons/list-purple.svg' }
+        cta: { label: 'Explore Rentals', href: SEARCH_URL, icon: '/assets/icons/listing-purple.svg' }
       };
 
     case GUEST_MENU_STATES.NO_PROPOSALS_WITH_APP:
@@ -143,7 +143,7 @@ export function getGuestMenuConfig(state, onSignupClick) {
           baseItems.favoriteListings,
           baseItems.faqs
         ],
-        cta: { label: 'Explore Rentals', href: SEARCH_URL, icon: '/assets/icons/list-purple.svg' }
+        cta: { label: 'Explore Rentals', href: SEARCH_URL, icon: '/assets/icons/listing-purple.svg' }
       };
 
     case GUEST_MENU_STATES.WITH_PROPOSALS:
@@ -156,7 +156,7 @@ export function getGuestMenuConfig(state, onSignupClick) {
           baseItems.manageProposals,
           baseItems.faqs
         ],
-        cta: { label: 'Manage Proposals', href: '/guest-proposals', icon: '/assets/icons/file-text-purple.svg' }
+        cta: { label: 'Manage Proposals', href: '/guest-proposals', icon: '/assets/icons/document-purple.svg' }
       };
 
     case GUEST_MENU_STATES.WITH_SUGGESTED:
@@ -181,7 +181,7 @@ export function getGuestMenuConfig(state, onSignupClick) {
           baseItems.manageLeases,
           baseItems.faqs
         ],
-        cta: { label: 'Manage Leases', href: '/guest-proposals#leases', icon: '/assets/icons/key-purple.svg' }
+        cta: { label: 'Manage Leases', href: '/guest-proposals#leases', icon: '/assets/icons/leases-purple.svg' }
       };
 
     default:
@@ -191,7 +191,7 @@ export function getGuestMenuConfig(state, onSignupClick) {
           baseItems.successStories,
           baseItems.faqs
         ],
-        cta: { label: 'Sign Up', action: onSignupClick, icon: '/assets/icons/user-purple.svg' }
+        cta: { label: 'Sign Up', action: onSignupClick, icon: '/assets/icons/user-bubble-purple.svg' }
       };
   }
 }
