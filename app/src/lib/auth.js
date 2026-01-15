@@ -47,6 +47,9 @@ import {
   clearLinkedInOAuthLoginFlow
 } from './secureStorage.js';
 
+const DEBUG_AUTH = import.meta.env.DEV;
+const log = (...args) => DEBUG_AUTH && console.log(...args);
+
 // ============================================================================
 // Auth State Management
 // ============================================================================
@@ -96,10 +99,10 @@ export function checkSplitLeaseCookies() {
   const username = getUsernameFromCookies();
 
   // Log the authentication status to console
-  console.log('🔐 Split Lease Cookie Auth Check:');
-  console.log('   Logged In:', isLoggedIn);
-  console.log('   Username:', username || 'not set');
-  console.log('   Raw Cookies:', { loggedInCookie, usernameCookie });
+  log('🔐 Split Lease Cookie Auth Check:');
+  log('   Logged In:', isLoggedIn);
+  log('   Username:', username || 'not set');
+  log('   Raw Cookies:', { loggedInCookie, usernameCookie });
 
   return { isLoggedIn, username };
 }
@@ -122,20 +125,20 @@ export function checkSplitLeaseCookies() {
  * @returns {Promise<boolean>} True if user is authenticated, false otherwise
  */
 export async function checkAuthStatus() {
-  console.log('🔍 Checking authentication status...');
+  log('🔍 Checking authentication status...');
 
   // Try to migrate from legacy storage first
   const migrated = await migrateFromLegacyStorage();
   if (migrated) {
-    console.log('✅ Migrated from legacy storage');
+    log('✅ Migrated from legacy storage');
   }
 
   // First check cross-domain cookies from .split.lease (for compatibility)
   const splitLeaseAuth = checkSplitLeaseCookies();
 
   if (splitLeaseAuth.isLoggedIn) {
-    console.log('✅ User authenticated via Split Lease cookies');
-    console.log('   Username:', splitLeaseAuth.username);
+    log('✅ User authenticated via Split Lease cookies');
+    log('   Username:', splitLeaseAuth.username);
     isUserLoggedInState = true;
     setAuthState(true);
     return true;
@@ -151,20 +154,20 @@ export async function checkAuthStatus() {
     // If no session on first check, wait briefly for Supabase to initialize
     // This handles the race condition on page load
     if (!session && !error) {
-      console.log('🔄 No immediate Supabase session, waiting briefly for initialization...');
+      log('🔄 No immediate Supabase session, waiting briefly for initialization...');
       await new Promise(resolve => setTimeout(resolve, 200));
       const retryResult = await supabase.auth.getSession();
       session = retryResult.data?.session;
       error = retryResult.error;
       if (session) {
-        console.log('✅ Found Supabase session after brief wait');
+        log('✅ Found Supabase session after brief wait');
       }
     }
 
     if (session && !error) {
-      console.log('✅ User authenticated via Supabase Auth session');
-      console.log('   User ID:', session.user?.id);
-      console.log('   Email:', session.user?.email);
+      log('✅ User authenticated via Supabase Auth session');
+      log('   User ID:', session.user?.id);
+      log('   Email:', session.user?.email);
 
       // Sync Supabase session to our storage for consistency
       const userId = session.user?.user_metadata?.user_id || session.user?.id;
@@ -183,7 +186,7 @@ export async function checkAuthStatus() {
       return true;
     }
   } catch (err) {
-    console.log('⚠️ Supabase session check failed:', err.message);
+    log('⚠️ Supabase session check failed:', err.message);
     // Continue to check legacy auth
   }
 
@@ -195,13 +198,13 @@ export async function checkAuthStatus() {
     const hasTokens = await hasValidTokens();
 
     if (hasTokens) {
-      console.log('✅ User authenticated via secure storage (legacy)');
+      log('✅ User authenticated via secure storage (legacy)');
       isUserLoggedInState = true;
       return true;
     }
   }
 
-  console.log('❌ User not authenticated');
+  log('❌ User not authenticated');
   isUserLoggedInState = false;
   setAuthState(false);
   return false;
@@ -232,7 +235,7 @@ export function clearAuthData() {
   clearAllAuthData();
 
   isUserLoggedInState = false;
-  console.log('🗑️ Authentication data cleared (secure storage and cookies)');
+  log('🗑️ Authentication data cleared (secure storage and cookies)');
 }
 
 // ============================================================================
@@ -467,21 +470,21 @@ export function resetAuthCheckAttempts() {
  * @returns {Promise<Object>} Response object with status, token, user_id, or error
  */
 export async function loginUser(email, password) {
-  console.log('🔐 Attempting login via Edge Function for:', email);
+  log('🔐 Attempting login via Edge Function for:', email);
 
   try {
     // CRITICAL: Use direct fetch to bypass Supabase client session handling
     // The Supabase client's functions.invoke can hang indefinitely when there's a stale
     // session because it tries to refresh the token before making requests. Since auth-user
     // has verify_jwt=false, we don't need any auth token. Using direct fetch bypasses this.
-    console.log('🔄 Using direct fetch to bypass Supabase client session handling...');
+    log('🔄 Using direct fetch to bypass Supabase client session handling...');
 
     // Clear localStorage directly to avoid signOut() hanging
     try {
       const storageKey = `sb-${import.meta.env.VITE_SUPABASE_URL?.split('//')[1]?.split('.')[0]}-auth-token`;
       if (storageKey && storageKey !== 'sb-undefined-auth-token') {
         localStorage.removeItem(storageKey);
-        console.log('✅ Cleared auth token from localStorage');
+        log('✅ Cleared auth token from localStorage');
       }
     } catch (clearErr) {
       console.warn('⚠️ Could not clear localStorage:', clearErr);
@@ -490,7 +493,7 @@ export async function loginUser(email, password) {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-    console.log('📡 Calling auth-user edge function via direct fetch...');
+    log('📡 Calling auth-user edge function via direct fetch...');
     const response = await fetch(`${supabaseUrl}/functions/v1/auth-user`, {
       method: 'POST',
       headers: {
@@ -508,8 +511,8 @@ export async function loginUser(email, password) {
     });
 
     const data = await response.json();
-    console.log('📡 Response status:', response.status);
-    console.log('📡 Response data:', data);
+    log('📡 Response status:', response.status);
+    log('📡 Response data:', data);
 
     // Handle HTTP errors
     if (!response.ok) {
@@ -553,7 +556,7 @@ export async function loginUser(email, password) {
         console.error('❌ Failed to set Supabase session:', sessionError.message);
         // Continue anyway - tokens are still valid, just not in client state
       } else {
-        console.log('✅ Supabase session set successfully');
+        log('✅ Supabase session set successfully');
       }
 
       // CRITICAL: Verify the session is actually persisted before proceeding
@@ -563,11 +566,11 @@ export async function loginUser(email, password) {
       while (verifyAttempts < maxVerifyAttempts) {
         const { data: { session: verifiedSession } } = await supabase.auth.getSession();
         if (verifiedSession && verifiedSession.access_token === access_token) {
-          console.log('✅ Session verified and persisted');
+          log('✅ Session verified and persisted');
           break;
         }
         verifyAttempts++;
-        console.log(`⏳ Waiting for session to persist (attempt ${verifyAttempts}/${maxVerifyAttempts})...`);
+        log(`⏳ Waiting for session to persist (attempt ${verifyAttempts}/${maxVerifyAttempts})...`);
         await new Promise(resolve => setTimeout(resolve, 100)); // Wait 100ms
       }
 
@@ -591,11 +594,11 @@ export async function loginUser(email, password) {
     // Update login state
     isUserLoggedInState = true;
 
-    console.log('✅ Login successful (Supabase Auth)');
-    console.log('   User ID (_id):', user_id);
-    console.log('   Supabase Auth ID:', supabase_user_id);
-    console.log('   User Type:', user_type);
-    console.log('   Session expires in:', expires_in, 'seconds');
+    log('✅ Login successful (Supabase Auth)');
+    log('   User ID (_id):', user_id);
+    log('   Supabase Auth ID:', supabase_user_id);
+    log('   User Type:', user_type);
+    log('   Session expires in:', expires_in, 'seconds');
 
     // Store Supabase user ID for reference
     if (supabase_user_id) {
@@ -641,7 +644,7 @@ export async function loginUser(email, password) {
  * @returns {Promise<Object>} Response object with status, user_id, or error
  */
 export async function signupUser(email, password, retype, additionalData = null) {
-  console.log('📝 Attempting signup via Supabase Auth for:', email);
+  log('📝 Attempting signup via Supabase Auth for:', email);
 
   // Client-side validation
   if (!email || !password || !retype) {
@@ -675,7 +678,7 @@ export async function signupUser(email, password, retype, additionalData = null)
   // Add additional signup data if provided
   if (additionalData) {
     payload.additionalData = additionalData;
-    console.log('📝 Additional signup data:', additionalData);
+    log('📝 Additional signup data:', additionalData);
   }
 
   try {
@@ -683,14 +686,14 @@ export async function signupUser(email, password, retype, additionalData = null)
     // The Supabase client's functions.invoke can hang indefinitely when there's a stale
     // session because it tries to refresh the token before making requests. Since auth-user
     // has verify_jwt=false, we don't need any auth token. Using direct fetch bypasses this.
-    console.log('🔄 Using direct fetch to bypass Supabase client session handling...');
+    log('🔄 Using direct fetch to bypass Supabase client session handling...');
 
     // Clear localStorage directly to avoid signOut() hanging
     try {
       const storageKey = `sb-${import.meta.env.VITE_SUPABASE_URL?.split('//')[1]?.split('.')[0]}-auth-token`;
       if (storageKey && storageKey !== 'sb-undefined-auth-token') {
         localStorage.removeItem(storageKey);
-        console.log('✅ Cleared auth token from localStorage');
+        log('✅ Cleared auth token from localStorage');
       }
     } catch (clearErr) {
       console.warn('⚠️ Could not clear localStorage:', clearErr);
@@ -699,7 +702,7 @@ export async function signupUser(email, password, retype, additionalData = null)
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-    console.log('📡 Calling auth-user edge function via direct fetch...');
+    log('📡 Calling auth-user edge function via direct fetch...');
     const response = await fetch(`${supabaseUrl}/functions/v1/auth-user`, {
       method: 'POST',
       headers: {
@@ -714,8 +717,8 @@ export async function signupUser(email, password, retype, additionalData = null)
     });
 
     const data = await response.json();
-    console.log('📡 Response status:', response.status);
-    console.log('📡 Response data:', data);
+    log('📡 Response status:', response.status);
+    log('📡 Response data:', data);
 
     // Handle HTTP errors
     if (!response.ok) {
@@ -736,7 +739,7 @@ export async function signupUser(email, password, retype, additionalData = null)
       };
     }
 
-    console.log('✅ Edge Function returned successfully');
+    log('✅ Edge Function returned successfully');
 
     // Extract Supabase session data
     const {
@@ -750,15 +753,15 @@ export async function signupUser(email, password, retype, additionalData = null)
       user_type
     } = data.data;
 
-    console.log('📋 Extracted session data:');
-    console.log('   access_token:', access_token ? `${access_token.substring(0, 20)}...` : 'MISSING');
-    console.log('   refresh_token:', refresh_token ? `${refresh_token.substring(0, 20)}...` : 'MISSING');
-    console.log('   user_id:', user_id);
-    console.log('   user_type:', user_type);
+    log('📋 Extracted session data:');
+    log('   access_token:', access_token ? `${access_token.substring(0, 20)}...` : 'MISSING');
+    log('   refresh_token:', refresh_token ? `${refresh_token.substring(0, 20)}...` : 'MISSING');
+    log('   user_id:', user_id);
+    log('   user_type:', user_type);
 
     // Set Supabase session using the client
     // This stores the session in localStorage and enables authenticated requests
-    console.log('🔐 About to call setSession...');
+    log('🔐 About to call setSession...');
     let sessionError = null;
     try {
       const result = await supabase.auth.setSession({
@@ -766,7 +769,7 @@ export async function signupUser(email, password, retype, additionalData = null)
         refresh_token
       });
       sessionError = result.error;
-      console.log('🔐 setSession completed, error:', sessionError);
+      log('🔐 setSession completed, error:', sessionError);
     } catch (setSessionErr) {
       console.error('🔐 setSession threw an exception:', setSessionErr);
       sessionError = setSessionErr;
@@ -776,7 +779,7 @@ export async function signupUser(email, password, retype, additionalData = null)
       console.error('❌ Failed to set Supabase session:', sessionError.message);
       // Continue anyway - tokens are still valid, just not in client state
     } else {
-      console.log('✅ Supabase session set successfully');
+      log('✅ Supabase session set successfully');
     }
 
     // CRITICAL: Verify the session is actually persisted before proceeding
@@ -786,11 +789,11 @@ export async function signupUser(email, password, retype, additionalData = null)
     while (verifyAttempts < maxVerifyAttempts) {
       const { data: { session: verifiedSession } } = await supabase.auth.getSession();
       if (verifiedSession && verifiedSession.access_token === access_token) {
-        console.log('✅ Session verified and persisted');
+        log('✅ Session verified and persisted');
         break;
       }
       verifyAttempts++;
-      console.log(`⏳ Waiting for session to persist (attempt ${verifyAttempts}/${maxVerifyAttempts})...`);
+      log(`⏳ Waiting for session to persist (attempt ${verifyAttempts}/${maxVerifyAttempts})...`);
       await new Promise(resolve => setTimeout(resolve, 100)); // Wait 100ms
     }
 
@@ -813,13 +816,13 @@ export async function signupUser(email, password, retype, additionalData = null)
     // Update login state
     isUserLoggedInState = true;
 
-    console.log('✅ Signup successful (Supabase Auth)');
-    console.log('   User ID (_id):', user_id);
-    console.log('   Supabase Auth ID:', supabase_user_id);
-    console.log('   Host Account ID:', host_account_id);
-    console.log('   Guest Account ID:', guest_account_id);
-    console.log('   User Type:', user_type);
-    console.log('   Session expires in:', expires_in, 'seconds');
+    log('✅ Signup successful (Supabase Auth)');
+    log('   User ID (_id):', user_id);
+    log('   Supabase Auth ID:', supabase_user_id);
+    log('   Host Account ID:', host_account_id);
+    log('   Guest Account ID:', guest_account_id);
+    log('   User Type:', user_type);
+    log('   Session expires in:', expires_in, 'seconds');
 
     // Store Supabase user ID for reference
     if (supabase_user_id) {
@@ -866,7 +869,7 @@ export async function validateTokenAndFetchUser({ clearOnFailure = true } = {}) 
 
   // If no legacy token/userId, check for Supabase Auth session and sync it
   if (!token || !userId) {
-    console.log('[Auth] No legacy token found, checking for Supabase Auth session...');
+    log('[Auth] No legacy token found, checking for Supabase Auth session...');
 
     try {
       let { data: { session }, error } = await supabase.auth.getSession();
@@ -874,18 +877,18 @@ export async function validateTokenAndFetchUser({ clearOnFailure = true } = {}) 
       // CRITICAL: Supabase client may not have loaded session from localStorage yet
       // Wait briefly for initialization if no session found
       if (!session && !error) {
-        console.log('[Auth] 🔄 No immediate session, waiting briefly for Supabase initialization...');
+        log('[Auth] 🔄 No immediate session, waiting briefly for Supabase initialization...');
         await new Promise(resolve => setTimeout(resolve, 200));
         const retryResult = await supabase.auth.getSession();
         session = retryResult.data?.session;
         error = retryResult.error;
         if (session) {
-          console.log('[Auth] ✅ Found Supabase session after brief wait');
+          log('[Auth] ✅ Found Supabase session after brief wait');
         }
       }
 
       if (session && !error) {
-        console.log('[Auth] ✅ Found Supabase Auth session, syncing to secure storage');
+        log('[Auth] ✅ Found Supabase Auth session, syncing to secure storage');
         token = session.access_token;
         userId = session.user?.user_metadata?.user_id || session.user?.id;
 
@@ -901,16 +904,16 @@ export async function validateTokenAndFetchUser({ clearOnFailure = true } = {}) 
         }
       }
     } catch (err) {
-      console.log('[Auth] Error checking Supabase session:', err.message);
+      log('[Auth] Error checking Supabase session:', err.message);
     }
   }
 
   if (!token || !userId) {
-    console.log('[Auth] No token or user ID found - user not logged in');
+    log('[Auth] No token or user ID found - user not logged in');
     return null;
   }
 
-  console.log('🔍 Validating token and fetching user data via Edge Function...');
+  log('🔍 Validating token and fetching user data via Edge Function...');
 
   try {
     const { data, error } = await supabase.functions.invoke('auth-user', {
@@ -963,14 +966,14 @@ export async function validateTokenAndFetchUser({ clearOnFailure = true } = {}) 
     }
 
     if (!data.success) {
-      console.log('❌ Token validation failed');
-      console.log('   Reason:', data.error || 'Unknown');
+      log('❌ Token validation failed');
+      log('   Reason:', data.error || 'Unknown');
       // Only clear auth data if clearOnFailure is true
       if (clearOnFailure) {
-        console.log('   Clearing auth data...');
+        log('   Clearing auth data...');
         clearAuthData();
       } else {
-        console.log('   Preserving session (clearOnFailure=false)');
+        log('   Preserving session (clearOnFailure=false)');
       }
       isUserLoggedInState = false;
       return null;
@@ -985,10 +988,10 @@ export async function validateTokenAndFetchUser({ clearOnFailure = true } = {}) 
       userType = userData.userType || null;
       if (userType) {
         setUserType(userType);
-        console.log('✅ User type fetched and cached:', userType);
+        log('✅ User type fetched and cached:', userType);
       }
     } else {
-      console.log('✅ User type loaded from cache:', userType);
+      log('✅ User type loaded from cache:', userType);
     }
 
     const userDataObject = {
@@ -1019,8 +1022,8 @@ export async function validateTokenAndFetchUser({ clearOnFailure = true } = {}) 
       setSecureAvatarUrl(userDataObject.profilePhoto);
     }
 
-    console.log('✅ User data validated:', userDataObject.firstName, '- Type:', userDataObject.userType);
-    console.log('📊 User proposalCount from Edge Function:', userData.proposalCount, '→ stored as:', userDataObject.proposalCount);
+    log('✅ User data validated:', userDataObject.firstName, '- Type:', userDataObject.userType);
+    log('📊 User proposalCount from Edge Function:', userData.proposalCount, '→ stored as:', userDataObject.proposalCount);
     isUserLoggedInState = true;
 
     return userDataObject;
@@ -1082,7 +1085,7 @@ export async function logoutUser() {
   const token = getAuthToken();
 
   if (!token) {
-    console.log('❌ No token found for logout');
+    log('❌ No token found for logout');
     // Clear any remaining auth data even if no token
     clearAuthData();
     return {
@@ -1091,13 +1094,13 @@ export async function logoutUser() {
     };
   }
 
-  console.log('🔓 Attempting logout via Edge Function...');
+  log('🔓 Attempting logout via Edge Function...');
 
   // Sign out from Supabase Auth client explicitly
   // This ensures the client-side session is cleared from localStorage
   try {
     await supabase.auth.signOut();
-    console.log('✅ Signed out from Supabase Auth client');
+    log('✅ Signed out from Supabase Auth client');
   } catch (err) {
     console.warn('⚠️ Error signing out from Supabase Auth client:', err);
     // Continue with legacy logout...
@@ -1118,14 +1121,14 @@ export async function logoutUser() {
     clearAuthData();
 
     if (error || !data.success) {
-      console.log('⚠️ Logout API returned error, but local data cleared');
+      log('⚠️ Logout API returned error, but local data cleared');
       return {
         success: true,
         message: 'Logged out locally'
       };
     }
 
-    console.log('✅ Logout successful');
+    log('✅ Logout successful');
     return {
       success: true,
       message: data.data.message || 'Logout successful'
@@ -1201,7 +1204,7 @@ export function clearAuthErrorFromUrl() {
  * @returns {Promise<Object>} Response object with success status and message
  */
 export async function requestPasswordReset(email) {
-  console.log('🔐 Requesting password reset for:', email);
+  log('🔐 Requesting password reset for:', email);
 
   if (!email) {
     return {
@@ -1230,7 +1233,7 @@ export async function requestPasswordReset(email) {
       };
     }
 
-    console.log('✅ Password reset request processed');
+    log('✅ Password reset request processed');
     return {
       success: true,
       message: data?.data?.message || 'If an account with that email exists, a password reset link has been sent.'
@@ -1258,7 +1261,7 @@ export async function requestPasswordReset(email) {
  * @returns {Promise<Object>} Response object with success status
  */
 export async function updatePassword(newPassword) {
-  console.log('🔐 Updating password...');
+  log('🔐 Updating password...');
 
   if (!newPassword) {
     return {
@@ -1340,7 +1343,7 @@ export async function updatePassword(newPassword) {
       };
     }
 
-    console.log('✅ Password updated successfully');
+    log('✅ Password updated successfully');
 
     // Keep user logged in by syncing the Supabase session to secure storage
     // The user has proven account ownership by accessing their email
@@ -1360,9 +1363,9 @@ export async function updatePassword(newPassword) {
     // Update login state
     isUserLoggedInState = true;
 
-    console.log('✅ User session preserved after password update');
-    console.log('   User ID:', userId);
-    console.log('   User Type:', userType);
+    log('✅ User session preserved after password update');
+    log('   User ID:', userId);
+    log('   User Type:', userType);
 
     return {
       success: true,
@@ -1390,7 +1393,7 @@ export async function updatePassword(newPassword) {
  * @returns {Promise<Object>} Result with success status or error
  */
 export async function initiateLinkedInOAuth(userType) {
-  console.log('[Auth] Initiating LinkedIn OAuth with userType:', userType);
+  log('[Auth] Initiating LinkedIn OAuth with userType:', userType);
 
   // Store user type before redirect
   setLinkedInOAuthUserType(userType);
@@ -1424,7 +1427,7 @@ export async function initiateLinkedInOAuth(userType) {
  * @returns {Promise<Object>} Result with user data or error
  */
 export async function handleLinkedInOAuthCallback() {
-  console.log('[Auth] Handling LinkedIn OAuth callback');
+  log('[Auth] Handling LinkedIn OAuth callback');
 
   // Get the session from OAuth callback
   const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -1457,8 +1460,8 @@ export async function handleLinkedInOAuthCallback() {
     supabaseUserId: user.id,
   };
 
-  console.log('[Auth] LinkedIn data:', linkedInData);
-  console.log('[Auth] Stored userType:', userType);
+  log('[Auth] LinkedIn data:', linkedInData);
+  log('[Auth] Stored userType:', userType);
 
   // Call Edge Function to create/link user record
   try {
@@ -1523,7 +1526,7 @@ export async function handleLinkedInOAuthCallback() {
  * @returns {Promise<Object>} Result with success status or error
  */
 export async function initiateLinkedInOAuthLogin() {
-  console.log('[Auth] Initiating LinkedIn OAuth Login');
+  log('[Auth] Initiating LinkedIn OAuth Login');
 
   // Clear any existing signup flow flags to prevent conflicts
   clearLinkedInOAuthUserType();
@@ -1561,11 +1564,11 @@ export async function initiateLinkedInOAuthLogin() {
  * @returns {Promise<Object>} Result with user data or error (userNotFound: true if account doesn't exist)
  */
 export async function handleLinkedInOAuthLoginCallback() {
-  console.log('[Auth] Handling LinkedIn OAuth Login callback');
+  log('[Auth] Handling LinkedIn OAuth Login callback');
 
   // Verify this is a login flow
   if (!getLinkedInOAuthLoginFlow()) {
-    console.log('[Auth] Not a login flow callback, skipping');
+    log('[Auth] Not a login flow callback, skipping');
     return { success: false, error: 'Not a login flow' };
   }
 
@@ -1594,7 +1597,7 @@ export async function handleLinkedInOAuthLoginCallback() {
     const email = user.email;
     const supabaseUserId = user.id;
 
-    console.log('[Auth] LinkedIn OAuth login data:', { email, supabaseUserId });
+    log('[Auth] LinkedIn OAuth login data:', { email, supabaseUserId });
 
     // Call Edge Function to verify user exists
     const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/auth-user`, {
@@ -1623,7 +1626,7 @@ export async function handleLinkedInOAuthLoginCallback() {
     if (!response.ok || !data.success) {
       // Check if user was not found
       if (data.data?.userNotFound) {
-        console.log('[Auth] User not found for OAuth login:', email);
+        log('[Auth] User not found for OAuth login:', email);
         return {
           success: false,
           userNotFound: true,
@@ -1653,7 +1656,7 @@ export async function handleLinkedInOAuthLoginCallback() {
       localStorage.setItem('splitlease_supabase_user_id', supabase_user_id);
     }
 
-    console.log('[Auth] LinkedIn OAuth login successful');
+    log('[Auth] LinkedIn OAuth login successful');
     return {
       success: true,
       data: data.data

@@ -349,9 +349,9 @@ export function clearLinkedInOAuthLoginFlow() {
 }
 
 /**
- * Export for debugging (REMOVE IN PRODUCTION)
+ * Debug utilities - only available in development mode
  */
-export const __DEV__ = {
+export const __DEV__ = import.meta.env.DEV ? {
   dumpSecureStorage() {
     return {
       token: getAuthToken(),
@@ -359,4 +359,4 @@ export const __DEV__ = {
       refreshData: getRefreshData()
     };
   }
-};
+} : {};
