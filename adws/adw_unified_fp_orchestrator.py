@@ -60,6 +60,49 @@ from adw_modules.chunk_parser import extract_page_groups, ChunkData
 from adw_code_audit import run_code_audit_and_plan
 
 
+def _cleanup_browser_processes(logger: RunLogger) -> None:
+    """Kill zombie Playwright/Chrome processes to prevent MCP session conflicts."""
+    import platform
+
+    if platform.system() != "Windows":
+        # Unix-like cleanup
+        subprocess.run(["pkill", "-f", "chrome.*--remote-debugging"], capture_output=True)
+        subprocess.run(["pkill", "-f", "chromium"], capture_output=True)
+        subprocess.run(["pkill", "-f", "playwright"], capture_output=True)
+        return
+
+    # Windows cleanup
+    try:
+        # Kill Chrome/Edge with remote debugging
+        result = subprocess.run(
+            ["powershell", "-Command",
+             "Get-Process | Where-Object { $_.ProcessName -match 'chrome|chromium|msedge' } | "
+             "Stop-Process -Force -ErrorAction SilentlyContinue"],
+            capture_output=True, text=True, timeout=10
+        )
+
+        # Kill playwright processes
+        subprocess.run(
+            ["powershell", "-Command",
+             "Get-Process | Where-Object { $_.ProcessName -match 'playwright' } | "
+             "Stop-Process -Force -ErrorAction SilentlyContinue"],
+            capture_output=True, timeout=10
+        )
+
+        # Clean up lock files
+        lock_paths = [
+            Path.home() / ".playwright-mcp" / "SingletonLock",
+            Path.cwd() / ".playwright-mcp" / "SingletonLock",
+        ]
+        for lock_path in lock_paths:
+            if lock_path.exists():
+                lock_path.unlink(missing_ok=True)
+
+        logger.step("Browser cleanup complete", notify=False)
+    except Exception as e:
+        logger.step(f"Browser cleanup warning: {e}", notify=False)
+
+
 def implement_chunks_with_gemini(chunks: List[ChunkData], working_dir: Path, logger: RunLogger) -> bool:
     """Implement all chunks in a group using Gemini Flash."""
     for chunk in chunks:
@@ -140,6 +183,9 @@ def main():
     # Track success for final notification
     run_success = False
     dev_server = None
+
+    # Clean up zombie browser processes before starting
+    _cleanup_browser_processes(logger)
 
     try:
         # PHASE 1: AUDIT (Claude Opus)
