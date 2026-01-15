@@ -60,47 +60,72 @@ from adw_modules.chunk_parser import extract_page_groups, ChunkData
 from adw_code_audit import run_code_audit_and_plan
 
 
-def _cleanup_browser_processes(logger: RunLogger) -> None:
-    """Kill zombie Playwright/Chrome processes to prevent MCP session conflicts."""
+def _cleanup_browser_processes(logger: RunLogger, silent: bool = False) -> None:
+    """Kill ALL Playwright/Chrome processes to prevent MCP session conflicts.
+
+    Args:
+        logger: RunLogger instance
+        silent: If True, don't log the cleanup step
+    """
     import platform
+    import os
+    import time
 
     if platform.system() != "Windows":
-        # Unix-like cleanup
-        subprocess.run(["pkill", "-f", "chrome.*--remote-debugging"], capture_output=True)
+        # Unix-like cleanup - aggressive
+        subprocess.run(["pkill", "-f", "chrome"], capture_output=True)
         subprocess.run(["pkill", "-f", "chromium"], capture_output=True)
         subprocess.run(["pkill", "-f", "playwright"], capture_output=True)
+        subprocess.run(["pkill", "-f", "node.*playwright"], capture_output=True)
         return
 
-    # Windows cleanup
+    # Windows - aggressive cleanup matching kill_browsers.ps1
     try:
-        # Kill Chrome/Edge with remote debugging
-        result = subprocess.run(
-            ["powershell", "-Command",
-             "Get-Process | Where-Object { $_.ProcessName -match 'chrome|chromium|msedge' } | "
-             "Stop-Process -Force -ErrorAction SilentlyContinue"],
-            capture_output=True, text=True, timeout=10
-        )
-
-        # Kill playwright processes
+        # Step 1: Kill ALL Chrome/Chromium/Edge processes
         subprocess.run(
             ["powershell", "-Command",
-             "Get-Process | Where-Object { $_.ProcessName -match 'playwright' } | "
+             "Get-Process -Name chrome, chromium, msedge -ErrorAction SilentlyContinue | "
+             "Stop-Process -Force -ErrorAction SilentlyContinue"],
+            capture_output=True, timeout=15
+        )
+
+        # Step 2: Kill node/npx processes (MCP servers)
+        subprocess.run(
+            ["powershell", "-Command",
+             "Get-Process -Name node, npx -ErrorAction SilentlyContinue | "
              "Stop-Process -Force -ErrorAction SilentlyContinue"],
             capture_output=True, timeout=10
         )
 
-        # Clean up lock files
-        lock_paths = [
-            Path.home() / ".playwright-mcp" / "SingletonLock",
-            Path.cwd() / ".playwright-mcp" / "SingletonLock",
-        ]
-        for lock_path in lock_paths:
-            if lock_path.exists():
-                lock_path.unlink(missing_ok=True)
+        # Give processes time to terminate
+        time.sleep(2)
 
-        logger.step("Browser cleanup complete", notify=False)
+        # Step 3: Clean up ALL Playwright MCP lock files
+        local_app_data = os.environ.get("LOCALAPPDATA", "")
+        mcp_dirs = [
+            Path(local_app_data) / "ms-playwright" / "mcp-chrome-host-live",
+            Path(local_app_data) / "ms-playwright" / "mcp-chrome-host-dev",
+            Path(local_app_data) / "ms-playwright" / "mcp-chrome-guest-live",
+            Path(local_app_data) / "ms-playwright" / "mcp-chrome-guest-dev",
+            Path.home() / ".playwright-mcp",
+            Path.cwd() / ".playwright-mcp",
+        ]
+
+        for mcp_dir in mcp_dirs:
+            for lock_name in ["SingletonLock", "SingletonSocket", "SingletonCookie"]:
+                lock_path = mcp_dir / lock_name
+                if lock_path.exists():
+                    lock_path.unlink(missing_ok=True)
+                # Also check Default subdirectory
+                default_lock = mcp_dir / "Default" / lock_name
+                if default_lock.exists():
+                    default_lock.unlink(missing_ok=True)
+
+        if not silent:
+            logger.step("Browser cleanup complete", notify=False)
     except Exception as e:
-        logger.step(f"Browser cleanup warning: {e}", notify=False)
+        if not silent:
+            logger.step(f"Browser cleanup warning: {e}", notify=False)
 
 
 def implement_chunks_with_gemini(chunks: List[ChunkData], working_dir: Path, logger: RunLogger) -> bool:
@@ -315,6 +340,9 @@ def main():
                 continue
 
             try:
+                # Clean up any zombie browser processes before visual check
+                _cleanup_browser_processes(logger, silent=True)
+
                 # 4c. Visual regression check (concurrent LIVE vs DEV)
                 mcp_live, mcp_dev = get_concurrent_mcp_sessions(page_path)
                 page_info = get_page_info(page_path)

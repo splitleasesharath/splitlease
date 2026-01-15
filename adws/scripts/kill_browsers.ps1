@@ -1,46 +1,80 @@
-# Kill zombie Playwright/Chrome processes
+# Kill ALL Playwright/Chrome/Chromium processes - Nuclear option
 # Run before starting ADW orchestrator to prevent MCP session conflicts
 
-Write-Host "Cleaning up browser processes..." -ForegroundColor Yellow
+Write-Host "=== NUCLEAR BROWSER CLEANUP ===" -ForegroundColor Red
 
-# Kill Chrome/Chromium processes with remote debugging
-Get-Process | Where-Object {
-    $_.ProcessName -match "chrome|chromium|msedge" -and
-    $_.CommandLine -match "remote-debugging"
-} | ForEach-Object {
-    Write-Host "  Killing: $($_.ProcessName) (PID: $($_.Id))"
-    Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue
+# Step 1: Kill ALL Chrome/Chromium/Edge processes (not just remote-debugging ones)
+Write-Host "`n[1/4] Killing ALL browser processes..." -ForegroundColor Yellow
+$browsers = Get-Process -Name chrome, chromium, msedge -ErrorAction SilentlyContinue
+if ($browsers) {
+    $browsers | ForEach-Object {
+        Write-Host "  Killing: $($_.ProcessName) (PID: $($_.Id))"
+    }
+    $browsers | Stop-Process -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 2
+} else {
+    Write-Host "  No browser processes found"
 }
 
-# Kill any playwright processes
-Get-Process | Where-Object { $_.ProcessName -match "playwright" } | ForEach-Object {
-    Write-Host "  Killing: $($_.ProcessName) (PID: $($_.Id))"
-    Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue
+# Step 2: Kill node/npx processes that might be MCP servers
+Write-Host "`n[2/4] Killing node/npx processes (MCP servers)..." -ForegroundColor Yellow
+$nodeProcs = Get-Process -Name node, npx -ErrorAction SilentlyContinue
+if ($nodeProcs) {
+    $nodeProcs | ForEach-Object {
+        Write-Host "  Killing: $($_.ProcessName) (PID: $($_.Id))"
+    }
+    $nodeProcs | Stop-Process -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 1
+} else {
+    Write-Host "  No node/npx processes found"
 }
 
-# Kill processes on debug ports (9222, 9223, etc.)
-$debugPorts = @(9222, 9223, 9224, 9225)
+# Step 3: Clean up ALL Playwright MCP user data directories (lock files)
+Write-Host "`n[3/4] Removing Playwright lock files..." -ForegroundColor Yellow
+$mcpDirs = @(
+    "$env:LOCALAPPDATA\ms-playwright\mcp-chrome-host-live",
+    "$env:LOCALAPPDATA\ms-playwright\mcp-chrome-host-dev",
+    "$env:LOCALAPPDATA\ms-playwright\mcp-chrome-guest-live",
+    "$env:LOCALAPPDATA\ms-playwright\mcp-chrome-guest-dev",
+    "$env:USERPROFILE\.playwright-mcp",
+    "$PWD\.playwright-mcp"
+)
+
+foreach ($dir in $mcpDirs) {
+    $lockFile = Join-Path $dir "SingletonLock"
+    $socketFile = Join-Path $dir "SingletonSocket"
+    $cookieFile = Join-Path $dir "SingletonCookie"
+
+    foreach ($file in @($lockFile, $socketFile, $cookieFile)) {
+        if (Test-Path $file) {
+            Write-Host "  Removing: $file"
+            Remove-Item $file -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    # Also check for Default/Singleton* files
+    $defaultDir = Join-Path $dir "Default"
+    if (Test-Path $defaultDir) {
+        Get-ChildItem "$defaultDir\Singleton*" -ErrorAction SilentlyContinue | ForEach-Object {
+            Write-Host "  Removing: $($_.FullName)"
+            Remove-Item $_.FullName -Force -ErrorAction SilentlyContinue
+        }
+    }
+}
+
+# Step 4: Release any ports that might be held
+Write-Host "`n[4/4] Checking debug ports..." -ForegroundColor Yellow
+$debugPorts = @(9222, 9223, 9224, 9225, 9226, 9227, 9228, 9229)
 foreach ($port in $debugPorts) {
-    $connections = Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue
-    foreach ($conn in $connections) {
+    $conn = Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue
+    if ($conn) {
         $proc = Get-Process -Id $conn.OwningProcess -ErrorAction SilentlyContinue
         if ($proc) {
-            Write-Host "  Killing process on port ${port}: $($proc.ProcessName) (PID: $($proc.Id))"
+            Write-Host "  Port ${port}: Killing $($proc.ProcessName) (PID: $($proc.Id))"
             Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
         }
     }
 }
 
-# Clean up Playwright MCP state directories
-$mcpDirs = @(
-    "$env:USERPROFILE\.playwright-mcp",
-    "$PWD\.playwright-mcp"
-)
-foreach ($dir in $mcpDirs) {
-    if (Test-Path "$dir\SingletonLock") {
-        Write-Host "  Removing lock file: $dir\SingletonLock"
-        Remove-Item "$dir\SingletonLock" -Force -ErrorAction SilentlyContinue
-    }
-}
-
-Write-Host "Browser cleanup complete." -ForegroundColor Green
+Write-Host "`n=== CLEANUP COMPLETE ===" -ForegroundColor Green
+Write-Host "You may now restart Claude Code or the ADW orchestrator." -ForegroundColor Cyan
