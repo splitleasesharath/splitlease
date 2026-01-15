@@ -114,13 +114,23 @@ def check_visual_parity(
 
             # Success - parse JSON from response
             try:
-                json_match = re.search(r'\{.*\}', response.output, re.DOTALL)
+                output_text = response.output
+
+                # Strip markdown code blocks if present (```json ... ``` or ``` ... ```)
+                code_block_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', output_text, re.DOTALL)
+                if code_block_match:
+                    output_text = code_block_match.group(1)
+
+                # Find JSON object in the output
+                json_match = re.search(r'\{.*\}', output_text, re.DOTALL)
                 if json_match:
                     return json.loads(json_match.group(0))
                 else:
+                    # Provide more diagnostic info
+                    output_preview = response.output[:500] if response.output else "(empty)"
                     return {
                         "visualParity": "FAIL",
-                        "issues": ["Could not parse JSON from visual check response"],
+                        "issues": [f"Could not parse JSON from visual check response. Output preview: {output_preview}"],
                         "explanation": response.output
                     }
             except json.JSONDecodeError as e:
