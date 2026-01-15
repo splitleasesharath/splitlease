@@ -11,7 +11,7 @@
  */
 
 import QRCode from "qrcode";
-import { createCanvas, loadImage } from "canvas";
+import { Image, decode } from "imagescript";
 import {
   OUTPUT_SIZE,
   PADDING,
@@ -21,8 +21,6 @@ import {
   DEFAULT_BACKGROUND,
   MONOTONE_BACKGROUND,
   LOGO_URL,
-  TEXT_FONT_SIZE,
-  TEXT_SPACING,
   ERROR_CORRECTION,
 } from "../lib/qrConfig.ts";
 import { ValidationError } from "../../_shared/errors.ts";
@@ -57,6 +55,17 @@ interface QRColors {
  */
 const isValidHexColor = (color: string): boolean =>
   /^#[0-9A-Fa-f]{6}$/.test(color);
+
+/**
+ * Convert hex color to RGBA number for imagescript
+ * Format: 0xRRGGBBAA
+ */
+const hexToRgba = (hex: string, alpha: number = 255): number => {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return ((r << 24) | (g << 16) | (b << 8) | alpha) >>> 0;
+};
 
 /**
  * Resolve background color from input
@@ -163,60 +172,78 @@ const generateQRDataUrl = async (
 /**
  * Compose final image with QR code, logo, and optional text
  *
- * Uses Canvas API for image composition
+ * Uses imagescript for Deno Deploy compatibility (pure TypeScript)
+ * Note: Text rendering not supported in pure imagescript without font files
  */
 const composeImage = async (
   qrDataUrl: string,
   logoBuffer: ArrayBuffer,
   colors: QRColors,
-  text?: string
+  _text?: string  // Reserved for future font-based implementation
 ): Promise<Uint8Array> => {
-  // Create canvas with output dimensions
-  const canvas = createCanvas(OUTPUT_SIZE, OUTPUT_SIZE);
-  const ctx = canvas.getContext('2d');
+  // Create base image with background color
+  const canvas = new Image(OUTPUT_SIZE, OUTPUT_SIZE);
+  canvas.fill(hexToRgba(colors.background));
 
-  // Fill background
-  ctx.fillStyle = colors.background;
-  ctx.fillRect(0, 0, OUTPUT_SIZE, OUTPUT_SIZE);
+  // Decode QR code from data URL (strip base64 prefix)
+  const qrBase64 = qrDataUrl.split(',')[1];
+  const qrBytes = Uint8Array.from(atob(qrBase64), c => c.charCodeAt(0));
+  const qrImage = await decode(qrBytes);
 
-  // Load and draw QR code (centered with padding)
-  const qrImage = await loadImage(qrDataUrl);
-  ctx.drawImage(qrImage, PADDING, PADDING, QR_DISPLAY_SIZE, QR_DISPLAY_SIZE);
+  // Resize QR code to fit display area
+  const qrResized = qrImage.resize(QR_DISPLAY_SIZE, QR_DISPLAY_SIZE);
+
+  // Composite QR code onto canvas at padding offset
+  canvas.composite(qrResized, PADDING, PADDING);
 
   // Calculate logo position (center of QR code)
-  const centerX = OUTPUT_SIZE / 2;
-  const centerY = PADDING + (QR_DISPLAY_SIZE / 2);
+  const centerX = Math.floor(OUTPUT_SIZE / 2);
+  const centerY = Math.floor(PADDING + (QR_DISPLAY_SIZE / 2));
 
   // Draw white circle behind logo
-  ctx.fillStyle = '#FFFFFF';
-  ctx.beginPath();
-  ctx.arc(centerX, centerY, LOGO_CIRCLE_SIZE / 2, 0, Math.PI * 2);
-  ctx.fill();
+  const circleRadius = Math.floor(LOGO_CIRCLE_SIZE / 2);
+  drawFilledCircle(canvas, centerX, centerY, circleRadius, hexToRgba('#FFFFFF'));
 
-  // Load and draw logo
-  const logoImage = await loadImage(new Uint8Array(logoBuffer));
-  ctx.drawImage(
-    logoImage,
-    centerX - (LOGO_SIZE / 2),
-    centerY - (LOGO_SIZE / 2),
-    LOGO_SIZE,
-    LOGO_SIZE
-  );
+  // Decode and resize logo
+  const logoImage = await decode(new Uint8Array(logoBuffer));
+  const logoResized = logoImage.resize(LOGO_SIZE, LOGO_SIZE);
 
-  // Draw optional text below QR code
-  if (text) {
-    const upperText = text.toUpperCase();
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = `bold ${TEXT_FONT_SIZE}px Arial, sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
+  // Composite logo at center
+  const logoX = Math.floor(centerX - (LOGO_SIZE / 2));
+  const logoY = Math.floor(centerY - (LOGO_SIZE / 2));
+  canvas.composite(logoResized, logoX, logoY);
 
-    const textY = PADDING + QR_DISPLAY_SIZE + TEXT_SPACING;
-    ctx.fillText(upperText, centerX, textY);
-  }
+  // Note: Text rendering requires font file loading
+  // For now, text parameter is accepted but not rendered
+  // TODO: Implement text rendering with embedded font or external font fetch
 
   // Export as PNG
-  return canvas.toBuffer('image/png');
+  return canvas.encode();
+};
+
+/**
+ * Draw a filled circle on an image (imagescript doesn't have built-in circle fill)
+ */
+const drawFilledCircle = (
+  image: Image,
+  cx: number,
+  cy: number,
+  radius: number,
+  color: number
+): void => {
+  const radiusSq = radius * radius;
+
+  for (let y = -radius; y <= radius; y++) {
+    for (let x = -radius; x <= radius; x++) {
+      if (x * x + y * y <= radiusSq) {
+        const px = cx + x;
+        const py = cy + y;
+        if (px >= 0 && px < image.width && py >= 0 && py < image.height) {
+          image.setPixelAt(px + 1, py + 1, color); // imagescript uses 1-based indexing
+        }
+      }
+    }
+  }
 };
 
 // ─────────────────────────────────────────────────────────────
