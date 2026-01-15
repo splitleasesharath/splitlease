@@ -171,8 +171,8 @@ export async function getDefaultGuests() {
     const { data, error } = await supabase
       .from('user')
       .select(USER_SELECT_FIELDS)
-      .ilike('Type - User Current', '%Guest%')
-      .order('Created Date', { ascending: false })
+      .ilike('"Type - User Current"', '%Guest%')
+      .order('"Created Date"', { ascending: false })
       .limit(20);
 
     if (error) throw error;
@@ -192,7 +192,7 @@ export async function searchGuests(searchTerm) {
     const { data, error } = await supabase
       .from('user')
       .select(USER_SELECT_FIELDS)
-      .ilike('Type - User Current', '%Guest%')
+      .ilike('"Type - User Current"', '%Guest%')
       .or(`"Name - Full".ilike.%${searchTerm}%,"Name - First".ilike.%${searchTerm}%,"Name - Last".ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,"Phone Number (as text)".ilike.%${searchTerm}%,_id.ilike.%${searchTerm}%`)
       .limit(20);
 
