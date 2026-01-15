@@ -81,10 +81,11 @@ export function useHeaderMessagingPanelLogic({
   // FETCH THREADS WHEN PANEL OPENS
   // ============================================================================
   useEffect(() => {
-    if (isOpen && !hasLoadedThreads.current) {
+    // Only fetch if panel is open, we have a user ID, and haven't loaded yet
+    if (isOpen && userBubbleId && !hasLoadedThreads.current) {
       fetchThreads();
     }
-  }, [isOpen]);
+  }, [isOpen, userBubbleId]);
 
   // Reset when panel closes
   useEffect(() => {
