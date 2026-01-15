@@ -57,12 +57,12 @@ Design an optimal orchestration system for sequencing multiple Supabase Edge Fun
 | bubble-proxy | send_message, ai_inquiry, upload_photos, submit_referral, toggle_favorite, get_favorites, parse_profile | External API proxy |
 | ai-gateway | complete, stream | OpenAI proxy with templating |
 | send-email | send, health | SendGrid email delivery |
-| virtual-meeting | create, delete, accept, decline, send_calendar_invite, notify_participants | Meeting coordination |
+| send-sms | send, health | Twilio SMS delivery |
+| rental-application | get, submit, upload | Rental application management |
 | cohost-request | create, rate, notify-host | Co-host request management |
 | slack | faq_inquiry | Slack notifications |
 | communications | health | Placeholder |
 | pricing | health | Placeholder |
-| ai-signup-guest | (single action) | AI-powered signup |
 | workflow-enqueue | enqueue, status, health | Workflow entry point |
 | workflow-orchestrator | process | Workflow step executor |
 
