@@ -1316,7 +1316,7 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
           {/* VM action button (only when actionable, not disabled) */}
           {vmConfig.visible && !vmConfig.disabled && (
             <button
-              className={`btn btn-outline ${highlightVMButton && vmConfig.view === 'request' ? 'vm-button-pulse' : ''}`}
+              className="btn btn-outline"
               onClick={handleVMButtonClick}
             >
               {vmConfig.view === 'request' ? 'Schedule Meeting' : vmConfig.label}
