@@ -1,15 +1,21 @@
-const LOG_LEVELS = {
-  ERROR: 0,
-  WARN: 1,
-  INFO: 2,
-  DEBUG: 3
-}
+/**
+ * Development-aware logging utility
+ *
+ * Automatically gates log/warn/debug behind development mode.
+ * Errors are always logged (production + development).
+ *
+ * @example
+ * import { logger } from '../../lib/logger.js';
+ *
+ * logger.log('[Component] Rendering...'); // Only in dev
+ * logger.error('[Component] Failed:', err); // Always logs
+ */
 
-const currentLevel = import.meta.env.DEV ? LOG_LEVELS.DEBUG : LOG_LEVELS.ERROR
+const isDev = import.meta.env.DEV;
 
 export const logger = {
-  error: (msg, data) => currentLevel >= LOG_LEVELS.ERROR && console.error(`[ERROR] ${msg}`, data),
-  warn: (msg, data) => currentLevel >= LOG_LEVELS.WARN && console.warn(`[WARN] ${msg}`, data),
-  info: (msg, data) => currentLevel >= LOG_LEVELS.INFO && console.log(`[INFO] ${msg}`, data),
-  debug: (msg, data) => currentLevel >= LOG_LEVELS.DEBUG && console.log(`[DEBUG] ${msg}`, data)
-}
+  log: (...args) => isDev && console.log(...args),
+  warn: (...args) => isDev && console.warn(...args),
+  error: (...args) => console.error(...args), // Keep errors in production
+  debug: (...args) => isDev && console.debug(...args),
+};
