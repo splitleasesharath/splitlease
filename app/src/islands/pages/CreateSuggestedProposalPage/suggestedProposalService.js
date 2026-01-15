@@ -344,8 +344,9 @@ export function getAddressString(listing) {
     if (parts) return parts;
   }
 
-  // Final fallback: use State and Zip only (Location - City is a Bubble FK ID)
+  // Final fallback: use Borough, State, and Zip (Location - City is a Bubble FK ID)
   return [
+    listing['Location - Borough'],
     listing['Location - State'],
     listing['Location - Zip Code']
   ].filter(Boolean).join(', ');
