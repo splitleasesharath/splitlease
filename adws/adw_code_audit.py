@@ -36,8 +36,8 @@ def run_code_audit_and_plan(target_path: str, audit_type: str, working_dir: Path
 
     # Generate timestamp for output files
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-    plan_file = f".claude/plans/New/{timestamp}_code_refactor_plan.md"
-    agent_dir = f"agents/code_audit_{timestamp}"
+    plan_file = f"adws/adw_plans/{timestamp}_code_refactor_plan.md"
+    agent_dir = f"adws/agents/code_audit_{timestamp}"
 
     # Load prompt from template
     prompt_template_path = Path(__file__).parent / "prompts" / "code_audit_opus.txt"
