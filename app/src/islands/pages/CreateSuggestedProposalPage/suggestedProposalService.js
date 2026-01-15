@@ -325,7 +325,7 @@ export function getLastPhoto(listing, photos = []) {
  * Get address string from listing
  *
  * Location - Address JSON structure: { address: "Full Address String", lat, lng }
- * Note: Location - City contains a Bubble FK ID, not a city name - never display it directly
+ * Note: Location - City and Location - Borough contain Bubble FK IDs, not displayable names
  */
 export function getAddressString(listing) {
   if (!listing) return '';
@@ -344,9 +344,8 @@ export function getAddressString(listing) {
     if (parts) return parts;
   }
 
-  // Final fallback: use Borough, State, and Zip (Location - City is a Bubble FK ID)
+  // Final fallback: State and Zip only (City and Borough are Bubble FK IDs)
   return [
-    listing['Location - Borough'],
     listing['Location - State'],
     listing['Location - Zip Code']
   ].filter(Boolean).join(', ');
