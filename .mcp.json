@@ -19,7 +19,7 @@
       ],
       "env": {}
     },
-	"playwright-host": {
+	"playwright-host-live": {
       "type": "stdio",
       "command": "cmd",
       "args": [
@@ -27,11 +27,11 @@
         "npx",
         "@playwright/mcp@latest",
         "--user-data-dir",
-        "C:\\Users\\Split Lease\\AppData\\Local\\ms-playwright\\mcp-chrome-host"
+        "C:\\Users\\Split Lease\\AppData\\Local\\ms-playwright\\mcp-chrome-host-live"
       ],
       "env": {}
     },
-	"playwright-guest": {
+    "playwright-host-dev": {
       "type": "stdio",
       "command": "cmd",
       "args": [
@@ -39,7 +39,31 @@
         "npx",
         "@playwright/mcp@latest",
         "--user-data-dir",
-        "C:\\Users\\Split Lease\\AppData\\Local\\ms-playwright\\mcp-chrome-guest"
+        "C:\\Users\\Split Lease\\AppData\\Local\\ms-playwright\\mcp-chrome-host-dev"
+      ],
+      "env": {}
+    },
+    "playwright-guest-live": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "@playwright/mcp@latest",
+        "--user-data-dir",
+        "C:\\Users\\Split Lease\\AppData\\Local\\ms-playwright\\mcp-chrome-guest-live"
+      ],
+      "env": {}
+    },
+    "playwright-guest-dev": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "@playwright/mcp@latest",
+        "--user-data-dir",
+        "C:\\Users\\Split Lease\\AppData\\Local\\ms-playwright\\mcp-chrome-guest-dev"
       ],
       "env": {}
     }

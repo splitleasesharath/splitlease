@@ -45,7 +45,17 @@ from adw_modules.data_types import AgentPromptRequest
 from adw_modules.run_logger import create_run_logger, RunLogger
 from adw_modules.dev_server import DevServerManager
 from adw_modules.visual_regression import check_visual_parity
-from adw_modules.page_classifier import HOST_PAGES, GUEST_PAGES, SHARED_PROTECTED_PAGES
+from adw_modules.page_classifier import (
+    ALL_PAGES,
+    get_page_info,
+    get_mcp_sessions_for_page,
+)
+from adw_modules.concurrent_parity import (
+    create_parity_check_plan,
+    get_capture_config,
+    LIVE_BASE_URL,
+    DEV_BASE_URL,
+)
 from adw_modules.chunk_parser import extract_page_groups, ChunkData
 from adw_code_audit import run_code_audit_and_plan
 
@@ -101,15 +111,14 @@ def implement_chunks_with_gemini(chunks: List[ChunkData], working_dir: Path, log
     return True
 
 
-def get_mcp_session_for_page(page_path: str) -> Optional[str]:
-    """Determine MCP session for a page path."""
-    if page_path in HOST_PAGES:
-        return "playwright-host"
-    if page_path in GUEST_PAGES:
-        return "playwright-guest"
-    if page_path in SHARED_PROTECTED_PAGES:
-        return "playwright-host"
-    return None
+def get_concurrent_mcp_sessions(page_path: str) -> tuple:
+    """
+    Get MCP session pair for concurrent LIVE vs DEV comparison.
+
+    Returns:
+        Tuple of (live_session, dev_session) - None for public pages
+    """
+    return get_mcp_sessions_for_page(page_path)
 
 
 def main():
@@ -216,17 +225,22 @@ def main():
                 continue
 
             try:
-                # 4c. Visual regression check
-                mcp_session = get_mcp_session_for_page(page_path)
-                auth_type = "protected" if mcp_session else "public"
+                # 4c. Visual regression check (concurrent LIVE vs DEV)
+                mcp_live, mcp_dev = get_concurrent_mcp_sessions(page_path)
+                page_info = get_page_info(page_path)
+                auth_type = page_info.auth_type if page_info else "public"
 
-                logger.step(f"Visual check (MCP: {mcp_session or 'public'})")
+                logger.step(f"Visual check: LIVE({mcp_live or 'public'}) vs DEV({mcp_dev or 'public'})")
 
+                # For concurrent comparison, we use both sessions
+                # The visual_regression module handles the parallel capture
                 visual_result = check_visual_parity(
                     page_path=page_path,
-                    mcp_session=mcp_session,
+                    mcp_session=mcp_live,  # Primary session for LIVE
+                    mcp_session_dev=mcp_dev,  # Secondary session for DEV
                     auth_type=auth_type,
-                    port=port
+                    port=port,
+                    concurrent=True  # Enable concurrent capture
                 )
 
                 # 4d. Commit or reset
