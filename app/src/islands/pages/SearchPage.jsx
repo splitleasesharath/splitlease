@@ -3560,6 +3560,7 @@ export default function SearchPage() {
             filteredListings={allListings}
             selectedListing={null}
             selectedBorough={selectedBorough}
+            selectedNightsCount={selectedNightsCount}
             onMarkerClick={(listing) => {
               console.log('Marker clicked:', listing.title);
               scrollToListingCard(listing);
@@ -3686,6 +3687,7 @@ export default function SearchPage() {
               filteredListings={allListings}
               selectedListing={null}
               selectedBorough={selectedBorough}
+              selectedNightsCount={selectedNightsCount}
               onMarkerClick={(listing) => {
                 console.log('Marker clicked:', listing.title);
                 // Close mobile map and scroll to listing

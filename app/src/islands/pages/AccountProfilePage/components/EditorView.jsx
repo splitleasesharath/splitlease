@@ -9,11 +9,11 @@ import React from 'react';
 import BasicInfoCard from './cards/BasicInfoCard.jsx';
 import AboutCard from './cards/AboutCard.jsx';
 import RequirementsCard from './cards/RequirementsCard.jsx';
-import ScheduleCommuteCard from './cards/ScheduleCommuteCard.jsx';
+import ScheduleCard from './cards/ScheduleCard.jsx';
+import TransportCard from './cards/TransportCard.jsx';
 import TrustVerificationCard from './cards/TrustVerificationCard.jsx';
 import ReasonsCard from './cards/ReasonsCard.jsx';
 import StorageItemsCard from './cards/StorageItemsCard.jsx';
-import VideoIntroCard from './cards/VideoIntroCard.jsx';
 import AccountSettingsCard from './cards/AccountSettingsCard.jsx';
 import ListingsCard from './cards/ListingsCard.jsx';
 import RentalApplicationCard from './RentalApplicationCard.jsx';
@@ -76,13 +76,19 @@ export default function EditorView({
         />
       )}
 
-      {/* Guest-only: Schedule & Commute */}
+      {/* Guest-only: Schedule */}
       {!isHostUser && (
-        <ScheduleCommuteCard
+        <ScheduleCard
           selectedDays={formData.selectedDays}
+          onDayToggle={onDayToggle}
+        />
+      )}
+
+      {/* Guest-only: Transport */}
+      {!isHostUser && (
+        <TransportCard
           transportationType={formData.transportationType}
           transportationOptions={transportationOptions}
-          onDayToggle={onDayToggle}
           onFieldChange={onFieldChange}
         />
       )}
@@ -124,12 +130,6 @@ export default function EditorView({
           onCreateListing={onCreateListing}
         />
       )}
-
-      {/* Video Introduction - Always shown */}
-      <VideoIntroCard
-        videoUrl={profileData?.['Video Intro URL'] || null}
-        onUpload={() => console.log('Video upload clicked')}
-      />
 
       {/* Guest-only: Rental Application */}
       {!isHostUser && (

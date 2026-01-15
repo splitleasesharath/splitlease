@@ -1,16 +1,12 @@
 /* Hero Section */
 .hero-section {
+    background: white;
+    padding: 100px 48px;
+    padding-top: 160px;
+    margin: 0;
     position: relative;
-    min-height: 400px;
-    margin: 150px auto 3rem;
-    width: 80%;
-    max-width: none;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: visible;
-    background: transparent;
+    overflow: hidden;
+    min-height: 700px;
 }
 
 /* Keep mobile break inline on desktop */
@@ -84,31 +80,6 @@
     overflow: visible;
 }
 
-/* Static waterfall/cascade effect - removed animations */
-/* Visual hierarchy maintained through layering and shadows */
-
-/* Waterfall cascade visual effect using pseudo-elements */
-.hero-section::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 100%;
-    background: linear-gradient(180deg,
-        transparent 0%,
-        rgba(255, 255, 255, 0.1) 10%,
-        rgba(255, 255, 255, 0.2) 20%,
-        rgba(255, 255, 255, 0.1) 30%,
-        transparent 40%,
-        rgba(255, 255, 255, 0.05) 50%,
-        transparent 60%,
-        rgba(255, 255, 255, 0.1) 70%,
-        transparent 100%
-    );
-    pointer-events: none;
-    z-index: 1;
-}
 
 
 .hero-content {
@@ -125,23 +96,22 @@
 }
 
 .hero-title {
-    font-size: 1.75rem;
-    font-weight: 700;
-    line-height: 1.2;
-    margin-bottom: 0.5rem;
-    color: #000000;
-    letter-spacing: -0.01em;
-    width: 100%;
-    white-space: nowrap;
+    font-size: 52px;
+    font-weight: 800;
+    color: #111827;
+    line-height: 1.15;
+    margin-bottom: 16px;
+    letter-spacing: -1.5px;
 }
 
 .hero-subtitle {
-    font-size: 0.9rem;
+    font-size: 18px;
     color: #4a4a4a;
-    margin-bottom: 1rem;
-    line-height: 1.4;
-    font-weight: 400;
-    width: 100%;
+    margin-bottom: 32px;
+    line-height: 1.6;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .hero-tagline {
@@ -272,4 +242,326 @@
 #checkinDay, #checkoutDay {
     color: var(--bg-purple);
     font-weight: 600;
+}
+
+/* ========================================
+   FLOATING AVATARS
+   ======================================== */
+.floating-avatar {
+    position: absolute;
+    border-radius: 50%;
+    overflow: visible;
+    box-shadow: 0 8px 24px rgba(49, 19, 93, 0.15);
+    border: 4px solid white;
+    transition: transform 0.3s ease;
+    z-index: 1;
+}
+
+.floating-avatar:hover {
+    transform: scale(1.08);
+    box-shadow: 0 12px 32px rgba(49, 19, 93, 0.25);
+}
+
+.floating-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: 50%;
+}
+
+/* Avatar positions */
+.avatar-1 {
+    width: 120px;
+    height: 120px;
+    top: 12%;
+    left: 10%;
+    animation: hero-float-1 7s ease-in-out infinite;
+}
+
+.avatar-2 {
+    width: 90px;
+    height: 90px;
+    top: 55%;
+    right: 8%;
+    animation: hero-float-2 8s ease-in-out infinite;
+}
+
+.avatar-3 {
+    width: 110px;
+    height: 110px;
+    bottom: 18%;
+    left: 12%;
+    animation: hero-float-3 6.5s ease-in-out infinite;
+}
+
+.avatar-4 {
+    width: 80px;
+    height: 80px;
+    top: 30%;
+    right: 6%;
+    animation: hero-float-4 9s ease-in-out infinite;
+}
+
+.avatar-5 {
+    width: 100px;
+    height: 100px;
+    top: 18%;
+    left: 28%;
+    animation: hero-float-5 7.5s ease-in-out infinite;
+    opacity: 0.85;
+}
+
+.avatar-6 {
+    width: 85px;
+    height: 85px;
+    bottom: 30%;
+    right: 15%;
+    animation: hero-float-6 8.5s ease-in-out infinite;
+    opacity: 0.9;
+}
+
+@keyframes hero-float-1 {
+    0%, 100% { transform: translateY(0px) translateX(0px); }
+    50% { transform: translateY(-18px) translateX(12px); }
+}
+
+@keyframes hero-float-2 {
+    0%, 100% { transform: translateY(0px) translateX(0px); }
+    50% { transform: translateY(20px) translateX(-10px); }
+}
+
+@keyframes hero-float-3 {
+    0%, 100% { transform: translateY(0px) translateX(0px); }
+    50% { transform: translateY(-22px) translateX(-8px); }
+}
+
+@keyframes hero-float-4 {
+    0%, 100% { transform: translateY(0px) translateX(0px); }
+    50% { transform: translateY(15px) translateX(15px); }
+}
+
+@keyframes hero-float-5 {
+    0%, 100% { transform: translateY(0px) translateX(0px); }
+    50% { transform: translateY(-12px) translateX(-14px); }
+}
+
+@keyframes hero-float-6 {
+    0%, 100% { transform: translateY(0px) translateX(0px); }
+    50% { transform: translateY(18px) translateX(8px); }
+}
+
+/* ========================================
+   NOTIFICATION BADGES
+   ======================================== */
+.notification-badge {
+    position: absolute;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 4px 16px rgba(49, 19, 93, 0.15), 0 2px 6px rgba(0,0,0,0.08);
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    font-size: 12px;
+    font-weight: 600;
+    z-index: 2;
+    opacity: 0;
+    transform: translateY(10px) scale(0.9);
+    text-decoration: none;
+    cursor: default;
+}
+
+.notification-badge.clickable {
+    cursor: pointer;
+    pointer-events: auto;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.notification-badge.clickable:hover {
+    transform: translateX(-50%) translateY(-2px) scale(1.02) !important;
+    box-shadow: 0 6px 20px rgba(49, 19, 93, 0.2), 0 3px 8px rgba(0,0,0,0.1);
+}
+
+.notification-badge svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+.notification-badge.savings {
+    color: #4B47CE;
+    bottom: -12px;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px) scale(0.9);
+}
+
+.notification-badge.savings.visible {
+    animation: badge-appear-center 0.4s ease-out 2s forwards;
+}
+
+.notification-badge.feature {
+    color: #4B47CE;
+    bottom: -12px;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px) scale(0.9);
+}
+
+.notification-badge.feature.visible {
+    animation: badge-appear-center 0.4s ease-out 3s forwards;
+}
+
+.notification-badge.location {
+    color: #4B47CE;
+    bottom: -12px;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px) scale(0.9);
+}
+
+.notification-badge.location.visible {
+    animation: badge-appear-center 0.4s ease-out 2.5s forwards;
+}
+
+@keyframes badge-appear-center {
+    0% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(10px) scale(0.9);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0) scale(1);
+    }
+}
+
+/* ========================================
+   HERO CONTAINER (New Design)
+   ======================================== */
+.hero-container {
+    max-width: 900px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 2;
+    text-align: center;
+}
+
+.hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 20px;
+    background: rgba(49, 19, 93, 0.08);
+    border: 1px solid rgba(49, 19, 93, 0.2);
+    border-radius: 500px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #31135D;
+    margin-bottom: 24px;
+}
+
+.hero-title .savings {
+    display: block;
+    color: #4B47CE;
+    font-size: 48px;
+}
+
+/* Schedule Selector Wrapper */
+.schedule-selector-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 32px;
+}
+
+/* ========================================
+   CTA BUTTONS (New Design)
+   ======================================== */
+.hero-cta {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.cta-button.cta-primary {
+    background: #31135D;
+    color: white;
+    border: 2px solid #31135D;
+    padding: 14px 32px;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cta-button.cta-primary:hover {
+    background: #4A2F7C;
+    border-color: #4A2F7C;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(49, 19, 93, 0.3);
+}
+
+.cta-button.cta-secondary {
+    background: white;
+    color: #31135D;
+    border: 2px solid #31135D;
+    padding: 14px 32px;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cta-button.cta-secondary:hover {
+    background: rgba(49, 19, 93, 0.05);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(49, 19, 93, 0.15);
+}
+
+/* ========================================
+   HERO STATS
+   ======================================== */
+.hero-stats {
+    display: flex;
+    justify-content: center;
+    gap: 48px;
+    margin-top: 48px;
+    padding-top: 32px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #31135D;
+    line-height: 1.2;
+}
+
+.stat-label {
+    font-size: 13px;
+    color: #6b7280;
+    font-weight: 500;
+    margin-top: 4px;
+}
+
+/* ========================================
+   RESPONSIVE - Hide avatars on tablet
+   ======================================== */
+@media (max-width: 1024px) {
+    .avatar-5 {
+        display: none;
+    }
 }
