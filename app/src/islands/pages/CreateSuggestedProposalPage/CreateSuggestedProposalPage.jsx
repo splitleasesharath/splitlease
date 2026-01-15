@@ -233,6 +233,7 @@ export default function CreateSuggestedProposalPage() {
 
                 <ValidationPanel
                   selectedDays={selectedDays}
+                  nightsCount={nightsCount}
                   reservationWeeks={reservationSpan === 'custom' ? customWeeks : parseInt(reservationSpan) || 0}
                 />
 

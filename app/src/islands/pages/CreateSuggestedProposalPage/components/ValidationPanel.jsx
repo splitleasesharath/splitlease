@@ -4,14 +4,14 @@
 
 import { getDayName } from '../../../../lib/dayUtils.js';
 
-export default function ValidationPanel({ selectedDays, reservationWeeks }) {
+export default function ValidationPanel({ selectedDays, nightsCount, reservationWeeks }) {
   // Generate pattern string from selected days
   const getPattern = () => {
     if (selectedDays.length === 0) return '-';
 
     const sortedDays = [...selectedDays].sort((a, b) => a - b);
     const dayNames = sortedDays.map(d => getDayName(d).slice(0, 3));
-    return `${dayNames.join(', ')} (${sortedDays.length} nights/week)`;
+    return `${dayNames.join(', ')} (${nightsCount} nights/week)`;
   };
 
   return (

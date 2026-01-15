@@ -17,7 +17,7 @@
 
 import { useState, useMemo } from 'react';
 import { formatPrice, formatDate } from '../../../lib/proposals/dataTransformers.js';
-import { getStatusConfig, getActionsForStatus, isTerminalStatus, isCompletedStatus, isSuggestedProposal, shouldShowStatusBanner, getUsualOrder } from '../../../logic/constants/proposalStatuses.js';
+import { getStatusConfig, getActionsForStatus, isTerminalStatus, isCompletedStatus, isSuggestedProposal, shouldShowStatusBanner, getUsualOrder, PROPOSAL_STATUSES } from '../../../logic/constants/proposalStatuses.js';
 import { shouldHideVirtualMeetingButton } from '../../../lib/proposals/statusButtonConfig.js';
 import { navigateToMessaging } from '../../../logic/workflows/proposals/navigationWorkflow.js';
 import { executeDeleteProposal } from '../../../logic/workflows/proposals/cancelProposalWorkflow.js';
@@ -28,6 +28,8 @@ import CancelProposalModal from '../../modals/CancelProposalModal.jsx';
 import VirtualMeetingManager from '../../shared/VirtualMeetingManager/VirtualMeetingManager.jsx';
 import FullscreenProposalMapModal from '../../modals/FullscreenProposalMapModal.jsx';
 import { showToast } from '../../shared/Toast.jsx';
+import { supabase } from '../../../lib/supabase.js';
+import { canConfirmSuggestedProposal, getNextStatusAfterConfirmation, needsRentalApplicationSubmission } from '../../../logic/rules/proposals/proposalRules.js';
 
 // Day abbreviations for schedule display (single letter like Bubble)
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -863,6 +865,9 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
   // Delete proposal loading state
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Confirm proposal loading state (for SL-suggested proposals)
+  const [isConfirming, setIsConfirming] = useState(false);
+
   // Status and progress - derive dynamically from statusConfig
   const status = proposal.Status;
   const currentStatusConfig = statusConfig || getStatusConfig(status);
@@ -1019,6 +1024,44 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
     console.log('[ProposalCard] Cancel confirmed with reason:', reason);
     // TODO: Implement actual cancel API call here
     closeCancelModal();
+  };
+
+  // Handler for confirm proposal (SL-suggested proposals)
+  const handleConfirmProposal = async () => {
+    if (!proposal?._id || isConfirming) return;
+
+    if (!canConfirmSuggestedProposal(proposal)) {
+      showToast({ title: 'Cannot confirm this proposal', type: 'error' });
+      return;
+    }
+
+    setIsConfirming(true);
+    try {
+      const nextStatus = getNextStatusAfterConfirmation(proposal);
+
+      const { error } = await supabase
+        .from('proposal')
+        .update({
+          Status: nextStatus,
+          'Modified Date': new Date().toISOString()
+        })
+        .eq('_id', proposal._id);
+
+      if (error) {
+        console.error('[ProposalCard] Error confirming proposal:', error);
+        throw new Error(error.message || 'Failed to confirm proposal');
+      }
+
+      console.log('[ProposalCard] Proposal confirmed, new status:', nextStatus);
+      showToast({ title: 'Proposal confirmed!', type: 'success' });
+
+      // Reload page to show updated status and CTAs
+      window.location.reload();
+    } catch (error) {
+      console.error('[ProposalCard] Error confirming proposal:', error);
+      showToast({ title: 'Failed to confirm proposal', content: error.message, type: 'error' });
+      setIsConfirming(false);
+    }
   };
 
   // Handler for delete proposal (soft-delete for already-cancelled proposals)
@@ -1251,6 +1294,7 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
                   buttonConfig.guestAction1.action === 'delete_proposal' ? 'btn-danger' :
                   'btn-primary'
                 }`}
+                disabled={buttonConfig.guestAction1.action === 'confirm_proposal' && isConfirming}
                 onClick={() => {
                   if (buttonConfig.guestAction1.action === 'modify_proposal') {
                     setProposalDetailsModalInitialView('pristine');
@@ -1259,6 +1303,8 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
                     goToRentalApplication(proposal._id);
                   } else if (buttonConfig.guestAction1.action === 'delete_proposal') {
                     handleDeleteProposal();
+                  } else if (buttonConfig.guestAction1.action === 'confirm_proposal') {
+                    handleConfirmProposal();
                   }
                 }}
               >
@@ -1285,6 +1331,8 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
                 if (buttonConfig.guestAction2.action === 'see_details') {
                   setProposalDetailsModalInitialView('pristine');
                   setShowProposalDetailsModal(true);
+                } else if (buttonConfig.guestAction2.action === 'submit_rental_app') {
+                  goToRentalApplication(proposal._id);
                 }
               }}
             >

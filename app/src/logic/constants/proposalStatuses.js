@@ -57,17 +57,20 @@ export const PROPOSAL_STATUSES = {
   },
 
   // Suggested proposal by Split Lease agent - awaiting rental application (sort_order 0)
+  // NEW MEANING: Guest has CONFIRMED but rental app not yet submitted
   SUGGESTED_PROPOSAL_AWAITING_RENTAL_APP: {
     key: 'Proposal Submitted for guest by Split Lease - Awaiting Rental Application',
     color: 'purple',
-    label: 'Suggested Proposal - Submit Rental App',
+    label: 'Suggested Proposal - Awaiting Rental App',
     stage: 1,
     usualOrder: 0,
     isSuggestedBySL: true,
+    guestConfirmed: true,
     actions: ['submit_rental_app', 'cancel_proposal', 'request_vm', 'send_message']
   },
 
   // Suggested proposal by Split Lease agent - pending confirmation (sort_order 0)
+  // NEW MEANING: Initial state - guest hasn't confirmed yet
   SUGGESTED_PROPOSAL_PENDING_CONFIRMATION: {
     key: 'Proposal Submitted for guest by Split Lease - Pending Confirmation',
     color: 'purple',
@@ -75,7 +78,8 @@ export const PROPOSAL_STATUSES = {
     stage: 1,
     usualOrder: 0,
     isSuggestedBySL: true,
-    actions: ['confirm_proposal', 'cancel_proposal', 'request_vm', 'send_message']
+    guestConfirmed: false,
+    actions: ['confirm_proposal', 'submit_rental_app', 'cancel_proposal', 'request_vm', 'send_message']
   },
 
   // usualOrder 1: Host Review (after rental app submitted)

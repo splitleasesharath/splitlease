@@ -25,7 +25,7 @@ import {
 // CONSTANTS
 // ============================================================================
 
-const DEFAULT_STATUS = PROPOSAL_STATUSES.SUGGESTED_PROPOSAL_AWAITING_RENTAL_APP.key;
+const DEFAULT_STATUS = PROPOSAL_STATUSES.SUGGESTED_PROPOSAL_PENDING_CONFIRMATION.key;
 
 const RESERVATION_SPAN_OPTIONS = [
   { value: '6', label: '6 weeks' },
