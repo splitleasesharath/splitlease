@@ -2,6 +2,8 @@
  * GuestInfoForm - Step 3: Guest information fields
  */
 
+import CallTranscriptionTool from './CallTranscriptionTool.jsx';
+
 export default function GuestInfoForm({
   guestName,
   aboutMe,
@@ -9,13 +11,19 @@ export default function GuestInfoForm({
   specialNeeds,
   onAboutMeChange,
   onNeedForSpaceChange,
-  onSpecialNeedsChange
+  onSpecialNeedsChange,
+  onTranscriptionParsed
 }) {
   return (
     <section className="csp-step-section">
       <div className="csp-section-header">
         <h2>Step 3: Guest Information</h2>
       </div>
+
+      {/* AI Transcription Tool */}
+      <CallTranscriptionTool
+        onParsedData={onTranscriptionParsed}
+      />
 
       <div className="csp-user-info-form">
         <div className="csp-form-group">

@@ -6,8 +6,6 @@ import { supabase } from '../../lib/supabase.js';
 import CreateDuplicateListingModal from './CreateDuplicateListingModal/CreateDuplicateListingModal.jsx';
 import LoggedInAvatar from './LoggedInAvatar/LoggedInAvatar.jsx';
 import SignUpLoginModal from './SignUpLoginModal.jsx';
-import { useHostMenuData, getHostMenuConfig } from './Header/useHostMenuData.js';
-import { useGuestMenuData, getGuestMenuConfig } from './Header/useGuestMenuData.js';
 
 export default function Header({ autoShowLogin = false }) {
   const [mobileMenuActive, setMobileMenuActive] = useState(false);
@@ -45,12 +43,6 @@ export default function Header({ autoShowLogin = false }) {
 
   // CreateDuplicateListingModal State
   const [showListPropertyModal, setShowListPropertyModal] = useState(false);
-
-  // Dynamic menu data hooks for Host and Guest dropdowns
-  const userId = currentUser?.userId || currentUser?.id || '';
-  const isAuthenticated = !!currentUser;
-  const { state: hostMenuState } = useHostMenuData(userId, isAuthenticated);
-  const { state: guestMenuState } = useGuestMenuData(userId, isAuthenticated);
 
   // Background validation: Validate cached auth state and update with real data
   // The optimistic UI is already set synchronously in useState initializer above
@@ -505,7 +497,7 @@ export default function Header({ autoShowLogin = false }) {
               role="menu"
               aria-label="Host with Us menu"
             >
-              {/* Mega Menu with Featured Card + Menu Items */}
+              {/* Dynamic menu items based on host state */}
               {(() => {
                 const hostMenuConfig = getHostMenuConfig(hostMenuState, handleSignupClick);
                 const currentPath = window.location.pathname;
@@ -520,102 +512,53 @@ export default function Header({ autoShowLogin = false }) {
                 // Check if CTA links to current page
                 const ctaLinksToCurrentPage = ctaHref && currentPath.startsWith(ctaHref);
                 const showCta = !ctaLinksToCurrentPage;
-                const featured = hostMenuConfig.featured;
 
                 return (
                   <>
-                    <div className="mega-menu-content">
-                      {/* Featured Section (left side) */}
-                      <div className="mega-menu-featured">
-                        <div className="featured-image">
-                          <img src={featured?.image} alt="" />
+                    {filteredItems.map((item) => (
+                      <a
+                        key={item.id}
+                        href={item.href}
+                        className="dropdown-item"
+                        role="menuitem"
+                        onClick={item.action ? (e) => {
+                          e.preventDefault();
+                          setActiveDropdown(null);
+                          setMobileMenuActive(false);
+                          item.action();
+                        } : undefined}
+                      >
+                        {item.icon && <img src={item.icon} alt="" className="dropdown-icon" />}
+                        <div className="dropdown-content">
+                          <span className="dropdown-title">{item.title}</span>
+                          {item.desc && <span className="dropdown-desc">{item.desc}</span>}
                         </div>
-                        <h3 className="featured-title">{featured?.title}</h3>
-                        <p className="featured-desc">{featured?.desc}</p>
-                        <a
-                          href={featured?.ctaHref || '#'}
-                          className="featured-link"
-                          onClick={() => {
-                            setActiveDropdown(null);
-                            setMobileMenuActive(false);
-                          }}
-                        >
-                          {featured?.cta}
-                          <svg className="featured-link-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                            <path d="M3 8H13M13 8L9 4M13 8L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        </a>
-                      </div>
+                      </a>
+                    ))}
 
-                      <div className="menu-separator"></div>
+                    {/* Separator - only show if CTA is visible */}
+                    {showCta && <div className="dropdown-separator" />}
 
-                      {/* Menu Columns */}
-                      <div className="mega-menu-columns">
-                        <div className="menu-column">
-                          <div className="menu-column-title">Learn</div>
-                          {filteredItems.slice(0, Math.ceil(filteredItems.length / 2)).map((item) => (
-                            <a
-                              key={item.id}
-                              href={item.href}
-                              className="dropdown-item"
-                              role="menuitem"
-                              onClick={item.action ? (e) => {
-                                e.preventDefault();
-                                setActiveDropdown(null);
-                                setMobileMenuActive(false);
-                                item.action();
-                              } : () => {
-                                setActiveDropdown(null);
-                                setMobileMenuActive(false);
-                              }}
-                            >
-                              <span className="dropdown-title">{item.title}</span>
-                            </a>
-                          ))}
-                        </div>
-                        <div className="menu-column">
-                          <div className="menu-column-title">Get Started</div>
-                          {filteredItems.slice(Math.ceil(filteredItems.length / 2)).map((item) => (
-                            <a
-                              key={item.id}
-                              href={item.href}
-                              className="dropdown-item"
-                              role="menuitem"
-                              onClick={item.action ? (e) => {
-                                e.preventDefault();
-                                setActiveDropdown(null);
-                                setMobileMenuActive(false);
-                                item.action();
-                              } : () => {
-                                setActiveDropdown(null);
-                                setMobileMenuActive(false);
-                              }}
-                            >
-                              <span className="dropdown-title">{item.title}</span>
-                            </a>
-                          ))}
-                          {/* Bottom CTA in second column */}
-                          {showCta && (
-                            <a
-                              href={hostMenuConfig.cta.href || '#'}
-                              className="dropdown-cta"
-                              role="menuitem"
-                              onClick={hostMenuConfig.cta.action ? (e) => {
-                                e.preventDefault();
-                                setActiveDropdown(null);
-                                setMobileMenuActive(false);
-                                hostMenuConfig.cta.action();
-                              } : () => {
-                                setActiveDropdown(null);
-                                setMobileMenuActive(false);
-                              }}
-                            >
-                              {hostMenuConfig.cta.label}
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                    {/* Bottom CTA - hide if it links to current page */}
+                    {showCta && (
+                    <a
+                      href={hostMenuConfig.cta.href || '#'}
+                      className="dropdown-cta"
+                      role="menuitem"
+                      onClick={hostMenuConfig.cta.action ? (e) => {
+                        e.preventDefault();
+                        setActiveDropdown(null);
+                        setMobileMenuActive(false);
+                        hostMenuConfig.cta.action();
+                      } : () => {
+                        setActiveDropdown(null);
+                        setMobileMenuActive(false);
+                      }}
+                    >
+                      {hostMenuConfig.cta.icon && <img src={hostMenuConfig.cta.icon} alt="" className="dropdown-icon" />}
+                      {hostMenuConfig.cta.label}
+                    </a>
+                    )}
                   </>
                 );
               })()}
@@ -661,7 +604,7 @@ export default function Header({ autoShowLogin = false }) {
               role="menu"
               aria-label="Stay with Us menu"
             >
-              {/* Mega Menu with Featured Card + Menu Items */}
+              {/* Dynamic menu items based on guest state */}
               {(() => {
                 const guestMenuConfig = getGuestMenuConfig(guestMenuState, handleSignupClick);
                 const currentPath = window.location.pathname;
@@ -676,102 +619,53 @@ export default function Header({ autoShowLogin = false }) {
                 // Check if CTA links to current page
                 const ctaLinksToCurrentPage = ctaHref && currentPath.startsWith(ctaHref);
                 const showCta = !ctaLinksToCurrentPage;
-                const featured = guestMenuConfig.featured;
 
                 return (
                   <>
-                    <div className="mega-menu-content">
-                      {/* Featured Section (left side) */}
-                      <div className="mega-menu-featured">
-                        <div className="featured-image">
-                          <img src={featured?.image} alt="" />
+                    {filteredItems.map((item) => (
+                      <a
+                        key={item.id}
+                        href={item.href}
+                        className="dropdown-item"
+                        role="menuitem"
+                        onClick={item.action ? (e) => {
+                          e.preventDefault();
+                          setActiveDropdown(null);
+                          setMobileMenuActive(false);
+                          item.action();
+                        } : undefined}
+                      >
+                        {item.icon && <img src={item.icon} alt="" className="dropdown-icon" />}
+                        <div className="dropdown-content">
+                          <span className="dropdown-title">{item.title}</span>
+                          {item.desc && <span className="dropdown-desc">{item.desc}</span>}
                         </div>
-                        <h3 className="featured-title">{featured?.title}</h3>
-                        <p className="featured-desc">{featured?.desc}</p>
-                        <a
-                          href={featured?.ctaHref || '#'}
-                          className="featured-link"
-                          onClick={() => {
-                            setActiveDropdown(null);
-                            setMobileMenuActive(false);
-                          }}
-                        >
-                          {featured?.cta}
-                          <svg className="featured-link-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                            <path d="M3 8H13M13 8L9 4M13 8L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        </a>
-                      </div>
+                      </a>
+                    ))}
 
-                      <div className="menu-separator"></div>
+                    {/* Separator - only show if CTA is visible */}
+                    {showCta && <div className="dropdown-separator" />}
 
-                      {/* Menu Columns */}
-                      <div className="mega-menu-columns">
-                        <div className="menu-column">
-                          <div className="menu-column-title">Discover</div>
-                          {filteredItems.slice(0, Math.ceil(filteredItems.length / 2)).map((item) => (
-                            <a
-                              key={item.id}
-                              href={item.href}
-                              className="dropdown-item"
-                              role="menuitem"
-                              onClick={item.action ? (e) => {
-                                e.preventDefault();
-                                setActiveDropdown(null);
-                                setMobileMenuActive(false);
-                                item.action();
-                              } : () => {
-                                setActiveDropdown(null);
-                                setMobileMenuActive(false);
-                              }}
-                            >
-                              <span className="dropdown-title">{item.title}</span>
-                            </a>
-                          ))}
-                        </div>
-                        <div className="menu-column">
-                          <div className="menu-column-title">Get Started</div>
-                          {filteredItems.slice(Math.ceil(filteredItems.length / 2)).map((item) => (
-                            <a
-                              key={item.id}
-                              href={item.href}
-                              className="dropdown-item"
-                              role="menuitem"
-                              onClick={item.action ? (e) => {
-                                e.preventDefault();
-                                setActiveDropdown(null);
-                                setMobileMenuActive(false);
-                                item.action();
-                              } : () => {
-                                setActiveDropdown(null);
-                                setMobileMenuActive(false);
-                              }}
-                            >
-                              <span className="dropdown-title">{item.title}</span>
-                            </a>
-                          ))}
-                          {/* Bottom CTA in second column */}
-                          {showCta && (
-                            <a
-                              href={guestMenuConfig.cta.href || '#'}
-                              className="dropdown-cta"
-                              role="menuitem"
-                              onClick={guestMenuConfig.cta.action ? (e) => {
-                                e.preventDefault();
-                                setActiveDropdown(null);
-                                setMobileMenuActive(false);
-                                guestMenuConfig.cta.action();
-                              } : () => {
-                                setActiveDropdown(null);
-                                setMobileMenuActive(false);
-                              }}
-                            >
-                              {guestMenuConfig.cta.label}
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                    {/* Bottom CTA - hide if it links to current page */}
+                    {showCta && (
+                    <a
+                      href={guestMenuConfig.cta.href || '#'}
+                      className="dropdown-cta"
+                      role="menuitem"
+                      onClick={guestMenuConfig.cta.action ? (e) => {
+                        e.preventDefault();
+                        setActiveDropdown(null);
+                        setMobileMenuActive(false);
+                        guestMenuConfig.cta.action();
+                      } : () => {
+                        setActiveDropdown(null);
+                        setMobileMenuActive(false);
+                      }}
+                    >
+                      {guestMenuConfig.cta.icon && <img src={guestMenuConfig.cta.icon} alt="" className="dropdown-icon" />}
+                      {guestMenuConfig.cta.label}
+                    </a>
+                    )}
                   </>
                 );
               })()}

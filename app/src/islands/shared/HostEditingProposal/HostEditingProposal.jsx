@@ -343,6 +343,10 @@ export function HostEditingProposal({
     : 0
 
   // Handlers
+  const handleToggleView = () => {
+    setView(view === 'general' ? 'editing' : 'general')
+  }
+
   const handleToggleEditSection = () => {
     const willExpand = !isEditSectionExpanded
     setIsEditSectionExpanded(willExpand)
@@ -480,6 +484,17 @@ export function HostEditingProposal({
         <div className="hep-section-header">
           <h2 className="hep-title-main">Review Proposal Terms</h2>
           <div className="hep-header-actions">
+            <button
+              type="button"
+              className="hep-icon hep-icon-edit"
+              onClick={handleToggleView}
+              title="Edit proposal"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
             <button
               type="button"
               className="hep-icon hep-icon-close"

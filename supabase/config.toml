@@ -443,3 +443,9 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/workflow-orchestrator/deno.json"
 entrypoint = "./functions/workflow-orchestrator/index.ts"
+
+[functions.qr-generator]
+enabled = true
+verify_jwt = false
+import_map = "./functions/qr-generator/deno.json"
+entrypoint = "./functions/qr-generator/index.ts"

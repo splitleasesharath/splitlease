@@ -44,7 +44,12 @@ export {
   isLeaseActivated,
   requiresSpecialCancellationConfirmation,
   getCancelButtonText,
-  getCancellationReasonOptions
+  getCancellationReasonOptions,
+  // SL Suggested Proposal rules
+  needsRentalApplicationSubmission,
+  isSLSuggestedProposal,
+  canConfirmSuggestedProposal,
+  getNextStatusAfterConfirmation
 } from './proposals/proposalRules.js'
 
 // Virtual Meeting Rules

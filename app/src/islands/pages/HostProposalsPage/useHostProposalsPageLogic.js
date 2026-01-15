@@ -199,25 +199,6 @@ export function useHostProposalsPageLogic() {
   }, []);
 
   // ============================================================================
-  // BODY SCROLL LOCK FOR EDITING PROPOSAL MODAL
-  // ============================================================================
-  useEffect(() => {
-    if (isEditingProposal) {
-      // Lock both html and body to prevent scroll on all browsers
-      const originalBodyOverflow = document.body.style.overflow;
-      const originalHtmlOverflow = document.documentElement.style.overflow;
-
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
-
-      return () => {
-        document.body.style.overflow = originalBodyOverflow;
-        document.documentElement.style.overflow = originalHtmlOverflow;
-      };
-    }
-  }, [isEditingProposal]);
-
-  // ============================================================================
   // DATA LOADING
   // ============================================================================
 
@@ -390,7 +371,6 @@ export function useHostProposalsPageLogic() {
           "4 week compensation",
           "cleaning fee",
           "damage deposit",
-          "rental type",
           "Guest email",
           "need for space",
           "about_yourself",

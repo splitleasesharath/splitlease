@@ -1,0 +1,89 @@
+# TASK: Compare Live vs Dev Version of {{PAGE_PATH}} (PROTECTED PAGE)
+
+You are comparing the LIVE (production) version of this page against the DEV (main branch) version.
+
+This is a PROTECTED page requiring authentication.
+You have access to Playwright MCP session: {{MCP_SESSION}}
+This session is already authenticated as a {{AUTH_TYPE}} user.
+
+## Your Mission
+
+1. Navigate to LIVE: https://split.lease{{PAGE_PATH}}
+2. Wait for page load: browser_wait_for with networkidle
+3. Verify page loaded correctly (not redirected to login)
+4. Capture LIVE snapshot: browser_snapshot
+5. Take LIVE screenshot: browser_take_screenshot with fullPage=true
+6. Navigate to DEV: http://localhost:8010{{PAGE_PATH}}
+7. Wait for page load: browser_wait_for with networkidle
+8. Verify page loaded correctly (not redirected to login)
+9. Capture DEV snapshot: browser_snapshot
+10. Take DEV screenshot: browser_take_screenshot with fullPage=true
+11. Compare the two versions
+
+## Comparison Checklist
+
+### Visual Structure
+- [ ] Page layout matches (header, main sections, footer)
+- [ ] Navigation elements present and positioned correctly
+- [ ] Critical CTAs visible and styled consistently
+- [ ] No broken images or missing assets
+
+### Content
+- [ ] Headings and body text match
+- [ ] No missing content sections
+- [ ] User-specific data displays correctly (names, IDs, etc.)
+- [ ] All links present and functional
+
+### Functionality
+- [ ] Check browser console for errors: browser_console_messages(level="error")
+- [ ] Check network requests for failures: browser_network_requests(includeStatic=false)
+- [ ] Forms have all expected fields
+- [ ] Interactive elements respond correctly
+- [ ] No JavaScript runtime errors
+
+### Authentication Behavior
+- [ ] Page loads without auth redirect
+- [ ] User data displays correctly
+- [ ] Role-specific features showing appropriately (host vs guest)
+- [ ] No infinite redirect loops
+
+## What NOT to Flag
+
+- Different user data values (names, dates, etc.) - IGNORE
+- Minor CSS differences - IGNORE
+- Slightly different wording that's intentional - MARK AS INFO
+- Timestamps or dynamic content - IGNORE
+
+Focus on STRUCTURAL and FUNCTIONAL differences, not data values.
+
+## Output Format
+
+Return ONLY valid JSON (no markdown, no explanations):
+
+{
+  "page": "{{PAGE_PATH}}",
+  "authType": "{{AUTH_TYPE}}",
+  "timestamp": "2026-01-14T10:30:00Z",
+  "overallStatus": "PASS",
+  "findings": [
+    {
+      "category": "auth",
+      "severity": "critical",
+      "issue": "Page redirects to login in dev",
+      "liveState": "Page loads correctly when authenticated",
+      "devState": "Redirects to / (login)",
+      "recommendation": "Check auth guard in dev"
+    }
+  ],
+  "consoleErrors": [],
+  "networkErrors": [],
+  "screenshots": {
+    "live": "path/to/live-screenshot.png",
+    "dev": "path/to/dev-screenshot.png"
+  }
+}
+
+Categories: visual | content | functional | auth
+Severities: critical | major | minor | info
+
+IMPORTANT: Return ONLY the JSON object, nothing else.

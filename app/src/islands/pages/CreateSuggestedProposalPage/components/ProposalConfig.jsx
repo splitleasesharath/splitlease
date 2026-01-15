@@ -5,7 +5,7 @@
  */
 
 import { PROPOSAL_STATUSES } from '../../../../logic/constants/proposalStatuses.js';
-import { DAY_NAMES, getShortDayName } from '../../../../lib/dayUtils.js';
+import { DAY_NAMES } from '../../../../lib/dayUtils.js';
 
 // Day button labels (single letter display, 0-indexed order starting with Sunday)
 const DAY_BUTTONS = [
@@ -18,14 +18,23 @@ const DAY_BUTTONS = [
   { index: 6, label: 'S', title: 'Saturday' }
 ];
 
+// Generate week label with month approximation for weeks >= 12
+const formatWeekLabel = (weeks) => {
+  if (weeks >= 12) {
+    return `${weeks} weeks (${Math.floor(weeks / 4)} months)`;
+  }
+  return `${weeks} weeks`;
+};
+
+// Reservation span options matching View Split Lease page + custom option
+const RESERVATION_SPAN_WEEKS = [6, 7, 8, 9, 10, 12, 13, 16, 17, 20, 22, 26, 52];
+
 const RESERVATION_SPAN_OPTIONS = [
   { value: '', label: 'Select span' },
-  { value: '6', label: '6 weeks' },
-  { value: '8', label: '8 weeks' },
-  { value: '12', label: '12 weeks' },
-  { value: '16', label: '16 weeks' },
-  { value: '26', label: '26 weeks' },
-  { value: '52', label: '52 weeks' },
+  ...RESERVATION_SPAN_WEEKS.map(weeks => ({
+    value: String(weeks),
+    label: formatWeekLabel(weeks)
+  })),
   { value: 'custom', label: 'Other (specify weeks)' }
 ];
 
@@ -37,18 +46,12 @@ const MOVE_IN_RANGE_OPTIONS = [
 ];
 
 // Status options for suggested proposals
+// When creating a suggested proposal, it should ALWAYS start in "Pending Confirmation" state
+// This is the only valid initial state - guest must confirm before it progresses
 const STATUS_OPTIONS = [
   {
-    value: PROPOSAL_STATUSES.SUGGESTED_PROPOSAL_AWAITING_RENTAL_APP.key,
-    label: 'Proposal Submitted for Guest (Suggested)'
-  },
-  {
-    value: PROPOSAL_STATUSES.HOST_REVIEW.key,
-    label: 'Host Review'
-  },
-  {
-    value: PROPOSAL_STATUSES.COUNTEROFFER_SUBMITTED_AWAITING_GUEST_REVIEW.key,
-    label: 'Host Counteroffer Submitted'
+    value: PROPOSAL_STATUSES.SUGGESTED_PROPOSAL_PENDING_CONFIRMATION.key,
+    label: 'Pending Guest Confirmation (Split Lease created)'
   }
 ];
 
@@ -58,8 +61,9 @@ export default function ProposalConfig({
   moveInRange,
   strictMoveIn,
   selectedDays,
-  checkInDayIndex,
-  checkOutDayIndex,
+  checkInDayName,
+  checkOutDayName,
+  nightsCount,
   reservationSpan,
   customWeeks,
   onStatusChange,
@@ -68,8 +72,6 @@ export default function ProposalConfig({
   onStrictMoveInChange,
   onDayToggle,
   onSelectFullTime,
-  onCheckInDayChange,
-  onCheckOutDayChange,
   onReservationSpanChange,
   onCustomWeeksChange
 }) {
@@ -164,36 +166,27 @@ export default function ProposalConfig({
           </button>
         </div>
 
-        <div className="csp-checkin-checkout">
-          <div className="csp-form-group">
-            <label htmlFor="checkInDay">Check-in Day</label>
-            <select
-              id="checkInDay"
-              className="csp-form-select"
-              value={checkInDayIndex ?? ''}
-              onChange={onCheckInDayChange}
-            >
-              <option value="">Select day</option>
-              {DAY_NAMES.map((name, index) => (
-                <option key={index} value={index}>{name}</option>
-              ))}
-            </select>
+        {/* Check-in/Check-out Display (derived from selected days) */}
+        {selectedDays.length > 0 && (
+          <div className="csp-checkin-checkout-display">
+            {selectedDays.length === 7 ? (
+              <div className="csp-schedule-summary">
+                <strong>Full-time stay</strong>
+              </div>
+            ) : (
+              <>
+                <div className="csp-schedule-summary">
+                  <strong>{selectedDays.length} days, {nightsCount} nights</strong> Selected
+                </div>
+                <div className="csp-check-dates">
+                  Check-in day is <strong>{checkInDayName || 'N/A'}</strong>
+                  <br />
+                  Check-out day is <strong>{checkOutDayName || 'N/A'}</strong>
+                </div>
+              </>
+            )}
           </div>
-          <div className="csp-form-group">
-            <label htmlFor="checkOutDay">Check-out Day</label>
-            <select
-              id="checkOutDay"
-              className="csp-form-select"
-              value={checkOutDayIndex ?? ''}
-              onChange={onCheckOutDayChange}
-            >
-              <option value="">Select day</option>
-              {DAY_NAMES.map((name, index) => (
-                <option key={index} value={index}>{name}</option>
-              ))}
-            </select>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Reservation Span */}

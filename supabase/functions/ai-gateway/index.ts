@@ -52,6 +52,7 @@ import "./prompts/_registry.ts";
 import "./prompts/listing-description.ts";
 import "./prompts/listing-title.ts";
 import "./prompts/neighborhood-description.ts";
+import "./prompts/parse-call-transcription.ts";
 
 // ─────────────────────────────────────────────────────────────
 // Configuration (Immutable)
@@ -62,6 +63,7 @@ const PUBLIC_PROMPTS: ReadonlySet<string> = new Set([
   "listing-description",
   "listing-title",
   "neighborhood-description",
+  "parse-call-transcription",
   "echo-test",
 ]);
 

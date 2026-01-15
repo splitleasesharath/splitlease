@@ -17,7 +17,7 @@
 
 import { useState, useMemo } from 'react';
 import { formatPrice, formatDate } from '../../../lib/proposals/dataTransformers.js';
-import { getStatusConfig, getActionsForStatus, isTerminalStatus, isCompletedStatus, isSuggestedProposal, shouldShowStatusBanner, getUsualOrder } from '../../../logic/constants/proposalStatuses.js';
+import { getStatusConfig, getActionsForStatus, isTerminalStatus, isCompletedStatus, isSuggestedProposal, shouldShowStatusBanner, getUsualOrder, PROPOSAL_STATUSES } from '../../../logic/constants/proposalStatuses.js';
 import { shouldHideVirtualMeetingButton } from '../../../lib/proposals/statusButtonConfig.js';
 import { navigateToMessaging } from '../../../logic/workflows/proposals/navigationWorkflow.js';
 import { executeDeleteProposal } from '../../../logic/workflows/proposals/cancelProposalWorkflow.js';
@@ -28,6 +28,8 @@ import CancelProposalModal from '../../modals/CancelProposalModal.jsx';
 import VirtualMeetingManager from '../../shared/VirtualMeetingManager/VirtualMeetingManager.jsx';
 import FullscreenProposalMapModal from '../../modals/FullscreenProposalMapModal.jsx';
 import { showToast } from '../../shared/Toast.jsx';
+import { supabase } from '../../../lib/supabase.js';
+import { canConfirmSuggestedProposal, getNextStatusAfterConfirmation, needsRentalApplicationSubmission } from '../../../logic/rules/proposals/proposalRules.js';
 
 // Day abbreviations for schedule display (single letter like Bubble)
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -283,61 +285,61 @@ const STATUS_BANNERS = {
   },
   'Rental Application Submitted': {
     text: 'Application Submitted!\nAwaiting host review.',
-    bgColor: '#e0e7ff',
-    borderColor: '#5B5FCF',
-    textColor: '#5B5FCF'
+    bgColor: '#EBF5FF',
+    borderColor: '#3B82F6',
+    textColor: '#1D4ED8'
   },
   'Host Counteroffer Submitted / Awaiting Guest Review': {
     text: 'Host has submitted a counteroffer.\nReview the new terms below.',
-    bgColor: '#f3e8ff',
-    borderColor: '#8C68EE',
-    textColor: '#8C68EE'
+    bgColor: '#FEF3C7',
+    borderColor: '#F59E0B',
+    textColor: '#92400E'
   },
   // usualOrder >= 3: Accepted states - text varies based on counteroffer
   'Proposal or Counteroffer Accepted / Drafting Lease Documents': {
     type: 'accepted',
     text: 'Proposal Accepted!\nSplit Lease is Drafting Lease Documents',
     // Alternative text when counteroffer: 'Host terms Accepted!\nLease Documents being prepared.'
-    bgColor: '#ede9fe',
-    borderColor: '#5B21B6',
-    textColor: '#5B21B6'
+    bgColor: '#E1FFE1',
+    borderColor: '#1E561A',
+    textColor: '#1BA54E'
   },
   'Reviewing Documents': {
     text: 'Documents Ready for Review',
-    bgColor: '#e0e7ff',
-    borderColor: '#5B5FCF',
-    textColor: '#5B5FCF'
+    bgColor: '#EBF5FF',
+    borderColor: '#3B82F6',
+    textColor: '#1D4ED8'
   },
   'Lease Documents Sent for Review': {
     text: 'Lease Documents Draft prepared.\nPlease review and comment.',
-    bgColor: '#ede9fe',
-    borderColor: '#5B21B6',
-    textColor: '#5B21B6'
+    bgColor: '#E1FFE1',
+    borderColor: '#1E561A',
+    textColor: '#1BA54E'
   },
   'Lease Documents Sent for Signatures': {
     text: 'Check your email for legally submitted documents.',
-    bgColor: '#ede9fe',
-    borderColor: '#5B21B6',
-    textColor: '#5B21B6'
+    bgColor: '#E1FFE1',
+    borderColor: '#1E561A',
+    textColor: '#1BA54E'
   },
   'Lease Documents Signed / Awaiting Initial payment': {
     text: 'Lease Documents signed.\nSubmit payment to activate your lease.',
-    bgColor: '#ede9fe',
-    borderColor: '#5B21B6',
-    textColor: '#5B21B6'
+    bgColor: '#E1FFE1',
+    borderColor: '#1E561A',
+    textColor: '#1BA54E'
   },
   // Legacy key format
   'Lease Signed / Awaiting Initial Payment': {
     text: 'Lease Signed!\nSubmit initial payment to activate.',
-    bgColor: '#ede9fe',
-    borderColor: '#5B21B6',
-    textColor: '#5B21B6'
+    bgColor: '#E1FFE1',
+    borderColor: '#1E561A',
+    textColor: '#1BA54E'
   },
   'Initial Payment Submitted / Lease activated': {
     text: 'Your lease agreement is now officially signed.\nFor details, please visit the lease section of your account.',
-    bgColor: '#ede9fe',
-    borderColor: '#5B21B6',
-    textColor: '#5B21B6'
+    bgColor: '#E1FFE1',
+    borderColor: '#1E561A',
+    textColor: '#1BA54E'
   },
   // Terminal states
   'Proposal Cancelled by Split Lease': {
@@ -370,13 +372,13 @@ const STATUS_BANNERS = {
  * Default banner config based on usualOrder (fallback when no specific config)
  */
 function getDefaultBannerConfig(status, usualOrder) {
-  // Default CTA purple banner for active statuses with usualOrder >= 3
+  // Default blue banner for active statuses with usualOrder >= 3
   if (usualOrder >= 3 && usualOrder < 99) {
     return {
       text: status,
-      bgColor: '#e0e7ff',
-      borderColor: '#5B5FCF',
-      textColor: '#5B5FCF'
+      bgColor: '#EBF5FF',
+      borderColor: '#3B82F6',
+      textColor: '#1D4ED8'
     };
   }
   return null;
@@ -556,15 +558,15 @@ const PROGRESS_STAGES = [
 
 /**
  * Color constants for progress tracker
- * Harmonized purple color scheme matching guest proposals design
+ * Based on Bubble documentation: Guest Proposals page Progress Bar Status Conditionals
  */
 const PROGRESS_COLORS = {
-  completed: '#31135D',   // Completed stage (Primary Purple)
-  current: '#6D31C2',     // Current/Active stage (Secondary Purple)
-  cancelled: '#dc2626',   // Cancelled/Rejected (Destructive Red)
-  pending: '#B6B7E9',     // Pending/Waiting state
-  future: '#DEDEDE',      // Inactive/Future stage
-  labelGray: '#9CA3AF'    // Inactive label color
+  purple: '#6D31C2',    // Completed stage
+  green: '#1F8E16',     // Current/Active stage (action needed)
+  red: '#DB2E2E',       // Cancelled/Rejected
+  lightPurple: '#B6B7E9', // Pending/Waiting state
+  gray: '#DEDEDE',      // Inactive/Future stage
+  labelGray: '#9CA3AF'  // Inactive label color
 };
 
 /**
@@ -581,29 +583,29 @@ const PROGRESS_COLORS = {
 function getStageColor(stageIndex, status, usualOrder, isTerminal, proposal = {}) {
   // Terminal statuses: ALL stages turn red
   if (isTerminal) {
-    return PROGRESS_COLORS.cancelled;
+    return PROGRESS_COLORS.red;
   }
 
   const normalizedStatus = typeof status === 'string' ? status.trim() : status;
   const hasRentalApp = proposal['rental application'];
   const guestDocsFinalized = proposal['guest documents review finalized?'];
 
-  // Stage 1: Proposal Submitted - Always completed (primary purple) once proposal exists
+  // Stage 1: Proposal Submitted - Always purple (completed) once proposal exists
   if (stageIndex === 0) {
-    return PROGRESS_COLORS.completed;
+    return PROGRESS_COLORS.purple;
   }
 
   // Stage 2: Rental App Submitted
   if (stageIndex === 1) {
-    // Current (secondary purple) when awaiting rental app - these statuses mean rental app is NOT yet submitted
+    // Green when awaiting rental app - these statuses mean rental app is NOT yet submitted
     if (normalizedStatus === 'Proposal Submitted by guest - Awaiting Rental Application' ||
         normalizedStatus === 'Proposal Submitted for guest by Split Lease - Awaiting Rental Application' ||
         normalizedStatus === 'Proposal Submitted for guest by Split Lease - Pending Confirmation' ||
         normalizedStatus === 'Pending' ||
         normalizedStatus === 'Pending Confirmation') {
-      return PROGRESS_COLORS.current;
+      return PROGRESS_COLORS.green;
     }
-    // Completed when rental app has been submitted (status moved past awaiting rental app)
+    // Purple when rental app has been submitted (status moved past awaiting rental app)
     if (hasRentalApp ||
         normalizedStatus === 'Rental Application Submitted' ||
         normalizedStatus === 'Host Review' ||
@@ -612,78 +614,78 @@ function getStageColor(stageIndex, status, usualOrder, isTerminal, proposal = {}
         normalizedStatus.includes('Lease Documents') ||
         normalizedStatus.includes('Payment') ||
         normalizedStatus.includes('activated')) {
-      return PROGRESS_COLORS.completed;
+      return PROGRESS_COLORS.purple;
     }
-    return PROGRESS_COLORS.future;
+    return PROGRESS_COLORS.gray;
   }
 
   // Stage 3: Host Review
   if (stageIndex === 2) {
-    // Current when actively in host review with rental app submitted
+    // Green when actively in host review with rental app submitted
     if (normalizedStatus === 'Host Review' && hasRentalApp) {
-      return PROGRESS_COLORS.current;
+      return PROGRESS_COLORS.green;
     }
-    // Current when counteroffer awaiting review
+    // Green when counteroffer awaiting review
     if (normalizedStatus === 'Host Counteroffer Submitted / Awaiting Guest Review') {
-      return PROGRESS_COLORS.current;
+      return PROGRESS_COLORS.green;
     }
-    // Completed when host review is complete (proposal accepted or further along)
+    // Purple when host review is complete (proposal accepted or further along)
     if (normalizedStatus.includes('Accepted') ||
         normalizedStatus.includes('Drafting') ||
         normalizedStatus.includes('Lease Documents') ||
         normalizedStatus.includes('Payment') ||
         normalizedStatus.includes('activated')) {
-      return PROGRESS_COLORS.completed;
+      return PROGRESS_COLORS.purple;
     }
-    // Future for all other cases (including awaiting rental app)
-    return PROGRESS_COLORS.future;
+    // Gray for all other cases (including awaiting rental app)
+    return PROGRESS_COLORS.gray;
   }
 
   // Stage 4: Review Documents
   if (stageIndex === 3) {
-    // Current when lease documents sent for review
+    // Green when lease documents sent for review
     if (normalizedStatus === 'Lease Documents Sent for Review') {
-      return PROGRESS_COLORS.current;
+      return PROGRESS_COLORS.green;
     }
-    // Pending (light purple) when guest documents review finalized (waiting state)
+    // Light purple when guest documents review finalized (waiting state)
     if (guestDocsFinalized) {
-      return PROGRESS_COLORS.pending;
+      return PROGRESS_COLORS.lightPurple;
     }
-    // Completed when past this stage
+    // Purple when past this stage
     if (usualOrder >= 5) {
-      return PROGRESS_COLORS.completed;
+      return PROGRESS_COLORS.purple;
     }
-    return PROGRESS_COLORS.future;
+    return PROGRESS_COLORS.gray;
   }
 
   // Stage 5: Lease Documents
   if (stageIndex === 4) {
-    // Current when sent for signatures
+    // Green when sent for signatures
     if (normalizedStatus === 'Lease Documents Sent for Signatures') {
-      return PROGRESS_COLORS.current;
+      return PROGRESS_COLORS.green;
     }
-    // Completed when past this stage
+    // Purple when past this stage
     if (usualOrder >= 6) {
-      return PROGRESS_COLORS.completed;
+      return PROGRESS_COLORS.purple;
     }
-    return PROGRESS_COLORS.future;
+    return PROGRESS_COLORS.gray;
   }
 
   // Stage 6: Initial Payment
   if (stageIndex === 5) {
-    // Current when awaiting initial payment
+    // Green when awaiting initial payment
     if (normalizedStatus === 'Lease Documents Signed / Awaiting Initial payment' ||
         normalizedStatus === 'Lease Signed / Awaiting Initial Payment') {
-      return PROGRESS_COLORS.current;
+      return PROGRESS_COLORS.green;
     }
-    // Completed when lease activated
+    // Purple when lease activated
     if (isCompletedStatus(normalizedStatus)) {
-      return PROGRESS_COLORS.completed;
+      return PROGRESS_COLORS.purple;
     }
-    return PROGRESS_COLORS.future;
+    return PROGRESS_COLORS.gray;
   }
 
-  return PROGRESS_COLORS.future;
+  return PROGRESS_COLORS.gray;
 }
 
 function InlineProgressTracker({ status, usualOrder = 0, isTerminal = false, stageLabels = null, proposal = {} }) {
@@ -743,7 +745,7 @@ function InlineProgressTracker({ status, usualOrder = 0, isTerminal = false, sta
 // MAIN COMPONENT
 // ============================================================================
 
-export default function ProposalCard({ proposal, transformedProposal, statusConfig, buttonConfig, allProposals = [], onProposalSelect, onProposalDeleted, highlightVMButton = false }) {
+export default function ProposalCard({ proposal, transformedProposal, statusConfig, buttonConfig, allProposals = [], onProposalSelect, onProposalDeleted }) {
   if (!proposal) {
     return null;
   }
@@ -862,6 +864,9 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
 
   // Delete proposal loading state
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Confirm proposal loading state (for SL-suggested proposals)
+  const [isConfirming, setIsConfirming] = useState(false);
 
   // Status and progress - derive dynamically from statusConfig
   const status = proposal.Status;
@@ -1019,6 +1024,44 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
     console.log('[ProposalCard] Cancel confirmed with reason:', reason);
     // TODO: Implement actual cancel API call here
     closeCancelModal();
+  };
+
+  // Handler for confirm proposal (SL-suggested proposals)
+  const handleConfirmProposal = async () => {
+    if (!proposal?._id || isConfirming) return;
+
+    if (!canConfirmSuggestedProposal(proposal)) {
+      showToast({ title: 'Cannot confirm this proposal', type: 'error' });
+      return;
+    }
+
+    setIsConfirming(true);
+    try {
+      const nextStatus = getNextStatusAfterConfirmation(proposal);
+
+      const { error } = await supabase
+        .from('proposal')
+        .update({
+          Status: nextStatus,
+          'Modified Date': new Date().toISOString()
+        })
+        .eq('_id', proposal._id);
+
+      if (error) {
+        console.error('[ProposalCard] Error confirming proposal:', error);
+        throw new Error(error.message || 'Failed to confirm proposal');
+      }
+
+      console.log('[ProposalCard] Proposal confirmed, new status:', nextStatus);
+      showToast({ title: 'Proposal confirmed!', type: 'success' });
+
+      // Reload page to show updated status and CTAs
+      window.location.reload();
+    } catch (error) {
+      console.error('[ProposalCard] Error confirming proposal:', error);
+      showToast({ title: 'Failed to confirm proposal', content: error.message, type: 'error' });
+      setIsConfirming(false);
+    }
   };
 
   // Handler for delete proposal (soft-delete for already-cancelled proposals)
@@ -1251,6 +1294,7 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
                   buttonConfig.guestAction1.action === 'delete_proposal' ? 'btn-danger' :
                   'btn-primary'
                 }`}
+                disabled={buttonConfig.guestAction1.action === 'confirm_proposal' && isConfirming}
                 onClick={() => {
                   if (buttonConfig.guestAction1.action === 'modify_proposal') {
                     setProposalDetailsModalInitialView('pristine');
@@ -1259,6 +1303,8 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
                     goToRentalApplication(proposal._id);
                   } else if (buttonConfig.guestAction1.action === 'delete_proposal') {
                     handleDeleteProposal();
+                  } else if (buttonConfig.guestAction1.action === 'confirm_proposal') {
+                    handleConfirmProposal();
                   }
                 }}
               >
@@ -1285,6 +1331,8 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
                 if (buttonConfig.guestAction2.action === 'see_details') {
                   setProposalDetailsModalInitialView('pristine');
                   setShowProposalDetailsModal(true);
+                } else if (buttonConfig.guestAction2.action === 'submit_rental_app') {
+                  goToRentalApplication(proposal._id);
                 }
               }}
             >
