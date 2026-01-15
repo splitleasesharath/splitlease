@@ -49,8 +49,8 @@ function getStatusLabel(status) {
   const normalizedStatus = status.trim();
 
   // Suggested proposals: distinguish guest action vs host action
-  if (normalizedStatus.includes('Split Lease - Pending Confirmation')) return 'Action Required';
-  if (normalizedStatus.includes('Split Lease - Awaiting Rental Application')) return 'Complete Application';
+  if (normalizedStatus.includes('Split Lease - Pending Confirmation')) return 'SL Suggestion · Review';
+  if (normalizedStatus.includes('Split Lease - Awaiting Rental Application')) return 'SL Suggestion · Apply';
 
   if (normalizedStatus.includes('Counteroffer')) return 'Review Counteroffer';
   if (normalizedStatus.includes('Accepted')) return 'Accepted';
