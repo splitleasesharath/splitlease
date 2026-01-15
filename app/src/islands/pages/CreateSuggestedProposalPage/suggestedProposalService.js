@@ -172,6 +172,8 @@ const USER_SELECT_FIELDS = `
   "Phone Number (as text)",
   "Profile Photo",
   "About Me / Bio",
+  "need for Space",
+  "special needs",
   "Type - User Current",
   "Created Date"
 `;
@@ -277,6 +279,78 @@ export async function createSuggestedProposal(proposalData) {
     return { data: result.data, error: null };
   } catch (error) {
     console.error('[suggestedProposalService] createSuggestedProposal error:', error);
+    return { data: null, error: error.message };
+  }
+}
+
+// ============================================================================
+// AI TRANSCRIPTION PARSING
+// ============================================================================
+
+/**
+ * Parse a call transcription using AI to extract guest profile fields
+ *
+ * @param {string} transcription - The call transcription or notes text
+ * @returns {Promise<{data: {aboutMe: string, needForSpace: string, specialNeeds: string}, error: string|null}>}
+ */
+export async function parseCallTranscription(transcription) {
+  try {
+    if (!transcription || transcription.trim().length === 0) {
+      return { data: null, error: 'Transcription text is required' };
+    }
+
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-gateway`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          action: 'complete',
+          payload: {
+            prompt_key: 'parse-call-transcription',
+            variables: {
+              transcription: transcription.trim()
+            }
+          }
+        })
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || result.error) {
+      throw new Error(result.error || result.message || 'Failed to parse transcription');
+    }
+
+    // The AI gateway returns the completion in result.data.completion
+    const completion = result.data?.completion;
+
+    if (!completion) {
+      throw new Error('No completion returned from AI');
+    }
+
+    // Parse the JSON response from the AI
+    let parsed;
+    try {
+      parsed = typeof completion === 'string' ? JSON.parse(completion) : completion;
+    } catch (parseError) {
+      console.error('[suggestedProposalService] Failed to parse AI response:', completion);
+      throw new Error('AI returned invalid JSON response');
+    }
+
+    return {
+      data: {
+        aboutMe: parsed.aboutMe || '',
+        needForSpace: parsed.needForSpace || '',
+        specialNeeds: parsed.specialNeeds || ''
+      },
+      error: null
+    };
+  } catch (error) {
+    console.error('[suggestedProposalService] parseCallTranscription error:', error);
     return { data: null, error: error.message };
   }
 }

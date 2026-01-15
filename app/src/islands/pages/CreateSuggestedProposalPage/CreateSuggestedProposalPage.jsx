@@ -119,6 +119,7 @@ export default function CreateSuggestedProposalPage() {
     handleAboutMeChange,
     handleNeedForSpaceChange,
     handleSpecialNeedsChange,
+    handleTranscriptionParsed,
 
     // Handlers - Configuration
     handleStatusChange,
@@ -203,6 +204,7 @@ export default function CreateSuggestedProposalPage() {
                   onAboutMeChange={handleAboutMeChange}
                   onNeedForSpaceChange={handleNeedForSpaceChange}
                   onSpecialNeedsChange={handleSpecialNeedsChange}
+                  onTranscriptionParsed={handleTranscriptionParsed}
                 />
               )}
             </div>

@@ -71,6 +71,11 @@ export interface CreateSuggestedProposalInput {
   guestFlexibility?: string;
   preferredGender?: string;
   comment?: string;
+
+  // Guest Profile Fields (saved to user table)
+  aboutMe?: string;
+  needForSpace?: string;
+  specialNeeds?: string;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -518,6 +523,20 @@ export async function handleCreateSuggested(
   const currentFavorites = parseJsonArray<string>(guestData["Favorited Listings"], "Favorited Listings");
   if (!currentFavorites.includes(input.listingId)) {
     guestUpdates["Favorited Listings"] = [...currentFavorites, input.listingId];
+  }
+
+  // Save guest profile fields if provided (persist to user profile)
+  if (input.aboutMe !== undefined && input.aboutMe.trim() !== "") {
+    guestUpdates["About Me / Bio"] = input.aboutMe.trim();
+    console.log(`[proposal:create_suggested] Saving aboutMe to guest profile`);
+  }
+  if (input.needForSpace !== undefined && input.needForSpace.trim() !== "") {
+    guestUpdates["need for Space"] = input.needForSpace.trim();
+    console.log(`[proposal:create_suggested] Saving needForSpace to guest profile`);
+  }
+  if (input.specialNeeds !== undefined && input.specialNeeds.trim() !== "") {
+    guestUpdates["special needs"] = input.specialNeeds.trim();
+    console.log(`[proposal:create_suggested] Saving specialNeeds to guest profile`);
   }
 
   const { error: guestUpdateError } = await supabase

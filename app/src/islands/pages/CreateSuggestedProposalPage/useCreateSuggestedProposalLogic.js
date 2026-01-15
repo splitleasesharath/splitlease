@@ -503,6 +503,22 @@ export function useCreateSuggestedProposalLogic() {
     setSpecialNeeds(e.target.value);
   }, []);
 
+  /**
+   * Handle AI-parsed transcription data
+   * Updates all three guest info fields from AI extraction
+   */
+  const handleTranscriptionParsed = useCallback((parsedData) => {
+    if (parsedData.aboutMe) {
+      setAboutMe(parsedData.aboutMe);
+    }
+    if (parsedData.needForSpace) {
+      setNeedForSpace(parsedData.needForSpace);
+    }
+    if (parsedData.specialNeeds) {
+      setSpecialNeeds(parsedData.specialNeeds);
+    }
+  }, []);
+
   // -------------------------------------------------------------------------
   // CONFIGURATION HANDLERS
   // -------------------------------------------------------------------------
@@ -771,6 +787,7 @@ export function useCreateSuggestedProposalLogic() {
     handleAboutMeChange,
     handleNeedForSpaceChange,
     handleSpecialNeedsChange,
+    handleTranscriptionParsed,
 
     // Handlers - Configuration
     handleStatusChange,
