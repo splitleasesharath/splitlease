@@ -202,6 +202,9 @@ def main():
             chunk_ids = ", ".join([str(c.number) for c in chunks])
             logger.step(f"Processing {page_path} (chunks: {chunk_ids})", notify=True)
 
+            # Check if this is a testable page (URL path) or a shared/global group
+            is_testable_page = page_path.startswith("/")
+
             # 4a. Implement chunks (Gemini Flash)
             success = implement_chunks_with_gemini(chunks, working_dir, logger)
             if not success:
@@ -212,7 +215,48 @@ def main():
                 logger.phase_complete(f"Page {page_path}", success=False, error="Implementation failed")
                 continue
 
-            # 4b. Start dev server
+            # For non-page groups (GLOBAL, Shared Components, etc.), skip visual check
+            # and verify with build instead
+            if not is_testable_page:
+                logger.step(f"Shared/global group - running build check instead of visual parity")
+                try:
+                    # Run build to verify changes don't break anything
+                    build_result = subprocess.run(
+                        ["bun", "run", "build"],
+                        cwd=working_dir / "app",
+                        capture_output=True,
+                        text=True,
+                        timeout=120
+                    )
+                    if build_result.returncode == 0:
+                        logger.log(f"  [PASS] Build succeeded")
+                        commit_msg = f"refactor({page_path}): Implement chunks {chunk_ids}\n\nBuild verified - no visual test (shared code)"
+
+                        subprocess.run(["git", "add", "."], cwd=working_dir, check=False)
+                        subprocess.run(["git", "commit", "-m", commit_msg], cwd=working_dir, check=False)
+
+                        stats["passed"] += 1
+                        logger.phase_complete(f"Page {page_path}", success=True)
+                    else:
+                        error_snippet = (build_result.stderr or build_result.stdout)[:200]
+                        logger.log(f"  [FAIL] Build failed: {error_snippet}")
+                        subprocess.run(["git", "reset", "--hard", "HEAD"], cwd=working_dir, check=False)
+                        stats["failed"] += 1
+                        logger.phase_complete(f"Page {page_path}", success=False, error="Build failed")
+                except subprocess.TimeoutExpired:
+                    logger.log(f"  [FAIL] Build timed out")
+                    subprocess.run(["git", "reset", "--hard", "HEAD"], cwd=working_dir, check=False)
+                    stats["failed"] += 1
+                    logger.phase_complete(f"Page {page_path}", success=False, error="Build timeout")
+                except Exception as e:
+                    logger.log(f"  [FAIL] Build error: {e}")
+                    subprocess.run(["git", "reset", "--hard", "HEAD"], cwd=working_dir, check=False)
+                    stats["failed"] += 1
+                    logger.phase_complete(f"Page {page_path}", success=False, error=str(e)[:50])
+                count += 1
+                continue
+
+            # 4b. Start dev server (only for testable pages)
             logger.step("Starting dev server...")
             try:
                 port, base_url = dev_server.start()
