@@ -441,10 +441,10 @@ export function getMenuVisibility(data, currentPath = '') {
     // 1. My Profile - ALWAYS visible for all users
     myProfile: true,
 
-    // 2. My Proposals - ALWAYS visible for all users
-    //    - Guests see their submitted proposals
-    //    - Hosts see proposals received from guests
-    myProposals: true,
+    // 2. My Proposals - Only visible when user HAS proposals
+    //    - Guests see their submitted proposals (proposalsCount from Guest query)
+    //    - Hosts see proposals received from guests (proposalsCount from Host query)
+    myProposals: proposalsCount > 0,
 
     // 3. My Proposals Suggested - GUEST only AND must have suggested proposals
     //    Only shows when user has proposals created by Split Lease agent
