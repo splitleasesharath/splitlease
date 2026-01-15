@@ -334,6 +334,17 @@ export const routes = [
     hasDynamicSegment: false
   },
 
+  // ===== HOUSE MANUAL =====
+  {
+    path: '/house-manual',
+    file: 'house-manual.html',
+    aliases: ['/house-manual.html'],
+    protected: true,
+    cloudflareInternal: true,
+    internalName: 'house-manual-view',
+    hasDynamicSegment: false
+  },
+
   // ===== INTERNAL/DEV PAGES =====
   {
     path: '/_internal-test',
