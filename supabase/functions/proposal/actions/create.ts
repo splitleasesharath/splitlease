@@ -32,7 +32,6 @@ import {
   getNightlyRateForNights,
 } from "../lib/calculations.ts";
 import { determineInitialStatus, ProposalStatusName } from "../lib/status.ts";
-import { enqueueBubbleSync, triggerQueueProcessing } from "../lib/bubbleSyncQueue.ts";
 import {
   addUserProposal,
   addUserListingFavorite,
@@ -554,41 +553,6 @@ export async function handleCreate(
   console.log(`[proposal:create] [ASYNC] Would trigger: proposal-suggestions`, {
     proposalId: proposalId,
   });
-
-  // ================================================
-  // ENQUEUE BUBBLE SYNC (Supabase → Bubble via sync_queue)
-  // ================================================
-
-  // Enqueue sync item for the proposal creation only.
-  // The proposal record contains FK relationships (Guest, Host User, Listing)
-  // that establish the connections. We do NOT update user records' Proposals List
-  // via Data API - Bubble's Data API handles ONE record per call, and list fields
-  // like Proposals List are managed by Bubble's internal relationship system.
-  try {
-    await enqueueBubbleSync(supabase, {
-      correlationId: proposalId,
-
-      items: [
-        // CREATE proposal in Bubble - contains all FK relationships
-        {
-          sequence: 1,
-          table: 'proposal',
-          recordId: proposalId,
-          operation: 'INSERT',
-          payload: proposalData,
-        },
-      ]
-    });
-
-    console.log(`[proposal:create] Bubble sync items enqueued (correlation: ${proposalId})`);
-
-    // Trigger queue processing (fire and forget)
-    triggerQueueProcessing();
-
-  } catch (syncError) {
-    // Log but don't fail - items can be manually requeued if needed
-    console.error(`[proposal:create] Failed to enqueue Bubble sync (non-blocking):`, syncError);
-  }
 
   // ================================================
   // RETURN RESPONSE
