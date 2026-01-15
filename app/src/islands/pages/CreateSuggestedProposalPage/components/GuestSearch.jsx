@@ -119,7 +119,7 @@ export default function GuestSearch({
             )}
           </div>
 
-          {!isConfirmed && (
+          {!isConfirmed && !existingProposalsCount && (
             <button
               className="csp-btn-select-user"
               onClick={onConfirm}
