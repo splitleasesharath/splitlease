@@ -11,6 +11,7 @@ import { initializeLookups, getNeighborhoodName, getBoroughName, getPropertyType
 import { parseUrlToFilters, updateUrlParams, watchUrlChanges, hasUrlFilters } from '../../lib/urlParams.js';
 import { fetchPhotoUrls, fetchHostData, extractPhotos, parseAmenities, parseJsonArray } from '../../lib/supabaseUtils.js';
 import { sanitizeNeighborhoodSearch, sanitizeSearchQuery } from '../../lib/sanitize.js';
+import { logger } from '../../lib/logger.js';
 
 // ============================================================================
 // Internal Components
@@ -1076,7 +1077,9 @@ export default function SearchPage() {
           try {
             const parsed = JSON.parse(photosField);
             if (Array.isArray(parsed)) parsed.forEach(id => allPhotoIds.add(id));
-          } catch (e) {}
+          } catch (e) {
+            logger.warn('Failed to parse photo IDs from listing:', listing._id, e.message);
+          }
         }
       });
       const photoMap = await fetchPhotoUrls(Array.from(allPhotoIds));

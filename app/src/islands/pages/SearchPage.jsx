@@ -23,208 +23,18 @@ import { sanitizeNeighborhoodSearch, sanitizeSearchQuery } from '../../lib/sanit
 import { createDay } from '../../lib/scheduleSelector/dayHelpers.js';
 import { calculateNextAvailableCheckIn } from '../../logic/calculators/scheduling/calculateNextAvailableCheckIn.js';
 import { shiftMoveInDateIfPast } from '../../logic/calculators/scheduling/shiftMoveInDateIfPast.js';
+import { calculateCheckInOutFromDays } from '../../logic/calculators/scheduling/calculateCheckInOutFromDays.js';
 // NOTE: adaptDaysToBubble removed - database now uses 0-indexed days natively
 import { countSelectedNights } from '../../lib/scheduleSelector/nightCalculations.js';
 import { calculatePrice } from '../../lib/scheduleSelector/priceCalculations.js';
 import ProposalSuccessModal from '../modals/ProposalSuccessModal.jsx';
-
-// ============================================================================
-// Utility Functions
-// ============================================================================
-
-/**
- * Fetch informational texts from Supabase
- */
-async function fetchInformationalTexts() {
-  try {
-    const { data, error } = await supabase
-      .from('informationaltexts')
-      .select('_id, "Information Tag-Title", "Desktop copy", "Mobile copy", "Desktop+ copy", "show more available?"');
-
-    if (error) throw error;
-
-    // Transform data into a map keyed by tag title
-    const textsMap = {};
-    data.forEach(item => {
-      textsMap[item['Information Tag-Title']] = {
-        desktop: item['Desktop copy'],
-        mobile: item['Mobile copy'],
-        desktopPlus: item['Desktop+ copy'],
-        showMore: item['show more available?']
-      };
-    });
-
-    return textsMap;
-  } catch (error) {
-    logger.error('Failed to fetch informational texts:', error);
-    return {};
-  }
-}
+import { fetchInformationalTexts } from '../../lib/informationalTextsFetcher.js';
+import CompactScheduleIndicator from './SearchPage/components/CompactScheduleIndicator.jsx';
+import MobileFilterBar from './SearchPage/components/MobileFilterBar.jsx';
 
 // ============================================================================
 // Internal Components
 // ============================================================================
-
-/**
- * CompactScheduleIndicator - Minimal dot-based schedule display
- * Shows when mobile header is hidden during scroll
- */
-function CompactScheduleIndicator({ isVisible }) {
-  // Get selected days from URL params
-  const urlParams = new URLSearchParams(window.location.search);
-  const daysSelected = urlParams.get('days-selected') || '';
-
-  // Parse days-selected (format: "1,2,3,4,5" where 0=Sun, 1=Mon, etc.)
-  const selectedDaysArray = daysSelected
-    ? daysSelected.split(',').map(d => parseInt(d, 10)).filter(d => !isNaN(d))
-    : [];
-
-  // Day names for display
-  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
-  // Calculate check-in and check-out days
-  let checkInText = '';
-  let checkOutText = '';
-
-  if (selectedDaysArray.length >= 2) {
-    const sortedDays = [...selectedDaysArray].sort((a, b) => a - b);
-    const hasSaturday = sortedDays.includes(6);
-    const hasSunday = sortedDays.includes(0);
-    const isWrapAround = hasSaturday && hasSunday && sortedDays.length < 7;
-
-    let checkInDay, checkOutDay;
-
-    if (isWrapAround) {
-      // Find the gap in the sequence to determine actual check-in/check-out
-      let gapIndex = -1;
-      for (let i = 1; i < sortedDays.length; i++) {
-        if (sortedDays[i] - sortedDays[i - 1] > 1) {
-          gapIndex = i;
-          break;
-        }
-      }
-
-      if (gapIndex !== -1) {
-        checkInDay = sortedDays[gapIndex];
-        checkOutDay = sortedDays[gapIndex - 1];
-      } else {
-        checkInDay = sortedDays[0];
-        checkOutDay = sortedDays[sortedDays.length - 1];
-      }
-    } else {
-      checkInDay = sortedDays[0];
-      checkOutDay = sortedDays[sortedDays.length - 1];
-    }
-
-    checkInText = dayNames[checkInDay];
-    checkOutText = dayNames[checkOutDay];
-  }
-
-  return (
-    <div className={`compact-schedule-indicator ${isVisible ? 'compact-schedule-indicator--visible' : ''}`}>
-      <span className="compact-schedule-text">
-        {selectedDaysArray.length >= 2 ? (
-          <>
-            <span className="compact-label">Check-in:</span> {checkInText} • <span className="compact-label">Check-out:</span> {checkOutText}
-          </>
-        ) : (
-          'Select days'
-        )}
-      </span>
-      <div className="compact-schedule-dots">
-        {[0, 1, 2, 3, 4, 5, 6].map((dayIndex) => (
-          <div
-            key={dayIndex}
-            className={`compact-day-dot ${selectedDaysArray.includes(dayIndex) ? 'selected' : ''}`}
-            title={dayNames[dayIndex]}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/**
- * MobileFilterBar - Sticky filter button for mobile
- * Includes auth-aware elements: favorites link and LoggedInAvatar for logged-in users
- */
-function MobileFilterBar({
-  onFilterClick,
-  onMapClick,
-  isMapVisible,
-  isLoggedIn,
-  currentUser,
-  favoritesCount,
-  onNavigate,
-  onLogout,
-  onOpenAuthModal,
-  isHidden
-}) {
-  return (
-    <div className={`mobile-filter-bar ${isHidden ? 'mobile-filter-bar--hidden' : ''}`}>
-      <a href="/" className="mobile-logo-link" aria-label="Go to homepage">
-        <img
-          src="/assets/images/split-lease-purple-circle.png"
-          alt="Split Lease Logo"
-          className="mobile-logo-icon"
-          width="28"
-          height="28"
-        />
-      </a>
-      <button className="filter-toggle-btn" onClick={onFilterClick}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M4 6h16M4 12h16M4 18h16" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-        <span>Filters</span>
-      </button>
-      <button className="map-toggle-btn" onClick={onMapClick}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <rect x="3" y="3" width="18" height="18" rx="2" strokeWidth="2" />
-          <path d="M9 3v18M15 3v18M3 9h18M3 15h18" strokeWidth="2" />
-        </svg>
-        <span>{isMapVisible ? 'Show Listings' : 'Map'}</span>
-      </button>
-
-      {/* Mobile Header Actions - Auth-aware elements */}
-      <div className="mobile-header-actions">
-        {isLoggedIn && currentUser ? (
-          <>
-            {/* Favorites Heart with Count */}
-            <a href="/favorite-listings" className="mobile-favorites-link" aria-label="My Favorite Listings">
-              <svg
-                width="22"
-                height="22"
-                viewBox="0 0 24 24"
-                fill="#5b21b6"
-                stroke="none"
-              >
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-              </svg>
-            </a>
-
-            {/* Logged In Avatar */}
-            <LoggedInAvatar
-              user={currentUser}
-              currentPath="/search"
-              onNavigate={onNavigate}
-              onLogout={onLogout}
-              size="small"
-            />
-          </>
-        ) : (
-          /* Sign In button for logged out users */
-          <button
-            className="mobile-signin-btn"
-            onClick={onOpenAuthModal}
-            aria-label="Sign In"
-          >
-            Sign In
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
 
 /**
  * NeighborhoodCheckboxList - Simple scrollable list with checkboxes
@@ -1157,43 +967,11 @@ export default function SearchPage() {
   // Calculate check-in and check-out day names
   const checkInOutDays = useMemo(() => {
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
-    if (selectedDaysForDisplay.length < 2) {
-      return { checkIn: '', checkOut: '' };
-    }
-
-    const sortedDays = [...selectedDaysForDisplay].sort((a, b) => a - b);
-    const hasSaturday = sortedDays.includes(6);
-    const hasSunday = sortedDays.includes(0);
-    const isWrapAround = hasSaturday && hasSunday && sortedDays.length < 7;
-
-    let checkInDay, checkOutDay;
-
-    if (isWrapAround) {
-      // Find the gap in the sequence
-      let gapIndex = -1;
-      for (let i = 1; i < sortedDays.length; i++) {
-        if (sortedDays[i] - sortedDays[i - 1] > 1) {
-          gapIndex = i;
-          break;
-        }
-      }
-
-      if (gapIndex !== -1) {
-        checkInDay = sortedDays[gapIndex];
-        checkOutDay = sortedDays[gapIndex - 1];
-      } else {
-        checkInDay = sortedDays[0];
-        checkOutDay = sortedDays[sortedDays.length - 1];
-      }
-    } else {
-      checkInDay = sortedDays[0];
-      checkOutDay = sortedDays[sortedDays.length - 1];
-    }
-
+    const result = calculateCheckInOutFromDays(selectedDaysForDisplay);
+    if (!result) return { checkIn: '', checkOut: '' };
     return {
-      checkIn: dayNames[checkInDay],
-      checkOut: dayNames[checkOutDay]
+      checkIn: dayNames[result.checkIn],
+      checkOut: dayNames[result.checkOut]
     };
   }, [selectedDaysForDisplay]);
 
