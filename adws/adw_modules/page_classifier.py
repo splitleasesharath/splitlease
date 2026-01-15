@@ -310,19 +310,34 @@ def group_pages_for_concurrent_check() -> Dict[str, List[PageInfo]]:
 # =============================================================================
 # TEST IDs FOR DYNAMIC ROUTES
 # =============================================================================
+# These IDs must exist in BOTH live (split.lease) and dev (localhost) databases
+# for visual parity checks to work correctly.
+#
+# To find valid IDs:
+#   - listing_id: Query `listing` table for a published listing
+#   - user_id_host: Query `user` table for a host with listings
+#   - user_id_guest: Query `user` table for a guest with proposals
+#   - proposal_id: Query `proposal` table for an active proposal
+
 TEST_IDS = {
-    # Listing IDs - Use real IDs from Supabase
-    "listing_id": "clv7k2x0g0001qw0g8h3j4k5l",  # TODO: Replace with actual test listing
+    # Listing ID - Must exist on both LIVE and DEV
+    # Used for: /view-split-lease/:id, /preview-split-lease/:id, /edit-listing/:id
+    "listing_id": "1705678660579x984500774015074300",
 
-    # User IDs - Use real IDs from Supabase
-    "user_id_host": "auth-host-uuid-here",  # TODO: Replace with actual host user
-    "user_id_guest": "auth-guest-uuid-here",  # TODO: Replace with actual guest user
+    # Host User ID - Must exist on both LIVE and DEV
+    # Used for: /account-profile/:userId (when viewing host profile)
+    "user_id_host": "TODO_REPLACE_WITH_REAL_HOST_USER_ID",
 
-    # Proposal IDs
-    "proposal_id": "prop-uuid-here",  # TODO: Replace with actual proposal
+    # Guest User ID - Must exist on both LIVE and DEV
+    # Used for: /account-profile/:userId (when viewing guest profile)
+    "user_id_guest": "TODO_REPLACE_WITH_REAL_GUEST_USER_ID",
 
-    # Help Center Categories
-    "help_center_category": "guests",  # Known category
+    # Proposal ID - Must exist on both LIVE and DEV
+    # Used for: /proposal/:id
+    "proposal_id": "TODO_REPLACE_WITH_REAL_PROPOSAL_ID",
+
+    # Help Center Categories - Static, no database lookup needed
+    "help_center_category": "guests",  # Options: guests, hosts, general
 }
 
 
