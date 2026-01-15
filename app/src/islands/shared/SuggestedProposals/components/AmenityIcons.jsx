@@ -10,11 +10,11 @@
  * @param {Object} props.listing - Listing object with amenity fields
  */
 export default function AmenityIcons({ listing = {} }) {
-  const bedrooms = listing['Qty Bedrooms'] || 0;
-  const bathrooms = listing['Qty Bathrooms'] || 0;
-  const beds = listing['Qty Beds'] || 0;
-  const guests = listing['Qty Guests'] || 0;
-  const spaceType = listing['Type of Space'] || 'Space';
+  const bedrooms = listing['Features - Qty Bedrooms'] || 0;
+  const bathrooms = listing['Features - Qty Bathrooms'] || 0;
+  const beds = listing['Features - Qty Beds'] || 0;
+  const guests = listing['Features - Qty Guests'] || 0;
+  const spaceType = listing['Features - Type of Space'] || 'Space';
 
   return (
     <div className="sp-amenities">

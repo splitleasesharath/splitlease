@@ -59,10 +59,14 @@ export default function SuggestedProposalPopup({
 
   // Extract data using native Supabase field names
   const listing = proposal._listing || {};
-  const photos = listing['Photos - Features'] || [];
-  const listingName = listing['Listing Name'] || 'Unnamed Listing';
-  const address = listing['Address - Full'] || '';
-  const geoPoint = listing.geo_point || null;
+  const photos = listing['Features - Photos'] || [];
+  const listingName = listing['Name'] || 'Unnamed Listing';
+  // Location - Address is a JSONB object with shape: { address: string, city: string, ... }
+  const addressData = listing['Location - Address'];
+  const address = typeof addressData === 'object' && addressData !== null
+    ? (addressData.address || '')
+    : (addressData || '');
+  const geoPoint = listing['Location - Coordinates'] || null;
 
   // Negotiation summary (AI explanation)
   const summaries = proposal._negotiationSummaries || [];
@@ -171,8 +175,8 @@ export default function SuggestedProposalPopup({
               <AmenityIcons listing={listing} />
 
               <PriceDisplay
-                nightlyPrice={proposal['Nightly Price']}
-                totalPrice={proposal['Total Price']}
+                nightlyPrice={proposal['proposal nightly price']}
+                totalPrice={proposal['Total Price for Reservation (guest)']}
               />
 
               <ActionButtons
