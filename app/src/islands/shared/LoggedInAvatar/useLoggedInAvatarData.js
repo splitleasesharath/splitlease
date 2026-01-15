@@ -326,6 +326,13 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
         effectiveCount: proposalsCount
       });
 
+      // DEBUG: Log unread messages result to diagnose notification issue
+      console.log('[useLoggedInAvatarData] Unread messages result:', {
+        count: messagesResult.count,
+        error: messagesResult.error,
+        userId: userId
+      });
+
       const newData = {
         userType: normalizedType,
         proposalsCount,

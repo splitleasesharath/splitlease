@@ -121,10 +121,13 @@ export default function Header({ autoShowLogin = false }) {
             console.log('[Header] Supabase session exists - preserving auth state');
             // Set basic user info from session if available
             // CRITICAL: Include userId and userType so useHostMenuData and LoggedInAvatar can function
+            // Use Bubble-format user_id from metadata (or localStorage) for downstream queries
+            // Fallback to Supabase UUID only if neither is available
             if (session?.user) {
+              const bubbleUserId = session.user.user_metadata?.user_id || getUserId() || session.user.id;
               setCurrentUser({
-                userId: session.user.id,
-                id: session.user.id,
+                userId: bubbleUserId,
+                id: bubbleUserId,
                 firstName: session.user.user_metadata?.first_name || session.user.email?.split('@')[0] || 'User',
                 email: session.user.email,
                 userType: session.user.user_metadata?.user_type || null,
