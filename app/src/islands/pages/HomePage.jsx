@@ -18,12 +18,19 @@ import {
 // ============================================================================
 // A/B TEST CONFIG - Market Report Popup vs Drawer
 // Set to false to disable A/B test and use drawer only (easy revert)
+// Note: Popup only shows on desktop (>768px), mobile always gets drawer
 // ============================================================================
 const AB_TEST_ENABLED = true;
 const POPUP_PERCENTAGE = 0.5; // 50% see popup, 50% see drawer
+const MOBILE_BREAKPOINT = 768; // px - below this, always show drawer
 
 function getMarketReportVariant() {
   if (!AB_TEST_ENABLED) return 'drawer';
+
+  // Mobile always gets drawer
+  if (typeof window !== 'undefined' && window.innerWidth < MOBILE_BREAKPOINT) {
+    return 'drawer';
+  }
 
   let variant = localStorage.getItem('marketReportVariant');
   if (!variant) {
