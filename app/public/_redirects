@@ -86,9 +86,9 @@
 /host-guarantee  /_internal/host-guarantee-view  200
 /host-guarantee/  /_internal/host-guarantee-view  200
 
-# /referral-invite → referral-invite.html
-/referral-invite  /_internal/referral-invite-view  200
-/referral-invite/  /_internal/referral-invite-view  200
+# /referral → referral.html
+/referral  /_internal/referral-view  200
+/referral/  /_internal/referral-view  200
 
 # /guest-success → guest-success.html
 /guest-success  /_internal/guest-success-view  200

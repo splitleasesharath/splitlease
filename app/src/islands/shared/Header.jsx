@@ -6,8 +6,6 @@ import { supabase } from '../../lib/supabase.js';
 import CreateDuplicateListingModal from './CreateDuplicateListingModal/CreateDuplicateListingModal.jsx';
 import LoggedInAvatar from './LoggedInAvatar/LoggedInAvatar.jsx';
 import SignUpLoginModal from './SignUpLoginModal.jsx';
-import { useHostMenuData, getHostMenuConfig } from './Header/useHostMenuData.js';
-import { useGuestMenuData, getGuestMenuConfig } from './Header/useGuestMenuData.js';
 
 export default function Header({ autoShowLogin = false }) {
   const [mobileMenuActive, setMobileMenuActive] = useState(false);
@@ -45,12 +43,6 @@ export default function Header({ autoShowLogin = false }) {
 
   // CreateDuplicateListingModal State
   const [showListPropertyModal, setShowListPropertyModal] = useState(false);
-
-  // Dynamic menu data hooks for Host and Guest dropdowns
-  const userId = currentUser?.userId || currentUser?.id || '';
-  const isAuthenticated = !!currentUser;
-  const { state: hostMenuState } = useHostMenuData(userId, isAuthenticated);
-  const { state: guestMenuState } = useGuestMenuData(userId, isAuthenticated);
 
   // Background validation: Validate cached auth state and update with real data
   // The optimistic UI is already set synchronously in useState initializer above
@@ -505,71 +497,64 @@ export default function Header({ autoShowLogin = false }) {
               role="menu"
               aria-label="Host with Us menu"
             >
-              {/* Dynamic menu items based on host state */}
-              {(() => {
-                const hostMenuConfig = getHostMenuConfig(hostMenuState, handleSignupClick);
-                const currentPath = window.location.pathname;
-                const ctaHref = hostMenuConfig.cta.href?.split('?')[0].split('#')[0];
-                // Filter out items that link to the current page OR duplicate the CTA
-                const filteredItems = hostMenuConfig.items.filter(item => {
-                  const itemHref = item.href?.split('?')[0].split('#')[0];
-                  const linksToCurrentPage = item.href && currentPath.startsWith(itemHref);
-                  const duplicatesCta = itemHref && ctaHref && itemHref === ctaHref;
-                  return !linksToCurrentPage && !duplicatesCta;
-                });
-                // Check if CTA links to current page
-                const ctaLinksToCurrentPage = ctaHref && currentPath.startsWith(ctaHref);
-                const showCta = !ctaLinksToCurrentPage;
-
-                return (
-                  <>
-                    {filteredItems.map((item) => (
-                      <a
-                        key={item.id}
-                        href={item.href}
-                        className="dropdown-item"
-                        role="menuitem"
-                        onClick={item.action ? (e) => {
-                          e.preventDefault();
-                          setActiveDropdown(null);
-                          setMobileMenuActive(false);
-                          item.action();
-                        } : undefined}
-                      >
-                        {item.icon && <img src={item.icon} alt="" className="dropdown-icon" />}
-                        <div className="dropdown-content">
-                          <span className="dropdown-title">{item.title}</span>
-                          {item.desc && <span className="dropdown-desc">{item.desc}</span>}
-                        </div>
-                      </a>
-                    ))}
-
-                    {/* Separator - only show if CTA is visible */}
-                    {showCta && <div className="dropdown-separator" />}
-
-                    {/* Bottom CTA - hide if it links to current page */}
-                    {showCta && (
-                    <a
-                      href={hostMenuConfig.cta.href || '#'}
-                      className="dropdown-cta"
-                      role="menuitem"
-                      onClick={hostMenuConfig.cta.action ? (e) => {
-                        e.preventDefault();
-                        setActiveDropdown(null);
-                        setMobileMenuActive(false);
-                        hostMenuConfig.cta.action();
-                      } : () => {
-                        setActiveDropdown(null);
-                        setMobileMenuActive(false);
-                      }}
-                    >
-                      {hostMenuConfig.cta.icon && <img src={hostMenuConfig.cta.icon} alt="" className="dropdown-icon" />}
-                      {hostMenuConfig.cta.label}
-                    </a>
-                    )}
-                  </>
-                );
-              })()}
+              <a
+                href="/list-with-us"
+                className="dropdown-item"
+                role="menuitem"
+              >
+                <span className="dropdown-title">Why List with Us</span>
+                <span className="dropdown-desc">New to Split Lease? Learn more about hosting</span>
+              </a>
+              <a
+                href="/host-success"
+                className="dropdown-item"
+                role="menuitem"
+              >
+                <span className="dropdown-title">Success Stories</span>
+                <span className="dropdown-desc">Explore other hosts' feedback</span>
+              </a>
+              <a
+                href="/self-listing-v2"
+                className="dropdown-item"
+                role="menuitem"
+                onClick={() => {
+                  setActiveDropdown(null);
+                  setMobileMenuActive(false);
+                }}
+              >
+                <span className="dropdown-title">List Property</span>
+              </a>
+              <a
+                href="/policies"
+                className="dropdown-item"
+                role="menuitem"
+              >
+                <span className="dropdown-title">Legal Information</span>
+                <span className="dropdown-desc">Review most important policies</span>
+              </a>
+              <a
+                href="/faq?section=hosts"
+                className="dropdown-item"
+                role="menuitem"
+              >
+                <span className="dropdown-title">FAQs</span>
+                <span className="dropdown-desc">Frequently Asked Questions</span>
+              </a>
+              {!currentUser && (
+              <a
+                href="#"
+                className="dropdown-item"
+                role="menuitem"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setActiveDropdown(null);
+                  setMobileMenuActive(false);
+                  handleSignupClick();
+                }}
+              >
+                <span className="dropdown-title">Sign Up</span>
+              </a>
+              )}
             </div>
           </div>
           )}
@@ -612,71 +597,53 @@ export default function Header({ autoShowLogin = false }) {
               role="menu"
               aria-label="Stay with Us menu"
             >
-              {/* Dynamic menu items based on guest state */}
-              {(() => {
-                const guestMenuConfig = getGuestMenuConfig(guestMenuState, handleSignupClick);
-                const currentPath = window.location.pathname;
-                const ctaHref = guestMenuConfig.cta.href?.split('?')[0].split('#')[0];
-                // Filter out items that link to the current page OR duplicate the CTA
-                const filteredItems = guestMenuConfig.items.filter(item => {
-                  const itemHref = item.href?.split('?')[0].split('#')[0];
-                  const linksToCurrentPage = item.href && currentPath.startsWith(itemHref);
-                  const duplicatesCta = itemHref && ctaHref && itemHref === ctaHref;
-                  return !linksToCurrentPage && !duplicatesCta;
-                });
-                // Check if CTA links to current page
-                const ctaLinksToCurrentPage = ctaHref && currentPath.startsWith(ctaHref);
-                const showCta = !ctaLinksToCurrentPage;
-
-                return (
-                  <>
-                    {filteredItems.map((item) => (
-                      <a
-                        key={item.id}
-                        href={item.href}
-                        className="dropdown-item"
-                        role="menuitem"
-                        onClick={item.action ? (e) => {
-                          e.preventDefault();
-                          setActiveDropdown(null);
-                          setMobileMenuActive(false);
-                          item.action();
-                        } : undefined}
-                      >
-                        {item.icon && <img src={item.icon} alt="" className="dropdown-icon" />}
-                        <div className="dropdown-content">
-                          <span className="dropdown-title">{item.title}</span>
-                          {item.desc && <span className="dropdown-desc">{item.desc}</span>}
-                        </div>
-                      </a>
-                    ))}
-
-                    {/* Separator - only show if CTA is visible */}
-                    {showCta && <div className="dropdown-separator" />}
-
-                    {/* Bottom CTA - hide if it links to current page */}
-                    {showCta && (
-                    <a
-                      href={guestMenuConfig.cta.href || '#'}
-                      className="dropdown-cta"
-                      role="menuitem"
-                      onClick={guestMenuConfig.cta.action ? (e) => {
-                        e.preventDefault();
-                        setActiveDropdown(null);
-                        setMobileMenuActive(false);
-                        guestMenuConfig.cta.action();
-                      } : () => {
-                        setActiveDropdown(null);
-                        setMobileMenuActive(false);
-                      }}
-                    >
-                      {guestMenuConfig.cta.icon && <img src={guestMenuConfig.cta.icon} alt="" className="dropdown-icon" />}
-                      {guestMenuConfig.cta.label}
-                    </a>
-                    )}
-                  </>
-                );
-              })()}
+              <a
+                href={SEARCH_URL}
+                className="dropdown-item"
+                role="menuitem"
+              >
+                <span className="dropdown-title">Explore Rentals</span>
+                <span className="dropdown-desc">See available listings!</span>
+              </a>
+              <a
+                href="/why-split-lease"
+                className="dropdown-item"
+                role="menuitem"
+              >
+                <span className="dropdown-title">Why Split Lease</span>
+                <span className="dropdown-desc">Learn why guests choose Split Lease</span>
+              </a>
+              <a
+                href="/guest-success"
+                className="dropdown-item"
+                role="menuitem"
+              >
+                <span className="dropdown-title">Success Stories</span>
+                <span className="dropdown-desc">Explore other guests' feedback</span>
+              </a>
+              <a
+                href="/faq?section=travelers"
+                className="dropdown-item"
+                role="menuitem"
+              >
+                <span className="dropdown-title">FAQs</span>
+                <span className="dropdown-desc">Frequently Asked Questions</span>
+              </a>
+              {!currentUser && (
+              <a
+                href="#"
+                className="dropdown-item"
+                role="menuitem"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setActiveDropdown(null);
+                  setMobileMenuActive(false);
+                  handleSignupClick();
+                }}
+              >
+                <span className="dropdown-title">Sign Up</span>
+              </a>
+              )}
             </div>
           </div>
           )}

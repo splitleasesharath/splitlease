@@ -601,91 +601,35 @@
 
 .eld-photo-controls {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: var(--spacing-xs, 4px);
+  right: var(--spacing-xs, 4px);
   display: flex;
-  gap: 6px;
-  z-index: 2;
+  gap: var(--spacing-xs, 4px);
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.eld-photo-item:hover .eld-photo-controls {
+  opacity: 1;
 }
 
 .eld-photo-delete {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  background-color: rgba(255, 255, 255, 0.95);
-  border: 2px solid #d1d5db;
-  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: var(--radius-sm, 6px);
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-  transition: all 0.2s ease;
-  padding: 0;
-}
-
-/* Ensure SVG icon is visible */
-.eld-photo-delete svg {
-  width: 20px;
-  height: 20px;
-  pointer-events: none;
-  display: block;
-  flex-shrink: 0;
+  color: var(--color-error, #DC2626);
+  transition: background-color 150ms ease, color 150ms ease;
 }
 
 .eld-photo-delete:hover {
-  background-color: #fee2e2;
-  border-color: #ef4444;
-  transform: scale(1.08);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
-}
-
-.eld-photo-delete:hover svg {
-  stroke: #ef4444;
-}
-
-/* Star button for setting cover photo */
-.eld-photo-star {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  background-color: rgba(255, 255, 255, 0.95);
-  border: 2px solid #d1d5db;
-  border-radius: 8px;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-  transition: all 0.2s ease;
-  padding: 0;
-}
-
-.eld-photo-star svg {
-  width: 20px;
-  height: 20px;
-  pointer-events: none;
-  display: block;
-  flex-shrink: 0;
-}
-
-.eld-photo-star:hover {
-  background-color: #fef3c7;
-  border-color: #f59e0b;
-  transform: scale(1.08);
-  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
-}
-
-.eld-photo-star:hover svg {
-  stroke: #f59e0b;
-}
-
-/* Active state - current cover photo */
-.eld-photo-star--active {
-  background-color: #fef3c7;
-  border-color: #f59e0b;
-}
-
-.eld-photo-star--active:hover {
-  background-color: #fde68a;
+  background: var(--color-error, #DC2626);
+  color: white;
 }
 
 .eld-photo-badge {

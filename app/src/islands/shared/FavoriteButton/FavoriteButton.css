@@ -95,7 +95,11 @@
   }
 }
 
-/* Loading state - only blocks interaction, no visual change for instant feel */
+/* Loading state */
 .favorite-button-shared.loading {
   pointer-events: none;
+}
+
+.favorite-button-shared.loading .favorite-button-icon {
+  opacity: 0.7;
 }

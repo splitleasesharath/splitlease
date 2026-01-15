@@ -195,12 +195,12 @@ export const routes = [
     hasDynamicSegment: false
   },
   {
-    path: '/referral-invite',
-    file: 'referral-invite.html',
-    aliases: ['/referral-invite.html', '/ref', '/referral'],
+    path: '/referral',
+    file: 'referral.html',
+    aliases: ['/referral.html', '/ref'],
     protected: false,
     cloudflareInternal: true,
-    internalName: 'referral-invite-view',
+    internalName: 'referral-view',
     hasDynamicSegment: false
   },
 
@@ -290,9 +290,7 @@ export const routes = [
     protected: true,
     cloudflareInternal: true,
     internalName: 'rental-application-view',
-    hasDynamicSegment: false,
-    deprecated: true, // DEPRECATED: Redirects to /account-profile with ?section=rental-application&openRentalApp=true
-    redirectTo: '/account-profile' // Note: actual redirect handled in RentalApplicationPage component
+    hasDynamicSegment: false
   },
 
   // ===== AUTH PAGES =====
