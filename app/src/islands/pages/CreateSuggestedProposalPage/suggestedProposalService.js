@@ -8,6 +8,20 @@
 import { supabase } from '../../../lib/supabase.js';
 
 // ============================================================================
+// REFERENCE DATA LOOKUPS
+// ============================================================================
+
+// Borough Bubble FK ID to display name mapping
+const BOROUGH_LOOKUP = {
+  '1607041299637x913970439175620100': 'Brooklyn',
+  '1607041299687x679479834266385900': 'Manhattan',
+  '1607041299715x741251947580746200': 'Bronx',
+  '1607041299828x406969561802059650': 'Queens',
+  '1686599616073x348655546878883200': 'Weehawken, NJ',
+  '1686674905048x436838997624262400': 'Newark, NJ'
+};
+
+// ============================================================================
 // LISTING OPERATIONS
 // ============================================================================
 
@@ -158,6 +172,8 @@ const USER_SELECT_FIELDS = `
   "Phone Number (as text)",
   "Profile Photo",
   "About Me / Bio",
+  "need for Space",
+  "special needs",
   "Type - User Current",
   "Created Date"
 `;
@@ -268,6 +284,78 @@ export async function createSuggestedProposal(proposalData) {
 }
 
 // ============================================================================
+// AI TRANSCRIPTION PARSING
+// ============================================================================
+
+/**
+ * Parse a call transcription using AI to extract guest profile fields
+ *
+ * @param {string} transcription - The call transcription or notes text
+ * @returns {Promise<{data: {aboutMe: string, needForSpace: string, specialNeeds: string}, error: string|null}>}
+ */
+export async function parseCallTranscription(transcription) {
+  try {
+    if (!transcription || transcription.trim().length === 0) {
+      return { data: null, error: 'Transcription text is required' };
+    }
+
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-gateway`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          action: 'complete',
+          payload: {
+            prompt_key: 'parse-call-transcription',
+            variables: {
+              transcription: transcription.trim()
+            }
+          }
+        })
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || result.error) {
+      throw new Error(result.error || result.message || 'Failed to parse transcription');
+    }
+
+    // The AI gateway returns the completion in result.data.completion
+    const completion = result.data?.completion;
+
+    if (!completion) {
+      throw new Error('No completion returned from AI');
+    }
+
+    // Parse the JSON response from the AI
+    let parsed;
+    try {
+      parsed = typeof completion === 'string' ? JSON.parse(completion) : completion;
+    } catch (parseError) {
+      console.error('[suggestedProposalService] Failed to parse AI response:', completion);
+      throw new Error('AI returned invalid JSON response');
+    }
+
+    return {
+      data: {
+        aboutMe: parsed.aboutMe || '',
+        needForSpace: parsed.needForSpace || '',
+        specialNeeds: parsed.specialNeeds || ''
+      },
+      error: null
+    };
+  } catch (error) {
+    console.error('[suggestedProposalService] parseCallTranscription error:', error);
+    return { data: null, error: error.message };
+  }
+}
+
+// ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
 
@@ -322,30 +410,34 @@ export function getLastPhoto(listing, photos = []) {
 }
 
 /**
+ * Get borough display name from Bubble FK ID
+ */
+export function getBoroughName(boroughId) {
+  return BOROUGH_LOOKUP[boroughId] || null;
+}
+
+/**
  * Get address string from listing
  *
+ * Returns: "Borough, Full Address" or fallback to "Borough, State, Zip"
  * Location - Address JSON structure: { address: "Full Address String", lat, lng }
- * Note: Location - City contains a Bubble FK ID, not a city name - never display it directly
  */
 export function getAddressString(listing) {
   if (!listing) return '';
 
+  const boroughName = getBoroughName(listing['Location - Borough']);
   const locationAddress = listing['Location - Address'];
-  if (typeof locationAddress === 'object' && locationAddress !== null) {
-    // Primary: use the full formatted address string if available
-    if (locationAddress.address) {
-      return locationAddress.address;
-    }
-    // Fallback: try individual address components (some records may have these)
-    const parts = [
-      locationAddress.number,
-      locationAddress.street
-    ].filter(Boolean).join(' ');
-    if (parts) return parts;
+
+  // Primary: Borough + full address from JSON
+  if (typeof locationAddress === 'object' && locationAddress !== null && locationAddress.address) {
+    return boroughName
+      ? `${boroughName}, ${locationAddress.address}`
+      : locationAddress.address;
   }
 
-  // Final fallback: use State and Zip only (Location - City is a Bubble FK ID)
+  // Fallback: Borough + State + Zip
   return [
+    boroughName,
     listing['Location - State'],
     listing['Location - Zip Code']
   ].filter(Boolean).join(', ');

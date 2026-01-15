@@ -34,6 +34,7 @@ export const STATUS_TO_CTA: Record<string, { guest?: string; host?: string }> = 
   },
   'Proposal Submitted for guest by Split Lease - Awaiting Rental Application': {
     guest: 'fill_out_rental_application',
+    host: 'view_proposal_host',
   },
   'Proposal Submitted for guest by Split Lease - Pending Confirmation': {
     guest: 'view_proposal_guest',

@@ -44,15 +44,18 @@ import { reportErrorLog } from "../_shared/slack.ts";
 import { handleSendMessage } from './handlers/sendMessage.ts';
 import { handleGetMessages } from './handlers/getMessages.ts';
 import { handleSendGuestInquiry } from './handlers/sendGuestInquiry.ts';
+import { handleCreateProposalThread } from './handlers/createProposalThread.ts';
 
 // ─────────────────────────────────────────────────────────────
 // Configuration (Immutable)
 // ─────────────────────────────────────────────────────────────
 
-const ALLOWED_ACTIONS = ['send_message', 'get_messages', 'send_guest_inquiry'] as const;
+const ALLOWED_ACTIONS = ['send_message', 'get_messages', 'send_guest_inquiry', 'create_proposal_thread'] as const;
 
 // Actions that don't require authentication
-const PUBLIC_ACTIONS: ReadonlySet<string> = new Set(['send_guest_inquiry']);
+// - send_guest_inquiry: Public form submission
+// - create_proposal_thread: Internal service-to-service call
+const PUBLIC_ACTIONS: ReadonlySet<string> = new Set(['send_guest_inquiry', 'create_proposal_thread']);
 
 type Action = typeof ALLOWED_ACTIONS[number];
 
@@ -61,6 +64,7 @@ const handlers: Readonly<Record<Action, Function>> = {
   send_message: handleSendMessage,
   get_messages: handleGetMessages,
   send_guest_inquiry: handleSendGuestInquiry,
+  create_proposal_thread: handleCreateProposalThread,
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -251,6 +255,10 @@ async function executeHandler(
       return handler(supabaseAdmin, payload, user!);
 
     case 'send_guest_inquiry':
+      return handler(supabaseAdmin, payload);
+
+    case 'create_proposal_thread':
+      // Internal action - no user auth needed (service-level call)
       return handler(supabaseAdmin, payload);
 
     default: {

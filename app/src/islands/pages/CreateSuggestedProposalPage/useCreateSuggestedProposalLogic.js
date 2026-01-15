@@ -171,13 +171,14 @@ export function useCreateSuggestedProposalLogic() {
   const nightsCount = Math.max(0, selectedDays.length - 1);
 
   // Calculate check-in/check-out using the same logic as ViewSplitLeasePage
-  const { checkInDayIndex, checkOutDayIndex, checkInDayName, checkOutDayName } = useMemo(() => {
+  const { checkInDayIndex, checkOutDayIndex, checkInDayName, checkOutDayName, nightsSelected } = useMemo(() => {
     if (selectedDays.length === 0) {
       return {
         checkInDayIndex: null,
         checkOutDayIndex: null,
         checkInDayName: null,
-        checkOutDayName: null
+        checkOutDayName: null,
+        nightsSelected: []
       };
     }
 
@@ -189,11 +190,19 @@ export function useCreateSuggestedProposalLogic() {
 
     const { checkIn, checkOut } = calculateCheckInCheckOut(dayObjects);
 
+    // nightsSelected = all selected days except checkout day
+    // (checkout day is when you leave, not a night you stay)
+    const checkOutDay = checkOut?.dayOfWeek ?? null;
+    const nights = checkOutDay !== null
+      ? selectedDays.filter(day => day !== checkOutDay)
+      : selectedDays.slice(0, -1); // fallback: all but last
+
     return {
       checkInDayIndex: checkIn?.dayOfWeek ?? null,
-      checkOutDayIndex: checkOut?.dayOfWeek ?? null,
+      checkOutDayIndex: checkOutDay,
       checkInDayName: checkIn?.name ?? null,
-      checkOutDayName: checkOut?.name ?? null
+      checkOutDayName: checkOut?.name ?? null,
+      nightsSelected: nights
     };
   }, [selectedDays]);
 
@@ -445,9 +454,15 @@ export function useCreateSuggestedProposalLogic() {
       setExistingProposalsCount(data?.length || 0);
     }
 
-    // Pre-fill about me if available
+    // Pre-fill guest profile fields if available
     if (guest['About Me / Bio']) {
       setAboutMe(guest['About Me / Bio']);
+    }
+    if (guest['need for Space']) {
+      setNeedForSpace(guest['need for Space']);
+    }
+    if (guest['special needs']) {
+      setSpecialNeeds(guest['special needs']);
     }
   }, [selectedListing]);
 
@@ -486,6 +501,22 @@ export function useCreateSuggestedProposalLogic() {
 
   const handleSpecialNeedsChange = useCallback((e) => {
     setSpecialNeeds(e.target.value);
+  }, []);
+
+  /**
+   * Handle AI-parsed transcription data
+   * Updates all three guest info fields from AI extraction
+   */
+  const handleTranscriptionParsed = useCallback((parsedData) => {
+    if (parsedData.aboutMe) {
+      setAboutMe(parsedData.aboutMe);
+    }
+    if (parsedData.needForSpace) {
+      setNeedForSpace(parsedData.needForSpace);
+    }
+    if (parsedData.specialNeeds) {
+      setSpecialNeeds(parsedData.specialNeeds);
+    }
   }, []);
 
   // -------------------------------------------------------------------------
@@ -570,40 +601,33 @@ export function useCreateSuggestedProposalLogic() {
       moveInEndObj.setDate(moveInEndObj.getDate() + moveInRange);
 
       const proposalData = {
-        // References
+        // References (required by edge function)
         listingId: selectedListing._id,
         guestId: selectedGuest._id,
-        guestEmail: selectedGuest.email,
-        hostUserId: selectedListing['Host User'],
-        hostEmail: selectedListing['Host email'],
 
-        // Status
-        status: proposalStatus,
-
-        // Dates
-        moveInStart: moveInDateObj.toISOString(),
-        moveInEnd: moveInEndObj.toISOString(),
-
-        // Schedule (0-indexed days)
+        // Schedule (0-indexed: 0=Sunday, 6=Saturday)
         daysSelected: selectedDays,
-        checkInDayIndex,
-        checkOutDayIndex,
-        nightsPerWeek: selectedDays.length,
+        nightsSelected,
+        checkIn: checkInDayIndex,        // Edge function expects 'checkIn', not 'checkInDayIndex'
+        checkOut: checkOutDayIndex,      // Edge function expects 'checkOut', not 'checkOutDayIndex'
 
-        // Reservation
+        // Dates (edge function expects 'Range' suffix)
+        moveInStartRange: moveInDateObj.toISOString(),
+        moveInEndRange: moveInEndObj.toISOString(),
+
+        // Reservation (edge function expects 'SpanWeeks')
+        reservationSpanWeeks: reservationWeeks,
         reservationSpan: reservationSpan === 'custom' ? `${customWeeks} weeks` : `${reservationSpan} weeks`,
-        reservationWeeks,
-        rentalType: selectedListing['rental type'],
 
         // Pricing
-        fourWeekRent: pricing?.fourWeekRent || 0,
+        nightlyPrice: pricing?.nightlyPrice || 0,
         totalPrice: pricing?.grandTotal || 0,
         hostCompensation: pricing?.hostCompensation || 0,
         cleaningFee: pricing?.cleaningFee || 0,
         damageDeposit: pricing?.damageDeposit || 0,
-        nightlyPrice: pricing?.nightlyPrice || 0,
+        fourWeekRent: pricing?.fourWeekRent || 0,
 
-        // User Info
+        // Optional Guest Info
         aboutMe,
         needForSpace,
         specialNeeds
@@ -635,6 +659,7 @@ export function useCreateSuggestedProposalLogic() {
     moveInDate,
     moveInRange,
     selectedDays,
+    nightsSelected,
     checkInDayIndex,
     checkOutDayIndex,
     reservationSpan,
@@ -762,6 +787,7 @@ export function useCreateSuggestedProposalLogic() {
     handleAboutMeChange,
     handleNeedForSpaceChange,
     handleSpecialNeedsChange,
+    handleTranscriptionParsed,
 
     // Handlers - Configuration
     handleStatusChange,
