@@ -20,6 +20,7 @@ from .data_types import (
     RetryCode,
 )
 from .gemini_agent import prompt_gemini_agent
+from .webhook import notify_failure, notify_in_progress
 
 # Load environment variables
 load_dotenv()
@@ -350,20 +351,94 @@ def prompt_claude_code_with_retry(
     return last_response
 
 
+def _attempt_claude_fallback(
+    request: AgentPromptRequest,
+    gemini_error: str,
+    original_provider: str,
+    original_strict: str
+) -> Optional[AgentPromptResponse]:
+    """Attempt to fallback to Claude when Gemini fails.
+
+    Args:
+        request: Original request to retry with Claude
+        gemini_error: Error message from Gemini failure
+        original_provider: Original ADW_PROVIDER value to restore
+        original_strict: Original STRICT_GEMINI value to restore
+
+    Returns:
+        AgentPromptResponse if fallback succeeds, None if fallback is disabled or fails
+    """
+    # Only fallback if we were using Gemini
+    if original_provider != "gemini":
+        return None
+
+    # Check if fallback is enabled (can be disabled via environment)
+    if os.getenv("DISABLE_GEMINI_FALLBACK", "false").lower() == "true":
+        return None
+
+    # Log the fallback attempt
+    error_snippet = gemini_error[:80].replace("\n", " ") if gemini_error else "Unknown error"
+    print(f"  [Fallback] Gemini failed: {error_snippet}")
+    print(f"  [Fallback] Retrying with Claude...")
+
+    # Send Slack notification about fallback
+    notify_in_progress(step=f"Gemini failed, falling back to Claude - {error_snippet}")
+
+    try:
+        # Temporarily override environment to use Claude
+        os.environ["ADW_PROVIDER"] = "claude"
+        os.environ["STRICT_GEMINI"] = "false"
+
+        # Create new output file for Claude attempt
+        claude_output = request.output_file.replace(".jsonl", "_claude_fallback.jsonl")
+        fallback_request = AgentPromptRequest(
+            prompt=request.prompt,
+            adw_id=request.adw_id,
+            agent_name=request.agent_name,
+            model=request.model,
+            output_file=claude_output,
+            dangerously_skip_permissions=request.dangerously_skip_permissions,
+            working_dir=request.working_dir,
+            mcp_session=request.mcp_session
+        )
+
+        # Recursively call prompt_claude_code (now it will use Claude)
+        response = prompt_claude_code(fallback_request)
+
+        if response.success:
+            print(f"  [Fallback] Claude succeeded")
+        else:
+            print(f"  [Fallback] Claude also failed: {response.output[:80]}")
+
+        return response
+
+    finally:
+        # Restore original environment
+        os.environ["ADW_PROVIDER"] = original_provider
+        os.environ["STRICT_GEMINI"] = original_strict
+
+
 def prompt_claude_code(request: AgentPromptRequest) -> AgentPromptResponse:
     """Execute AI agent (Claude or Gemini) with the given prompt configuration.
 
     Passes the prompt via stdin instead of command-line arguments to avoid
     shell interpretation issues with special characters, JSON, etc.
     This is especially important on Windows when cwd is set.
+
+    Automatic Fallback: If Gemini fails with a retryable error, the function
+    will automatically retry with Claude and notify via Slack.
     """
-    
+
     # Re-check provider and strict mode to ensure we respect late environment changes
     provider = os.getenv("ADW_PROVIDER", ADW_PROVIDER).lower()
     strict_gemini = os.getenv("STRICT_GEMINI", str(STRICT_GEMINI)).lower() == "true"
     if strict_gemini:
         provider = "gemini"
-        
+
+    # Store original values for potential fallback
+    original_provider = provider
+    original_strict = os.getenv("STRICT_GEMINI", str(STRICT_GEMINI))
+
     agent_name = "Gemini" if provider == "gemini" else "Claude Code"
 
     # Check if AI agent CLI is installed
@@ -480,6 +555,14 @@ def prompt_claude_code(request: AgentPromptRequest) -> AgentPromptResponse:
                 # Handle error_during_execution case where there's no result field
                 if subtype == "error_during_execution":
                     error_msg = f"Error during execution: {agent_name} encountered an error and did not return a result"
+
+                    # Attempt fallback to Claude if Gemini had execution error
+                    fallback_response = _attempt_claude_fallback(
+                        request, error_msg, original_provider, original_strict
+                    )
+                    if fallback_response:
+                        return fallback_response
+
                     return AgentPromptResponse(
                         output=error_msg,
                         success=False,
@@ -628,6 +711,13 @@ def prompt_claude_code(request: AgentPromptRequest) -> AgentPromptResponse:
             else:
                 error_msg = f"{agent_name} error: Command failed with exit code {result.returncode}"
 
+            # Attempt fallback to Claude if Gemini failed
+            fallback_response = _attempt_claude_fallback(
+                request, error_msg, original_provider, original_strict
+            )
+            if fallback_response:
+                return fallback_response
+
             # Always truncate error messages to prevent huge outputs
             return AgentPromptResponse(
                 output=truncate_output(error_msg, max_length=800),
@@ -638,6 +728,14 @@ def prompt_claude_code(request: AgentPromptRequest) -> AgentPromptResponse:
 
     except subprocess.TimeoutExpired:
         error_msg = f"Error: {agent_name} command timed out after 5 minutes"
+
+        # Attempt fallback to Claude if Gemini timed out
+        fallback_response = _attempt_claude_fallback(
+            request, error_msg, original_provider, original_strict
+        )
+        if fallback_response:
+            return fallback_response
+
         return AgentPromptResponse(
             output=error_msg,
             success=False,
@@ -646,6 +744,14 @@ def prompt_claude_code(request: AgentPromptRequest) -> AgentPromptResponse:
         )
     except Exception as e:
         error_msg = f"Error executing {agent_name}: {e}"
+
+        # Attempt fallback to Claude if Gemini had an execution error
+        fallback_response = _attempt_claude_fallback(
+            request, error_msg, original_provider, original_strict
+        )
+        if fallback_response:
+            return fallback_response
+
         return AgentPromptResponse(
             output=error_msg,
             success=False,
