@@ -24,6 +24,11 @@ import TypingIndicator from './TypingIndicator.jsx';
  * @param {function} props.onCTAClick - Handler for CTA button clicks
  * @param {function} props.getCTAButtonConfig - Get CTA button config
  * @param {function} props.onSuggestionClick - Handler for suggestion chip clicks
+ * @param {function} props.onFocusInput - Handler to focus the message input
+ * @param {boolean} props.showRightPanel - Whether right panel is available (screen width > 1200px)
+ * @param {boolean} props.isRightPanelCollapsed - Whether right panel is collapsed
+ * @param {function} props.onToggleRightPanel - Handler to toggle right panel
+ * @param {function} props.onHeaderAction - Handler for header action buttons (video, phone, menu)
  */
 export default function MessageThread({
   messages,
@@ -35,7 +40,12 @@ export default function MessageThread({
   typingUserName,
   onCTAClick,
   getCTAButtonConfig,
-  onSuggestionClick
+  onSuggestionClick,
+  onFocusInput,
+  showRightPanel,
+  isRightPanelCollapsed,
+  onToggleRightPanel,
+  onHeaderAction
 }) {
   const messagesEndRef = useRef(null);
 
@@ -56,7 +66,17 @@ export default function MessageThread({
   return (
     <div className="message-thread">
       {/* Thread Header */}
-      {threadInfo && <ThreadHeader info={threadInfo} onBack={onBack} isMobile={isMobile} />}
+      {threadInfo && (
+        <ThreadHeader
+          info={threadInfo}
+          onBack={onBack}
+          isMobile={isMobile}
+          showRightPanel={showRightPanel}
+          isRightPanelCollapsed={isRightPanelCollapsed}
+          onToggleRightPanel={onToggleRightPanel}
+          onAction={onHeaderAction}
+        />
+      )}
 
       {/* Messages Container */}
       <div className="message-thread__messages">
@@ -76,6 +96,16 @@ export default function MessageThread({
             <p className="conversation-empty-desc">
               Send a message to begin chatting with {threadInfo?.contact_name || 'your contact'}.
             </p>
+            <button
+              className="conversation-empty-btn"
+              type="button"
+              onClick={() => onFocusInput?.()}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+              </svg>
+              Write a message
+            </button>
             <div className="suggestion-chips">
               <button
                 className="suggestion-chip"

@@ -2,8 +2,14 @@
  * ThreadCard Component
  *
  * Individual thread card in the sidebar.
- * Upwork-style design with rounded pill selected state.
- * Shows contact avatar, name, role badge, property, last message preview, and unread count.
+ * Shows contact avatar with online indicator, name with role badge,
+ * property name, last message preview, timestamp, and unread count.
+ *
+ * Design matches mockup:
+ * - Left: Avatar (with initials fallback, online dot at bottom-right)
+ * - Middle: Name + Badge, Property name, Message preview
+ * - Right: Timestamp, Unread badge
+ * - Selected state: Purple left border and subtle background tint
  */
 
 /**
@@ -24,8 +30,12 @@ export default function ThreadCard({ thread, isSelected, onClick }) {
   const initials = getInitials(thread.contact_name);
 
   // Determine role badge - if contact is a host or guest relative to current user
-  // This is determined by the contact_role field from the API
   const contactRole = thread.contact_role; // 'host' or 'guest'
+
+  // Format message preview with "You:" prefix if sent by current user
+  const messagePreview = thread.last_message_is_mine
+    ? `You: ${thread.last_message_preview || ''}`
+    : thread.last_message_preview || 'No messages yet';
 
   return (
     <div
@@ -61,15 +71,9 @@ export default function ThreadCard({ thread, isSelected, onClick }) {
         >
           {initials}
         </div>
+        {/* Online indicator dot - bottom right of avatar */}
         {thread.is_online && (
           <span className="thread-card__online-dot" />
-        )}
-        {thread.is_with_splitbot && (
-          <span className="thread-card__bot-badge" title="Split Bot">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2M7.5 13A2.5 2.5 0 0 0 5 15.5A2.5 2.5 0 0 0 7.5 18a2.5 2.5 0 0 0 2.5-2.5A2.5 2.5 0 0 0 7.5 13m9 0a2.5 2.5 0 0 0-2.5 2.5a2.5 2.5 0 0 0 2.5 2.5a2.5 2.5 0 0 0 2.5-2.5a2.5 2.5 0 0 0-2.5-2.5z"/>
-            </svg>
-          </span>
         )}
       </div>
 
@@ -90,13 +94,13 @@ export default function ThreadCard({ thread, isSelected, onClick }) {
         {/* Property/Listing name */}
         {thread.property_name && (
           <span className="thread-card__property">
-            <span className="thread-card__property-prefix">Split:</span> {thread.property_name}
+            {thread.property_name}
           </span>
         )}
 
         {/* Message preview */}
         <p className="thread-card__preview">
-          {thread.last_message_preview || 'No messages yet'}
+          {messagePreview}
         </p>
       </div>
 
