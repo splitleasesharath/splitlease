@@ -8,7 +8,6 @@
  */
 
 import { routes, getBasePath, findRouteForUrl } from '../routes.config.js';
-import { getSessionId } from './auth.js';
 
 /**
  * Navigate to a listing detail page
@@ -214,7 +213,9 @@ export function goToRentalApplication(proposalId, options = {}) {
   }
 
   if (proposalId) {
-    params.set('proposal', proposalId);
+    window.location.href = `/rental-application?proposal=${proposalId}`;
+  } else {
+    window.location.href = '/rental-application';
   }
 
   const queryString = params.toString();

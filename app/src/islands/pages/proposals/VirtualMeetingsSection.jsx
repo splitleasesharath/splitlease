@@ -503,7 +503,7 @@ export default function VirtualMeetingsSection({ proposals, currentUserId }) {
   };
 
   return (
-    <div id="virtual-meetings" className="vm-section-wrapper">
+    <div className="vm-section-wrapper">
       {/* Section Title */}
       <h2 className="vm-section-heading">Virtual Meetings</h2>
 

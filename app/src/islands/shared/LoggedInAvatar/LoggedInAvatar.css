@@ -70,9 +70,10 @@
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  width: 280px;
+  width: 300px;
   max-height: 600px;
   background-color: #FFFFFF;
+  border: 1px solid #E5E5E5;
   border-radius: 12px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
   overflow: visible;
@@ -80,7 +81,6 @@
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
-  padding: 0.5rem;
 }
 
 @keyframes dropdownFadeIn {
@@ -108,24 +108,30 @@
 .logged-in-avatar .menu-item {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
+  gap: 12px;
+  height: 46px;
+  padding: 0 15px;
   background-color: #FFFFFF;
   border: none;
-  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease;
   font-family: 'DM Sans', sans-serif;
-  font-size: 0.95rem;
+  font-size: 15px;
   font-weight: 500;
-  color: var(--text-dark, #1a1a1a);
+  color: #000000;
   text-align: left;
   width: 100%;
   position: relative;
 }
 
 .logged-in-avatar .menu-item:hover {
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: #CAC8C8;
+}
+
+/* Active menu item (current page) */
+.logged-in-avatar .menu-item.active {
+  border-left: 3px solid #FF6B35;
+  padding-left: 12px;
 }
 
 /* Menu Icon (Emoji) - Scoped to LoggedInAvatar only */
@@ -142,8 +148,8 @@
 
 /* Menu Icon (SVG Image) - Scoped to LoggedInAvatar only */
 .logged-in-avatar .menu-icon {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   flex-shrink: 0;
   object-fit: contain;
 }
@@ -161,40 +167,32 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 5px;
-  border-radius: 10px;
+  min-width: 25px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 20px;
   font-family: 'DM Sans', sans-serif;
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 700;
   color: #FFFFFF;
   flex-shrink: 0;
-  background-color: var(--primary-color, #31135D);
 }
 
 .logged-in-avatar .notification-badge.purple {
-  background-color: var(--primary-color, #31135D);
+  background-color: #31135D;
 }
 
 .logged-in-avatar .notification-badge.red {
-  background-color: var(--primary-color, #31135D);
-}
-
-/* Separator before Sign Out */
-.logged-in-avatar .menu-separator {
-  height: 1px;
-  background: linear-gradient(to right, transparent, rgba(49, 19, 93, 0.15), transparent);
-  margin: 0.5rem 0;
+  background-color: #FF0000;
 }
 
 /* Sign Out Special Styling - Scoped to LoggedInAvatar only */
 .logged-in-avatar .menu-item.sign-out {
-  margin-top: 0;
+  margin-top: 8px;
 }
 
 .logged-in-avatar .menu-item.sign-out:hover {
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: #CAC8C8;
 }
 
 /* Responsive adjustments - Scoped to LoggedInAvatar only */

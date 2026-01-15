@@ -53,6 +53,9 @@ Thumbs.db
 # Logs
 *.log
 
+# ADW orchestrator run logs
+adws/adw_run_logs/
+
 # Worktrees directory
 trees/
 !trees/README.md

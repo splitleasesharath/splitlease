@@ -4,39 +4,10 @@
 
 /**
  * Get human-readable description of the weeks offered pattern
- * Handles both numeric values (1, 2, 3) and text patterns
  */
 function getWeeksOfferedDescription(weeksOffered) {
   if (!weeksOffered) return null;
-
-  // Handle numeric values (e.g., 2 means "2 weeks on, 2 weeks off")
-  const numValue = typeof weeksOffered === 'number' ? weeksOffered : parseInt(weeksOffered, 10);
-  if (!isNaN(numValue) && numValue > 0 && numValue <= 4) {
-    if (numValue === 1) {
-      return {
-        label: '1 week on / 1 week off',
-        shortLabel: '1on/1off',
-        actualWeeksPer4: 2
-      };
-    }
-    if (numValue === 2) {
-      return {
-        label: '2 weeks on / 2 weeks off',
-        shortLabel: '2on/2off',
-        actualWeeksPer4: 2
-      };
-    }
-    if (numValue === 3) {
-      return {
-        label: '1 week on / 3 weeks off',
-        shortLabel: '1on/3off',
-        actualWeeksPer4: 1
-      };
-    }
-  }
-
-  // Handle text patterns
-  const pattern = String(weeksOffered).toLowerCase();
+  const pattern = weeksOffered.toLowerCase();
 
   if (pattern.includes('1 on 1 off') || pattern.includes('1on1off') ||
       (pattern.includes('one week on') && pattern.includes('one week off')) ||
@@ -162,47 +133,30 @@ export default function ReviewSection({ data, listing, onEditUserDetails, onEdit
           <span className="price-value">{formatCurrency(data.pricePerNight)}</span>
         </div>
 
-        {/* Total nights - adjusted for alternating schedules */}
+        <div className="price-row">
+          <span className="price-label">Number of nights per week</span>
+          <span className="price-value">x {data.numberOfNights}</span>
+        </div>
+
+        {/* Show actual weeks breakdown for alternating schedules */}
         {(() => {
           const weeksOffered = listing?.['Weeks offered'] || listing?.weeks_offered;
           const scheduleInfo = getWeeksOfferedDescription(weeksOffered);
-          // nightsPerWeek: derive from numberOfNights/reservationSpan if not directly available
-          const nightsPerWeek = data.nightsPerWeek || (data.reservationSpan ? Math.round(data.numberOfNights / data.reservationSpan) : 3);
-
           if (scheduleInfo) {
-            // For alternating schedules, calculate actual nights based on actual occupancy weeks
             const actualWeeks = Math.ceil(scheduleInfo.actualWeeksPer4 * (data.reservationSpan / 4));
-            const actualTotalNights = actualWeeks * nightsPerWeek;
             return (
-              <>
-                <div className="price-row">
-                  <span className="price-label">Nights per week</span>
-                  <span className="price-value">{nightsPerWeek} nights</span>
-                </div>
-                <div className="price-row">
-                  <span className="price-label">
-                    Actual weeks of occupancy
-                    <div style={{ fontSize: '11px', color: '#666', fontStyle: 'italic', marginTop: '2px' }}>
-                      ({scheduleInfo.shortLabel} schedule)
-                    </div>
-                  </span>
-                  <span className="price-value">x {actualWeeks} weeks</span>
-                </div>
-                <div className="price-row">
-                  <span className="price-label">Total nights</span>
-                  <span className="price-value">= {actualTotalNights} nights</span>
-                </div>
-              </>
+              <div className="price-row">
+                <span className="price-label">
+                  Actual weeks of occupancy
+                  <div style={{ fontSize: '11px', color: '#666', fontStyle: 'italic', marginTop: '2px' }}>
+                    ({scheduleInfo.shortLabel} schedule)
+                  </div>
+                </span>
+                <span className="price-value">x {actualWeeks} weeks</span>
+              </div>
             );
           }
-
-          // For regular "every week" listings
-          return (
-            <div className="price-row">
-              <span className="price-label">Total nights</span>
-              <span className="price-value">x {data.numberOfNights}</span>
-            </div>
-          );
+          return null;
         })()}
 
         <div className="divider"></div>
