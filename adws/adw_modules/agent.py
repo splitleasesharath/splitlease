@@ -357,7 +357,7 @@ def _attempt_claude_fallback(
     original_provider: str,
     original_strict: str
 ) -> Optional[AgentPromptResponse]:
-    """Attempt to fallback to Claude when Gemini fails.
+    """Attempt to fallback to Claude Sonnet when Gemini fails.
 
     Args:
         request: Original request to retry with Claude
@@ -379,10 +379,10 @@ def _attempt_claude_fallback(
     # Log the fallback attempt
     error_snippet = gemini_error[:80].replace("\n", " ") if gemini_error else "Unknown error"
     print(f"  [Fallback] Gemini failed: {error_snippet}")
-    print(f"  [Fallback] Retrying with Claude...")
+    print(f"  [Fallback] Retrying with Claude Sonnet...")
 
     # Send Slack notification about fallback
-    notify_in_progress(step=f"Gemini failed, falling back to Claude - {error_snippet}")
+    notify_in_progress(step=f"Gemini failed, retrying with Claude Sonnet - {error_snippet}")
 
     try:
         # Temporarily override environment to use Claude
@@ -395,20 +395,20 @@ def _attempt_claude_fallback(
             prompt=request.prompt,
             adw_id=request.adw_id,
             agent_name=request.agent_name,
-            model=request.model,
+            model="sonnet",  # Always use Claude Sonnet for fallback
             output_file=claude_output,
             dangerously_skip_permissions=request.dangerously_skip_permissions,
             working_dir=request.working_dir,
             mcp_session=request.mcp_session
         )
 
-        # Recursively call prompt_claude_code (now it will use Claude)
+        # Recursively call prompt_claude_code (now it will use Claude Sonnet)
         response = prompt_claude_code(fallback_request)
 
         if response.success:
-            print(f"  [Fallback] Claude succeeded")
+            print(f"  [Fallback] Claude Sonnet succeeded")
         else:
-            print(f"  [Fallback] Claude also failed: {response.output[:80]}")
+            print(f"  [Fallback] Claude Sonnet also failed: {response.output[:80]}")
 
         return response
 
