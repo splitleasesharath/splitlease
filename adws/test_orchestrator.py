@@ -119,20 +119,20 @@ def test_implement(plan_file: str, chunk_number: int = None):
 
 
 def test_visual(page_path: str, use_claude: bool = False):
-    """Test visual regression functionality.
+    """Test visual regression functionality with concurrent MCP sessions.
 
     Args:
         page_path: URL path to test (e.g., "/search")
         use_claude: If True, use Claude instead of Gemini (avoids quota issues)
     """
     print("="*60)
-    print("TESTING: Visual Regression Check")
+    print("TESTING: Visual Regression Check (Concurrent Mode)")
     print("="*60)
 
     sys.path.insert(0, str(Path(__file__).parent))
     from adw_modules.visual_regression import check_visual_parity
     from adw_modules.dev_server import DevServerManager
-    from adw_modules.page_classifier import HOST_PAGES, GUEST_PAGES, SHARED_PROTECTED_PAGES
+    from adw_modules.page_classifier import get_page_info, get_mcp_sessions_for_page
     import logging
 
     if use_claude:
@@ -154,29 +154,25 @@ def test_visual(page_path: str, use_claude: bool = False):
         print("\nStarting dev server on port 8010...")
         port, base_url = dev_server.start()
 
-        # Determine MCP session
-        if page_path in HOST_PAGES:
-            mcp_session = "playwright-host"
-        elif page_path in GUEST_PAGES:
-            mcp_session = "playwright-guest"
-        elif page_path in SHARED_PROTECTED_PAGES:
-            mcp_session = "playwright-host"
-        else:
-            mcp_session = None
+        # Get concurrent MCP sessions (LIVE + DEV)
+        mcp_live, mcp_dev = get_mcp_sessions_for_page(page_path)
+        page_info = get_page_info(page_path)
+        auth_type = page_info.auth_type if page_info else "public"
 
-        auth_type = "protected" if mcp_session else "public"
-
-        print(f"\nRunning visual check:")
+        print(f"\nRunning concurrent visual check:")
         print(f"  Page: {page_path}")
-        print(f"  MCP Session: {mcp_session or 'public'}")
         print(f"  Auth Type: {auth_type}")
+        print(f"  MCP LIVE: {mcp_live or 'public'}")
+        print(f"  MCP DEV: {mcp_dev or 'public'}")
 
         result = check_visual_parity(
             page_path=page_path,
-            mcp_session=mcp_session,
+            mcp_session=mcp_live,
+            mcp_session_dev=mcp_dev,
             auth_type=auth_type,
             port=port,
-            use_claude=use_claude
+            use_claude=use_claude,
+            concurrent=True
         )
 
         print(f"\nResult: {result.get('visualParity')}")
