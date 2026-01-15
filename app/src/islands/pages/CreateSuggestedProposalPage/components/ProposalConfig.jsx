@@ -46,18 +46,12 @@ const MOVE_IN_RANGE_OPTIONS = [
 ];
 
 // Status options for suggested proposals
+// When creating a suggested proposal, it should ALWAYS start in "Pending Confirmation" state
+// This is the only valid initial state - guest must confirm before it progresses
 const STATUS_OPTIONS = [
   {
-    value: PROPOSAL_STATUSES.SUGGESTED_PROPOSAL_AWAITING_RENTAL_APP.key,
-    label: 'Proposal Submitted for Guest (Suggested)'
-  },
-  {
-    value: PROPOSAL_STATUSES.HOST_REVIEW.key,
-    label: 'Host Review'
-  },
-  {
-    value: PROPOSAL_STATUSES.COUNTEROFFER_SUBMITTED_AWAITING_GUEST_REVIEW.key,
-    label: 'Host Counteroffer Submitted'
+    value: PROPOSAL_STATUSES.SUGGESTED_PROPOSAL_PENDING_CONFIRMATION.key,
+    label: 'Pending Guest Confirmation (Split Lease created)'
   }
 ];
 
