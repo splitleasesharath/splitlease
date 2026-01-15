@@ -454,9 +454,15 @@ export function useCreateSuggestedProposalLogic() {
       setExistingProposalsCount(data?.length || 0);
     }
 
-    // Pre-fill about me if available
+    // Pre-fill guest profile fields if available
     if (guest['About Me / Bio']) {
       setAboutMe(guest['About Me / Bio']);
+    }
+    if (guest['need for Space']) {
+      setNeedForSpace(guest['need for Space']);
+    }
+    if (guest['special needs']) {
+      setSpecialNeeds(guest['special needs']);
     }
   }, [selectedListing]);
 
@@ -579,41 +585,33 @@ export function useCreateSuggestedProposalLogic() {
       moveInEndObj.setDate(moveInEndObj.getDate() + moveInRange);
 
       const proposalData = {
-        // References
+        // References (required by edge function)
         listingId: selectedListing._id,
         guestId: selectedGuest._id,
-        guestEmail: selectedGuest.email,
-        hostUserId: selectedListing['Host User'],
-        hostEmail: selectedListing['Host email'],
 
-        // Status
-        status: proposalStatus,
-
-        // Dates
-        moveInStart: moveInDateObj.toISOString(),
-        moveInEnd: moveInEndObj.toISOString(),
-
-        // Schedule (0-indexed days)
+        // Schedule (0-indexed: 0=Sunday, 6=Saturday)
         daysSelected: selectedDays,
         nightsSelected,
-        checkInDayIndex,
-        checkOutDayIndex,
-        nightsPerWeek: nightsSelected.length,
+        checkIn: checkInDayIndex,        // Edge function expects 'checkIn', not 'checkInDayIndex'
+        checkOut: checkOutDayIndex,      // Edge function expects 'checkOut', not 'checkOutDayIndex'
 
-        // Reservation
+        // Dates (edge function expects 'Range' suffix)
+        moveInStartRange: moveInDateObj.toISOString(),
+        moveInEndRange: moveInEndObj.toISOString(),
+
+        // Reservation (edge function expects 'SpanWeeks')
+        reservationSpanWeeks: reservationWeeks,
         reservationSpan: reservationSpan === 'custom' ? `${customWeeks} weeks` : `${reservationSpan} weeks`,
-        reservationWeeks,
-        rentalType: selectedListing['rental type'],
 
         // Pricing
-        fourWeekRent: pricing?.fourWeekRent || 0,
+        nightlyPrice: pricing?.nightlyPrice || 0,
         totalPrice: pricing?.grandTotal || 0,
         hostCompensation: pricing?.hostCompensation || 0,
         cleaningFee: pricing?.cleaningFee || 0,
         damageDeposit: pricing?.damageDeposit || 0,
-        nightlyPrice: pricing?.nightlyPrice || 0,
+        fourWeekRent: pricing?.fourWeekRent || 0,
 
-        // User Info
+        // Optional Guest Info
         aboutMe,
         needForSpace,
         specialNeeds
