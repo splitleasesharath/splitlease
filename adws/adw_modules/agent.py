@@ -544,9 +544,29 @@ def prompt_claude_code(request: AgentPromptRequest) -> AgentPromptResponse:
             # Convert JSONL to JSON array file
             json_file = convert_jsonl_to_json(request.output_file)
 
-            if result_message and "result" in result_message:
+            if result_message:
                 # Extract session_id from result message
                 session_id = result_message.get("session_id")
+
+                # Check for API-level errors (quota exhausted, rate limits, etc.)
+                # These come as {"type":"result","status":"error","error":{...}}
+                if result_message.get("status") == "error" and result_message.get("error"):
+                    error_obj = result_message.get("error", {})
+                    error_msg = error_obj.get("message", "Unknown API error")
+
+                    # Attempt fallback to Claude for API errors (quota, rate limit)
+                    fallback_response = _attempt_claude_fallback(
+                        request, error_msg, original_provider, original_strict
+                    )
+                    if fallback_response:
+                        return fallback_response
+
+                    return AgentPromptResponse(
+                        output=f"{agent_name} API error: {error_msg}",
+                        success=False,
+                        session_id=session_id,
+                        retry_code=RetryCode.CLAUDE_CODE_ERROR,
+                    )
 
                 # Check if there was an error in the result
                 is_error = result_message.get("is_error", False)
