@@ -330,7 +330,7 @@ export function useHeaderMessagingPanelLogic({
           .from('_message')
           .select('"Associated Thread/Conversation"')
           .in('"Associated Thread/Conversation"', threadIds)
-          .filter('Unread Users', 'cs', JSON.stringify([bubbleId]));
+          .filter('"Unread Users"', 'cs', JSON.stringify([bubbleId]));
 
         if (unreadData) {
           // Count occurrences of each thread ID
