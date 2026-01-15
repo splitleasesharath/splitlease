@@ -18,14 +18,23 @@ const DAY_BUTTONS = [
   { index: 6, label: 'S', title: 'Saturday' }
 ];
 
+// Generate week label with month approximation for weeks >= 12
+const formatWeekLabel = (weeks) => {
+  if (weeks >= 12) {
+    return `${weeks} weeks (${Math.floor(weeks / 4)} months)`;
+  }
+  return `${weeks} weeks`;
+};
+
+// Reservation span options matching View Split Lease page + custom option
+const RESERVATION_SPAN_WEEKS = [6, 7, 8, 9, 10, 12, 13, 16, 17, 20, 22, 26, 52];
+
 const RESERVATION_SPAN_OPTIONS = [
   { value: '', label: 'Select span' },
-  { value: '6', label: '6 weeks' },
-  { value: '8', label: '8 weeks' },
-  { value: '12', label: '12 weeks' },
-  { value: '16', label: '16 weeks' },
-  { value: '26', label: '26 weeks' },
-  { value: '52', label: '52 weeks' },
+  ...RESERVATION_SPAN_WEEKS.map(weeks => ({
+    value: String(weeks),
+    label: formatWeekLabel(weeks)
+  })),
   { value: 'custom', label: 'Other (specify weeks)' }
 ];
 
