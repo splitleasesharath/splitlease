@@ -565,22 +565,14 @@ function FeaturedSpacesSection() {
 // A/B TEST VARIANT: Market Report Popup (bottom-right corner)
 // ============================================================================
 
-function MarketReportPopup({ onRequestClick, onDismiss }) {
-  const [isVisible, setIsVisible] = useState(true);
+function MarketReportPopup({ onRequestClick, onDismiss, isVisible }) {
   const [isAnimating, setIsAnimating] = useState(true);
-
-  useEffect(() => {
-    if (sessionStorage.getItem('marketReportDismissed')) {
-      setIsVisible(false);
-    }
-  }, []);
 
   const handleDismiss = () => {
     setIsAnimating(false);
     setTimeout(() => {
-      setIsVisible(false);
-      sessionStorage.setItem('marketReportDismissed', 'true');
       onDismiss?.();
+      console.log('[A/B Test] Popup dismissed - showing drawer');
     }, 300);
   };
 
@@ -674,6 +666,7 @@ export default function HomePage() {
   const [isAIResearchModalOpen, setIsAIResearchModalOpen] = useState(false);
   const [selectedDays, setSelectedDays] = useState([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isPopupDismissed, setIsPopupDismissed] = useState(false); // A/B test: when true, show drawer instead of popup
 
   // Internal routing state for password reset fallback
   const [RecoveryComponent, setRecoveryComponent] = useState(null);
@@ -788,10 +781,11 @@ export default function HomePage() {
 
       {!isLoggedIn && (
         <>
-          {getMarketReportVariant() === 'popup' ? (
+          {getMarketReportVariant() === 'popup' && !isPopupDismissed ? (
             <MarketReportPopup
+              isVisible={true}
               onRequestClick={handleOpenAIResearchModal}
-              onDismiss={() => console.log('[A/B Test] Popup dismissed')}
+              onDismiss={() => setIsPopupDismissed(true)}
             />
           ) : (
             <FloatingBadge onClick={handleOpenAIResearchModal} />
