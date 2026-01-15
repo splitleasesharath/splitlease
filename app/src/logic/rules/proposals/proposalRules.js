@@ -13,7 +13,7 @@
  * - Rules never perform actions - they only provide verdicts
  */
 
-import { PROPOSAL_STATUSES, isTerminalStatus, isCompletedStatus, getActionsForStatus } from '../../../lib/constants/proposalStatuses.js';
+import { PROPOSAL_STATUSES, isTerminalStatus, isCompletedStatus, getActionsForStatus } from '../../constants/proposalStatuses.js';
 import { getGuestCancellationReasons } from '../../../lib/dataLookups.js';
 
 /**
@@ -314,4 +314,75 @@ export function getCancellationReasonOptions() {
     'Terms not acceptable',
     'Other'
   ];
+}
+
+// ============================================================================
+// SPLIT LEASE SUGGESTED PROPOSAL RULES
+// ============================================================================
+
+/**
+ * Check if proposal needs rental application submission
+ * Used to determine if "Submit Rental App" CTA should be shown
+ *
+ * @param {Object} proposal - Proposal with rentalApplication data joined
+ * @returns {boolean} True if rental app is missing or not submitted
+ */
+export function needsRentalApplicationSubmission(proposal) {
+  if (!proposal) return false;
+
+  // No rental application linked at all
+  if (!proposal['rental application'] && !proposal.rentalApplication) {
+    return true;
+  }
+
+  // Has rental application reference but no data joined (shouldn't happen, but handle it)
+  if (proposal['rental application'] && !proposal.rentalApplication) {
+    return true;
+  }
+
+  // Has rental application but not submitted
+  if (proposal.rentalApplication && !proposal.rentalApplication.submitted) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Check if this is a Split Lease suggested proposal
+ * @param {Object} proposal - Proposal object
+ * @returns {boolean} True if suggested by Split Lease
+ */
+export function isSLSuggestedProposal(proposal) {
+  if (!proposal) return false;
+  const status = proposal.status || proposal.Status;
+  return status?.includes('Submitted for guest by Split Lease');
+}
+
+/**
+ * Check if guest can confirm a Split Lease suggested proposal
+ * Guest can confirm if in "Pending Confirmation" status
+ * @param {Object} proposal - Proposal object
+ * @returns {boolean} True if can confirm
+ */
+export function canConfirmSuggestedProposal(proposal) {
+  if (!proposal) return false;
+  const status = proposal.status || proposal.Status;
+
+  // Can confirm if in "Pending Confirmation" status
+  return status === PROPOSAL_STATUSES.SUGGESTED_PROPOSAL_PENDING_CONFIRMATION.key;
+}
+
+/**
+ * Determine next status when guest confirms an SL-suggested proposal
+ * @param {Object} proposal - Proposal with rentalApplication data
+ * @returns {string} Next status key
+ */
+export function getNextStatusAfterConfirmation(proposal) {
+  if (needsRentalApplicationSubmission(proposal)) {
+    // Guest confirmed but rental app not done → intermediate status
+    return PROPOSAL_STATUSES.SUGGESTED_PROPOSAL_AWAITING_RENTAL_APP.key;
+  }
+  // Rental app already done → go straight to Host Review
+  return PROPOSAL_STATUSES.HOST_REVIEW.key;
 }

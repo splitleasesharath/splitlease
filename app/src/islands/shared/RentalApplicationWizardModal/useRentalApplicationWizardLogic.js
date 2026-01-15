@@ -9,6 +9,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../../../lib/supabase.js';
 import { checkAuthStatus, getSessionId, getAuthToken } from '../../../lib/auth.js';
+import { PROPOSAL_STATUSES } from '../../../logic/constants/proposalStatuses.js';
 import { useRentalApplicationStore } from '../../pages/RentalApplicationPage/store/index.ts';
 import { mapDatabaseToFormData } from '../../pages/RentalApplicationPage/utils/rentalApplicationFieldMapper.ts';
 
@@ -85,6 +86,59 @@ const FILE_TYPE_MAP = {
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+
+/**
+ * Transition SL-suggested proposals from "Awaiting Rental App" to "Host Review"
+ * when rental application is submitted.
+ *
+ * This function finds all proposals for the user that are in the
+ * "Awaiting Rental Application" status and transitions them to "Host Review".
+ *
+ * @param {string} userId - The user's ID
+ */
+async function transitionSLProposalsOnRentalAppSubmit(userId) {
+  if (!userId) return;
+
+  try {
+    // Find proposals in "Awaiting Rental Application" status
+    const { data: proposals, error: fetchError } = await supabase
+      .from('proposal')
+      .select('_id, Status')
+      .eq('Guest', userId)
+      .eq('Status', PROPOSAL_STATUSES.SUGGESTED_PROPOSAL_AWAITING_RENTAL_APP.key);
+
+    if (fetchError) {
+      console.error('[RentalAppWizard] Error fetching proposals for transition:', fetchError);
+      return;
+    }
+
+    if (!proposals || proposals.length === 0) {
+      console.log('[RentalAppWizard] No SL proposals to transition');
+      return;
+    }
+
+    // Transition each proposal to "Host Review"
+    const proposalIds = proposals.map(p => p._id);
+    console.log(`[RentalAppWizard] Transitioning ${proposalIds.length} SL proposal(s) to Host Review`);
+
+    const { error: updateError } = await supabase
+      .from('proposal')
+      .update({
+        Status: PROPOSAL_STATUSES.HOST_REVIEW.key,
+        'Modified Date': new Date().toISOString()
+      })
+      .in('_id', proposalIds);
+
+    if (updateError) {
+      console.error('[RentalAppWizard] Error transitioning proposals:', updateError);
+    } else {
+      console.log('[RentalAppWizard] Successfully transitioned proposals to Host Review');
+    }
+  } catch (error) {
+    // Non-critical: log but don't block rental app submission
+    console.error('[RentalAppWizard] Error in proposal transition:', error);
+  }
+}
 
 export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicationStatus = 'not_started', userProfileData = null }) {
   // ============================================================================
@@ -807,6 +861,9 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
       if (!response.ok || !result.success) {
         throw new Error(result.error || 'Submission failed');
       }
+
+      // Auto-transition SL-suggested proposals from "Awaiting Rental App" to "Host Review"
+      await transitionSLProposalsOnRentalAppSubmit(userId);
 
       // Clear localStorage on success
       resetStore();

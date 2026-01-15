@@ -26,7 +26,8 @@
 @import url('components/mobile.css');
 @import url('components/utilities.css');
 @import url('components/policies.css');
-@import url('components/success-stories.css');
+@import url('components/guest-success.css');
+@import url('components/host-success.css');
 @import url('components/not-found.css');
 
 /* Map Components */

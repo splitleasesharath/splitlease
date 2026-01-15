@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Lottie from 'lottie-react';
 import { signupUser } from '../../../lib/auth.js';
-import { sendAbandonedResearch } from '../../../lib/slackService.js';
 import Toast, { useToast } from '../Toast.jsx';
 
 /**
@@ -212,10 +211,7 @@ function autoCorrectEmail(email) {
 async function queueProfileParsing(data) {
   console.log('[AiSignupMarketReport] Queuing profile parsing (async)...');
 
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  if (!supabaseUrl) {
-    throw new Error('VITE_SUPABASE_URL is required');
-  }
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://qcfifybkaddcoimjroca.supabase.co';
   const edgeFunctionUrl = `${supabaseUrl}/functions/v1/ai-parse-profile`;
 
   try {
@@ -358,10 +354,7 @@ async function submitSignup(data) {
   console.log('[AiSignupMarketReport] Step 2: Submitting market research...');
 
   // Get Supabase URL from environment
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  if (!supabaseUrl) {
-    throw new Error('VITE_SUPABASE_URL is required');
-  }
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://qcfifybkaddcoimjroca.supabase.co';
   const edgeFunctionUrl = `${supabaseUrl}/functions/v1/ai-signup-guest`;
 
   console.log('[AiSignupMarketReport] Edge Function URL:', edgeFunctionUrl);
@@ -478,10 +471,7 @@ async function parseProfileWithAI(data) {
   console.log('[AiSignupMarketReport] Email:', data.email);
   console.log('[AiSignupMarketReport] Text length:', data.text_inputted.length);
 
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  if (!supabaseUrl) {
-    throw new Error('VITE_SUPABASE_URL is required');
-  }
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://qcfifybkaddcoimjroca.supabase.co';
   const edgeFunctionUrl = `${supabaseUrl}/functions/v1/bubble-proxy`;
 
   try {
@@ -708,7 +698,6 @@ function TopicIndicators({ detectedTopics }) {
 
 function FreeformInput({ value, onChange }) {
   const detectedTopics = detectTopics(value);
-  const hasStartedTyping = value && value.trim().length > 0;
 
   return (
     <div className="freeform-container">
@@ -730,7 +719,7 @@ Send to (415) 555-5555 and guest@mail.com`}
         aria-label="Market research description"
       />
 
-      {hasStartedTyping && <TopicIndicators detectedTopics={detectedTopics} />}
+      <TopicIndicators detectedTopics={detectedTopics} />
 
       <div className="freeform-animation-message">
         <p className="freeform-helper-text">
@@ -1218,26 +1207,6 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
     }));
   }, [onClose, state.existingEmail]);
 
-  // Handle close with abandoned research tracking
-  const handleClose = useCallback(() => {
-    const typedText = state.formData.marketResearchText;
-
-    // If user has typed something and hasn't completed the flow, send to Slack
-    if (typedText && typedText.trim().length > 0 && state.currentSection !== 'final') {
-      // Fire and forget - don't block the close
-      sendAbandonedResearch({
-        text: typedText,
-        sessionInfo: {
-          section: state.currentSection,
-          hasEmail: !!state.formData.email,
-          hasPhone: !!state.formData.phone,
-        },
-      });
-    }
-
-    onClose();
-  }, [onClose, state.formData, state.currentSection]);
-
   const getButtonText = useCallback(() => {
     const { formData } = state;
 
@@ -1282,15 +1251,15 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
 
   // Handle escape key to close modal
   useEffect(() => {
-    const handleEscapeKey = (e) => {
+    const handleEscape = (e) => {
       if (e.key === 'Escape' && isOpen) {
-        handleClose();
+        onClose();
       }
     };
 
-    document.addEventListener('keydown', handleEscapeKey);
-    return () => document.removeEventListener('keydown', handleEscapeKey);
-  }, [isOpen, handleClose]);
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen, onClose]);
 
   // Auto-close modal and reload page after success (to show logged-in state)
   useEffect(() => {
@@ -1326,11 +1295,15 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
   return (
     <div
       className="ai-signup-overlay"
+      onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
     >
-      <div className="ai-signup-modal">
+      <div
+        className="ai-signup-modal"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="ai-signup-header">
           <div className="ai-signup-icon-wrapper">
@@ -1351,7 +1324,7 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
           </h2>
           <button
             className="ai-signup-close-button"
-            onClick={handleClose}
+            onClick={onClose}
             aria-label="Close modal"
           >
             ×

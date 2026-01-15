@@ -7,8 +7,6 @@
  * Uses inline styles to ensure visibility (no Tailwind dependency)
  */
 
-import { goToRentalApplication } from '../../lib/navigation.js';
-
 export default function ProposalSuccessModal({
   proposalId,
   listingName,
@@ -16,9 +14,8 @@ export default function ProposalSuccessModal({
   hasSubmittedRentalApp = false
 }) {
   // Handle navigation to rental application
-  // Now redirects to account profile with rental application modal auto-open
   const handleGoToRentalApp = () => {
-    goToRentalApplication(proposalId);
+    window.location.href = `/rental-application?proposal=${proposalId}`;
   };
 
   // Handle navigation to guest dashboard

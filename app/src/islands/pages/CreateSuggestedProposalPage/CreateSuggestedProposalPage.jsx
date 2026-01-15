@@ -76,10 +76,15 @@ export default function CreateSuggestedProposalPage() {
     moveInRange,
     strictMoveIn,
     selectedDays,
-    checkInDayIndex,
-    checkOutDayIndex,
     reservationSpan,
     customWeeks,
+
+    // Computed (from selected days)
+    checkInDayIndex,
+    checkOutDayIndex,
+    checkInDayName,
+    checkOutDayName,
+    nightsCount,
 
     // Calculated pricing
     pricing,
@@ -97,12 +102,14 @@ export default function CreateSuggestedProposalPage() {
 
     // Handlers - Listing Search
     handleListingSearchChange,
+    handleListingSearchFocus,
     handleListingSelect,
     handleListingClear,
     handleClearListingSearch,
 
     // Handlers - Guest Search
     handleGuestSearchChange,
+    handleGuestSearchFocus,
     handleGuestSelect,
     handleGuestConfirm,
     handleGuestClear,
@@ -120,8 +127,6 @@ export default function CreateSuggestedProposalPage() {
     handleStrictMoveInChange,
     handleDayToggle,
     handleSelectFullTime,
-    handleCheckInDayChange,
-    handleCheckOutDayChange,
     handleReservationSpanChange,
     handleCustomWeeksChange,
 
@@ -164,6 +169,7 @@ export default function CreateSuggestedProposalPage() {
                 listingPhotos={listingPhotos}
                 isSearching={isSearchingListings}
                 onSearchChange={handleListingSearchChange}
+                onSearchFocus={handleListingSearchFocus}
                 onSelect={handleListingSelect}
                 onClear={handleListingClear}
                 onClearSearch={handleClearListingSearch}
@@ -179,6 +185,7 @@ export default function CreateSuggestedProposalPage() {
                   isConfirmed={isGuestConfirmed}
                   isSearching={isSearchingGuests}
                   onSearchChange={handleGuestSearchChange}
+                  onSearchFocus={handleGuestSearchFocus}
                   onSelect={handleGuestSelect}
                   onConfirm={handleGuestConfirm}
                   onClear={handleGuestClear}
@@ -209,8 +216,9 @@ export default function CreateSuggestedProposalPage() {
                   moveInRange={moveInRange}
                   strictMoveIn={strictMoveIn}
                   selectedDays={selectedDays}
-                  checkInDayIndex={checkInDayIndex}
-                  checkOutDayIndex={checkOutDayIndex}
+                  checkInDayName={checkInDayName}
+                  checkOutDayName={checkOutDayName}
+                  nightsCount={nightsCount}
                   reservationSpan={reservationSpan}
                   customWeeks={customWeeks}
                   onStatusChange={handleStatusChange}
@@ -219,14 +227,13 @@ export default function CreateSuggestedProposalPage() {
                   onStrictMoveInChange={handleStrictMoveInChange}
                   onDayToggle={handleDayToggle}
                   onSelectFullTime={handleSelectFullTime}
-                  onCheckInDayChange={handleCheckInDayChange}
-                  onCheckOutDayChange={handleCheckOutDayChange}
                   onReservationSpanChange={handleReservationSpanChange}
                   onCustomWeeksChange={handleCustomWeeksChange}
                 />
 
                 <ValidationPanel
                   selectedDays={selectedDays}
+                  nightsCount={nightsCount}
                   reservationWeeks={reservationSpan === 'custom' ? customWeeks : parseInt(reservationSpan) || 0}
                 />
 

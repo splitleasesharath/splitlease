@@ -32,7 +32,6 @@ import {
   formatPriceForDisplay,
   getNightlyRateForNights,
 } from "../lib/calculations.ts";
-import { enqueueBubbleSync, triggerQueueProcessing } from "../lib/bubbleSyncQueue.ts";
 import {
   addUserProposal,
   addUserListingFavorite,
@@ -562,38 +561,6 @@ export async function handleCreateSuggested(
 
   // Dual-write to junction tables
   await addUserProposal(supabase, hostUserData._id, proposalId, 'host');
-
-  // ================================================
-  // ENQUEUE BUBBLE SYNC
-  // ================================================
-
-  try {
-    await enqueueBubbleSync(supabase, {
-      correlationId: proposalId,
-      items: [
-        {
-          sequence: 1,
-          table: 'proposal',
-          recordId: proposalId,
-          operation: 'INSERT',
-          payload: proposalData,
-        },
-        {
-          sequence: 2,
-          table: 'thread',
-          recordId: threadId,
-          operation: 'INSERT',
-          payload: threadData,
-        },
-      ]
-    });
-
-    console.log(`[proposal:create_suggested] Bubble sync items enqueued`);
-    triggerQueueProcessing();
-
-  } catch (syncError) {
-    console.error(`[proposal:create_suggested] Failed to enqueue Bubble sync (non-blocking):`, syncError);
-  }
 
   // ================================================
   // RETURN RESPONSE

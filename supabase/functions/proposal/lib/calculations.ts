@@ -15,11 +15,8 @@ import {
  * Calculate compensation based on rental type and duration
  * Mirrors Bubble workflow CORE-create_proposal-NEW Steps 13-18
  *
- * IMPORTANT: host_compensation stores the HOST'S per-PERIOD rate:
- *   - Nightly: per-night rate (from "💰Nightly Host Rate for X nights")
- *   - Weekly: per-week rate (from "💰Weekly Host Rate")
- *   - Monthly: per-month rate (from "💰Monthly Host Rate")
- *
+ * IMPORTANT: host_compensation in Bubble is the HOST'S per-night rate (from listing's
+ * pricing tiers like "💰Nightly Host Rate for X nights"), NOT the guest-facing price.
  * The Total Compensation is then calculated as:
  *   - Nightly: host_nightly_rate * nights_per_week * total_weeks
  *   - Weekly: weekly_rate * total_weeks
@@ -48,18 +45,15 @@ export function calculateCompensation(
   let fourWeekRent = 0;
   let fourWeekCompensation = 0;
 
-  // Per-period host compensation (used for "host compensation" field in proposal)
-  // For nightly: this is the per-night rate
-  // For weekly: this is the per-week rate
-  // For monthly: this is the per-month rate
-  let hostCompensationPerPeriod = hostNightlyRate;
+  // Per-night host compensation (used for "host compensation" field in proposal)
+  // This is the base rate that gets multiplied by nights and weeks
+  const hostCompensationPerNight = hostNightlyRate;
 
   switch (rentalType) {
     case "nightly":
       // Step 13: Nightly calculation
       // Total = host_nightly_rate * nights_per_week * total_weeks
       // This matches Bubble: "host compensation * nights selected:count * actual weeks"
-      hostCompensationPerPeriod = hostNightlyRate;
       totalCompensation = hostNightlyRate * nightsPerWeek * weeks;
       fourWeekRent = hostNightlyRate * nightsPerWeek * 4;
       fourWeekCompensation = fourWeekRent;
@@ -69,19 +63,15 @@ export function calculateCompensation(
     case "weekly":
       // Step 14: Weekly calculation
       // Total = weekly_rate * total_weeks
-      // host_compensation stores the per-week rate for weekly rentals
-      hostCompensationPerPeriod = weeklyRate;
       totalCompensation = weeklyRate * weeks;
       fourWeekRent = weeklyRate * 4;
       fourWeekCompensation = fourWeekRent;
       durationMonths = weeks / 4;
       break;
 
-    case "monthly": {
+    case "monthly":
       // Monthly uses the monthly rate directly
-      // host_compensation stores the per-month rate for monthly rentals
       const effectiveMonthlyRate = monthlyRate || (weeklyRate * 4);
-      hostCompensationPerPeriod = effectiveMonthlyRate;
       if (reservationSpan !== "other") {
         // Step 15: Monthly (standard span)
         // Duration in months = weeks / 4
@@ -99,14 +89,12 @@ export function calculateCompensation(
         fourWeekCompensation = fourWeekRent;
       }
       break;
-    }
 
     default:
       // Default to nightly if unknown type
       console.warn(
         `[calculations] Unknown rental type "${rentalType}", defaulting to nightly`
       );
-      hostCompensationPerPeriod = hostNightlyRate;
       totalCompensation = hostNightlyRate * nightsPerWeek * weeks;
       fourWeekRent = hostNightlyRate * nightsPerWeek * 4;
       fourWeekCompensation = fourWeekRent;
@@ -118,8 +106,7 @@ export function calculateCompensation(
     duration_months: roundToTwoDecimals(durationMonths),
     four_week_rent: roundToTwoDecimals(fourWeekRent),
     four_week_compensation: roundToTwoDecimals(fourWeekCompensation),
-    // Note: Field name is historical - for monthly/weekly this is per-period, not per-night
-    host_compensation_per_night: roundToTwoDecimals(hostCompensationPerPeriod),
+    host_compensation_per_night: roundToTwoDecimals(hostCompensationPerNight),
   };
 }
 

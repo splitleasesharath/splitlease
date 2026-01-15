@@ -10,9 +10,12 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { PROPOSAL_STATUSES } from '../../../logic/constants/proposalStatuses.js';
 import { DAY_NAMES, getDayName } from '../../../lib/dayUtils.js';
+import { calculateCheckInCheckOut } from '../../../lib/scheduleSelector/nightCalculations.js';
 import {
   searchListings,
+  getDefaultListings,
   searchGuests,
+  getDefaultGuests,
   getListingPhotos,
   getUserProposalsForListing,
   createSuggestedProposal
@@ -22,7 +25,7 @@ import {
 // CONSTANTS
 // ============================================================================
 
-const DEFAULT_STATUS = PROPOSAL_STATUSES.SUGGESTED_PROPOSAL_AWAITING_RENTAL_APP.key;
+const DEFAULT_STATUS = PROPOSAL_STATUSES.SUGGESTED_PROPOSAL_PENDING_CONFIRMATION.key;
 
 const RESERVATION_SPAN_OPTIONS = [
   { value: '6', label: '6 weeks' },
@@ -149,8 +152,6 @@ export function useCreateSuggestedProposalLogic() {
   const [moveInRange, setMoveInRange] = useState(14);
   const [strictMoveIn, setStrictMoveIn] = useState(false);
   const [selectedDays, setSelectedDays] = useState([]); // 0-indexed integers
-  const [checkInDayIndex, setCheckInDayIndex] = useState(null);
-  const [checkOutDayIndex, setCheckOutDayIndex] = useState(null);
   const [reservationSpan, setReservationSpan] = useState('');
   const [customWeeks, setCustomWeeks] = useState(null);
 
@@ -167,6 +168,34 @@ export function useCreateSuggestedProposalLogic() {
   // -------------------------------------------------------------------------
 
   const nightsPerWeek = selectedDays.length;
+  const nightsCount = Math.max(0, selectedDays.length - 1);
+
+  // Calculate check-in/check-out using the same logic as ViewSplitLeasePage
+  const { checkInDayIndex, checkOutDayIndex, checkInDayName, checkOutDayName } = useMemo(() => {
+    if (selectedDays.length === 0) {
+      return {
+        checkInDayIndex: null,
+        checkOutDayIndex: null,
+        checkInDayName: null,
+        checkOutDayName: null
+      };
+    }
+
+    // Convert day indices to day objects for calculateCheckInCheckOut
+    const dayObjects = selectedDays.map(dayIndex => ({
+      dayOfWeek: dayIndex,
+      name: DAY_NAMES[dayIndex]
+    }));
+
+    const { checkIn, checkOut } = calculateCheckInCheckOut(dayObjects);
+
+    return {
+      checkInDayIndex: checkIn?.dayOfWeek ?? null,
+      checkOutDayIndex: checkOut?.dayOfWeek ?? null,
+      checkInDayName: checkIn?.name ?? null,
+      checkOutDayName: checkOut?.name ?? null
+    };
+  }, [selectedDays]);
 
   const reservationWeeks = useMemo(() => {
     if (reservationSpan === 'custom') {
@@ -232,21 +261,46 @@ export function useCreateSuggestedProposalLogic() {
   // LISTING SEARCH
   // -------------------------------------------------------------------------
 
-  const debouncedListingSearch = useCallback(
-    debounce(async (term) => {
-      if (term.length < 2) {
-        setListingSearchResults([]);
-        return;
-      }
-
+  // Load default listings on mount
+  useEffect(() => {
+    const loadDefaults = async () => {
       setIsSearchingListings(true);
       try {
-        const { data, error } = await searchListings(term);
+        const { data, error } = await getDefaultListings();
         if (error) {
-          console.error('[CreateSuggestedProposal] Listing search error:', error);
-          setListingSearchResults([]);
+          console.error('[CreateSuggestedProposal] Default listings error:', error);
         } else {
           setListingSearchResults(data || []);
+        }
+      } finally {
+        setIsSearchingListings(false);
+      }
+    };
+    loadDefaults();
+  }, []);
+
+  const debouncedListingSearch = useCallback(
+    debounce(async (term) => {
+      setIsSearchingListings(true);
+      try {
+        // Empty search = show defaults with valid pricing
+        if (term.length === 0) {
+          const { data, error } = await getDefaultListings();
+          if (error) {
+            console.error('[CreateSuggestedProposal] Default listings error:', error);
+            setListingSearchResults([]);
+          } else {
+            setListingSearchResults(data || []);
+          }
+        } else {
+          // Search by term
+          const { data, error } = await searchListings(term);
+          if (error) {
+            console.error('[CreateSuggestedProposal] Listing search error:', error);
+            setListingSearchResults([]);
+          } else {
+            setListingSearchResults(data || []);
+          }
         }
       } finally {
         setIsSearchingListings(false);
@@ -260,6 +314,21 @@ export function useCreateSuggestedProposalLogic() {
     setListingSearchTerm(term);
     debouncedListingSearch(term);
   }, [debouncedListingSearch]);
+
+  // Handler for when listing search box receives focus
+  const handleListingSearchFocus = useCallback(async () => {
+    if (listingSearchResults.length === 0 && !selectedListing) {
+      setIsSearchingListings(true);
+      try {
+        const { data, error } = await getDefaultListings();
+        if (!error) {
+          setListingSearchResults(data || []);
+        }
+      } finally {
+        setIsSearchingListings(false);
+      }
+    }
+  }, [listingSearchResults.length, selectedListing]);
 
   const handleListingSelect = useCallback(async (listing) => {
     setSelectedListing(listing);
@@ -293,21 +362,48 @@ export function useCreateSuggestedProposalLogic() {
   // GUEST SEARCH
   // -------------------------------------------------------------------------
 
+  // Load default guests when step 2 becomes active
+  useEffect(() => {
+    if (currentStep === 2 && guestSearchResults.length === 0 && !selectedGuest) {
+      const loadDefaults = async () => {
+        setIsSearchingGuests(true);
+        try {
+          const { data, error } = await getDefaultGuests();
+          if (error) {
+            console.error('[CreateSuggestedProposal] Default guests error:', error);
+          } else {
+            setGuestSearchResults(data || []);
+          }
+        } finally {
+          setIsSearchingGuests(false);
+        }
+      };
+      loadDefaults();
+    }
+  }, [currentStep, guestSearchResults.length, selectedGuest]);
+
   const debouncedGuestSearch = useCallback(
     debounce(async (term) => {
-      if (term.length < 2) {
-        setGuestSearchResults([]);
-        return;
-      }
-
       setIsSearchingGuests(true);
       try {
-        const { data, error } = await searchGuests(term);
-        if (error) {
-          console.error('[CreateSuggestedProposal] Guest search error:', error);
-          setGuestSearchResults([]);
+        // Empty search = show default guest list
+        if (term.length === 0) {
+          const { data, error } = await getDefaultGuests();
+          if (error) {
+            console.error('[CreateSuggestedProposal] Default guests error:', error);
+            setGuestSearchResults([]);
+          } else {
+            setGuestSearchResults(data || []);
+          }
         } else {
-          setGuestSearchResults(data || []);
+          // Search by term (already filtered to guests only)
+          const { data, error } = await searchGuests(term);
+          if (error) {
+            console.error('[CreateSuggestedProposal] Guest search error:', error);
+            setGuestSearchResults([]);
+          } else {
+            setGuestSearchResults(data || []);
+          }
         }
       } finally {
         setIsSearchingGuests(false);
@@ -321,6 +417,21 @@ export function useCreateSuggestedProposalLogic() {
     setGuestSearchTerm(term);
     debouncedGuestSearch(term);
   }, [debouncedGuestSearch]);
+
+  // Handler for when guest search box receives focus
+  const handleGuestSearchFocus = useCallback(async () => {
+    if (guestSearchResults.length === 0 && !selectedGuest) {
+      setIsSearchingGuests(true);
+      try {
+        const { data, error } = await getDefaultGuests();
+        if (!error) {
+          setGuestSearchResults(data || []);
+        }
+      } finally {
+        setIsSearchingGuests(false);
+      }
+    }
+  }, [guestSearchResults.length, selectedGuest]);
 
   const handleGuestSelect = useCallback(async (guest) => {
     setSelectedGuest(guest);
@@ -412,16 +523,6 @@ export function useCreateSuggestedProposalLogic() {
     setSelectedDays([0, 1, 2, 3, 4, 5, 6]);
   }, []);
 
-  const handleCheckInDayChange = useCallback((e) => {
-    const value = e.target.value;
-    setCheckInDayIndex(value === '' ? null : parseInt(value));
-  }, []);
-
-  const handleCheckOutDayChange = useCallback((e) => {
-    const value = e.target.value;
-    setCheckOutDayIndex(value === '' ? null : parseInt(value));
-  }, []);
-
   const handleReservationSpanChange = useCallback((e) => {
     setReservationSpan(e.target.value);
     if (e.target.value !== 'custom') {
@@ -432,15 +533,6 @@ export function useCreateSuggestedProposalLogic() {
   const handleCustomWeeksChange = useCallback((e) => {
     setCustomWeeks(e.target.value);
   }, []);
-
-  // Auto-update check-in/check-out when days change
-  useEffect(() => {
-    if (selectedDays.length > 0) {
-      const sortedDays = [...selectedDays].sort((a, b) => a - b);
-      setCheckInDayIndex(sortedDays[0]);
-      setCheckOutDayIndex(sortedDays[sortedDays.length - 1]);
-    }
-  }, [selectedDays]);
 
   // -------------------------------------------------------------------------
   // NAVIGATION
@@ -578,8 +670,6 @@ export function useCreateSuggestedProposalLogic() {
     setMoveInRange(14);
     setStrictMoveIn(false);
     setSelectedDays([]);
-    setCheckInDayIndex(null);
-    setCheckOutDayIndex(null);
     setReservationSpan('');
     setCustomWeeks(null);
     setIsConfirmationStep(false);
@@ -626,12 +716,15 @@ export function useCreateSuggestedProposalLogic() {
     moveInRange,
     strictMoveIn,
     selectedDays,
-    checkInDayIndex,
-    checkOutDayIndex,
     reservationSpan,
     customWeeks,
 
-    // Computed
+    // Computed (from selected days)
+    checkInDayIndex,
+    checkOutDayIndex,
+    checkInDayName,
+    checkOutDayName,
+    nightsCount,
     pricing,
 
     // UI State
@@ -652,12 +745,14 @@ export function useCreateSuggestedProposalLogic() {
 
     // Handlers - Listing Search
     handleListingSearchChange,
+    handleListingSearchFocus,
     handleListingSelect,
     handleListingClear,
     handleClearListingSearch,
 
     // Handlers - Guest Search
     handleGuestSearchChange,
+    handleGuestSearchFocus,
     handleGuestSelect,
     handleGuestConfirm,
     handleGuestClear,
@@ -675,8 +770,6 @@ export function useCreateSuggestedProposalLogic() {
     handleStrictMoveInChange,
     handleDayToggle,
     handleSelectFullTime,
-    handleCheckInDayChange,
-    handleCheckOutDayChange,
     handleReservationSpanChange,
     handleCustomWeeksChange,
 

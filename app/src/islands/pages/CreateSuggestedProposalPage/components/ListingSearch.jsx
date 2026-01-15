@@ -11,6 +11,7 @@ export default function ListingSearch({
   listingPhotos,
   isSearching,
   onSearchChange,
+  onSearchFocus,
   onSelect,
   onClear,
   onClearSearch
@@ -32,6 +33,7 @@ export default function ListingSearch({
             placeholder="Search Host Name, email, listing name, unique id, rental type"
             value={searchTerm}
             onChange={onSearchChange}
+            onFocus={onSearchFocus}
             disabled={!!selectedListing}
           />
           {searchTerm && (
@@ -48,8 +50,8 @@ export default function ListingSearch({
           )}
         </div>
 
-        {/* Search Results */}
-        {searchTerm.length >= 2 && !selectedListing && (
+        {/* Search Results - Show whenever there are results and no selection */}
+        {!selectedListing && (searchResults.length > 0 || isSearching) && (
           <div className="csp-search-results">
             {isSearching ? (
               <div className="csp-loading">Searching...</div>

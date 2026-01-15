@@ -14,7 +14,7 @@
  */
 
 import { supabase } from '../supabase.js';
-import { PROPOSAL_STATUSES } from '../constants/proposalStatuses.js';
+import { PROPOSAL_STATUSES, getStatusConfig } from '../constants/proposalStatuses.js';
 
 // In-memory cache for status configurations
 let statusConfigCache = null;
@@ -173,6 +173,29 @@ export function isSuggestedProposalFromConfig(statusDisplay) {
   if (!statusDisplay) return false;
   const normalized = typeof statusDisplay === 'string' ? statusDisplay.trim() : statusDisplay;
   return normalized.includes('Submitted for guest by Split Lease');
+}
+
+/**
+ * Check if proposal needs rental application submission
+ * Used to determine if "Submit Rental App" button should show
+ *
+ * @param {Object} proposal - Proposal with rentalApplication data joined
+ * @returns {boolean} True if rental app is missing or not submitted
+ */
+export function needsRentalAppFromConfig(proposal) {
+  if (!proposal) return true;
+
+  // No rental application linked
+  if (!proposal['rental application'] && !proposal.rentalApplication) {
+    return true;
+  }
+
+  // Has rental application but not submitted
+  if (proposal.rentalApplication && !proposal.rentalApplication.submitted) {
+    return true;
+  }
+
+  return false;
 }
 
 /**
@@ -360,7 +383,34 @@ export function getButtonConfigForProposal(proposal) {
     cancelButton.label = 'Reject Modified Terms';
     cancelButton.action = 'reject_counteroffer';
   } else if (isSLSuggested) {
-    // SL-suggested proposals: "Reject Proposal"
+    // SL-suggested proposals: Dynamic button logic based on confirmation state
+    const statusConfigData = getStatusConfig(status);
+
+    if (statusConfigData?.guestConfirmed) {
+      // Already confirmed, just waiting for rental app
+      // Primary action: Submit Rental Application (handled by database config)
+      // Cancel button: "Reject Proposal"
+    } else {
+      // Not yet confirmed - need to show both CTAs
+      // Primary: "Confirm Proposal"
+      // Secondary: "Submit Rental App" (only if rental app not submitted)
+
+      // Override guestAction1 to show "Confirm Proposal" as primary
+      guestAction1.visible = true;
+      guestAction1.label = 'Confirm Proposal';
+      guestAction1.action = 'confirm_proposal';
+
+      // guestAction2: Show "Submit Rental App" only if needed
+      // The needsRentalAppFromConfig check happens at render time in component
+      // We set up the structure here, component determines visibility
+      if (needsRentalAppFromConfig(proposal)) {
+        guestAction2.visible = true;
+        guestAction2.label = 'Submit Rental Application';
+        guestAction2.action = 'submit_rental_app';
+      }
+    }
+
+    // Cancel button for SL-suggested: "Reject Proposal"
     cancelButton.visible = true;
     cancelButton.label = 'Reject Proposal';
     cancelButton.action = 'reject_proposal';

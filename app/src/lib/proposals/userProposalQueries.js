@@ -387,6 +387,33 @@ export async function fetchProposalsByIds(proposalIds) {
     }
   }
 
+  // Step 5.6: Fetch rental application submitted status for proposals
+  const rentalAppIds = [...new Set(
+    validProposals
+      .map(p => p['rental application'])
+      .filter(Boolean)
+  )];
+
+  console.log(`fetchProposalsByIds: Fetching ${rentalAppIds.length} rental applications`);
+
+  let rentalApps = [];
+  if (rentalAppIds.length > 0) {
+    const { data: rentalAppsData, error: rentalAppError } = await supabase
+      .from('rentalapplication')
+      .select('_id, submitted, "percentage % done"')
+      .in('_id', rentalAppIds);
+
+    if (rentalAppError) {
+      console.error('fetchProposalsByIds: Error fetching rental applications:', rentalAppError);
+    } else {
+      rentalApps = rentalAppsData || [];
+      console.log(`fetchProposalsByIds: Fetched ${rentalApps.length} rental applications`);
+    }
+  }
+
+  // Create rental application lookup map
+  const rentalAppMap = new Map(rentalApps.map(ra => [ra._id, ra]));
+
   // Step 6: Fetch virtual meetings for all proposals
   console.log(`fetchProposalsByIds: Fetching virtual meetings for ${validProposals.length} proposals`);
 
@@ -452,6 +479,8 @@ export async function fetchProposalsByIds(proposalIds) {
     const featuredPhotoUrl = listing ? featuredPhotoMap.get(listing._id) : null;
     // Lookup virtual meeting
     const virtualMeeting = vmMap.get(proposal._id) || null;
+    // Lookup rental application
+    const rentalApplication = rentalAppMap.get(proposal['rental application']) || null;
 
     // Resolve house rules IDs to names (from proposal, not listing)
     // House Rules field is stored as a JSON string array: "[\"id1\", \"id2\"]"
@@ -484,6 +513,7 @@ export async function fetchProposalsByIds(proposalIds) {
       } : null,
       guest: guest || null,
       virtualMeeting,
+      rentalApplication,
       houseRules: houseRulesResolved
     };
   });

@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Split Lease - Private Concierge</title>
+    <style>
+        :root {
+            --primary: #5b21b6;
+            --primary-light: #7c3aed;
+            --bg: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-sub: #6b7280;
+            --border: #e5e7eb;
+            --success: #10b981;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            padding: 40px 20px;
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 550px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            color: var(--text-main);
+        }
+        .header p {
+            color: var(--text-sub);
+            font-size: 1rem;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            margin-bottom: 30px;
+            padding: 0 10px;
+        }
+        .progress-bar-bg {
+            background-color: #e5e7eb;
+            height: 8px;
+            border-radius: 4px;
+            width: 100%;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            background-color: var(--primary);
+            height: 100%;
+            width: 12.5%;
+            transition: width 0.4s ease;
+        }
+        .step-indicator {
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-sub);
+            margin-top: 8px;
+            font-weight: 600;
+        }
+
+        /* Cards */
+        .section-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 35px 30px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+            display: none;
+            animation: slideIn 0.4s ease;
+        }
+
+        .section-card.active {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 { margin: 0 0 25px 0; font-size: 1.5rem; color: var(--text-main); }
+
+        .form-group { margin-bottom: 25px; }
+        label { display: block; font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 10px; }
+
+        input, select {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 1rem;
+            background: #fff;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+        input:focus, select:focus { outline: none; border-color: var(--primary); }
+
+        .row { display: flex; gap: 15px; }
+        .col { flex: 1; }
+
+        /* Privacy/Host Type Selector Styles */
+        .privacy-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .privacy-card {
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            transition: all 0.2s;
+        }
+        .privacy-card:hover { border-color: #c7d2fe; background: #f5f3ff; }
+        .privacy-card.selected { border-color: var(--primary); background: #eff6ff; }
+
+        .privacy-radio {
+            margin-top: 5px;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ccc;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .selected .privacy-radio::after {
+            content: "";
+            width: 10px;
+            height: 10px;
+            background: var(--primary);
+            border-radius: 50%;
+        }
+        .privacy-content h3 { margin: 0 0 5px 0; font-size: 1rem; color: var(--text-main); }
+        .privacy-content p { margin: 0; font-size: 0.85rem; color: var(--text-sub); line-height: 1.4; }
+
+        /* Lease Options in Columns */
+        .lease-options-columns {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            justify-content: space-between;
+        }
+        .lease-options-columns .privacy-card {
+            flex: 1;
+            padding: 15px 10px;
+            text-align: center;
+            align-items: center;
+            flex-direction: column;
+            min-width: 0;
+        }
+        .lease-options-columns .privacy-content h3 {
+            font-size: 0.95rem;
+            margin-bottom: 5px;
+        }
+        .lease-options-columns .privacy-content p {
+            font-size: 0.75rem;
+            line-height: 1.2;
+        }
+        .lease-options-columns .privacy-radio {
+            margin-bottom: 10px;
+            margin-top: 0;
+        }
+
+        /* Conditional Content Sections */
+        .conditional-section {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        .conditional-section.visible {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        /* Day Selector (Card 3 - Interactive) */
+        .day-selector-wrapper-simple {
+            background: #e0e7ff;
+            border: 2px solid #c7d2fe;
+            border-radius: 12px;
+            padding: 20px 15px;
+            margin-bottom: 10px;
+        }
+        .day-labels {
+            display: flex; justify-content: space-between; padding: 0 8px; margin-bottom: 12px;
+            font-size: 0.8rem; color: var(--text-sub); font-weight: bold;
+        }
+        .day-selector-simple { display: flex; justify-content: space-between; gap: 5px; }
+        .day-btn-simple {
+            width: 42px; height: 42px; border-radius: 50%; border: 2px solid white;
+            background: white; color: #4b5563; font-weight: 800; font-size: 0.95rem;
+            cursor: pointer; transition: all 0.15s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+        }
+        .day-btn-simple.selected {
+            background: var(--primary); color: white; border-color: var(--primary);
+            transform: translateY(-2px); box-shadow: 0 4px 8px rgba(91, 33, 182, 0.4);
+        }
+
+        /* Schedule Summary Badge (Card 4 - Read Only) */
+        .schedule-summary-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #e0e7ff;
+            border: 1px solid #c7d2fe;
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+        .schedule-summary-badge .edit-link {
+            font-size: 0.8rem;
+            color: var(--text-sub);
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        .schedule-summary-badge .edit-link:hover {
+            color: var(--primary);
+        }
+
+        /* Monthly Agreement Radio */
+        .agreement-option {
+            margin-bottom: 15px;
+        }
+        .agreement-label {
+            display: flex;
+            align-items: flex-start;
+            cursor: pointer;
+            gap: 10px;
+        }
+        .agreement-label input[type="radio"] {
+            width: auto;
+            margin-top: 4px;
+        }
+        .agreement-text {
+            font-size: 0.95rem;
+            color: var(--text-main);
+        }
+        .agreement-desc {
+            font-size: 0.9rem;
+            color: var(--text-sub);
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        /* Buttons */
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        .btn-next {
+            width: 100%; padding: 18px; background: var(--primary); color: white;
+            border: none; border-radius: 12px; font-size: 1rem; font-weight: 700;
+            cursor: pointer; transition: background 0.2s;
+        }
+        .btn-next:hover { background: var(--primary-light); }
+
+        .btn-back {
+            width: 100%; padding: 15px; background: transparent; color: var(--text-sub);
+            border: none; border-radius: 12px; font-size: 0.95rem; font-weight: 600;
+            cursor: pointer; transition: color 0.2s;
+        }
+        .btn-back:hover { color: var(--text-main); background: #e5e7eb; }
+
+        .btn-skip { background: white; border: 2px solid var(--border); color: var(--text-sub); }
+        .btn-skip:hover { background: var(--bg); color: var(--text-main); border-color: var(--text-sub); }
+
+        /* Photo Zone */
+        .photo-zone {
+            border: 2px dashed var(--border); border-radius: 16px; padding: 40px 20px;
+            text-align: center; cursor: pointer; background: #f9fafb; transition: all 0.2s;
+        }
+        .photo-zone:hover { border-color: var(--primary); background: #f5f3ff; }
+
+        /* Listing Preview */
+        .listing-preview {
+            background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px;
+            overflow: hidden; margin-top: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            color: var(--text-main); position: relative;
+        }
+        .listing-badge {
+            position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.75); color: white;
+            padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .listing-img {
+            width: 100%; height: 200px; background-size: cover; background-position: center;
+            border-bottom: 1px solid var(--border);
+        }
+        .listing-content { padding: 20px; }
+        .listing-title { font-size: 1.3rem; font-weight: 700; margin: 0 0 8px 0; color: var(--primary); line-height: 1.3; }
+        .listing-location { font-size: 1rem; color: var(--text-sub); margin-bottom: 15px; display: flex; align-items: center; gap: 5px; }
+        .listing-price-info { display: flex; align-items: baseline; margin-bottom: 8px; }
+        .listing-price { font-size: 1.8rem; font-weight: 800; color: var(--text-main); margin-right: 6px; }
+        .listing-period { font-size: 1.1rem; font-weight: 600; color: var(--text-sub); }
+        .listing-schedule { font-size: 0.9rem; color: var(--success); font-weight: 700; background: #d1fae5; display: inline-block; padding: 4px 10px; border-radius: 8px; }
+
+        /* Utility Styles */
+        .utility-options { display: flex; gap: 10px; }
+        .utility-card {
+            flex: 1; border: 2px solid var(--border); border-radius: 10px; padding: 12px;
+            cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 0.9rem; font-weight: 600;
+            transition: all 0.2s; color: var(--text-sub);
+        }
+        .utility-card:hover { border-color: #c7d2fe; background: #f5f3ff; }
+        .utility-card.selected { border-color: var(--primary); background: #eff6ff; color: var(--primary); }
+
+        .utility-radio {
+            width: 16px; height: 16px; border: 2px solid #ccc; border-radius: 50%; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .utility-card.selected .utility-radio { border-color: var(--primary); }
+        .utility-card.selected .utility-radio::after {
+            content: ""; width: 8px; height: 8px; background: var(--primary); border-radius: 50%;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>Listing Setup</h1>
+        <p>Let's find your perfect match.</p>
+    </div>
+
+    <div class="progress-container">
+        <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="progressBar"></div>
+        </div>
+        <div class="step-indicator" id="stepIndicator">Step 1 of 7</div>
+    </div>
+
+    <!-- CARD 1: HOST TYPE -->
+    <div id="card1" class="section-card active">
+        <h2>Who are you?</h2>
+
+        <div class="form-group">
+            <label>Select your host type</label>
+            <div class="privacy-options">
+                <div class="privacy-card selected" onclick="selectHostType('resident', this)">
+                    <div class="privacy-radio"></div>
+                    <div class="privacy-content">
+                        <p>I live in the property part-time and rent out the nights I'm away.</p>
+                    </div>
+                </div>
+                <div class="privacy-card" onclick="selectHostType('liveout', this)">
+                    <div class="privacy-radio"></div>
+                    <div class="privacy-content">
+                        <p>I own or rent the property but do not live there.</p>
+                    </div>
+                </div>
+                <div class="privacy-card" onclick="selectHostType('coliving', this)">
+                    <div class="privacy-radio"></div>
+                    <div class="privacy-content">
+                        <p>I live in the property and rent out a private room in my space.</p>
+                    </div>
+                </div>
+                <div class="privacy-card" onclick="selectHostType('agent', this)">
+                    <div class="privacy-radio"></div>
+                    <div class="privacy-content">
+                        <p>I manage listings for landlords.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn-next" onclick="nextStep(1)">Continue</button>
+        </div>
+    </div>
+
+    <!-- CARD 2: MARKET STRATEGY -->
+    <div id="card2" class="section-card">
+        <h2>Market Strategy</h2>
+
+        <div class="form-group">
+            <label>How should we market it?</label>
+            <div class="privacy-options">
+                <div class="privacy-card selected" onclick="selectPrivacy('private', this)">
+                    <div class="privacy-radio"></div>
+                    <div class="privacy-content">
+                        <h3>Private Network (Concierge)</h3>
+                        <p>We search for a guest for you. Address remains hidden until vetting is complete. <strong>Recommended.</strong></p>
+                    </div>
+                </div>
+                <div class="privacy-card" onclick="selectPrivacy('public', this)">
+                    <div class="privacy-radio"></div>
+                    <div class="privacy-content">
+                        <h3>Public Marketplace</h3>
+                        <p>Standard listing. Visible to all users immediately.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn-next" onclick="nextStep(2)">Continue</button>
+            <button class="btn-back" onclick="prevStep(2)">Back</button>
+        </div>
+    </div>
+
+    <!-- CARD 3: LISTING STRATEGY (Schedule Selection) -->
+    <div id="card3" class="section-card">
+        <h2>Listing Strategy</h2>
+
+        <!-- Lease Style Selection -->
+        <div class="form-group">
+            <label>Lease Style</label>
+            <div class="lease-options-columns">
+                <div class="privacy-card selected" onclick="selectLeaseStyle('nightly', this)">
+                    <div class="privacy-radio"></div>
+                    <div class="privacy-content">
+                        <h3>Nightly</h3>
+                        <p>Rent by the night with flexible availability</p>
+                    </div>
+                </div>
+                <div class="privacy-card" onclick="selectLeaseStyle('weekly', this)">
+                    <div class="privacy-radio"></div>
+                    <div class="privacy-content">
+                        <h3>Weekly</h3>
+                        <p>Rent in weekly patterns</p>
+                    </div>
+                </div>
+                <div class="privacy-card" onclick="selectLeaseStyle('monthly', this)">
+                    <div class="privacy-radio"></div>
+                    <div class="privacy-content">
+                        <h3>Monthly</h3>
+                        <p>Traditional month-to-month rental</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Conditional Content: Nightly - Schedule Selection -->
+        <div id="content-nightly" class="conditional-section visible">
+            <label>Which nights are you away? (Tap to select)</label>
+            <div class="day-labels">
+                <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+            </div>
+            <div class="day-selector-wrapper-simple">
+                <div class="day-selector-simple" id="day-selector-card3">
+                    <button class="day-btn-simple" data-idx="0">S</button>
+                    <button class="day-btn-simple selected" data-idx="1">M</button>
+                    <button class="day-btn-simple selected" data-idx="2">T</button>
+                    <button class="day-btn-simple selected" data-idx="3">W</button>
+                    <button class="day-btn-simple selected" data-idx="4">T</button>
+                    <button class="day-btn-simple selected" data-idx="5">F</button>
+                    <button class="day-btn-simple" data-idx="6">S</button>
+                </div>
+            </div>
+            <div id="schedule-text" style="text-align: center; font-size: 0.95rem; color: var(--primary); margin-top: 12px; font-weight: 700;">
+                Weekdays Only (You keep weekends!)
+            </div>
+        </div>
+
+        <!-- Conditional Content: Weekly -->
+        <div id="content-weekly" class="conditional-section">
+            <label>Select Weekly Pattern</label>
+            <select id="weeklyPattern">
+                <option value="1on1off">One week on and one week off</option>
+                <option value="2on2off">Two weeks on and two weeks off</option>
+                <option value="1on3off">One week on and three weeks off</option>
+            </select>
+        </div>
+
+        <!-- Conditional Content: Monthly -->
+        <div id="content-monthly" class="conditional-section">
+            <label>Monthly Lease Agreement</label>
+            <p class="agreement-desc">Our Split Lease 'Monthly' model helps guests meet rent obligations through a subsidy. For financial stability, we may need to sublease unused nights. If this isn't ideal, our other models might be more fitting for you, as they don't require this provision.</p>
+
+            <div class="agreement-option">
+                <label class="agreement-label">
+                    <input type="radio" name="monthlyAgreement" value="agree" checked>
+                    <span class="agreement-text">I agree to the monthly subsidy terms</span>
+                </label>
+            </div>
+            <div class="agreement-option">
+                <label class="agreement-label">
+                    <input type="radio" name="monthlyAgreement" value="disagree">
+                    <span class="agreement-text">No, I will select a different rental style</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn-next" onclick="nextStep(3)">Continue</button>
+            <button class="btn-back" onclick="prevStep(3)">Back</button>
+        </div>
+    </div>
+
+    <!-- CARD 4: NIGHTLY PRICING (Color Palette Style) -->
+    <div id="card4" class="section-card">
+        <h2>Pricing Strategy</h2>
+
+
+        <p style="color: var(--text-sub); font-size: 0.9rem; margin-bottom: 20px;">
+            Set your base rate. Longer stays get automatic discounts to encourage bookings.
+        </p>
+
+        <div id="nightly-calculator"></div>
+
+        <div class="btn-group">
+            <button class="btn-next" onclick="nextStep(4)">Continue</button>
+            <button class="btn-back" onclick="prevStep(4)">Back</button>
+        </div>
+    </div>
+
+    <!-- CARD 5: FINANCIALS (for weekly/monthly modes) -->
+    <div id="card5" class="section-card">
+        <h2>Financials</h2>
+
+        <div class="form-group">
+            <label>Desired Rent</label>
+            <div class="row">
+                <div class="col" style="flex: 2;">
+                    <div style="position: relative;">
+                        <span style="position: absolute; left: 15px; top: 16px; font-weight: bold; color: var(--text-sub);">$</span>
+                        <input type="number" id="price" placeholder="2000" style="padding-left: 30px;">
+                    </div>
+                </div>
+                <div class="col">
+                    <select id="frequency">
+                        <option value="Month">Per Month</option>
+                        <option value="Week">Per Week</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Utilities (WiFi, Electric, Gas)</label>
+            <div class="utility-options">
+                <div class="utility-card selected" onclick="selectUtility('included', this)">
+                    <div class="utility-radio"></div>
+                    <span>Included in Rent</span>
+                </div>
+                <div class="utility-card" onclick="selectUtility('extra', this)">
+                    <div class="utility-radio"></div>
+                    <span>Charged Extra</span>
+                </div>
+            </div>
+            <div id="utility-cost-wrapper" style="display: none; margin-top: 15px; animation: fadeIn 0.3s;">
+                <label style="font-size: 0.9rem;">Estimated Monthly Cost</label>
+                <div style="position: relative;">
+                    <span style="position: absolute; left: 15px; top: 16px; font-weight: bold; font-size: 0.9rem;">$</span>
+                    <input type="number" id="utilityCost" placeholder="150" style="padding-left: 25px;">
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col">
+                <div class="form-group">
+                    <label>Security Deposit</label>
+                    <div style="position: relative;">
+                        <span style="position: absolute; left: 15px; top: 16px; font-weight: bold; font-size: 0.9rem;">$</span>
+                        <input type="number" id="deposit" placeholder="1000" style="padding-left: 25px;">
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <label>Cleaning Fee</label>
+                    <div style="position: relative;">
+                        <span style="position: absolute; left: 15px; top: 16px; font-weight: bold; font-size: 0.9rem;">$</span>
+                        <input type="number" id="cleaning" placeholder="150" style="padding-left: 25px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn-next" onclick="nextStep(5)">Next: Space & Time</button>
+            <button class="btn-back" onclick="prevStep(5)">Back</button>
+        </div>
+    </div>
+
+    <!-- CARD 6: LOCATION & DETAILS -->
+    <div id="card6" class="section-card">
+        <h2>The Space & Time</h2>
+
+        <div class="form-group">
+            <label>What type of property is it?</label>
+            <select id="propertyType">
+                <option value="Apartment">Apartment</option>
+                <option value="House">House</option>
+                <option value="Condo">Condo</option>
+                <option value="Townhouse">Townhouse</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Neighborhood / Location</label>
+            <input type="text" id="location" placeholder="e.g. Chelsea, Manhattan">
+        </div>
+
+        <div class="row">
+            <div class="col">
+                <div class="form-group">
+                    <label>Bedrooms</label>
+                    <select id="bedrooms">
+                        <option>1</option>
+                        <option>2</option>
+                        <option>Studio</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <label>Bathrooms</label>
+                    <select id="bathrooms">
+                        <option>1</option>
+                        <option>Shared</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn-next" onclick="nextStep(6)">Next: Photos</button>
+            <button class="btn-back" onclick="prevStep(6)">Back</button>
+        </div>
+    </div>
+
+    <!-- CARD 7: PHOTOS -->
+    <div id="card7" class="section-card">
+        <h2>Photos (Optional)</h2>
+
+        <div class="photo-zone" onclick="alert('File picker opens here')">
+            <div style="font-size: 3rem; margin-bottom: 15px;"></div>
+            <p style="margin: 0; font-weight: 700; font-size: 1.1rem;">Click to upload photos</p>
+            <p style="margin: 5px 0 0 0; font-size: 0.9rem; color: var(--text-sub);">Min 1, Max 3 for now</p>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn-next" onclick="nextStep(7)">Upload & Continue</button>
+            <button class="btn-next btn-skip" onclick="nextStep(7)">Skip for now</button>
+            <button class="btn-back" onclick="prevStep(7)">Back</button>
+        </div>
+    </div>
+
+    <!-- CARD 8: REVIEW -->
+    <div id="card8" class="section-card">
+        <h2>Review & Activate</h2>
+
+        <p style="font-size: 1rem; color: var(--text-sub); margin-bottom: 25px;">
+            Your listing is ready to go live on our network.
+        </p>
+
+        <div class="listing-preview">
+            <div class="listing-badge" id="privacy-badge">Private Listing</div>
+            <div class="listing-img" style="background-image: url('https://via.placeholder.com/600x400/eceff1/90a4ae?text=Your+Space+Preview');"></div>
+            <div class="listing-content">
+                <h3 id="preview-title" class="listing-title"></h3>
+                <p id="preview-location" class="listing-location"></p>
+                <div class="listing-price-info">
+                    <span id="preview-price" class="listing-price"></span><span id="preview-frequency" class="listing-period"></span>
+                </div>
+                <p id="preview-schedule" class="listing-schedule"></p>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn-next" onclick="finish()" style="background: var(--success);">Activate Listing</button>
+            <button class="btn-back" onclick="prevStep(8)">Back</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // ============================================
+    // PRICING CALCULATOR - Color Palette Style (side by side, no gaps)
+    // ============================================
+    (function() {
+      const container = document.getElementById('nightly-calculator');
+      if (!container) return;
+
+      const initialP1 = 100;
+      const initialDiscount = 20;
+
+      const shadowRoot = container.attachShadow({ mode: 'open' });
+
+      shadowRoot.innerHTML = `
+        <style>
+          :host { all: initial; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
+
+          .control-group { margin-bottom: 24px; }
+          .label-row { display: flex; justify-content: space-between; margin-bottom: 8px; align-items: baseline; }
+          .label { font-size: 14px; font-weight: 600; color: #374151; }
+          .value-display { font-size: 14px; font-weight: 700; color: #5b3bb3; }
+
+          .base-input-wrapper { position: relative; max-width: 200px; margin: 0 auto 24px; }
+          .currency-symbol { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 20px; font-weight: 600; color: #9ca3af; }
+          .base-input {
+            width: 100%; padding: 12px 12px 12px 32px; font-size: 24px; font-weight: 700;
+            text-align: center; border: 2px solid #e5e7eb; border-radius: 16px;
+            color: #111827; outline: none; transition: border-color 0.2s; box-sizing: border-box;
+          }
+          .base-input:focus { border-color: #5b3bb3; }
+
+          .range-wrapper { position: relative; height: 40px; display: flex; align-items: center; }
+          input[type=range] {
+            -webkit-appearance: none; width: 100%; background: transparent; cursor: pointer;
+          }
+          input[type=range]:focus { outline: none; }
+          input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 8px; cursor: pointer; background: #e5e7eb; border-radius: 4px;
+          }
+          input[type=range]::-webkit-slider-thumb {
+            height: 24px; width: 24px; border-radius: 50%; background: #5b3bb3;
+            cursor: pointer; -webkit-appearance: none; margin-top: -8px;
+            box-shadow: 0 2px 6px rgba(91, 59, 179, 0.3); border: 2px solid #fff;
+          }
+          .marks { display: flex; justify-content: space-between; margin-top: -5px; padding: 0 2px; }
+          .mark { font-size: 11px; color: #9ca3af; }
+
+          /* Color Palette Style - No gaps, side by side */
+          .nights-display-wrapper {
+            margin-top: 24px;
+          }
+          .nights-display-header {
+            text-align: center;
+            margin-bottom: 12px;
+            font-size: 13px;
+            color: #6b7280;
+            font-weight: 500;
+          }
+
+          /* Color palette container */
+          .palette-container {
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+          }
+
+          .palette-row {
+            display: flex;
+          }
+
+          .palette-swatch {
+            flex: 1;
+            min-height: 70px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 0;
+          }
+
+          /* Gradient colors - dark grey to white */
+          .palette-swatch.n1 { background: #374151; color: white; }
+          .palette-swatch.n2 { background: #4b5563; color: white; }
+          .palette-swatch.n3 { background: #6b7280; color: white; }
+          .palette-swatch.n4 { background: #9ca3af; color: white; }
+          .palette-swatch.n5 { background: #d1d5db; color: #374151; }
+          .palette-swatch.n6 { background: #e5e7eb; color: #374151; }
+          .palette-swatch.n7 { background: #f3f4f6; color: #374151; }
+
+          .swatch-number {
+            font-size: 10px;
+            font-weight: 600;
+            line-height: 1;
+            opacity: 0.75;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+          }
+
+          .swatch-price {
+            font-size: 15px;
+            font-weight: 800;
+            line-height: 1;
+          }
+
+          .swatch-label {
+            font-size: 8px;
+            font-weight: 600;
+            line-height: 1;
+            opacity: 0.65;
+            margin-top: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+          }
+
+          /* Addition formula row */
+          .formula-row {
+            display: flex;
+            margin-top: 8px;
+          }
+
+          .formula-item {
+            flex: 1;
+            text-align: center;
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 600;
+          }
+
+          .formula-plus {
+            color: #9ca3af;
+          }
+
+          .formula-total-row {
+            margin-top: 12px;
+            padding: 12px 16px;
+            background: #f9fafb;
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          }
+
+          .formula-total-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+          }
+
+          .formula-total {
+            font-size: 18px;
+            font-weight: 800;
+            color: #374151;
+          }
+
+          /* Summary totals */
+          .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding: 16px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+          }
+          .summary-item {
+            text-align: center;
+          }
+          .summary-label {
+            font-size: 11px;
+            color: #6b7280;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+          }
+          .summary-value {
+            font-size: 20px;
+            color: #374151;
+            font-weight: 800;
+          }
+
+          details { margin-top: 24px; border-top: 1px solid #e5e7eb; padding-top: 15px; }
+          summary {
+            font-size: 13px; font-weight: 600; color: #6b7280; cursor: pointer; list-style: none;
+            display: flex; align-items: center; gap: 6px;
+          }
+          summary::-webkit-details-marker { display: none; }
+          summary:hover { color: #374151; }
+          summary::before { content: '▸'; display: inline-block; transition: transform 0.2s; }
+          details[open] summary::before { transform: rotate(90deg); }
+          .details-content {
+            margin-top: 10px; font-size: 13px; line-height: 1.5; color: #6b7280;
+            background: #f9fafb; padding: 12px; border-radius: 8px;
+          }
+        </style>
+
+        <div class="app">
+          <div class="control-group" style="text-align:center;">
+            <label class="label" style="display:block; margin-bottom:10px;">Base Nightly Rate</label>
+            <div class="base-input-wrapper">
+              <span class="currency-symbol">$</span>
+              <input id="inp-base" class="base-input" type="number" min="0" step="1" value="100">
+            </div>
+          </div>
+
+          <div class="control-group">
+            <div class="label-row">
+              <span class="label">Long Stay Discount</span>
+              <span class="value-display" id="disp-discount">20%</span>
+            </div>
+            <div class="range-wrapper">
+              <input id="inp-discount" type="range" min="0" max="50" step="1" value="20">
+            </div>
+            <div class="marks">
+              <span class="mark">0%</span>
+              <span class="mark">25%</span>
+              <span class="mark">50%</span>
+            </div>
+            <p style="font-size:12px; color:#6b7280; margin-top:8px; line-height:1.4;">
+              Consecutive nights get progressively cheaper. A 5-night stay averages
+              <strong id="disp-avg-price" style="color:#5b3bb3;">$85</strong>/night.
+            </p>
+          </div>
+
+          <!-- Color Palette Display -->
+          <div class="nights-display-wrapper">
+            <div class="nights-display-header">Price per consecutive night</div>
+            <div class="palette-container">
+              <div class="palette-row" id="palette-row"></div>
+            </div>
+            <div class="formula-row" id="formula-row"></div>
+            <div class="formula-total-row">
+              <div class="formula-total-label">7-Night Total</div>
+              <div class="formula-total" id="formula-total"></div>
+            </div>
+          </div>
+
+          <!-- Summary based on selected days -->
+          <div class="summary-row">
+            <div class="summary-item">
+              <div class="summary-label">Your Weekly Total</div>
+              <div class="summary-value" id="val-weekly">$0</div>
+            </div>
+            <div class="summary-item">
+              <div class="summary-label">Est. Monthly</div>
+              <div class="summary-value" id="val-monthly">$0</div>
+            </div>
+          </div>
+
+          <details>
+            <summary>How does Smart Pricing work?</summary>
+            <div class="details-content">
+              We calculate a "decay curve" for your pricing. The first night is your full Base Rate. Each consecutive night gets slightly cheaper based on your Discount setting.
+              <br><br>
+              This encourages guests to book longer blocks (like Mon-Fri) instead of just two nights, maximizing your occupancy and reducing turnover effort.
+            </div>
+          </details>
+        </div>
+      `;
+
+      const N = 7;
+      const DECAY_MIN = 0.7;
+      const DECAY_MAX = 1.0;
+
+      const $ = (sel) => shadowRoot.getElementById(sel);
+      const fmt0 = (n) => n.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+      const fmtShort = (n) => '$' + Math.round(n);
+      const roundUp = (n) => Math.ceil(n);
+      const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
+
+      const inpBase = $('inp-base');
+      const inpDiscount = $('inp-discount');
+      const dispDiscount = $('disp-discount');
+      const dispAvgPrice = $('disp-avg-price');
+      const paletteRow = $('palette-row');
+      const formulaRow = $('formula-row');
+      const formulaTotal = $('formula-total');
+      const valWeekly = $('val-weekly');
+      const valMonthly = $('val-monthly');
+
+      let baseRate = initialP1;
+      let discountPercent = initialDiscount;
+      let nightlyPrices = Array(N).fill(0);
+
+      function solveDecay(p1, p5) {
+        if (p1 <= 0) return 1.0;
+        if (p5 >= p1) return 1.0;
+        const ratio = p5 / p1;
+        const d = Math.pow(ratio, 0.25);
+        return clamp(d, DECAY_MIN, DECAY_MAX);
+      }
+
+      function calculateCurve() {
+        const p5Target = baseRate * (1 - (discountPercent / 100));
+        const decay = solveDecay(baseRate, p5Target);
+
+        nightlyPrices[0] = roundUp(baseRate);
+        for(let i=1; i<N; i++) {
+            nightlyPrices[i] = roundUp(nightlyPrices[i-1] * decay);
+        }
+
+        const sum5 = nightlyPrices.slice(0,5).reduce((a,b)=>a+b, 0);
+        dispAvgPrice.textContent = fmt0(sum5/5);
+
+        return decay;
+      }
+
+      function renderPaletteDisplay() {
+        let paletteHTML = '';
+        let formulaHTML = '';
+        let totalForN = 0;
+
+        for (let i = 0; i < N; i++) {
+          const nightCount = i + 1;
+          totalForN = nightlyPrices[i] * nightCount;
+          paletteHTML += `
+            <div class="palette-swatch n${nightCount}">
+              <span class="swatch-number">Night ${nightCount}</span>
+              <span class="swatch-price">${fmtShort(nightlyPrices[i])}</span>
+              <span class="swatch-label">per night</span>
+            </div>
+          `;
+          formulaHTML += `<div class="formula-item">${fmtShort(totalForN)}</div>`;
+        }
+
+        paletteRow.innerHTML = paletteHTML;
+        formulaRow.innerHTML = formulaHTML;
+        formulaTotal.innerHTML = fmtShort(totalForN);
+      }
+
+      function calculateWeeklyTotal() {
+        const selectedDays = window.selectedDays || [false, true, true, true, true, true, false];
+        let totalWeekly = 0;
+        let consecutiveCounter = 0;
+
+        for(let i=0; i<7; i++) {
+          if (selectedDays[i]) {
+            totalWeekly += nightlyPrices[consecutiveCounter];
+            if (consecutiveCounter < N-1) consecutiveCounter++;
+          } else {
+            consecutiveCounter = 0;
+          }
+        }
+
+        valWeekly.textContent = fmt0(totalWeekly);
+        valMonthly.textContent = fmt0(totalWeekly * 4.33);
+
+        window.nightlyWeeklyTotal = totalWeekly;
+        window.nightlyMonthlyTotal = totalWeekly * 4.33;
+        window.nightlyBaseRate = baseRate;
+        window.nightlyDiscount = discountPercent;
+        window.nightlyPrices = [...nightlyPrices];
+
+        return totalWeekly;
+      }
+
+      function updateUI() {
+        calculateCurve();
+        dispDiscount.textContent = discountPercent + '%';
+        renderPaletteDisplay();
+        calculateWeeklyTotal();
+      }
+
+      window.refreshNightlyCalculator = function() {
+        updateUI();
+      };
+
+      inpBase.addEventListener('input', (e) => {
+        let val = parseFloat(e.target.value);
+        if(isNaN(val) || val < 0) val = 0;
+        baseRate = val;
+        updateUI();
+      });
+
+      inpDiscount.addEventListener('input', (e) => {
+        discountPercent = parseFloat(e.target.value);
+        updateUI();
+      });
+
+      updateUI();
+
+      window.nightlyWeeklyTotal = 0;
+      window.nightlyMonthlyTotal = 0;
+      window.nightlyBaseRate = baseRate;
+      window.nightlyDiscount = discountPercent;
+      window.nightlyPrices = [...nightlyPrices];
+
+    })();
+
+    // ============================================
+    // MAIN FORM LOGIC
+    // ============================================
+
+    window.selectedDays = [false, true, true, true, true, true, false];
+    let listingMode = 'private';
+    let utilityMode = 'included';
+    let hostType = 'resident';
+    let leaseStyle = 'nightly';
+
+    document.addEventListener('DOMContentLoaded', () => {
+        updateScheduleText();
+        updateProgress(1);
+        initCard3DaySelector();
+    });
+
+    function initCard3DaySelector() {
+        const btns = document.querySelectorAll('#day-selector-card3 .day-btn-simple');
+        btns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const idx = +btn.dataset.idx;
+                window.selectedDays[idx] = !window.selectedDays[idx];
+                syncDaySelectors();
+                updateScheduleText();
+            });
+        });
+    }
+
+    function syncDaySelectors() {
+        const card3Btns = document.querySelectorAll('#day-selector-card3 .day-btn-simple');
+        card3Btns.forEach((btn, i) => {
+            if (window.selectedDays[i]) {
+                btn.classList.add('selected');
+            } else {
+                btn.classList.remove('selected');
+            }
+        });
+        updateScheduleSummaryBadge();
+        updateScheduleText();
+    }
+
+    function updateScheduleSummaryBadge() {
+        const summaryEl = document.getElementById('schedule-summary-text');
+        if (summaryEl) {
+            summaryEl.innerText = getScheduleText();
+        }
+    }
+
+    function getScheduleText() {
+        const count = window.selectedDays.filter(d => d).length;
+        const isWeekdays = !window.selectedDays[0] &&
+                           window.selectedDays[1] && window.selectedDays[2] &&
+                           window.selectedDays[3] && window.selectedDays[4] &&
+                           window.selectedDays[5] && !window.selectedDays[6];
+
+        if (count === 0) {
+            return "No days selected";
+        } else if (isWeekdays) {
+            return "Weekdays Only";
+        } else {
+            return count + " Nights / Week";
+        }
+    }
+
+    function selectHostType(type, el) {
+        hostType = type;
+        document.querySelectorAll('#card1 .privacy-options .privacy-card').forEach(c => c.classList.remove('selected'));
+        el.classList.add('selected');
+    }
+
+    function selectLeaseStyle(style, el) {
+        leaseStyle = style;
+        document.querySelectorAll('.lease-options-columns .privacy-card').forEach(c => c.classList.remove('selected'));
+        el.classList.add('selected');
+
+        document.getElementById('content-nightly').classList.remove('visible');
+        document.getElementById('content-weekly').classList.remove('visible');
+        document.getElementById('content-monthly').classList.remove('visible');
+
+        document.getElementById('content-' + style).classList.add('visible');
+    }
+
+    function selectPrivacy(mode, el) {
+        listingMode = mode;
+        const container = el.closest('.privacy-options');
+        container.querySelectorAll('.privacy-card').forEach(c => c.classList.remove('selected'));
+        el.classList.add('selected');
+    }
+
+    function selectUtility(mode, el) {
+        utilityMode = mode;
+        document.querySelectorAll('.utility-card').forEach(c => c.classList.remove('selected'));
+        el.classList.add('selected');
+
+        const costInput = document.getElementById('utility-cost-wrapper');
+        if (mode === 'extra') {
+            costInput.style.display = 'block';
+        } else {
+            costInput.style.display = 'none';
+        }
+    }
+
+    function updateScheduleText() {
+        const textEl = document.getElementById('schedule-text');
+        const count = window.selectedDays.filter(d => d).length;
+
+        if (count === 0) {
+            textEl.innerText = "Select at least 1 day";
+            textEl.style.color = "red";
+        } else {
+            const isWeekdays = !window.selectedDays[0] &&
+                               window.selectedDays[1] && window.selectedDays[2] &&
+                               window.selectedDays[3] && window.selectedDays[4] &&
+                               window.selectedDays[5] && !window.selectedDays[6];
+            if (isWeekdays) {
+                textEl.innerText = "Weekdays Only (You keep weekends!)";
+            } else {
+                textEl.innerText = count + " Nights / Week";
+            }
+            textEl.style.color = "var(--primary)";
+        }
+    }
+
+    function goBackToSchedule() {
+        document.getElementById('card4').classList.remove('active');
+        document.getElementById('card3').classList.add('active');
+        updateProgress(3);
+    }
+
+    function updateListingPreview() {
+        const location = document.getElementById('location').value;
+        const bedrooms = document.getElementById('bedrooms').value;
+        const type = document.getElementById('propertyType').value;
+        let price, freq, schedule;
+
+        if (leaseStyle === 'nightly') {
+            price = Math.round(window.nightlyWeeklyTotal || 0);
+            freq = "Week";
+            schedule = getScheduleText();
+        } else if (leaseStyle === 'weekly') {
+            price = document.getElementById('price').value || 0;
+            freq = document.getElementById('frequency').value;
+            const pattern = document.getElementById('weeklyPattern').options[document.getElementById('weeklyPattern').selectedIndex].text;
+            schedule = "Weekly: " + pattern;
+        } else if (leaseStyle === 'monthly') {
+            price = document.getElementById('price').value || 0;
+            freq = document.getElementById('frequency').value;
+            schedule = "Monthly Agreement";
+        }
+
+        document.getElementById('preview-title').innerText = `${bedrooms} Bedroom ${type} in ${location}`;
+        document.getElementById('preview-location').innerText = `${location}`;
+        document.getElementById('preview-price').innerText = `$${price}`;
+        document.getElementById('preview-frequency').innerText = ` / ${freq}`;
+        document.getElementById('preview-schedule').innerText = schedule;
+
+        const badge = document.getElementById('privacy-badge');
+        if(listingMode === 'private') {
+            badge.innerText = "Private (Concierge)";
+            badge.style.background = "#5b21b6";
+        } else {
+            badge.innerText = "Public Listing";
+            badge.style.background = "#10b981";
+        }
+    }
+
+    function nextStep(currentStep) {
+        if (currentStep === 3) {
+            if (leaseStyle === 'nightly') {
+                if (window.selectedDays.filter(d => d).length === 0) {
+                    alert("Please select at least one day");
+                    return;
+                }
+            } else if (leaseStyle === 'monthly') {
+                const agreed = document.querySelector('input[name="monthlyAgreement"]:checked').value;
+                if (agreed !== 'agree') {
+                    alert("You must agree to the terms or select a different rental style.");
+                    return;
+                }
+            }
+        }
+
+        let nextStepNum = currentStep + 1;
+
+        if (currentStep === 3) {
+            if (leaseStyle === 'nightly') {
+                nextStepNum = 4;
+                updateScheduleSummaryBadge();
+            } else {
+                nextStepNum = 5;
+            }
+        } else if (currentStep === 4) {
+            nextStepNum = 6;
+        }
+
+        if (currentStep === 5) {
+            if (!document.getElementById('price').value) {
+                alert("Please enter a price");
+                return;
+            }
+        }
+        if (currentStep === 6) {
+            if (!document.getElementById('location').value) {
+                alert("Please enter a location");
+                return;
+            }
+        }
+
+        document.getElementById('card' + currentStep).classList.remove('active');
+        const nextCard = document.getElementById('card' + nextStepNum);
+
+        if (nextCard) {
+            nextCard.classList.add('active');
+            updateProgress(nextStepNum);
+
+            if (nextStepNum === 4 && window.refreshNightlyCalculator) {
+                window.refreshNightlyCalculator();
+            }
+
+            if (nextStepNum === 8) {
+                updateListingPreview();
+            }
+
+            document.querySelector('.container').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+
+    function prevStep(currentStep) {
+        let prevStepNum = currentStep - 1;
+
+        if (currentStep === 6) {
+            if (leaseStyle === 'nightly') {
+                prevStepNum = 4;
+            } else {
+                prevStepNum = 5;
+            }
+        } else if (currentStep === 5) {
+            prevStepNum = 3;
+        } else if (currentStep === 4) {
+            prevStepNum = 3;
+        }
+
+        document.getElementById('card' + currentStep).classList.remove('active');
+        const prevCard = document.getElementById('card' + prevStepNum);
+
+        if (prevCard) {
+            prevCard.classList.add('active');
+            updateProgress(prevStepNum);
+        }
+    }
+
+    function updateProgress(step) {
+        let displayStep, totalSteps;
+
+        if (leaseStyle === 'nightly') {
+            totalSteps = 7;
+            const nightlyMap = {1:1, 2:2, 3:3, 4:4, 6:5, 7:6, 8:7};
+            displayStep = nightlyMap[step] || step;
+        } else {
+            totalSteps = 7;
+            const otherMap = {1:1, 2:2, 3:3, 5:4, 6:5, 7:6, 8:7};
+            displayStep = otherMap[step] || step;
+        }
+
+        const percentage = (displayStep / totalSteps) * 100;
+        document.getElementById('progressBar').style.width = percentage + '%';
+        document.getElementById('stepIndicator').innerText = `Step ${displayStep} of ${totalSteps}`;
+    }
+
+    function finish() {
+        const formData = {
+            hostType: hostType,
+            listingMode: listingMode,
+            leaseStyle: leaseStyle,
+            location: document.getElementById('location').value,
+            propertyType: document.getElementById('propertyType').value,
+            bedrooms: document.getElementById('bedrooms').value,
+            bathrooms: document.getElementById('bathrooms').value,
+            utilities: utilityMode,
+            selectedDays: window.selectedDays
+        };
+
+        if (leaseStyle === 'nightly') {
+            formData.nightlyBaseRate = window.nightlyBaseRate;
+            formData.nightlyDiscount = window.nightlyDiscount;
+            formData.nightlyPrices = window.nightlyPrices;
+            formData.weeklyTotal = window.nightlyWeeklyTotal;
+            formData.monthlyEstimate = window.nightlyMonthlyTotal;
+        } else {
+            formData.price = document.getElementById('price').value;
+            formData.frequency = document.getElementById('frequency').value;
+            formData.deposit = document.getElementById('deposit').value;
+            formData.cleaningFee = document.getElementById('cleaning').value;
+        }
+
+        console.log('Form Data:', formData);
+        alert("Success! Your request has been sent to our concierge team.");
+    }
+
+</script>
+
+</body>
+</html>

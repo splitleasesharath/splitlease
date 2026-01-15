@@ -12,7 +12,7 @@
 
 import React from 'react';
 import ProfileCard from './shared/ProfileCard.jsx';
-import { FileText, Clock, CheckCircle, ChevronRight, Edit3 } from 'lucide-react';
+import { FileText, Clock, CheckCircle, ChevronRight } from 'lucide-react';
 import './RentalApplicationCard.css';
 
 export default function RentalApplicationCard({
@@ -20,7 +20,7 @@ export default function RentalApplicationCard({
   progress = 0,                       // 0-100 percentage
   onOpenWizard,                       // Handler to open wizard modal
 }) {
-  // Submitted state - success card with review/edit option
+  // Submitted state - success card
   if (applicationStatus === 'submitted') {
     return (
       <ProfileCard title="Rental Application" className="rental-app-card rental-app-card--success">
@@ -34,14 +34,6 @@ export default function RentalApplicationCard({
               Your rental application is on file. Hosts can now review your information when considering your proposals.
             </p>
           </div>
-          <button
-            className="rental-app-card__cta rental-app-card__cta--secondary"
-            onClick={onOpenWizard}
-            type="button"
-          >
-            <Edit3 size={16} />
-            Review & Edit
-          </button>
         </div>
       </ProfileCard>
     );

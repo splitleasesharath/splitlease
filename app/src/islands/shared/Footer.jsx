@@ -137,17 +137,6 @@ export default function Footer() {
             </div>
           )}
 
-          {/* Support Column for Guests - shown when For Hosts is hidden (guest logged in) */}
-          {!showHostsColumn && (
-            <div className="footer-column support-column">
-              <h4>Knowledge Base</h4>
-              <a href="/help-center-articles/knowledge-base/airbnb-vs-split-lease.html">Split Lease vs Airbnb</a>
-              <a href="/help-center-articles/knowledge-base/approval-process.html">Approval Process</a>
-              <a href="/help-center-articles/knowledge-base/why-airbnb-terrible-hybrid-workers.html">For Hybrid Workers</a>
-              <a href="/help-center-articles/knowledge-base/commuting-winter.html">Commuting Tips</a>
-            </div>
-          )}
-
           {/* For Guests Column - hidden for logged-in hosts */}
           {showGuestsColumn && (
             <div className="footer-column">
@@ -156,17 +145,6 @@ export default function Footer() {
               <a href="/guest-success">Success Stories</a>
               <a href={SIGNUP_LOGIN_URL}>Speak to an Agent</a>
               <a href="/faq?section=travelers">View FAQ</a>
-            </div>
-          )}
-
-          {/* Support Column for Hosts - shown when For Guests is hidden (host logged in) */}
-          {!showGuestsColumn && (
-            <div className="footer-column support-column">
-              <h4>Knowledge Base</h4>
-              <a href="/help-center-articles/knowledge-base/host-guide-airbnb-vs-split-lease.html">Host Guide: vs Airbnb</a>
-              <a href="/help-center-articles/knowledge-base/month-to-month-losers.html">Month-to-Month Rentals</a>
-              <a href="/help-center-articles/knowledge-base/pet-fees.html">Pet Fee Guide</a>
-              <a href="/help-center-articles/knowledge-base/landlord-application-fees.html">Application Fees</a>
             </div>
           )}
 
