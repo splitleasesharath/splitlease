@@ -492,11 +492,8 @@ export async function handleCreateSuggested(
     _id: threadId,
     Proposal: proposalId,
     Listing: input.listingId,
-    Guest: input.guestId,
-    Host: hostUserData._id,
-    "Is Active": true,
-    "Message Count": 0,
-    Deleted: false,
+    "-Guest User": input.guestId,
+    "-Host User": hostUserData._id,
     "Created Date": now,
     "Modified Date": now,
   };
