@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../../lib/supabase';
+import { logger } from '../../../lib/logger';
 import { checkAuthStatus, validateTokenAndFetchUser, getFirstName, getAvatarUrl } from '../../../lib/auth';
 import { getUserId } from '../../../lib/secureStorage';
 import { generateListingDescription, generateListingTitle } from '../../../lib/aiService';
@@ -21,7 +22,7 @@ function safeParseJsonArray(value) {
       const parsed = JSON.parse(value);
       return Array.isArray(parsed) ? parsed : [];
     } catch (e) {
-      console.warn('Failed to parse JSON array:', e);
+      logger.warn('Failed to parse JSON array:', e);
       return [];
     }
   }
@@ -112,9 +113,9 @@ async function fetchLookupTables() {
       });
     }
 
-    console.log('📚 Lookup tables loaded');
+    logger.debug('📚 Lookup tables loaded');
   } catch (err) {
-    console.warn('⚠️ Failed to fetch lookup tables:', err);
+    logger.warn('⚠️ Failed to fetch lookup tables:', err);
   }
 
   return lookups;
@@ -140,7 +141,7 @@ function transformListingData(dbListing, photos = [], lookups = {}) {
       locationAddress = dbListing['Location - Address'];
     }
   } catch (e) {
-    console.warn('Failed to parse location address:', e);
+    logger.warn('Failed to parse location address:', e);
   }
 
   // Transform amenities from JSON strings (stored as text) to component format
@@ -383,7 +384,7 @@ export default function useListingDashboardPageLogic() {
     setError(null);
 
     try {
-      console.log('🔍 Fetching listing:', listingId);
+      logger.debug('🔍 Fetching listing:', listingId);
 
       // Fetch from listing table
       const listingResult = await supabase
@@ -402,7 +403,7 @@ export default function useListingDashboardPageLogic() {
         throw new Error('Listing not found');
       }
 
-      console.log('✅ Found listing:', listingData._id);
+      logger.debug('✅ Found listing:', listingData._id);
 
       // Fetch lookup tables and related data in parallel
       const [lookups, photosResult, proposalsResult, leasesResult, meetingsResult, reviewsResult] = await Promise.all([
@@ -441,35 +442,35 @@ export default function useListingDashboardPageLogic() {
             Active: true,
           };
         });
-        console.log('📷 Embedded photos from Features - Photos:', photos.length, isObjectArray ? '(objects)' : '(URLs)');
+        logger.debug('📷 Embedded photos from Features - Photos:', photos.length, isObjectArray ? '(objects)' : '(URLs)');
       } else {
         // Legacy: fetch from listing_photo table
         const { data: photosData, error: photosError } = photosResult;
         if (photosError) {
-          console.warn('⚠️ Failed to fetch photos:', photosError);
+          logger.warn('⚠️ Failed to fetch photos:', photosError);
         }
         photos = photosData || [];
-        console.log('📷 Photos from listing_photo table:', photos.length);
+        logger.debug('📷 Photos from listing_photo table:', photos.length);
       }
 
       const { count: proposalsCount, error: proposalsError } = proposalsResult;
       if (proposalsError) {
-        console.warn('⚠️ Failed to fetch proposals count:', proposalsError);
+        logger.warn('⚠️ Failed to fetch proposals count:', proposalsError);
       }
 
       const { count: leasesCount, error: leasesError } = leasesResult;
       if (leasesError) {
-        console.warn('⚠️ Failed to fetch leases count:', leasesError);
+        logger.warn('⚠️ Failed to fetch leases count:', leasesError);
       }
 
       const { count: meetingsCount, error: meetingsError } = meetingsResult;
       if (meetingsError) {
-        console.warn('⚠️ Failed to fetch meetings count:', meetingsError);
+        logger.warn('⚠️ Failed to fetch meetings count:', meetingsError);
       }
 
       const { count: reviewsCount, error: reviewsError } = reviewsResult;
       if (reviewsError) {
-        console.warn('⚠️ Failed to fetch reviews count:', reviewsError);
+        logger.warn('⚠️ Failed to fetch reviews count:', reviewsError);
       }
 
       const transformedListing = transformListingData(listingData, photos || [], lookups);
@@ -482,7 +483,7 @@ export default function useListingDashboardPageLogic() {
         reviews: reviewsCount || 0,
       });
 
-      console.log('✅ Listing loaded successfully');
+      logger.debug('✅ Listing loaded successfully');
 
       // Fetch existing cohost request for this listing
       try {
@@ -495,16 +496,16 @@ export default function useListingDashboardPageLogic() {
           .maybeSingle();
 
         if (cohostError) {
-          console.warn('⚠️ Failed to fetch cohost request:', cohostError);
+          logger.warn('⚠️ Failed to fetch cohost request:', cohostError);
         } else if (cohostRequest) {
-          console.log('📋 Found existing cohost request:', cohostRequest._id);
+          logger.debug('📋 Found existing cohost request:', cohostRequest._id);
           setExistingCohostRequest(cohostRequest);
         }
       } catch (cohostErr) {
-        console.warn('⚠️ Error fetching cohost request:', cohostErr);
+        logger.warn('⚠️ Error fetching cohost request:', cohostErr);
       }
     } catch (err) {
-      console.error('❌ Error fetching listing:', err);
+      logger.error('❌ Error fetching listing:', err);
       if (!silent) {
         setError(err.message || 'Failed to load listing');
       }
@@ -522,7 +523,7 @@ export default function useListingDashboardPageLogic() {
       fetchListing(listingId);
     } else {
       // No listing ID provided - show error
-      console.error('❌ No listing ID in URL');
+      logger.error('❌ No listing ID in URL');
       setError('No listing ID provided. Please access this page from your listings.');
       setIsLoading(false);
     }
@@ -590,7 +591,7 @@ export default function useListingDashboardPageLogic() {
         type: 'success'
       });
     } catch (err) {
-      console.error('Failed to copy link:', err);
+      logger.error('Failed to copy link:', err);
       window.showToast?.({
         title: 'Copy Failed',
         content: 'Unable to copy link to clipboard',
@@ -628,7 +629,7 @@ export default function useListingDashboardPageLogic() {
         // TODO: Navigate to leases or scroll to section
         break;
       default:
-        console.log('Unknown card clicked:', cardId);
+        logger.debug('Unknown card clicked:', cardId);
     }
   }, [listing, handleCopyLink]);
 
@@ -663,7 +664,7 @@ export default function useListingDashboardPageLogic() {
     setIsAIComplete(false);
     setAiGeneratedData({});
     setShowAIImportAssistant(true);
-    console.log('🤖 AI Import Assistant opened');
+    logger.debug('🤖 AI Import Assistant opened');
   }, []);
 
   // Schedule Cohost state
@@ -709,7 +710,7 @@ export default function useListingDashboardPageLogic() {
         const isAuthenticated = await checkAuthStatus();
 
         if (!isAuthenticated) {
-          console.log('[ListingDashboard] User not authenticated, redirecting to home');
+          logger.debug('[ListingDashboard] User not authenticated, redirecting to home');
           setAuthState({ isChecking: false, shouldRedirect: true });
           setTimeout(() => {
             window.location.href = '/?login=true';
@@ -724,7 +725,7 @@ export default function useListingDashboardPageLogic() {
           // Success path: Use validated user data
           setCurrentUser(userData);
           setAuthState({ isChecking: false, shouldRedirect: false });
-          console.log('[ListingDashboard] User data loaded:', userData['Name - First'] || userData.firstName);
+          logger.debug('[ListingDashboard] User data loaded:', userData['Name - First'] || userData.firstName);
         } else {
           // Step 3: Fallback to Supabase session metadata
           const { data: { session } } = await supabase.auth.getSession();
@@ -742,10 +743,10 @@ export default function useListingDashboardPageLogic() {
             };
             setCurrentUser(fallbackUser);
             setAuthState({ isChecking: false, shouldRedirect: false });
-            console.log('[ListingDashboard] Using fallback user data from session:', fallbackUser.firstName);
+            logger.debug('[ListingDashboard] Using fallback user data from session:', fallbackUser.firstName);
           } else {
             // No valid session - redirect
-            console.log('[ListingDashboard] No valid session, redirecting');
+            logger.debug('[ListingDashboard] No valid session, redirecting');
             setAuthState({ isChecking: false, shouldRedirect: true });
             setTimeout(() => {
               window.location.href = '/?login=true';
@@ -753,7 +754,7 @@ export default function useListingDashboardPageLogic() {
           }
         }
       } catch (err) {
-        console.warn('[ListingDashboard] Could not fetch user data:', err);
+        logger.warn('[ListingDashboard] Could not fetch user data:', err);
         setAuthState({ isChecking: false, shouldRedirect: false });
       }
     };
@@ -770,7 +771,7 @@ export default function useListingDashboardPageLogic() {
   }, []);
 
   const handleCohostRequestSubmitted = useCallback((requestData) => {
-    console.log('✅ Co-host request submitted:', requestData);
+    logger.debug('✅ Co-host request submitted:', requestData);
     // Store the request so UI shows tracking view on next open
     if (requestData) {
       setExistingCohostRequest({
@@ -795,7 +796,7 @@ export default function useListingDashboardPageLogic() {
   const handleSubmitImportReviews = useCallback(async (data) => {
     setIsImportingReviews(true);
     try {
-      console.log('📥 Submitting import reviews request:', data);
+      logger.debug('📥 Submitting import reviews request:', data);
 
       // Send to Slack via Edge Function
       const response = await fetch(
@@ -822,11 +823,11 @@ export default function useListingDashboardPageLogic() {
         throw new Error(errorData.error || 'Failed to submit request');
       }
 
-      console.log('✅ Import reviews request submitted successfully');
+      logger.debug('✅ Import reviews request submitted successfully');
       alert('Your request has been submitted! Our team will import your reviews within 24-48 hours.');
       setShowImportReviews(false);
     } catch (err) {
-      console.error('❌ Error submitting import reviews request:', err);
+      logger.error('❌ Error submitting import reviews request:', err);
       alert('Failed to submit request. Please try again later.');
     } finally {
       setIsImportingReviews(false);
@@ -839,8 +840,8 @@ export default function useListingDashboardPageLogic() {
   }, []);
 
   const handleAIImportComplete = useCallback((generatedData) => {
-    console.log('✅ AI Import complete, updating local state instantly...');
-    console.log('📋 Generated data:', generatedData);
+    logger.debug('✅ AI Import complete, updating local state instantly...');
+    logger.debug('📋 Generated data:', generatedData);
 
     // Build set of changed fields for highlighting
     const changedFields = new Set();
@@ -888,7 +889,7 @@ export default function useListingDashboardPageLogic() {
 
     // Set highlighted fields for visual feedback
     setHighlightedFields(changedFields);
-    console.log('✨ Highlighting changed fields:', [...changedFields]);
+    logger.debug('✨ Highlighting changed fields:', [...changedFields]);
 
     // Auto-clear highlights after 8 seconds
     setTimeout(() => {
@@ -908,7 +909,7 @@ export default function useListingDashboardPageLogic() {
   // Update listing in database and local state
   // NOTE: This is defined here (before handleStartAIGeneration) to avoid temporal dead zone issues
   const updateListing = useCallback(async (listingId, updates) => {
-    console.log('📝 Updating listing:', listingId, updates);
+    logger.debug('📝 Updating listing:', listingId, updates);
 
     // Map UI field names to database column names (handles quirky column names with leading spaces)
     const fieldMapping = {
@@ -922,8 +923,8 @@ export default function useListingDashboardPageLogic() {
       dbUpdates[dbColumnName] = value;
     }
 
-    console.log(`📋 Updating listing table with _id=${listingId}`);
-    console.log('📋 DB updates:', dbUpdates);
+    logger.debug(`📋 Updating listing table with _id=${listingId}`);
+    logger.debug('📋 DB updates:', dbUpdates);
 
     // Perform the update without .select() to avoid 409 conflicts from PostgREST
     // The .select().maybeSingle() pattern can fail when:
@@ -935,12 +936,12 @@ export default function useListingDashboardPageLogic() {
       .eq('_id', listingId);
 
     if (updateError) {
-      console.error('❌ Error updating listing:', updateError);
-      console.error('❌ Error code:', updateError.code);
-      console.error('❌ Error message:', updateError.message);
-      console.error('❌ Error details:', updateError.details);
-      console.error('❌ Error hint:', updateError.hint);
-      console.error('❌ Full error object:', JSON.stringify(updateError, null, 2));
+      logger.error('❌ Error updating listing:', updateError);
+      logger.error('❌ Error code:', updateError.code);
+      logger.error('❌ Error message:', updateError.message);
+      logger.error('❌ Error details:', updateError.details);
+      logger.error('❌ Error hint:', updateError.hint);
+      logger.error('❌ Full error object:', JSON.stringify(updateError, null, 2));
       throw updateError;
     }
 
@@ -952,12 +953,12 @@ export default function useListingDashboardPageLogic() {
       .maybeSingle();
 
     if (fetchError) {
-      console.warn('⚠️ Update succeeded but failed to fetch updated data:', fetchError);
+      logger.warn('⚠️ Update succeeded but failed to fetch updated data:', fetchError);
       // Return partial data - the update still succeeded
       return { _id: listingId, ...dbUpdates };
     }
 
-    console.log('✅ Listing updated:', data);
+    logger.debug('✅ Listing updated:', data);
     return data;
   }, []);
 
@@ -965,11 +966,11 @@ export default function useListingDashboardPageLogic() {
   const handleCancellationPolicyChange = useCallback(async (policyId) => {
     const listingId = getListingIdFromUrl();
     if (!listingId) {
-      console.error('❌ No listing ID found for cancellation policy update');
+      logger.error('❌ No listing ID found for cancellation policy update');
       return;
     }
 
-    console.log('📋 Updating cancellation policy to:', policyId);
+    logger.debug('📋 Updating cancellation policy to:', policyId);
 
     try {
       await updateListing(listingId, {
@@ -983,9 +984,9 @@ export default function useListingDashboardPageLogic() {
         'Cancellation Policy': policyId,
       }));
 
-      console.log('✅ Cancellation policy saved successfully');
+      logger.debug('✅ Cancellation policy saved successfully');
     } catch (error) {
-      console.error('❌ Failed to save cancellation policy:', error);
+      logger.error('❌ Failed to save cancellation policy:', error);
     }
   }, [getListingIdFromUrl, updateListing]);
 
@@ -993,11 +994,11 @@ export default function useListingDashboardPageLogic() {
   const handleCancellationRestrictionsChange = useCallback(async (restrictionsText) => {
     const listingId = getListingIdFromUrl();
     if (!listingId) {
-      console.error('❌ No listing ID found for cancellation restrictions update');
+      logger.error('❌ No listing ID found for cancellation restrictions update');
       return;
     }
 
-    console.log('📋 Updating cancellation restrictions:', restrictionsText);
+    logger.debug('📋 Updating cancellation restrictions:', restrictionsText);
 
     try {
       await updateListing(listingId, {
@@ -1011,9 +1012,9 @@ export default function useListingDashboardPageLogic() {
         'Cancellation Policy - Additional Restrictions': restrictionsText,
       }));
 
-      console.log('✅ Cancellation restrictions saved successfully');
+      logger.debug('✅ Cancellation restrictions saved successfully');
     } catch (error) {
-      console.error('❌ Failed to save cancellation restrictions:', error);
+      logger.error('❌ Failed to save cancellation restrictions:', error);
     }
   }, [getListingIdFromUrl, updateListing]);
 
@@ -1026,7 +1027,7 @@ export default function useListingDashboardPageLogic() {
    */
   const handleStartAIGeneration = useCallback(async () => {
     if (!listing) {
-      console.error('❌ No listing data available for AI generation');
+      logger.error('❌ No listing data available for AI generation');
       return;
     }
 
@@ -1042,8 +1043,8 @@ export default function useListingDashboardPageLogic() {
     let enrichedNeighborhood = listing.location?.hoodsDisplay || '';
 
     try {
-      console.log('🤖 Starting AI Import Assistant generation...');
-      console.log('📋 Step 1: Loading common features and data first...');
+      logger.debug('🤖 Starting AI Import Assistant generation...');
+      logger.debug('📋 Step 1: Loading common features and data first...');
 
       // ========================================
       // PHASE 1: Load all data first (so AI has full context)
@@ -1063,7 +1064,7 @@ export default function useListingDashboardPageLogic() {
         }
         setAiGenerationStatus(prev => ({ ...prev, inUnitAmenities: 'complete' }));
       } catch (err) {
-        console.error('❌ Error loading in-unit amenities:', err);
+        logger.error('❌ Error loading in-unit amenities:', err);
         setAiGenerationStatus(prev => ({ ...prev, inUnitAmenities: 'complete' }));
       }
 
@@ -1081,7 +1082,7 @@ export default function useListingDashboardPageLogic() {
         }
         setAiGenerationStatus(prev => ({ ...prev, buildingAmenities: 'complete' }));
       } catch (err) {
-        console.error('❌ Error loading building amenities:', err);
+        logger.error('❌ Error loading building amenities:', err);
         setAiGenerationStatus(prev => ({ ...prev, buildingAmenities: 'complete' }));
       }
 
@@ -1093,10 +1094,10 @@ export default function useListingDashboardPageLogic() {
         // First, try by neighborhood name (Location - Hood)
         const hoodName = listing.location?.hoodsDisplay;
         if (hoodName) {
-          console.log('🏘️ Trying neighborhood lookup by name:', hoodName);
+          logger.debug('🏘️ Trying neighborhood lookup by name:', hoodName);
           neighborhoodResult = await getNeighborhoodByName(hoodName);
           if (neighborhoodResult?.description) {
-            console.log('✅ Found neighborhood by name:', hoodName);
+            logger.debug('✅ Found neighborhood by name:', hoodName);
           }
         }
 
@@ -1104,17 +1105,17 @@ export default function useListingDashboardPageLogic() {
         if (!neighborhoodResult?.description) {
           const zipCode = listing.location?.zipCode;
           if (zipCode) {
-            console.log('🏘️ Trying neighborhood lookup by ZIP:', zipCode);
+            logger.debug('🏘️ Trying neighborhood lookup by ZIP:', zipCode);
             neighborhoodResult = await getNeighborhoodByZipCode(zipCode);
             if (neighborhoodResult?.description) {
-              console.log('✅ Found neighborhood by ZIP:', zipCode);
+              logger.debug('✅ Found neighborhood by ZIP:', zipCode);
             }
           }
         }
 
         // Third, fallback to AI generation
         if (!neighborhoodResult?.description) {
-          console.log('🏘️ No database match, trying AI generation...');
+          logger.debug('🏘️ No database match, trying AI generation...');
           const addressData = {
             fullAddress: listing.location?.address || '',
             city: listing.location?.city || '',
@@ -1129,7 +1130,7 @@ export default function useListingDashboardPageLogic() {
                 description: aiDescription,
                 neighborhoodName: hoodName || '',
               };
-              console.log('✅ Generated neighborhood via AI');
+              logger.debug('✅ Generated neighborhood via AI');
             }
           }
         }
@@ -1141,12 +1142,12 @@ export default function useListingDashboardPageLogic() {
           enrichedNeighborhood = neighborhoodResult.neighborhoodName || enrichedNeighborhood;
           await updateListing(listingId, { 'Description - Neighborhood': neighborhoodResult.description });
         } else {
-          console.warn('⚠️ No neighborhood description found via any method');
+          logger.warn('⚠️ No neighborhood description found via any method');
         }
 
         setAiGenerationStatus(prev => ({ ...prev, neighborhood: 'complete' }));
       } catch (err) {
-        console.error('❌ Error loading neighborhood:', err);
+        logger.error('❌ Error loading neighborhood:', err);
         setAiGenerationStatus(prev => ({ ...prev, neighborhood: 'complete' }));
       }
 
@@ -1163,7 +1164,7 @@ export default function useListingDashboardPageLogic() {
         }
         setAiGenerationStatus(prev => ({ ...prev, houseRules: 'complete' }));
       } catch (err) {
-        console.error('❌ Error loading house rules:', err);
+        logger.error('❌ Error loading house rules:', err);
         setAiGenerationStatus(prev => ({ ...prev, houseRules: 'complete' }));
       }
 
@@ -1180,7 +1181,7 @@ export default function useListingDashboardPageLogic() {
         }
         setAiGenerationStatus(prev => ({ ...prev, safetyFeatures: 'complete' }));
       } catch (err) {
-        console.error('❌ Error loading safety features:', err);
+        logger.error('❌ Error loading safety features:', err);
         setAiGenerationStatus(prev => ({ ...prev, safetyFeatures: 'complete' }));
       }
 
@@ -1188,7 +1189,7 @@ export default function useListingDashboardPageLogic() {
       // PHASE 2: Generate AI content with enriched data
       // ========================================
 
-      console.log('📋 Step 2: Generating AI content with enriched data...');
+      logger.debug('📋 Step 2: Generating AI content with enriched data...');
 
       // Build enriched listing data for AI generation (using all loaded amenities)
       const enrichedListingData = {
@@ -1204,7 +1205,7 @@ export default function useListingDashboardPageLogic() {
         amenitiesOutsideUnit: enrichedAmenities.building,
       };
 
-      console.log('🤖 Generating AI content with enriched data:', enrichedListingData);
+      logger.debug('🤖 Generating AI content with enriched data:', enrichedListingData);
 
       // 6. Generate Description (uses AI - better with full amenities)
       setAiGenerationStatus(prev => ({ ...prev, description: 'loading' }));
@@ -1216,7 +1217,7 @@ export default function useListingDashboardPageLogic() {
         }
         setAiGenerationStatus(prev => ({ ...prev, description: 'complete' }));
       } catch (err) {
-        console.error('❌ Error generating description:', err);
+        logger.error('❌ Error generating description:', err);
         setAiGenerationStatus(prev => ({ ...prev, description: 'complete' }));
       }
 
@@ -1230,15 +1231,15 @@ export default function useListingDashboardPageLogic() {
         }
         setAiGenerationStatus(prev => ({ ...prev, name: 'complete' }));
       } catch (err) {
-        console.error('❌ Error generating name:', err);
+        logger.error('❌ Error generating name:', err);
         setAiGenerationStatus(prev => ({ ...prev, name: 'complete' }));
       }
 
-      console.log('✅ AI Import Assistant generation complete:', generatedResults);
+      logger.debug('✅ AI Import Assistant generation complete:', generatedResults);
       setAiGeneratedData(generatedResults);
       setIsAIComplete(true);
     } catch (err) {
-      console.error('❌ AI generation error:', err);
+      logger.error('❌ AI generation error:', err);
     } finally {
       setIsAIGenerating(false);
     }
@@ -1248,12 +1249,12 @@ export default function useListingDashboardPageLogic() {
   const handleSetCoverPhoto = useCallback(async (photoId) => {
     if (!listing || !photoId) return;
 
-    console.log('⭐ Setting cover photo:', photoId);
+    logger.debug('⭐ Setting cover photo:', photoId);
 
     // Find the photo to set as cover
     const photoIndex = listing.photos.findIndex(p => p.id === photoId);
     if (photoIndex === -1 || photoIndex === 0) {
-      console.log('Photo not found or already first');
+      logger.debug('Photo not found or already first');
       return;
     }
 
@@ -1301,9 +1302,9 @@ export default function useListingDashboardPageLogic() {
         }
       }
 
-      console.log('✅ Cover photo updated in listing_photo table');
+      logger.debug('✅ Cover photo updated in listing_photo table');
     } catch (err) {
-      console.error('❌ Error updating cover photo:', err);
+      logger.error('❌ Error updating cover photo:', err);
       // Revert local state on error
       fetchListing(getListingIdFromUrl());
     }
@@ -1312,7 +1313,7 @@ export default function useListingDashboardPageLogic() {
   const handleReorderPhotos = useCallback(async (fromIndex, toIndex) => {
     if (!listing || fromIndex === toIndex) return;
 
-    console.log('🔀 Reordering photos:', fromIndex, '→', toIndex);
+    logger.debug('🔀 Reordering photos:', fromIndex, '→', toIndex);
 
     // Create new photos array with reordered items
     const newPhotos = [...listing.photos];
@@ -1345,9 +1346,9 @@ export default function useListingDashboardPageLogic() {
           .eq('_id', newPhotos[i].id);
       }
 
-      console.log('✅ Photos reordered in listing_photo table');
+      logger.debug('✅ Photos reordered in listing_photo table');
     } catch (err) {
-      console.error('❌ Error reordering photos:', err);
+      logger.error('❌ Error reordering photos:', err);
       // Revert local state on error
       fetchListing(getListingIdFromUrl());
     }
@@ -1356,12 +1357,12 @@ export default function useListingDashboardPageLogic() {
   const handleDeletePhoto = useCallback(async (photoId) => {
     if (!listing || !photoId) return;
 
-    console.log('🗑️ Deleting photo:', photoId);
+    logger.debug('🗑️ Deleting photo:', photoId);
 
     // Find the photo to delete
     const photoIndex = listing.photos.findIndex(p => p.id === photoId);
     if (photoIndex === -1) {
-      console.log('Photo not found');
+      logger.debug('Photo not found');
       return;
     }
 
@@ -1397,9 +1398,9 @@ export default function useListingDashboardPageLogic() {
           .eq('_id', newPhotos[0].id);
       }
 
-      console.log('✅ Photo deleted from listing_photo table');
+      logger.debug('✅ Photo deleted from listing_photo table');
     } catch (err) {
-      console.error('❌ Error deleting photo:', err);
+      logger.error('❌ Error deleting photo:', err);
       // Revert local state on error
       fetchListing(getListingIdFromUrl());
     }
@@ -1479,7 +1480,7 @@ export default function useListingDashboardPageLogic() {
 
       const dbFieldName = fieldMapping[fieldName];
       if (!dbFieldName) {
-        console.error('Unknown availability field:', fieldName);
+        logger.error('Unknown availability field:', fieldName);
         return;
       }
 
@@ -1497,7 +1498,7 @@ export default function useListingDashboardPageLogic() {
         type: 'success'
       });
     } catch (error) {
-      console.error('Failed to save availability field:', error);
+      logger.error('Failed to save availability field:', error);
       window.showToast?.({
         title: 'Save Failed',
         content: 'Could not save changes. Please try again.',
@@ -1510,11 +1511,11 @@ export default function useListingDashboardPageLogic() {
   const handleBlockedDatesChange = useCallback(async (newBlockedDates) => {
     const listingId = getListingIdFromUrl();
     if (!listingId) {
-      console.error('❌ No listing ID found for blocked dates update');
+      logger.error('❌ No listing ID found for blocked dates update');
       return;
     }
 
-    console.log('📅 Saving blocked dates:', newBlockedDates);
+    logger.debug('📅 Saving blocked dates:', newBlockedDates);
 
     try {
       // Update the database with the new blocked dates
@@ -1528,9 +1529,9 @@ export default function useListingDashboardPageLogic() {
         blockedDates: newBlockedDates,
       }));
 
-      console.log('✅ Blocked dates saved successfully');
+      logger.debug('✅ Blocked dates saved successfully');
     } catch (error) {
-      console.error('❌ Failed to save blocked dates:', error);
+      logger.error('❌ Failed to save blocked dates:', error);
     }
   }, [getListingIdFromUrl, updateListing]);
 

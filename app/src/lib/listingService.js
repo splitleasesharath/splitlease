@@ -10,6 +10,7 @@
 import { supabase } from './supabase.js';
 import { getUserId } from './secureStorage.js';
 import { uploadPhotos } from './photoUpload.js';
+import { logger } from './logger.js';
 
 // ============================================================================
 // GEO LOOKUP UTILITIES
@@ -36,14 +37,14 @@ async function getBoroughIdByZipCode(zipCode) {
       .maybeSingle();
 
     if (error || !data) {
-      console.log('[ListingService] No borough found for zip:', cleanZip);
+      logger.debug('[ListingService] No borough found for zip:', cleanZip);
       return null;
     }
 
-    console.log('[ListingService] ✅ Found borough:', data['Display Borough'], 'for zip:', cleanZip);
+    logger.debug('[ListingService] ✅ Found borough:', data['Display Borough'], 'for zip:', cleanZip);
     return data._id;
   } catch (err) {
-    console.error('[ListingService] Error looking up borough:', err);
+    logger.error('[ListingService] Error looking up borough:', err);
     return null;
   }
 }
@@ -69,14 +70,14 @@ async function getHoodIdByZipCode(zipCode) {
       .maybeSingle();
 
     if (error || !data) {
-      console.log('[ListingService] No hood found for zip:', cleanZip);
+      logger.debug('[ListingService] No hood found for zip:', cleanZip);
       return null;
     }
 
-    console.log('[ListingService] ✅ Found hood:', data['Display'], 'for zip:', cleanZip);
+    logger.debug('[ListingService] ✅ Found hood:', data['Display'], 'for zip:', cleanZip);
     return data._id;
   } catch (err) {
-    console.error('[ListingService] Error looking up hood:', err);
+    logger.error('[ListingService] Error looking up hood:', err);
     return null;
   }
 }
@@ -87,7 +88,7 @@ async function getHoodIdByZipCode(zipCode) {
  * @returns {Promise<{boroughId: string|null, hoodId: string|null}>}
  */
 async function getGeoIdsByZipCode(zipCode) {
-  console.log('[ListingService] Looking up geo IDs for zip:', zipCode);
+  logger.debug('[ListingService] Looking up geo IDs for zip:', zipCode);
 
   const [boroughId, hoodId] = await Promise.all([
     getBoroughIdByZipCode(zipCode),
@@ -112,11 +113,11 @@ async function getGeoIdsByZipCode(zipCode) {
  * @returns {Promise<object>} - Created listing with _id
  */
 export async function createListing(formData) {
-  console.log('[ListingService] Creating listing directly in listing table');
+  logger.debug('[ListingService] Creating listing directly in listing table');
 
   // Get current user ID from storage
   const storedUserId = getUserId();
-  console.log('[ListingService] Stored user ID:', storedUserId);
+  logger.debug('[ListingService] Stored user ID:', storedUserId);
 
   // Resolve user._id - this is used for BOTH "Created By" AND "Host User"
   // user._id is used directly as the host reference
@@ -124,7 +125,7 @@ export async function createListing(formData) {
   const isSupabaseUUID = storedUserId && storedUserId.includes('-');
 
   if (isSupabaseUUID) {
-    console.log('[ListingService] Detected Supabase Auth UUID, resolving user._id by email...');
+    logger.debug('[ListingService] Detected Supabase Auth UUID, resolving user._id by email...');
     const { data: { session } } = await supabase.auth.getSession();
 
     if (session?.user?.email) {
@@ -138,30 +139,30 @@ export async function createListing(formData) {
 
       if (userData?._id) {
         userId = userData._id;
-        console.log('[ListingService] ✅ Resolved user._id:', userId);
+        logger.debug('[ListingService] ✅ Resolved user._id:', userId);
       } else {
-        console.warn('[ListingService] ⚠️ Could not resolve user data, using stored ID:', storedUserId);
+        logger.warn('[ListingService] ⚠️ Could not resolve user data, using stored ID:', storedUserId);
       }
     }
   }
 
-  console.log('[ListingService] User ID (for Created By and Host User):', userId);
+  logger.debug('[ListingService] User ID (for Created By and Host User):', userId);
 
   // Step 1: Generate Bubble-compatible _id via RPC
   const { data: generatedId, error: rpcError } = await supabase.rpc('generate_bubble_id');
 
   if (rpcError || !generatedId) {
-    console.error('[ListingService] ❌ Failed to generate listing ID:', rpcError);
+    logger.error('[ListingService] ❌ Failed to generate listing ID:', rpcError);
     throw new Error('Failed to generate listing ID');
   }
 
-  console.log('[ListingService] ✅ Generated listing _id:', generatedId);
+  logger.debug('[ListingService] ✅ Generated listing _id:', generatedId);
 
   // Step 2: Process photos - they should already be uploaded to Supabase Storage
   // The Section6Photos component now uploads directly, so we just format them here
   let uploadedPhotos = [];
   if (formData.photos?.photos?.length > 0) {
-    console.log('[ListingService] Processing photos...');
+    logger.debug('[ListingService] Processing photos...');
 
     // Check if photos already have Supabase URLs (uploaded during form editing)
     const allPhotosHaveUrls = formData.photos.photos.every(
@@ -170,7 +171,7 @@ export async function createListing(formData) {
 
     if (allPhotosHaveUrls) {
       // Photos are already uploaded - just format them
-      console.log('[ListingService] ✅ Photos already uploaded to storage');
+      logger.debug('[ListingService] ✅ Photos already uploaded to storage');
       uploadedPhotos = formData.photos.photos.map((p, i) => ({
         id: p.id,
         url: p.url,
@@ -184,12 +185,12 @@ export async function createListing(formData) {
       }));
     } else {
       // Legacy path: Some photos may still need uploading (shouldn't happen with new flow)
-      console.log('[ListingService] Uploading remaining photos to Supabase Storage...');
+      logger.debug('[ListingService] Uploading remaining photos to Supabase Storage...');
       try {
         uploadedPhotos = await uploadPhotos(formData.photos.photos, generatedId);
-        console.log('[ListingService] ✅ Photos uploaded:', uploadedPhotos.length);
+        logger.debug('[ListingService] ✅ Photos uploaded:', uploadedPhotos.length);
       } catch (uploadError) {
-        console.error('[ListingService] ❌ Photo upload failed:', uploadError);
+        logger.error('[ListingService] ❌ Photo upload failed:', uploadError);
         throw new Error('Failed to upload photos: ' + uploadError.message);
       }
     }
@@ -210,7 +211,7 @@ export async function createListing(formData) {
   let hoodId = null;
 
   if (zipCode) {
-    console.log('[ListingService] Looking up borough/hood for zip:', zipCode);
+    logger.debug('[ListingService] Looking up borough/hood for zip:', zipCode);
     const geoIds = await getGeoIdsByZipCode(zipCode);
     boroughId = geoIds.boroughId;
     hoodId = geoIds.hoodId;
@@ -221,8 +222,8 @@ export async function createListing(formData) {
   const listingData = mapFormDataToListingTable(formDataWithPhotos, userId, generatedId, userId, boroughId, hoodId);
 
   // Debug: Log the cancellation policy value being inserted
-  console.log('[ListingService] Cancellation Policy value to insert:', listingData['Cancellation Policy']);
-  console.log('[ListingService] Rules from form:', formDataWithPhotos.rules);
+  logger.debug('[ListingService] Cancellation Policy value to insert:', listingData['Cancellation Policy']);
+  logger.debug('[ListingService] Rules from form:', formDataWithPhotos.rules);
 
   // Step 4: Insert directly into listing table
   const { data, error } = await supabase
@@ -232,29 +233,29 @@ export async function createListing(formData) {
     .single();
 
   if (error) {
-    console.error('[ListingService] ❌ Error creating listing in Supabase:', error);
-    console.error('[ListingService] ❌ Full listing data that failed:', JSON.stringify(listingData, null, 2));
+    logger.error('[ListingService] ❌ Error creating listing in Supabase:', error);
+    logger.error('[ListingService] ❌ Full listing data that failed:', JSON.stringify(listingData, null, 2));
     throw new Error(error.message || 'Failed to create listing');
   }
 
-  console.log('[ListingService] ✅ Listing created in listing table with _id:', data._id);
+  logger.debug('[ListingService] ✅ Listing created in listing table with _id:', data._id);
 
   // Step 5: Link listing to user's Listings array using _id
   // This MUST succeed - if it fails, the user won't see their listing
   if (!userId) {
-    console.error('[ListingService] ❌ No userId provided - cannot link listing to user');
+    logger.error('[ListingService] ❌ No userId provided - cannot link listing to user');
     throw new Error('User ID is required to create a listing');
   }
 
   await linkListingToHost(userId, data._id);
-  console.log('[ListingService] ✅ Listing linked to user account');
+  logger.debug('[ListingService] ✅ Listing linked to user account');
 
   // NOTE: Bubble sync disabled - see /docs/tech-debt/BUBBLE_SYNC_DISABLED.md
   // The listing is now created directly in Supabase without Bubble synchronization
 
   // Step 6: Trigger mockup proposal creation for first-time hosts (non-blocking)
   triggerMockupProposalIfFirstListing(userId, data._id).catch(err => {
-    console.warn('[ListingService] ⚠️ Mockup proposal creation failed (non-blocking):', err.message);
+    logger.warn('[ListingService] ⚠️ Mockup proposal creation failed (non-blocking):', err.message);
   });
 
   return data;
@@ -273,7 +274,7 @@ export async function createListing(formData) {
  * @returns {Promise<void>}
  */
 async function linkListingToHost(userId, listingId) {
-  console.log('[ListingService] Linking listing _id to host:', userId, listingId);
+  logger.debug('[ListingService] Linking listing _id to host:', userId, listingId);
 
   let userData = null;
   let fetchError = null;
@@ -283,16 +284,16 @@ async function linkListingToHost(userId, listingId) {
 
   if (isSupabaseUUID) {
     // Get user email from Supabase Auth session
-    console.log('[ListingService] Detected Supabase Auth UUID, looking up user by email...');
+    logger.debug('[ListingService] Detected Supabase Auth UUID, looking up user by email...');
     const { data: { session } } = await supabase.auth.getSession();
 
     if (!session?.user?.email) {
-      console.error('[ListingService] ❌ No email found in auth session');
+      logger.error('[ListingService] ❌ No email found in auth session');
       throw new Error('Could not retrieve user email from session');
     }
 
     const userEmail = session.user.email;
-    console.log('[ListingService] Looking up user by email:', userEmail);
+    logger.debug('[ListingService] Looking up user by email:', userEmail);
 
     // Look up user by email in public.user table
     // Note: Some users have email in 'email' column, others in 'email as text' (legacy Bubble column)
@@ -306,7 +307,7 @@ async function linkListingToHost(userId, listingId) {
     fetchError = result.error;
   } else {
     // Legacy path: Direct lookup by Bubble _id
-    console.log('[ListingService] Using Bubble ID for user lookup');
+    logger.debug('[ListingService] Using Bubble ID for user lookup');
     const result = await supabase
       .from('user')
       .select('_id, Listings')
@@ -318,16 +319,16 @@ async function linkListingToHost(userId, listingId) {
   }
 
   if (fetchError) {
-    console.error('[ListingService] ❌ Error fetching user:', fetchError);
+    logger.error('[ListingService] ❌ Error fetching user:', fetchError);
     throw fetchError;
   }
 
   if (!userData) {
-    console.error('[ListingService] ❌ No user found for userId:', userId);
+    logger.error('[ListingService] ❌ No user found for userId:', userId);
     throw new Error(`User not found: ${userId}`);
   }
 
-  console.log('[ListingService] ✅ Found user with Bubble _id:', userData._id);
+  logger.debug('[ListingService] ✅ Found user with Bubble _id:', userData._id);
 
   // Add the new listing ID to the array
   const currentListings = userData.Listings || [];
@@ -342,11 +343,11 @@ async function linkListingToHost(userId, listingId) {
     .eq('_id', userData._id);
 
   if (updateError) {
-    console.error('[ListingService] ❌ Error updating user Listings:', updateError);
+    logger.error('[ListingService] ❌ Error updating user Listings:', updateError);
     throw updateError;
   }
 
-  console.log('[ListingService] ✅ user Listings updated:', currentListings);
+  logger.debug('[ListingService] ✅ user Listings updated:', currentListings);
 }
 
 /**
@@ -364,7 +365,7 @@ async function linkListingToHost(userId, listingId) {
  * @returns {Promise<void>}
  */
 async function triggerMockupProposalIfFirstListing(userId, listingId) {
-  console.log('[ListingService] Step 6: Checking if first listing for mockup proposal...');
+  logger.debug('[ListingService] Step 6: Checking if first listing for mockup proposal...');
 
   let userData = null;
   let fetchError = null;
@@ -374,16 +375,16 @@ async function triggerMockupProposalIfFirstListing(userId, listingId) {
 
   if (isSupabaseUUID) {
     // Get user email from Supabase Auth session
-    console.log('[ListingService] Detected Supabase Auth UUID, looking up user by email...');
+    logger.debug('[ListingService] Detected Supabase Auth UUID, looking up user by email...');
     const { data: { session } } = await supabase.auth.getSession();
 
     if (!session?.user?.email) {
-      console.warn('[ListingService] ⚠️ No email found in auth session for mockup proposal check');
+      logger.warn('[ListingService] ⚠️ No email found in auth session for mockup proposal check');
       return;
     }
 
     const sessionEmail = session.user.email;
-    console.log('[ListingService] Looking up user by email for mockup check:', sessionEmail);
+    logger.debug('[ListingService] Looking up user by email for mockup check:', sessionEmail);
 
     // Look up user by email in public.user table
     const result = await supabase
@@ -396,7 +397,7 @@ async function triggerMockupProposalIfFirstListing(userId, listingId) {
     fetchError = result.error;
   } else {
     // Legacy path: Direct lookup by Bubble _id
-    console.log('[ListingService] Using Bubble ID for mockup proposal user lookup');
+    logger.debug('[ListingService] Using Bubble ID for mockup proposal user lookup');
     const result = await supabase
       .from('user')
       .select('_id, email, Listings')
@@ -415,7 +416,7 @@ async function triggerMockupProposalIfFirstListing(userId, listingId) {
 
   if (!userData && isSupabaseUUID) {
     // User not in legacy table - use Supabase Auth data directly
-    console.log('[ListingService] User not in legacy user table, using Supabase Auth session data');
+    logger.debug('[ListingService] User not in legacy user table, using Supabase Auth session data');
     const { data: { session } } = await supabase.auth.getSession();
 
     if (session?.user) {
@@ -425,30 +426,30 @@ async function triggerMockupProposalIfFirstListing(userId, listingId) {
       hostEmail = session.user.email;
       // Since this is a new Supabase Auth user not in legacy table, this is definitely their first listing
       listings = [listingId];
-      console.log('[ListingService] ✅ Using Supabase Auth data for mockup proposal:', hostUserId);
+      logger.debug('[ListingService] ✅ Using Supabase Auth data for mockup proposal:', hostUserId);
     } else {
-      console.warn('[ListingService] ⚠️ No Supabase Auth session found for mockup proposal');
+      logger.warn('[ListingService] ⚠️ No Supabase Auth session found for mockup proposal');
       return;
     }
   } else if (fetchError || !userData) {
-    console.warn('[ListingService] ⚠️ Could not fetch user for mockup proposal check:', fetchError?.message);
+    logger.warn('[ListingService] ⚠️ Could not fetch user for mockup proposal check:', fetchError?.message);
     return;
   } else {
-    console.log('[ListingService] ✅ Found user for mockup check with Bubble _id:', userData._id);
+    logger.debug('[ListingService] ✅ Found user for mockup check with Bubble _id:', userData._id);
   }
 
   // Only create mockup proposal for first listing
   if (listings.length !== 1) {
-    console.log(`[ListingService] ⏭️ Skipping mockup proposal - not first listing (count: ${listings.length})`);
+    logger.debug(`[ListingService] ⏭️ Skipping mockup proposal - not first listing (count: ${listings.length})`);
     return;
   }
 
   if (!hostEmail) {
-    console.warn('[ListingService] ⚠️ Missing email for mockup proposal');
+    logger.warn('[ListingService] ⚠️ Missing email for mockup proposal');
     return;
   }
 
-  console.log('[ListingService] 🎯 First listing detected, triggering mockup proposal creation...');
+  logger.debug('[ListingService] 🎯 First listing detected, triggering mockup proposal creation...');
 
   // Get the Supabase URL from environment or config
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -476,7 +477,7 @@ async function triggerMockupProposalIfFirstListing(userId, listingId) {
   }
 
   const result = await response.json();
-  console.log('[ListingService] ✅ Mockup proposal creation triggered:', result);
+  logger.debug('[ListingService] ✅ Mockup proposal creation triggered:', result);
 }
 
 /**
@@ -495,7 +496,7 @@ function mapCancellationPolicyToId(policyName) {
   };
 
   const result = !policyName ? policyMap['Standard'] : (policyMap[policyName] || policyMap['Standard']);
-  console.log('[ListingService] Cancellation policy mapping:', { input: policyName, output: result });
+  logger.debug('[ListingService] Cancellation policy mapping:', { input: policyName, output: result });
   return result;
 }
 
@@ -518,7 +519,7 @@ function mapParkingTypeToId(parkingType) {
 
   if (!parkingType) return null; // Parking type is optional
   const result = parkingMap[parkingType] || null;
-  console.log('[ListingService] Parking type mapping:', { input: parkingType, output: result });
+  logger.debug('[ListingService] Parking type mapping:', { input: parkingType, output: result });
   return result;
 }
 
@@ -539,7 +540,7 @@ function mapSpaceTypeToId(spaceType) {
 
   if (!spaceType) return null; // Space type is optional
   const result = spaceTypeMap[spaceType] || null;
-  console.log('[ListingService] Space type mapping:', { input: spaceType, output: result });
+  logger.debug('[ListingService] Space type mapping:', { input: spaceType, output: result });
   return result;
 }
 
@@ -559,7 +560,7 @@ function mapStorageOptionToId(storageOption) {
 
   if (!storageOption) return null; // Storage option is optional
   const result = storageMap[storageOption] || null;
-  console.log('[ListingService] Storage option mapping:', { input: storageOption, output: result });
+  logger.debug('[ListingService] Storage option mapping:', { input: storageOption, output: result });
   return result;
 }
 
@@ -597,7 +598,7 @@ function mapStateToDisplayName(stateInput) {
   };
 
   const result = stateAbbreviationMap[stateInput.toUpperCase()] || stateInput;
-  console.log('[ListingService] State mapping:', { input: stateInput, output: result });
+  logger.debug('[ListingService] State mapping:', { input: stateInput, output: result });
   return result;
 }
 
@@ -804,7 +805,7 @@ function mapAvailableNightsToNames(availableNights) {
  * @returns {Promise<object>} - Updated listing
  */
 export async function updateListing(listingId, formData) {
-  console.log('[ListingService] Updating listing:', listingId);
+  logger.debug('[ListingService] Updating listing:', listingId);
 
   if (!listingId) {
     throw new Error('Listing ID is required for update');
@@ -818,12 +819,12 @@ export async function updateListing(listingId, formData) {
   if (isFlatDbFormat) {
     // Already using database column names - normalize special columns
     listingData = normalizeDatabaseColumns(formData);
-    console.log('[ListingService] Using flat DB format update');
+    logger.debug('[ListingService] Using flat DB format update');
   } else {
     // Nested SelfListingPage format - needs mapping
     // Note: For updates, we use the existing _id, not generate a new one
     listingData = mapFormDataToListingTableForUpdate(formData);
-    console.log('[ListingService] Using mapped SelfListingPage format');
+    logger.debug('[ListingService] Using mapped SelfListingPage format');
   }
 
   listingData['Modified Date'] = new Date().toISOString();
@@ -836,11 +837,11 @@ export async function updateListing(listingId, formData) {
     .single();
 
   if (error) {
-    console.error('[ListingService] ❌ Error updating listing:', error);
+    logger.error('[ListingService] ❌ Error updating listing:', error);
     throw new Error(error.message || 'Failed to update listing');
   }
 
-  console.log('[ListingService] ✅ Listing updated:', data._id);
+  logger.debug('[ListingService] ✅ Listing updated:', data._id);
   return data;
 }
 
@@ -1017,7 +1018,7 @@ function normalizeDatabaseColumns(formData) {
  * @returns {Promise<object|null>} - Listing data or null if not found
  */
 export async function getListingById(listingId) {
-  console.log('[ListingService] Fetching listing:', listingId);
+  logger.debug('[ListingService] Fetching listing:', listingId);
 
   if (!listingId) {
     throw new Error('Listing ID is required');
@@ -1032,20 +1033,20 @@ export async function getListingById(listingId) {
   if (error) {
     if (error.code === 'PGRST116') {
       // No rows returned
-      console.log('[ListingService] Listing not found:', listingId);
+      logger.debug('[ListingService] Listing not found:', listingId);
       return null;
     }
-    console.error('[ListingService] ❌ Error fetching listing:', error);
+    logger.error('[ListingService] ❌ Error fetching listing:', error);
     throw new Error(error.message || 'Failed to fetch listing');
   }
 
   // Check if listing is soft-deleted
   if (data && data.Deleted === true) {
-    console.log('[ListingService] Listing is soft-deleted:', listingId);
+    logger.debug('[ListingService] Listing is soft-deleted:', listingId);
     return null;
   }
 
-  console.log('[ListingService] ✅ Listing fetched:', data._id);
+  logger.debug('[ListingService] ✅ Listing fetched:', data._id);
   return data;
 }
 
@@ -1059,7 +1060,7 @@ export async function getListingById(listingId) {
  * @returns {Promise<object>} - Saved listing
  */
 export async function saveDraft(formData, existingId = null) {
-  console.log('[ListingService] Saving draft, existingId:', existingId);
+  logger.debug('[ListingService] Saving draft, existingId:', existingId);
 
   if (existingId) {
     return updateListing(existingId, { ...formData, isDraft: true });

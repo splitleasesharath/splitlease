@@ -11,6 +11,7 @@ import FavoriteButton from '../shared/FavoriteButton';
 import CreateProposalFlowV2, { clearProposalDraft } from '../shared/CreateProposalFlowV2.jsx';
 import { isGuest } from '../../logic/rules/users/isGuest.js';
 import { supabase } from '../../lib/supabase.js';
+import { logger } from '../../lib/logger.js';
 import { fetchProposalsByGuest, fetchLastProposalDefaults } from '../../lib/proposalDataFetcher.js';
 import { fetchZatPriceConfiguration } from '../../lib/listingDataFetcher.js';
 import { checkAuthStatus, validateTokenAndFetchUser, getUserId, getSessionId, logoutUser } from '../../lib/auth.js';
@@ -55,7 +56,7 @@ async function fetchInformationalTexts() {
 
     return textsMap;
   } catch (error) {
-    console.error('Failed to fetch informational texts:', error);
+    logger.error('Failed to fetch informational texts:', error);
     return {};
   }
 }
@@ -588,7 +589,7 @@ function PropertyCard({ listing, onLocationClick, onCardHover, onCardLeave, onOp
       // Default reservationSpan of 13 weeks (standard booking period)
       const priceBreakdown = calculatePrice(mockNightsArray, listing, 13, null);
 
-      console.log(`[PropertyCard] Dynamic price for ${listing.title}:`, {
+      logger.debug(`[PropertyCard] Dynamic price for ${listing.title}:`, {
         nightsCount,
         rentalType: listing.rentalType,
         hostRate: listing[`💰Nightly Host Rate for ${nightsCount} nights`],
@@ -599,7 +600,7 @@ function PropertyCard({ listing, onLocationClick, onCardHover, onCardLeave, onOp
       // Return the guest-facing price per night
       return priceBreakdown.pricePerNight || listing['Starting nightly price'] || listing.price?.starting || 0;
     } catch (error) {
-      console.warn(`[PropertyCard] Price calculation failed for listing ${listing.id}:`, error.message);
+      logger.warn(`[PropertyCard] Price calculation failed for listing ${listing.id}:`, error.message);
       return listing['Starting nightly price'] || listing.price?.starting || 0;
     }
   };
@@ -638,7 +639,7 @@ function PropertyCard({ listing, onLocationClick, onCardHover, onCardLeave, onOp
   const handleCardClick = (e) => {
     if (!listingId) {
       e.preventDefault();
-      console.error('[PropertyCard] No listing ID found', { listing });
+      logger.error('[PropertyCard] No listing ID found', { listing });
       return;
     }
 
@@ -653,7 +654,7 @@ function PropertyCard({ listing, onLocationClick, onCardHover, onCardLeave, onOp
       ? `/view-split-lease/${listingId}?days-selected=${daysSelected}`
       : `/view-split-lease/${listingId}`;
 
-    console.log('📅 PropertyCard: Opening listing with URL:', url);
+    logger.debug('📅 PropertyCard: Opening listing with URL:', url);
 
     // Detect mobile viewport (matches CSS breakpoint at 768px)
     const isMobile = window.innerWidth <= 768;
@@ -1301,7 +1302,7 @@ export default function SearchPage() {
   useEffect(() => {
     const init = async () => {
       if (!isInitialized()) {
-        console.log('Initializing data lookups...');
+        logger.debug('Initializing data lookups...');
         await initializeLookups();
       }
     };
@@ -1393,7 +1394,7 @@ export default function SearchPage() {
         const config = await fetchZatPriceConfiguration();
         setZatConfig(config);
       } catch (error) {
-        console.warn('Failed to load ZAT config:', error);
+        logger.warn('Failed to load ZAT config:', error);
       }
     };
     loadZatConfig();
@@ -1451,7 +1452,7 @@ export default function SearchPage() {
                 setFavoritedListingIds(new Set(validFavorites));
                 // Set count to match - all favorites count regardless of Active status
                 setFavoritesCount(validFavorites.length);
-                console.log('[SearchPage] Favorites count from user table:', validFavorites.length);
+                logger.debug('[SearchPage] Favorites count from user table:', validFavorites.length);
               } else {
                 setFavoritesCount(0);
                 setFavoritedListingIds(new Set());
@@ -1460,7 +1461,7 @@ export default function SearchPage() {
               // Handle proposals count from junction RPC
               const junctionCounts = countsResult.data?.[0] || {};
               const proposalCount = Number(junctionCounts.proposals_count) || 0;
-              console.log('[SearchPage] Proposals count from junction:', proposalCount);
+              logger.debug('[SearchPage] Proposals count from junction:', proposalCount);
 
               if (!error && userRecord) {
 
@@ -1482,7 +1483,7 @@ export default function SearchPage() {
                 const proposalDefaults = await fetchLastProposalDefaults(userId);
                 if (proposalDefaults) {
                   setLastProposalDefaults(proposalDefaults);
-                  console.log('[SearchPage] Loaded last proposal defaults:', proposalDefaults);
+                  logger.debug('[SearchPage] Loaded last proposal defaults:', proposalDefaults);
                 }
 
                 // Fetch user's proposals to check if any exist for specific listings
@@ -1490,7 +1491,7 @@ export default function SearchPage() {
                 if (userIsGuest && userId && proposalCount > 0) {
                   try {
                     const proposals = await fetchProposalsByGuest(userId);
-                    console.log(`[SearchPage] Loaded ${proposals.length} proposals for user`);
+                    logger.debug(`[SearchPage] Loaded ${proposals.length} proposals for user`);
 
                     // Create a map of listing ID to proposal (only include non-terminal proposals)
                     const proposalsMap = new Map();
@@ -1506,9 +1507,9 @@ export default function SearchPage() {
                     });
 
                     setProposalsByListingId(proposalsMap);
-                    console.log(`[SearchPage] Mapped ${proposalsMap.size} listings with proposals`);
+                    logger.debug(`[SearchPage] Mapped ${proposalsMap.size} listings with proposals`);
                   } catch (proposalErr) {
-                    console.warn('[SearchPage] Failed to fetch proposals (non-critical):', proposalErr);
+                    logger.warn('[SearchPage] Failed to fetch proposals (non-critical):', proposalErr);
                     // Don't fail the page if proposals can't be loaded - just show Create Proposal for all
                   }
                 }
@@ -1517,7 +1518,7 @@ export default function SearchPage() {
           }
         }
       } catch (error) {
-        console.error('[SearchPage] Auth check error:', error);
+        logger.error('[SearchPage] Auth check error:', error);
         setIsLoggedIn(false);
         setCurrentUser(null);
       }
@@ -1529,7 +1530,7 @@ export default function SearchPage() {
   // Fetch ALL active listings for green markers (NO FILTERS - runs once on mount)
   useEffect(() => {
     const fetchAllActiveListings = async () => {
-      console.log('🌍 Fetching ALL active listings for map background (green pins)...');
+      logger.debug('🌍 Fetching ALL active listings for map background (green pins)...');
 
       try {
         const { data, error } = await supabase
@@ -1541,7 +1542,7 @@ export default function SearchPage() {
 
         if (error) throw error;
 
-        console.log('📊 fetchAllActiveListings: Supabase returned', data.length, 'active listings');
+        logger.debug('📊 fetchAllActiveListings: Supabase returned', data.length, 'active listings');
 
         // Collect legacy photo IDs (strings) for batch fetch
         // New format has embedded objects with URLs, no fetch needed
@@ -1611,7 +1612,7 @@ export default function SearchPage() {
         const listingsWithCoordinates = transformedListings.filter(listing => {
           const hasValidCoords = listing.coordinates && listing.coordinates.lat && listing.coordinates.lng;
           if (!hasValidCoords) {
-            console.warn('⚠️ fetchAllActiveListings: Excluding listing without coordinates:', {
+            logger.warn('⚠️ fetchAllActiveListings: Excluding listing without coordinates:', {
               id: listing.id,
               title: listing.title
             });
@@ -1619,10 +1620,10 @@ export default function SearchPage() {
           return hasValidCoords;
         });
 
-        console.log(`✅ Fetched ${listingsWithCoordinates.length} active listings with coordinates for green markers`);
+        logger.debug(`✅ Fetched ${listingsWithCoordinates.length} active listings with coordinates for green markers`);
         setAllActiveListings(listingsWithCoordinates);
       } catch (error) {
-        console.error('❌ Failed to fetch all active listings:', error);
+        logger.error('❌ Failed to fetch all active listings:', error);
         // Don't set error state - this shouldn't block the page, filtered results will still work
       }
     };
@@ -1653,7 +1654,7 @@ export default function SearchPage() {
   // Watch for browser back/forward navigation
   useEffect(() => {
     const cleanup = watchUrlChanges((newFilters) => {
-      console.log('URL changed via browser navigation, updating filters:', newFilters);
+      logger.debug('URL changed via browser navigation, updating filters:', newFilters);
 
       // Update all filter states from URL
       setSelectedBorough(newFilters.selectedBorough);
@@ -1670,7 +1671,7 @@ export default function SearchPage() {
   useEffect(() => {
     const loadBoroughs = async () => {
       try {
-        console.log('[DEBUG] Loading boroughs from zat_geo_borough_toplevel...');
+        logger.debug('[DEBUG] Loading boroughs from zat_geo_borough_toplevel...');
         const { data, error } = await supabase
           .schema('reference_table')
           .from('zat_geo_borough_toplevel')
@@ -1679,7 +1680,7 @@ export default function SearchPage() {
 
         if (error) throw error;
 
-        console.log('[DEBUG] Raw borough data from Supabase:', data);
+        logger.debug('[DEBUG] Raw borough data from Supabase:', data);
 
         const boroughList = data
           .filter(b => b['Display Borough'] && b['Display Borough'].trim())
@@ -1691,7 +1692,7 @@ export default function SearchPage() {
               .replace(/\s+/g, '-')
           }));
 
-        console.log('[DEBUG] Processed borough list:', boroughList.map(b => ({
+        logger.debug('[DEBUG] Processed borough list:', boroughList.map(b => ({
           id: b.id,
           name: b.name,
           value: b.value
@@ -1709,7 +1710,7 @@ export default function SearchPage() {
           // Validate borough from URL exists in list
           const boroughExists = boroughList.find(b => b.value === selectedBorough);
           if (!boroughExists) {
-            console.warn(`Borough "${selectedBorough}" from URL not found, defaulting to Manhattan`);
+            logger.warn(`Borough "${selectedBorough}" from URL not found, defaulting to Manhattan`);
             const manhattan = boroughList.find(b => b.value === 'manhattan');
             if (manhattan) {
               setSelectedBorough(manhattan.value);
@@ -1717,7 +1718,7 @@ export default function SearchPage() {
           }
         }
       } catch (err) {
-        console.error('Failed to load boroughs:', err);
+        logger.error('Failed to load boroughs:', err);
       }
     };
 
@@ -1727,16 +1728,16 @@ export default function SearchPage() {
   // Load neighborhoods when borough changes
   useEffect(() => {
     const loadNeighborhoods = async () => {
-      console.log('[DEBUG] loadNeighborhoods called - selectedBorough:', selectedBorough, 'boroughs.length:', boroughs.length);
+      logger.debug('[DEBUG] loadNeighborhoods called - selectedBorough:', selectedBorough, 'boroughs.length:', boroughs.length);
 
       if (!selectedBorough || boroughs.length === 0) {
-        console.log('[DEBUG] Skipping neighborhood load - missing selectedBorough or boroughs');
+        logger.debug('[DEBUG] Skipping neighborhood load - missing selectedBorough or boroughs');
         return;
       }
 
       // When "all" boroughs is selected, clear neighborhoods and load all
       if (selectedBorough === 'all') {
-        console.log('[DEBUG] All boroughs selected - loading all neighborhoods');
+        logger.debug('[DEBUG] All boroughs selected - loading all neighborhoods');
         try {
           const { data, error } = await supabase
             .schema('reference_table')
@@ -1754,21 +1755,21 @@ export default function SearchPage() {
 
           setNeighborhoods(formattedNeighborhoods);
           setSelectedNeighborhoods([]); // Clear neighborhood selection when switching to all boroughs
-          console.log('[DEBUG] Loaded all neighborhoods:', formattedNeighborhoods.length);
+          logger.debug('[DEBUG] Loaded all neighborhoods:', formattedNeighborhoods.length);
         } catch (error) {
-          console.error('Failed to load all neighborhoods:', error);
+          logger.error('Failed to load all neighborhoods:', error);
         }
         return;
       }
 
       const borough = boroughs.find(b => b.value === selectedBorough);
       if (!borough) {
-        console.warn('[DEBUG] Borough not found for value:', selectedBorough);
-        console.log('[DEBUG] Available borough values:', boroughs.map(b => b.value));
+        logger.warn('[DEBUG] Borough not found for value:', selectedBorough);
+        logger.debug('[DEBUG] Available borough values:', boroughs.map(b => b.value));
         return;
       }
 
-      console.log('[DEBUG] Loading neighborhoods for borough:', {
+      logger.debug('[DEBUG] Loading neighborhoods for borough:', {
         boroughName: borough.name,
         boroughId: borough.id,
         boroughIdType: typeof borough.id,
@@ -1783,7 +1784,7 @@ export default function SearchPage() {
           .select('_id, Display, "Geo-Borough"')
           .limit(5);
 
-        console.log('[DEBUG] Sample neighborhoods (first 5):', allNeighborhoods?.map(n => ({
+        logger.debug('[DEBUG] Sample neighborhoods (first 5):', allNeighborhoods?.map(n => ({
           id: n._id,
           name: n.Display,
           geoBoroughValue: n['Geo-Borough'],
@@ -1800,16 +1801,16 @@ export default function SearchPage() {
 
         if (error) throw error;
 
-        console.log(`[DEBUG] Found ${data.length} neighborhoods for ${borough.name}:`,
+        logger.debug(`[DEBUG] Found ${data.length} neighborhoods for ${borough.name}:`,
           data.slice(0, 5).map(n => ({ id: n._id, name: n.Display, boroughRef: n['Geo-Borough'] }))
         );
 
         // Debug: Check if borough.id matches any Geo-Borough values
         if (data.length === 0 && allNeighborhoods && allNeighborhoods.length > 0) {
-          console.warn('[DEBUG] No neighborhoods found! Comparing IDs:');
-          console.log('[DEBUG] Looking for borough.id:', borough.id);
-          console.log('[DEBUG] Sample Geo-Borough values:', allNeighborhoods.map(n => n['Geo-Borough']));
-          console.log('[DEBUG] ID match check:', allNeighborhoods.some(n => n['Geo-Borough'] === borough.id));
+          logger.warn('[DEBUG] No neighborhoods found! Comparing IDs:');
+          logger.debug('[DEBUG] Looking for borough.id:', borough.id);
+          logger.debug('[DEBUG] Sample Geo-Borough values:', allNeighborhoods.map(n => n['Geo-Borough']));
+          logger.debug('[DEBUG] ID match check:', allNeighborhoods.some(n => n['Geo-Borough'] === borough.id));
         }
 
         const neighborhoodList = data
@@ -1823,7 +1824,7 @@ export default function SearchPage() {
         setNeighborhoods(neighborhoodList);
         setSelectedNeighborhoods([]); // Clear selections when borough changes
       } catch (err) {
-        console.error('Failed to load neighborhoods:', err);
+        logger.error('Failed to load neighborhoods:', err);
       }
     };
 
@@ -1840,14 +1841,14 @@ export default function SearchPage() {
     // Skip if same parameters are already being fetched or were just fetched
     if (fetchInProgressRef.current) {
       if (import.meta.env.DEV) {
-        console.log('⏭️ Skipping duplicate fetch - already in progress');
+        logger.debug('⏭️ Skipping duplicate fetch - already in progress');
       }
       return;
     }
 
     if (lastFetchParamsRef.current === fetchParams) {
       if (import.meta.env.DEV) {
-        console.log('⏭️ Skipping duplicate fetch - same parameters as last fetch');
+        logger.debug('⏭️ Skipping duplicate fetch - same parameters as last fetch');
       }
       return;
     }
@@ -1856,7 +1857,7 @@ export default function SearchPage() {
     lastFetchParamsRef.current = fetchParams;
 
     if (import.meta.env.DEV) {
-      console.log('🔍 Starting fetch:', fetchParams);
+      logger.debug('🔍 Starting fetch:', fetchParams);
     }
 
     setIsLoading(true);
@@ -1915,8 +1916,8 @@ export default function SearchPage() {
 
       if (error) throw error;
 
-      console.log('📊 SearchPage: Supabase query returned', data.length, 'listings');
-      console.log('📍 SearchPage: First 3 raw listings from DB:', data.slice(0, 3).map(l => ({
+      logger.debug('📊 SearchPage: Supabase query returned', data.length, 'listings');
+      logger.debug('📍 SearchPage: First 3 raw listings from DB:', data.slice(0, 3).map(l => ({
         id: l._id,
         name: l.Name,
         locationAddress: l['Location - Address'],
@@ -1929,7 +1930,7 @@ export default function SearchPage() {
       // Check coordinate coverage
       const listingsWithCoords = data.filter(l => l['Location - Address']?.lat && l['Location - Address']?.lng);
       const listingsWithoutCoords = data.filter(l => !l['Location - Address']?.lat || !l['Location - Address']?.lng);
-      console.log('📍 SearchPage: Coordinate coverage:', {
+      logger.debug('📍 SearchPage: Coordinate coverage:', {
         total: data.length,
         withCoordinates: listingsWithCoords.length,
         withoutCoordinates: listingsWithoutCoords.length,
@@ -1937,7 +1938,7 @@ export default function SearchPage() {
       });
 
       if (listingsWithoutCoords.length > 0) {
-        console.error('❌ SearchPage: Listings WITHOUT coordinates:', listingsWithoutCoords.map(l => ({
+        logger.error('❌ SearchPage: Listings WITHOUT coordinates:', listingsWithoutCoords.map(l => ({
           id: l._id,
           name: l.Name,
           locationAddress: l['Location - Address'],
@@ -2006,12 +2007,12 @@ export default function SearchPage() {
       });
 
       // Transform and filter data
-      console.log('🔄 SearchPage: Starting transformation of', data.length, 'listings');
+      logger.debug('🔄 SearchPage: Starting transformation of', data.length, 'listings');
       const transformedListings = data.map(listing =>
         transformListing(listing, resolvedPhotos[listing._id], resolvedHosts[listing._id])
       );
-      console.log('✅ SearchPage: Transformation complete. Transformed', transformedListings.length, 'listings');
-      console.log('📍 SearchPage: First 3 transformed listings:', transformedListings.slice(0, 3).map(l => ({
+      logger.debug('✅ SearchPage: Transformation complete. Transformed', transformedListings.length, 'listings');
+      logger.debug('📍 SearchPage: First 3 transformed listings:', transformedListings.slice(0, 3).map(l => ({
         id: l.id,
         title: l.title,
         coordinates: l.coordinates,
@@ -2022,7 +2023,7 @@ export default function SearchPage() {
       const listingsWithCoordinates = transformedListings.filter(listing => {
         const hasValidCoords = listing.coordinates && listing.coordinates.lat && listing.coordinates.lng;
         if (!hasValidCoords) {
-          console.warn('⚠️ SearchPage: Excluding listing without valid coordinates:', {
+          logger.warn('⚠️ SearchPage: Excluding listing without valid coordinates:', {
             id: listing.id,
             title: listing.title,
             coordinates: listing.coordinates
@@ -2031,7 +2032,7 @@ export default function SearchPage() {
         return hasValidCoords;
       });
 
-      console.log('📍 SearchPage: Coordinate filter results:', {
+      logger.debug('📍 SearchPage: Coordinate filter results:', {
         before: transformedListings.length,
         after: listingsWithCoordinates.length,
         excluded: transformedListings.length - listingsWithCoordinates.length
@@ -2041,7 +2042,7 @@ export default function SearchPage() {
       const listingsWithPhotos = listingsWithCoordinates.filter(listing => {
         const hasPhotos = listing.images && listing.images.length > 0;
         if (!hasPhotos) {
-          console.warn('⚠️ SearchPage: Excluding listing without photos:', {
+          logger.warn('⚠️ SearchPage: Excluding listing without photos:', {
             id: listing.id,
             title: listing.title,
             imageCount: listing.images?.length || 0
@@ -2050,7 +2051,7 @@ export default function SearchPage() {
         return hasPhotos;
       });
 
-      console.log('📸 SearchPage: Photo filter results:', {
+      logger.debug('📸 SearchPage: Photo filter results:', {
         before: listingsWithCoordinates.length,
         after: listingsWithPhotos.length,
         excluded: listingsWithCoordinates.length - listingsWithPhotos.length
@@ -2059,7 +2060,7 @@ export default function SearchPage() {
       // No day filtering applied - show all listings with valid coordinates and photos
       const filteredListings = listingsWithPhotos;
 
-      console.log('📊 SearchPage: Final filtered listings being set to state:', {
+      logger.debug('📊 SearchPage: Final filtered listings being set to state:', {
         count: filteredListings.length,
         firstThree: filteredListings.slice(0, 3).map(l => ({
           id: l.id,
@@ -2072,10 +2073,10 @@ export default function SearchPage() {
       setAllListings(filteredListings);
       setLoadedCount(0);
 
-      console.log('✅ SearchPage: State updated with', filteredListings.length, 'filtered listings');
+      logger.debug('✅ SearchPage: State updated with', filteredListings.length, 'filtered listings');
     } catch (err) {
       // Log technical details for debugging
-      console.error('Failed to fetch listings:', {
+      logger.error('Failed to fetch listings:', {
         message: err.message,
         stack: err.stack,
         timestamp: new Date().toISOString(),
@@ -2114,7 +2115,7 @@ export default function SearchPage() {
 
       if (error) throw error;
 
-      console.log('📊 SearchPage: Fallback query returned', data.length, 'listings');
+      logger.debug('📊 SearchPage: Fallback query returned', data.length, 'listings');
 
       // Collect legacy photo IDs (strings) for batch fetch
       // New format has embedded objects with URLs, no fetch needed
@@ -2190,12 +2191,12 @@ export default function SearchPage() {
         return listing.images && listing.images.length > 0;
       });
 
-      console.log('📊 SearchPage: Fallback listings ready:', listingsWithPhotos.length);
+      logger.debug('📊 SearchPage: Fallback listings ready:', listingsWithPhotos.length);
 
       setFallbackListings(listingsWithPhotos);
       setFallbackLoadedCount(0);
     } catch (err) {
-      console.error('Failed to fetch fallback listings:', err);
+      logger.error('Failed to fetch fallback listings:', err);
       // Don't set error state - this is a fallback, so we just show nothing
       setFallbackListings([]);
     } finally {
@@ -2228,7 +2229,7 @@ export default function SearchPage() {
       try {
         locationSlightlyDifferent = JSON.parse(locationSlightlyDifferent);
       } catch (error) {
-        console.error('❌ SearchPage: Failed to parse Location - slightly different address:', {
+        logger.error('❌ SearchPage: Failed to parse Location - slightly different address:', {
           id: dbListing._id,
           name: dbListing.Name,
           rawValue: locationSlightlyDifferent,
@@ -2242,7 +2243,7 @@ export default function SearchPage() {
       try {
         locationAddress = JSON.parse(locationAddress);
       } catch (error) {
-        console.error('❌ SearchPage: Failed to parse Location - Address:', {
+        logger.error('❌ SearchPage: Failed to parse Location - Address:', {
           id: dbListing._id,
           name: dbListing.Name,
           rawValue: locationAddress,
@@ -2270,7 +2271,7 @@ export default function SearchPage() {
       coordinateSource = 'main-address';
     }
 
-    console.log('🔄 SearchPage: Transforming listing:', {
+    logger.debug('🔄 SearchPage: Transforming listing:', {
       id: dbListing._id,
       name: dbListing.Name,
       hasSlightlyDifferentAddress: !!locationSlightlyDifferent,
@@ -2281,14 +2282,14 @@ export default function SearchPage() {
     });
 
     if (!coordinates) {
-      console.error('❌ SearchPage: Missing coordinates for listing - will be filtered out:', {
+      logger.error('❌ SearchPage: Missing coordinates for listing - will be filtered out:', {
         id: dbListing._id,
         name: dbListing.Name,
         locationSlightlyDifferent: locationSlightlyDifferent,
         locationAddress: locationAddress
       });
     } else {
-      console.log('✅ SearchPage: Valid coordinates found from', coordinateSource, ':', {
+      logger.debug('✅ SearchPage: Valid coordinates found from', coordinateSource, ':', {
         id: dbListing._id,
         name: dbListing.Name,
         lat: coordinates.lat,
@@ -2296,7 +2297,7 @@ export default function SearchPage() {
       });
     }
 
-    console.log('📍 SearchPage: Final coordinates for listing:', {
+    logger.debug('📍 SearchPage: Final coordinates for listing:', {
       id: dbListing._id,
       coordinates,
       hasValidCoordinates: !!coordinates
@@ -2465,11 +2466,11 @@ export default function SearchPage() {
   // Ensures the listing is loaded (lazy-loading) before scrolling
   const scrollToListingCard = (listing) => {
     const listingId = listing.id || listing._id;
-    console.log('[scrollToListingCard] Looking for listing:', listingId);
+    logger.debug('[scrollToListingCard] Looking for listing:', listingId);
 
     // First check if the listing card already exists in the DOM
     let listingCard = document.querySelector(`[data-listing-id="${listingId}"]`);
-    console.log('[scrollToListingCard] Initial card search result:', listingCard);
+    logger.debug('[scrollToListingCard] Initial card search result:', listingCard);
 
     if (listingCard) {
       // Card exists, scroll to it
@@ -2487,20 +2488,20 @@ export default function SearchPage() {
       // Card not in DOM - might not be lazy-loaded yet
       // Find the listing's position in allListings and load up to that point
       const listingIndex = allListings.findIndex(l => (l.id || l._id) === listingId);
-      console.log('[scrollToListingCard] Listing index in allListings:', listingIndex);
+      logger.debug('[scrollToListingCard] Listing index in allListings:', listingIndex);
 
       if (listingIndex >= 0) {
         // Load listings up to and including the clicked one
         const needToLoad = listingIndex + 1;
         if (needToLoad > loadedCount) {
-          console.log('[scrollToListingCard] Loading more listings to show card. Need:', needToLoad, 'Currently loaded:', loadedCount);
+          logger.debug('[scrollToListingCard] Loading more listings to show card. Need:', needToLoad, 'Currently loaded:', loadedCount);
           setDisplayedListings(allListings.slice(0, needToLoad));
           setLoadedCount(needToLoad);
 
           // Wait for React to render the new cards, then scroll
           setTimeout(() => {
             const newListingCard = document.querySelector(`[data-listing-id="${listingId}"]`);
-            console.log('[scrollToListingCard] After load, found card:', newListingCard);
+            logger.debug('[scrollToListingCard] After load, found card:', newListingCard);
 
             if (newListingCard) {
               newListingCard.scrollIntoView({
@@ -2516,7 +2517,7 @@ export default function SearchPage() {
           }, 100); // Small delay to allow React to render
         }
       } else {
-        console.warn('[scrollToListingCard] Listing not found in allListings:', listingId);
+        logger.warn('[scrollToListingCard] Listing not found in allListings:', listingId);
       }
     }
   };
@@ -2536,7 +2537,7 @@ export default function SearchPage() {
           .filter(d => d >= 0 && d <= 6)  // Valid 0-based day range
           .map(dayIndex => createDay(dayIndex, true));
       } catch (e) {
-        console.warn('Failed to parse days from URL:', e);
+        logger.warn('Failed to parse days from URL:', e);
       }
     }
 
@@ -2560,7 +2561,7 @@ export default function SearchPage() {
         previousMoveInDate: lastProposalDefaults.moveInDate,
         minDate: minMoveInDate
       }) || minMoveInDate;
-      console.log('[SearchPage] Pre-filling move-in from last proposal:', lastProposalDefaults.moveInDate, '->', smartMoveInDate);
+      logger.debug('[SearchPage] Pre-filling move-in from last proposal:', lastProposalDefaults.moveInDate, '->', smartMoveInDate);
     } else if (initialDays.length > 0) {
       // Fallback: calculate based on selected days
       try {
@@ -2570,7 +2571,7 @@ export default function SearchPage() {
           minDate: minMoveInDate
         });
       } catch (err) {
-        console.error('Error calculating smart move-in date:', err);
+        logger.error('Error calculating smart move-in date:', err);
         smartMoveInDate = minMoveInDate;
       }
     }
@@ -2602,9 +2603,9 @@ export default function SearchPage() {
         throw new Error('User ID not found. Please log in again.');
       }
 
-      console.log('[SearchPage] Submitting proposal to Edge Function...');
-      console.log('   Guest ID:', guestId);
-      console.log('   Listing ID:', selectedListingForProposal?.id || selectedListingForProposal?._id);
+      logger.debug('[SearchPage] Submitting proposal to Edge Function...');
+      logger.debug('   Guest ID:', guestId);
+      logger.debug('   Listing ID:', selectedListingForProposal?.id || selectedListingForProposal?._id);
 
       // Days are already in JS format (0-6) - database now uses 0-indexed natively
       // proposalData.daysSelectedObjects contains Day objects with dayOfWeek property
@@ -2687,7 +2688,7 @@ export default function SearchPage() {
         fourWeekCompensation: proposalData.pricePerFourWeeks
       };
 
-      console.log('[SearchPage] Edge Function payload:', edgeFunctionPayload);
+      logger.debug('[SearchPage] Edge Function payload:', edgeFunctionPayload);
 
       // Call the proposal Edge Function (Supabase-native)
       const { data, error } = await supabase.functions.invoke('proposal', {
@@ -2698,17 +2699,17 @@ export default function SearchPage() {
       });
 
       if (error) {
-        console.error('[SearchPage] Edge Function error:', error);
+        logger.error('[SearchPage] Edge Function error:', error);
         throw new Error(error.message || 'Failed to submit proposal');
       }
 
       if (!data?.success) {
-        console.error('[SearchPage] Proposal submission failed:', data?.error);
+        logger.error('[SearchPage] Proposal submission failed:', data?.error);
         throw new Error(data?.error || 'Failed to submit proposal');
       }
 
-      console.log('[SearchPage] Proposal submitted successfully:', data);
-      console.log('   Proposal ID:', data.data?.proposalId);
+      logger.debug('[SearchPage] Proposal submitted successfully:', data);
+      logger.debug('   Proposal ID:', data.data?.proposalId);
 
       // Clear the localStorage draft on successful submission
       clearProposalDraft(proposalData.listingId);
@@ -2730,14 +2731,14 @@ export default function SearchPage() {
           setProposalsByListingId(prev => {
             const updated = new Map(prev);
             updated.set(listingId, { _id: newProposalId });
-            console.log(`[SearchPage] Added proposal ${newProposalId} to listing ${listingId}`);
+            logger.debug(`[SearchPage] Added proposal ${newProposalId} to listing ${listingId}`);
             return updated;
           });
         }
       }
 
     } catch (error) {
-      console.error('[SearchPage] Error submitting proposal:', error);
+      logger.error('[SearchPage] Error submitting proposal:', error);
       showToast(error.message || 'Failed to submit proposal. Please try again.', 'error');
       // Keep the modal open on error so user can retry
     } finally {
@@ -2747,13 +2748,13 @@ export default function SearchPage() {
 
   // Handle proposal submission - checks auth first
   const handleCreateProposalSubmit = async (proposalData) => {
-    console.log('[SearchPage] Proposal submission initiated:', proposalData);
+    logger.debug('[SearchPage] Proposal submission initiated:', proposalData);
 
     // Check if user is logged in
     const isAuthenticated = await checkAuthStatus();
 
     if (!isAuthenticated) {
-      console.log('[SearchPage] User not logged in, showing auth modal');
+      logger.debug('[SearchPage] User not logged in, showing auth modal');
       // Store the proposal data for later submission
       setPendingProposalData(proposalData);
       // Close the proposal modal
@@ -2764,13 +2765,13 @@ export default function SearchPage() {
     }
 
     // User is logged in, proceed with submission
-    console.log('[SearchPage] User is logged in, submitting proposal');
+    logger.debug('[SearchPage] User is logged in, submitting proposal');
     await submitProposal(proposalData);
   };
 
   // Handle successful authentication for proposal submission
   const handleAuthSuccessForProposal = async (authResult) => {
-    console.log('[SearchPage] Auth success for proposal:', authResult);
+    logger.debug('[SearchPage] Auth success for proposal:', authResult);
 
     // Close the auth modal
     setShowAuthModalForProposal(false);
@@ -2792,15 +2793,15 @@ export default function SearchPage() {
           userType: userData.userType || 'GUEST',
           avatarUrl: userData.profilePhoto || null
         });
-        console.log('[SearchPage] User data updated after auth:', userData.firstName);
+        logger.debug('[SearchPage] User data updated after auth:', userData.firstName);
       }
     } catch (err) {
-      console.error('[SearchPage] Error fetching user data after auth:', err);
+      logger.error('[SearchPage] Error fetching user data after auth:', err);
     }
 
     // If there's a pending proposal, submit it now
     if (pendingProposalData) {
-      console.log('[SearchPage] Submitting pending proposal after auth');
+      logger.debug('[SearchPage] Submitting pending proposal after auth');
       // Small delay to ensure auth state is fully updated
       setTimeout(async () => {
         await submitProposal(pendingProposalData);
@@ -2840,7 +2841,7 @@ export default function SearchPage() {
 
   // Update favorites count and show toast (API call handled by FavoriteButton component)
   const handleToggleFavorite = (listingId, listingTitle, newState) => {
-    console.log('[SearchPage] handleToggleFavorite called:', {
+    logger.debug('[SearchPage] handleToggleFavorite called:', {
       listingId,
       listingTitle,
       newState,
@@ -2881,7 +2882,7 @@ export default function SearchPage() {
       // Optionally redirect to home or refresh the page
       window.location.reload();
     } catch (error) {
-      console.error('[SearchPage] Logout error:', error);
+      logger.error('[SearchPage] Logout error:', error);
     }
   };
 
@@ -2894,14 +2895,14 @@ export default function SearchPage() {
 
     const selectorProps = {
       onSelectionChange: (days) => {
-        console.log('Schedule selector changed:', days);
+        logger.debug('Schedule selector changed:', days);
         // Calculate nights from days (nights = days - 1)
         const nightsCount = countSelectedNights(days);
-        console.log(`[SearchPage] Days selected: ${days.length}, Nights: ${nightsCount}`);
+        logger.debug(`[SearchPage] Days selected: ${days.length}, Nights: ${nightsCount}`);
         // Update nights count for dynamic pricing (0 nights is valid - shows starting price)
         setSelectedNightsCount(nightsCount);
       },
-      onError: (error) => console.error('AuthAwareSearchScheduleSelector error:', error),
+      onError: (error) => logger.error('AuthAwareSearchScheduleSelector error:', error),
       weekPattern: weekPattern
     };
 
@@ -3544,11 +3545,11 @@ export default function SearchPage() {
             selectedBorough={selectedBorough}
             selectedNightsCount={selectedNightsCount}
             onMarkerClick={(listing) => {
-              console.log('Marker clicked:', listing.title);
+              logger.debug('Marker clicked:', listing.title);
               scrollToListingCard(listing);
             }}
             onMessageClick={(listing) => {
-              console.log('[SearchPage] Map card message clicked for:', listing?.id);
+              logger.debug('[SearchPage] Map card message clicked for:', listing?.id);
               handleOpenContactModal(listing);
             }}
             onAIResearchClick={handleOpenAIResearchModal}
@@ -3594,7 +3595,7 @@ export default function SearchPage() {
         onClose={() => setIsAuthModalOpen(false)}
         initialView={authModalView}
         onAuthSuccess={() => {
-          console.log('Auth successful from SearchPage');
+          logger.debug('Auth successful from SearchPage');
         }}
       />
       {isCreateProposalModalOpen && selectedListingForProposal && (
@@ -3671,13 +3672,13 @@ export default function SearchPage() {
               selectedBorough={selectedBorough}
               selectedNightsCount={selectedNightsCount}
               onMarkerClick={(listing) => {
-                console.log('Marker clicked:', listing.title);
+                logger.debug('Marker clicked:', listing.title);
                 // Close mobile map and scroll to listing
                 setIsMobileMapVisible(false);
                 setTimeout(() => scrollToListingCard(listing), 300);
               }}
               onMessageClick={(listing) => {
-                console.log('[SearchPage] Mobile map card message clicked for:', listing?.id);
+                logger.debug('[SearchPage] Mobile map card message clicked for:', listing?.id);
                 handleOpenContactModal(listing);
               }}
               onAIResearchClick={handleOpenAIResearchModal}

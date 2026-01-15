@@ -34,6 +34,7 @@ import {
 import { DAY_ABBREVIATIONS, DEFAULTS, COLORS, SCHEDULE_PATTERNS } from '../../lib/constants.js';
 import { createDay } from '../../lib/scheduleSelector/dayHelpers.js';
 import { supabase } from '../../lib/supabase.js';
+import { logger } from '../../lib/logger.js';
 // NOTE: adaptDaysToBubble removed - database now uses 0-indexed days natively
 import '../../styles/listing-schedule-selector.css';
 import '../../styles/components/toast.css';
@@ -52,7 +53,7 @@ function getInitialScheduleFromUrl() {
   const daysParam = urlParams.get('days-selected');
 
   if (!daysParam) {
-    console.log('📅 ViewSplitLeasePage: No days-selected URL param, using empty initial selection');
+    logger.debug('📅 ViewSplitLeasePage: No days-selected URL param, using empty initial selection');
     return [];
   }
 
@@ -64,7 +65,7 @@ function getInitialScheduleFromUrl() {
     if (validDays.length > 0) {
       // Convert to Day objects using createDay
       const dayObjects = validDays.map(dayIndex => createDay(dayIndex, true));
-      console.log('📅 ViewSplitLeasePage: Loaded schedule from URL:', {
+      logger.debug('📅 ViewSplitLeasePage: Loaded schedule from URL:', {
         urlParam: daysParam,
         dayIndices: validDays,
         dayObjects: dayObjects.map(d => d.name)
@@ -72,7 +73,7 @@ function getInitialScheduleFromUrl() {
       return dayObjects;
     }
   } catch (e) {
-    console.warn('⚠️ ViewSplitLeasePage: Failed to parse days-selected URL parameter:', e);
+    logger.warn('⚠️ ViewSplitLeasePage: Failed to parse days-selected URL parameter:', e);
   }
 
   return [];
@@ -91,7 +92,7 @@ function getInitialReservationSpanFromUrl() {
 
   const parsed = parseInt(spanParam, 10);
   if (!isNaN(parsed) && parsed > 0) {
-    console.log('📅 ViewSplitLeasePage: Loaded reservation span from URL:', parsed);
+    logger.debug('📅 ViewSplitLeasePage: Loaded reservation span from URL:', parsed);
     return parsed;
   }
 
@@ -111,7 +112,7 @@ function getInitialMoveInFromUrl() {
 
   // Basic validation: YYYY-MM-DD format
   if (/^\d{4}-\d{2}-\d{2}$/.test(moveInParam)) {
-    console.log('📅 ViewSplitLeasePage: Loaded move-in date from URL:', moveInParam);
+    logger.debug('📅 ViewSplitLeasePage: Loaded move-in date from URL:', moveInParam);
     return moveInParam;
   }
 
@@ -127,13 +128,13 @@ async function fetchInformationalTexts() {
   const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    console.error('❌ Missing Supabase environment variables');
+    logger.error('❌ Missing Supabase environment variables');
     return {};
   }
 
   try {
-    console.log('🔍 Fetching informational texts from Supabase...');
-    console.log('🌐 Using Supabase URL:', SUPABASE_URL);
+    logger.debug('🔍 Fetching informational texts from Supabase...');
+    logger.debug('🌐 Using Supabase URL:', SUPABASE_URL);
 
     // Use select=* to get all columns (safer with special characters in column names)
     const response = await fetch(
@@ -147,24 +148,24 @@ async function fetchInformationalTexts() {
       }
     );
 
-    console.log('📡 Response status:', response.status, response.statusText);
+    logger.debug('📡 Response status:', response.status, response.statusText);
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ Failed to fetch informational texts:', response.statusText, errorText);
+      logger.error('❌ Failed to fetch informational texts:', response.statusText, errorText);
       return {};
     }
 
     const data = await response.json();
-    console.log('📦 Raw data received:', data?.length, 'items');
-    console.log('📦 First item structure:', data?.[0] ? Object.keys(data[0]) : 'No items');
+    logger.debug('📦 Raw data received:', data?.length, 'items');
+    logger.debug('📦 First item structure:', data?.[0] ? Object.keys(data[0]) : 'No items');
 
     // Create a lookup object by tag-title
     const textsByTag = {};
     data.forEach((item, index) => {
       const tag = item['Information Tag-Title'];
       if (!tag) {
-        console.warn(`⚠️ Item ${index} has no Information Tag-Title:`, item);
+        logger.warn(`⚠️ Item ${index} has no Information Tag-Title:`, item);
         return;
       }
 
@@ -181,7 +182,7 @@ async function fetchInformationalTexts() {
       if (tag === 'aligned schedule with move-in' ||
           tag === 'move-in flexibility' ||
           tag === 'Reservation Span') {
-        console.log(`✅ Found "${tag}":`, {
+        logger.debug(`✅ Found "${tag}":`, {
           desktop: item['Desktop copy']?.substring(0, 50) + '...',
           mobile: item['Mobile copy']?.substring(0, 50) + '...',
           showMore: item['show more available?']
@@ -189,8 +190,8 @@ async function fetchInformationalTexts() {
       }
     });
 
-    console.log('📚 Fetched informational texts:', Object.keys(textsByTag).length, 'total');
-    console.log('🎯 Required tags present:', {
+    logger.debug('📚 Fetched informational texts:', Object.keys(textsByTag).length, 'total');
+    logger.debug('🎯 Required tags present:', {
       'aligned schedule with move-in': !!textsByTag['aligned schedule with move-in'],
       'move-in flexibility': !!textsByTag['move-in flexibility'],
       'Reservation Span': !!textsByTag['Reservation Span']
@@ -198,7 +199,7 @@ async function fetchInformationalTexts() {
 
     return textsByTag;
   } catch (error) {
-    console.error('❌ Error fetching informational texts:', error);
+    logger.error('❌ Error fetching informational texts:', error);
     return {};
   }
 }
@@ -778,14 +779,14 @@ export default function ViewSplitLeasePage() {
           const dayNumbers = selectedDayObjects.map(day => day.dayOfWeek);
           const smartDate = calculateSmartMoveInDate(dayNumbers);
           setMoveInDate(smartDate);
-          console.log('📅 ViewSplitLeasePage: URL move-in date was before minimum, using smart date:', smartDate);
+          logger.debug('📅 ViewSplitLeasePage: URL move-in date was before minimum, using smart date:', smartDate);
         }
       } else {
         // No URL date provided, calculate smart default
         const dayNumbers = selectedDayObjects.map(day => day.dayOfWeek);
         const smartDate = calculateSmartMoveInDate(dayNumbers);
         setMoveInDate(smartDate);
-        console.log('📅 ViewSplitLeasePage: Set initial move-in date from URL selection:', smartDate);
+        logger.debug('📅 ViewSplitLeasePage: Set initial move-in date from URL selection:', smartDate);
       }
     }
   }, []); // Run only once on mount - empty deps to prevent recalculation on state changes
@@ -809,8 +810,8 @@ export default function ViewSplitLeasePage() {
 
   // Debug: Log when activeInfoTooltip changes
   useEffect(() => {
-    console.log('🎯 activeInfoTooltip changed to:', activeInfoTooltip);
-    console.log('🔗 Refs status:', {
+    logger.debug('🎯 activeInfoTooltip changed to:', activeInfoTooltip);
+    logger.debug('🔗 Refs status:', {
       moveInInfoRef: !!moveInInfoRef.current,
       reservationSpanInfoRef: !!reservationSpanInfoRef.current,
       flexibilityInfoRef: !!flexibilityInfoRef.current
@@ -820,8 +821,8 @@ export default function ViewSplitLeasePage() {
   // Debug: Log when informationalTexts are loaded
   useEffect(() => {
     if (Object.keys(informationalTexts).length > 0) {
-      console.log('📚 informationalTexts loaded with', Object.keys(informationalTexts).length, 'entries');
-      console.log('🎯 Specific tags:', {
+      logger.debug('📚 informationalTexts loaded with', Object.keys(informationalTexts).length, 'entries');
+      logger.debug('🎯 Specific tags:', {
         'aligned schedule with move-in': informationalTexts['aligned schedule with move-in'],
         'move-in flexibility': informationalTexts['move-in flexibility'],
         'Reservation Span': informationalTexts['Reservation Span']
@@ -859,7 +860,7 @@ export default function ViewSplitLeasePage() {
           const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
           if (userData) {
             setLoggedInUserData(userData);
-            console.log('👤 ViewSplitLeasePage: User data loaded:', userData.firstName);
+            logger.debug('👤 ViewSplitLeasePage: User data loaded:', userData.firstName);
           }
         }
 
@@ -879,7 +880,7 @@ export default function ViewSplitLeasePage() {
 
         // Fetch complete listing data
         const listingData = await fetchListingComplete(listingId);
-        console.log('📋 ViewSplitLeasePage: Listing data fetched:', {
+        logger.debug('📋 ViewSplitLeasePage: Listing data fetched:', {
           id: listingData._id,
           name: listingData.Name,
           amenitiesInUnit: listingData.amenitiesInUnit,
@@ -896,7 +897,7 @@ export default function ViewSplitLeasePage() {
         setLoading(false);
 
       } catch (err) {
-        console.error('Error initializing page:', err);
+        logger.error('Error initializing page:', err);
         setError(err.message);
         setLoading(false);
       }
@@ -953,13 +954,13 @@ export default function ViewSplitLeasePage() {
     // Automatically center and zoom the map when it loads for the first time
     // This replicates the behavior of clicking "Located in" link, but without scrolling
     if (shouldLoadMap && mapRef.current && listing && !hasAutoZoomedRef.current) {
-      console.log('🗺️ ViewSplitLeasePage: Auto-zooming map on initial load');
+      logger.debug('🗺️ ViewSplitLeasePage: Auto-zooming map on initial load');
 
       // Wait for map to fully initialize before calling zoomToListing
       // Same 600ms timeout as handleLocationClick
       setTimeout(() => {
         if (mapRef.current && listing) {
-          console.log('🗺️ ViewSplitLeasePage: Calling zoomToListing for initial auto-zoom');
+          logger.debug('🗺️ ViewSplitLeasePage: Calling zoomToListing for initial auto-zoom');
           mapRef.current.zoomToListing(listing._id);
           hasAutoZoomedRef.current = true;
         }
@@ -991,7 +992,7 @@ export default function ViewSplitLeasePage() {
       }
 
       try {
-        console.log('🔍 ViewSplitLeasePage: Checking for existing proposals for listing:', listing._id);
+        logger.debug('🔍 ViewSplitLeasePage: Checking for existing proposals for listing:', listing._id);
 
         const { data: existingProposals, error } = await supabase
           .from('proposal')
@@ -1004,20 +1005,20 @@ export default function ViewSplitLeasePage() {
           .limit(1);
 
         if (error) {
-          console.error('Error checking for existing proposals:', error);
+          logger.error('Error checking for existing proposals:', error);
           setExistingProposalForListing(null);
           return;
         }
 
         if (existingProposals && existingProposals.length > 0) {
-          console.log('📋 ViewSplitLeasePage: User already has a proposal for this listing:', existingProposals[0]);
+          logger.debug('📋 ViewSplitLeasePage: User already has a proposal for this listing:', existingProposals[0]);
           setExistingProposalForListing(existingProposals[0]);
         } else {
-          console.log('✅ ViewSplitLeasePage: No existing proposal found for this listing');
+          logger.debug('✅ ViewSplitLeasePage: No existing proposal found for this listing');
           setExistingProposalForListing(null);
         }
       } catch (err) {
-        console.error('Error checking for existing proposals:', err);
+        logger.error('Error checking for existing proposals:', err);
         setExistingProposalForListing(null);
       }
     }
@@ -1139,8 +1140,8 @@ export default function ViewSplitLeasePage() {
   };
 
   const handlePriceChange = useCallback((newPriceBreakdown) => {
-    console.log('=== PRICE CHANGE CALLBACK ===');
-    console.log('Received price breakdown:', newPriceBreakdown);
+    logger.debug('=== PRICE CHANGE CALLBACK ===');
+    logger.debug('Received price breakdown:', newPriceBreakdown);
     // Only update if the values have actually changed to prevent infinite loops
     setPriceBreakdown((prev) => {
       if (!prev ||
@@ -1192,9 +1193,9 @@ export default function ViewSplitLeasePage() {
         throw new Error('User ID not found. Please log in again.');
       }
 
-      console.log('📤 Submitting proposal to Edge Function...');
-      console.log('   Guest ID:', guestId);
-      console.log('   Listing ID:', proposalData.listingId);
+      logger.debug('📤 Submitting proposal to Edge Function...');
+      logger.debug('   Guest ID:', guestId);
+      logger.debug('   Listing ID:', proposalData.listingId);
 
       // Days are already in JS format (0-6) - database now uses 0-indexed natively
       // proposalData.daysSelectedObjects contains Day objects with dayOfWeek property
@@ -1285,8 +1286,8 @@ export default function ViewSplitLeasePage() {
         customScheduleDescription: customScheduleDescription || ''
       };
 
-      console.log('📋 Edge Function payload:', edgeFunctionPayload);
-      console.log('📋 Payload field types:', {
+      logger.debug('📋 Edge Function payload:', edgeFunctionPayload);
+      logger.debug('📋 Payload field types:', {
         guestId: typeof edgeFunctionPayload.guestId,
         listingId: typeof edgeFunctionPayload.listingId,
         moveInStartRange: typeof edgeFunctionPayload.moveInStartRange,
@@ -1310,9 +1311,9 @@ export default function ViewSplitLeasePage() {
       });
 
       if (error) {
-        console.error('❌ Edge Function error:', error);
-        console.error('❌ Error properties:', Object.keys(error));
-        console.error('❌ Error context:', error.context);
+        logger.error('❌ Edge Function error:', error);
+        logger.error('❌ Error properties:', Object.keys(error));
+        logger.error('❌ Error context:', error.context);
 
         // Extract actual error message from response context if available
         let errorMessage = error.message || 'Failed to submit proposal';
@@ -1322,7 +1323,7 @@ export default function ViewSplitLeasePage() {
           if (error.context && typeof error.context.json === 'function') {
             // context is a Response object
             const errorBody = await error.context.json();
-            console.error('❌ Edge Function error body (from json()):', errorBody);
+            logger.error('❌ Edge Function error body (from json()):', errorBody);
             if (errorBody?.error) {
               errorMessage = errorBody.error;
             }
@@ -1331,25 +1332,25 @@ export default function ViewSplitLeasePage() {
             const errorBody = typeof error.context.body === 'string'
               ? JSON.parse(error.context.body)
               : error.context.body;
-            console.error('❌ Edge Function error body (from body):', errorBody);
+            logger.error('❌ Edge Function error body (from body):', errorBody);
             if (errorBody?.error) {
               errorMessage = errorBody.error;
             }
           }
         } catch (e) {
-          console.error('❌ Could not parse error body:', e);
+          logger.error('❌ Could not parse error body:', e);
         }
 
         throw new Error(errorMessage);
       }
 
       if (!data?.success) {
-        console.error('❌ Proposal submission failed:', data?.error);
+        logger.error('❌ Proposal submission failed:', data?.error);
         throw new Error(data?.error || 'Failed to submit proposal');
       }
 
-      console.log('✅ Proposal submitted successfully:', data);
-      console.log('   Proposal ID:', data.data?.proposalId);
+      logger.debug('✅ Proposal submitted successfully:', data);
+      logger.debug('   Proposal ID:', data.data?.proposalId);
 
       // Clear the localStorage draft on successful submission
       clearProposalDraft(proposalData.listingId);
@@ -1372,12 +1373,12 @@ export default function ViewSplitLeasePage() {
 
       // Create messaging thread for the proposal (non-blocking)
       try {
-        console.log('💬 Creating proposal messaging thread...');
+        logger.debug('💬 Creating proposal messaging thread...');
         // Use the actual status returned from the Edge Function
         const actualProposalStatus = data.data?.status || 'Host Review';
         const actualHostId = data.data?.hostId || listing.host?.userId;
 
-        console.log('   Thread params:', {
+        logger.debug('   Thread params:', {
           proposalId: newProposalId,
           guestId: guestId,
           hostId: actualHostId,
@@ -1399,17 +1400,17 @@ export default function ViewSplitLeasePage() {
         });
 
         if (threadResponse.error) {
-          console.warn('⚠️ Thread creation failed (non-blocking):', threadResponse.error);
+          logger.warn('⚠️ Thread creation failed (non-blocking):', threadResponse.error);
         } else {
-          console.log('✅ Proposal thread created:', threadResponse.data);
+          logger.debug('✅ Proposal thread created:', threadResponse.data);
         }
       } catch (threadError) {
         // Non-blocking - don't fail the proposal if thread creation fails
-        console.warn('⚠️ Thread creation error (non-blocking):', threadError);
+        logger.warn('⚠️ Thread creation error (non-blocking):', threadError);
       }
 
     } catch (error) {
-      console.error('❌ Error submitting proposal:', error);
+      logger.error('❌ Error submitting proposal:', error);
 
       // Provide user-friendly error messages for common failure cases
       let userMessage = error.message || 'Failed to submit proposal. Please try again.';
@@ -1437,13 +1438,13 @@ export default function ViewSplitLeasePage() {
 
   // Handle proposal submission - checks auth first
   const handleProposalSubmit = async (proposalData) => {
-    console.log('📋 Proposal submission initiated:', proposalData);
+    logger.debug('📋 Proposal submission initiated:', proposalData);
 
     // Check if user is logged in
     const isLoggedIn = await checkAuthStatus();
 
     if (!isLoggedIn) {
-      console.log('🔐 User not logged in, showing auth modal');
+      logger.debug('🔐 User not logged in, showing auth modal');
       // Store the proposal data for later submission
       setPendingProposalData(proposalData);
       // Close the proposal modal
@@ -1454,13 +1455,13 @@ export default function ViewSplitLeasePage() {
     }
 
     // User is logged in, proceed with submission
-    console.log('✅ User is logged in, submitting proposal');
+    logger.debug('✅ User is logged in, submitting proposal');
     await submitProposal(proposalData);
   };
 
   // Handle successful authentication
   const handleAuthSuccess = async (authResult) => {
-    console.log('🎉 Auth success:', authResult);
+    logger.debug('🎉 Auth success:', authResult);
 
     // Close the auth modal
     setShowAuthModal(false);
@@ -1471,15 +1472,15 @@ export default function ViewSplitLeasePage() {
       const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
       if (userData) {
         setLoggedInUserData(userData);
-        console.log('👤 User data updated after auth:', userData.firstName);
+        logger.debug('👤 User data updated after auth:', userData.firstName);
       }
     } catch (err) {
-      console.error('❌ Error fetching user data after auth:', err);
+      logger.error('❌ Error fetching user data after auth:', err);
     }
 
     // If there's a pending proposal, submit it now
     if (pendingProposalData) {
-      console.log('📤 Submitting pending proposal after auth');
+      logger.debug('📤 Submitting pending proposal after auth');
       // Small delay to ensure auth state is fully updated
       setTimeout(async () => {
         await submitProposal(pendingProposalData);
@@ -2342,7 +2343,7 @@ export default function ViewSplitLeasePage() {
               <span
                 onClick={(e) => {
                   e.stopPropagation();
-                  console.log('Move-in text clicked, current state:', activeInfoTooltip);
+                  logger.debug('Move-in text clicked, current state:', activeInfoTooltip);
                   setActiveInfoTooltip(activeInfoTooltip === 'moveIn' ? null : 'moveIn');
                 }}
                 style={{ cursor: 'pointer' }}
@@ -2353,7 +2354,7 @@ export default function ViewSplitLeasePage() {
                 ref={moveInInfoRef}
                 onClick={(e) => {
                   e.stopPropagation();
-                  console.log('Move-in info icon clicked, current state:', activeInfoTooltip);
+                  logger.debug('Move-in info icon clicked, current state:', activeInfoTooltip);
                   setActiveInfoTooltip(activeInfoTooltip === 'moveIn' ? null : 'moveIn');
                 }}
                 style={{ width: '16px', height: '16px', color: '#9CA3AF', cursor: 'pointer' }}
@@ -2594,7 +2595,7 @@ export default function ViewSplitLeasePage() {
               <span
                 onClick={(e) => {
                   e.stopPropagation();
-                  console.log('Reservation span text clicked, current state:', activeInfoTooltip);
+                  logger.debug('Reservation span text clicked, current state:', activeInfoTooltip);
                   setActiveInfoTooltip(activeInfoTooltip === 'reservationSpan' ? null : 'reservationSpan');
                 }}
                 style={{ cursor: 'pointer' }}
@@ -2605,7 +2606,7 @@ export default function ViewSplitLeasePage() {
                 ref={reservationSpanInfoRef}
                 onClick={(e) => {
                   e.stopPropagation();
-                  console.log('Reservation span info icon clicked, current state:', activeInfoTooltip);
+                  logger.debug('Reservation span info icon clicked, current state:', activeInfoTooltip);
                   setActiveInfoTooltip(activeInfoTooltip === 'reservationSpan' ? null : 'reservationSpan');
                 }}
                 style={{ width: '16px', height: '16px', color: '#9CA3AF', cursor: 'pointer' }}
@@ -2688,7 +2689,7 @@ export default function ViewSplitLeasePage() {
             borderRadius: '10px',
             border: '1px solid #E5E7EB'
           }}>
-            {console.log('Rendering prices - pricingBreakdown:', pricingBreakdown)}
+            {logger.debug('Rendering prices - pricingBreakdown:', pricingBreakdown)}
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
@@ -3133,7 +3134,7 @@ export default function ViewSplitLeasePage() {
 
       {/* Informational Text Tooltips */}
       {(() => {
-        console.log('📚 Rendering InformationalText components:', {
+        logger.debug('📚 Rendering InformationalText components:', {
           hasAlignedSchedule: !!informationalTexts['aligned schedule with move-in'],
           hasMoveInFlexibility: !!informationalTexts['move-in flexibility'],
           hasReservationSpan: !!informationalTexts['Reservation Span'],
