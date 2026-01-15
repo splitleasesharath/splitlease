@@ -14,7 +14,8 @@ import { isHost } from '../../logic/rules/users/isHost.js';
 import { supabase } from '../../lib/supabase.js';
 import { fetchProposalsByGuest, fetchLastProposalDefaults } from '../../lib/proposalDataFetcher.js';
 import { fetchZatPriceConfiguration } from '../../lib/listingDataFetcher.js';
-import { checkAuthStatus, validateTokenAndFetchUser, getUserId, getSessionId, logoutUser } from '../../lib/auth.js';
+import { checkAuthStatus, validateTokenAndFetchUser, getUserId, getSessionId, logoutUser, getFirstName, getAvatarUrl } from '../../lib/auth.js';
+import { getUserType as getStoredUserType, getAuthState } from '../../lib/secureStorage.js';
 import { PRICE_TIERS, SORT_OPTIONS, WEEK_PATTERNS, LISTING_CONFIG, VIEW_LISTING_URL, SEARCH_URL } from '../../lib/constants.js';
 import { initializeLookups, getNeighborhoodName, getBoroughName, getPropertyTypeLabel, isInitialized } from '../../lib/dataLookups.js';
 import { parseUrlToFilters, updateUrlParams, watchUrlChanges, hasUrlFilters } from '../../lib/urlParams.js';
@@ -509,7 +510,7 @@ function FilterPanel({
 /**
  * PropertyCard - Individual listing card
  */
-function PropertyCard({ listing, onLocationClick, onCardHover, onCardLeave, onOpenContactModal, onOpenInfoModal, isLoggedIn, isFavorited, userId, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalForListing, selectedNightsCount }) {
+function PropertyCard({ listing, onLocationClick, onCardHover, onCardLeave, onOpenContactModal, onOpenInfoModal, isLoggedIn, isFavorited, userId, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalForListing, selectedNightsCount, showMessageButton = true }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const priceInfoTriggerRef = useRef(null);
   const mobilePriceInfoTriggerRef = useRef(null);
@@ -792,19 +793,21 @@ function PropertyCard({ listing, onLocationClick, onCardHover, onCardLeave, onOp
             </div>
             {/* Action Buttons */}
             <div className="action-buttons">
-              <button
-                className="action-button secondary"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onOpenContactModal(listing);
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-                </svg>
-                Message
-              </button>
+              {showMessageButton && (
+                <button
+                  className="action-button secondary"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onOpenContactModal(listing);
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                  </svg>
+                  Message
+                </button>
+              )}
               {/* Proposal CTAs - Show Create or View based on existing proposal */}
               {showCreateProposalButton && (
                 proposalForListing ? (
@@ -886,7 +889,7 @@ function PropertyCard({ listing, onLocationClick, onCardHover, onCardLeave, onOp
 /**
  * ListingsGrid - Grid of property cards with lazy loading
  */
-function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef, isLoggedIn, userId, favoritedListingIds, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalsByListingId, selectedNightsCount }) {
+function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef, isLoggedIn, userId, favoritedListingIds, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalsByListingId, selectedNightsCount, showMessageButton = true }) {
 
   const sentinelRef = useRef(null);
 
@@ -958,6 +961,7 @@ function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactM
             onOpenCreateProposalModal={onOpenCreateProposalModal}
             proposalForListing={proposalForListing}
             selectedNightsCount={selectedNightsCount}
+            showMessageButton={showMessageButton}
           />
         );
       })}
@@ -1098,9 +1102,27 @@ export default function SearchPage() {
   const [mobileHeaderHidden, setMobileHeaderHidden] = useState(false);
   const [desktopHeaderCollapsed, setDesktopHeaderCollapsed] = useState(false);
 
-  // Auth state
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
+  // Auth state - Initialize with cached data for optimistic UI (prevents flash of logged-out state)
+  const cachedFirstName = getFirstName();
+  const cachedAvatarUrl = getAvatarUrl();
+  const cachedUserType = getStoredUserType();
+  const hasCachedAuth = !!(cachedFirstName && getAuthState());
+
+  const [isLoggedIn, setIsLoggedIn] = useState(hasCachedAuth);
+  const [currentUser, setCurrentUser] = useState(() => {
+    if (hasCachedAuth) {
+      return {
+        id: getUserId(),
+        name: cachedFirstName,
+        email: '',
+        userType: cachedUserType || 'GUEST',
+        avatarUrl: cachedAvatarUrl || null,
+        proposalCount: 0,
+        _isOptimistic: true // Flag to indicate this is optimistic data
+      };
+    }
+    return null;
+  });
   const [favoritesCount, setFavoritesCount] = useState(0);
   const [favoritedListingIds, setFavoritedListingIds] = useState(new Set());
 
@@ -3411,6 +3433,7 @@ export default function SearchPage() {
                       onOpenCreateProposalModal={handleOpenCreateProposalModal}
                       proposalsByListingId={proposalsByListingId}
                       selectedNightsCount={selectedNightsCount}
+                      showMessageButton={showMessageButton}
                     />
                   </div>
                 )}
@@ -3438,6 +3461,7 @@ export default function SearchPage() {
                 onOpenCreateProposalModal={handleOpenCreateProposalModal}
                 proposalsByListingId={proposalsByListingId}
                 selectedNightsCount={selectedNightsCount}
+                showMessageButton={showMessageButton}
               />
             )}
           </div>
