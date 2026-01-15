@@ -681,18 +681,39 @@ def prompt_claude_code(request: AgentPromptRequest) -> AgentPromptResponse:
             # Error occurred - stderr is captured, stdout went to file
             stderr_msg = result.stderr.strip() if result.stderr else ""
 
+            # Filter out informational messages from stderr that are NOT errors
+            # Gemini CLI outputs "YOLO mode is enabled" as an informational message
+            informational_patterns = [
+                "YOLO mode is enabled",
+                "All tool calls will be automatically approved",
+            ]
+            for pattern in informational_patterns:
+                stderr_msg = stderr_msg.replace(pattern, "").strip()
+
             # Try to read the output file to check for errors in stdout
             stdout_msg = ""
             error_from_jsonl = None
+            success_from_jsonl = False
+            result_text_from_jsonl = None
+            session_id_from_jsonl = None
             try:
                 if os.path.exists(request.output_file):
-                    # Parse JSONL to find error message
+                    # Parse JSONL to find error message OR successful result
                     messages, result_message = parse_jsonl_output(request.output_file)
 
-                    if result_message and result_message.get("is_error"):
-                        # Found error in result message
-                        error_from_jsonl = result_message.get("result", "Unknown error")
-                    elif messages:
+                    if result_message:
+                        session_id_from_jsonl = result_message.get("session_id")
+
+                        if result_message.get("is_error"):
+                            # Found error in result message
+                            error_from_jsonl = result_message.get("result", "Unknown error")
+                        elif result_message.get("status") == "success" or result_message.get("result"):
+                            # Found successful result - Gemini CLI may return non-zero but succeed
+                            result_text_from_jsonl = result_message.get("result", "")
+                            if result_text_from_jsonl:
+                                success_from_jsonl = True
+
+                    if not success_from_jsonl and not error_from_jsonl and messages:
                         # Look for error in last few messages
                         for msg in reversed(messages[-5:]):
                             if msg.get("type") == "assistant" and msg.get(
@@ -709,7 +730,7 @@ def prompt_claude_code(request: AgentPromptRequest) -> AgentPromptResponse:
                                         break
 
                     # If no structured error found, get last line only
-                    if not error_from_jsonl:
+                    if not error_from_jsonl and not success_from_jsonl:
                         with open(request.output_file, "r", encoding='utf-8') as f:
                             lines = f.readlines()
                             if lines:
@@ -719,6 +740,16 @@ def prompt_claude_code(request: AgentPromptRequest) -> AgentPromptResponse:
                                 ]  # Truncate to 200 chars
             except:
                 pass
+
+            # If JSONL shows success despite non-zero returncode, treat as success
+            # This handles Gemini CLI quirks where YOLO mode causes non-zero exit
+            if success_from_jsonl and not error_from_jsonl:
+                return AgentPromptResponse(
+                    output=result_text_from_jsonl,
+                    success=True,
+                    session_id=session_id_from_jsonl,
+                    retry_code=RetryCode.NONE,
+                )
 
             if error_from_jsonl:
                 error_msg = f"{agent_name} error: {error_from_jsonl}"

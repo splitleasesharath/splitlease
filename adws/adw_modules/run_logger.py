@@ -113,7 +113,7 @@ class RunLogger:
 
         if notify:
             if success:
-                notify_success(step=f"{self.run_type}: {phase_name} complete")
+                notify_success(step=f"{self.run_type}: {phase_name}")
             else:
                 notify_failure(step=f"{self.run_type}: {phase_name}", error=error or "Unknown error")
 
