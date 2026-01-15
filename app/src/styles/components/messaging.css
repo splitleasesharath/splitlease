@@ -74,8 +74,8 @@ main.main-content:has(.messaging-page) {
   width: var(--messaging-sidebar-width);
   min-width: 280px;
   max-width: 400px;
-  background-color: var(--color-sidebar-bg);
-  border-right: 1px solid var(--color-border);
+  background-color: var(--color-background);
+  border-right: 1px solid #E0E0E0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -84,34 +84,35 @@ main.main-content:has(.messaging-page) {
 .sidebar-title {
   font-size: 1.5rem;
   font-weight: 600;
-  color: var(--color-message-incoming-text);
-  padding: 1.5rem;
+  color: #001E00;
+  padding: 16px 16px 12px;
   margin: 0;
-  border-bottom: 1px solid var(--color-border);
-  background-color: var(--color-background);
 }
 
 .thread-list {
   flex: 1;
   overflow-y: auto;
-  padding: 0.5rem 0;
+  padding: 4px 8px;
 }
 
 /* ==========================================================================
-   Thread Card
+   Thread Card - Upwork-style Rounded Pill Design
    ========================================================================== */
 
 .thread-card {
   display: flex;
   align-items: flex-start;
-  padding: 1rem 1.25rem;
+  gap: 12px;
+  padding: 12px;
+  margin-bottom: 2px;
+  border-radius: 12px;
   cursor: pointer;
-  transition: background-color 0.2s ease;
-  border-bottom: 1px solid #EEEEEE;
+  transition: background 0.15s ease;
+  position: relative;
 }
 
 .thread-card:hover {
-  background-color: var(--color-hover-bg);
+  background-color: #F2F2F2;
 }
 
 .thread-card:focus {
@@ -119,44 +120,152 @@ main.main-content:has(.messaging-page) {
   outline-offset: -2px;
 }
 
+/* SELECTED STATE - Purple pill */
 .thread-card--selected {
-  background-color: var(--color-hover-bg);
-  border-left: 3px solid var(--color-primary-purple);
-}
-
-.thread-card__avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  object-fit: cover;
-  flex-shrink: 0;
   background-color: var(--color-primary-purple);
 }
 
+.thread-card--selected .thread-card__name,
+.thread-card--selected .thread-card__property,
+.thread-card--selected .thread-card__property-prefix,
+.thread-card--selected .thread-card__preview,
+.thread-card--selected .thread-card__time,
+.thread-card--selected .thread-card__role-badge {
+  color: white !important;
+}
+
+.thread-card--selected .thread-card__role-badge {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.thread-card--selected .thread-card__unread {
+  background: white;
+  color: var(--color-primary-purple);
+}
+
+.thread-card--selected .thread-card__avatar-placeholder {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.thread-card--selected .thread-card__online-dot {
+  border-color: var(--color-primary-purple);
+}
+
+/* Avatar Container */
+.thread-card__avatar-container {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  position: relative;
+  overflow: visible;
+}
+
+.thread-card__avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.thread-card__avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #E8D4F8, #D4B8F0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--color-primary-purple);
+}
+
+.thread-card__online-dot {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 12px;
+  height: 12px;
+  background: #14A800;
+  border: 2px solid white;
+  border-radius: 50%;
+}
+
+.thread-card__bot-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 18px;
+  height: 18px;
+  background: var(--color-primary-purple);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+}
+
+/* Thread Content */
 .thread-card__content {
   flex: 1;
   min-width: 0;
-  margin-left: 0.875rem;
+}
+
+.thread-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.thread-card__name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
 .thread-card__name {
-  display: block;
-  font-weight: 600;
-  font-size: 0.9375rem;
-  color: var(--color-message-incoming-text);
+  font-size: 14px;
+  font-weight: 500;
+  color: #001E00;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+.thread-card__role-badge {
+  display: inline-flex;
+  padding: 2px 6px;
+  background: #F2F2F2;
+  color: #5E6D55;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 4px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.thread-card__role-badge--host {
+  background: #E8F5E9;
+  color: #2E7D32;
+}
+
+.thread-card__role-badge--guest {
+  background: #E3F2FD;
+  color: #1565C0;
+}
+
 .thread-card__property {
-  display: block;
-  font-size: 0.8125rem;
-  color: var(--color-text-secondary);
+  font-size: 13px;
+  color: #5E6D55;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-top: 0.125rem;
+  margin-bottom: 4px;
 }
 
 .thread-card__property-prefix {
@@ -165,41 +274,44 @@ main.main-content:has(.messaging-page) {
 }
 
 .thread-card__preview {
-  font-size: 0.8125rem;
-  color: var(--color-text-secondary);
+  font-size: 13px;
+  color: #9AAA97;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin: 0.25rem 0 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
+/* Meta (time and unread) */
 .thread-card__meta {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  margin-left: 0.5rem;
   flex-shrink: 0;
+  gap: 4px;
 }
 
 .thread-card__time {
-  font-size: 0.75rem;
-  color: var(--color-text-secondary);
+  font-size: 12px;
+  color: #9AAA97;
   white-space: nowrap;
 }
 
 .thread-card__unread {
-  background-color: var(--color-alert);
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background: var(--color-primary-purple);
   color: white;
-  font-size: 0.6875rem;
+  font-size: 11px;
   font-weight: 600;
-  min-width: 18px;
-  height: 18px;
-  border-radius: 9px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 0.375rem;
-  margin-top: 0.375rem;
 }
 
 /* ==========================================================================
@@ -873,4 +985,603 @@ main.main-content:has(.messaging-page) {
 
 .typing-text {
   font-style: italic;
+}
+
+/* ==========================================================================
+   WELCOME STATE - New User / No Conversations
+   Based on messages-final.html mockup
+   ========================================================================== */
+
+.messaging-welcome-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 40px;
+  text-align: center;
+  background-color: #FAFAFA;
+  min-height: 60vh;
+}
+
+.welcome-illustration {
+  width: 200px;
+  height: 160px;
+  margin-bottom: 32px;
+  position: relative;
+}
+
+.welcome-illustration .bubble-1 {
+  position: absolute;
+  width: 120px;
+  height: 80px;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  left: 0;
+  top: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.welcome-illustration .bubble-2 {
+  position: absolute;
+  width: 120px;
+  height: 80px;
+  background: var(--color-primary-purple);
+  border-radius: 16px;
+  right: 0;
+  top: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.welcome-illustration .bubble-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.welcome-illustration .bubble-line {
+  height: 8px;
+  border-radius: 4px;
+}
+
+.welcome-illustration .bubble-1 .bubble-line {
+  background: var(--color-border);
+}
+
+.welcome-illustration .bubble-2 .bubble-line {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.welcome-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-message-incoming-text);
+  margin-bottom: 12px;
+}
+
+.welcome-desc {
+  font-size: 0.9375rem;
+  color: var(--color-text-secondary);
+  max-width: 400px;
+  line-height: 1.6;
+  margin-bottom: 32px;
+}
+
+.welcome-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.welcome-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 28px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 24px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+
+.welcome-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.welcome-btn-primary {
+  background: var(--color-primary-purple);
+  color: white;
+  border: none;
+}
+
+.welcome-btn-primary:hover {
+  background: var(--color-primary-light);
+  transform: translateY(-1px);
+}
+
+.welcome-btn-secondary {
+  background: var(--color-background);
+  color: var(--color-message-incoming-text);
+  border: 1px solid var(--color-border);
+}
+
+.welcome-btn-secondary:hover {
+  border-color: var(--color-primary-purple);
+  background: var(--color-hover-bg);
+}
+
+/* Getting Started Tips */
+.welcome-tips {
+  margin-top: 48px;
+  padding-top: 32px;
+  border-top: 1px solid var(--color-border);
+  width: 100%;
+  max-width: 500px;
+}
+
+.welcome-tips-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 16px;
+}
+
+.welcome-tip-cards {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.welcome-tip-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  text-decoration: none;
+}
+
+.welcome-tip-card:hover {
+  border-color: var(--color-primary-purple);
+  background: var(--color-hover-bg);
+}
+
+.welcome-tip-icon {
+  width: 36px;
+  height: 36px;
+  background: var(--color-hover-bg);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.welcome-tip-icon svg {
+  width: 18px;
+  height: 18px;
+  color: var(--color-primary-purple);
+}
+
+.welcome-tip-text {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-message-incoming-text);
+}
+
+/* ==========================================================================
+   CONVERSATION EMPTY STATE - Thread Selected, No Messages Yet
+   ========================================================================== */
+
+.conversation-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 40px;
+  text-align: center;
+}
+
+.conversation-empty-icon {
+  width: 80px;
+  height: 80px;
+  background: var(--color-hover-bg);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.conversation-empty-icon svg {
+  width: 40px;
+  height: 40px;
+  color: var(--color-primary-purple);
+}
+
+.conversation-empty-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-message-incoming-text);
+  margin-bottom: 8px;
+}
+
+.conversation-empty-desc {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  max-width: 320px;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+.conversation-empty-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: var(--color-primary-purple);
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: none;
+  border-radius: 24px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.conversation-empty-btn:hover {
+  background: var(--color-primary-light);
+  transform: translateY(-1px);
+}
+
+.conversation-empty-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Suggestion Chips */
+.suggestion-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.suggestion-chip {
+  padding: 8px 16px;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.suggestion-chip:hover {
+  border-color: var(--color-primary-purple);
+  color: var(--color-primary-purple);
+  background: var(--color-hover-bg);
+}
+
+/* ==========================================================================
+   SIDEBAR EMPTY STATE - No Threads in Sidebar
+   ========================================================================== */
+
+.sidebar-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  text-align: center;
+  flex: 1;
+}
+
+.sidebar-empty-icon {
+  width: 64px;
+  height: 64px;
+  background: var(--color-hover-bg);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.sidebar-empty-icon svg {
+  width: 32px;
+  height: 32px;
+  color: var(--color-primary-purple);
+}
+
+.sidebar-empty-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-message-incoming-text);
+  margin-bottom: 8px;
+}
+
+.sidebar-empty-desc {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+.sidebar-empty-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  background: var(--color-primary-purple);
+  color: white;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.sidebar-empty-btn:hover {
+  background: var(--color-primary-light);
+}
+
+.sidebar-empty-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ==========================================================================
+   UPDATED LOADING/ERROR/EMPTY STATES
+   ========================================================================== */
+
+.messaging-loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 2rem;
+  text-align: center;
+}
+
+.messaging-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-primary-purple);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.messaging-loading-state p {
+  margin-top: 1rem;
+  color: var(--color-text-secondary);
+}
+
+.messaging-error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 2rem;
+  text-align: center;
+}
+
+.messaging-error-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background-color: #FED7D7;
+  color: var(--color-alert);
+  font-size: 2rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.messaging-error-state h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-message-incoming-text);
+  margin: 0 0 0.5rem;
+}
+
+.messaging-error-message {
+  color: var(--color-text-secondary);
+  margin-bottom: 1.5rem;
+}
+
+.messaging-retry-button {
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: white;
+  background-color: var(--color-primary-purple);
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.messaging-retry-button:hover {
+  background-color: var(--color-primary-light);
+}
+
+/* New Empty State (Full Page - No Conversations) */
+.messaging-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 2rem;
+  text-align: center;
+}
+
+.messaging-empty-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: var(--color-hover-bg);
+  color: var(--color-primary-purple);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.messaging-empty-icon svg {
+  width: 40px;
+  height: 40px;
+}
+
+.messaging-empty-state h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-message-incoming-text);
+  margin: 0 0 0.5rem;
+}
+
+.messaging-empty-state p {
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.messaging-empty-subtext {
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+.messaging-browse-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 1.5rem;
+  padding: 14px 28px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: white;
+  background-color: var(--color-primary-purple);
+  border: none;
+  border-radius: 24px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.messaging-browse-button:hover {
+  background-color: var(--color-primary-light);
+  transform: translateY(-1px);
+}
+
+.messaging-browse-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ==========================================================================
+   Responsive Adjustments for Empty States
+   ========================================================================== */
+
+@media (max-width: 900px) {
+  .messaging-welcome-state {
+    padding: 40px 24px;
+  }
+
+  .welcome-illustration {
+    width: 160px;
+    height: 130px;
+    margin-bottom: 24px;
+  }
+
+  .welcome-illustration .bubble-1,
+  .welcome-illustration .bubble-2 {
+    width: 100px;
+    height: 65px;
+  }
+
+  .welcome-title {
+    font-size: 1.25rem;
+  }
+
+  .welcome-desc {
+    font-size: 0.875rem;
+  }
+
+  .welcome-btn {
+    padding: 12px 20px;
+    font-size: 0.8125rem;
+  }
+
+  .welcome-tips {
+    margin-top: 32px;
+  }
+
+  .welcome-tip-cards {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .welcome-tip-card {
+    width: 100%;
+    max-width: 280px;
+  }
+}
+
+@media (max-width: 480px) {
+  .messaging-welcome-state {
+    padding: 32px 16px;
+  }
+
+  .welcome-actions {
+    flex-direction: column;
+    width: 100%;
+    max-width: 280px;
+  }
+
+  .welcome-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .conversation-empty-state {
+    padding: 24px 16px;
+  }
+
+  .suggestion-chips {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .suggestion-chip {
+    width: 100%;
+    max-width: 280px;
+    text-align: center;
+  }
 }

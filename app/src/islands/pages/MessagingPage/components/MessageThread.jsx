@@ -23,6 +23,7 @@ import TypingIndicator from './TypingIndicator.jsx';
  * @param {string} props.typingUserName - Name of user who is typing
  * @param {function} props.onCTAClick - Handler for CTA button clicks
  * @param {function} props.getCTAButtonConfig - Get CTA button config
+ * @param {function} props.onSuggestionClick - Handler for suggestion chip clicks
  */
 export default function MessageThread({
   messages,
@@ -33,7 +34,8 @@ export default function MessageThread({
   isOtherUserTyping,
   typingUserName,
   onCTAClick,
-  getCTAButtonConfig
+  getCTAButtonConfig,
+  onSuggestionClick
 }) {
   const messagesEndRef = useRef(null);
 
@@ -64,12 +66,39 @@ export default function MessageThread({
             <p>Loading messages...</p>
           </div>
         ) : messages.length === 0 ? (
-          <div className="message-thread__empty">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-            </svg>
-            <p>No messages yet</p>
-            <span>Start the conversation by sending a message below</span>
+          <div className="conversation-empty-state">
+            <div className="conversation-empty-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+            </div>
+            <h3 className="conversation-empty-title">Start the conversation</h3>
+            <p className="conversation-empty-desc">
+              Send a message to begin chatting with {threadInfo?.contact_name || 'your contact'}.
+            </p>
+            <div className="suggestion-chips">
+              <button
+                className="suggestion-chip"
+                type="button"
+                onClick={() => onSuggestionClick?.('Hi! I wanted to reach out about the listing.')}
+              >
+                👋 Say hello
+              </button>
+              <button
+                className="suggestion-chip"
+                type="button"
+                onClick={() => onSuggestionClick?.('Hi! I wanted to check on availability for the dates I\'m interested in.')}
+              >
+                📅 Ask about availability
+              </button>
+              <button
+                className="suggestion-chip"
+                type="button"
+                onClick={() => onSuggestionClick?.('Hi! I have a quick question about the listing.')}
+              >
+                ❓ Ask a question
+              </button>
+            </div>
           </div>
         ) : (
           <>

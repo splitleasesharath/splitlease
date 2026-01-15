@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { redirectToLogin, loginUser, signupUser, logoutUser, validateTokenAndFetchUser, isProtectedPage, getAuthToken, getFirstName, getAvatarUrl, checkUrlForAuthError } from '../../lib/auth.js';
 import { SIGNUP_LOGIN_URL, SEARCH_URL, HOST_OVERVIEW_URL } from '../../lib/constants.js';
-import { getUserType as getStoredUserType, getAuthState, getUserId } from '../../lib/secureStorage.js';
+import { getUserType as getStoredUserType, getAuthState } from '../../lib/secureStorage.js';
 import { supabase } from '../../lib/supabase.js';
 import CreateDuplicateListingModal from './CreateDuplicateListingModal/CreateDuplicateListingModal.jsx';
 import LoggedInAvatar from './LoggedInAvatar/LoggedInAvatar.jsx';
 import SignUpLoginModal from './SignUpLoginModal.jsx';
+import { useHostMenuData, getHostMenuConfig } from './Header/useHostMenuData.js';
+import { useGuestMenuData, getGuestMenuConfig } from './Header/useGuestMenuData.js';
 
 export default function Header({ autoShowLogin = false }) {
   const [mobileMenuActive, setMobileMenuActive] = useState(false);
@@ -43,6 +45,12 @@ export default function Header({ autoShowLogin = false }) {
 
   // CreateDuplicateListingModal State
   const [showListPropertyModal, setShowListPropertyModal] = useState(false);
+
+  // Dynamic menu data hooks for Host and Guest dropdowns
+  const userId = currentUser?.userId || currentUser?.id || '';
+  const isAuthenticated = !!currentUser;
+  const { state: hostMenuState } = useHostMenuData(userId, isAuthenticated);
+  const { state: guestMenuState } = useGuestMenuData(userId, isAuthenticated);
 
   // Background validation: Validate cached auth state and update with real data
   // The optimistic UI is already set synchronously in useState initializer above
@@ -110,20 +118,12 @@ export default function Header({ autoShowLogin = false }) {
           if (hasSupabaseSession) {
             console.log('[Header] Supabase session exists - preserving auth state');
             // Set basic user info from session if available
-            // CRITICAL: Include userId and userType so useHostMenuData and LoggedInAvatar can function
             if (session?.user) {
               setCurrentUser({
-                userId: session.user.id,
-                id: session.user.id,
                 firstName: session.user.user_metadata?.first_name || session.user.email?.split('@')[0] || 'User',
                 email: session.user.email,
-                userType: session.user.user_metadata?.user_type || null,
                 _isFromSession: true
               });
-              // Also update userType state so isHost()/isGuest() work correctly
-              if (session.user.user_metadata?.user_type) {
-                setUserType(session.user.user_metadata.user_type);
-              }
             }
           } else {
             setCurrentUser(null);
@@ -204,24 +204,13 @@ export default function Header({ autoShowLogin = false }) {
               console.log('[Header] UI updated for:', userData.firstName);
             } else {
               // Validation failed but we have a valid session - set basic info from session
-              // CRITICAL: Include userId and userType so useHostMenuData and LoggedInAvatar can function
-              // Use Bubble-format user_id from metadata (or localStorage) for downstream queries
-              // Fallback to Supabase UUID only if neither is available
               console.log('[Header] User profile fetch failed, using session data');
               if (session?.user) {
-                const bubbleUserId = session.user.user_metadata?.user_id || getUserId() || session.user.id;
                 setCurrentUser({
-                  userId: bubbleUserId,
-                  id: bubbleUserId,
                   firstName: session.user.user_metadata?.first_name || session.user.email?.split('@')[0] || 'User',
                   email: session.user.email,
-                  userType: session.user.user_metadata?.user_type || null,
                   _isFromSession: true
                 });
-                // Also update userType state so isHost()/isGuest() work correctly
-                if (session.user.user_metadata?.user_type) {
-                  setUserType(session.user.user_metadata.user_type);
-                }
                 setAuthChecked(true);
               }
             }
@@ -501,17 +490,13 @@ export default function Header({ autoShowLogin = false }) {
               {(() => {
                 const hostMenuConfig = getHostMenuConfig(hostMenuState, handleSignupClick);
                 const currentPath = window.location.pathname;
-                const ctaHref = hostMenuConfig.cta.href?.split('?')[0].split('#')[0];
-                // Filter out items that link to the current page OR duplicate the CTA
-                const filteredItems = hostMenuConfig.items.filter(item => {
-                  const itemHref = item.href?.split('?')[0].split('#')[0];
-                  const linksToCurrentPage = item.href && currentPath.startsWith(itemHref);
-                  const duplicatesCta = itemHref && ctaHref && itemHref === ctaHref;
-                  return !linksToCurrentPage && !duplicatesCta;
-                });
+                // Filter out items that link to the current page
+                const filteredItems = hostMenuConfig.items.filter(item =>
+                  !item.href || !currentPath.startsWith(item.href.split('?')[0].split('#')[0])
+                );
                 // Check if CTA links to current page
-                const ctaLinksToCurrentPage = ctaHref && currentPath.startsWith(ctaHref);
-                const showCta = !ctaLinksToCurrentPage;
+                const ctaHref = hostMenuConfig.cta.href?.split('?')[0].split('#')[0];
+                const showCta = !ctaHref || !currentPath.startsWith(ctaHref);
 
                 return (
                   <>
@@ -608,17 +593,13 @@ export default function Header({ autoShowLogin = false }) {
               {(() => {
                 const guestMenuConfig = getGuestMenuConfig(guestMenuState, handleSignupClick);
                 const currentPath = window.location.pathname;
-                const ctaHref = guestMenuConfig.cta.href?.split('?')[0].split('#')[0];
-                // Filter out items that link to the current page OR duplicate the CTA
-                const filteredItems = guestMenuConfig.items.filter(item => {
-                  const itemHref = item.href?.split('?')[0].split('#')[0];
-                  const linksToCurrentPage = item.href && currentPath.startsWith(itemHref);
-                  const duplicatesCta = itemHref && ctaHref && itemHref === ctaHref;
-                  return !linksToCurrentPage && !duplicatesCta;
-                });
+                // Filter out items that link to the current page
+                const filteredItems = guestMenuConfig.items.filter(item =>
+                  !item.href || !currentPath.startsWith(item.href.split('?')[0].split('#')[0])
+                );
                 // Check if CTA links to current page
-                const ctaLinksToCurrentPage = ctaHref && currentPath.startsWith(ctaHref);
-                const showCta = !ctaLinksToCurrentPage;
+                const ctaHref = guestMenuConfig.cta.href?.split('?')[0].split('#')[0];
+                const showCta = !ctaHref || !currentPath.startsWith(ctaHref);
 
                 return (
                   <>
