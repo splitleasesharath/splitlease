@@ -8,6 +8,20 @@
 import { supabase } from '../../../lib/supabase.js';
 
 // ============================================================================
+// REFERENCE DATA LOOKUPS
+// ============================================================================
+
+// Borough Bubble FK ID to display name mapping
+const BOROUGH_LOOKUP = {
+  '1607041299637x913970439175620100': 'Brooklyn',
+  '1607041299687x679479834266385900': 'Manhattan',
+  '1607041299715x741251947580746200': 'Bronx',
+  '1607041299828x406969561802059650': 'Queens',
+  '1686599616073x348655546878883200': 'Weehawken, NJ',
+  '1686674905048x436838997624262400': 'Newark, NJ'
+};
+
+// ============================================================================
 // LISTING OPERATIONS
 // ============================================================================
 
@@ -322,30 +336,34 @@ export function getLastPhoto(listing, photos = []) {
 }
 
 /**
+ * Get borough display name from Bubble FK ID
+ */
+export function getBoroughName(boroughId) {
+  return BOROUGH_LOOKUP[boroughId] || null;
+}
+
+/**
  * Get address string from listing
  *
+ * Returns: "Borough, Full Address" or fallback to "Borough, State, Zip"
  * Location - Address JSON structure: { address: "Full Address String", lat, lng }
- * Note: Location - City and Location - Borough contain Bubble FK IDs, not displayable names
  */
 export function getAddressString(listing) {
   if (!listing) return '';
 
+  const boroughName = getBoroughName(listing['Location - Borough']);
   const locationAddress = listing['Location - Address'];
-  if (typeof locationAddress === 'object' && locationAddress !== null) {
-    // Primary: use the full formatted address string if available
-    if (locationAddress.address) {
-      return locationAddress.address;
-    }
-    // Fallback: try individual address components (some records may have these)
-    const parts = [
-      locationAddress.number,
-      locationAddress.street
-    ].filter(Boolean).join(' ');
-    if (parts) return parts;
+
+  // Primary: Borough + full address from JSON
+  if (typeof locationAddress === 'object' && locationAddress !== null && locationAddress.address) {
+    return boroughName
+      ? `${boroughName}, ${locationAddress.address}`
+      : locationAddress.address;
   }
 
-  // Final fallback: State and Zip only (City and Borough are Bubble FK IDs)
+  // Fallback: Borough + State + Zip
   return [
+    boroughName,
     listing['Location - State'],
     listing['Location - Zip Code']
   ].filter(Boolean).join(', ');
