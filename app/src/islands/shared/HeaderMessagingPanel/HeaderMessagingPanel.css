@@ -317,6 +317,7 @@
   border-radius: 16px;
   min-width: 0;
   max-width: 100%;
+  overflow: hidden;
 }
 
 .header-messaging-panel__messages .message-bubble--incoming .message-bubble__content {
