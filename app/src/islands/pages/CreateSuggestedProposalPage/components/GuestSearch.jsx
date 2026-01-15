@@ -12,6 +12,7 @@ export default function GuestSearch({
   isConfirmed,
   isSearching,
   onSearchChange,
+  onSearchFocus,
   onSelect,
   onConfirm,
   onClear,
@@ -37,6 +38,7 @@ export default function GuestSearch({
             placeholder="Search Guest Name, email, phone number, unique ID"
             value={searchTerm}
             onChange={onSearchChange}
+            onFocus={onSearchFocus}
             disabled={!!selectedGuest}
           />
           {searchTerm && (
@@ -53,8 +55,8 @@ export default function GuestSearch({
           )}
         </div>
 
-        {/* Search Results */}
-        {searchTerm.length >= 2 && !selectedGuest && (
+        {/* Search Results - Show whenever there are results and no selection */}
+        {!selectedGuest && (searchResults.length > 0 || isSearching) && (
           <div className="csp-search-results">
             {isSearching ? (
               <div className="csp-loading">Searching...</div>

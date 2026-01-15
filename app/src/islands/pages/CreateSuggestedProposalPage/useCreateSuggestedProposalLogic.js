@@ -12,7 +12,9 @@ import { PROPOSAL_STATUSES } from '../../../logic/constants/proposalStatuses.js'
 import { DAY_NAMES, getDayName } from '../../../lib/dayUtils.js';
 import {
   searchListings,
+  getDefaultListings,
   searchGuests,
+  getDefaultGuests,
   getListingPhotos,
   getUserProposalsForListing,
   createSuggestedProposal
@@ -232,21 +234,46 @@ export function useCreateSuggestedProposalLogic() {
   // LISTING SEARCH
   // -------------------------------------------------------------------------
 
-  const debouncedListingSearch = useCallback(
-    debounce(async (term) => {
-      if (term.length < 2) {
-        setListingSearchResults([]);
-        return;
-      }
-
+  // Load default listings on mount
+  useEffect(() => {
+    const loadDefaults = async () => {
       setIsSearchingListings(true);
       try {
-        const { data, error } = await searchListings(term);
+        const { data, error } = await getDefaultListings();
         if (error) {
-          console.error('[CreateSuggestedProposal] Listing search error:', error);
-          setListingSearchResults([]);
+          console.error('[CreateSuggestedProposal] Default listings error:', error);
         } else {
           setListingSearchResults(data || []);
+        }
+      } finally {
+        setIsSearchingListings(false);
+      }
+    };
+    loadDefaults();
+  }, []);
+
+  const debouncedListingSearch = useCallback(
+    debounce(async (term) => {
+      setIsSearchingListings(true);
+      try {
+        // Empty search = show defaults with valid pricing
+        if (term.length === 0) {
+          const { data, error } = await getDefaultListings();
+          if (error) {
+            console.error('[CreateSuggestedProposal] Default listings error:', error);
+            setListingSearchResults([]);
+          } else {
+            setListingSearchResults(data || []);
+          }
+        } else {
+          // Search by term
+          const { data, error } = await searchListings(term);
+          if (error) {
+            console.error('[CreateSuggestedProposal] Listing search error:', error);
+            setListingSearchResults([]);
+          } else {
+            setListingSearchResults(data || []);
+          }
         }
       } finally {
         setIsSearchingListings(false);
@@ -260,6 +287,21 @@ export function useCreateSuggestedProposalLogic() {
     setListingSearchTerm(term);
     debouncedListingSearch(term);
   }, [debouncedListingSearch]);
+
+  // Handler for when listing search box receives focus
+  const handleListingSearchFocus = useCallback(async () => {
+    if (listingSearchResults.length === 0 && !selectedListing) {
+      setIsSearchingListings(true);
+      try {
+        const { data, error } = await getDefaultListings();
+        if (!error) {
+          setListingSearchResults(data || []);
+        }
+      } finally {
+        setIsSearchingListings(false);
+      }
+    }
+  }, [listingSearchResults.length, selectedListing]);
 
   const handleListingSelect = useCallback(async (listing) => {
     setSelectedListing(listing);
@@ -293,21 +335,48 @@ export function useCreateSuggestedProposalLogic() {
   // GUEST SEARCH
   // -------------------------------------------------------------------------
 
+  // Load default guests when step 2 becomes active
+  useEffect(() => {
+    if (currentStep === 2 && guestSearchResults.length === 0 && !selectedGuest) {
+      const loadDefaults = async () => {
+        setIsSearchingGuests(true);
+        try {
+          const { data, error } = await getDefaultGuests();
+          if (error) {
+            console.error('[CreateSuggestedProposal] Default guests error:', error);
+          } else {
+            setGuestSearchResults(data || []);
+          }
+        } finally {
+          setIsSearchingGuests(false);
+        }
+      };
+      loadDefaults();
+    }
+  }, [currentStep, guestSearchResults.length, selectedGuest]);
+
   const debouncedGuestSearch = useCallback(
     debounce(async (term) => {
-      if (term.length < 2) {
-        setGuestSearchResults([]);
-        return;
-      }
-
       setIsSearchingGuests(true);
       try {
-        const { data, error } = await searchGuests(term);
-        if (error) {
-          console.error('[CreateSuggestedProposal] Guest search error:', error);
-          setGuestSearchResults([]);
+        // Empty search = show default guest list
+        if (term.length === 0) {
+          const { data, error } = await getDefaultGuests();
+          if (error) {
+            console.error('[CreateSuggestedProposal] Default guests error:', error);
+            setGuestSearchResults([]);
+          } else {
+            setGuestSearchResults(data || []);
+          }
         } else {
-          setGuestSearchResults(data || []);
+          // Search by term (already filtered to guests only)
+          const { data, error } = await searchGuests(term);
+          if (error) {
+            console.error('[CreateSuggestedProposal] Guest search error:', error);
+            setGuestSearchResults([]);
+          } else {
+            setGuestSearchResults(data || []);
+          }
         }
       } finally {
         setIsSearchingGuests(false);
@@ -321,6 +390,21 @@ export function useCreateSuggestedProposalLogic() {
     setGuestSearchTerm(term);
     debouncedGuestSearch(term);
   }, [debouncedGuestSearch]);
+
+  // Handler for when guest search box receives focus
+  const handleGuestSearchFocus = useCallback(async () => {
+    if (guestSearchResults.length === 0 && !selectedGuest) {
+      setIsSearchingGuests(true);
+      try {
+        const { data, error } = await getDefaultGuests();
+        if (!error) {
+          setGuestSearchResults(data || []);
+        }
+      } finally {
+        setIsSearchingGuests(false);
+      }
+    }
+  }, [guestSearchResults.length, selectedGuest]);
 
   const handleGuestSelect = useCallback(async (guest) => {
     setSelectedGuest(guest);
@@ -652,12 +736,14 @@ export function useCreateSuggestedProposalLogic() {
 
     // Handlers - Listing Search
     handleListingSearchChange,
+    handleListingSearchFocus,
     handleListingSelect,
     handleListingClear,
     handleClearListingSearch,
 
     // Handlers - Guest Search
     handleGuestSearchChange,
+    handleGuestSearchFocus,
     handleGuestSelect,
     handleGuestConfirm,
     handleGuestClear,

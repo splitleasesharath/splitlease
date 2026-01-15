@@ -11,6 +11,97 @@ import { supabase } from '../../../lib/supabase.js';
 // LISTING OPERATIONS
 // ============================================================================
 
+// Standard fields to select for listing queries
+const LISTING_SELECT_FIELDS = `
+  _id,
+  "Name",
+  "Description",
+  "Active",
+  "Approved",
+  "Host User",
+  "Host email",
+  "host name",
+  "Location - Address",
+  "Location - City",
+  "Location - State",
+  "Location - Borough",
+  "Location - Hood",
+  "Location - Zip Code",
+  "Features - Photos",
+  "Features - Qty Bedrooms",
+  "Features - Qty Bathrooms",
+  "Features - Qty Beds",
+  "Features - Type of Space",
+  "rental type",
+  "Nights Available (List of Nights) ",
+  "Days Available (List of Days)",
+  "Minimum Nights",
+  "Maximum Weeks",
+  "💰Monthly Host Rate",
+  "💰Weekly Host Rate",
+  "💰Nightly Host Rate for 2 nights",
+  "💰Nightly Host Rate for 3 nights",
+  "💰Nightly Host Rate for 4 nights",
+  "💰Nightly Host Rate for 5 nights",
+  "💰Nightly Host Rate for 6 nights",
+  "💰Nightly Host Rate for 7 nights",
+  "💰Cleaning Cost / Maintenance Fee",
+  "💰Damage Deposit"
+`;
+
+/**
+ * Check if a listing has valid pricing for its rental type
+ * @param {Object} listing - Listing object
+ * @returns {boolean} True if listing has valid pricing
+ */
+function hasValidPricing(listing) {
+  const rentalType = listing['rental type'];
+  if (!rentalType) return false;
+
+  if (rentalType === 'Monthly') {
+    return !!listing['💰Monthly Host Rate'] && listing['💰Monthly Host Rate'] > 0;
+  }
+  if (rentalType === 'Weekly') {
+    return !!listing['💰Weekly Host Rate'] && listing['💰Weekly Host Rate'] > 0;
+  }
+  // Nightly - check if any nightly rate is set
+  return !!(
+    listing['💰Nightly Host Rate for 2 nights'] ||
+    listing['💰Nightly Host Rate for 3 nights'] ||
+    listing['💰Nightly Host Rate for 4 nights'] ||
+    listing['💰Nightly Host Rate for 5 nights'] ||
+    listing['💰Nightly Host Rate for 6 nights'] ||
+    listing['💰Nightly Host Rate for 7 nights']
+  );
+}
+
+/**
+ * Get default listings with valid pricing (for showing when search box is empty)
+ * Listings must have a rental type set and the corresponding price field populated
+ */
+export async function getDefaultListings() {
+  try {
+    const { data, error } = await supabase
+      .from('listing')
+      .select(LISTING_SELECT_FIELDS)
+      .eq('Deleted', false)
+      .eq('Active', true)
+      .not('rental type', 'is', null)
+      .order('Modified Date', { ascending: false })
+      .limit(50);
+
+    if (error) throw error;
+
+    // Filter client-side for valid pricing (Supabase can't do OR across different fields easily)
+    const validListings = (data || []).filter(hasValidPricing);
+
+    return { data: validListings.slice(0, 20), error: null };
+  } catch (error) {
+    console.error('[suggestedProposalService] getDefaultListings error:', error);
+    return { data: [], error: error.message };
+  }
+}
+
 /**
  * Search listings by host name, email, listing name, unique ID, or rental type
  */
@@ -18,40 +109,7 @@ export async function searchListings(searchTerm) {
   try {
     const { data, error } = await supabase
       .from('listing')
-      .select(`
-        _id,
-        "Name",
-        "Description",
-        "Active",
-        "Approved",
-        "Host User",
-        "Host email",
-        "host name",
-        "Location - Address",
-        "Location - City",
-        "Location - State",
-        "Location - Borough",
-        "Location - Hood",
-        "Location - Zip Code",
-        "Features - Photos",
-        "Features - Qty Bedrooms",
-        "Features - Qty Bathrooms",
-        "Features - Qty Beds",
-        "Features - Type of Space",
-        "rental type",
-        "Nights Available (List of Nights) ",
-        "Days Available (List of Days)",
-        "Minimum Nights",
-        "Maximum Weeks",
-        "💰Nightly Host Rate for 2 nights",
-        "💰Nightly Host Rate for 3 nights",
-        "💰Nightly Host Rate for 4 nights",
-        "💰Nightly Host Rate for 5 nights",
-        "💰Nightly Host Rate for 6 nights",
-        "💰Nightly Host Rate for 7 nights",
-        "💰Cleaning Cost / Maintenance Fee",
-        "💰Damage Deposit"
-      `)
+      .select(LISTING_SELECT_FIELDS)
       .eq('Deleted', false)
       .eq('Active', true)
       .or(`Name.ilike.%${searchTerm}%,host name.ilike.%${searchTerm}%,Host email.ilike.%${searchTerm}%,_id.ilike.%${searchTerm}%,rental type.ilike.%${searchTerm}%`)
@@ -89,26 +147,52 @@ export async function getListingPhotos(listingId) {
 // USER/GUEST OPERATIONS
 // ============================================================================
 
+// Standard fields to select for user/guest queries
+const USER_SELECT_FIELDS = `
+  _id,
+  "Name - First",
+  "Name - Last",
+  "Name - Full",
+  email,
+  "email as text",
+  "Phone Number (as text)",
+  "Profile Photo",
+  "About Me / Bio",
+  "Type - User Current",
+  "Created Date"
+`;
+
+/**
+ * Get default guest list (users with guest user type)
+ * Shows all guests when search box is empty/focused
+ */
+export async function getDefaultGuests() {
+  try {
+    const { data, error } = await supabase
+      .from('user')
+      .select(USER_SELECT_FIELDS)
+      .ilike('Type - User Current', '%Guest%')
+      .order('Created Date', { ascending: false })
+      .limit(20);
+
+    if (error) throw error;
+    return { data: data || [], error: null };
+  } catch (error) {
+    console.error('[suggestedProposalService] getDefaultGuests error:', error);
+    return { data: [], error: error.message };
+  }
+}
+
 /**
  * Search guests by name, email, phone, or unique ID
+ * Only returns users with guest user type
  */
 export async function searchGuests(searchTerm) {
   try {
     const { data, error } = await supabase
       .from('user')
-      .select(`
-        _id,
-        "Name - First",
-        "Name - Last",
-        "Name - Full",
-        email,
-        "email as text",
-        "Phone Number (as text)",
-        "Profile Photo",
-        "About Me / Bio",
-        "Type - User Current",
-        "Created Date"
-      `)
+      .select(USER_SELECT_FIELDS)
+      .ilike('Type - User Current', '%Guest%')
       .or(`"Name - Full".ilike.%${searchTerm}%,"Name - First".ilike.%${searchTerm}%,"Name - Last".ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,"Phone Number (as text)".ilike.%${searchTerm}%,_id.ilike.%${searchTerm}%`)
       .limit(20);
 

@@ -97,12 +97,14 @@ export default function CreateSuggestedProposalPage() {
 
     // Handlers - Listing Search
     handleListingSearchChange,
+    handleListingSearchFocus,
     handleListingSelect,
     handleListingClear,
     handleClearListingSearch,
 
     // Handlers - Guest Search
     handleGuestSearchChange,
+    handleGuestSearchFocus,
     handleGuestSelect,
     handleGuestConfirm,
     handleGuestClear,
@@ -164,6 +166,7 @@ export default function CreateSuggestedProposalPage() {
                 listingPhotos={listingPhotos}
                 isSearching={isSearchingListings}
                 onSearchChange={handleListingSearchChange}
+                onSearchFocus={handleListingSearchFocus}
                 onSelect={handleListingSelect}
                 onClear={handleListingClear}
                 onClearSearch={handleClearListingSearch}
@@ -179,6 +182,7 @@ export default function CreateSuggestedProposalPage() {
                   isConfirmed={isGuestConfirmed}
                   isSearching={isSearchingGuests}
                   onSearchChange={handleGuestSearchChange}
+                  onSearchFocus={handleGuestSearchFocus}
                   onSelect={handleGuestSelect}
                   onConfirm={handleGuestConfirm}
                   onClear={handleGuestClear}
