@@ -351,16 +351,12 @@ export async function handleCreateSuggested(
     nightsPerWeek
   );
 
-  // Status: For suggested proposals by Split Lease
-  const hasRentalApp = !!guestData["Rental Application"];
-  const rentalAppSubmitted = rentalApp?.submitted ?? false;
+  // Status: Suggested proposals ALWAYS start in "Pending Confirmation"
+  // The guest must confirm the suggestion before it progresses to any other state.
+  // Only after guest confirmation will the workflow check rental app status.
+  const status = "Proposal Submitted for guest by Split Lease - Pending Confirmation";
 
-  // Use appropriate status based on rental app state
-  const status = (hasRentalApp && rentalAppSubmitted)
-    ? "Host Review"
-    : "Proposal Submitted for guest by Split Lease - Awaiting Rental Application";
-
-  console.log(`[proposal:create_suggested] Calculated status: ${status}`);
+  console.log(`[proposal:create_suggested] Using status: ${status}`);
 
   // ================================================
   // GENERATE IDS
