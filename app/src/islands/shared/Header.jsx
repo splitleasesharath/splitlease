@@ -6,7 +6,7 @@ import { supabase } from '../../lib/supabase.js';
 import CreateDuplicateListingModal from './CreateDuplicateListingModal/CreateDuplicateListingModal.jsx';
 import LoggedInAvatar from './LoggedInAvatar/LoggedInAvatar.jsx';
 import SignUpLoginModal from './SignUpLoginModal.jsx';
-import SuggestedProposalTrigger from './SuggestedProposals/SuggestedProposalTrigger.jsx';
+import HeaderSuggestedProposalTrigger from './SuggestedProposals/HeaderSuggestedProposalTrigger.jsx';
 import SuggestedProposalPopup from './SuggestedProposals/SuggestedProposalPopup.jsx';
 import { fetchPendingConfirmationCount, fetchPendingConfirmationProposals, markProposalInterested, dismissProposal } from './SuggestedProposals/suggestedProposalService.js';
 
@@ -760,13 +760,10 @@ export default function Header({ autoShowLogin = false }) {
         <div className={`nav-right ${mobileMenuActive ? 'mobile-active' : ''}`}>
           {/* Suggested Proposal Trigger - shows for guest users with pending proposals */}
           {currentUser && isGuest() && pendingProposalCount > 0 && (
-            <SuggestedProposalTrigger
+            <HeaderSuggestedProposalTrigger
               onClick={handleSuggestedTriggerClick}
               isActive={showSuggestedPopup}
               proposalCount={pendingProposalCount}
-              showLabelOnMount={true}
-              labelDelay={2000}
-              labelDuration={6000}
             />
           )}
 

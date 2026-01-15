@@ -1,0 +1,99 @@
+/**
+ * HeaderSuggestedProposalTrigger Styles
+ *
+ * Inline button styled to match the header's design language.
+ * Positioned inline within nav-right, between nav links.
+ */
+
+.header-sp-trigger {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: transparent;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-right: 8px;
+}
+
+.header-sp-trigger:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: scale(1.05);
+}
+
+.header-sp-trigger:active {
+  transform: scale(0.95);
+}
+
+.header-sp-trigger--active {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+/* Lightbulb icon */
+.header-sp-trigger__icon {
+  width: 20px;
+  height: 20px;
+  color: #FFFFFF;
+}
+
+/* Count badge */
+.header-sp-trigger__badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  background: #EF4444;
+  color: #FFFFFF;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Subtle pulse animation to draw attention */
+@keyframes header-sp-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+  }
+}
+
+.header-sp-trigger__badge {
+  animation: header-sp-pulse 2s ease-in-out infinite;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .header-sp-trigger {
+    width: 36px;
+    height: 36px;
+    margin-right: 4px;
+  }
+
+  .header-sp-trigger__icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .header-sp-trigger__badge {
+    min-width: 16px;
+    height: 16px;
+    font-size: 10px;
+    top: -3px;
+    right: -3px;
+  }
+}
