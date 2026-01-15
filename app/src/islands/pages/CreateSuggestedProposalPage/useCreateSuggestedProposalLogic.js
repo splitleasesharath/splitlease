@@ -639,8 +639,10 @@ export function useCreateSuggestedProposalLogic() {
         throw new Error(error);
       }
 
-      setCreatedProposal(data.proposal);
-      setCreatedThread(data.thread);
+      // Edge function returns { proposalId, threadId, status, ... }
+      // Store the IDs in objects with _id property for SuccessModal compatibility
+      setCreatedProposal({ _id: data.proposalId });
+      setCreatedThread({ _id: data.threadId });
       setShowSuccessModal(true);
       setIsConfirmationStep(false);
 

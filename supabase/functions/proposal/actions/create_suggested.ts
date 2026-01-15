@@ -247,6 +247,7 @@ export async function handleCreateSuggested(
       "💰Nightly Host Rate for 3 nights",
       "💰Nightly Host Rate for 4 nights",
       "💰Nightly Host Rate for 5 nights",
+      "💰Nightly Host Rate for 6 nights",
       "💰Nightly Host Rate for 7 nights",
       "💰Monthly Host Rate",
       "Deleted"
@@ -305,6 +306,7 @@ export async function handleCreateSuggested(
 
   // Fetch Rental Application (if exists)
   let rentalApp: RentalApplicationData | null = null;
+  let hasRentalApp = false;
   if (guestData["Rental Application"]) {
     const { data: app } = await supabase
       .from("rentalapplication")
@@ -312,6 +314,7 @@ export async function handleCreateSuggested(
       .eq("_id", guestData["Rental Application"])
       .single();
     rentalApp = app as RentalApplicationData | null;
+    hasRentalApp = rentalApp !== null;
     console.log(`[proposal:create_suggested] Rental app found, submitted: ${rentalApp?.submitted}`);
   }
 
