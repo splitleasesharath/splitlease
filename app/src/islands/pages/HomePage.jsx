@@ -615,7 +615,7 @@ function MarketReportPopup({ onRequestClick, onDismiss }) {
 
         <div className="market-popup-illustration">
           <lottie-player
-            src="https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1745939792891x394981453861459140/Report.json"
+            src="https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1751640509056x731482311814151200/atom%20white.json"
             background="transparent"
             speed="1"
             style={{ width: '120px', height: '120px' }}
