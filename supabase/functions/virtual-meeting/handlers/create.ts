@@ -11,6 +11,7 @@
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { ValidationError, SupabaseSyncError } from "../../_shared/errors.ts";
 import { enqueueBubbleSync, triggerQueueProcessing } from "../../_shared/queueSync.ts";
+import { sendVMRequestMessages } from "../../_shared/vmMessagingHelpers.ts";
 import {
   CreateVirtualMeetingInput,
   CreateVirtualMeetingResponse,
@@ -101,7 +102,7 @@ export async function handleCreate(
 
   const { data: hostUser, error: hostUserError } = await supabase
     .from("user")
-    .select(`_id, email, "Name - First", "Name - Full"`)
+    .select(`_id, email, "Name - First", "Name - Full", "Phone - Number", "Notification Setting"`)
     .eq("_id", hostUserId)
     .single();
 
@@ -119,7 +120,7 @@ export async function handleCreate(
   // Fetch Guest User
   const { data: guestUser, error: guestUserError } = await supabase
     .from("user")
-    .select(`_id, email, "Name - First", "Name - Full"`)
+    .select(`_id, email, "Name - First", "Name - Full", "Phone - Number", "Notification Setting"`)
     .eq("_id", proposalData.Guest)
     .single();
 
@@ -253,6 +254,65 @@ export async function handleCreate(
   } catch (syncError) {
     // Log but don't fail - items can be manually requeued if needed
     console.error(`[virtual-meeting:create] Failed to enqueue Bubble sync (non-blocking):`, syncError);
+  }
+
+  // ================================================
+  // SEND MULTI-CHANNEL NOTIFICATIONS
+  // ================================================
+
+  try {
+    // Fetch notification preferences
+    const [hostNotifResult, guestNotifResult] = await Promise.all([
+      hostUserData["Notification Setting"]
+        ? supabase.from("notification_setting").select(`"Virtual Meetings"`).eq("_id", hostUserData["Notification Setting"]).single()
+        : { data: null },
+      guestUserData["Notification Setting"]
+        ? supabase.from("notification_setting").select(`"Virtual Meetings"`).eq("_id", guestUserData["Notification Setting"]).single()
+        : { data: null },
+    ]);
+
+    const hostVmNotifs: string[] = hostNotifResult.data?.["Virtual Meetings"] || [];
+    const guestVmNotifs: string[] = guestNotifResult.data?.["Virtual Meetings"] || [];
+
+    // Fetch listing name for context
+    let listingName: string | undefined;
+    if (proposalData.Listing) {
+      const { data: listing } = await supabase
+        .from("listing")
+        .select('"Name"')
+        .eq("_id", proposalData.Listing)
+        .single();
+      listingName = listing?.Name;
+    }
+
+    const messageResult = await sendVMRequestMessages(supabase, {
+      proposalId: input.proposalId,
+      hostUserId: hostUserData._id,
+      guestUserId: guestUserData._id,
+      listingId: proposalData.Listing,
+      listingName,
+      hostName: hostUserData["Name - First"],
+      guestName: guestUserData["Name - First"],
+      hostEmail: hostUserData.email,
+      guestEmail: guestUserData.email,
+      hostPhone: hostUserData["Phone - Number"],
+      guestPhone: guestUserData["Phone - Number"],
+      suggestedDates: input.timesSelected,
+      notifyHostSms: hostVmNotifs.includes('SMS'),
+      notifyHostEmail: hostVmNotifs.includes('Email'),
+      notifyGuestSms: guestVmNotifs.includes('SMS'),
+      notifyGuestEmail: guestVmNotifs.includes('Email'),
+    }, requesterIsHost);
+
+    console.log(`[virtual-meeting:create] Notifications sent:`, {
+      thread: messageResult.threadId,
+      inApp: { guest: !!messageResult.guestMessageId, host: !!messageResult.hostMessageId },
+      email: { guest: messageResult.guestEmailSent, host: messageResult.hostEmailSent },
+      sms: { guest: messageResult.guestSmsSent, host: messageResult.hostSmsSent },
+    });
+  } catch (msgError) {
+    // Non-blocking - log and continue
+    console.error(`[virtual-meeting:create] Failed to send notifications (non-blocking):`, msgError);
   }
 
   // ================================================

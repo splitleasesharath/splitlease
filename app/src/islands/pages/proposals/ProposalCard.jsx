@@ -382,6 +382,45 @@ function getDefaultBannerConfig(status, usualOrder) {
   return null;
 }
 
+/**
+ * Get status icon for the banner
+ */
+function getStatusIcon(config) {
+  if (config.type === 'cancelled' || config.type === 'rejected' || config.type === 'cancelled_by_guest') {
+    return '✕';
+  }
+  if (config.type === 'accepted') {
+    return '✓';
+  }
+  if (config.type === 'suggested') {
+    return '💡';
+  }
+  // Default icons based on color
+  if (config.bgColor === '#FBECEC' || config.borderColor === '#CC0000') {
+    return '!';
+  }
+  if (config.bgColor === '#ecfdf5' || config.bgColor?.includes('ecfdf5')) {
+    return '✓';
+  }
+  return 'i';
+}
+
+/**
+ * Get banner variant class
+ */
+function getBannerVariant(config) {
+  if (config.type === 'cancelled' || config.type === 'rejected' || config.type === 'cancelled_by_guest') {
+    return 'cancelled';
+  }
+  if (config.type === 'accepted' || config.bgColor === '#ecfdf5') {
+    return 'success';
+  }
+  if (config.bgColor === '#fef3c7') {
+    return 'attention';
+  }
+  return '';
+}
+
 function StatusBanner({ status, cancelReason, isCounteroffer }) {
   // Normalize status for lookup (handle trailing spaces from Bubble)
   const normalizedStatus = typeof status === 'string' ? status.trim() : status;
@@ -399,53 +438,55 @@ function StatusBanner({ status, cancelReason, isCounteroffer }) {
   if (!config) return null;
 
   let displayText = config.text;
+  let strongText = '';
+  let detailText = '';
 
   // Handle different banner types
   switch (config.type) {
     case 'cancelled':
       // Hide banner entirely if no reason is provided for Split Lease cancellation
       if (!cancelReason) return null;
-      displayText = `Proposal Cancelled by Split Lease\nReason: ${cancelReason}`;
+      strongText = 'Proposal Cancelled by Split Lease';
+      detailText = `Reason: ${cancelReason}`;
       break;
     case 'cancelled_by_guest':
-      displayText = cancelReason
-        ? `Proposal Cancelled!\nReason: ${cancelReason}`
-        : 'You cancelled this proposal.';
+      strongText = 'Proposal Cancelled';
+      detailText = cancelReason ? `Reason: ${cancelReason}` : 'You cancelled this proposal.';
       break;
     case 'rejected':
-      displayText = cancelReason
-        ? `Proposal Cancelled!\nReason: ${cancelReason}`
-        : 'This proposal was declined by the host.';
+      strongText = 'Proposal Declined';
+      detailText = cancelReason ? `Reason: ${cancelReason}` : 'This proposal was declined by the host.';
       break;
     case 'accepted':
-      // Show different text based on whether counteroffer happened
-      displayText = isCounteroffer
-        ? 'Host terms Accepted!\nLease Documents being prepared.'
-        : config.text;
+      strongText = isCounteroffer ? 'Host terms Accepted' : 'Proposal Accepted';
+      detailText = 'Lease Documents being prepared.';
+      break;
+    case 'suggested':
+      strongText = 'Suggested Proposal';
+      detailText = 'This proposal was suggested by a Split Lease Agent on your behalf.';
       break;
     default:
-      // Use the default text from config
+      // Parse text for strong/detail parts
+      if (displayText && displayText.includes('\n')) {
+        const parts = displayText.split('\n');
+        strongText = parts[0];
+        detailText = parts.slice(1).join(' ');
+      } else {
+        strongText = displayText || '';
+      }
       break;
   }
 
+  const icon = getStatusIcon(config);
+  const variant = getBannerVariant(config);
+
   return (
-    <div
-      className="status-banner"
-      style={{
-        background: config.bgColor,
-        border: `1px solid ${config.borderColor}`,
-        color: config.textColor,
-        borderRadius: '10px',
-        padding: '15px 20px',
-        textAlign: 'center',
-        fontWeight: 'bold',
-        marginBottom: '15px',
-        fontSize: '12px',
-        lineHeight: '1.5',
-        whiteSpace: 'pre-line'
-      }}
-    >
-      {displayText}
+    <div className={`status-banner ${variant}`}>
+      <span className="status-icon">{icon}</span>
+      <div className="status-text">
+        <strong>{strongText}</strong>
+        {detailText && ` — ${detailText}`}
+      </div>
     </div>
   );
 }
@@ -649,55 +690,51 @@ function InlineProgressTracker({ status, usualOrder = 0, isTerminal = false, sta
   const labels = stageLabels || PROGRESS_STAGES.map(s => s.label);
 
   return (
-    <div className="inline-progress-tracker">
-      <div className="progress-line-container">
-        {PROGRESS_STAGES.map((stage, index) => {
-          const stageColor = getStageColor(index, status, usualOrder, isTerminal, proposal);
-          const prevStageColor = index > 0 ? getStageColor(index - 1, status, usualOrder, isTerminal, proposal) : null;
+    <div className="progress-row">
+      {PROGRESS_STAGES.map((stage, index) => {
+        const stageColor = getStageColor(index, status, usualOrder, isTerminal, proposal);
+        const prevStageColor = index > 0 ? getStageColor(index - 1, status, usualOrder, isTerminal, proposal) : null;
+        const isCurrent = stageColor === PROGRESS_COLORS.current;
+        const isCompleted = stageColor === PROGRESS_COLORS.completed;
+        const isCancelled = stageColor === PROGRESS_COLORS.cancelled;
 
-          // Connector color: purple ONLY if previous dot is purple (completed)
-          // Green dot is the "current action" - line after it should be gray
-          // Everything after the green dot should be gray
-          const connectorColor = prevStageColor === PROGRESS_COLORS.purple
-            ? PROGRESS_COLORS.purple
-            : prevStageColor === PROGRESS_COLORS.red
-              ? PROGRESS_COLORS.red
-              : PROGRESS_COLORS.gray;
+        // Connector color: completed (primary purple) ONLY if previous dot is completed
+        const connectorColor = prevStageColor === PROGRESS_COLORS.completed
+          ? PROGRESS_COLORS.completed
+          : prevStageColor === PROGRESS_COLORS.cancelled
+            ? PROGRESS_COLORS.cancelled
+            : PROGRESS_COLORS.future;
 
-          return (
-            <div key={stage.id} className="progress-node-wrapper">
-              {/* Connector line before node (except first) */}
-              {index > 0 && (
-                <div
-                  className="progress-connector"
-                  style={{ backgroundColor: connectorColor }}
-                />
-              )}
-              {/* Node circle */}
-              <div
-                className="progress-node"
-                style={{ backgroundColor: stageColor }}
-              />
-            </div>
-          );
-        })}
-      </div>
-      <div className="progress-labels">
-        {PROGRESS_STAGES.map((stage, index) => {
-          const stageColor = getStageColor(index, status, usualOrder, isTerminal, proposal);
-          const labelColor = stageColor !== PROGRESS_COLORS.gray ? stageColor : PROGRESS_COLORS.labelGray;
+        // Determine step state class
+        let stepClass = 'progress-step';
+        if (isCompleted) stepClass += ' completed';
+        if (isCurrent) stepClass += ' current';
+        if (isCancelled) stepClass += ' cancelled';
 
-          return (
+        const labelColor = stageColor !== PROGRESS_COLORS.future ? stageColor : PROGRESS_COLORS.labelGray;
+
+        return (
+          <div key={stage.id} className={stepClass}>
             <div
-              key={stage.id}
-              className="progress-label"
-              style={{ color: labelColor }}
-            >
+              className="progress-dot"
+              style={{
+                backgroundColor: stageColor,
+                ...(isCurrent && { boxShadow: '0 0 0 4px rgba(109, 49, 194, 0.15)' })
+              }}
+            />
+            <span className="progress-label" style={{ color: labelColor }}>
               {labels[index] || stage.label}
-            </div>
-          );
-        })}
-      </div>
+            </span>
+            {/* Connector line after label (except last) */}
+            {index < PROGRESS_STAGES.length - 1 && (
+              <div
+                className="progress-line"
+                style={{ backgroundColor: isCompleted ? PROGRESS_COLORS.completed : PROGRESS_COLORS.future }}
+              />
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -1026,313 +1063,165 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
     window.location.reload();
   };
 
+  // Calculate days summary for display
+  const selectedDaysCount = daysSelected.length;
+
   return (
     <div className="proposal-card-wrapper">
-      {/* Status Banner - shows for accepted/counteroffer/cancelled states */}
-      <StatusBanner status={status} cancelReason={cancelReason} isCounteroffer={isCounteroffer} />
+      {/* Detail Section Container */}
+      <div className="detail-section">
+        {/* Status Banner - shows for accepted/counteroffer/cancelled states */}
+        <StatusBanner status={status} cancelReason={cancelReason} isCounteroffer={isCounteroffer} />
 
-      <div className="proposal-card-v2">
-        {/* Main two-column content */}
-        <div className="proposal-content-row">
-          {/* Left column - Listing details */}
-          <div className="proposal-left-column">
-            <h3 className="listing-title-v2">{listingName}</h3>
-            <p className="listing-location-v2">{location}</p>
+        {/* Detail Header */}
+        <div className="detail-header">
+          {photoUrl ? (
+            <img src={photoUrl} className="detail-image" alt="" />
+          ) : (
+            <div className="detail-image" style={{ backgroundColor: 'var(--gp-border-light)' }} />
+          )}
+          <div className="detail-title-area">
+            <div className="detail-title">{listingName}</div>
+            <div className="detail-location">{location}</div>
+          </div>
+          <div className="detail-host">
+            <div className="host-name">{hostName}</div>
+            <div className="host-label">Host</div>
+          </div>
+        </div>
 
-            {/* Action buttons row */}
-            <div className="listing-actions-row">
-              <a
-                href={getListingUrlWithProposalContext(listing?._id, {
-                  daysSelected: parseDaysSelectedForContext(proposal),
-                  reservationSpan: getEffectiveReservationSpan(proposal),
-                  moveInDate: proposal['Move in range start']
-                })}
-                className="btn-action btn-primary-v2"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                View Listing
-              </a>
-              <button
-                className="btn-action btn-map"
-                onClick={() => setShowMapModal(true)}
-              >
-                View Map
-              </button>
-            </div>
+        {/* Quick Links Row */}
+        <div className="links-row">
+          <a
+            href={getListingUrlWithProposalContext(listing?._id, {
+              daysSelected: parseDaysSelectedForContext(proposal),
+              reservationSpan: getEffectiveReservationSpan(proposal),
+              moveInDate: proposal['Move in range start']
+            })}
+            className="link-item"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            View Listing
+          </a>
+          <button
+            className="link-item"
+            onClick={() => setShowMapModal(true)}
+          >
+            Map
+          </button>
+          <button
+            className="link-item"
+            onClick={() => navigateToMessaging(host?._id, proposal._id)}
+          >
+            Message Host
+          </button>
+          <button
+            className="link-item"
+            onClick={() => setShowHostProfileModal(true)}
+          >
+            Host Profile
+          </button>
+          {hasHouseRules && (
+            <button
+              className="link-item"
+              onClick={() => setShowHouseRules(!showHouseRules)}
+            >
+              {showHouseRules ? 'Hide Rules' : 'House Rules'}
+            </button>
+          )}
+        </div>
 
-            {/* Schedule info */}
-            <div className="schedule-info-block">
-              {checkInOutRange && (
-                <div className="schedule-text primary">{checkInOutRange}</div>
-              )}
-              <div className="schedule-text">
-                <span className="label">Duration</span> {reservationWeeks} Weeks
+        {/* House Rules Grid - conditionally shown */}
+        {showHouseRules && hasHouseRules && (
+          <div className="house-rules-grid" style={{ padding: '16px 24px', borderBottom: '1px solid var(--gp-border-light)' }}>
+            {houseRules.map((rule, index) => (
+              <div key={index} className="house-rule-badge">
+                {rule}
               </div>
-            </div>
+            ))}
+          </div>
+        )}
 
-            {/* Day selector badges with warning icon */}
-            <div className="day-badges-row">
-              {allDays.map((day) => (
-                <div
-                  key={day.index}
-                  className={`day-badge-v2 ${day.selected ? 'selected' : ''}`}
-                >
-                  {day.letter}
-                </div>
-              ))}
-              {/* Warning icon when some nights are unavailable */}
+        {/* Info Grid */}
+        <div className="info-grid">
+          <div className="info-item">
+            <div className="info-label">Ideal Move-in</div>
+            <div className="info-value">{anticipatedMoveIn || 'TBD'}</div>
+          </div>
+          <div className="info-item">
+            <div className="info-label">Duration</div>
+            <div className="info-value">{reservationWeeks} weeks</div>
+          </div>
+          <div className="info-item">
+            <div className="info-label">Schedule</div>
+            <div className="info-value">{checkInOutRange || 'Flexible'}</div>
+          </div>
+          <div className="info-item">
+            <div className="info-label">Nights/week</div>
+            <div className="info-value">{nightsPerWeek} nights</div>
+          </div>
+        </div>
+
+        {/* Days Row */}
+        <div className="days-row">
+          <span className="days-label">Schedule</span>
+          <div className="days-pills">
+            {allDays.map((day) => (
+              <div
+                key={day.index}
+                className={`day-pill ${day.selected ? 'selected' : ''}`}
+              >
+                {day.letter}
+              </div>
+            ))}
+          </div>
+          <div className="days-info">
+            <div className="days-count">
+              {selectedDaysCount} days, {nightsPerWeek} nights Selected
               {someNightsUnavailable && (
                 <span
                   className="nights-unavailable-warning"
                   title="Some selected nights are no longer available"
-                  style={{
-                    color: '#4B47CE',
-                    fontSize: '20px',
-                    marginLeft: '8px',
-                    cursor: 'pointer'
-                  }}
+                  style={{ color: 'var(--gp-danger)', marginLeft: '8px' }}
                 >
                   ⚠
                 </span>
               )}
             </div>
-
-            {/* Check-in/out times */}
-            <div className="checkin-times">
-              Check-in {checkInTime} Check-out {checkOutTime}
-            </div>
-
-            {/* Move-in and Move-out dates */}
-            <div className="movein-date">
-              <span className="label">Move-in</span> {anticipatedMoveIn || 'TBD'}
-              {anticipatedMoveOut && (
-                <>
-                  &nbsp;&nbsp;&nbsp;
-                  <span className="label">Move-out</span> {anticipatedMoveOut}
-                </>
-              )}
-            </div>
-
-          {/* House rules section - only show if listing has rules */}
-          {hasHouseRules && (
-            <div className="house-rules-section">
-              <button
-                type="button"
-                className="house-rules-toggle"
-                onClick={() => setShowHouseRules(!showHouseRules)}
-              >
-                {showHouseRules ? 'Hide House Rules' : 'See House Rules'}
-              </button>
-
-              {showHouseRules && (
-                <div className="house-rules-grid">
-                  {houseRules.map((rule, index) => (
-                    <div key={index} className="house-rule-badge">
-                      {rule}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Right column - Photo with host overlay */}
-        <div className="proposal-right-column">
-          <div
-            className="listing-photo-container"
-            style={{ backgroundImage: photoUrl ? `url(${photoUrl})` : 'none' }}
-          >
-            {/* Host overlay */}
-            <div className="host-overlay">
-              {hostPhoto ? (
-                <img src={hostPhoto} alt={hostName} className="host-avatar" />
-              ) : (
-                <div className="host-avatar host-avatar-placeholder">
-                  {hostName.charAt(0).toUpperCase()}
-                </div>
-              )}
-              <div className="host-name-badge">{hostName}</div>
-              <button
-                className="btn-host btn-host-profile"
-                onClick={() => setShowHostProfileModal(true)}
-              >
-                Host Profile
-              </button>
-              <button
-                className="btn-host btn-host-message"
-                onClick={() => navigateToMessaging(host?._id, proposal._id)}
-              >Send a Message</button>
-            </div>
+            <div className="days-range">Check-in {checkInTime}, Check-out {checkOutTime}</div>
           </div>
         </div>
-      </div>
 
-        {/* Pricing bar with dynamic action buttons */}
-        <div className="pricing-bar">
-          <div className="pricing-details">
-            {/* Show original price with strikethrough when counteroffer happened */}
-            {originalTotalPrice && (
-              <span className="pricing-original">
-                <s>Total {formatPrice(originalTotalPrice)}</s>
-              </span>
-            )}
-            <span className="pricing-total">Total {formatPrice(totalPrice)}</span>
-            <span className="pricing-fee">{cleaningFee > 0 ? `Maintenance fee ${formatPrice(cleaningFee)}` : 'No maintenance fee'}</span>
-            <span className="pricing-deposit">Damage deposit {formatPrice(damageDeposit)}</span>
-          </div>
-          <div className="pricing-nightly">
-            {formatPrice(nightlyPrice)} / night
-          </div>
-
-          {/* Dynamic action buttons based on status - uses buttonConfig from os_proposal_status */}
-          <div className="action-buttons">
-            {/* Fallback: Show basic buttons if buttonConfig not yet loaded */}
-            {!buttonConfig && !isTerminal && !isCompleted && (
+        {/* Pricing Row */}
+        <div className="pricing-row">
+          <div className="pricing-breakdown">
+            <span>{formatPrice(nightlyPrice)}/night</span>
+            <span>×</span>
+            <span>{nightsPerWeek} nights</span>
+            <span>×</span>
+            <span>{reservationWeeks} weeks</span>
+            {cleaningFee > 0 && (
               <>
-                {/* VM Button (Fallback) */}
-                {vmConfig.visible && (
-                  <button
-                    className={`btn-action-bar ${vmConfig.className}`}
-                    disabled={vmConfig.disabled}
-                    style={vmConfig.style || undefined}
-                    onClick={handleVMButtonClick}
-                  >
-                    {vmConfig.label}
-                  </button>
-                )}
-                <button
-                  className="btn-action-bar btn-modify-proposal"
-                  onClick={() => {
-                    setProposalDetailsModalInitialView('pristine');
-                    setShowProposalDetailsModal(true);
-                  }}
-                >
-                  Modify Proposal
-                </button>
-                <button
-                  className="btn-action-bar btn-cancel-proposal"
-                  onClick={openCancelModal}
-                >
-                  Cancel Proposal
-                </button>
+                <span>+</span>
+                <span>{formatPrice(cleaningFee)} fee</span>
               </>
             )}
-
-            {/* Button 1: Virtual Meeting - visibility based on vmConfig (implements 8 Bubble conditionals) */}
-            {buttonConfig && vmConfig.visible && (
-              <button
-                className={`btn-action-bar ${vmConfig.className}`}
-                disabled={vmConfig.disabled}
-                style={vmConfig.style || undefined}
-                onClick={handleVMButtonClick}
-              >
-                {vmConfig.label}
-              </button>
-            )}
-
-            {/* Button 2: Guest Action 1 - dynamic label from os_proposal_status.guest_action_1 */}
-            {buttonConfig?.guestAction1?.visible && (
-              buttonConfig.guestAction1.action === 'go_to_leases' ? (
-                <a
-                  href="/my-leases"
-                  className="btn-action-bar btn-go-to-leases"
-                  style={buttonConfig.guestAction1.style || undefined}
-                >
-                  {buttonConfig.guestAction1.label}
-                </a>
-              ) : (
-                <button
-                  className={`btn-action-bar ${
-                    buttonConfig.guestAction1.action === 'delete_proposal' ? 'btn-delete-proposal' :
-                    buttonConfig.guestAction1.action === 'remind_sl' ? 'btn-remind' :
-                    buttonConfig.guestAction1.action === 'modify_proposal' ? 'btn-modify-proposal' :
-                    buttonConfig.guestAction1.action === 'accept_counteroffer' ? 'btn-accept-counteroffer' :
-                    buttonConfig.guestAction1.action === 'confirm_interest' ? 'btn-interested' :
-                    'btn-primary-action'
-                  }`}
-                  style={buttonConfig.guestAction1.style || undefined}
-                  onClick={() => {
-                    // Handle different actions
-                    if (buttonConfig.guestAction1.action === 'modify_proposal') {
-                      setProposalDetailsModalInitialView('pristine');
-                      setShowProposalDetailsModal(true);
-                    } else if (buttonConfig.guestAction1.action === 'submit_rental_app') {
-                      goToRentalApplication(proposal._id);
-                    } else if (buttonConfig.guestAction1.action === 'delete_proposal') {
-                      // Soft-delete for already-cancelled proposals
-                      handleDeleteProposal();
-                    }
-                    // TODO: Add handlers for other actions (remind_sl, accept_counteroffer, etc.)
-                  }}
-                >
-                  {buttonConfig.guestAction1.label}
-                </button>
-              )
-            )}
-
-            {/* Button 3: Guest Action 2 - dynamic label from os_proposal_status.guest_action_2 */}
-            {buttonConfig?.guestAction2?.visible && (
-              <button
-                className={`btn-action-bar ${
-                  buttonConfig.guestAction2.action === 'reject_suggestion' ? 'btn-not-interested' :
-                  buttonConfig.guestAction2.action === 'review_counteroffer' ? 'btn-review-terms' :
-                  buttonConfig.guestAction2.action === 'see_details' ? 'btn-see-details' :
-                  buttonConfig.guestAction2.action === 'verify_identity' ? 'btn-verify-identity' :
-                  'btn-secondary-action'
-                }`}
-                style={buttonConfig.guestAction2.style || undefined}
-                onClick={() => {
-                  // Handle different actions
-                  if (buttonConfig.guestAction2.action === 'see_details') {
-                    setProposalDetailsModalInitialView('pristine');
-                    setShowProposalDetailsModal(true);
-                  }
-                  // TODO: Add handlers for other actions (reject_suggestion, review_counteroffer, verify_identity)
-                }}
-              >
-                {buttonConfig.guestAction2.label}
-              </button>
-            )}
-
-            {/* Button 4: Cancel/Delete/Reject button - dynamic based on status */}
-            {buttonConfig?.cancelButton?.visible && (
-              <button
-                className={`btn-action-bar ${
-                  buttonConfig.cancelButton.action === 'delete_proposal' ? 'btn-delete-proposal' :
-                  buttonConfig.cancelButton.action === 'see_house_manual' ? 'btn-house-manual' :
-                  buttonConfig.cancelButton.action === 'reject_counteroffer' ? 'btn-reject-terms' :
-                  buttonConfig.cancelButton.action === 'reject_proposal' ? 'btn-reject-proposal' :
-                  'btn-cancel-proposal'
-                }`}
-                style={buttonConfig.cancelButton.style || undefined}
-                disabled={buttonConfig.cancelButton.disabled}
-                onClick={() => {
-                  // Handle different actions
-                  if (buttonConfig.cancelButton.action === 'see_house_manual') {
-                    // Navigate to house manual or open modal
-                    // TODO: Implement house manual navigation
-                  } else if (buttonConfig.cancelButton.action === 'delete_proposal') {
-                    // Soft-delete for already-cancelled proposals
-                    handleDeleteProposal();
-                  } else if (
-                    buttonConfig.cancelButton.action === 'cancel_proposal' ||
-                    buttonConfig.cancelButton.action === 'reject_counteroffer' ||
-                    buttonConfig.cancelButton.action === 'reject_proposal'
-                  ) {
-                    // Open standalone CancelProposalModal
-                    openCancelModal();
-                  }
-                }}
-              >
-                {buttonConfig.cancelButton.label}
-              </button>
-            )}
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div className="pricing-total-label">
+              Reservation Estimated Total
+              {originalTotalPrice && (
+                <span style={{ marginLeft: '8px', color: 'var(--gp-text-muted)', textDecoration: 'line-through' }}>
+                  {formatPrice(originalTotalPrice)}
+                </span>
+              )}
+            </div>
+            <div className="pricing-total">{formatPrice(totalPrice)}</div>
           </div>
         </div>
 
-        {/* Progress tracker with dynamic stage, colors, and labels */}
+        {/* Progress Tracker */}
         <InlineProgressTracker
           status={status}
           usualOrder={currentStatusConfig?.usualOrder || 0}
@@ -1340,6 +1229,114 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
           isTerminal={isTerminal}
           proposal={proposal}
         />
+
+        {/* Actions Row */}
+        <div className="actions-row">
+          {/* VM status as text label (for waiting/requested states) */}
+          {vmConfig.visible && vmConfig.disabled && (
+            <span className={`btn-vm-text ${vmConfig.className === 'btn-vm-requested' ? 'waiting' : ''}`}>
+              {vmConfig.label}
+            </span>
+          )}
+
+          {/* Primary action button (Guest Action 1) */}
+          {buttonConfig?.guestAction1?.visible && (
+            buttonConfig.guestAction1.action === 'go_to_leases' ? (
+              <a href="/my-leases" className="btn btn-primary">
+                {buttonConfig.guestAction1.label}
+              </a>
+            ) : (
+              <button
+                className={`btn ${
+                  buttonConfig.guestAction1.action === 'delete_proposal' ? 'btn-danger' :
+                  'btn-primary'
+                }`}
+                onClick={() => {
+                  if (buttonConfig.guestAction1.action === 'modify_proposal') {
+                    setProposalDetailsModalInitialView('pristine');
+                    setShowProposalDetailsModal(true);
+                  } else if (buttonConfig.guestAction1.action === 'submit_rental_app') {
+                    goToRentalApplication(proposal._id);
+                  } else if (buttonConfig.guestAction1.action === 'delete_proposal') {
+                    handleDeleteProposal();
+                  }
+                }}
+              >
+                {buttonConfig.guestAction1.label}
+              </button>
+            )
+          )}
+
+          {/* VM action button (only when actionable, not disabled) */}
+          {vmConfig.visible && !vmConfig.disabled && (
+            <button
+              className={`btn btn-outline ${highlightVMButton && vmConfig.view === 'request' ? 'vm-button-pulse' : ''}`}
+              onClick={handleVMButtonClick}
+            >
+              {vmConfig.view === 'request' ? 'Schedule Meeting' : vmConfig.label}
+            </button>
+          )}
+
+          {/* Guest Action 2 (secondary action) */}
+          {buttonConfig?.guestAction2?.visible && (
+            <button
+              className="btn btn-outline"
+              onClick={() => {
+                if (buttonConfig.guestAction2.action === 'see_details') {
+                  setProposalDetailsModalInitialView('pristine');
+                  setShowProposalDetailsModal(true);
+                }
+              }}
+            >
+              {buttonConfig.guestAction2.label}
+            </button>
+          )}
+
+          {/* Edit button (always show if not terminal/completed) */}
+          {!isTerminal && !isCompleted && (
+            <button
+              className="btn btn-ghost"
+              onClick={() => {
+                setProposalDetailsModalInitialView('pristine');
+                setShowProposalDetailsModal(true);
+              }}
+            >
+              Edit
+            </button>
+          )}
+
+          {/* Cancel/Delete button */}
+          {buttonConfig?.cancelButton?.visible && (
+            <button
+              className={`btn ${
+                buttonConfig.cancelButton.action === 'delete_proposal' ? 'btn-danger' :
+                buttonConfig.cancelButton.action === 'see_house_manual' ? 'btn-ghost' :
+                'btn-danger'
+              }`}
+              disabled={buttonConfig.cancelButton.disabled}
+              onClick={() => {
+                if (buttonConfig.cancelButton.action === 'delete_proposal') {
+                  handleDeleteProposal();
+                } else if (
+                  buttonConfig.cancelButton.action === 'cancel_proposal' ||
+                  buttonConfig.cancelButton.action === 'reject_counteroffer' ||
+                  buttonConfig.cancelButton.action === 'reject_proposal'
+                ) {
+                  openCancelModal();
+                }
+              }}
+            >
+              {buttonConfig.cancelButton.label}
+            </button>
+          )}
+
+          {/* Fallback cancel button if no buttonConfig */}
+          {!buttonConfig && !isTerminal && !isCompleted && (
+            <button className="btn btn-danger" onClick={openCancelModal}>
+              Cancel
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Host Profile Modal */}

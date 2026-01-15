@@ -317,3 +317,233 @@ export async function getUnreadCount(
 
   return count || 0;
 }
+
+// ============================================
+// PROPOSAL THREAD OPERATIONS
+// ============================================
+
+/**
+ * Find existing thread for a proposal
+ * Returns thread ID if found, null otherwise
+ */
+export async function findThreadByProposal(
+  supabase: SupabaseClient,
+  proposalId: string
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('thread')
+    .select('_id')
+    .eq('"Proposal"', proposalId)
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error('[messagingHelpers] Thread lookup by proposal error:', error);
+    return null;
+  }
+
+  return data?._id || null;
+}
+
+/**
+ * Get listing name by ID
+ */
+export async function getListingName(
+  supabase: SupabaseClient,
+  listingId: string
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('listing')
+    .select('"Name"')
+    .eq('_id', listingId)
+    .single();
+
+  if (error || !data) {
+    console.error('[messagingHelpers] Listing lookup error:', error);
+    return null;
+  }
+
+  return data['Name'] || null;
+}
+
+export interface CreateProposalThreadParams {
+  proposalId: string;
+  hostUserId: string;
+  guestUserId: string;
+  listingId: string;
+  listingName: string;
+}
+
+/**
+ * Create a new thread for a proposal
+ * Uses listing name as thread subject
+ * Returns the new thread ID
+ */
+export async function createProposalThread(
+  supabase: SupabaseClient,
+  params: CreateProposalThreadParams
+): Promise<string> {
+  const threadId = await createThread(supabase, {
+    hostUserId: params.hostUserId,
+    guestUserId: params.guestUserId,
+    listingId: params.listingId,
+    proposalId: params.proposalId,
+    subject: params.listingName,
+    createdBy: params.guestUserId, // Proposals are initiated by guests
+  });
+
+  console.log('[messagingHelpers] Created proposal thread:', threadId, 'for proposal:', params.proposalId);
+  return threadId;
+}
+
+/**
+ * Find or create a thread for a proposal
+ * Returns { threadId, isNew }
+ *
+ * Logic:
+ * 1. First check if thread already exists for this proposal
+ * 2. If not, check if thread exists for same listing+guest (from ContactHost)
+ * 3. If found, update that thread with the proposal ID
+ * 4. If nothing found, create a new thread
+ */
+export async function findOrCreateProposalThread(
+  supabase: SupabaseClient,
+  params: CreateProposalThreadParams
+): Promise<{ threadId: string; isNew: boolean }> {
+  // First, check if thread already exists for this proposal
+  const existingThreadByProposal = await findThreadByProposal(supabase, params.proposalId);
+
+  if (existingThreadByProposal) {
+    console.log('[messagingHelpers] Found existing thread for proposal:', existingThreadByProposal);
+    return { threadId: existingThreadByProposal, isNew: false };
+  }
+
+  // Second, check if thread exists for the same listing+guest (from ContactHost flow)
+  const existingThreadByListing = await findExistingThread(
+    supabase,
+    params.hostUserId,
+    params.guestUserId,
+    params.listingId
+  );
+
+  if (existingThreadByListing) {
+    console.log('[messagingHelpers] Found existing thread for listing+guest, updating with proposal:', existingThreadByListing);
+
+    // Update the existing thread to link it to this proposal
+    const { error: updateError } = await supabase
+      .from('thread')
+      .update({
+        "Proposal": params.proposalId,
+        "Modified Date": new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('_id', existingThreadByListing);
+
+    if (updateError) {
+      console.error('[messagingHelpers] Failed to update thread with proposal:', updateError);
+      // Continue anyway - thread exists, just won't be linked
+    }
+
+    return { threadId: existingThreadByListing, isNew: false };
+  }
+
+  // Create new thread
+  const newThreadId = await createProposalThread(supabase, params);
+  return { threadId: newThreadId, isNew: true };
+}
+
+// ============================================
+// SPLITBOT MESSAGE OPERATIONS
+// ============================================
+
+export interface CreateSplitBotMessageParams {
+  threadId: string;
+  messageBody: string;
+  callToAction: string; // CTA display name (FK to os_messaging_cta.display)
+  visibleToHost: boolean;
+  visibleToGuest: boolean;
+  splitBotWarning?: string;
+  recipientUserId: string; // The user who should see this as unread
+}
+
+/**
+ * SplitBot user ID - constant for automated messages
+ */
+export const SPLITBOT_USER_ID = '1634177189464x117577733821174320';
+
+/**
+ * Create a SplitBot automated message
+ * Sets is_split_bot = true and is_forwarded = true (per Bubble pattern)
+ */
+export async function createSplitBotMessage(
+  supabase: SupabaseClient,
+  params: CreateSplitBotMessageParams
+): Promise<string> {
+  const messageId = await generateBubbleId(supabase);
+  const now = new Date().toISOString();
+
+  // Get thread info for host/guest IDs
+  const thread = await getThread(supabase, params.threadId);
+  if (!thread) {
+    throw new Error('Thread not found');
+  }
+
+  const { error } = await supabase
+    .from('_message')
+    .insert({
+      _id: messageId,
+      "Associated Thread/Conversation": params.threadId,
+      "Message Body": params.messageBody,
+      "-Originator User": SPLITBOT_USER_ID,
+      "-Host User": thread.hostUser,
+      "-Guest User": thread.guestUser,
+      "is Split Bot": true,
+      "is Forwarded": true, // SplitBot messages are marked as forwarded per Bubble pattern
+      "is Visible to Host": params.visibleToHost,
+      "is Visible to Guest": params.visibleToGuest,
+      "is deleted (is hidden)": false,
+      "Call to Action": params.callToAction,
+      "Split Bot Warning": params.splitBotWarning || null,
+      "Unread Users": [params.recipientUserId],
+      "Created Date": now,
+      "Modified Date": now,
+      "Created By": SPLITBOT_USER_ID,
+      created_at: now,
+      updated_at: now,
+      pending: false,
+    });
+
+  if (error) {
+    console.error('[messagingHelpers] Failed to create SplitBot message:', error);
+    throw new Error(`Failed to create SplitBot message: ${error.message}`);
+  }
+
+  console.log('[messagingHelpers] Created SplitBot message:', messageId);
+  return messageId;
+}
+
+/**
+ * Update thread's last message info after sending a message
+ */
+export async function updateThreadLastMessage(
+  supabase: SupabaseClient,
+  threadId: string,
+  messageBody: string
+): Promise<void> {
+  const now = new Date().toISOString();
+
+  const { error } = await supabase
+    .from('thread')
+    .update({
+      "~Last Message": messageBody.substring(0, 100), // Truncate for preview
+      "~Date Last Message": now,
+      "Modified Date": now,
+      updated_at: now,
+    })
+    .eq('_id', threadId);
+
+  if (error) {
+    console.error('[messagingHelpers] Failed to update thread last message:', error);
+    // Non-blocking - don't throw
+  }
+}

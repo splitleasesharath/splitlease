@@ -262,8 +262,8 @@ export async function handleCreate(
 
   // Calculate order ranking
   // After migration, "Proposals List" is a native text[] array - no parsing needed
-  const existingProposals: string[] = guestData["Proposals List"] || [];
-  const orderRanking = calculateOrderRanking(existingProposals.length);
+  const guestProposalsList: string[] = guestData["Proposals List"] || [];
+  const orderRanking = calculateOrderRanking(guestProposalsList.length);
 
   // Calculate complementary nights (Step 4)
   const complementaryNights = calculateComplementaryNights(
@@ -459,7 +459,7 @@ export async function handleCreate(
   };
 
   // Add proposal to guest's list
-  const updatedGuestProposals = [...existingProposals, proposalId];
+  const updatedGuestProposals = [...guestProposalsList, proposalId];
   guestUpdates["Proposals List"] = updatedGuestProposals;
 
   // Add listing to favorites (Step 2)

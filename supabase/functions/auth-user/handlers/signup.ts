@@ -60,7 +60,10 @@ export async function handleSignup(
   supabaseServiceKey: string,
   payload: any
 ): Promise<any> {
-  console.log('[signup] ========== SIGNUP REQUEST (SUPABASE NATIVE) ==========');
+  console.log('[signup] ========== SIGNUP REQUEST (SUPABASE NATIVE) v3 ==========');
+  console.log('[signup] 🔑 DATABASE CONNECTION INFO:');
+  console.log('[signup]    supabaseUrl:', supabaseUrl);
+  console.log('[signup]    Project ID (from URL):', supabaseUrl?.match(/https:\/\/([^.]+)\./)?.[1] || 'UNKNOWN');
 
   // Validate required fields
   validateRequiredFields(payload, ['email', 'password', 'retype']);
@@ -117,7 +120,9 @@ export async function handleSignup(
 
   try {
     // ========== CHECK FOR EXISTING USER ==========
+    console.log('[signup] ========== EMAIL CHECK v2 ==========');
     console.log('[signup] Checking if email already exists...');
+    console.log('[signup] Email to check:', email.toLowerCase());
 
     // Check in public.user table
     const { data: existingUser, error: userCheckError } = await supabaseAdmin
@@ -126,33 +131,45 @@ export async function handleSignup(
       .eq('email', email.toLowerCase())
       .maybeSingle();
 
+    console.log('[signup] public.user check result:', { existingUser, userCheckError: userCheckError?.message });
+
     if (userCheckError) {
       console.error('[signup] Error checking existing user:', userCheckError.message);
       throw new BubbleApiError('Failed to verify email availability', 500);
     }
 
     if (existingUser) {
-      console.log('[signup] Email already exists in user table:', email);
+      console.log('[signup] ❌ BLOCKED: Email already exists in user table:', email, 'user_id:', existingUser._id);
       throw new BubbleApiError('This email is already in use.', 400, 'USED_EMAIL');
     }
+
+    console.log('[signup] ✅ Email NOT in public.user table');
 
     // Check in Supabase Auth
     let existingAuthUser = null;
     try {
       const { data: authUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+      console.log('[signup] auth.listUsers result:', {
+        userCount: authUsers?.users?.length || 0,
+        listError: listError?.message
+      });
       if (!listError && authUsers?.users) {
         existingAuthUser = authUsers.users.find(u => u.email?.toLowerCase() === email.toLowerCase());
+        if (existingAuthUser) {
+          console.log('[signup] ❌ BLOCKED: Found matching auth user:', existingAuthUser.id, existingAuthUser.email);
+        }
       }
     } catch (listErr) {
       console.log('[signup] Could not list auth users:', listErr);
     }
 
     if (existingAuthUser) {
-      console.log('[signup] Email already exists in Supabase Auth:', email);
+      console.log('[signup] ❌ BLOCKED: Email already exists in Supabase Auth:', email);
       throw new BubbleApiError('This email is already in use.', 400, 'USED_EMAIL');
     }
 
-    console.log('[signup] ✅ Email is available');
+    console.log('[signup] ✅ Email NOT in Supabase Auth');
+    console.log('[signup] ✅ Email is available - proceeding with signup');
 
     // ========== GENERATE BUBBLE-STYLE ID ==========
     console.log('[signup] Generating ID using generate_bubble_id()...');

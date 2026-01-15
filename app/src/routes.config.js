@@ -95,7 +95,8 @@ export const routes = [
     file: 'account-profile.html',
     aliases: ['/account-profile.html'],
     protected: true,
-    cloudflareInternal: false,
+    cloudflareInternal: true,
+    internalName: 'account-profile-view',
     hasDynamicSegment: true,
     dynamicPattern: '/account-profile/:userId'
   },
@@ -338,6 +339,14 @@ export const routes = [
     path: '/_internal-test',
     file: '_internal-test.html',
     aliases: ['/_internal-test.html'],
+    protected: false,
+    cloudflareInternal: false,
+    hasDynamicSegment: false
+  },
+  {
+    path: '/_internal/create-suggested-proposal',
+    file: 'create-suggested-proposal.html',
+    aliases: ['/_internal/create-suggested-proposal.html'],
     protected: false,
     cloudflareInternal: false,
     hasDynamicSegment: false

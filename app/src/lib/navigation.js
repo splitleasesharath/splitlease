@@ -136,12 +136,8 @@ export function getSearchUrl(filters = {}) {
  * Navigate to account profile
  * @param {string} userId - The user ID
  */
-export function goToProfile(userId) {
-  if (!userId) {
-    console.error('goToProfile: userId is required');
-    return;
-  }
-  window.location.href = `/account-profile/${userId}`;
+export function goToProfile() {
+  window.location.href = '/account-profile';
 }
 
 /**
@@ -196,14 +192,34 @@ export function goToFavorites() {
 
 /**
  * Navigate to rental application
- * @param {string} proposalId - Optional proposal ID
+ * Now redirects to account profile with rental application section focus and modal auto-open
+ *
+ * @param {string} proposalId - Optional proposal ID for context
+ * @param {Object} options - Navigation options
+ * @param {boolean} options.openModal - Whether to auto-open the rental application modal (default: true)
+ * @param {boolean} options.scrollToSection - Whether to scroll to section (default: true)
  */
-export function goToRentalApplication(proposalId) {
+export function goToRentalApplication(proposalId, options = {}) {
+  const { openModal = true, scrollToSection = true } = options;
+
+  const params = new URLSearchParams();
+
+  if (scrollToSection) {
+    params.set('section', 'rental-application');
+  }
+
+  if (openModal) {
+    params.set('openRentalApp', 'true');
+  }
+
   if (proposalId) {
     window.location.href = `/rental-application?proposal=${proposalId}`;
   } else {
     window.location.href = '/rental-application';
   }
+
+  const queryString = params.toString();
+  window.location.href = `/account-profile${queryString ? '?' + queryString : ''}`;
 }
 
 /**

@@ -323,7 +323,8 @@ export function SelfListingPageV2() {
       }
 
       // User is logged in - check their type
-      const userData = await validateTokenAndFetchUser();
+      // CRITICAL: Use clearOnFailure: false to preserve session if Edge Function fails
+      const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
       const userType = userData?.userType;
 
       console.log('🔐 SelfListingPageV2: User type:', userType);
@@ -396,7 +397,8 @@ export function SelfListingPageV2() {
 
       if (loggedIn) {
         try {
-          const userData = await validateTokenAndFetchUser();
+          // CRITICAL: Use clearOnFailure: false to preserve session if Edge Function fails
+          const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
           if (userData?.phoneNumber) {
             setUserPhoneNumber(userData.phoneNumber);
             setPhoneNumber(userData.phoneNumber);
@@ -951,10 +953,17 @@ export function SelfListingPageV2() {
 
   // Submit handler
   const handleSubmit = async () => {
-    // Use validateTokenAndFetchUser to match Header's auth check behavior
-    // This ensures consistency - if Header shows logged out, we show the modal
-    const userData = await validateTokenAndFetchUser();
-    const loggedIn = !!userData;
+    // Try to get user data from Edge Function first
+    // CRITICAL: Use clearOnFailure: false to preserve session if Edge Function fails
+    const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
+
+    // If Edge Function failed (userData is null), fall back to checking Supabase session directly
+    // This handles the case where Edge Function returns 500 but user has valid Supabase session
+    let loggedIn = !!userData;
+    if (!loggedIn) {
+      loggedIn = await checkAuthStatus();
+      console.log('[SelfListingPageV2] Edge Function failed, checking Supabase session:', loggedIn);
+    }
     setIsLoggedIn(loggedIn);
 
     if (!loggedIn) {

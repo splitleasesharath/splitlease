@@ -283,7 +283,8 @@ export const SelfListingPage: React.FC = () => {
       }
 
       // User is logged in - check their type
-      const userData = await validateTokenAndFetchUser();
+      // CRITICAL: Use clearOnFailure: false to preserve session if Edge Function fails
+      const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
       const userType = userData?.userType;
 
       console.log('🔐 SelfListingPage: User type:', userType);

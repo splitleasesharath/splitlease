@@ -2,270 +2,177 @@
  * Proposal Edge Function
  * Split Lease - Supabase Edge Functions
  *
- * Main router for proposal operations:
- * - create: Create a new proposal
- * - update: Update an existing proposal
- * - get: Get proposal details
- * - suggest: Find and create suggestion proposals (weekly match, same address)
- *
- * NO FALLBACK PRINCIPLE: All errors fail fast without fallback logic
- *
- * FP ARCHITECTURE:
- * - Pure functions for validation, routing, and response formatting
- * - Immutable data structures (no let reassignment in orchestration)
- * - Side effects isolated to boundaries (entry/exit of handler)
- * - Result type for error propagation (exceptions only at outer boundary)
+ * DIAGNOSTIC VERSION 2: Minimal core + lazy imports
  */
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeaders } from "../_shared/cors.ts";
-import {
-  ValidationError,
-  AuthenticationError,
-} from "../_shared/errors.ts";
 
-// FP Utilities
-import { Result, ok, err } from "../_shared/fp/result.ts";
-import {
-  parseRequest,
-  validateAction,
-  routeToHandler,
-  isPublicAction,
-  getSupabaseConfig,
-  formatSuccessResponse,
-  formatErrorResponseHttp,
-  formatCorsResponse,
-  CorsPreflightSignal,
-  AuthenticatedUser,
-  extractAuthToken,
-} from "../_shared/fp/orchestration.ts";
-import { createErrorLog, addError, setUserId, setAction, ErrorLog } from "../_shared/fp/errorLog.ts";
-import { reportErrorLog } from "../_shared/slack.ts";
-
-// Handlers
-import { handleCreate } from "./actions/create.ts";
-import { handleUpdate } from "./actions/update.ts";
-import { handleGet } from "./actions/get.ts";
-import { handleSuggest } from "./actions/suggest.ts";
-
-// ─────────────────────────────────────────────────────────────
-// Configuration (Immutable)
-// ─────────────────────────────────────────────────────────────
-
-const ALLOWED_ACTIONS = ["create", "update", "get", "suggest"] as const;
-
-// NOTE: 'create' is temporarily public until Supabase auth migration is complete
-// TODO: Remove 'create' from PUBLIC_ACTIONS once auth migration is done
-const PUBLIC_ACTIONS: ReadonlySet<string> = new Set(["get", "create"]);
-
-type Action = typeof ALLOWED_ACTIONS[number];
-
-// Handler map (immutable record) - replaces switch statement
-const handlers: Readonly<Record<Action, Function>> = {
-  create: handleCreate,
-  update: handleUpdate,
-  get: handleGet,
-  suggest: handleSuggest,
+// CORS headers inlined
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
 };
 
-// ─────────────────────────────────────────────────────────────
-// Pure Functions
-// ─────────────────────────────────────────────────────────────
-
-/**
- * Authenticate user from request headers
- * Returns Result with user or error
- */
-const authenticateUser = async (
-  headers: Headers,
-  supabaseUrl: string,
-  supabaseAnonKey: string,
-  requireAuth: boolean
-): Promise<Result<AuthenticatedUser | null, AuthenticationError>> => {
-  // Public actions don't require auth
-  if (!requireAuth) {
-    return ok(null);
-  }
-
-  // Extract auth token
-  const tokenResult = extractAuthToken(headers);
-  if (!tokenResult.ok) {
-    return tokenResult;
-  }
-
-  // Validate token with Supabase Auth
-  const authClient = createClient(supabaseUrl, supabaseAnonKey, {
-    global: { headers: { Authorization: tokenResult.value } },
-  });
-
-  const { data: { user: authUser }, error: authError } = await authClient.auth.getUser();
-
-  if (authError || !authUser) {
-    return err(new AuthenticationError("Invalid or expired token"));
-  }
-
-  return ok({ id: authUser.id, email: authUser.email ?? "" });
-};
-
-// ─────────────────────────────────────────────────────────────
-// Effect Boundary (Side Effects Isolated Here)
-// ─────────────────────────────────────────────────────────────
-
-console.log("[proposal] Edge Function started (FP mode)");
+console.log("[proposal] Edge Function initializing...");
 
 Deno.serve(async (req: Request) => {
-  // Initialize immutable error log with correlation ID
-  const correlationId = crypto.randomUUID().slice(0, 8);
-  let errorLog: ErrorLog = createErrorLog('proposal', 'unknown', correlationId);
-
   try {
-    console.log(`[proposal] ========== REQUEST ==========`);
-    console.log(`[proposal] Method: ${req.method}`);
+    console.log(`[proposal] Request: ${req.method}`);
 
-    // ─────────────────────────────────────────────────────────
-    // Step 1: Parse request (side effect boundary for req.json())
-    // ─────────────────────────────────────────────────────────
-
-    const parseResult = await parseRequest(req);
-
-    if (!parseResult.ok) {
-      // Handle CORS preflight (not an error, just control flow)
-      if (parseResult.error instanceof CorsPreflightSignal) {
-        return formatCorsResponse();
-      }
-      throw parseResult.error;
+    // Handle CORS preflight FIRST
+    if (req.method === 'OPTIONS') {
+      console.log(`[proposal] CORS preflight - returning 200`);
+      return new Response(null, { status: 200, headers: corsHeaders });
     }
 
-    const { action, payload, headers } = parseResult.value;
+    // Parse request body
+    const body = await req.json();
+    const action = body.action || 'unknown';
+    const payload = body.payload || {};
 
-    // Update error log with action (immutable transformation)
-    errorLog = setAction(errorLog, action);
     console.log(`[proposal] Action: ${action}`);
 
-    // ─────────────────────────────────────────────────────────
-    // Step 2: Validate action (pure)
-    // ─────────────────────────────────────────────────────────
-
-    const actionResult = validateAction(ALLOWED_ACTIONS, action);
-    if (!actionResult.ok) {
-      throw actionResult.error;
+    // Validate action
+    const validActions = ['create', 'update', 'get', 'suggest', 'create_suggested'];
+    if (!validActions.includes(action)) {
+      return new Response(
+        JSON.stringify({ success: false, error: `Invalid action: ${action}` }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    // ─────────────────────────────────────────────────────────
-    // Step 3: Get configuration (pure with env read)
-    // ─────────────────────────────────────────────────────────
+    // Get Supabase config
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
 
-    const configResult = getSupabaseConfig();
-    if (!configResult.ok) {
-      throw configResult.error;
-    }
-    const config = configResult.value;
-
-    // ─────────────────────────────────────────────────────────
-    // Step 4: Authenticate user (side effect boundary)
-    // ─────────────────────────────────────────────────────────
-
-    const requireAuth = !isPublicAction(PUBLIC_ACTIONS, action);
-    const authResult = await authenticateUser(
-      headers,
-      config.supabaseUrl,
-      config.supabaseAnonKey,
-      requireAuth
-    );
-
-    if (!authResult.ok) {
-      throw authResult.error;
+    if (!supabaseUrl || !supabaseServiceKey || !supabaseAnonKey) {
+      throw new Error('Missing Supabase configuration');
     }
 
-    const user = authResult.value;
-
-    if (user) {
-      errorLog = setUserId(errorLog, user.id);
-      console.log(`[proposal] Authenticated: ${user.email}`);
-    } else {
-      console.log(`[proposal] Public action - skipping authentication`);
-    }
-
-    // ─────────────────────────────────────────────────────────
-    // Step 5: Create service client (side effect - client creation)
-    // ─────────────────────────────────────────────────────────
-
-    const serviceClient = createClient(config.supabaseUrl, config.supabaseServiceKey, {
+    // Create service client
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // ─────────────────────────────────────────────────────────
-    // Step 6: Route to handler (pure lookup + execution)
-    // ─────────────────────────────────────────────────────────
+    let result: unknown;
 
-    const handlerResult = routeToHandler(handlers, action);
-    if (!handlerResult.ok) {
-      throw handlerResult.error;
+    // Dynamic imports - load only the handler needed
+    // This avoids boot-time loading of all handlers
+    switch (action) {
+      case 'create': {
+        console.log('[proposal] Loading create handler...');
+        const { handleCreate } = await import("./actions/create.ts");
+        console.log('[proposal] Create handler loaded');
+
+        // Authentication check - create is public for now
+        result = await handleCreate(payload, null, supabase);
+        break;
+      }
+
+      case 'update': {
+        console.log('[proposal] Loading update handler...');
+        const { handleUpdate } = await import("./actions/update.ts");
+        console.log('[proposal] Update handler loaded');
+
+        // Authentication required
+        const user = await authenticateFromHeaders(req.headers, supabaseUrl, supabaseAnonKey);
+        if (!user) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'Authentication required' }),
+            { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        result = await handleUpdate(payload, user, supabase);
+        break;
+      }
+
+      case 'get': {
+        console.log('[proposal] Loading get handler...');
+        const { handleGet } = await import("./actions/get.ts");
+        console.log('[proposal] Get handler loaded');
+
+        result = await handleGet(payload, supabase);
+        break;
+      }
+
+      case 'suggest': {
+        console.log('[proposal] Loading suggest handler...');
+        const { handleSuggest } = await import("./actions/suggest.ts");
+        console.log('[proposal] Suggest handler loaded');
+
+        // Authentication required
+        const user = await authenticateFromHeaders(req.headers, supabaseUrl, supabaseAnonKey);
+        if (!user) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'Authentication required' }),
+            { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        result = await handleSuggest(payload, user, supabase);
+        break;
+      }
+
+      case 'create_suggested': {
+        console.log('[proposal] Loading create_suggested handler...');
+        const { handleCreateSuggested } = await import("./actions/create_suggested.ts");
+        console.log('[proposal] Create_suggested handler loaded');
+
+        // No authentication required - internal tool only
+        // Access control is handled by route protection (/_internal/* paths)
+        result = await handleCreateSuggested(payload, supabase);
+        break;
+      }
+
+      default:
+        throw new Error(`Unhandled action: ${action}`);
     }
 
-    // Execute handler - the only remaining side effect
-    const handler = handlerResult.value;
-    const result = await executeHandler(handler, action as Action, payload, user, serviceClient);
+    console.log('[proposal] Handler completed successfully');
 
-    console.log(`[proposal] ========== SUCCESS ==========`);
-
-    return formatSuccessResponse(result);
+    return new Response(
+      JSON.stringify({ success: true, data: result }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
 
   } catch (error) {
-    console.error(`[proposal] ========== ERROR ==========`);
-    console.error(`[proposal]`, error);
+    console.error('[proposal] Error:', error);
 
-    // Add error to log (immutable)
-    errorLog = addError(errorLog, error as Error, 'Fatal error in main handler');
+    const statusCode = (error as { name?: string }).name === 'ValidationError' ? 400 :
+                       (error as { name?: string }).name === 'AuthenticationError' ? 401 : 500;
 
-    // Report to Slack (side effect at boundary)
-    reportErrorLog(errorLog);
-
-    return formatErrorResponseHttp(error as Error);
+    return new Response(
+      JSON.stringify({ success: false, error: (error as Error).message }),
+      { status: statusCode, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
 });
 
-// ─────────────────────────────────────────────────────────────
-// Handler Execution (Encapsulates action-specific logic)
-// ─────────────────────────────────────────────────────────────
+// Helper function for authentication
+async function authenticateFromHeaders(
+  headers: Headers,
+  supabaseUrl: string,
+  supabaseAnonKey: string
+): Promise<{ id: string; email: string } | null> {
+  const authHeader = headers.get('Authorization');
 
-/**
- * Execute the appropriate handler with correct parameters
- * This function handles the different signatures of each handler
- */
-async function executeHandler(
-  handler: Function,
-  action: Action,
-  payload: Record<string, unknown>,
-  user: AuthenticatedUser | null,
-  serviceClient: ReturnType<typeof createClient>
-): Promise<unknown> {
-  switch (action) {
-    case "create":
-      // NOTE: 'create' is temporarily public until Supabase auth migration is complete
-      // The handler validates guestId from payload instead of requiring auth
-      return handler(payload, user, serviceClient);
-
-    case "update":
-      if (!user) {
-        throw new AuthenticationError("Authentication required for update");
-      }
-      return handler(payload, user, serviceClient);
-
-    case "get":
-      return handler(payload, serviceClient);
-
-    case "suggest":
-      if (!user) {
-        throw new AuthenticationError("Authentication required for suggest");
-      }
-      return handler(payload, user, serviceClient);
-
-    default: {
-      // Exhaustive check - TypeScript ensures all cases are handled
-      const _exhaustive: never = action;
-      throw new ValidationError(`Unhandled action: ${action}`);
-    }
+  if (!authHeader) {
+    return null;
   }
+
+  const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: authHeader } },
+  });
+
+  const { data: { user }, error } = await authClient.auth.getUser();
+
+  if (error || !user) {
+    return null;
+  }
+
+  return { id: user.id, email: user.email ?? '' };
 }
+
+console.log("[proposal] Edge Function ready");

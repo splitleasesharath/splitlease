@@ -110,6 +110,63 @@
         display: none !important;
     }
 
+    /* Hide floating avatars on mobile */
+    .floating-avatar {
+        display: none !important;
+    }
+
+    /* Hero container adjustments for mobile */
+    .hero-container {
+        padding: 0 1rem;
+    }
+
+    .hero-badge {
+        font-size: 11px;
+        padding: 6px 14px;
+        margin-bottom: 16px;
+    }
+
+    .hero-title .savings {
+        font-size: 28px;
+    }
+
+    /* Hero CTA buttons mobile layout */
+    .hero-cta {
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .cta-button.cta-primary,
+    .cta-button.cta-secondary {
+        width: 80%;
+        max-width: 280px;
+        justify-content: center;
+        padding: 12px 24px;
+        font-size: 14px;
+    }
+
+    /* Hero stats mobile layout */
+    .hero-stats {
+        flex-direction: column;
+        gap: 24px;
+        margin-top: 32px;
+        padding-top: 24px;
+    }
+
+    .stat-value {
+        font-size: 24px;
+    }
+
+    .stat-label {
+        font-size: 12px;
+    }
+
+    /* Schedule selector wrapper mobile */
+    .schedule-selector-wrapper {
+        margin-bottom: 24px;
+    }
+
     .value-container {
         grid-template-columns: repeat(2, 1fr);
         gap: 1rem;

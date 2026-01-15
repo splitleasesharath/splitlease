@@ -143,6 +143,7 @@ export default function AccountProfilePage() {
                 goodGuestReasonsList={logic.goodGuestReasonsList}
                 storageItemsList={logic.storageItemsList}
                 transportationOptions={logic.transportationOptions}
+                showDateOfBirthField={logic.showDateOfBirthField}
                 onFieldChange={logic.handleFieldChange}
                 onDayToggle={logic.handleDayToggle}
                 onChipToggle={logic.handleChipToggle}
@@ -226,6 +227,14 @@ export default function AccountProfilePage() {
             isOpen={logic.showRentalWizardModal}
             onClose={logic.handleCloseRentalWizard}
             onSuccess={logic.handleRentalWizardSuccess}
+            applicationStatus={logic.rentalApplicationStatus}
+            userProfileData={{
+              email: logic.profileData?.email || logic.profileData?.['Email'] || '',
+              firstName: logic.profileData?.['Name - First'] || '',
+              lastName: logic.profileData?.['Name - Last'] || '',
+              phone: logic.profileData?.['Phone Number (as text)'] || '',
+              dob: logic.profileData?.['Date of Birth'] || '',
+            }}
           />
         )}
 

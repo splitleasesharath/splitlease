@@ -16,206 +16,32 @@
 import Header from '../shared/Header.jsx';
 import { useRentalApplicationPageLogic } from './useRentalApplicationPageLogic.js';
 
-export default function RentalApplicationPage({ requireAuth = false, isAuthenticated = true }) {
-  // ============================================================================
-  // LOGIC HOOK - Provides all state and handlers
-  // ============================================================================
+export default function RentalApplicationPage() {
+  useEffect(() => {
+    // Get the user ID for redirect
+    const userId = getSessionId();
 
-  const {
-    // Form data
-    formData,
-    occupants,
-    verificationStatus,
-    verificationLoading,
-    uploadedFiles,
-    uploadProgress,
-    uploadErrors,
+    // Preserve any query params (like proposal ID)
+    const params = new URLSearchParams(window.location.search);
+    const proposalId = params.get('proposal');
 
-    // Validation
-    fieldErrors,
-    fieldValid,
-
-    // Computed
-    progress,
-    canSubmit,
-    documentStatus,
-
-    // State
-    isSubmitting,
-    submitSuccess,
-    submitError,
-
-    // Constants
-    maxOccupants,
-    relationshipOptions,
-    employmentStatusOptions,
-
-    // Input handlers
-    handleInputChange,
-    handleInputBlur,
-    handleToggleChange,
-    handleRadioChange,
-
-    // Occupant handlers
-    addOccupant,
-    removeOccupant,
-    updateOccupant,
-
-    // File handlers
-    handleFileUpload,
-    handleFileRemove,
-
-    // Verification handlers
-    handleVerification,
-
-    // Form handlers
-    handleSubmit,
-    closeSuccessModal,
-
-    // Refs
-    addressInputRef
-  } = useRentalApplicationPageLogic();
-
-  // ============================================================================
-  // RENDER HELPERS
-  // ============================================================================
-
-  const getInputClassName = (fieldName) => {
-    let className = 'form-input';
-    if (fieldValid[fieldName]) className += ' valid';
-    if (fieldErrors[fieldName]) className += ' error';
-    return className;
-  };
-
-  const renderVerificationButton = (service, label, icon, buttonClass) => {
-    const isVerified = verificationStatus[service];
-    const isLoading = verificationLoading[service];
-
-    return (
-      <button
-        type="button"
-        className={`${buttonClass} ${isVerified ? 'connected' : ''}`}
-        onClick={() => handleVerification(service)}
-        disabled={isLoading || isVerified}
-      >
-        {isLoading ? (
-          'Connecting...'
-        ) : isVerified ? (
-          <>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-            </svg>
-            {service === 'linkedin' || service === 'facebook' ? 'Connected' : 'Verified'}
-          </>
-        ) : (
-          <>
-            {icon}
-            {label}
-          </>
-        )}
-      </button>
-    );
-  };
-
-  // Render file upload box with existing file display and upload progress
-  const renderFileUploadBox = (uploadKey, inputId, helperText, urlField) => {
-    const existingUrl = formData[urlField];
-    const localFile = uploadedFiles[uploadKey];
-    const isUploading = uploadProgress[uploadKey] === 'uploading';
-    const isComplete = uploadProgress[uploadKey] === 'complete';
-    const error = uploadErrors[uploadKey];
-
-    // If there's an existing URL from the database (previously uploaded)
-    if (existingUrl && !localFile) {
-      return (
-        <div className="form-group">
-          <div className="existing-file-display">
-            <a
-              href={existingUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="file-link"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/>
-              </svg>
-              View uploaded document
-            </a>
-            <button
-              type="button"
-              className="btn-replace-file"
-              onClick={() => document.getElementById(inputId).click()}
-            >
-              Replace
-            </button>
-            <input
-              type="file"
-              id={inputId}
-              accept="image/*,.pdf"
-              onChange={(e) => handleFileUpload(uploadKey, e.target.files)}
-              hidden
-            />
-          </div>
-          <p className="helper-text">{helperText}</p>
-        </div>
-      );
+    // Build redirect URL
+    const redirectParams = new URLSearchParams();
+    redirectParams.set('section', 'rental-application');
+    redirectParams.set('openRentalApp', 'true');
+    if (proposalId) {
+      redirectParams.set('proposal', proposalId);
     }
 
-    // Show upload box (for new uploads or replacements)
-    return (
-      <div className="form-group">
-        <div
-          className={`upload-box ${localFile ? 'has-file' : ''} ${isUploading ? 'uploading' : ''} ${isComplete ? 'complete' : ''} ${error ? 'error' : ''}`}
-          onClick={() => !isUploading && document.getElementById(inputId).click()}
-        >
-          {isUploading ? (
-            <>
-              <span className="upload-spinner" />
-              <span className="upload-text">Uploading...</span>
-            </>
-          ) : isComplete ? (
-            <>
-              <span className="upload-icon success">&#10003;</span>
-              <span className="upload-text">Upload complete!</span>
-            </>
-          ) : (
-            <>
-              <span className="upload-icon">&#128206;</span>
-              <span className="upload-text">Click to upload an image</span>
-            </>
-          )}
-          <input
-            type="file"
-            id={inputId}
-            accept="image/*,.pdf"
-            onChange={(e) => handleFileUpload(uploadKey, e.target.files)}
-            hidden
-          />
-        </div>
-        <p className="helper-text">{helperText}</p>
-        {error && <p className="upload-error">{error}</p>}
-        {localFile && !isUploading && (
-          <div className="file-preview">
-            <div className="file-preview-item">
-              <span className="file-name">{localFile.name}</span>
-              <button
-                type="button"
-                className="remove-file"
-                onClick={() => handleFileRemove(uploadKey)}
-              >
-                &times;
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
+    if (userId) {
+      window.location.replace(`/account-profile?${redirectParams.toString()}`);
+    } else {
+      // Not logged in - redirect to home (route is protected anyway)
+      window.location.replace('/');
+    }
+  }, []);
 
-  // ============================================================================
-  // RENDER
-  // ============================================================================
-
+  // Show loading state while redirecting
   return (
     <>
       <Header

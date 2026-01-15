@@ -38,10 +38,10 @@
 
 .listing-card-for-map-container {
   position: relative;
-  width: 340px;
+  width: 300px;
   background-color: #FFFFFF;
   border: 1px solid #E0E0E0;
-  border-radius: 12px;
+  border-radius: 10px;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -69,13 +69,13 @@
 @media (max-width: 768px) {
   /* Container - reduced width */
   .listing-card-for-map-container {
-    width: 280px;
-    border-radius: 10px;
+    width: 260px;
+    border-radius: 8px;
   }
 
   /* Image - reduced height */
   .listing-card-image-container {
-    height: 140px;
+    height: 120px;
   }
 
   /* Close button - tighter positioning */
@@ -111,13 +111,13 @@
   /* Content section - reduced padding and gap */
   .listing-card-content {
     padding: 8px;
-    gap: 4px;
+    gap: 2px;
   }
 
   /* Header row - reduced spacing */
   .listing-card-header-row {
     gap: 6px;
-    margin-bottom: 1px;
+    margin-bottom: 0;
   }
 
   /* Title - slightly smaller */
@@ -127,12 +127,11 @@
 
   /* Price - reduced size */
   .listing-card-price-highlight {
-    font-size: 16px;
+    font-size: 13px;
   }
 
   .listing-card-price-subtext {
     font-size: 10px;
-    margin-top: -1px;
   }
 
   /* Location - smaller */
@@ -144,7 +143,7 @@
   /* Features row - tighter spacing */
   .listing-card-features-row {
     gap: 8px;
-    margin-top: 1px;
+    margin-top: 0;
   }
 
   .listing-card-feature-item {
@@ -154,13 +153,13 @@
 
   /* Divider - reduced margin */
   .listing-card-divider {
-    margin: 5px 0;
+    margin: 4px 0;
   }
 
   /* Action row - tighter spacing */
   .listing-card-action-row {
     gap: 6px;
-    margin-top: 2px;
+    margin-top: 0;
   }
 
   /* Action buttons - smaller */
@@ -194,17 +193,17 @@
 
 @media (max-width: 480px) {
   .listing-card-for-map-container {
-    width: 250px;
+    width: 240px;
     border-radius: 8px;
   }
 
   .listing-card-image-container {
-    height: 120px;
+    height: 100px;
   }
 
   .listing-card-content {
     padding: 6px;
-    gap: 3px;
+    gap: 2px;
   }
 
   .listing-card-title {
@@ -212,7 +211,7 @@
   }
 
   .listing-card-price-highlight {
-    font-size: 14px;
+    font-size: 12px;
   }
 }
 
@@ -277,7 +276,7 @@
 .listing-card-image-container {
   position: relative;
   width: 100%;
-  height: 180px;
+  height: 140px;
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -356,18 +355,18 @@
 
 /* Content Section */
 .listing-card-content {
-  padding: 12px;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 2px;
 }
 
 .listing-card-header-row {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: baseline;
   gap: 8px;
-  margin-bottom: 2px;
+  margin-bottom: 0;
 }
 
 .listing-card-title {
@@ -385,19 +384,21 @@
 }
 
 .listing-card-title:hover {
-  color: #6C63FF;
+  color: #31135D;
 }
 
 .listing-card-price-section {
   flex-shrink: 0;
-  text-align: right;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
 }
 
 .listing-card-price-highlight {
   font-family: 'Lato', sans-serif;
   font-weight: 700;
-  font-size: 18px;
-  color: #000000;
+  font-size: 14px;
+  color: #31135D;
   white-space: nowrap;
 }
 
@@ -406,7 +407,6 @@
   font-weight: 300;
   font-size: 11px;
   color: #666;
-  margin-top: -2px;
 }
 
 .listing-card-location {
@@ -425,15 +425,15 @@
 }
 
 .listing-card-location:hover {
-  color: #6C63FF;
+  color: #31135D;
 }
 
 .listing-card-features-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
-  margin-top: 2px;
+  margin-top: 0;
 }
 
 .listing-card-feature-item {
@@ -449,20 +449,20 @@
 .listing-card-divider {
   height: 1px;
   background: #E0E0E0;
-  margin: 8px 0;
+  margin: 6px 0;
 }
 
 .listing-card-action-row {
   display: flex;
   gap: 8px;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .listing-card-view-details-btn {
   flex: 1;
   background-color: transparent;
-  color: #6C63FF;
-  border: 1px solid #6C63FF;
+  color: #31135D;
+  border: 1px solid #31135D;
   border-radius: 6px;
   padding: 8px 12px;
   font-family: 'Lato', sans-serif;
@@ -473,13 +473,13 @@
 }
 
 .listing-card-view-details-btn:hover {
-  background-color: #6C63FF;
+  background-color: #31135D;
   color: white;
 }
 
 .listing-card-send-message-btn {
   flex: 1;
-  background-color: #6C63FF;
+  background-color: #6D31C2;
   color: white;
   border: none;
   border-radius: 6px;
@@ -492,7 +492,7 @@
 }
 
 .listing-card-send-message-btn:hover {
-  background-color: #5a52e0;
+  background-color: #5a28a3;
 }
 
 .listing-card-send-message-btn:active {

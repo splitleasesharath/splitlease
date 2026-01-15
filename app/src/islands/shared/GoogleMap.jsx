@@ -25,6 +25,7 @@ import { DEFAULTS, COLORS, getBoroughMapConfig } from '../../lib/constants.js';
 import ListingCardForMap from './ListingCard/ListingCardForMap.jsx';
 import { supabase } from '../../lib/supabase.js';
 import { fetchPhotoUrls, extractPhotos } from '../../lib/supabaseUtils.js';
+import { calculatePrice } from '../../lib/scheduleSelector/priceCalculations.js';
 
 /**
  * MapLegend - Shows marker color meanings and toggle
@@ -117,7 +118,8 @@ const GoogleMap = forwardRef(({
   favoritedListingIds = new Set(), // Set of favorited listing IDs
   onToggleFavorite = null, // Callback when favorite button is clicked: (listingId, listingTitle, newState) => void
   userId = null,           // Current user ID for favorite button API calls
-  onRequireAuth = null     // Callback to show login modal if not authenticated
+  onRequireAuth = null,    // Callback to show login modal if not authenticated
+  selectedNightsCount = 0  // Number of nights selected for dynamic price calculation
 }, ref) => {
   console.log('🗺️ GoogleMap: Component rendered with props:', {
     listingsCount: listings.length,
@@ -145,6 +147,29 @@ const GoogleMap = forwardRef(({
   const [mapLoaded, setMapLoaded] = useState(false);
   const [showAllListings, setShowAllListings] = useState(true);
   const lastMarkersUpdateRef = useRef(null); // Track last marker update to prevent duplicates
+  const handlePinClickRef = useRef(null); // Ref to always have latest handlePinClick
+
+  /**
+   * Calculate dynamic price for a listing based on selected nights count
+   * Uses the same calculation as PropertyCard in SearchPage
+   * Falls back to starting price if no nights selected or calculation fails
+   */
+  const getDisplayPrice = useCallback((listing) => {
+    // If no nights selected, show starting price
+    if (selectedNightsCount < 1) {
+      return listing.price?.starting || listing['Starting nightly price'] || 0;
+    }
+
+    try {
+      // Create mock nights array (calculatePrice only uses .length)
+      const mockNightsArray = Array(selectedNightsCount).fill({ nightNumber: 0 });
+      const priceBreakdown = calculatePrice(mockNightsArray, listing, 13, null);
+      return priceBreakdown.pricePerNight || listing.price?.starting || listing['Starting nightly price'] || 0;
+    } catch (error) {
+      // Fallback to starting price on error
+      return listing.price?.starting || listing['Starting nightly price'] || 0;
+    }
+  }, [selectedNightsCount]);
 
   // Listing card state
   const [selectedListingForCard, setSelectedListingForCard] = useState(null);
@@ -154,6 +179,70 @@ const GoogleMap = forwardRef(({
 
   // Expose methods to parent via ref
   useImperativeHandle(ref, () => ({
+    // Highlight marker: pan to center on it (no zoom change), pulse, and show card
+    highlightListing(listingId) {
+      if (!googleMapRef.current || !mapLoaded) {
+        console.error('Map not initialized yet');
+        return;
+      }
+
+      // Find the listing in either filtered or all listings
+      const listing = filteredListings.find(l => l.id === listingId) ||
+                     listings.find(l => l.id === listingId);
+
+      if (!listing) {
+        console.error('Listing not found:', listingId);
+        return;
+      }
+
+      const coords = listing.coordinates;
+      if (!coords || !coords.lat || !coords.lng) {
+        console.error('Invalid coordinates for listing:', listingId);
+        return;
+      }
+
+      const map = googleMapRef.current;
+
+      // Pan to center on the listing (without changing zoom)
+      map.panTo({ lat: coords.lat, lng: coords.lng });
+
+      const marker = markersRef.current.find(m => m.listingId === listingId);
+      if (marker && marker.div) {
+        // Remove pulse from all other markers first
+        markersRef.current.forEach(m => {
+          if (m.div) m.div.classList.remove('pulse');
+        });
+        // Add pulse animation to this marker (continues until hover ends)
+        marker.div.classList.add('pulse');
+
+        // If a map card is already visible, update it to show the hovered listing
+        if (cardVisible && selectedListingForCard) {
+          // Calculate card position for the new marker
+          const mapContainer = mapRef.current;
+          if (mapContainer && marker.div) {
+            const mapRect = mapContainer.getBoundingClientRect();
+            const markerRect = marker.div.getBoundingClientRect();
+
+            // Card dimensions (matching ListingCardForMap)
+            const cardHeight = 300; // Approximate card height
+            const arrowHeight = 10;
+            const gapFromPin = 5;
+
+            const x = markerRect.left - mapRect.left + markerRect.width / 2;
+            // Position card so its bottom (including arrow) is above the marker
+            const y = markerRect.top - mapRect.top - cardHeight - arrowHeight - gapFromPin;
+            setCardPosition({ x, y });
+          }
+          setSelectedListingForCard(listing);
+        }
+      }
+    },
+    // Stop pulsing all markers (called when hover ends)
+    stopPulse() {
+      markersRef.current.forEach(m => {
+        if (m.div) m.div.classList.remove('pulse');
+      });
+    },
     zoomToListing(listingId) {
       if (!googleMapRef.current || !mapLoaded) {
         console.error('Map not initialized yet');
@@ -319,12 +408,24 @@ const GoogleMap = forwardRef(({
   /**
    * React callback to handle pin clicks properly within React's state management
    * This ensures state updates trigger re-renders correctly
+   * @param {Object} listing - The listing data
+   * @param {HTMLElement} priceTag - The price tag DOM element
+   * @param {Object} options - Optional settings
+   * @param {boolean} options.skipParentCallback - If true, don't call onMarkerClick (used for hover highlights)
    */
-  const handlePinClick = useCallback(async (listing, priceTag) => {
+  const handlePinClick = useCallback(async (listing, priceTag, options = {}) => {
+    const { skipParentCallback = false } = options;
     console.log('🖱️ handlePinClick (React callback): Pin clicked:', {
       listingId: listing.id,
-      listingTitle: listing.title
+      listingTitle: listing.title,
+      skipParentCallback
     });
+
+    // Call parent callback FIRST (before any async operations) so scroll/highlight happens immediately
+    if (onMarkerClick && !skipParentCallback) {
+      console.log('📜 handlePinClick: Calling onMarkerClick to scroll to listing card');
+      onMarkerClick(listing);
+    }
 
     // Calculate card position relative to map container
     const mapContainer = mapRef.current;
@@ -341,9 +442,9 @@ const GoogleMap = forwardRef(({
     const pinCenterX = priceTagRect.left - mapRect.left + (priceTagRect.width / 2);
     const pinTop = priceTagRect.top - mapRect.top;
 
-    // Card dimensions (matching ListingCardForMap)
-    const cardWidth = 340;
-    const cardHeight = 340; // Approximate height
+    // Card dimensions (matching ListingCardForMap - updated for compact layout)
+    const cardWidth = 300;
+    const cardHeight = 300; // Approximate height after compact layout updates
     const arrowHeight = 10;
     const gapFromPin = 5;
     const margin = 20;
@@ -441,12 +542,10 @@ const GoogleMap = forwardRef(({
       setCardVisible(false);
     }
     console.log('✅ handlePinClick: Selected listing state updated');
-
-    // Call parent callback
-    if (onMarkerClick) {
-      onMarkerClick(listing);
-    }
   }, [onMarkerClick]);
+
+  // Keep ref updated with latest handlePinClick so event listeners always use current version
+  handlePinClickRef.current = handlePinClick;
 
   // Initialize Google Map when API is loaded
   useEffect(() => {
@@ -622,9 +721,14 @@ const GoogleMap = forwardRef(({
             lng: listing.coordinates.lng
           };
 
+          // Calculate dynamic price based on selected nights
+          const displayPrice = getDisplayPrice(listing);
+
           console.log(`✅ GoogleMap: Creating ${simpleMode ? 'simple' : 'purple'} marker for listing ${listing.id}:`, {
             position,
-            price: listing.price?.starting || listing['Starting nightly price'],
+            displayPrice,
+            startingPrice: listing.price?.starting || listing['Starting nightly price'],
+            selectedNightsCount,
             title: listing.title,
             simpleMode
           });
@@ -635,7 +739,7 @@ const GoogleMap = forwardRef(({
             : createPriceMarker(
                 map,
                 position,
-                listing.price?.starting || listing['Starting nightly price'] || 0,
+                displayPrice,
                 COLORS.SECONDARY, // Purple - search results
                 listing
               );
@@ -715,9 +819,14 @@ const GoogleMap = forwardRef(({
             lng: listing.coordinates.lng
           };
 
+          // Calculate dynamic price based on selected nights
+          const displayPrice = getDisplayPrice(listing);
+
           console.log(`✅ GoogleMap: Creating grey marker for listing ${listing.id}:`, {
             position,
-            price: listing.price?.starting || listing['Starting nightly price'],
+            displayPrice,
+            startingPrice: listing.price?.starting || listing['Starting nightly price'],
+            selectedNightsCount,
             title: listing.title
           });
 
@@ -725,7 +834,7 @@ const GoogleMap = forwardRef(({
           const marker = createPriceMarker(
             map,
             position,
-            listing.price?.starting || listing['Starting nightly price'] || 0,
+            displayPrice,
             COLORS.MUTED, // Grey - all active listings
             listing
           );
@@ -786,7 +895,7 @@ const GoogleMap = forwardRef(({
 
     // Render markers immediately without lazy loading
     createMarkers();
-  }, [listings, filteredListings, mapLoaded, showAllListings]);
+  }, [listings, filteredListings, mapLoaded, showAllListings, selectedNightsCount, getDisplayPrice]);
 
   // Recenter map when borough changes
   useEffect(() => {
@@ -876,7 +985,7 @@ const GoogleMap = forwardRef(({
         cursor: pointer;
         transition: background-color 0.2s ease;
         transform: translate(-50%, -50%);
-        z-index: ${color === '#31135D' ? '1002' : '1001'};
+        z-index: ${color === '#5B21B6' ? '1002' : '1001'};
         will-change: transform;
         pointer-events: auto;
         display: block;
@@ -890,10 +999,12 @@ const GoogleMap = forwardRef(({
       // TODO: Re-implement hover effects after fixing positioning bug
       // Previous implementation was overwriting transform position from draw()
 
-      // Use React callback for proper state management
+      // Use ref to always call latest handlePinClick (avoids stale closure issue)
       priceTag.addEventListener('click', (e) => {
         e.stopPropagation(); // Prevent event from bubbling to map container
-        handlePinClick(listing, priceTag);
+        if (handlePinClickRef.current) {
+          handlePinClickRef.current(listing, priceTag);
+        }
       });
 
       this.div = priceTag;

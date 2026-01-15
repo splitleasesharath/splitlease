@@ -2,22 +2,30 @@
  * oauthCallbackHandler.js - Global OAuth Callback Detection and Processing
  *
  * This module handles OAuth login callbacks globally, regardless of which page
- * the user returns to after LinkedIn authentication. It runs early in app
- * initialization (via dynamic import from supabase.js) before React mounts.
+ * the user returns to after OAuth authentication (LinkedIn or Google). It runs
+ * early in app initialization (via dynamic import from supabase.js) before React mounts.
  *
  * Problem Solved:
- * - LinkedIn OAuth login redirects back to the original page
+ * - OAuth login redirects back to the original page
  * - The SignUpLoginModal is NOT mounted when user returns (modal is closed)
  * - Without global handling, OAuth tokens in URL are never processed
  *
  * Solution:
  * - Detect OAuth callback by checking localStorage flag + URL tokens
- * - Process callback via handleLinkedInOAuthLoginCallback() from auth.js
+ * - Process callback via handleLinkedInOAuthLoginCallback() or handleGoogleOAuthLoginCallback()
  * - Dispatch custom events for components to show toasts/handle UI
  */
 
-import { getLinkedInOAuthLoginFlow, clearLinkedInOAuthLoginFlow } from './secureStorage.js';
-import { handleLinkedInOAuthLoginCallback } from './auth.js';
+import {
+  getLinkedInOAuthLoginFlow,
+  clearLinkedInOAuthLoginFlow,
+  getGoogleOAuthLoginFlow,
+  clearGoogleOAuthLoginFlow
+} from './secureStorage.js';
+import {
+  handleLinkedInOAuthLoginCallback,
+  handleGoogleOAuthLoginCallback
+} from './auth.js';
 
 // Track if we've already processed an OAuth callback in this page load
 let oauthCallbackProcessed = false;
@@ -38,6 +46,7 @@ function hasOAuthTokensInUrl() {
 /**
  * Process OAuth login callback if applicable
  * This should be called early in app initialization
+ * Supports both LinkedIn and Google OAuth providers
  *
  * @returns {Promise<{processed: boolean, success?: boolean, result?: any, error?: string, userNotFound?: boolean, email?: string}>}
  */
@@ -48,9 +57,11 @@ export async function processOAuthLoginCallback() {
     return { processed: false, reason: 'already_processed' };
   }
 
-  // Check if this is a login flow
-  const isLoginFlow = getLinkedInOAuthLoginFlow();
-  if (!isLoginFlow) {
+  // Check if this is a login flow (LinkedIn or Google)
+  const isLinkedInLoginFlow = getLinkedInOAuthLoginFlow();
+  const isGoogleLoginFlow = getGoogleOAuthLoginFlow();
+
+  if (!isLinkedInLoginFlow && !isGoogleLoginFlow) {
     return { processed: false, reason: 'not_login_flow' };
   }
 
@@ -59,7 +70,8 @@ export async function processOAuthLoginCallback() {
     return { processed: false, reason: 'no_tokens_in_url' };
   }
 
-  console.log('[OAuth] Detected OAuth login callback, processing...');
+  const provider = isGoogleLoginFlow ? 'Google' : 'LinkedIn';
+  console.log(`[OAuth] Detected ${provider} OAuth login callback, processing...`);
   oauthCallbackProcessed = true;
 
   try {
@@ -67,13 +79,15 @@ export async function processOAuthLoginCallback() {
     // Supabase client automatically handles the hash and creates a session
     await new Promise(resolve => setTimeout(resolve, 100));
 
-    // Now call our handler which reads the session and calls the Edge Function
-    const result = await handleLinkedInOAuthLoginCallback();
+    // Now call the appropriate handler based on provider
+    const result = isGoogleLoginFlow
+      ? await handleGoogleOAuthLoginCallback()
+      : await handleLinkedInOAuthLoginCallback();
 
     oauthCallbackResult = result;
 
     if (result.success) {
-      console.log('[OAuth] Login callback processed successfully');
+      console.log(`[OAuth] ${provider} login callback processed successfully`);
 
       // Clean up URL hash to remove OAuth tokens (optional but cleaner)
       if (window.location.hash) {
@@ -89,7 +103,7 @@ export async function processOAuthLoginCallback() {
 
       return { processed: true, success: true, result: result.data };
     } else if (result.userNotFound) {
-      console.log('[OAuth] User not found for OAuth login:', result.email);
+      console.log(`[OAuth] User not found for ${provider} OAuth login:`, result.email);
 
       // Dispatch event for components to prompt signup
       window.dispatchEvent(new CustomEvent('oauth-login-user-not-found', {
@@ -98,9 +112,13 @@ export async function processOAuthLoginCallback() {
 
       return { processed: true, success: false, userNotFound: true, email: result.email };
     } else {
-      console.log('[OAuth] Login callback failed:', result.error);
-      // Clear the login flow flag on failure
-      clearLinkedInOAuthLoginFlow();
+      console.log(`[OAuth] ${provider} login callback failed:`, result.error);
+      // Clear the appropriate login flow flag on failure
+      if (isGoogleLoginFlow) {
+        clearGoogleOAuthLoginFlow();
+      } else {
+        clearLinkedInOAuthLoginFlow();
+      }
 
       // Dispatch error event
       window.dispatchEvent(new CustomEvent('oauth-login-error', {
@@ -111,7 +129,12 @@ export async function processOAuthLoginCallback() {
     }
   } catch (error) {
     console.error('[OAuth] Error processing callback:', error);
-    clearLinkedInOAuthLoginFlow();
+    // Clear the appropriate flag on error
+    if (isGoogleLoginFlow) {
+      clearGoogleOAuthLoginFlow();
+    } else {
+      clearLinkedInOAuthLoginFlow();
+    }
     oauthCallbackResult = { success: false, error: error.message };
 
     // Dispatch error event
@@ -145,5 +168,6 @@ export function getOAuthCallbackResult() {
  * @returns {boolean}
  */
 export function isPendingOAuthCallback() {
-  return getLinkedInOAuthLoginFlow() && hasOAuthTokensInUrl() && !oauthCallbackProcessed;
+  const isLoginFlow = getLinkedInOAuthLoginFlow() || getGoogleOAuthLoginFlow();
+  return isLoginFlow && hasOAuthTokensInUrl() && !oauthCallbackProcessed;
 }

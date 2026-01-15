@@ -191,6 +191,7 @@ export function useAccountProfilePageLogic() {
     firstName: '',
     lastName: '',
     jobTitle: '',
+    dateOfBirth: '', // ISO date string (YYYY-MM-DD)
     bio: '',
     needForSpace: '',
     specialNeeds: '',
@@ -325,6 +326,16 @@ export function useAccountProfilePageLogic() {
     return formData.jobTitle || profileData?.['Job Title'] || '';
   }, [formData.jobTitle, profileData]);
 
+  /**
+   * Determine if Date of Birth field should be shown.
+   * Only show when the user has NO date of birth in the database
+   * (typically OAuth signups via LinkedIn/Google where DOB isn't collected).
+   * Once the user saves a DOB, this field will be hidden on subsequent visits.
+   */
+  const showDateOfBirthField = useMemo(() => {
+    return !profileData?.['Date of Birth'];
+  }, [profileData]);
+
   // ============================================================================
   // DATA FETCHING
   // ============================================================================
@@ -357,7 +368,10 @@ export function useAccountProfilePageLogic() {
       if (storageError) {
         console.error('Error fetching storage items:', storageError);
       } else {
-        setStorageItemsList(storage || []);
+        // Filter out deprecated storage options
+        const excludedItems = ['ID / Wallet / Money', 'Luggage', 'Portable Massager', 'Protein', 'Sound System', 'TV'];
+        const filteredStorage = (storage || []).filter(item => !excludedItems.includes(item.Name));
+        setStorageItemsList(filteredStorage);
       }
     } catch (err) {
       console.error('Error fetching reference data:', err);
@@ -383,10 +397,15 @@ export function useAccountProfilePageLogic() {
 
       // Initialize form data from profile
       // Database columns use 'Name - First', 'Name - Last' naming convention
+      // Date of Birth is stored as timestamp, convert to YYYY-MM-DD for date input
+      const dobTimestamp = userData['Date of Birth'];
+      const dateOfBirth = dobTimestamp ? dobTimestamp.split('T')[0] : '';
+
       setFormData({
         firstName: userData['Name - First'] || '',
         lastName: userData['Name - Last'] || '',
         jobTitle: userData['Job Title'] || '',
+        dateOfBirth,
         bio: userData['About Me / Bio'] || '',
         needForSpace: userData['need for Space'] || '',
         specialNeeds: userData['special needs'] || '',
@@ -721,12 +740,19 @@ export function useAccountProfilePageLogic() {
       const lastName = formData.lastName.trim();
       const fullName = [firstName, lastName].filter(Boolean).join(' ') || null;
 
+      // Convert date of birth from YYYY-MM-DD to ISO timestamp for database
+      // Only include if value exists to avoid overwriting with null
+      const dateOfBirthISO = formData.dateOfBirth
+        ? new Date(formData.dateOfBirth + 'T00:00:00Z').toISOString()
+        : null;
+
       // Database columns use 'Name - First', 'Name - Last', 'Name - Full' naming convention
       const updateData = {
         'Name - First': firstName,
         'Name - Last': lastName,
         'Name - Full': fullName,
         'Job Title': formData.jobTitle.trim(),
+        'Date of Birth': dateOfBirthISO,
         'About Me / Bio': formData.bio.trim(),
         'need for Space': formData.needForSpace.trim(),
         'special needs': formData.specialNeeds.trim(),
@@ -765,10 +791,15 @@ export function useAccountProfilePageLogic() {
   const handleCancel = useCallback(() => {
     if (profileData) {
       // Database columns use 'Name - First', 'Name - Last' naming convention
+      // Date of Birth stored as timestamp, convert to YYYY-MM-DD
+      const dobTimestamp = profileData['Date of Birth'];
+      const dateOfBirth = dobTimestamp ? dobTimestamp.split('T')[0] : '';
+
       setFormData({
         firstName: profileData['Name - First'] || '',
         lastName: profileData['Name - Last'] || '',
         jobTitle: profileData['Job Title'] || '',
+        dateOfBirth,
         bio: profileData['About Me / Bio'] || '',
         needForSpace: profileData['need for Space'] || '',
         specialNeeds: profileData['special needs'] || '',
@@ -1025,6 +1056,7 @@ export function useAccountProfilePageLogic() {
     verifications,
     profileStrength,
     nextActions,
+    showDateOfBirthField,
 
     // Form state
     formData,

@@ -855,7 +855,8 @@ export default function ViewSplitLeasePage() {
         // Check auth status and fetch user data if logged in
         const isLoggedIn = await checkAuthStatus();
         if (isLoggedIn) {
-          const userData = await validateTokenAndFetchUser();
+          // CRITICAL: Use clearOnFailure: false to preserve session if Edge Function fails
+          const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
           if (userData) {
             setLoggedInUserData(userData);
             console.log('👤 ViewSplitLeasePage: User data loaded:', userData.firstName);
@@ -1369,9 +1370,66 @@ export default function ViewSplitLeasePage() {
         'Created Date': new Date().toISOString()
       });
 
+      // Create messaging thread for the proposal (non-blocking)
+      try {
+        console.log('💬 Creating proposal messaging thread...');
+        // Use the actual status returned from the Edge Function
+        const actualProposalStatus = data.data?.status || 'Host Review';
+        const actualHostId = data.data?.hostId || listing.host?.userId;
+
+        console.log('   Thread params:', {
+          proposalId: newProposalId,
+          guestId: guestId,
+          hostId: actualHostId,
+          listingId: proposalData.listingId,
+          proposalStatus: actualProposalStatus
+        });
+
+        const threadResponse = await supabase.functions.invoke('messages', {
+          body: {
+            action: 'create_proposal_thread',
+            payload: {
+              proposalId: newProposalId,
+              guestId: guestId,
+              hostId: actualHostId,
+              listingId: proposalData.listingId,
+              proposalStatus: actualProposalStatus
+            }
+          }
+        });
+
+        if (threadResponse.error) {
+          console.warn('⚠️ Thread creation failed (non-blocking):', threadResponse.error);
+        } else {
+          console.log('✅ Proposal thread created:', threadResponse.data);
+        }
+      } catch (threadError) {
+        // Non-blocking - don't fail the proposal if thread creation fails
+        console.warn('⚠️ Thread creation error (non-blocking):', threadError);
+      }
+
     } catch (error) {
       console.error('❌ Error submitting proposal:', error);
-      showToast(error.message || 'Failed to submit proposal. Please try again.', 'error');
+
+      // Provide user-friendly error messages for common failure cases
+      let userMessage = error.message || 'Failed to submit proposal. Please try again.';
+
+      // Network/CORS errors (Edge Function unavailable)
+      if (error.message?.includes('Failed to send a request') ||
+          error.message?.includes('Failed to fetch') ||
+          error.message?.includes('NetworkError')) {
+        userMessage = 'Unable to connect to our servers. Please check your internet connection and try again.';
+      }
+      // Timeout errors
+      else if (error.message?.includes('timeout') || error.message?.includes('Timeout')) {
+        userMessage = 'The request took too long. Please try again.';
+      }
+      // Duplicate proposal error (from Edge Function validation)
+      else if (error.message?.includes('already have an active proposal')) {
+        userMessage = error.message; // Keep the specific message
+      }
+
+      showToast(userMessage, 'error');
     } finally {
       setIsSubmittingProposal(false);
     }
@@ -1408,8 +1466,9 @@ export default function ViewSplitLeasePage() {
     setShowAuthModal(false);
 
     // Update the logged-in user data
+    // CRITICAL: Use clearOnFailure: false to preserve session if Edge Function fails
     try {
-      const userData = await validateTokenAndFetchUser();
+      const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
       if (userData) {
         setLoggedInUserData(userData);
         console.log('👤 User data updated after auth:', userData.firstName);
@@ -2059,7 +2118,7 @@ export default function ViewSplitLeasePage() {
                   </button>
                   {listing.host?.userId && (
                     <button
-                      onClick={() => window.location.href = `/account-profile/${listing.host.userId}`}
+                      onClick={() => window.location.href = '/account-profile'}
                       style={{
                         padding: isMobile ? '0.375rem 0.75rem' : '0.5rem 1rem',
                         background: 'transparent',

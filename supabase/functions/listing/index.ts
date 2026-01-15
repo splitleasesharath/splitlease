@@ -75,21 +75,47 @@ const handlers: Readonly<Record<Action, Function>> = {
 // ─────────────────────────────────────────────────────────────
 
 /**
- * Get combined configuration for listing operations
+ * Config for actions that need both Supabase and Bubble
  */
-interface ListingConfig {
+interface FullListingConfig {
   readonly supabaseUrl: string;
   readonly supabaseServiceKey: string;
   readonly bubbleBaseUrl: string;
   readonly bubbleApiKey: string;
 }
 
-const getListingConfig = (): Result<ListingConfig, Error> => {
+/**
+ * Config for actions that only need Supabase (no Bubble dependency)
+ */
+interface SupabaseOnlyConfig {
+  readonly supabaseUrl: string;
+  readonly supabaseServiceKey: string;
+}
+
+// Actions that only need Supabase config (no Bubble API calls)
+const SUPABASE_ONLY_ACTIONS: ReadonlySet<string> = new Set(["createMockupProposal", "delete"]);
+
+/**
+ * Get configuration based on action requirements
+ * - createMockupProposal: Only needs Supabase
+ * - All others: Need both Supabase and Bubble
+ */
+const getConfigForAction = (action: string): Result<FullListingConfig | SupabaseOnlyConfig, Error> => {
   const supabaseResult = getSupabaseConfig();
   if (!supabaseResult.ok) {
     return supabaseResult;
   }
 
+  // For Supabase-only actions, skip Bubble config requirement
+  if (SUPABASE_ONLY_ACTIONS.has(action)) {
+    console.log(`[listing] Action '${action}' only requires Supabase config`);
+    return ok({
+      supabaseUrl: supabaseResult.value.supabaseUrl,
+      supabaseServiceKey: supabaseResult.value.supabaseServiceKey,
+    });
+  }
+
+  // For other actions, require both Supabase and Bubble
   const bubbleResult = getBubbleConfig();
   if (!bubbleResult.ok) {
     return bubbleResult;
@@ -148,10 +174,10 @@ Deno.serve(async (req: Request) => {
     }
 
     // ─────────────────────────────────────────────────────────
-    // Step 3: Get configuration (pure with env read)
+    // Step 3: Get configuration based on action requirements
     // ─────────────────────────────────────────────────────────
 
-    const configResult = getListingConfig();
+    const configResult = getConfigForAction(action);
     if (!configResult.ok) {
       throw configResult.error;
     }
@@ -217,7 +243,7 @@ async function executeHandler(
   handler: Function,
   action: Action,
   payload: Record<string, unknown>,
-  config: ListingConfig
+  config: FullListingConfig | SupabaseOnlyConfig
 ): Promise<unknown> {
   switch (action) {
     case "create":

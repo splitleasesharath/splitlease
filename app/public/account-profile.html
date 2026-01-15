@@ -19,6 +19,51 @@
       })(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');
     </script>
 
+    <!-- Load environment config - required for Google Maps API -->
+    <script type="module" src="/src/lib/config.js"></script>
+
+    <!-- Google Maps API for Rental Application address autocomplete -->
+    <script>
+      // Initialize callback for Google Maps (required by the API)
+      window.initMap = function() {
+        console.log('🗺️ Google Maps API loaded successfully');
+        window.dispatchEvent(new Event('google-maps-loaded'));
+      };
+
+      // Load Google Maps API dynamically
+      function loadGoogleMaps() {
+        const apiKey = window.ENV?.GOOGLE_MAPS_API_KEY;
+        if (!apiKey) {
+          console.error('❌ Google Maps API key not configured in window.ENV');
+          return;
+        }
+
+        console.log('🗺️ Loading Google Maps API...');
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initMap&loading=async`;
+        script.async = true;
+        script.defer = true;
+        script.onerror = function() {
+          console.error('❌ Failed to load Google Maps API');
+        };
+        document.head.appendChild(script);
+      }
+
+      // Wait for config.js to load and set window.ENV
+      if (window.ENV) {
+        loadGoogleMaps();
+      } else {
+        window.addEventListener('env-config-loaded', loadGoogleMaps, { once: true });
+        setTimeout(() => {
+          if (!window.ENV) {
+            console.error('❌ window.ENV not available after 2 seconds');
+          } else if (!document.querySelector('script[src*="maps.googleapis.com"]')) {
+            loadGoogleMaps();
+          }
+        }, 2000);
+      }
+    </script>
+
     <!-- Preconnect for fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

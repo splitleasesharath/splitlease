@@ -5,11 +5,15 @@
  * Host-focused: displays compensation only, not guest pricing.
  */
 
+import { useState } from 'react'
 import { formatCurrency, formatDate, getDayName } from './types'
 
 /**
  * Convert day index (string or number) to day name
- * Handles both "0" (string) and 0 (number) formats from database
+ * Handles multiple formats:
+ * - Day name strings: "Sunday", "Monday", etc. → returned as-is
+ * - JavaScript 0-based index: 0-6 (Sunday=0) → converted via getDayName
+ * - Bubble 1-based index: 1-7 (Sunday=1) → converted with offset
  */
 function formatDayDisplay(dayValue) {
   if (dayValue === null || dayValue === undefined) return ''
@@ -21,7 +25,20 @@ function formatDayDisplay(dayValue) {
 
   // Convert index to day name
   const index = typeof dayValue === 'string' ? parseInt(dayValue, 10) : dayValue
-  return getDayName(index) || dayValue
+
+  // Try JS format first (0-6)
+  const jsResult = getDayName(index)
+  if (jsResult) return jsResult
+
+  // Try Bubble format (1-7) - convert to JS format by subtracting 1
+  if (index >= 1 && index <= 7) {
+    const bubbleToJs = index === 7 ? 6 : index - 1 // Bubble 7 (Sat) → JS 6, Bubble 1-6 → JS 0-5
+    const bubbleResult = getDayName(bubbleToJs)
+    if (bubbleResult) return bubbleResult
+  }
+
+  // Fallback: return original value
+  return dayValue
 }
 
 /**
@@ -41,6 +58,66 @@ function EditButton({ onClick, label }) {
         <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     </button>
+  )
+}
+
+/**
+ * Collapsible house rules display
+ * Shows count + click to expand into full list
+ */
+function HouseRulesDisplay({ rules, originalRules, hasChanged, onEditField }) {
+  const [isExpanded, setIsExpanded] = useState(false)
+
+  const getRuleName = (rule) => rule.name || rule.Display || rule
+  const count = rules.length
+  const originalCount = originalRules?.length || 0
+
+  if (count === 0) {
+    return (
+      <span className="hep-breakdown-row-value">
+        None specified
+        {onEditField && <EditButton onClick={() => onEditField('houseRules')} label="house rules" />}
+        {hasChanged && originalCount > 0 && (
+          <span className="hep-original-value">
+            was: {originalRules.map(getRuleName).join(', ')}
+          </span>
+        )}
+      </span>
+    )
+  }
+
+  return (
+    <span className="hep-breakdown-row-value hep-house-rules-value">
+      <span
+        className="hep-house-rules-summary"
+        onClick={() => setIsExpanded(!isExpanded)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === 'Enter' && setIsExpanded(!isExpanded)}
+      >
+        <span className="hep-house-rules-count">{count} rule{count !== 1 ? 's' : ''}</span>
+        <span className="hep-house-rules-toggle">
+          {isExpanded ? '▲ collapse' : '▼ expand'}
+        </span>
+      </span>
+      {onEditField && <EditButton onClick={() => onEditField('houseRules')} label="house rules" />}
+
+      {isExpanded && (
+        <ul className="hep-house-rules-list">
+          {rules.map((rule, idx) => (
+            <li key={rule.id || idx} className="hep-house-rules-item">
+              {getRuleName(rule)}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {hasChanged && originalRules && (
+        <span className="hep-original-value">
+          was: {originalCount > 0 ? `${originalCount} rule${originalCount !== 1 ? 's' : ''}` : 'None'}
+        </span>
+      )}
+    </span>
   )
 }
 
@@ -89,15 +166,17 @@ export function ReservationPriceBreakdown({
   const nightsCount = nightsSelected.length * weeksReservationSpan
 
   // Helper to check if a value changed
+  // For day fields, normalize both values to day names before comparing
+  // This prevents false positives when values are in different formats (e.g., 6 vs "Saturday")
   const hasChanged = {
     moveInDate: originalValues?.moveInDate
       ? formatDate(originalValues.moveInDate, 'short') !== formatDate(moveInDate, 'short')
       : false,
-    checkInDay: originalValues?.checkInDay
-      ? originalValues.checkInDay !== checkInDay
+    checkInDay: originalValues?.checkInDay !== undefined
+      ? formatDayDisplay(originalValues.checkInDay) !== formatDayDisplay(checkInDay)
       : false,
-    checkOutDay: originalValues?.checkOutDay
-      ? originalValues.checkOutDay !== checkOutDay
+    checkOutDay: originalValues?.checkOutDay !== undefined
+      ? formatDayDisplay(originalValues.checkOutDay) !== formatDayDisplay(checkOutDay)
       : false,
     reservationSpan: originalValues?.reservationSpan
       ? originalValues.reservationSpan?.value !== reservationSpan?.value
@@ -197,19 +276,12 @@ export function ReservationPriceBreakdown({
 
       <div className={getRowClass(hasChanged.houseRules)}>
         <span className="hep-breakdown-row-label">Your House Rules</span>
-        <span className="hep-breakdown-row-value">
-          {houseRules.length > 0
-            ? houseRules.map(rule => rule.name || rule.Display || rule).join(', ')
-            : 'None specified'}
-          {onEditField && <EditButton onClick={() => onEditField('houseRules')} label="house rules" />}
-          {hasChanged.houseRules && originalValues?.houseRules && (
-            <span className="hep-original-value">
-              was: {originalValues.houseRules.length > 0
-                ? originalValues.houseRules.map(r => r.name || r.Display || r).join(', ')
-                : 'None'}
-            </span>
-          )}
-        </span>
+        <HouseRulesDisplay
+          rules={houseRules}
+          originalRules={originalValues?.houseRules}
+          hasChanged={hasChanged.houseRules}
+          onEditField={onEditField}
+        />
       </div>
 
       <div className={getRowClass(hasChanged.nightsSelected)}>

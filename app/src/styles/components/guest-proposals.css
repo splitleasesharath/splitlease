@@ -1,12 +1,65 @@
 /**
  * Guest Proposals Page Styles
  *
- * Design matches Bubble's MyProposals page with:
- * - Two-column card layout (details left, photo right)
- * - Host overlay on listing photo
- * - Horizontal pricing bar
- * - Horizontal progress tracker
+ * V5 Balanced Design
+ * - Refined elegance from V3 with accessibility from V4
+ * - Base font 15px (readable but not oversized)
+ * - Higher contrast text colors for accessibility
+ * - 44x44 day pills (accessible touch target)
+ * - 32px pricing (prominent but not overwhelming)
+ * - 1px borders for refined look
  */
+
+/* ============================================================================
+   DESIGN SYSTEM VARIABLES - BALANCED
+   ============================================================================ */
+
+:root {
+  /* Primary Brand Colors */
+  --gp-purple-dark: #31135D;
+  --gp-purple-primary: #6D31C2;
+  --gp-purple-light: #8C68EE;
+  --gp-purple-bg: #f8f5ff;
+
+  /* Text Colors - High contrast but not harsh */
+  --gp-text: #1a1a1a;              /* Dark but not pure black */
+  --gp-text-secondary: #4b5563;    /* Readable secondary */
+  --gp-text-muted: #6b7280;        /* Soft muted */
+
+  /* Background & Border - Soft and refined */
+  --gp-border: #e5e7eb;
+  --gp-border-light: #f0f0f0;
+  --gp-bg: #fafafa;
+  --gp-white: #fff;
+
+  /* Semantic Colors */
+  --gp-success: #059669;
+  --gp-success-bg: #ecfdf5;
+  --gp-danger: #dc2626;
+  --gp-danger-bg: #fef2f2;
+  --gp-warning: #d97706;
+  --gp-warning-bg: #fef3c7;
+
+  /* Typography - BALANCED SIZES */
+  --gp-font-size-sm: 13px;
+  --gp-font-size-base: 15px;       /* Slightly larger than V3's 14px */
+  --gp-font-size-md: 16px;
+  --gp-font-size-lg: 18px;
+  --gp-font-size-xl: 22px;
+  --gp-font-size-2xl: 32px;        /* Between V3's 28px and V4's 36px */
+  --gp-font-size-label: 12px;
+
+  /* Line Heights */
+  --gp-line-height-tight: 1.3;
+  --gp-line-height-normal: 1.5;
+  --gp-line-height-relaxed: 1.6;
+
+  /* Touch Targets - For interactive elements only */
+  --gp-min-touch-target: 44px;
+
+  /* Focus States */
+  --gp-focus-ring: 0 0 0 3px rgba(109, 49, 194, 0.4);
+}
 
 /* ============================================================================
    MAIN CONTENT LAYOUT
@@ -16,7 +69,7 @@
   display: flex;
   flex-direction: row;
   width: 100%;
-  background-color: rgb(244, 244, 248);
+  background-color: var(--gp-bg);
   position: relative;
   min-height: calc(100vh - 70px);
   padding: 2rem 0;
@@ -24,12 +77,19 @@
 }
 
 .proposals-page {
-  max-width: 1024px;
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 2rem 1rem;
+  padding: 32px 24px;
   width: 100%;
   box-sizing: border-box;
   position: relative;
+}
+
+.page-title {
+  font-size: var(--gp-font-size-xl);
+  font-weight: 700;
+  color: var(--gp-purple-dark);
+  margin-bottom: 24px;
 }
 
 /* ============================================================================
@@ -105,105 +165,257 @@
 }
 
 /* ============================================================================
-   EMPTY STATE
+   EMPTY STATE - V3 Style
    ============================================================================ */
 
 .empty-state {
   text-align: center;
-  padding: 4rem 2rem;
-  background: white;
-  border-radius: 10px;
-  border: 2px solid #424242;
+  padding: 48px 24px;
+  background: var(--gp-white);
+  border: 2px solid var(--gp-border);
+  border-radius: 20px;
 }
 
 .empty-state h2 {
-  font-family: 'Lato', sans-serif;
-  font-size: 24px;
+  font-size: var(--gp-font-size-lg);
   font-weight: 700;
-  color: #424242;
-  margin-bottom: 1rem;
-  line-height: 1.25;
+  color: var(--gp-text);
+  margin-bottom: 12px;
 }
 
 .empty-state p {
-  color: #424242;
-  margin-bottom: 0.5rem;
+  font-size: var(--gp-font-size-base);
+  color: var(--gp-text-secondary);
+  margin-bottom: 12px;
+  line-height: var(--gp-line-height-relaxed);
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.empty-state .empty-subtext {
+  color: var(--gp-text-muted);
+  margin-bottom: 32px;
 }
 
 .empty-icon {
-  display: none;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 24px;
+  background: var(--gp-purple-bg);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  color: var(--gp-purple-primary);
 }
 
 /* ============================================================================
-   PROPOSAL SELECTOR
+   PROPOSAL SELECTOR - List Layout (V3)
    ============================================================================ */
 
 .proposal-selector {
   background: transparent;
   padding: 0;
-  margin: 0 auto 1rem;
-  max-width: 1024px;
+  margin: 0 auto 32px;
+  max-width: 1100px;
 }
 
 .selector-header {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 16px;
 }
 
 .selector-header h2 {
-  font-family: "Open Sans", sans-serif;
-  font-size: 24px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--gp-font-size-xl);
   font-weight: 700;
-  line-height: 1.31;
-  color: var(--color-primary, #6B4EFF);
+  line-height: var(--gp-line-height-tight);
+  color: var(--gp-purple-dark);
   margin: 0;
 }
 
 .proposal-count {
-  display: none; /* Count is shown inline in header like Bubble: "My Proposals (5)" */
+  display: none;
 }
 
+/* Hide old dropdown - replaced by list */
 .proposal-dropdown {
-  display: block;
-  width: 100%;
-  max-width: 400px;
-  height: 45px;
-  padding: 0 15px 0 5px;
-  font-size: 16px;
-  font-weight: 400;
-  color: #39873d; /* Green text like Bubble */
-  background-color: #fff;
-  border: 1px solid #D4D4D4;
-  border-radius: 10px;
+  display: none;
+}
+
+/* New proposal list layout */
+.proposal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.proposal-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: var(--gp-white);
+  border: 1px solid var(--gp-border);
+  border-radius: 12px;
   cursor: pointer;
+  transition: all 0.2s;
 }
 
-.proposal-dropdown:focus {
-  outline: none;
-  border-color: var(--color-primary, #6B4EFF);
-  box-shadow: 0 0 0 3px rgba(107, 78, 255, 0.1);
+.proposal-row:hover {
+  border-color: var(--gp-purple-light);
+  background: var(--gp-purple-bg);
 }
 
-.proposal-dropdown:hover {
-  border-color: #9CA3AF;
+.proposal-row.active {
+  border-color: var(--gp-purple-primary);
+  border-width: 2px;
+  background: var(--gp-purple-bg);
+}
+
+.proposal-thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background-color: var(--gp-border-light);
+}
+
+.proposal-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.proposal-name {
+  font-weight: 600;
+  font-size: var(--gp-font-size-base);
+  color: var(--gp-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.proposal-meta {
+  font-size: var(--gp-font-size-sm);
+  color: var(--gp-text-secondary);
+}
+
+.proposal-status {
+  font-size: var(--gp-font-size-sm);
+  font-weight: 500;
+  color: var(--gp-text-muted);
+  padding: 5px 12px;
+  background: var(--gp-border-light);
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.proposal-status.attention {
+  color: var(--gp-purple-primary);
+  background: var(--gp-purple-bg);
+}
+
+.proposal-status.success {
+  color: var(--gp-success);
+  background: var(--gp-success-bg);
 }
 
 /* ============================================================================
-   PROPOSAL CARD WRAPPER - Contains banner and card
+   PROPOSAL CARD WRAPPER - Contains banner and card (V3)
    ============================================================================ */
 
 .proposal-card-wrapper {
-  margin-top: 15px;
+  margin-top: 0;
 }
 
 /* ============================================================================
-   STATUS BANNER - Dynamic status messages above card
+   DETAIL SECTION - Main card container (V3)
+   ============================================================================ */
+
+.detail-section {
+  background: var(--gp-white);
+  border: 1px solid var(--gp-border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+/* ============================================================================
+   STATUS BANNER - V3 Style with icon
    ============================================================================ */
 
 .status-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 24px;
+  background: var(--gp-purple-bg);
+  border-bottom: 1px solid var(--gp-border);
+  font-size: var(--gp-font-size-base);
   animation: fadeIn 0.3s ease-in-out;
+}
+
+.status-banner.success {
+  background: var(--gp-success-bg);
+}
+
+.status-banner.attention {
+  background: #fef3c7;
+}
+
+.status-banner.cancelled {
+  background: var(--gp-danger-bg);
+}
+
+.status-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  background: var(--gp-purple-primary);
+  color: white;
+  flex-shrink: 0;
+}
+
+.status-banner.success .status-icon {
+  background: var(--gp-success);
+}
+
+.status-banner.attention .status-icon {
+  background: #f59e0b;
+}
+
+.status-banner.cancelled .status-icon {
+  background: var(--gp-danger);
+}
+
+.status-text {
+  flex: 1;
+}
+
+.status-text strong {
+  font-weight: 600;
+  color: var(--gp-purple-dark);
+}
+
+.status-banner.success .status-text strong {
+  color: var(--gp-success);
+}
+
+.status-banner.attention .status-text strong {
+  color: #92400e;
+}
+
+.status-banner.cancelled .status-text strong {
+  color: var(--gp-danger);
 }
 
 @keyframes fadeIn {
@@ -212,13 +424,383 @@
 }
 
 /* ============================================================================
-   PROPOSAL CARD V2 - Two Column Layout
+   DETAIL HEADER - V3 Style
+   ============================================================================ */
+
+.detail-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 24px;
+  border-bottom: 1px solid var(--gp-border-light);
+}
+
+.detail-image {
+  width: 88px;
+  height: 66px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.detail-title-area {
+  flex: 1;
+}
+
+.detail-title {
+  font-size: var(--gp-font-size-lg);
+  font-weight: 600;
+  color: var(--gp-purple-dark);
+  margin-bottom: 4px;
+}
+
+.detail-location {
+  font-size: var(--gp-font-size-base);
+  color: var(--gp-text-secondary);
+}
+
+.detail-host {
+  text-align: right;
+}
+
+.detail-host .host-name {
+  font-weight: 600;
+  font-size: var(--gp-font-size-base);
+  color: var(--gp-text);
+}
+
+.detail-host .host-label {
+  color: var(--gp-text-muted);
+  font-size: var(--gp-font-size-sm);
+}
+
+/* ============================================================================
+   QUICK LINKS ROW - V3 Style (pill-style buttons)
+   ============================================================================ */
+
+.links-row {
+  display: flex;
+  gap: 8px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--gp-border-light);
+  background: var(--gp-bg);
+  flex-wrap: wrap;
+}
+
+.link-item {
+  font-size: var(--gp-font-size-sm);
+  font-weight: 500;
+  color: var(--gp-purple-primary);
+  text-decoration: none;
+  padding: 8px 14px;
+  border-radius: 20px;
+  transition: all 0.15s;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+}
+
+.link-item:hover {
+  background: var(--gp-purple-bg);
+}
+
+/* ============================================================================
+   INFO GRID - V3 Style (4-column layout)
+   ============================================================================ */
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--gp-border-light);
+  border-bottom: 1px solid var(--gp-border-light);
+}
+
+.info-item {
+  padding: 20px 24px;
+  background: var(--gp-white);
+}
+
+.info-label {
+  font-size: var(--gp-font-size-label);
+  font-weight: 500;
+  color: var(--gp-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.info-value {
+  font-size: var(--gp-font-size-base);
+  font-weight: 600;
+  color: var(--gp-text);
+}
+
+/* ============================================================================
+   DAYS ROW - V5 Style (44x44 pills - balanced)
+   ============================================================================ */
+
+.days-row {
+  display: flex;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--gp-border-light);
+  gap: 16px;
+}
+
+.days-label {
+  font-size: var(--gp-font-size-label);
+  font-weight: 500;
+  color: var(--gp-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.days-pills {
+  display: flex;
+  gap: 8px;
+}
+
+.day-pill {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--gp-font-size-sm);
+  font-weight: 600;
+  background: var(--gp-bg);
+  color: var(--gp-text-muted);
+  border: 1px solid var(--gp-border);
+  transition: all 0.15s;
+}
+
+.day-pill.selected {
+  background: var(--gp-purple-dark);
+  border-color: var(--gp-purple-dark);
+  color: white;
+}
+
+.days-info {
+  margin-left: auto;
+  text-align: right;
+}
+
+.days-count {
+  font-size: var(--gp-font-size-base);
+  font-weight: 600;
+  color: var(--gp-text);
+}
+
+.days-range {
+  font-size: var(--gp-font-size-sm);
+  color: var(--gp-text-secondary);
+}
+
+/* ============================================================================
+   PRICING ROW - V5 Style (32px balanced pricing)
+   ============================================================================ */
+
+.pricing-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--gp-border-light);
+  background: var(--gp-bg);
+}
+
+.pricing-breakdown {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--gp-font-size-base);
+  color: var(--gp-text-secondary);
+}
+
+.pricing-breakdown span {
+  padding: 4px 0;
+}
+
+.pricing-total-label {
+  font-size: var(--gp-font-size-sm);
+  color: var(--gp-text-secondary);
+  margin-bottom: 2px;
+}
+
+.pricing-total {
+  font-size: var(--gp-font-size-2xl);
+  font-weight: 700;
+  color: var(--gp-purple-primary);
+}
+
+/* ============================================================================
+   PROGRESS ROW - V3 Style (horizontal timeline with glow)
+   ============================================================================ */
+
+.progress-row {
+  display: flex;
+  align-items: center;
+  padding: 24px;
+  border-bottom: 1px solid var(--gp-border-light);
+  gap: 4px;
+}
+
+.progress-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.progress-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--gp-border);
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.progress-step.completed .progress-dot {
+  background: var(--gp-purple-dark);
+}
+
+.progress-step.current .progress-dot {
+  background: var(--gp-purple-primary);
+  width: 12px;
+  height: 12px;
+  box-shadow: 0 0 0 4px rgba(109, 49, 194, 0.15);
+}
+
+.progress-step.cancelled .progress-dot {
+  background: var(--gp-danger);
+}
+
+.progress-line {
+  flex: 1;
+  height: 2px;
+  background: var(--gp-border);
+  border-radius: 1px;
+}
+
+.progress-step.completed .progress-line {
+  background: var(--gp-purple-dark);
+}
+
+.progress-label {
+  font-size: var(--gp-font-size-sm);
+  font-weight: 500;
+  color: var(--gp-text-muted);
+  white-space: nowrap;
+}
+
+.progress-step.completed .progress-label,
+.progress-step.current .progress-label {
+  color: var(--gp-text);
+}
+
+/* ============================================================================
+   ACTIONS ROW - V5 Style (balanced touch targets)
+   ============================================================================ */
+
+.actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 24px;
+  align-items: center;
+}
+
+/* V5 Button base styles */
+.actions-row .btn {
+  padding: 12px 20px;
+  font-size: var(--gp-font-size-base);
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  font-family: inherit;
+  white-space: nowrap;
+  flex: 0 0 auto;
+  width: auto;
+}
+
+.actions-row .btn-primary {
+  background: var(--gp-purple-primary);
+  color: white;
+}
+
+.actions-row .btn-primary:hover {
+  background: var(--gp-purple-dark);
+}
+
+.actions-row .btn-outline {
+  background: transparent;
+  color: var(--gp-purple-primary);
+  border: 2px solid var(--gp-purple-primary);
+}
+
+.actions-row .btn-outline:hover {
+  background: var(--gp-purple-bg);
+}
+
+.actions-row .btn-ghost {
+  background: transparent;
+  color: var(--gp-text-secondary);
+  border: 1px solid var(--gp-border);
+}
+
+.actions-row .btn-ghost:hover {
+  border-color: var(--gp-text-secondary);
+  color: var(--gp-text);
+}
+
+.actions-row .btn-danger {
+  background: transparent;
+  color: var(--gp-danger);
+  border: 1px solid var(--gp-danger);
+}
+
+.actions-row .btn-danger:hover {
+  background: var(--gp-danger-bg);
+}
+
+/* VM button text states */
+.actions-row .btn-vm-text {
+  background: transparent;
+  border: none;
+  color: var(--gp-danger);
+  font-weight: 600;
+  padding: 12px 16px;
+  cursor: default;
+}
+
+.actions-row .btn-vm-text.waiting {
+  color: var(--gp-text-muted);
+}
+
+.actions-row .btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ============================================================================
+   PROPOSAL CARD V2 - Two Column Layout (Legacy - keep for transition)
    ============================================================================ */
 
 .proposal-card-v2 {
-  background: white;
+  background: var(--gp-white);
   border-radius: 16px;
-  border: 1px solid #D4D4D4;
+  border: 1px solid var(--gp-border);
   overflow: hidden;
 }
 
@@ -930,25 +1512,25 @@
 }
 
 /* ============================================================================
-   RESPONSIVE STYLES
+   RESPONSIVE STYLES - V5 Balanced
    ============================================================================ */
 
 @media (max-width: 900px) {
-  .proposal-content-row {
-    flex-direction: column;
+  /* Info grid: 4 columns -> 2 columns */
+  .info-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 
-  .proposal-left-column {
-    max-width: 100%;
+  /* Days row stacks */
+  .days-row {
+    flex-wrap: wrap;
   }
 
-  .proposal-right-column {
-    flex: 0 0 auto;
-    max-width: 100%;
-  }
-
-  .listing-photo-container {
-    height: 280px;
+  .days-info {
+    width: 100%;
+    margin-left: 0;
+    margin-top: 12px;
+    text-align: left;
   }
 }
 
@@ -957,53 +1539,58 @@
     padding: 1.5rem 1rem;
   }
 
-  .proposal-dropdown {
-    width: 100%;
-    max-width: 100%;
-  }
-
   .selector-header h2 {
     font-size: 20px;
   }
 
-  .pricing-bar {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 15px;
+  /* Detail header stacks on tablet */
+  .detail-header {
+    flex-wrap: wrap;
   }
 
-  .pricing-details {
-    text-align: left;
-  }
-
-  .pricing-nightly {
-    text-align: left;
-  }
-
-  /* Action buttons stack vertically on tablet */
-  .action-buttons {
-    flex-direction: column;
+  .detail-host {
     width: 100%;
+    text-align: left;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--gp-border-light);
   }
 
-  .btn-action-bar {
-    width: 100%;
-    max-width: 100%;
+  /* Links row scrolls horizontally */
+  .links-row {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 12px;
   }
 
-  /* Progress tracker responsive */
-  .progress-connector {
-    width: 40px;
+  .link-item {
+    flex-shrink: 0;
   }
 
+  /* Pricing row stacks */
+  .pricing-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .pricing-breakdown {
+    flex-wrap: wrap;
+  }
+
+  /* Progress labels hidden */
   .progress-label {
-    width: 60px;
-    font-size: 10px;
+    display: none;
   }
 
-  .progress-node {
-    width: 20px;
-    height: 20px;
+  /* Actions wrap */
+  .actions-row {
+    flex-wrap: wrap;
+  }
+
+  .actions-row .btn {
+    flex: 1;
+    min-width: 140px;
   }
 }
 
@@ -1012,384 +1599,338 @@
     padding: 1rem 0.75rem;
   }
 
-  .selector-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-
   .selector-header h2 {
     font-size: 18px;
   }
 
-  .listing-actions-row {
-    flex-direction: column;
-    gap: 10px;
+  /* Info grid: 2 columns -> 1 column */
+  .info-grid {
+    grid-template-columns: 1fr;
   }
 
-  .btn-action {
-    width: 100%;
-  }
-
-  .day-badges-row {
-    justify-content: space-between;
-  }
-
-  .day-badge-v2 {
-    width: 36px;
-    height: 36px;
+  /* Day pills smaller */
+  .day-pill {
+    width: 38px;
+    height: 38px;
     font-size: 12px;
-    border-radius: 10px;
   }
 
-  /* Hide progress labels on very small screens */
-  .progress-labels {
-    display: none;
+  .days-pills {
+    gap: 6px;
   }
 
-  .progress-connector {
-    width: 30px;
+  /* Proposal rows stack content */
+  .proposal-row {
+    flex-wrap: wrap;
   }
 
-  .progress-node {
-    width: 16px;
-    height: 16px;
+  .proposal-info {
+    flex: 1 1 calc(100% - 64px);
+  }
+
+  .proposal-status {
+    width: 100%;
+    margin-top: 8px;
+    text-align: center;
+  }
+
+  /* Actions stack fully */
+  .actions-row {
+    flex-direction: column;
+  }
+
+  .actions-row .btn {
+    width: 100%;
   }
 }
 
 /* ============================================================================
-   VIRTUAL MEETINGS SECTION
+   VIRTUAL MEETINGS SECTION - V5 Balanced
    Displays proposals with active virtual meetings
    ============================================================================ */
 
 .vm-section-wrapper {
-  border-radius: 16px;
-  padding: 10px 5px 5px;
-  align-self: center;
-  min-width: 94%;
-  max-width: 94%;
-  margin: 20px auto;
-  background: transparent;
+  margin-top: 40px;
 }
 
 .vm-section-heading {
-  font-family: 'Inter', sans-serif;
-  font-size: 21px;
-  font-weight: 600;
-  color: var(--color-primary, #31135D);
-  line-height: 1.31;
-  margin: 0 0 10px 15px;
+  font-size: var(--gp-font-size-xl);
+  font-weight: 700;
+  color: var(--gp-purple-dark);
+  margin-bottom: 20px;
 }
 
 .vm-section-list {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 12px;
 }
 
-/* Individual VM Card */
+/* Individual VM Card - V5 Balanced */
 .vm-section-card {
-  background-color: var(--color-primary-contrast, #FFFFFF);
-  border-radius: 5px;
-  overflow: visible;
-  margin-bottom: 0;
+  background: var(--gp-white);
+  border: 1px solid var(--gp-border);
+  border-radius: 16px;
+  overflow: hidden;
 }
 
 .vm-section-card-content {
-  background-color: rgb(255, 255, 255);
-  padding: 0 0 0 20px;
+  padding: 20px;
 }
 
 /* Header row with profile icon and text */
 .vm-section-header-row {
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 5px;
-  padding: 20px 0;
-  background-color: rgb(255, 255, 255);
+  align-items: flex-start;
+  gap: 16px;
 }
 
 .vm-section-profile-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
+  background: var(--gp-border-light);
 }
 
 .vm-section-profile-img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  border-radius: 20px;
+  object-fit: cover;
 }
 
 .vm-section-text-content {
-  display: flex;
-  flex-direction: column;
-  min-width: 70%;
-  flex-grow: 1;
+  flex: 1;
+  min-width: 0;
 }
 
 .vm-section-title {
-  font-family: 'Roboto', sans-serif;
-  font-size: 17px;
-  font-weight: 400;
-  color: rgb(28, 27, 31);
-  letter-spacing: 0.5px;
-  line-height: 1.5;
-  padding-left: 5px;
-  white-space: pre-wrap;
+  font-size: var(--gp-font-size-base);
+  font-weight: 600;
+  color: var(--gp-purple-dark);
+  line-height: var(--gp-line-height-normal);
 }
 
 .vm-section-subtitle {
-  font-family: 'Roboto', sans-serif;
-  font-size: 12px;
-  font-weight: 400;
-  color: rgb(107, 114, 128);
-  padding-left: 5px;
-  margin-top: -2px;
+  font-size: var(--gp-font-size-sm);
+  color: var(--gp-text-muted);
+  margin-top: 4px;
 }
 
 .vm-section-message-row {
   display: flex;
-  flex-direction: row;
   align-items: center;
-  gap: 5px;
+  gap: 10px;
+  margin-top: 10px;
 }
 
 .vm-section-message-row svg {
   width: 20px;
   height: 20px;
   flex-shrink: 0;
-  margin-left: 5px;
+  color: var(--gp-purple-primary);
+}
+
+.vm-section-message-row svg rect,
+.vm-section-message-row svg line {
+  stroke: var(--gp-purple-primary);
 }
 
 .vm-section-message {
-  font-family: 'Inter', sans-serif;
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--color-text, #424242);
-  line-height: 1;
-  padding-left: 5px;
+  font-size: var(--gp-font-size-sm);
+  color: var(--gp-text-secondary);
+  line-height: var(--gp-line-height-normal);
 }
 
 /* Date/time pills row */
 .vm-section-dates-row {
   display: flex;
-  flex-direction: row;
   flex-wrap: wrap;
   gap: 10px;
-  padding-bottom: 10px;
-  background-color: rgb(255, 255, 255);
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--gp-border-light);
 }
 
 .vm-section-date-pill {
-  background-color: rgb(210, 207, 207);
-  font-family: 'Open Sans', sans-serif;
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--color-primary, #31135D);
-  line-height: 1.5;
-  padding: 5px 10px;
+  background: var(--gp-bg);
+  font-size: var(--gp-font-size-sm);
+  font-weight: 600;
+  color: var(--gp-text);
+  padding: 10px 16px;
   border-radius: 20px;
-  white-space: pre-wrap;
+  border: 1px solid var(--gp-border);
 }
 
-/* Action bar */
+/* Action bar - V5 Balanced */
 .vm-section-action-bar {
   display: flex;
-  flex-direction: row;
   align-items: center;
-  gap: 15px;
-  background-color: rgb(247, 248, 249);
-  padding: 0 0 0 15px;
-  min-height: 70px;
+  gap: 12px;
+  padding: 16px 20px;
+  background: var(--gp-bg);
+  border-top: 1px solid var(--gp-border-light);
 }
 
 .vm-section-cancel-btn {
-  background-color: rgb(147, 146, 147);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--color-primary-contrast, #FFFFFF);
-  text-align: center;
-  line-height: 1;
-  padding: 0 15px;
-  border-radius: 20px;
-  border: none;
-  height: 32px;
+  background: transparent;
+  font-size: var(--gp-font-size-sm);
+  font-weight: 600;
+  color: var(--gp-text-secondary);
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--gp-border);
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.15s;
+  min-height: var(--gp-min-touch-target);
 }
 
 .vm-section-cancel-btn:hover {
-  background-color: rgb(127, 126, 127);
+  border-color: var(--gp-text-secondary);
+  color: var(--gp-text);
 }
 
 /* ============================================================================
-   VM SECTION - STATE BADGES
-   Visual indicators for VM state (pending, confirmed, waiting)
+   VM SECTION - STATE BADGES - V5 Balanced
    ============================================================================ */
 
 .vm-section-title-row {
   display: flex;
-  flex-direction: row;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
 }
 
 .vm-section-badge {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 11px;
+  font-size: var(--gp-font-size-label);
   font-weight: 600;
-  padding: 4px 10px;
-  border-radius: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  padding: 6px 12px;
+  border-radius: 16px;
   white-space: nowrap;
 }
 
 .vm-section-badge-waiting {
-  background-color: #E5E7EB;
-  color: #4B5563;
+  background: var(--gp-border-light);
+  color: var(--gp-text-muted);
 }
 
 .vm-section-badge-pending {
-  background-color: #FEF3C7;
-  color: #92400E;
+  background: var(--gp-purple-bg);
+  color: var(--gp-purple-primary);
 }
 
 .vm-section-badge-confirmed {
-  background-color: #D1FAE5;
-  color: #065F46;
+  background: var(--gp-success-bg);
+  color: var(--gp-success);
 }
 
 .vm-section-badge-expired {
-  background-color: #FEF3C7;
-  color: #92400E;
-  border: 1px solid #F59E0B;
+  background: var(--gp-danger-bg);
+  color: var(--gp-danger);
 }
 
 /* ============================================================================
-   VM SECTION - PRIMARY ACTION BUTTONS
-   State-dependent action buttons
+   VM SECTION - PRIMARY ACTION BUTTONS - V5 Balanced
    ============================================================================ */
 
 .vm-section-primary-btn {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
-  font-weight: 500;
-  text-align: center;
-  line-height: 1;
-  padding: 0 18px;
-  border-radius: 20px;
-  border: none;
-  height: 36px;
+  font-size: var(--gp-font-size-sm);
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 1px solid transparent;
   cursor: pointer;
-  transition: background-color 0.2s, opacity 0.2s;
+  transition: all 0.15s;
+  min-height: var(--gp-min-touch-target);
+  min-width: 100px;
 }
 
-/* Respond state - Blue (action needed) */
+/* Respond state - Primary purple */
 .vm-section-primary-btn--respond {
-  background-color: #3B82F6;
+  background: var(--gp-purple-primary);
   color: white;
 }
 
 .vm-section-primary-btn--respond:hover {
-  background-color: #2563EB;
+  background: var(--gp-purple-dark);
 }
 
-/* Details state - Purple */
+/* Details state - Outline */
 .vm-section-primary-btn--details {
-  background-color: var(--color-primary, #6B4EFF);
-  color: white;
+  background: transparent;
+  color: var(--gp-purple-primary);
+  border: 1px solid var(--gp-purple-primary);
 }
 
 .vm-section-primary-btn--details:hover {
-  background-color: var(--color-primary-hover, #5840E0);
+  background: var(--gp-purple-bg);
 }
 
-/* Join state - Green */
+/* Join state - Primary purple */
 .vm-section-primary-btn--join {
-  background-color: #059669;
+  background: var(--gp-purple-primary);
   color: white;
 }
 
 .vm-section-primary-btn--join:hover {
-  background-color: #047857;
+  background: var(--gp-purple-dark);
 }
 
-/* Disabled state - Gray (waiting for response) */
+/* Disabled state */
 .vm-section-primary-btn--disabled {
-  background-color: #9CA3AF;
-  color: white;
+  background: var(--gp-border);
+  color: var(--gp-text-muted);
   cursor: not-allowed;
-  opacity: 0.8;
 }
 
-.vm-section-primary-btn--disabled:hover {
-  background-color: #9CA3AF;
-}
-
-/* Expired state - Amber/Orange (request new times) */
+/* Expired state - Outline danger */
 .vm-section-primary-btn--expired {
-  background-color: #F59E0B;
-  color: white;
+  background: transparent;
+  color: var(--gp-purple-primary);
+  border: 1px solid var(--gp-purple-primary);
 }
 
 .vm-section-primary-btn--expired:hover {
-  background-color: #D97706;
+  background: var(--gp-purple-bg);
 }
 
 /* ============================================================================
-   VM SECTION - BOOKED DATE PILL
-   Different styling for confirmed/booked dates
+   VM SECTION - BOOKED DATE PILL - V5 Balanced
    ============================================================================ */
 
 .vm-section-date-pill--booked {
-  background-color: #D1FAE5;
-  color: #065F46;
-  font-weight: 500;
+  background: var(--gp-purple-bg);
+  color: var(--gp-purple-dark);
+  border-color: var(--gp-purple-primary);
+  font-weight: 600;
 }
 
 /* Expired date pill styling */
 .vm-section-date-pill--expired {
-  background-color: #FEE2E2;
-  color: #991B1B;
+  background: var(--gp-danger-bg);
+  color: var(--gp-danger);
+  border-color: var(--gp-danger);
   text-decoration: line-through;
   opacity: 0.7;
 }
 
 /* ============================================================================
    VM SECTION - MULTI-BUTTON ACTION BAR
-   Layout for multiple buttons
    ============================================================================ */
 
 .vm-section-action-bar--multi {
   justify-content: flex-start;
-  gap: 10px;
 }
 
-/* Responsive styles for VM section */
+/* Responsive styles for VM section - V5 Balanced */
 @media (max-width: 768px) {
-  .vm-section-wrapper {
-    min-width: 100%;
-    max-width: 100%;
-    padding: 10px;
-  }
-
   .vm-section-heading {
-    margin-left: 0;
-    font-size: 18px;
+    font-size: var(--gp-font-size-lg);
   }
 
-  .vm-section-header-row {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
+  .vm-section-card-content {
+    padding: 16px;
   }
 
   .vm-section-title-row {
@@ -1398,65 +1939,41 @@
     gap: 6px;
   }
 
-  .vm-section-dates-row {
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .vm-section-date-pill {
-    width: fit-content;
-  }
-
   .vm-section-action-bar {
-    padding: 15px;
-    justify-content: center;
+    padding: 14px 16px;
     flex-wrap: wrap;
   }
 
-  .vm-section-action-bar--multi {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
   .vm-section-primary-btn {
-    width: 100%;
-    max-width: 250px;
+    flex: 1;
+    min-width: 120px;
+    max-width: 240px;
   }
 
   .vm-section-cancel-btn {
     width: 100%;
-    max-width: 250px;
+    max-width: 240px;
   }
 }
 
 @media (max-width: 480px) {
-  .vm-section-title {
-    font-size: 15px;
+  .vm-section-card-content {
+    padding: 16px;
   }
 
-  .vm-section-message {
-    font-size: 11px;
+  .vm-section-profile-icon {
+    width: 48px;
+    height: 48px;
   }
 
-  .vm-section-badge {
-    font-size: 10px;
-    padding: 3px 8px;
+  .vm-section-action-bar {
+    flex-direction: column;
+    padding: 16px;
   }
 
-  .vm-section-date-pill {
-    font-size: 11px;
-    padding: 4px 8px;
-  }
-
-  .vm-section-primary-btn {
-    font-size: 13px;
-    height: 34px;
-    padding: 0 14px;
-  }
-
+  .vm-section-primary-btn,
   .vm-section-cancel-btn {
-    font-size: 13px;
-    height: 30px;
+    width: 100%;
   }
 }
 
@@ -1504,4 +2021,279 @@
 
 .btn-danger:hover {
   background: #B91C1C;
+}
+
+/* ============================================================================
+   PROPOSAL DETAILS MODAL - V5 Balanced
+   ============================================================================ */
+
+.proposal-details-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  overflow-y: auto;
+  background-color: rgba(107, 114, 128, 0.75);
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.proposal-details-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 16px;
+}
+
+.proposal-details-modal {
+  position: relative;
+  background: var(--gp-white);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  max-width: 480px;
+  width: 100%;
+  overflow: hidden;
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Modal Header */
+.proposal-details-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--gp-border-light);
+}
+
+.proposal-details-title {
+  font-size: var(--gp-font-size-lg);
+  font-weight: 600;
+  color: var(--gp-purple-dark);
+  margin: 0;
+}
+
+.proposal-details-close {
+  background: transparent;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  color: var(--gp-text-muted);
+  border-radius: 8px;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.proposal-details-close:hover {
+  background: var(--gp-bg);
+  color: var(--gp-text);
+}
+
+.proposal-details-close svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* Modal Content */
+.proposal-details-content {
+  padding: 24px;
+}
+
+/* Info Row */
+.proposal-details-row {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--gp-border-light);
+}
+
+.proposal-details-row:last-child {
+  border-bottom: none;
+}
+
+.proposal-details-label {
+  font-size: var(--gp-font-size-sm);
+  font-weight: 500;
+  color: var(--gp-text-muted);
+  margin-bottom: 4px;
+}
+
+.proposal-details-value {
+  font-size: var(--gp-font-size-base);
+  font-weight: 500;
+  color: var(--gp-text);
+}
+
+/* House Rules Toggle */
+.proposal-details-rules-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: var(--gp-font-size-sm);
+  font-weight: 600;
+  color: var(--gp-purple-primary);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.proposal-details-rules-toggle:hover {
+  color: var(--gp-purple-dark);
+}
+
+.proposal-details-rules-count {
+  background: var(--gp-purple-bg);
+  color: var(--gp-purple-primary);
+  font-size: var(--gp-font-size-label);
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+/* House Rules List */
+.proposal-details-rules-list {
+  margin-top: 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.proposal-details-rule-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  font-size: var(--gp-font-size-sm);
+  color: var(--gp-text-secondary);
+}
+
+.proposal-details-rule-icon {
+  flex-shrink: 0;
+}
+
+.proposal-details-loading {
+  font-size: var(--gp-font-size-sm);
+  color: var(--gp-text-muted);
+  font-style: italic;
+  padding: 8px 0;
+}
+
+/* Pricing Breakdown */
+.proposal-details-pricing {
+  background: var(--gp-bg);
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 8px;
+}
+
+.proposal-details-pricing-title {
+  font-size: var(--gp-font-size-sm);
+  font-weight: 600;
+  color: var(--gp-text);
+  margin: 0 0 16px 0;
+}
+
+.proposal-details-pricing-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.proposal-details-pricing-label {
+  font-size: var(--gp-font-size-sm);
+  color: var(--gp-text-secondary);
+}
+
+.proposal-details-pricing-value {
+  font-size: var(--gp-font-size-sm);
+  font-weight: 600;
+  color: var(--gp-text);
+}
+
+.proposal-details-pricing-divider {
+  height: 1px;
+  background: var(--gp-border);
+  margin: 8px 0;
+}
+
+.proposal-details-pricing-total {
+  padding-top: 12px;
+}
+
+.proposal-details-pricing-total .proposal-details-pricing-label {
+  font-weight: 600;
+  color: var(--gp-text);
+}
+
+.proposal-details-pricing-total .proposal-details-pricing-value {
+  font-size: var(--gp-font-size-md);
+  font-weight: 700;
+  color: var(--gp-purple-primary);
+}
+
+.proposal-details-pricing-note {
+  font-size: var(--gp-font-size-label);
+  color: var(--gp-text-muted);
+  font-style: italic;
+  margin-top: 8px;
+}
+
+/* Modal Footer */
+.proposal-details-footer {
+  padding: 16px 24px;
+  background: var(--gp-bg);
+  border-top: 1px solid var(--gp-border-light);
+}
+
+.proposal-details-footer-btn {
+  width: 100%;
+  padding: 12px 20px;
+  background: var(--gp-purple-primary);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: var(--gp-font-size-base);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.proposal-details-footer-btn:hover {
+  background: var(--gp-purple-dark);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .proposal-details-modal {
+    max-width: 100%;
+    margin: 16px;
+    border-radius: 12px;
+  }
+
+  .proposal-details-header {
+    padding: 16px 20px;
+  }
+
+  .proposal-details-content {
+    padding: 20px;
+  }
+
+  .proposal-details-pricing {
+    padding: 16px;
+  }
+
+  .proposal-details-footer {
+    padding: 16px 20px;
+  }
 }

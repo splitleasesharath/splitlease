@@ -39,6 +39,8 @@ const STATE_KEYS = {
   AVATAR_URL: 'sl_avatar_url',
   LINKEDIN_OAUTH_USER_TYPE: 'sl_linkedin_oauth_user_type',
   LINKEDIN_OAUTH_LOGIN_FLOW: 'sl_linkedin_oauth_login_flow',
+  GOOGLE_OAUTH_USER_TYPE: 'sl_google_oauth_user_type',
+  GOOGLE_OAUTH_LOGIN_FLOW: 'sl_google_oauth_login_flow',
 };
 
 /**
@@ -346,6 +348,59 @@ export function getLinkedInOAuthLoginFlow() {
  */
 export function clearLinkedInOAuthLoginFlow() {
   localStorage.removeItem(STATE_KEYS.LINKEDIN_OAUTH_LOGIN_FLOW);
+}
+
+/**
+ * Set Google OAuth user type before redirect
+ * @param {string} userType - 'Host' or 'Guest'
+ */
+export function setGoogleOAuthUserType(userType) {
+  if (userType) {
+    localStorage.setItem(STATE_KEYS.GOOGLE_OAUTH_USER_TYPE, userType);
+  }
+}
+
+/**
+ * Get Google OAuth user type (stored before redirect)
+ * @returns {string|null} User type or null
+ */
+export function getGoogleOAuthUserType() {
+  return localStorage.getItem(STATE_KEYS.GOOGLE_OAUTH_USER_TYPE);
+}
+
+/**
+ * Clear Google OAuth user type after callback handling
+ */
+export function clearGoogleOAuthUserType() {
+  localStorage.removeItem(STATE_KEYS.GOOGLE_OAUTH_USER_TYPE);
+}
+
+/**
+ * Set Google OAuth login flow flag before redirect
+ * Distinguishes login flow from signup flow
+ * @param {boolean} isLoginFlow - Whether this is a login attempt
+ */
+export function setGoogleOAuthLoginFlow(isLoginFlow) {
+  if (isLoginFlow) {
+    localStorage.setItem(STATE_KEYS.GOOGLE_OAUTH_LOGIN_FLOW, 'true');
+  } else {
+    localStorage.removeItem(STATE_KEYS.GOOGLE_OAUTH_LOGIN_FLOW);
+  }
+}
+
+/**
+ * Get Google OAuth login flow flag
+ * @returns {boolean} True if this is a login flow
+ */
+export function getGoogleOAuthLoginFlow() {
+  return localStorage.getItem(STATE_KEYS.GOOGLE_OAUTH_LOGIN_FLOW) === 'true';
+}
+
+/**
+ * Clear Google OAuth login flow flag after callback handling
+ */
+export function clearGoogleOAuthLoginFlow() {
+  localStorage.removeItem(STATE_KEYS.GOOGLE_OAUTH_LOGIN_FLOW);
 }
 
 /**

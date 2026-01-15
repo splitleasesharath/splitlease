@@ -16,30 +16,92 @@ export default function AddressStep({
   addressInputRef,
 }) {
   const autocompleteRef = useRef(null);
+  const initAttempted = useRef(false);
 
-  // Initialize Google Places Autocomplete
+  // Initialize Google Places Autocomplete with retry logic
   useEffect(() => {
-    if (!addressInputRef?.current || !window.google?.maps?.places) return;
+    // Skip if already initialized
+    if (autocompleteRef.current || initAttempted.current) return;
 
-    const autocomplete = new window.google.maps.places.Autocomplete(
-      addressInputRef.current,
-      {
-        types: ['address'],
-        componentRestrictions: { country: 'us' }
+    let retryCount = 0;
+    const maxRetries = 50; // Try for 5 seconds (50 * 100ms)
+
+    const initAutocomplete = () => {
+      // Check for Google Maps AND the Places library
+      if (!window.google || !window.google.maps || !window.google.maps.places) {
+        retryCount++;
+        if (retryCount < maxRetries) {
+          setTimeout(initAutocomplete, 100);
+        } else {
+          console.error('[RentalAppWizard] Google Maps API failed to load after 5 seconds');
+        }
+        return;
       }
-    );
 
-    autocomplete.addListener('place_changed', () => {
-      const place = autocomplete.getPlace();
-      if (place.formatted_address) {
-        onFieldChange('currentAddress', place.formatted_address);
+      if (!addressInputRef?.current) {
+        retryCount++;
+        if (retryCount < maxRetries) {
+          setTimeout(initAutocomplete, 100);
+        }
+        return;
       }
-    });
 
-    autocompleteRef.current = autocomplete;
+      try {
+        console.log('[RentalAppWizard] Initializing Google Maps Autocomplete...');
+
+        // Create autocomplete restricted to US addresses only
+        const autocomplete = new window.google.maps.places.Autocomplete(
+          addressInputRef.current,
+          {
+            types: ['address'], // Restrict to addresses only
+            componentRestrictions: { country: 'us' }, // US addresses only
+            fields: ['address_components', 'formatted_address', 'geometry', 'place_id']
+          }
+        );
+
+        console.log('[RentalAppWizard] Google Maps Autocomplete initialized (US addresses)');
+
+        // Prevent autocomplete from selecting on Enter key (prevents form submission)
+        window.google.maps.event.addDomListener(addressInputRef.current, 'keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+          }
+        });
+
+        autocompleteRef.current = autocomplete;
+
+        // Listen for place selection
+        autocomplete.addListener('place_changed', () => {
+          const place = autocomplete.getPlace();
+          console.log('[RentalAppWizard] Place selected:', place);
+
+          // If user just pressed Enter without selecting, don't do anything
+          if (!place.place_id) {
+            console.log('[RentalAppWizard] No place_id - user did not select from dropdown');
+            return;
+          }
+
+          if (!place.formatted_address) {
+            console.error('[RentalAppWizard] Invalid place selected');
+            return;
+          }
+
+          // Update the currentAddress field with the formatted address
+          onFieldChange('currentAddress', place.formatted_address);
+          console.log('[RentalAppWizard] Address updated:', place.formatted_address);
+        });
+
+        initAttempted.current = true;
+      } catch (error) {
+        console.error('[RentalAppWizard] Error initializing Google Maps Autocomplete:', error);
+      }
+    };
+
+    initAutocomplete();
 
     return () => {
-      if (autocompleteRef.current) {
+      // Cleanup autocomplete listeners
+      if (autocompleteRef.current && window.google && window.google.maps) {
         window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
       }
     };

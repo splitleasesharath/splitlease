@@ -153,6 +153,7 @@ export default function GuestProposalsPage() {
                 selectedId={selectedProposal?._id}
                 onSelect={handleProposalSelect}
                 count={proposals.length}
+                fullProposals={proposals}
               />
 
               {/* Proposal Card (includes integrated Progress Tracker) */}

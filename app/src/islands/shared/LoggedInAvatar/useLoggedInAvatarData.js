@@ -119,7 +119,8 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
     leasesCount: 0,
     favoritesCount: 0,
     unreadMessagesCount: 0,
-    suggestedProposalsCount: 0
+    suggestedProposalsCount: 0,
+    threadsCount: 0 // Count of message threads user is part of
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -147,7 +148,8 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
         suggestedProposalsResult,
         junctionCountsResult,
         guestProposalsResult,
-        hostProposalsResult
+        hostProposalsResult,
+        threadsResult
       ] = await Promise.all([
         // 1. Fetch user data (type, favorites)
         supabase
@@ -184,11 +186,12 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
           .or(`Guest.eq.${userId},"Created By".eq.${userId}`),
 
         // 6. Count unread messages
+        //    Uses _message table with "Unread Users" JSONB array containing user IDs
+        //    Must use raw filter since .contains() doesn't work with JSONB + quoted columns
         supabase
-          .from('message')
+          .from('_message')
           .select('_id', { count: 'exact', head: true })
-          .eq('Recipient', userId)
-          .eq('Read', false),
+          .filter('Unread Users', 'cs', JSON.stringify([userId])),
 
         // 7. Check for proposals suggested by Split Lease
         //    These are proposals created by SL agent on behalf of the guest
@@ -219,7 +222,14 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
           .select('_id', { count: 'exact', head: true })
           .eq('Host User', userId)
           .or('"Deleted".is.null,"Deleted".eq.false')
-          .neq('Status', 'Proposal Cancelled by Guest')
+          .neq('Status', 'Proposal Cancelled by Guest'),
+
+        // 11. Count message threads where user is a participant (host or guest)
+        //     Note: Column names have leading hyphens: "-Host User", "-Guest User"
+        supabase
+          .from('thread')
+          .select('_id', { count: 'exact', head: true })
+          .or(`"-Host User".eq.${userId},"-Guest User".eq.${userId}`)
       ]);
 
       // Process user data
@@ -327,7 +337,8 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
         leasesCount: leasesResult.count || 0,
         favoritesCount,
         unreadMessagesCount: messagesResult.count || 0,
-        suggestedProposalsCount: suggestedProposalsResult.count || 0
+        suggestedProposalsCount: suggestedProposalsResult.count || 0,
+        threadsCount: threadsResult.count || 0
       };
 
       console.log('[useLoggedInAvatarData] Data fetched:', newData);
@@ -344,6 +355,60 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // ─────────────────────────────────────────────────────────────
+  // Real-time subscription for unread messages
+  // Updates badge instantly when new messages arrive or are read
+  // ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!userId) return;
+
+    console.log('[useLoggedInAvatarData] Setting up realtime subscription for messages');
+
+    // Helper to fetch current unread count
+    const fetchUnreadCount = async () => {
+      const { count, error } = await supabase
+        .from('_message')
+        .select('_id', { count: 'exact', head: true })
+        .filter('Unread Users', 'cs', JSON.stringify([userId]));
+
+      if (!error && count !== null) {
+        setData(prev => {
+          if (prev.unreadMessagesCount !== count) {
+            console.log('[useLoggedInAvatarData] Unread count updated:', prev.unreadMessagesCount, '->', count);
+            return { ...prev, unreadMessagesCount: count };
+          }
+          return prev;
+        });
+      }
+    };
+
+    // Subscribe to _message table changes
+    const channel = supabase
+      .channel('header-unread-messages')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: '_message',
+        },
+        (payload) => {
+          console.log('[useLoggedInAvatarData] Message change detected:', payload.eventType);
+          // Re-fetch unread count on any message change
+          // This handles: new messages, messages marked as read, messages deleted
+          fetchUnreadCount();
+        }
+      )
+      .subscribe((status) => {
+        console.log('[useLoggedInAvatarData] Realtime subscription status:', status);
+      });
+
+    return () => {
+      console.log('[useLoggedInAvatarData] Cleaning up realtime subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
 
   return { data, loading, error, refetch: fetchData };
 }
