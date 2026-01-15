@@ -171,13 +171,14 @@ export function useCreateSuggestedProposalLogic() {
   const nightsCount = Math.max(0, selectedDays.length - 1);
 
   // Calculate check-in/check-out using the same logic as ViewSplitLeasePage
-  const { checkInDayIndex, checkOutDayIndex, checkInDayName, checkOutDayName } = useMemo(() => {
+  const { checkInDayIndex, checkOutDayIndex, checkInDayName, checkOutDayName, nightsSelected } = useMemo(() => {
     if (selectedDays.length === 0) {
       return {
         checkInDayIndex: null,
         checkOutDayIndex: null,
         checkInDayName: null,
-        checkOutDayName: null
+        checkOutDayName: null,
+        nightsSelected: []
       };
     }
 
@@ -189,11 +190,19 @@ export function useCreateSuggestedProposalLogic() {
 
     const { checkIn, checkOut } = calculateCheckInCheckOut(dayObjects);
 
+    // nightsSelected = all selected days except checkout day
+    // (checkout day is when you leave, not a night you stay)
+    const checkOutDay = checkOut?.dayOfWeek ?? null;
+    const nights = checkOutDay !== null
+      ? selectedDays.filter(day => day !== checkOutDay)
+      : selectedDays.slice(0, -1); // fallback: all but last
+
     return {
       checkInDayIndex: checkIn?.dayOfWeek ?? null,
-      checkOutDayIndex: checkOut?.dayOfWeek ?? null,
+      checkOutDayIndex: checkOutDay,
       checkInDayName: checkIn?.name ?? null,
-      checkOutDayName: checkOut?.name ?? null
+      checkOutDayName: checkOut?.name ?? null,
+      nightsSelected: nights
     };
   }, [selectedDays]);
 
@@ -586,9 +595,10 @@ export function useCreateSuggestedProposalLogic() {
 
         // Schedule (0-indexed days)
         daysSelected: selectedDays,
+        nightsSelected,
         checkInDayIndex,
         checkOutDayIndex,
-        nightsPerWeek: selectedDays.length,
+        nightsPerWeek: nightsSelected.length,
 
         // Reservation
         reservationSpan: reservationSpan === 'custom' ? `${customWeeks} weeks` : `${reservationSpan} weeks`,
@@ -635,6 +645,7 @@ export function useCreateSuggestedProposalLogic() {
     moveInDate,
     moveInRange,
     selectedDays,
+    nightsSelected,
     checkInDayIndex,
     checkOutDayIndex,
     reservationSpan,
