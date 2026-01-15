@@ -34,6 +34,33 @@ def is_port_8010_responding() -> bool:
             return False
 
 
+def is_dev_server_http_ready(timeout: int = 2) -> bool:
+    """Check if dev server is ready to serve HTTP requests.
+
+    More reliable than socket check - actually makes an HTTP request
+    to verify Vite is fully initialized.
+
+    Args:
+        timeout: Request timeout in seconds
+
+    Returns:
+        True if HTTP request succeeds, False otherwise
+    """
+    import requests
+
+    try:
+        # Request the root path - Vite should respond even without content
+        resp = requests.get("http://localhost:8010/", timeout=timeout)
+        # Any 2xx or 3xx response means server is ready
+        return resp.status_code < 400
+    except requests.exceptions.ConnectionError:
+        return False
+    except requests.exceptions.Timeout:
+        return False
+    except Exception:
+        return False
+
+
 def restart_dev_server_on_port_8010(app_dir: Path, logger: logging.Logger) -> Optional[subprocess.Popen]:
     """Restart dev server on port 8010 using npm script.
 
@@ -94,14 +121,21 @@ def restart_dev_server_on_port_8010(app_dir: Path, logger: logging.Logger) -> Op
         creationflags=creation_flags
     )
 
-    # Wait for server to be ready (max 60 seconds)
-    # Increased timeout for cases where Vite needs to install deps or compile
+    # Wait for server to be HTTP-ready (max 60 seconds)
+    # First wait for port, then wait for HTTP response
     max_wait = 60
+    port_ready_at = None
+
     for i in range(max_wait):
-        if is_port_8010_responding():
-            logger.info(f"Dev server started successfully (took {i+1}s)")
+        if port_ready_at is None and is_port_8010_responding():
+            port_ready_at = i
+            logger.info(f"Port 8010 responding after {i+1}s, waiting for HTTP ready...")
+
+        if port_ready_at is not None and is_dev_server_http_ready():
+            logger.info(f"Dev server HTTP-ready (took {i+1}s total, {i - port_ready_at}s after port)")
             print(f"Dev server running at http://localhost:8010")
             return process
+
         time.sleep(1)
 
     # Server didn't start in time
