@@ -16,6 +16,25 @@ import {
 } from '../../lib/constants.js';
 
 // ============================================================================
+// A/B TEST CONFIG - Market Report Popup vs Drawer
+// Set to false to disable A/B test and use drawer only (easy revert)
+// ============================================================================
+const AB_TEST_ENABLED = true;
+const POPUP_PERCENTAGE = 0.5; // 50% see popup, 50% see drawer
+
+function getMarketReportVariant() {
+  if (!AB_TEST_ENABLED) return 'drawer';
+
+  let variant = localStorage.getItem('marketReportVariant');
+  if (!variant) {
+    variant = Math.random() < POPUP_PERCENTAGE ? 'popup' : 'drawer';
+    localStorage.setItem('marketReportVariant', variant);
+    console.log('[A/B Test] Assigned variant:', variant);
+  }
+  return variant;
+}
+
+// ============================================================================
 // INTERNAL COMPONENT: Hero Section
 // ============================================================================
 
@@ -536,6 +555,80 @@ function FeaturedSpacesSection() {
 }
 
 // ============================================================================
+// A/B TEST VARIANT: Market Report Popup (bottom-right corner)
+// ============================================================================
+
+function MarketReportPopup({ onRequestClick, onDismiss }) {
+  const [isVisible, setIsVisible] = useState(true);
+  const [isAnimating, setIsAnimating] = useState(true);
+
+  useEffect(() => {
+    if (sessionStorage.getItem('marketReportDismissed')) {
+      setIsVisible(false);
+    }
+  }, []);
+
+  const handleDismiss = () => {
+    setIsAnimating(false);
+    setTimeout(() => {
+      setIsVisible(false);
+      sessionStorage.setItem('marketReportDismissed', 'true');
+      onDismiss?.();
+    }, 300);
+  };
+
+  const handleRequest = () => {
+    onRequestClick();
+    console.log('[A/B Test] Popup: Request clicked');
+  };
+
+  if (!isVisible) return null;
+
+  return (
+    <div className={`market-popup-container ${isAnimating ? 'animate-in' : 'animate-out'}`}>
+      <div className="market-popup-card">
+        <button className="market-popup-close" onClick={handleDismiss} aria-label="Close">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+
+        <div className="market-popup-content">
+          <div className="market-popup-badge">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            <span>Free Report</span>
+          </div>
+
+          <h2 className="market-popup-title">Split Lease Market Research</h2>
+          <p className="market-popup-description">Market Research for Lodging, Storage, Transport, Restaurants and more</p>
+
+          <div className="market-popup-buttons">
+            <button className="market-popup-btn-primary" onClick={handleRequest}>Request</button>
+            <button className="market-popup-btn-secondary" onClick={handleDismiss}>Later</button>
+          </div>
+        </div>
+
+        <div className="market-popup-illustration">
+          <lottie-player
+            src="https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1745939792891x394981453861459140/Report.json"
+            background="transparent"
+            speed="1"
+            style={{ width: '120px', height: '120px' }}
+            loop
+            autoplay
+          ></lottie-player>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
 // INTERNAL COMPONENT: Floating Badge
 // ============================================================================
 
@@ -688,7 +781,14 @@ export default function HomePage() {
 
       {!isLoggedIn && (
         <>
-          <FloatingBadge onClick={handleOpenAIResearchModal} />
+          {getMarketReportVariant() === 'popup' ? (
+            <MarketReportPopup
+              onRequestClick={handleOpenAIResearchModal}
+              onDismiss={() => console.log('[A/B Test] Popup dismissed')}
+            />
+          ) : (
+            <FloatingBadge onClick={handleOpenAIResearchModal} />
+          )}
 
           <AiSignupMarketReport
             isOpen={isAIResearchModalOpen}
