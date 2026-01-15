@@ -76,10 +76,15 @@ export default function CreateSuggestedProposalPage() {
     moveInRange,
     strictMoveIn,
     selectedDays,
-    checkInDayIndex,
-    checkOutDayIndex,
     reservationSpan,
     customWeeks,
+
+    // Computed (from selected days)
+    checkInDayIndex,
+    checkOutDayIndex,
+    checkInDayName,
+    checkOutDayName,
+    nightsCount,
 
     // Calculated pricing
     pricing,
@@ -122,8 +127,6 @@ export default function CreateSuggestedProposalPage() {
     handleStrictMoveInChange,
     handleDayToggle,
     handleSelectFullTime,
-    handleCheckInDayChange,
-    handleCheckOutDayChange,
     handleReservationSpanChange,
     handleCustomWeeksChange,
 
@@ -213,8 +216,9 @@ export default function CreateSuggestedProposalPage() {
                   moveInRange={moveInRange}
                   strictMoveIn={strictMoveIn}
                   selectedDays={selectedDays}
-                  checkInDayIndex={checkInDayIndex}
-                  checkOutDayIndex={checkOutDayIndex}
+                  checkInDayName={checkInDayName}
+                  checkOutDayName={checkOutDayName}
+                  nightsCount={nightsCount}
                   reservationSpan={reservationSpan}
                   customWeeks={customWeeks}
                   onStatusChange={handleStatusChange}
@@ -223,8 +227,6 @@ export default function CreateSuggestedProposalPage() {
                   onStrictMoveInChange={handleStrictMoveInChange}
                   onDayToggle={handleDayToggle}
                   onSelectFullTime={handleSelectFullTime}
-                  onCheckInDayChange={handleCheckInDayChange}
-                  onCheckOutDayChange={handleCheckOutDayChange}
                   onReservationSpanChange={handleReservationSpanChange}
                   onCustomWeeksChange={handleCustomWeeksChange}
                 />

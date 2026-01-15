@@ -584,11 +584,34 @@
   color: #6C7FEB;
 }
 
-/* Check-in / Check-out */
-.csp-checkin-checkout {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
+/* Check-in / Check-out Display (text-based, matches ViewSplitLeasePage style) */
+.csp-checkin-checkout-display {
+  margin-top: 12px;
+  padding: 12px;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  border-radius: 8px;
+  border: 1px solid #E5E7EB;
+}
+
+.csp-schedule-summary {
+  font-size: 14px;
+  color: #111827;
+  margin-bottom: 6px;
+}
+
+.csp-schedule-summary strong {
+  color: #31135d;
+}
+
+.csp-check-dates {
+  font-size: 12px;
+  color: #6B7280;
+  line-height: 1.6;
+}
+
+.csp-check-dates strong {
+  color: #4B5563;
+  font-weight: 600;
 }
 
 /* ============================================

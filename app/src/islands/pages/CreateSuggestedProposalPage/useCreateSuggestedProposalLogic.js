@@ -10,6 +10,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { PROPOSAL_STATUSES } from '../../../logic/constants/proposalStatuses.js';
 import { DAY_NAMES, getDayName } from '../../../lib/dayUtils.js';
+import { calculateCheckInCheckOut } from '../../../lib/scheduleSelector/nightCalculations.js';
 import {
   searchListings,
   getDefaultListings,
@@ -151,8 +152,6 @@ export function useCreateSuggestedProposalLogic() {
   const [moveInRange, setMoveInRange] = useState(14);
   const [strictMoveIn, setStrictMoveIn] = useState(false);
   const [selectedDays, setSelectedDays] = useState([]); // 0-indexed integers
-  const [checkInDayIndex, setCheckInDayIndex] = useState(null);
-  const [checkOutDayIndex, setCheckOutDayIndex] = useState(null);
   const [reservationSpan, setReservationSpan] = useState('');
   const [customWeeks, setCustomWeeks] = useState(null);
 
@@ -169,6 +168,34 @@ export function useCreateSuggestedProposalLogic() {
   // -------------------------------------------------------------------------
 
   const nightsPerWeek = selectedDays.length;
+  const nightsCount = Math.max(0, selectedDays.length - 1);
+
+  // Calculate check-in/check-out using the same logic as ViewSplitLeasePage
+  const { checkInDayIndex, checkOutDayIndex, checkInDayName, checkOutDayName } = useMemo(() => {
+    if (selectedDays.length === 0) {
+      return {
+        checkInDayIndex: null,
+        checkOutDayIndex: null,
+        checkInDayName: null,
+        checkOutDayName: null
+      };
+    }
+
+    // Convert day indices to day objects for calculateCheckInCheckOut
+    const dayObjects = selectedDays.map(dayIndex => ({
+      dayOfWeek: dayIndex,
+      name: DAY_NAMES[dayIndex]
+    }));
+
+    const { checkIn, checkOut } = calculateCheckInCheckOut(dayObjects);
+
+    return {
+      checkInDayIndex: checkIn?.dayOfWeek ?? null,
+      checkOutDayIndex: checkOut?.dayOfWeek ?? null,
+      checkInDayName: checkIn?.name ?? null,
+      checkOutDayName: checkOut?.name ?? null
+    };
+  }, [selectedDays]);
 
   const reservationWeeks = useMemo(() => {
     if (reservationSpan === 'custom') {
@@ -496,16 +523,6 @@ export function useCreateSuggestedProposalLogic() {
     setSelectedDays([0, 1, 2, 3, 4, 5, 6]);
   }, []);
 
-  const handleCheckInDayChange = useCallback((e) => {
-    const value = e.target.value;
-    setCheckInDayIndex(value === '' ? null : parseInt(value));
-  }, []);
-
-  const handleCheckOutDayChange = useCallback((e) => {
-    const value = e.target.value;
-    setCheckOutDayIndex(value === '' ? null : parseInt(value));
-  }, []);
-
   const handleReservationSpanChange = useCallback((e) => {
     setReservationSpan(e.target.value);
     if (e.target.value !== 'custom') {
@@ -516,15 +533,6 @@ export function useCreateSuggestedProposalLogic() {
   const handleCustomWeeksChange = useCallback((e) => {
     setCustomWeeks(e.target.value);
   }, []);
-
-  // Auto-update check-in/check-out when days change
-  useEffect(() => {
-    if (selectedDays.length > 0) {
-      const sortedDays = [...selectedDays].sort((a, b) => a - b);
-      setCheckInDayIndex(sortedDays[0]);
-      setCheckOutDayIndex(sortedDays[sortedDays.length - 1]);
-    }
-  }, [selectedDays]);
 
   // -------------------------------------------------------------------------
   // NAVIGATION
@@ -662,8 +670,6 @@ export function useCreateSuggestedProposalLogic() {
     setMoveInRange(14);
     setStrictMoveIn(false);
     setSelectedDays([]);
-    setCheckInDayIndex(null);
-    setCheckOutDayIndex(null);
     setReservationSpan('');
     setCustomWeeks(null);
     setIsConfirmationStep(false);
@@ -710,12 +716,15 @@ export function useCreateSuggestedProposalLogic() {
     moveInRange,
     strictMoveIn,
     selectedDays,
-    checkInDayIndex,
-    checkOutDayIndex,
     reservationSpan,
     customWeeks,
 
-    // Computed
+    // Computed (from selected days)
+    checkInDayIndex,
+    checkOutDayIndex,
+    checkInDayName,
+    checkOutDayName,
+    nightsCount,
     pricing,
 
     // UI State
@@ -761,8 +770,6 @@ export function useCreateSuggestedProposalLogic() {
     handleStrictMoveInChange,
     handleDayToggle,
     handleSelectFullTime,
-    handleCheckInDayChange,
-    handleCheckOutDayChange,
     handleReservationSpanChange,
     handleCustomWeeksChange,
 

@@ -5,7 +5,7 @@
  */
 
 import { PROPOSAL_STATUSES } from '../../../../logic/constants/proposalStatuses.js';
-import { DAY_NAMES, getShortDayName } from '../../../../lib/dayUtils.js';
+import { DAY_NAMES } from '../../../../lib/dayUtils.js';
 
 // Day button labels (single letter display, 0-indexed order starting with Sunday)
 const DAY_BUTTONS = [
@@ -58,8 +58,9 @@ export default function ProposalConfig({
   moveInRange,
   strictMoveIn,
   selectedDays,
-  checkInDayIndex,
-  checkOutDayIndex,
+  checkInDayName,
+  checkOutDayName,
+  nightsCount,
   reservationSpan,
   customWeeks,
   onStatusChange,
@@ -68,8 +69,6 @@ export default function ProposalConfig({
   onStrictMoveInChange,
   onDayToggle,
   onSelectFullTime,
-  onCheckInDayChange,
-  onCheckOutDayChange,
   onReservationSpanChange,
   onCustomWeeksChange
 }) {
@@ -164,36 +163,27 @@ export default function ProposalConfig({
           </button>
         </div>
 
-        <div className="csp-checkin-checkout">
-          <div className="csp-form-group">
-            <label htmlFor="checkInDay">Check-in Day</label>
-            <select
-              id="checkInDay"
-              className="csp-form-select"
-              value={checkInDayIndex ?? ''}
-              onChange={onCheckInDayChange}
-            >
-              <option value="">Select day</option>
-              {DAY_NAMES.map((name, index) => (
-                <option key={index} value={index}>{name}</option>
-              ))}
-            </select>
+        {/* Check-in/Check-out Display (derived from selected days) */}
+        {selectedDays.length > 0 && (
+          <div className="csp-checkin-checkout-display">
+            {selectedDays.length === 7 ? (
+              <div className="csp-schedule-summary">
+                <strong>Full-time stay</strong>
+              </div>
+            ) : (
+              <>
+                <div className="csp-schedule-summary">
+                  <strong>{selectedDays.length} days, {nightsCount} nights</strong> Selected
+                </div>
+                <div className="csp-check-dates">
+                  Check-in day is <strong>{checkInDayName || 'N/A'}</strong>
+                  <br />
+                  Check-out day is <strong>{checkOutDayName || 'N/A'}</strong>
+                </div>
+              </>
+            )}
           </div>
-          <div className="csp-form-group">
-            <label htmlFor="checkOutDay">Check-out Day</label>
-            <select
-              id="checkOutDay"
-              className="csp-form-select"
-              value={checkOutDayIndex ?? ''}
-              onChange={onCheckOutDayChange}
-            >
-              <option value="">Select day</option>
-              {DAY_NAMES.map((name, index) => (
-                <option key={index} value={index}>{name}</option>
-              ))}
-            </select>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Reservation Span */}
