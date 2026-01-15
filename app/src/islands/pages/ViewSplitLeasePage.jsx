@@ -43,89 +43,6 @@ import '../../styles/components/toast.css';
 // ============================================================================
 
 /**
- * Normalize "Weeks offered" field to a standard format
- * Handles both numeric values (2) and text patterns ("two weeks on, two weeks off")
- * @param {string|number} weeksOffered - Raw value from listing
- * @returns {object} { description: string, weeksOn: number, weeksOff: number, cycleWeeks: number }
- */
-function normalizeWeeksOffered(weeksOffered) {
-  if (!weeksOffered || weeksOffered === 'Every week' || weeksOffered === 'every week') {
-    return {
-      description: 'Every week',
-      weeksOn: 1,
-      weeksOff: 0,
-      cycleWeeks: 1,
-      isAlternating: false
-    };
-  }
-
-  // Handle numeric values (e.g., "2" means "2 weeks on, 2 weeks off")
-  const numValue = typeof weeksOffered === 'number' ? weeksOffered : parseInt(weeksOffered, 10);
-  if (!isNaN(numValue) && numValue > 0 && numValue <= 4) {
-    // Numeric value represents "X weeks on, X weeks off" pattern
-    return {
-      description: `${numValue} week${numValue > 1 ? 's' : ''} on, ${numValue} week${numValue > 1 ? 's' : ''} off`,
-      weeksOn: numValue,
-      weeksOff: numValue,
-      cycleWeeks: numValue * 2,
-      isAlternating: true
-    };
-  }
-
-  // Handle text patterns
-  const pattern = String(weeksOffered).toLowerCase().trim();
-
-  // 1 week on, 1 week off
-  if (pattern.includes('1 on 1 off') || pattern.includes('1on1off') ||
-      (pattern.includes('one week on') && pattern.includes('one week off')) ||
-      (pattern.includes('1 week on') && pattern.includes('1 week off'))) {
-    return {
-      description: '1 week on, 1 week off',
-      weeksOn: 1,
-      weeksOff: 1,
-      cycleWeeks: 2,
-      isAlternating: true
-    };
-  }
-
-  // 2 weeks on, 2 weeks off
-  if (pattern.includes('2 on 2 off') || pattern.includes('2on2off') ||
-      pattern.includes('two weeks on') ||
-      (pattern.includes('two week') && pattern.includes('two week')) ||
-      (pattern.includes('2 week on') && pattern.includes('2 week off'))) {
-    return {
-      description: '2 weeks on, 2 weeks off',
-      weeksOn: 2,
-      weeksOff: 2,
-      cycleWeeks: 4,
-      isAlternating: true
-    };
-  }
-
-  // 1 week on, 3 weeks off
-  if (pattern.includes('1 on 3 off') || pattern.includes('1on3off') ||
-      (pattern.includes('one week on') && pattern.includes('three week')) ||
-      (pattern.includes('1 week on') && pattern.includes('3 week off'))) {
-    return {
-      description: '1 week on, 3 weeks off',
-      weeksOn: 1,
-      weeksOff: 3,
-      cycleWeeks: 4,
-      isAlternating: true
-    };
-  }
-
-  // Default: treat as every week
-  return {
-    description: String(weeksOffered),
-    weeksOn: 1,
-    weeksOff: 0,
-    cycleWeeks: 1,
-    isAlternating: false
-  };
-}
-
-/**
  * Get initial schedule selection from URL parameter
  * URL format: ?days-selected=2,3,4,5,6 (0-based, where 0=Sunday, matching JS Date.getDay())
  * Returns: Array of Day objects (0-based, where 0=Sunday)
@@ -292,17 +209,16 @@ async function fetchInformationalTexts() {
 
 /**
  * Calculate actual weeks from reservation span based on schedule pattern
- * Uses normalizeWeeksOffered to handle both numeric and text patterns
  * @param {number} reservationSpan - Total weeks in the reservation span
- * @param {string|number} weeksOffered - Schedule pattern from listing (numeric or text)
- * @returns {object} { actualWeeks, cycleDescription, showHighlight, weeksOn, weeksOff }
+ * @param {string} weeksOffered - Schedule pattern from listing
+ * @returns {object} { actualWeeks, cycleDescription, showHighlight }
  */
 function calculateActualWeeks(reservationSpan, weeksOffered) {
-  // Use the normalizer to handle both numeric and text formats
-  const normalized = normalizeWeeksOffered(weeksOffered);
+  // Normalize the pattern string for comparison
+  const pattern = (weeksOffered || 'Every week').toLowerCase().trim();
 
-  // Every week - no highlighting needed
-  if (!normalized.isAlternating) {
+  // Every week or nightly/monthly patterns - no highlighting needed
+  if (pattern === 'every week' || pattern === '') {
     return {
       actualWeeks: reservationSpan,
       cycleDescription: null,
@@ -310,19 +226,50 @@ function calculateActualWeeks(reservationSpan, weeksOffered) {
     };
   }
 
-  // Calculate actual weeks based on the cycle
-  // For alternating schedules: cycles = reservationSpan / cycleWeeks
-  // actualWeeks = cycles * weeksOn
-  // Use Math.ceil to match pricing calculation (guest pays for partial weeks)
-  const cycles = reservationSpan / normalized.cycleWeeks;
-  const actualWeeks = Math.ceil(cycles * normalized.weeksOn);
+  // One week on, one week off - 2 week cycle, guest gets 1 week per cycle
+  if (pattern.includes('one week on') && pattern.includes('one week off')) {
+    const cycles = reservationSpan / 2;
+    const actualWeeks = Math.floor(cycles); // 1 week per 2-week cycle
+    return {
+      actualWeeks,
+      cycleDescription: '1 week on, 1 week off',
+      showHighlight: true,
+      weeksOn: 1,
+      weeksOff: 1
+    };
+  }
 
+  // Two weeks on, two weeks off - 4 week cycle, guest gets 2 weeks per cycle
+  if (pattern.includes('two weeks on') && pattern.includes('two weeks off')) {
+    const cycles = reservationSpan / 4;
+    const actualWeeks = Math.floor(cycles * 2); // 2 weeks per 4-week cycle
+    return {
+      actualWeeks,
+      cycleDescription: '2 weeks on, 2 weeks off',
+      showHighlight: true,
+      weeksOn: 2,
+      weeksOff: 2
+    };
+  }
+
+  // One week on, three weeks off - 4 week cycle, guest gets 1 week per cycle
+  if (pattern.includes('one week on') && pattern.includes('three weeks off')) {
+    const cycles = reservationSpan / 4;
+    const actualWeeks = Math.floor(cycles); // 1 week per 4-week cycle
+    return {
+      actualWeeks,
+      cycleDescription: '1 week on, 3 weeks off',
+      showHighlight: true,
+      weeksOn: 1,
+      weeksOff: 3
+    };
+  }
+
+  // Default: treat as every week
   return {
-    actualWeeks,
-    cycleDescription: normalized.description,
-    showHighlight: true,
-    weeksOn: normalized.weeksOn,
-    weeksOff: normalized.weeksOff
+    actualWeeks: reservationSpan,
+    cycleDescription: null,
+    showHighlight: false
   };
 }
 
@@ -2514,7 +2461,7 @@ export default function ViewSplitLeasePage() {
               }}>
                 <span>This listing is </span>
                 <strong style={{ color: '#31135d' }}>
-                  {normalizeWeeksOffered(listing?.['Weeks offered']).description}
+                  {listing?.['Weeks offered'] || 'Every week'}
                 </strong>
                 <span>. </span>
                 <button
@@ -2530,7 +2477,7 @@ export default function ViewSplitLeasePage() {
                     fontWeight: '500'
                   }}
                 >
-                  {showCustomScheduleInput ? 'Hide custom schedule' : 'Click here if you want another schedule'}
+                  {showCustomScheduleInput ? 'Hide custom schedule' : 'Click here if you want to specify another recurrent schedule'}
                 </button>
               </div>
 
@@ -3419,7 +3366,7 @@ export default function ViewSplitLeasePage() {
                     }}>
                       <span>This listing is </span>
                       <strong style={{ color: '#31135d' }}>
-                        {normalizeWeeksOffered(listing?.['Weeks offered']).description}
+                        {listing?.['Weeks offered'] || 'Every week'}
                       </strong>
                       <span>. </span>
                       <button
@@ -3435,7 +3382,7 @@ export default function ViewSplitLeasePage() {
                           fontWeight: '500'
                         }}
                       >
-                        {showCustomScheduleInput ? 'Hide custom schedule' : 'Click here if you want another schedule'}
+                        {showCustomScheduleInput ? 'Hide custom schedule' : 'Click here if you want to specify another recurrent schedule'}
                       </button>
                     </div>
 
@@ -3511,11 +3458,6 @@ export default function ViewSplitLeasePage() {
                       </option>
                     ))}
                   </select>
-                  {/* Schedule Pattern Highlight - shows actual weeks for alternating patterns (Mobile) */}
-                  <SchedulePatternHighlight
-                    reservationSpan={reservationSpan}
-                    weeksOffered={listing?.['Weeks offered']}
-                  />
                 </div>
 
                 {/* Price Breakdown */}

@@ -270,19 +270,25 @@ export function searchHelpCenter(query) {
   if (!query || query.trim().length < 2) return [];
 
   const normalizedQuery = query.toLowerCase().trim();
+  const results = [];
 
-  return Object.entries(helpCenterArticles).flatMap(([categoryId, category]) =>
-    category.sections.flatMap(section =>
-      section.articles
-        .filter(article => article.title.toLowerCase().includes(normalizedQuery))
-        .map(article => ({
-          ...article,
-          categoryId,
-          categoryTitle: category.title,
-          sectionTitle: section.title
-        }))
-    )
-  );
+  Object.entries(helpCenterArticles).forEach(([categoryId, category]) => {
+    category.sections.forEach(section => {
+      section.articles.forEach(article => {
+        const titleMatch = article.title.toLowerCase().includes(normalizedQuery);
+        if (titleMatch) {
+          results.push({
+            ...article,
+            categoryId,
+            categoryTitle: category.title,
+            sectionTitle: section.title
+          });
+        }
+      });
+    });
+  });
+
+  return results;
 }
 
 /**

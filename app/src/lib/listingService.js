@@ -1237,13 +1237,12 @@ function mapArrayToAvailableNights(daysArray) {
   };
 
   if (Array.isArray(daysArray)) {
-    return daysArray.reduce((acc, dayNum) => {
+    for (const dayNum of daysArray) {
       const dayName = dayMapping[dayNum];
       if (dayName) {
-        return { ...acc, [dayName]: true };
+        result[dayName] = true;
       }
-      return acc;
-    }, result);
+    }
   }
 
   return result;

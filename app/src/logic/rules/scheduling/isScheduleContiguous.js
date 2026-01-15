@@ -51,8 +51,8 @@ export function isScheduleContiguous({ selectedDayIndices }) {
     }
   }
 
-  // Sort the selected days (immutable)
-  const sorted = selectedDayIndices.toSorted((a, b) => a - b)
+  // Sort the selected days
+  const sorted = [...selectedDayIndices].sort((a, b) => a - b)
 
   // If 6 or more days selected, it's contiguous (only 1 gap or no gaps)
   if (sorted.length >= 6) {
@@ -91,10 +91,10 @@ export function isScheduleContiguous({ selectedDayIndices }) {
     const maxNotSelected = Math.max(...notSelectedDays)
 
     // Generate expected contiguous range for not-selected days
-    const expectedNotSelected = Array.from(
-      { length: maxNotSelected - minNotSelected + 1 },
-      (_, i) => minNotSelected + i
-    )
+    const expectedNotSelected = []
+    for (let i = minNotSelected; i <= maxNotSelected; i++) {
+      expectedNotSelected.push(i)
+    }
 
     // If not-selected days are contiguous, then selected days wrap around properly
     const notSelectedContiguous = notSelectedDays.length === expectedNotSelected.length &&

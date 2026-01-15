@@ -28,13 +28,19 @@ export function isContiguousSelection(selectedDays) {
   if (selectedDays.length === 1) return true;
 
   // Sort the selected days
-  const sorted = selectedDays.toSorted((a, b) => a - b);
+  const sorted = [...selectedDays].sort((a, b) => a - b);
 
   // If 6 or more days selected, it's contiguous
   if (sorted.length >= 6) return true;
 
   // Check for standard contiguous sequence (no wrap around)
-  const isStandardContiguous = sorted.every((day, i) => i === 0 || day === sorted[i - 1] + 1);
+  let isStandardContiguous = true;
+  for (let i = 1; i < sorted.length; i++) {
+    if (sorted[i] !== sorted[i - 1] + 1) {
+      isStandardContiguous = false;
+      break;
+    }
+  }
 
   if (isStandardContiguous) return true;
 
@@ -55,10 +61,10 @@ export function isContiguousSelection(selectedDays) {
     const maxNotSelected = Math.max(...notSelectedDays);
 
     // Generate expected contiguous range for not-selected days
-    const expectedNotSelected = Array.from(
-      { length: maxNotSelected - minNotSelected + 1 },
-      (_, i) => minNotSelected + i
-    );
+    const expectedNotSelected = [];
+    for (let i = minNotSelected; i <= maxNotSelected; i++) {
+      expectedNotSelected.push(i);
+    }
 
     // If not-selected days are contiguous, then selected days wrap around properly
     const notSelectedContiguous = notSelectedDays.length === expectedNotSelected.length &&
@@ -96,7 +102,13 @@ export function calculateCheckInOutDays(selectedDays) {
 
   if (hasZero && hasSix) {
     // Find gap to determine actual start/end
-    const gapIndex = sorted.findIndex((day, i) => i > 0 && day !== sorted[i - 1] + 1);
+    let gapIndex = -1;
+    for (let i = 1; i < sorted.length; i++) {
+      if (sorted[i] !== sorted[i - 1] + 1) {
+        gapIndex = i;
+        break;
+      }
+    }
 
     if (gapIndex !== -1) {
       // Wrapped selection: check-in is after the gap (first day in wrap)
@@ -139,57 +151,56 @@ export function calculateCheckInOutDays(selectedDays) {
  * @returns {object} Validation result
  */
 export function validateScheduleSelection(selectedDays, listing) {
-  // Check if days are selected
-  if (!selectedDays || selectedDays.length === 0) {
-    return {
-      valid: false,
-      errors: ['Please select at least one day'],
-      warnings: [],
-      showTutorial: false,
-      nightsCount: 0,
-      isContiguous: false
-    };
-  }
-
-  const isContiguous = isContiguousSelection(selectedDays);
-  
-  if (!isContiguous) {
-    return {
-      valid: false,
-      errors: ['Please check for contiguous nights to continue with your proposal'],
-      warnings: [],
-      showTutorial: true,
-      nightsCount: selectedDays.length,
-      isContiguous: false
-    };
-  }
-
-  const warnings = [
-    listing['Minimum Nights'] && selectedDays.length < listing['Minimum Nights']
-      ? `Host prefers at least ${listing['Minimum Nights']} nights per week`
-      : null,
-    listing['Maximum Nights'] && selectedDays.length > listing['Maximum Nights']
-      ? `Host prefers at most ${listing['Maximum Nights']} nights per week`
-      : null
-  ].filter(Boolean);
-
-  const unavailableDays = listing['Days Not Available'];
-  const hasUnavailableSelected = Array.isArray(unavailableDays) && selectedDays.some(day => 
-    unavailableDays.includes(DAY_NAMES[day])
-  );
-
-  const errors = hasUnavailableSelected 
-    ? ['Some selected days are not available for this listing'] 
-    : [];
-
-  return {
-    valid: errors.length === 0,
-    errors,
-    warnings,
+  const result = {
+    valid: true,
+    errors: [],
+    warnings: [],
     showTutorial: false,
     nightsCount: selectedDays.length,
-    isContiguous: true
+    isContiguous: false
   };
+
+  // Check if days are selected
+  if (!selectedDays || selectedDays.length === 0) {
+    result.valid = false;
+    result.errors.push('Please select at least one day');
+    return result;
+  }
+
+  // Check contiguous requirement (CRITICAL)
+  result.isContiguous = isContiguousSelection(selectedDays);
+  if (!result.isContiguous) {
+    result.valid = false;
+    result.showTutorial = true;
+    result.errors.push('Please check for contiguous nights to continue with your proposal');
+    return result;
+  }
+
+  // Check against minimum nights
+  if (listing['Minimum Nights'] && selectedDays.length < listing['Minimum Nights']) {
+    result.warnings.push(`Host prefers at least ${listing['Minimum Nights']} nights per week`);
+  }
+
+  // Check against maximum nights
+  if (listing['Maximum Nights'] && selectedDays.length > listing['Maximum Nights']) {
+    result.warnings.push(`Host prefers at most ${listing['Maximum Nights']} nights per week`);
+  }
+
+  // Check against Days Not Available
+  if (listing['Days Not Available'] && Array.isArray(listing['Days Not Available'])) {
+    const unavailableDays = listing['Days Not Available'];
+    const unavailableSelected = selectedDays.filter(day => {
+      const dayName = DAY_NAMES[day];
+      return unavailableDays.includes(dayName);
+    });
+
+    if (unavailableSelected.length > 0) {
+      result.valid = false;
+      result.errors.push('Some selected days are not available for this listing');
+    }
+  }
+
+  return result;
 }
 
 /**

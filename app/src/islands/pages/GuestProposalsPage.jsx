@@ -99,7 +99,6 @@ export default function GuestProposalsPage() {
     // UI state
     isLoading,
     error,
-    highlightVMButton,
 
     // Handlers
     handleProposalSelect,
@@ -166,7 +165,6 @@ export default function GuestProposalsPage() {
                   allProposals={proposals}
                   onProposalSelect={handleProposalSelect}
                   onProposalDeleted={handleProposalDeleted}
-                  highlightVMButton={highlightVMButton}
                 />
               )}
 

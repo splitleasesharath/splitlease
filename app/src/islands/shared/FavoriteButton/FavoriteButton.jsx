@@ -145,7 +145,7 @@ const FavoriteButton = ({
       type="button"
       className={`favorite-button-shared ${sizeClass} ${isFavorited ? 'favorited' : ''} ${isAnimating ? 'animating' : ''} ${isLoading ? 'loading' : ''}`}
       onClick={handleClick}
-      disabled={disabled}
+      disabled={disabled || isLoading}
       aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
       title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
     >

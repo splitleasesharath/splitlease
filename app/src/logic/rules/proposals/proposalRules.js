@@ -303,7 +303,7 @@ export function getCancellationReasonOptions() {
   }
 
   // Fallback for initial render before cache is populated
-  // Note: If logging is needed for empty cache, the caller (workflow layer) should handle it
+  console.warn('[getCancellationReasonOptions] Cache empty, using fallback values');
   return [
     'Found another property',
     'Changed move-in dates',

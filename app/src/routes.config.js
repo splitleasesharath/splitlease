@@ -194,12 +194,12 @@ export const routes = [
     hasDynamicSegment: false
   },
   {
-    path: '/referral-invite',
-    file: 'referral-invite.html',
-    aliases: ['/referral-invite.html', '/ref', '/referral'],
+    path: '/referral',
+    file: 'referral.html',
+    aliases: ['/referral.html', '/ref'],
     protected: false,
     cloudflareInternal: true,
-    internalName: 'referral-invite-view',
+    internalName: 'referral-view',
     hasDynamicSegment: false
   },
 
@@ -289,9 +289,7 @@ export const routes = [
     protected: true,
     cloudflareInternal: true,
     internalName: 'rental-application-view',
-    hasDynamicSegment: false,
-    deprecated: true, // DEPRECATED: Redirects to /account-profile with ?section=rental-application&openRentalApp=true
-    redirectTo: '/account-profile' // Note: actual redirect handled in RentalApplicationPage component
+    hasDynamicSegment: false
   },
 
   // ===== AUTH PAGES =====
@@ -371,14 +369,13 @@ export const apiRoutes = [
 ];
 
 // Routes to explicitly exclude from Cloudflare Functions
-export const excludedFromFunctions = [
-  ...routes
-    .filter(r => r.excludeFromFunctions)
-    .map(r => [r.path, `${r.path}/*`])
-    .flat(),
-  '/guest-proposals',
-  '/guest-proposals/*'
-];
+export const excludedFromFunctions = routes
+  .filter(r => r.excludeFromFunctions)
+  .map(r => [r.path, `${r.path}/*`])
+  .flat();
+
+// Add default exclusions
+excludedFromFunctions.push('/guest-proposals', '/guest-proposals/*');
 
 /**
  * Get all routes that require _internal/ directory handling
@@ -453,12 +450,16 @@ export function findRouteForUrl(url) {
  * Used by vite.config.js for multi-page builds
  */
 export function buildRollupInputs(publicDir) {
-  return routes.reduce((acc, route) => {
-    if (route.devOnly) return acc; // Skip dev-only routes in production build
+  const inputs = {};
+
+  for (const route of routes) {
+    if (route.devOnly) continue; // Skip dev-only routes in production build
 
     const name = route.file.replace('.html', '');
-    return { ...acc, [name]: `${publicDir}/${route.file}` };
-  }, {});
+    inputs[name] = `${publicDir}/${route.file}`;
+  }
+
+  return inputs;
 }
 
 export default routes;

@@ -159,27 +159,31 @@ export async function uploadPhotos(photos, listingId) {
 
   console.log(`[PhotoUpload] Starting upload of ${photos.length} photos for listing ${listingId}`);
 
-  const uploadPromises = photos.map(async (photo, i) => {
+  const uploadedPhotos = [];
+
+  for (let i = 0; i < photos.length; i++) {
+    const photo = photos[i];
+
     try {
       const result = await uploadPhoto(photo, listingId, i);
 
-      return {
+      uploadedPhotos.push({
         id: photo.id || `photo_${i}_${Date.now()}`,
         url: result.url,
-        Photo: result.url,
-        'Photo (thumbnail)': result.url,
+        Photo: result.url, // For compatibility with listing display format
+        'Photo (thumbnail)': result.url, // Use same URL for thumbnail
         storagePath: result.path,
         caption: photo.caption || '',
         displayOrder: photo.displayOrder ?? i,
         SortOrder: photo.displayOrder ?? i,
         toggleMainPhoto: i === 0
-      };
+      });
     } catch (error) {
       console.error(`[PhotoUpload] Failed to upload photo ${i + 1}:`, error);
-      // Return fallback object on error
-      return {
+      // Continue with other photos, don't fail the entire upload
+      uploadedPhotos.push({
         id: photo.id || `photo_${i}_${Date.now()}`,
-        url: photo.url,
+        url: photo.url, // Keep data URL as fallback
         Photo: photo.url,
         'Photo (thumbnail)': photo.url,
         caption: photo.caption || '',
@@ -187,11 +191,9 @@ export async function uploadPhotos(photos, listingId) {
         SortOrder: photo.displayOrder ?? i,
         toggleMainPhoto: i === 0,
         uploadError: error.message
-      };
+      });
     }
-  });
-
-  const uploadedPhotos = await Promise.all(uploadPromises);
+  }
 
   console.log(`[PhotoUpload] Completed uploading ${uploadedPhotos.length} photos`);
   return uploadedPhotos;

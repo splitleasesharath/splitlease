@@ -149,39 +149,53 @@ export function getTermsComparison(proposal) {
     cleaningFee: proposal.hcCleaningFee || proposal['hc cleaning fee'] || originalTerms.cleaningFee
   };
 
-  // Build list of changes declaratively
-  const changes = [
-    originalTerms.totalPrice !== counterofferTerms.totalPrice && {
+  // Build list of changes
+  const changes = [];
+
+  if (originalTerms.totalPrice !== counterofferTerms.totalPrice) {
+    changes.push({
       field: 'totalPrice',
       label: 'Total Price',
       original: originalTerms.totalPrice,
       modified: counterofferTerms.totalPrice
-    },
-    originalTerms.nightlyPrice !== counterofferTerms.nightlyPrice && {
+    });
+  }
+
+  if (originalTerms.nightlyPrice !== counterofferTerms.nightlyPrice) {
+    changes.push({
       field: 'nightlyPrice',
       label: 'Nightly Rate',
       original: originalTerms.nightlyPrice,
       modified: counterofferTerms.nightlyPrice
-    },
-    originalTerms.reservationWeeks !== counterofferTerms.reservationWeeks && {
+    });
+  }
+
+  if (originalTerms.reservationWeeks !== counterofferTerms.reservationWeeks) {
+    changes.push({
       field: 'reservationWeeks',
       label: 'Duration (Weeks)',
       original: originalTerms.reservationWeeks,
       modified: counterofferTerms.reservationWeeks
-    },
-    originalTerms.nightsPerWeek !== counterofferTerms.nightsPerWeek && {
+    });
+  }
+
+  if (originalTerms.nightsPerWeek !== counterofferTerms.nightsPerWeek) {
+    changes.push({
       field: 'nightsPerWeek',
       label: 'Nights per Week',
       original: originalTerms.nightsPerWeek,
       modified: counterofferTerms.nightsPerWeek
-    },
-    JSON.stringify(originalTerms.daysSelected) !== JSON.stringify(counterofferTerms.daysSelected) && {
+    });
+  }
+
+  if (JSON.stringify(originalTerms.daysSelected) !== JSON.stringify(counterofferTerms.daysSelected)) {
+    changes.push({
       field: 'daysSelected',
       label: 'Weekly Schedule',
       original: originalTerms.daysSelected,
       modified: counterofferTerms.daysSelected
-    }
-  ].filter(Boolean);
+    });
+  }
 
   return {
     originalTerms,

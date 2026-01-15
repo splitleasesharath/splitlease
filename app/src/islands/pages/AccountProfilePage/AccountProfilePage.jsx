@@ -22,7 +22,7 @@ import PublicView from './components/PublicView.jsx';
 import FixedSaveBar from './components/shared/FixedSaveBar.jsx';
 import ReferralBanner from './components/ReferralBanner.jsx';
 import ReferralModal from './components/ReferralModal.jsx';
-import RentalApplicationWizardModal from '../../shared/RentalApplicationWizardModal/RentalApplicationWizardModal.jsx';
+import RentalApplicationWizardModal from './components/RentalApplicationWizardModal/RentalApplicationWizardModal.jsx';
 import './AccountProfilePage.css';
 
 // ============================================================================
@@ -226,8 +226,6 @@ export default function AccountProfilePage() {
             isOpen={logic.showRentalWizardModal}
             onClose={logic.handleCloseRentalWizard}
             onSuccess={logic.handleRentalWizardSuccess}
-            applicationStatus={logic.rentalApplicationStatus}
-            userEmail={logic.profileData?.email || logic.profileData?.['Email'] || ''}
           />
         )}
 

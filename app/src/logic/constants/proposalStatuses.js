@@ -78,12 +78,41 @@ export const PROPOSAL_STATUSES = {
     actions: ['confirm_proposal', 'cancel_proposal', 'request_vm', 'send_message']
   },
 
+  PENDING_CONFIRMATION: {
+    key: 'Pending Confirmation',
+    color: 'blue',
+    label: 'Awaiting Confirmation',
+    stage: 1,
+    usualOrder: 0,
+    actions: ['cancel_proposal', 'request_vm', 'send_message']
+  },
+
+  // Legacy pending status (treated as sort_order 0)
+  PENDING: {
+    key: 'Pending',
+    color: 'blue',
+    label: 'Pending',
+    stage: 1,
+    usualOrder: 0,
+    actions: ['cancel_proposal', 'request_vm', 'send_message']
+  },
+
   // usualOrder 1: Host Review (after rental app submitted)
   HOST_REVIEW: {
     key: 'Host Review',
     color: 'blue',
     label: 'Under Host Review',
     stage: 3,
+    usualOrder: 1,
+    actions: ['request_vm', 'cancel_proposal', 'send_message']
+  },
+
+  // Rental Application Submitted - transitional state before Host Review (sort_order 1)
+  RENTAL_APP_SUBMITTED: {
+    key: 'Rental Application Submitted',
+    color: 'blue',
+    label: 'Application Under Review',
+    stage: 2,
     usualOrder: 1,
     actions: ['request_vm', 'cancel_proposal', 'send_message']
   },
@@ -106,6 +135,16 @@ export const PROPOSAL_STATUSES = {
     stage: 4,
     usualOrder: 3,
     actions: ['request_vm', 'send_message']
+  },
+
+  // Reviewing Documents (variant of sort_order 3)
+  REVIEWING_DOCUMENTS: {
+    key: 'Reviewing Documents',
+    color: 'blue',
+    label: 'Reviewing Documents',
+    stage: 4,
+    usualOrder: 3,
+    actions: ['review_documents', 'request_vm', 'send_message']
   },
 
   // usualOrder 4: Lease Documents Sent for Review
@@ -138,6 +177,16 @@ export const PROPOSAL_STATUSES = {
     actions: ['submit_payment', 'request_vm', 'send_message']
   },
 
+  // Legacy key format (keeping for backwards compatibility) - sort_order 6
+  LEASE_SIGNED_AWAITING_INITIAL_PAYMENT: {
+    key: 'Lease Signed / Awaiting Initial Payment',
+    color: 'green',
+    label: 'Submit Initial Payment',
+    stage: 6,
+    usualOrder: 6,
+    actions: ['submit_payment', 'request_vm', 'send_message']
+  },
+
   // usualOrder 7: Initial Payment / Lease Activated
   INITIAL_PAYMENT_SUBMITTED_LEASE_ACTIVATED: {
     key: 'Initial Payment Submitted / Lease activated ',
@@ -149,6 +198,15 @@ export const PROPOSAL_STATUSES = {
   },
 
   // ===== SPECIAL STATES =====
+
+  DRAFT: {
+    key: 'Draft',
+    color: 'gray',
+    label: 'Draft',
+    stage: null,
+    usualOrder: 0,
+    actions: ['edit_proposal', 'submit_proposal', 'delete_proposal']
+  },
 
   EXPIRED: {
     key: 'Expired',

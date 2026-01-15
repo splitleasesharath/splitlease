@@ -247,28 +247,31 @@ export function parseAmenities(dbListing) {
     'desk': { icon: '💻', name: 'Workspace', priority: 12 }
   };
 
+  const amenities = [];
+  const foundAmenities = new Set(); // Track which amenities we've already added
+
   // Check Features field (if it exists as a string or array)
   const features = dbListing['Features'];
-  const featureText = typeof features === 'string' ? features.toLowerCase() : '';
+  if (features) {
+    const featureText = typeof features === 'string' ? features.toLowerCase() : '';
 
-  const featureAmenities = Object.entries(amenitiesMap)
-    .filter(([key, amenity]) => featureText.includes(key))
-    .map(([_, amenity]) => amenity);
+    for (const [key, amenity] of Object.entries(amenitiesMap)) {
+      if (featureText.includes(key) && !foundAmenities.has(amenity.name)) {
+        amenities.push(amenity);
+        foundAmenities.add(amenity.name);
+      }
+    }
+  }
 
-  // Check Kitchen Type field
+  // Check Kitchen Type field - if it's "Full Kitchen", add kitchen amenity
   const kitchenType = dbListing['Kitchen Type'];
-  const hasKitchen = kitchenType && kitchenType.toLowerCase().includes('kitchen');
-  
-  const kitchenAmenity = hasKitchen ? [amenitiesMap['kitchen']] : [];
-
-  // Combine and deduplicate by name
-  const allAmenities = [...featureAmenities, ...kitchenAmenity];
-  
-  // Deduplicate based on name
-  const uniqueAmenities = Array.from(
-    new Map(allAmenities.map(item => [item.name, item])).values()
-  );
+  if (kitchenType && kitchenType.toLowerCase().includes('kitchen') && !foundAmenities.has('Kitchen')) {
+    amenities.push(amenitiesMap['kitchen']);
+    foundAmenities.add('Kitchen');
+  }
 
   // Sort by priority (lower number = higher priority)
-  return uniqueAmenities.sort((a, b) => a.priority - b.priority);
+  amenities.sort((a, b) => a.priority - b.priority);
+
+  return amenities; // Return empty array if no amenities found - this is truthful, not a fallback
 }

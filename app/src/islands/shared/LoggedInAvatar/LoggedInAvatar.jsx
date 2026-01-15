@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import './LoggedInAvatar.css';
 import { useLoggedInAvatarData, getMenuVisibility, NORMALIZED_USER_TYPES } from './useLoggedInAvatarData.js';
-import ReferralModal from '../../pages/AccountProfilePage/components/ReferralModal.jsx';
 
 /**
  * Logged In Avatar Dropdown Component
@@ -50,7 +49,6 @@ export default function LoggedInAvatar({
   onLogout,
 }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [showReferralModal, setShowReferralModal] = useState(false);
   const dropdownRef = useRef(null);
 
   // Fetch user data from Supabase for menu conditionals
@@ -225,19 +223,14 @@ export default function LoggedInAvatar({
     }
 
     // 5. Virtual Meetings - When user HAS proposals (proposalsCount > 0)
-    //    - If user has virtual meetings: Navigate to proposals page + scroll to VM section
-    //    - If user has proposals but no VMs: Navigate to proposals page + highlight VM button
     if (menuVisibility.virtualMeetings) {
-      const hasVirtualMeetings = effectiveVirtualMeetingsCount > 0;
-      const vmQueryParam = hasVirtualMeetings ? '?scrollTo=virtual-meetings' : '?highlightVMButton=true';
-
       items.push({
         id: 'virtual-meetings',
         label: 'Virtual Meetings',
         icon: '/assets/icons/video-purple.svg',
         path: effectiveUserType === NORMALIZED_USER_TYPES.GUEST
-          ? `/guest-proposals${vmQueryParam}`
-          : `/host-proposals${vmQueryParam}`,
+          ? '/guest-dashboard'
+          : '/host-overview',
         badgeCount: effectiveVirtualMeetingsCount,
         badgeColor: 'purple',
       });
@@ -296,7 +289,6 @@ export default function LoggedInAvatar({
     }
 
     // 10. Rental Application - GUEST only
-    // Navigate to account profile with rental application section focus
     if (menuVisibility.rentalApplication) {
       items.push({
         id: 'rental-application',
@@ -304,7 +296,7 @@ export default function LoggedInAvatar({
         icon: '/assets/icons/clipboard-purple.svg',
         path: effectiveUserType === NORMALIZED_USER_TYPES.HOST
           ? '/account'
-          : `/account-profile/${user.id}?section=rental-application`,
+          : '/rental-application',
       });
     }
 
@@ -318,13 +310,13 @@ export default function LoggedInAvatar({
       });
     }
 
-    // 12. Referral - Always visible, opens modal instead of navigating
+    // 12. Referral - Always visible
     if (menuVisibility.referral) {
       items.push({
         id: 'referral',
         label: 'Referral',
         icon: '/assets/icons/gift-purple.svg',
-        action: () => setShowReferralModal(true),
+        path: '/referral',
       });
     }
 
@@ -333,12 +325,7 @@ export default function LoggedInAvatar({
 
   const handleMenuItemClick = (item) => {
     setIsOpen(false);
-    // If item has an action, call it; otherwise navigate
-    if (item.action) {
-      item.action();
-    } else {
-      onNavigate(item.path);
-    }
+    onNavigate(item.path);
   };
 
   const handleSignOut = async () => {
@@ -347,24 +334,13 @@ export default function LoggedInAvatar({
   };
 
   const isActivePath = (itemPath) => {
-    // Guard: if itemPath is undefined (e.g., menu items with only actions), return false
-    if (!itemPath) return false;
-
-    // Normalize paths for comparison (remove query params and hash)
-    const normalizedCurrentPath = currentPath.split('?')[0].split('#')[0];
-    const normalizedItemPath = itemPath.split('?')[0].split('#')[0];
-
-    // Check if current path matches or starts with the item path
-    return normalizedCurrentPath === normalizedItemPath ||
-           normalizedCurrentPath.startsWith(normalizedItemPath + '/');
+    return currentPath.includes(itemPath.replace('/', ''));
   };
 
-  // Get menu items and filter out items linking to current page
-  const allMenuItems = getMenuItems();
-  const menuItems = allMenuItems.filter(item => !isActivePath(item.path));
+  const menuItems = getMenuItems();
 
-  // Extract first name from full name (with defensive null check)
-  const firstName = user?.name?.split(' ')[0] || '';
+  // Extract first name from full name
+  const firstName = user.name.split(' ')[0];
 
   // Check if on a page with light header for styling
   const isSearchPage = currentPath.includes('search');
@@ -393,10 +369,10 @@ export default function LoggedInAvatar({
         aria-expanded={isOpen}
       >
         {user.avatarUrl ? (
-          <img src={user.avatarUrl} alt={user?.name || 'User avatar'} className="avatar-image" />
+          <img src={user.avatarUrl} alt={user.name} className="avatar-image" />
         ) : (
           <div className="avatar-placeholder">
-            {(user?.name?.charAt(0) || '?').toUpperCase()}
+            {user.name.charAt(0).toUpperCase()}
           </div>
         )}
         <span className="user-name-wrapper">
@@ -431,7 +407,7 @@ export default function LoggedInAvatar({
             {menuItems.map((item) => (
               <button
                 key={item.id}
-                className="menu-item"
+                className={`menu-item ${isActivePath(item.path) ? 'active' : ''}`}
                 onClick={() => handleMenuItemClick(item)}
               >
                 <img src={item.icon} alt="" className="menu-icon" />
@@ -444,8 +420,6 @@ export default function LoggedInAvatar({
               </button>
             ))}
 
-            <div className="menu-separator" />
-
             <button className="menu-item sign-out" onClick={handleSignOut}>
               <img src="/assets/icons/log-out-purple.svg" alt="" className="menu-icon" />
               <span className="menu-label">Sign Out</span>
@@ -453,14 +427,6 @@ export default function LoggedInAvatar({
           </div>
         </div>
       )}
-
-      {/* Referral Modal */}
-      <ReferralModal
-        isOpen={showReferralModal}
-        onClose={() => setShowReferralModal(false)}
-        referralCode={user.id}
-        userType={effectiveUserType === NORMALIZED_USER_TYPES.GUEST ? 'guest' : 'host'}
-      />
     </div>
   );
 }
