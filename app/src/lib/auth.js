@@ -23,6 +23,7 @@ import {
 } from './constants.js';
 import { supabase } from './supabase.js';
 import { logger } from './logger.js';
+import { delay } from './timing.js';
 import {
   setAuthToken as setSecureAuthToken,
   getAuthToken as getSecureAuthToken,
@@ -159,7 +160,7 @@ export async function checkAuthStatus() {
     // This handles the race condition on page load
     if (!session && !error) {
       logger.debug('🔄 No immediate Supabase session, waiting briefly for initialization...');
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await delay(200);
       const retryResult = await supabase.auth.getSession();
       session = retryResult.data?.session;
       error = retryResult.error;
@@ -575,7 +576,7 @@ export async function loginUser(email, password) {
         }
         verifyAttempts++;
         logger.debug(`⏳ Waiting for session to persist (attempt ${verifyAttempts}/${maxVerifyAttempts})...`);
-        await new Promise(resolve => setTimeout(resolve, 100)); // Wait 100ms
+        await delay(100);
       }
 
       if (verifyAttempts >= maxVerifyAttempts) {
@@ -798,7 +799,7 @@ export async function signupUser(email, password, retype, additionalData = null)
       }
       verifyAttempts++;
       logger.debug(`⏳ Waiting for session to persist (attempt ${verifyAttempts}/${maxVerifyAttempts})...`);
-      await new Promise(resolve => setTimeout(resolve, 100)); // Wait 100ms
+      await delay(100);
     }
 
     if (verifyAttempts >= maxVerifyAttempts) {
@@ -882,7 +883,7 @@ export async function validateTokenAndFetchUser({ clearOnFailure = true } = {}) 
       // Wait briefly for initialization if no session found
       if (!session && !error) {
         logger.debug('[Auth] 🔄 No immediate session, waiting briefly for Supabase initialization...');
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await delay(200);
         const retryResult = await supabase.auth.getSession();
         session = retryResult.data?.session;
         error = retryResult.error;

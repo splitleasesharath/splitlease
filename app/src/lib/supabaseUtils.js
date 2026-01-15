@@ -9,6 +9,7 @@
 
 import { supabase } from './supabase.js';
 import { DATABASE } from './constants.js';
+import { logger } from './logger.js';
 
 /**
  * Parse a value that may be a native array or stringified JSON array
@@ -35,14 +36,14 @@ export function parseJsonArray(value) {
       // Verify the parsed result is actually an array
       return Array.isArray(parsed) ? parsed : [];
     } catch (error) {
-      console.warn('Failed to parse JSON array:', { value, error: error.message });
+      logger.warn('Failed to parse JSON array:', { value, error: error.message });
       return []; // Return empty array - NO FALLBACK to hardcoded data
     }
   }
 
   // Unexpected type (null, undefined, object, number, etc.)
   if (value != null) {
-    console.warn('Unexpected type for JSONB array field:', { type: typeof value, value });
+    logger.warn('Unexpected type for JSONB array field:', { type: typeof value, value });
   }
   return []; // Return empty array - NO FALLBACK
 }
@@ -53,34 +54,24 @@ export function parseJsonArray(value) {
  * @returns {Promise<Object>} Map of photo ID to photo URL
  */
 export async function fetchPhotoUrls(photoIds) {
-  console.log('🔍 fetchPhotoUrls called with', photoIds?.length || 0, 'photo IDs');
+  logger.debug('fetchPhotoUrls called', { count: photoIds?.length || 0 });
 
   if (!photoIds || photoIds.length === 0) {
-    console.log('⚠️ fetchPhotoUrls: No photo IDs provided, returning empty map');
     return {};
   }
 
-  console.log('🔍 fetchPhotoUrls: Sample IDs:', photoIds.slice(0, 3));
-
   try {
-    console.log('🔍 fetchPhotoUrls: Querying listing_photo table...');
     const { data, error } = await supabase
       .from('listing_photo')
       .select('_id, Photo')
       .in('_id', photoIds);
 
-    console.log('🔍 fetchPhotoUrls: Query completed', {
-      dataLength: data?.length || 0,
-      error: error?.message || null
-    });
-
     if (error) {
-      console.error('❌ Error fetching photos:', error);
+      logger.error('Error fetching photos:', error);
       return {};
     }
 
     if (!data || data.length === 0) {
-      console.warn('⚠️ fetchPhotoUrls: Query returned no data for', photoIds.length, 'IDs');
       return {};
     }
 
@@ -97,10 +88,10 @@ export async function fetchPhotoUrls(photoIds) {
       }
     });
 
-    console.log(`✅ Fetched ${Object.keys(photoMap).length} photo URLs from ${data.length} records`);
+    logger.debug('Fetched photo URLs', { count: Object.keys(photoMap).length });
     return photoMap;
   } catch (error) {
-    console.error('❌ Error in fetchPhotoUrls:', error);
+    logger.error('Error in fetchPhotoUrls:', error);
     return {};
   }
 }
@@ -126,7 +117,7 @@ export async function fetchHostData(hostIds) {
       .in('_id', hostIds);
 
     if (userError) {
-      console.error('❌ Error fetching user data by _id:', userError);
+      logger.error('Error fetching user data by _id:', userError);
     }
 
     // Process users found by _id
@@ -145,10 +136,10 @@ export async function fetchHostData(hostIds) {
       });
     }
 
-    console.log(`✅ Fetched host data for ${Object.keys(hostMap).length} hosts`);
+    logger.debug('Fetched host data', { count: Object.keys(hostMap).length });
     return hostMap;
   } catch (error) {
-    console.error('❌ Error in fetchHostData:', error);
+    logger.error('Error in fetchHostData:', error);
     return {};
   }
 }
@@ -214,7 +205,7 @@ export function extractPhotos(photosField, photoMap = {}, listingId = null) {
   }
 
   if (photoUrls.length === 0) {
-    console.warn(`⚠️ Listing ${listingId}: NO VALID PHOTO URLS RESOLVED`);
+    logger.warn(`Listing ${listingId}: NO VALID PHOTO URLS RESOLVED`);
   }
 
   return photoUrls; // Return all actual photos
