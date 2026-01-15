@@ -18,6 +18,11 @@ function getStatusBadgeClass(status) {
 
   const normalizedStatus = status.trim();
 
+  // Action required: Suggested proposals pending guest confirmation
+  if (normalizedStatus.includes('Split Lease - Pending Confirmation')) {
+    return 'action-required';
+  }
+
   // Success states (accepted, completed)
   if (normalizedStatus.includes('Accepted') ||
       normalizedStatus.includes('activated') ||
@@ -42,6 +47,10 @@ function getStatusLabel(status) {
   if (!status) return 'Pending';
 
   const normalizedStatus = status.trim();
+
+  // Suggested proposals: distinguish guest action vs host action
+  if (normalizedStatus.includes('Split Lease - Pending Confirmation')) return 'Action Required';
+  if (normalizedStatus.includes('Split Lease - Awaiting Rental Application')) return 'Complete Application';
 
   if (normalizedStatus.includes('Counteroffer')) return 'Review Counteroffer';
   if (normalizedStatus.includes('Accepted')) return 'Accepted';

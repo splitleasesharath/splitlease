@@ -20,18 +20,7 @@
       "Bash(rm -rf:*)"
     ]
   },
-  "hooks": {
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python \"C:/Users/Split Lease/Documents/Split Lease/.claude/hooks/stop_handler.py\""
-          }
-        ]
-      }
-    ]
-  },
+  "hooks": {},
   "enabledPlugins": {
     "commit-commands@claude-plugins-official": true,
     "feature-dev@claude-plugins-official": true,
