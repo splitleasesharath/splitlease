@@ -37,6 +37,18 @@ import {
   addUserListingFavorite,
 } from "../../_shared/junctionHelpers.ts";
 import { parseJsonArray } from "../../_shared/jsonUtils.ts";
+import {
+  createSplitBotMessage,
+  updateThreadLastMessage,
+  getUserProfile,
+  getListingName,
+} from "../../_shared/messagingHelpers.ts";
+import {
+  getCTAForProposalStatus,
+  buildTemplateContext,
+  getDefaultMessage,
+  getVisibilityForRole,
+} from "../../_shared/ctaHelpers.ts";
 
 // ─────────────────────────────────────────────────────────────
 // INPUT TYPE
@@ -503,6 +515,77 @@ export async function handleCreateSuggested(
     console.warn(`[proposal:create_suggested] Proposal created but thread creation failed - manual intervention may be needed`);
   } else {
     console.log(`[proposal:create_suggested] Thread created successfully`);
+
+    // ================================================
+    // SEND SPLITBOT WELCOME MESSAGES
+    // ================================================
+    // Send automated messages to both guest and host so they see the thread immediately
+
+    try {
+      // Fetch user profiles and listing name for message templates
+      const [guestProfile, hostProfile, listingName] = await Promise.all([
+        getUserProfile(supabase, input.guestId),
+        getUserProfile(supabase, hostUserData._id),
+        getListingName(supabase, input.listingId),
+      ]);
+
+      const guestFirstName = guestProfile?.firstName || "Guest";
+      const hostFirstName = hostProfile?.firstName || "Host";
+      const resolvedListingName = listingName || "this listing";
+
+      // Build template context for CTA rendering
+      const templateContext = buildTemplateContext(hostFirstName, guestFirstName, resolvedListingName);
+
+      console.log(`[proposal:create_suggested] Sending SplitBot messages for status: ${status}`);
+
+      // Get CTAs for guest and host based on proposal status
+      const [guestCTA, hostCTA] = await Promise.all([
+        getCTAForProposalStatus(supabase, status, "guest", templateContext),
+        getCTAForProposalStatus(supabase, status, "host", templateContext),
+      ]);
+
+      // Send SplitBot message to GUEST
+      if (guestCTA) {
+        const guestMessageBody = guestCTA.message || getDefaultMessage(status, "guest", templateContext);
+        const guestVisibility = getVisibilityForRole("guest");
+
+        await createSplitBotMessage(supabase, {
+          threadId,
+          messageBody: guestMessageBody,
+          callToAction: guestCTA.display,
+          visibleToHost: guestVisibility.visibleToHost,
+          visibleToGuest: guestVisibility.visibleToGuest,
+          recipientUserId: input.guestId,
+        });
+        console.log(`[proposal:create_suggested] SplitBot message sent to guest`);
+      }
+
+      // Send SplitBot message to HOST
+      if (hostCTA) {
+        const hostMessageBody = hostCTA.message || getDefaultMessage(status, "host", templateContext);
+        const hostVisibility = getVisibilityForRole("host");
+
+        await createSplitBotMessage(supabase, {
+          threadId,
+          messageBody: hostMessageBody,
+          callToAction: hostCTA.display,
+          visibleToHost: hostVisibility.visibleToHost,
+          visibleToGuest: hostVisibility.visibleToGuest,
+          recipientUserId: hostUserData._id,
+        });
+        console.log(`[proposal:create_suggested] SplitBot message sent to host`);
+      }
+
+      // Update thread's last message preview
+      const lastMessageBody = guestCTA?.message || hostCTA?.message || `Proposal for ${resolvedListingName}`;
+      await updateThreadLastMessage(supabase, threadId, lastMessageBody);
+
+      console.log(`[proposal:create_suggested] SplitBot messages complete`);
+    } catch (msgError) {
+      // Non-blocking - proposal and thread are created, messages are secondary
+      console.error(`[proposal:create_suggested] SplitBot messages failed:`, msgError);
+      console.warn(`[proposal:create_suggested] Proposal and thread created, but SplitBot messages failed - host may not see notification`);
+    }
   }
 
   // ================================================
