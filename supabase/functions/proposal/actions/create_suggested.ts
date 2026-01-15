@@ -461,8 +461,7 @@ export async function handleCreateSuggested(
     "rental app requested": hasRentalApp,
     "host email": hostUserData.email,
 
-    // Thread reference
-    Thread: threadId,
+    // Note: Thread relationship is managed via thread.Proposal FK, not here
 
     // Timestamps
     "Created Date": now,
