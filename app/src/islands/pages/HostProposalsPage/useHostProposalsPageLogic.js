@@ -527,7 +527,7 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
         if (guestIds.length > 0) {
           const { data: guests } = await supabase
             .from('user')
-            .select('_id, "Name - Full", "Name - First", "Name - Last", email, "Profile Photo"')
+            .select('_id, "Name - Full", "Name - First", "Name - Last", email, "Profile Photo", "Bio", "ID Verified", "Work Verified", "Review Count", "Created Date"')
             .in('_id', guestIds);
 
           const guestMap = {};
