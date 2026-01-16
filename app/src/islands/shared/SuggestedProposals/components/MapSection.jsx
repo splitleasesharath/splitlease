@@ -1,9 +1,11 @@
+import { useState, useCallback } from 'react';
+
 /**
  * MapSection
  *
  * Displays property location using Google Maps Static API.
  * Automatically retrieves API key from window.ENV (set by config.js).
- * Falls back to styled Carto tile if no API key available.
+ * Falls back to styled Carto tile if Google Maps fails or no API key available.
  */
 
 /**
@@ -15,6 +17,9 @@ export default function MapSection({
   geoPoint,
   address
 }) {
+  // Track if Google Maps image failed to load
+  const [googleMapFailed, setGoogleMapFailed] = useState(false);
+
   // Get Google Maps API key from window.ENV (set by config.js)
   const googleMapsApiKey = typeof window !== 'undefined'
     ? window.ENV?.GOOGLE_MAPS_API_KEY
@@ -25,7 +30,7 @@ export default function MapSection({
 
   // Generate static map URL using Google Maps Static API
   const getMapUrl = () => {
-    if (!hasCoordinates || !googleMapsApiKey) return null;
+    if (!hasCoordinates || !googleMapsApiKey || googleMapFailed) return null;
 
     const { lat, lng } = geoPoint;
     const params = new URLSearchParams({
@@ -55,6 +60,12 @@ export default function MapSection({
     return `https://a.basemaps.cartocdn.com/light_all/${zoom}/${x}/${y}@2x.png`;
   };
 
+  // Handle Google Maps image load error - fall back to Carto
+  const handleGoogleMapError = useCallback(() => {
+    console.warn('MapSection: Google Maps Static API failed, falling back to Carto tiles');
+    setGoogleMapFailed(true);
+  }, []);
+
   const mapUrl = getMapUrl();
   const cartoTileUrl = getCartoTileUrl();
 
@@ -68,9 +79,10 @@ export default function MapSection({
             src={mapUrl}
             alt={`Map showing ${address}`}
             className="sp-map-image"
+            onError={handleGoogleMapError}
           />
         ) : hasCoordinates ? (
-          // Fallback to Carto Positron tiles when no Google API key
+          // Fallback to Carto Positron tiles when no Google API key or when it fails
           // These are modern, clean styled tiles similar to Mapbox light
           <div className="sp-map-carto-wrapper">
             <img
