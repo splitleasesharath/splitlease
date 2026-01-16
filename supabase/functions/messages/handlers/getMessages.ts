@@ -36,6 +36,8 @@ interface ThreadInfo {
   property_name?: string;
   status?: string;
   status_type?: string;
+  proposal_id?: string;
+  listing_id?: string;
 }
 
 interface GetMessagesPayload {
@@ -335,6 +337,8 @@ export async function handleGetMessages(
       property_name: propertyName,
       status: proposalStatus,
       status_type: statusType,
+      proposal_id: thread['Proposal'] || undefined,
+      listing_id: thread['Listing'] || undefined,
     },
   };
 }
