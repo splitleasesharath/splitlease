@@ -49,14 +49,6 @@ export const routes = [
     internalName: 'search-view',
     hasDynamicSegment: false
   },
-  {
-    path: '/search-test',
-    file: 'search-test.html',
-    aliases: ['/search-test.html'],
-    protected: false,
-    cloudflareInternal: false,
-    hasDynamicSegment: false
-  },
 
   // ===== DYNAMIC ROUTES (WITH ID PARAMS) =====
   {
@@ -331,6 +323,17 @@ export const routes = [
     protected: true,
     cloudflareInternal: true,
     internalName: 'messages-view',
+    hasDynamicSegment: false
+  },
+
+  // ===== HOUSE MANUAL =====
+  {
+    path: '/house-manual',
+    file: 'house-manual.html',
+    aliases: ['/house-manual.html'],
+    protected: true,
+    cloudflareInternal: true,
+    internalName: 'house-manual-view',
     hasDynamicSegment: false
   },
 

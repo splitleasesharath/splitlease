@@ -10,376 +10,36 @@ import LoggedInAvatar from '../shared/LoggedInAvatar/LoggedInAvatar.jsx';
 import FavoriteButton from '../shared/FavoriteButton';
 import CreateProposalFlowV2, { clearProposalDraft } from '../shared/CreateProposalFlowV2.jsx';
 import { isGuest } from '../../logic/rules/users/isGuest.js';
+import { isHost } from '../../logic/rules/users/isHost.js';
 import { supabase } from '../../lib/supabase.js';
+import { logger } from '../../lib/logger.js';
 import { fetchProposalsByGuest, fetchLastProposalDefaults } from '../../lib/proposalDataFetcher.js';
 import { fetchZatPriceConfiguration } from '../../lib/listingDataFetcher.js';
-import { checkAuthStatus, validateTokenAndFetchUser, getUserId, getSessionId, logoutUser } from '../../lib/auth.js';
+import { checkAuthStatus, getUserId, getSessionId, logoutUser } from '../../lib/auth.js';
+import { useAuthenticatedUser } from '../../hooks/useAuthenticatedUser.js';
 import { PRICE_TIERS, SORT_OPTIONS, WEEK_PATTERNS, LISTING_CONFIG, VIEW_LISTING_URL, SEARCH_URL } from '../../lib/constants.js';
 import { initializeLookups, getNeighborhoodName, getBoroughName, getPropertyTypeLabel, isInitialized } from '../../lib/dataLookups.js';
 import { parseUrlToFilters, updateUrlParams, watchUrlChanges, hasUrlFilters } from '../../lib/urlParams.js';
 import { fetchPhotoUrls, fetchHostData, extractPhotos, parseAmenities, parseJsonArray } from '../../lib/supabaseUtils.js';
-import { sanitizeNeighborhoodSearch, sanitizeSearchQuery } from '../../lib/sanitize.js';
+import { sanitizeSearchQuery } from '../../lib/sanitize.js';
 import { createDay } from '../../lib/scheduleSelector/dayHelpers.js';
 import { calculateNextAvailableCheckIn } from '../../logic/calculators/scheduling/calculateNextAvailableCheckIn.js';
 import { shiftMoveInDateIfPast } from '../../logic/calculators/scheduling/shiftMoveInDateIfPast.js';
+import { calculateCheckInOutFromDays } from '../../logic/calculators/scheduling/calculateCheckInOutFromDays.js';
+import { formatHostName } from '../../logic/processors/display/formatHostName.js';
 // NOTE: adaptDaysToBubble removed - database now uses 0-indexed days natively
 import { countSelectedNights } from '../../lib/scheduleSelector/nightCalculations.js';
 import { calculatePrice } from '../../lib/scheduleSelector/priceCalculations.js';
 import ProposalSuccessModal from '../modals/ProposalSuccessModal.jsx';
-
-// ============================================================================
-// Utility Functions
-// ============================================================================
-
-/**
- * Fetch informational texts from Supabase
- */
-async function fetchInformationalTexts() {
-  try {
-    const { data, error } = await supabase
-      .from('informationaltexts')
-      .select('_id, "Information Tag-Title", "Desktop copy", "Mobile copy", "Desktop+ copy", "show more available?"');
-
-    if (error) throw error;
-
-    // Transform data into a map keyed by tag title
-    const textsMap = {};
-    data.forEach(item => {
-      textsMap[item['Information Tag-Title']] = {
-        desktop: item['Desktop copy'],
-        mobile: item['Mobile copy'],
-        desktopPlus: item['Desktop+ copy'],
-        showMore: item['show more available?']
-      };
-    });
-
-    return textsMap;
-  } catch (error) {
-    console.error('Failed to fetch informational texts:', error);
-    return {};
-  }
-}
+import { fetchInformationalTexts } from '../../lib/informationalTextsFetcher.js';
+import CompactScheduleIndicator from './SearchPage/components/CompactScheduleIndicator.jsx';
+import MobileFilterBar from './SearchPage/components/MobileFilterBar.jsx';
+import { NeighborhoodCheckboxList, NeighborhoodDropdownFilter } from './SearchPage/components/NeighborhoodFilters.jsx';
+import PropertyCard from '../shared/ListingCard/PropertyCard.jsx';
 
 // ============================================================================
 // Internal Components
 // ============================================================================
-
-/**
- * CompactScheduleIndicator - Minimal dot-based schedule display
- * Shows when mobile header is hidden during scroll
- */
-function CompactScheduleIndicator({ isVisible }) {
-  // Get selected days from URL params
-  const urlParams = new URLSearchParams(window.location.search);
-  const daysSelected = urlParams.get('days-selected') || '';
-
-  // Parse days-selected (format: "1,2,3,4,5" where 0=Sun, 1=Mon, etc.)
-  const selectedDaysArray = daysSelected
-    ? daysSelected.split(',').map(d => parseInt(d, 10)).filter(d => !isNaN(d))
-    : [];
-
-  // Day names for display
-  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
-  // Calculate check-in and check-out days
-  let checkInText = '';
-  let checkOutText = '';
-
-  if (selectedDaysArray.length >= 2) {
-    const sortedDays = [...selectedDaysArray].sort((a, b) => a - b);
-    const hasSaturday = sortedDays.includes(6);
-    const hasSunday = sortedDays.includes(0);
-    const isWrapAround = hasSaturday && hasSunday && sortedDays.length < 7;
-
-    let checkInDay, checkOutDay;
-
-    if (isWrapAround) {
-      // Find the gap in the sequence to determine actual check-in/check-out
-      let gapIndex = -1;
-      for (let i = 1; i < sortedDays.length; i++) {
-        if (sortedDays[i] - sortedDays[i - 1] > 1) {
-          gapIndex = i;
-          break;
-        }
-      }
-
-      if (gapIndex !== -1) {
-        checkInDay = sortedDays[gapIndex];
-        checkOutDay = sortedDays[gapIndex - 1];
-      } else {
-        checkInDay = sortedDays[0];
-        checkOutDay = sortedDays[sortedDays.length - 1];
-      }
-    } else {
-      checkInDay = sortedDays[0];
-      checkOutDay = sortedDays[sortedDays.length - 1];
-    }
-
-    checkInText = dayNames[checkInDay];
-    checkOutText = dayNames[checkOutDay];
-  }
-
-  return (
-    <div className={`compact-schedule-indicator ${isVisible ? 'compact-schedule-indicator--visible' : ''}`}>
-      <span className="compact-schedule-text">
-        {selectedDaysArray.length >= 2 ? (
-          <>
-            <span className="compact-label">Check-in:</span> {checkInText} • <span className="compact-label">Check-out:</span> {checkOutText}
-          </>
-        ) : (
-          'Select days'
-        )}
-      </span>
-      <div className="compact-schedule-dots">
-        {[0, 1, 2, 3, 4, 5, 6].map((dayIndex) => (
-          <div
-            key={dayIndex}
-            className={`compact-day-dot ${selectedDaysArray.includes(dayIndex) ? 'selected' : ''}`}
-            title={dayNames[dayIndex]}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/**
- * MobileFilterBar - Sticky filter button for mobile
- * Includes auth-aware elements: favorites link and LoggedInAvatar for logged-in users
- */
-function MobileFilterBar({
-  onFilterClick,
-  onMapClick,
-  isMapVisible,
-  isLoggedIn,
-  currentUser,
-  favoritesCount,
-  onNavigate,
-  onLogout,
-  onOpenAuthModal,
-  isHidden
-}) {
-  return (
-    <div className={`mobile-filter-bar ${isHidden ? 'mobile-filter-bar--hidden' : ''}`}>
-      <a href="/" className="mobile-logo-link" aria-label="Go to homepage">
-        <img
-          src="/assets/images/split-lease-purple-circle.png"
-          alt="Split Lease Logo"
-          className="mobile-logo-icon"
-          width="28"
-          height="28"
-        />
-      </a>
-      <button className="filter-toggle-btn" onClick={onFilterClick}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M4 6h16M4 12h16M4 18h16" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-        <span>Filters</span>
-      </button>
-      <button className="map-toggle-btn" onClick={onMapClick}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <rect x="3" y="3" width="18" height="18" rx="2" strokeWidth="2" />
-          <path d="M9 3v18M15 3v18M3 9h18M3 15h18" strokeWidth="2" />
-        </svg>
-        <span>{isMapVisible ? 'Show Listings' : 'Map'}</span>
-      </button>
-
-      {/* Mobile Header Actions - Auth-aware elements */}
-      <div className="mobile-header-actions">
-        {isLoggedIn && currentUser ? (
-          <>
-            {/* Favorites Heart with Count */}
-            <a href="/favorite-listings" className="mobile-favorites-link" aria-label="My Favorite Listings">
-              <svg
-                width="22"
-                height="22"
-                viewBox="0 0 24 24"
-                fill="#5b21b6"
-                stroke="none"
-              >
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-              </svg>
-            </a>
-
-            {/* Logged In Avatar */}
-            <LoggedInAvatar
-              user={currentUser}
-              currentPath="/search"
-              onNavigate={onNavigate}
-              onLogout={onLogout}
-              size="small"
-            />
-          </>
-        ) : (
-          /* Sign In button for logged out users */
-          <button
-            className="mobile-signin-btn"
-            onClick={onOpenAuthModal}
-            aria-label="Sign In"
-          >
-            Sign In
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/**
- * NeighborhoodCheckboxList - Simple scrollable list with checkboxes
- */
-function NeighborhoodCheckboxList({
-  neighborhoods,
-  selectedNeighborhoods,
-  onNeighborhoodsChange,
-  id
-}) {
-  // Toggle neighborhood selection
-  const handleToggleNeighborhood = (neighborhoodId) => {
-    if (selectedNeighborhoods.includes(neighborhoodId)) {
-      onNeighborhoodsChange(selectedNeighborhoods.filter(nId => nId !== neighborhoodId));
-    } else {
-      onNeighborhoodsChange([...selectedNeighborhoods, neighborhoodId]);
-    }
-  };
-
-  return (
-    <div className="filter-group compact neighborhood-checkbox-list-group">
-      <label>Refine Neighborhood(s)</label>
-
-      {/* Scrollable list with checkboxes */}
-      <div className="neighborhood-checkbox-list" id={id}>
-        {neighborhoods.length === 0 ? (
-          <div className="neighborhood-list-empty">Loading neighborhoods...</div>
-        ) : (
-          neighborhoods.map(neighborhood => (
-            <label key={neighborhood.id} className="neighborhood-checkbox-item">
-              <input
-                type="checkbox"
-                checked={selectedNeighborhoods.includes(neighborhood.id)}
-                onChange={() => handleToggleNeighborhood(neighborhood.id)}
-              />
-              <span>{neighborhood.name}</span>
-            </label>
-          ))
-        )}
-      </div>
-
-      {selectedNeighborhoods.length > 0 && (
-        <div className="neighborhood-selection-count">
-          {selectedNeighborhoods.length} selected
-        </div>
-      )}
-    </div>
-  );
-}
-
-function NeighborhoodDropdownFilter({
-  neighborhoods,
-  selectedNeighborhoods,
-  onNeighborhoodsChange,
-  neighborhoodSearch,
-  onNeighborhoodSearchChange,
-  searchInputId
-}) {
-  const inputId = searchInputId || 'neighborhoodSearch';
-
-  const handleNeighborhoodToggle = (neighborhoodId) => {
-    const isSelected = selectedNeighborhoods.includes(neighborhoodId);
-    if (isSelected) {
-      onNeighborhoodsChange(selectedNeighborhoods.filter(id => id !== neighborhoodId));
-    } else {
-      onNeighborhoodsChange([...selectedNeighborhoods, neighborhoodId]);
-    }
-  };
-
-  const handleRemoveNeighborhood = (neighborhoodId) => {
-    onNeighborhoodsChange(selectedNeighborhoods.filter(id => id !== neighborhoodId));
-  };
-
-  const sanitizedSearch = sanitizeNeighborhoodSearch(neighborhoodSearch || '');
-
-  const filteredNeighborhoods = neighborhoods.filter((n) => {
-    if (!sanitizedSearch) {
-      return true;
-    }
-    return n.name.toLowerCase().includes(sanitizedSearch.toLowerCase());
-  });
-
-  const inputRef = useRef(null);
-
-  const handleContainerClick = (e) => {
-    // Focus the input when clicking on the container
-    if (inputRef.current && e.target.closest('.neighborhood-dropdown-container')) {
-      inputRef.current.focus();
-    }
-  };
-
-  return (
-    <div className="filter-group compact neighborhoods-group">
-      <label htmlFor={inputId}>Refine Neighborhood(s)</label>
-      <div
-        className="neighborhood-dropdown-container"
-        onClick={handleContainerClick}
-      >
-        {selectedNeighborhoods.length > 0 && (
-          <div className="selected-neighborhoods-chips">
-            {selectedNeighborhoods.map(id => {
-              const neighborhood = neighborhoods.find(n => n.id === id);
-              if (!neighborhood) return null;
-
-              return (
-                <div key={id} className="neighborhood-chip">
-                  <span>{neighborhood.name}</span>
-                  <button
-                    type="button"
-                    className="neighborhood-chip-remove"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveNeighborhood(id);
-                    }}
-                    aria-label={`Remove ${neighborhood.name}`}
-                  >
-                    ×
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        )}
-        <input
-          ref={inputRef}
-          type="text"
-          id={inputId}
-          placeholder={selectedNeighborhoods.length > 0 ? "" : "Search neighborhoods..."}
-          className="neighborhood-search"
-          value={neighborhoodSearch}
-          onChange={(e) => onNeighborhoodSearchChange(e.target.value)}
-        />
-      </div>
-
-      <div className="neighborhood-list">
-        {filteredNeighborhoods.length === 0 ? (
-          <div style={{ padding: '10px', color: '#666' }}>
-            {neighborhoods.length === 0 ? 'Loading neighborhoods...' : 'No neighborhoods found'}
-          </div>
-        ) : (
-          filteredNeighborhoods.map(neighborhood => (
-            <label key={neighborhood.id}>
-              <input
-                type="checkbox"
-                value={neighborhood.id}
-                checked={selectedNeighborhoods.includes(neighborhood.id)}
-                onChange={() => handleNeighborhoodToggle(neighborhood.id)}
-              />
-              {neighborhood.name}
-            </label>
-          ))
-        )}
-      </div>
-    </div>
-  );
-}
 
 /**
  * FilterPanel - Left sidebar with filters
@@ -506,386 +166,9 @@ function FilterPanel({
 }
 
 /**
- * PropertyCard - Individual listing card
- */
-function PropertyCard({ listing, onLocationClick, onCardHover, onCardLeave, onOpenContactModal, onOpenInfoModal, isLoggedIn, isFavorited, userId, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalForListing, selectedNightsCount }) {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const priceInfoTriggerRef = useRef(null);
-  const mobilePriceInfoTriggerRef = useRef(null);
-
-  const hasImages = listing.images && listing.images.length > 0;
-  const hasMultipleImages = listing.images && listing.images.length > 1;
-
-  // Format host name to show "FirstName L."
-  const formatHostName = (fullName) => {
-    if (!fullName || fullName === 'Host') return 'Host';
-
-    const nameParts = fullName.trim().split(/\s+/);
-    if (nameParts.length === 1) return nameParts[0];
-
-    const firstName = nameParts[0];
-    const lastInitial = nameParts[nameParts.length - 1].charAt(0).toUpperCase();
-
-    return `${firstName} ${lastInitial}.`;
-  };
-
-  const handlePrevImage = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!hasMultipleImages) return;
-    setCurrentImageIndex((prev) =>
-      prev === 0 ? listing.images.length - 1 : prev - 1
-    );
-  };
-
-  const handleNextImage = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!hasMultipleImages) return;
-    setCurrentImageIndex((prev) =>
-      prev === listing.images.length - 1 ? 0 : prev + 1
-    );
-  };
-
-  // Get listing ID for FavoriteButton
-  const favoriteListingId = listing.id || listing._id;
-
-  // Get availability message - hardcoded variety for now
-  const getAvailabilityMessage = () => {
-    const id = listing.id || listing._id || '';
-    // Use a simple hash of the listing ID to deterministically assign messages
-    const hash = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const messageIndex = hash % 4;
-
-    const messages = [
-      { text: 'Available in 1 week', className: 'availability-soon' },
-      { text: 'Available in 2 weeks', className: 'availability-soon' },
-      { text: 'Available in 3 weeks', className: 'availability-later' },
-      { text: 'Message Split Lease\nfor Availability', className: '' },
-    ];
-
-    return messages[messageIndex];
-  };
-
-  const availabilityInfo = getAvailabilityMessage();
-
-  // Calculate dynamic price based on selected nights from day selector
-  // Uses the same calculatePrice function as View Split Lease page
-  const calculateDynamicPrice = () => {
-    const nightsCount = selectedNightsCount;
-
-    // If 0 nights, show starting price (need at least 2 days = 1 night for a valid stay)
-    if (nightsCount < 1) {
-      return listing['Starting nightly price'] || listing.price?.starting || 0;
-    }
-
-    try {
-      // Create a mock nights array with the correct length
-      // calculatePrice only uses .length to get nightsCount
-      const mockNightsArray = Array(nightsCount).fill({ nightNumber: 0 });
-
-      // Use the same pricing calculation as View Split Lease page
-      // Default reservationSpan of 13 weeks (standard booking period)
-      const priceBreakdown = calculatePrice(mockNightsArray, listing, 13, null);
-
-      console.log(`[PropertyCard] Dynamic price for ${listing.title}:`, {
-        nightsCount,
-        rentalType: listing.rentalType,
-        hostRate: listing[`💰Nightly Host Rate for ${nightsCount} nights`],
-        pricePerNight: priceBreakdown.pricePerNight,
-        valid: priceBreakdown.valid
-      });
-
-      // Return the guest-facing price per night
-      return priceBreakdown.pricePerNight || listing['Starting nightly price'] || listing.price?.starting || 0;
-    } catch (error) {
-      console.warn(`[PropertyCard] Price calculation failed for listing ${listing.id}:`, error.message);
-      return listing['Starting nightly price'] || listing.price?.starting || 0;
-    }
-  };
-
-  const dynamicPrice = calculateDynamicPrice();
-  const startingPrice = listing['Starting nightly price'] || listing.price?.starting || 0;
-
-  // Render amenity icons
-  const renderAmenityIcons = () => {
-    if (!listing.amenities || listing.amenities.length === 0) return null;
-
-    const maxVisible = 6;
-    const visibleAmenities = listing.amenities.slice(0, maxVisible);
-    const hiddenCount = Math.max(0, listing.amenities.length - maxVisible);
-
-    return (
-      <div className="listing-amenities">
-        {visibleAmenities.map((amenity, idx) => (
-          <span key={idx} className="amenity-icon" data-tooltip={amenity.name}>
-            {amenity.icon}
-          </span>
-        ))}
-        {hiddenCount > 0 && (
-          <span className="amenity-more-count" title="Show all amenities">
-            +{hiddenCount} more
-          </span>
-        )}
-      </div>
-    );
-  };
-
-  const listingId = listing.id || listing._id;
-
-  // Handle click to pass days-selected parameter at click time (not render time)
-  // This ensures we get the current URL parameter after SearchScheduleSelector has updated it
-  const handleCardClick = (e) => {
-    if (!listingId) {
-      e.preventDefault();
-      console.error('[PropertyCard] No listing ID found', { listing });
-      return;
-    }
-
-    // Prevent default link behavior - we'll handle navigation manually
-    e.preventDefault();
-
-    // Get days-selected from URL at click time (after SearchScheduleSelector has updated it)
-    const urlParams = new URLSearchParams(window.location.search);
-    const daysSelected = urlParams.get('days-selected');
-
-    const url = daysSelected
-      ? `/view-split-lease/${listingId}?days-selected=${daysSelected}`
-      : `/view-split-lease/${listingId}`;
-
-    console.log('📅 PropertyCard: Opening listing with URL:', url);
-
-    // Detect mobile viewport (matches CSS breakpoint at 768px)
-    const isMobile = window.innerWidth <= 768;
-
-    if (isMobile) {
-      // On mobile, navigate in the same tab for better UX and to avoid popup blockers
-      window.location.href = url;
-    } else {
-      // On desktop, open in new tab
-      window.open(url, '_blank', 'noopener,noreferrer');
-    }
-  };
-
-  return (
-    <a
-      className="listing-card"
-      data-listing-id={listingId}
-      href={listingId ? `/view-split-lease/${listingId}` : '#'}
-      target="_blank"
-      rel="noopener noreferrer"
-      style={{ textDecoration: 'none', color: 'inherit' }}
-      onClick={handleCardClick}
-      onMouseEnter={() => {
-        if (onCardHover) {
-          onCardHover(listing);
-        }
-      }}
-      onMouseLeave={() => {
-        if (onCardLeave) {
-          onCardLeave();
-        }
-      }}
-    >
-      {/* Image Section */}
-      {hasImages && (
-        <div className="listing-images">
-          <img
-            src={listing.images[currentImageIndex]}
-            alt={listing.title}
-          />
-          {hasMultipleImages && (
-            <>
-              <button className="image-nav prev-btn" onClick={handlePrevImage}>
-                ‹
-              </button>
-              <button className="image-nav next-btn" onClick={handleNextImage}>
-                ›
-              </button>
-              <div className="image-counter">
-                <span className="current-image">{currentImageIndex + 1}</span> /{' '}
-                <span className="total-images">{listing.images.length}</span>
-              </div>
-            </>
-          )}
-          <FavoriteButton
-            listingId={favoriteListingId}
-            userId={userId}
-            initialFavorited={isFavorited}
-            onToggle={(newState, listingId) => {
-              if (onToggleFavorite) {
-                onToggleFavorite(listingId, listing.title, newState);
-              }
-            }}
-            onRequireAuth={onRequireAuth}
-            size="medium"
-          />
-          {listing.isNew && <span className="new-badge">New Listing</span>}
-          {listing.type === 'Entire Place' && (
-            <span className="family-friendly-tag" aria-label="Family Friendly - Entire place listing suitable for families">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-              </svg>
-              Family Friendly
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Content Section - F7b Layout */}
-      <div className="listing-content">
-        {/* Main Info - Left Side */}
-        <div className="listing-main-info">
-          <div className="listing-info-top">
-            <div
-              className="listing-location"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (onLocationClick) {
-                  onLocationClick(listing);
-                }
-              }}
-              style={{ cursor: onLocationClick ? 'pointer' : 'default' }}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                <circle cx="12" cy="10" r="3" />
-              </svg>
-              <span className="location-text">{listing.location}</span>
-            </div>
-            <h3 className="listing-title">{listing.title}</h3>
-          </div>
-
-          {/* Meta Section - Info Dense Style */}
-          <div className="listing-meta">
-            <span className="meta-item"><strong>{listing.type || 'Entire Place'}</strong></span>
-            <span className="meta-item"><strong>{listing.maxGuests}</strong> guests</span>
-            <span className="meta-item"><strong>{listing.bedrooms === 0 ? 'Studio' : `${listing.bedrooms} bedroom${listing.bedrooms > 1 ? 's' : ''}`}</strong></span>
-            <span className="meta-item"><strong>{listing.bathrooms}</strong> bath</span>
-          </div>
-
-          {/* Host Section - Price, CTA, Hosted by */}
-          <div className="listing-host-section">
-            {/* Inline Price Display */}
-            <div className="inline-price">
-              <span className="price-current">${dynamicPrice.toFixed(2)}</span>
-              <span className="price-period">/ night</span>
-              {startingPrice > 0 && startingPrice !== dynamicPrice && (
-                <span
-                  ref={mobilePriceInfoTriggerRef}
-                  className="price-min-trigger"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onOpenInfoModal(listing, mobilePriceInfoTriggerRef);
-                  }}
-                >
-                  from ${parseFloat(startingPrice).toFixed(2)}/night
-                  <span className="price-info-icon">?</span>
-                </span>
-              )}
-            </div>
-            {/* Action Buttons */}
-            <div className="action-buttons">
-              <button
-                className="action-button secondary"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onOpenContactModal(listing);
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-                </svg>
-                Message
-              </button>
-              {/* Proposal CTAs - Show Create or View based on existing proposal */}
-              {showCreateProposalButton && (
-                proposalForListing ? (
-                  <button
-                    className="view-proposal-btn"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      window.location.href = `/guest-proposals?proposal=${proposalForListing._id}`;
-                    }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                      <polyline points="14 2 14 8 20 8" />
-                      <line x1="16" y1="13" x2="8" y2="13" />
-                      <line x1="16" y1="17" x2="8" y2="17" />
-                      <polyline points="10 9 9 9 8 9" />
-                    </svg>
-                    View Proposal
-                  </button>
-                ) : (
-                  <button
-                    className="create-proposal-btn"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      onOpenCreateProposalModal(listing);
-                    }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="12" y1="5" x2="12" y2="19" />
-                      <line x1="5" y1="12" x2="19" y2="12" />
-                    </svg>
-                    Create Proposal
-                  </button>
-                )
-              )}
-            </div>
-            {/* Host Profile - Simple text */}
-            <div className="host-profile">
-              {listing.host?.image ? (
-                <img src={listing.host.image} alt={listing.host.name} className="host-avatar" />
-              ) : (
-                <div className="host-avatar-placeholder">?</div>
-              )}
-              <span className="host-name">
-                Hosted by {formatHostName(listing.host?.name)}
-                {listing.host?.verified && <span className="verified-badge" title="Verified">✓</span>}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Price Sidebar - Right Side */}
-        <div
-          className="listing-price-sidebar"
-          ref={priceInfoTriggerRef}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onOpenInfoModal(listing, priceInfoTriggerRef);
-          }}
-        >
-          <div className="price-main">${dynamicPrice.toFixed(2)}</div>
-          <div className="price-period">/night</div>
-          <div className="price-divider"></div>
-          {selectedNightsCount >= 1 ? (
-            <div className="price-context">for {selectedNightsCount} night{selectedNightsCount !== 1 ? 's' : ''}/week</div>
-          ) : (
-            <div className="price-starting">Starting at<span>${parseFloat(startingPrice).toFixed(2)}/night</span></div>
-          )}
-          <div className={`availability-note ${availabilityInfo.className}`}>{availabilityInfo.text.split('\n').map((line, i) => i === 0 ? line : <><br key={i}/>{line}</>)}</div>
-        </div>
-      </div>
-    </a>
-  );
-}
-
-/**
  * ListingsGrid - Grid of property cards with lazy loading
  */
-function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef, isLoggedIn, userId, favoritedListingIds, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalsByListingId, selectedNightsCount }) {
+function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef, onCardLeave, isLoggedIn, userId, favoritedListingIds, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalsByListingId, selectedNightsCount }) {
 
   const sentinelRef = useRef(null);
 
@@ -934,18 +217,7 @@ function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactM
                 mapRef.current.highlightListing(listing.id);
               }
             }}
-            onCardLeave={() => {
-              // Delay stopPulse to allow hovering to map without losing pulse
-              if (pulseTimeoutRef.current) {
-                clearTimeout(pulseTimeoutRef.current);
-              }
-              pulseTimeoutRef.current = setTimeout(() => {
-                if (mapRef.current) {
-                  mapRef.current.stopPulse();
-                }
-                pulseTimeoutRef.current = null;
-              }, 150); // Short delay to allow transition to map
-            }}
+            onCardLeave={onCardLeave}
             onOpenContactModal={onOpenContactModal}
             onOpenInfoModal={onOpenInfoModal}
             isLoggedIn={isLoggedIn}
@@ -957,6 +229,7 @@ function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactM
             onOpenCreateProposalModal={onOpenCreateProposalModal}
             proposalForListing={proposalForListing}
             selectedNightsCount={selectedNightsCount}
+            variant="search"
           />
         );
       })}
@@ -1038,6 +311,9 @@ function EmptyState({ onResetFilters }) {
 // ============================================================================
 
 export default function SearchPage() {
+  // GOLD STANDARD AUTH PATTERN - Use consolidated hook
+  const { user: authenticatedUser, userId: authUserId, loading: authLoading, isAuthenticated } = useAuthenticatedUser();
+
   // State management
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -1097,9 +373,27 @@ export default function SearchPage() {
   const [mobileHeaderHidden, setMobileHeaderHidden] = useState(false);
   const [desktopHeaderCollapsed, setDesktopHeaderCollapsed] = useState(false);
 
-  // Auth state
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
+  // Auth state - Initialize with cached data for optimistic UI (prevents flash of logged-out state)
+  const cachedFirstName = getFirstName();
+  const cachedAvatarUrl = getAvatarUrl();
+  const cachedUserType = getStoredUserType();
+  const hasCachedAuth = !!(cachedFirstName && getAuthState());
+
+  const [isLoggedIn, setIsLoggedIn] = useState(hasCachedAuth);
+  const [currentUser, setCurrentUser] = useState(() => {
+    if (hasCachedAuth) {
+      return {
+        id: getUserId(),
+        name: cachedFirstName,
+        email: '',
+        userType: cachedUserType || 'GUEST',
+        avatarUrl: cachedAvatarUrl || null,
+        proposalCount: 0,
+        _isOptimistic: true // Flag to indicate this is optimistic data
+      };
+    }
+    return null;
+  });
   const [favoritesCount, setFavoritesCount] = useState(0);
   const [favoritedListingIds, setFavoritedListingIds] = useState(new Set());
 
@@ -1156,43 +450,11 @@ export default function SearchPage() {
   // Calculate check-in and check-out day names
   const checkInOutDays = useMemo(() => {
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
-    if (selectedDaysForDisplay.length < 2) {
-      return { checkIn: '', checkOut: '' };
-    }
-
-    const sortedDays = [...selectedDaysForDisplay].sort((a, b) => a - b);
-    const hasSaturday = sortedDays.includes(6);
-    const hasSunday = sortedDays.includes(0);
-    const isWrapAround = hasSaturday && hasSunday && sortedDays.length < 7;
-
-    let checkInDay, checkOutDay;
-
-    if (isWrapAround) {
-      // Find the gap in the sequence
-      let gapIndex = -1;
-      for (let i = 1; i < sortedDays.length; i++) {
-        if (sortedDays[i] - sortedDays[i - 1] > 1) {
-          gapIndex = i;
-          break;
-        }
-      }
-
-      if (gapIndex !== -1) {
-        checkInDay = sortedDays[gapIndex];
-        checkOutDay = sortedDays[gapIndex - 1];
-      } else {
-        checkInDay = sortedDays[0];
-        checkOutDay = sortedDays[sortedDays.length - 1];
-      }
-    } else {
-      checkInDay = sortedDays[0];
-      checkOutDay = sortedDays[sortedDays.length - 1];
-    }
-
+    const result = calculateCheckInOutFromDays(selectedDaysForDisplay);
+    if (!result) return { checkIn: '', checkOut: '' };
     return {
-      checkIn: dayNames[checkInDay],
-      checkOut: dayNames[checkOutDay]
+      checkIn: dayNames[result.checkIn],
+      checkOut: dayNames[result.checkOut]
     };
   }, [selectedDaysForDisplay]);
 
@@ -1301,7 +563,7 @@ export default function SearchPage() {
   useEffect(() => {
     const init = async () => {
       if (!isInitialized()) {
-        console.log('Initializing data lookups...');
+        logger.debug('Initializing data lookups...');
         await initializeLookups();
       }
     };
@@ -1393,7 +655,7 @@ export default function SearchPage() {
         const config = await fetchZatPriceConfiguration();
         setZatConfig(config);
       } catch (error) {
-        console.warn('Failed to load ZAT config:', error);
+        logger.warn('Failed to load ZAT config:', error);
       }
     };
     loadZatConfig();
@@ -1403,133 +665,121 @@ export default function SearchPage() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const authenticated = await checkAuthStatus();
-        setIsLoggedIn(authenticated);
+        // Wait for auth hook to complete
+        if (authLoading) return;
 
-        if (authenticated) {
-          // Validate token and get user data
-          // CRITICAL: Use clearOnFailure: false to preserve session if Edge Function fails
-          const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
-          if (userData) {
-            const userId = getUserId();
-            setCurrentUser({
-              id: userId,
-              name: userData.fullName || userData.firstName || '',
-              email: userData.email || '',
-              userType: userData.userType || 'GUEST',
-              avatarUrl: userData.profilePhoto || null,
-              proposalCount: userData.proposalCount ?? 0
+        // GOLD STANDARD AUTH PATTERN - Use hook result
+        setIsLoggedIn(isAuthenticated);
+
+        if (isAuthenticated && authUserId) {
+          // Set auth state from hook
+          setCurrentUser(authenticatedUser);
+
+          // Fetch favorites, proposals count, and profile data from Supabase
+          // Uses junction table RPCs for favorites/proposals (Phase 5b migration)
+          // Parallel fetch: profile data + junction counts + favorites list
+          const [userResult, countsResult] = await Promise.all([
+            // Profile data + favorites for proposal form prefilling and heart icons
+            supabase
+              .from('user')
+              .select('"About Me / Bio", "need for Space", "special needs", "Favorited Listings"')
+              .eq('_id', authUserId)
+              .single(),
+            // Junction counts for proposals
+            supabase.rpc('get_user_junction_counts', { p_user_id: authUserId })
+          ]);
+
+          const userRecord = userResult.data;
+          const error = userResult.error;
+
+          // Handle favorites from user table JSONB field
+          const favorites = userRecord?.['Favorited Listings'] || [];
+          if (Array.isArray(favorites) && favorites.length > 0) {
+            // Filter to only valid Bubble listing IDs (pattern: digits + 'x' + digits)
+            const validFavorites = favorites.filter(id =>
+              typeof id === 'string' && /^\d+x\d+$/.test(id)
+            );
+
+            // Store all favorited IDs for heart icon state
+            setFavoritedListingIds(new Set(validFavorites));
+            // Set count to match - all favorites count regardless of Active status
+            setFavoritesCount(validFavorites.length);
+            logger.debug('[SearchPage] Favorites count from user table:', validFavorites.length);
+          } else {
+            setFavoritesCount(0);
+            setFavoritedListingIds(new Set());
+          }
+
+          // Handle proposals count from junction RPC
+          const junctionCounts = countsResult.data?.[0] || {};
+          const proposalCount = Number(junctionCounts.proposals_count) || 0;
+          logger.debug('[SearchPage] Proposals count from junction:', proposalCount);
+
+          if (!error && userRecord) {
+            // Update currentUser with actual proposal count
+            setCurrentUser(prev => ({
+              ...prev,
+              proposalCount: proposalCount
+            }));
+
+            // Set logged in user data for proposal form prefilling
+            setLoggedInUserData({
+              aboutMe: userRecord['About Me / Bio'] || '',
+              needForSpace: userRecord['need for Space'] || '',
+              specialNeeds: userRecord['special needs'] || '',
+              proposalCount: proposalCount
             });
 
-            // Fetch favorites, proposals count, and profile data from Supabase
-            // Uses junction table RPCs for favorites/proposals (Phase 5b migration)
-            if (userId) {
-              // Parallel fetch: profile data + junction counts + favorites list
-              const [userResult, countsResult] = await Promise.all([
-                // Profile data + favorites for proposal form prefilling and heart icons
-                supabase
-                  .from('user')
-                  .select('"About Me / Bio", "need for Space", "special needs", "Favorited Listings"')
-                  .eq('_id', userId)
-                  .single(),
-                // Junction counts for proposals
-                supabase.rpc('get_user_junction_counts', { p_user_id: userId })
-              ]);
+            // Fetch last proposal defaults for pre-population
+            const proposalDefaults = await fetchLastProposalDefaults(authUserId);
+            if (proposalDefaults) {
+              setLastProposalDefaults(proposalDefaults);
+              logger.debug('[SearchPage] Loaded last proposal defaults:', proposalDefaults);
+            }
 
-              const userRecord = userResult.data;
-              const error = userResult.error;
+            // Fetch user's proposals to check if any exist for specific listings
+            const userIsGuest = isGuest({ userType: authenticatedUser.userType });
+            if (userIsGuest && authUserId && proposalCount > 0) {
+              try {
+                const proposals = await fetchProposalsByGuest(authUserId);
+                logger.debug(`[SearchPage] Loaded ${proposals.length} proposals for user`);
 
-              // Handle favorites from user table JSONB field
-              const favorites = userRecord?.['Favorited Listings'] || [];
-              if (Array.isArray(favorites) && favorites.length > 0) {
-                // Filter to only valid Bubble listing IDs (pattern: digits + 'x' + digits)
-                const validFavorites = favorites.filter(id =>
-                  typeof id === 'string' && /^\d+x\d+$/.test(id)
-                );
-
-                // Store all favorited IDs for heart icon state
-                setFavoritedListingIds(new Set(validFavorites));
-                // Set count to match - all favorites count regardless of Active status
-                setFavoritesCount(validFavorites.length);
-                console.log('[SearchPage] Favorites count from user table:', validFavorites.length);
-              } else {
-                setFavoritesCount(0);
-                setFavoritedListingIds(new Set());
-              }
-
-              // Handle proposals count from junction RPC
-              const junctionCounts = countsResult.data?.[0] || {};
-              const proposalCount = Number(junctionCounts.proposals_count) || 0;
-              console.log('[SearchPage] Proposals count from junction:', proposalCount);
-
-              if (!error && userRecord) {
-
-                // Update currentUser with actual proposal count
-                setCurrentUser(prev => ({
-                  ...prev,
-                  proposalCount: proposalCount
-                }));
-
-                // Set logged in user data for proposal form prefilling
-                setLoggedInUserData({
-                  aboutMe: userRecord['About Me / Bio'] || '',
-                  needForSpace: userRecord['need for Space'] || '',
-                  specialNeeds: userRecord['special needs'] || '',
-                  proposalCount: proposalCount
+                // Create a map of listing ID to proposal (only include non-terminal proposals)
+                const proposalsMap = new Map();
+                proposals.forEach(proposal => {
+                  const listingId = proposal.Listing;
+                  if (listingId) {
+                    // If multiple proposals exist for same listing, keep the most recent one
+                    // (proposals are already sorted by Created Date descending)
+                    if (!proposalsMap.has(listingId)) {
+                      proposalsMap.set(listingId, proposal);
+                    }
+                  }
                 });
 
-                // Fetch last proposal defaults for pre-population
-                const proposalDefaults = await fetchLastProposalDefaults(userId);
-                if (proposalDefaults) {
-                  setLastProposalDefaults(proposalDefaults);
-                  console.log('[SearchPage] Loaded last proposal defaults:', proposalDefaults);
-                }
-
-                // Fetch user's proposals to check if any exist for specific listings
-                const userIsGuest = isGuest({ userType: userData.userType });
-                if (userIsGuest && userId && proposalCount > 0) {
-                  try {
-                    const proposals = await fetchProposalsByGuest(userId);
-                    console.log(`[SearchPage] Loaded ${proposals.length} proposals for user`);
-
-                    // Create a map of listing ID to proposal (only include non-terminal proposals)
-                    const proposalsMap = new Map();
-                    proposals.forEach(proposal => {
-                      const listingId = proposal.Listing;
-                      if (listingId) {
-                        // If multiple proposals exist for same listing, keep the most recent one
-                        // (proposals are already sorted by Created Date descending)
-                        if (!proposalsMap.has(listingId)) {
-                          proposalsMap.set(listingId, proposal);
-                        }
-                      }
-                    });
-
-                    setProposalsByListingId(proposalsMap);
-                    console.log(`[SearchPage] Mapped ${proposalsMap.size} listings with proposals`);
-                  } catch (proposalErr) {
-                    console.warn('[SearchPage] Failed to fetch proposals (non-critical):', proposalErr);
-                    // Don't fail the page if proposals can't be loaded - just show Create Proposal for all
-                  }
-                }
+                setProposalsByListingId(proposalsMap);
+                logger.debug(`[SearchPage] Mapped ${proposalsMap.size} listings with proposals`);
+              } catch (proposalErr) {
+                logger.warn('[SearchPage] Failed to fetch proposals (non-critical):', proposalErr);
+                // Don't fail the page if proposals can't be loaded - just show Create Proposal for all
               }
             }
           }
         }
       } catch (error) {
-        console.error('[SearchPage] Auth check error:', error);
+        logger.error('[SearchPage] Auth check error:', error);
         setIsLoggedIn(false);
         setCurrentUser(null);
       }
     };
 
     checkAuth();
-  }, []);
+  }, [authLoading, isAuthenticated, authUserId, authenticatedUser]);
 
   // Fetch ALL active listings for green markers (NO FILTERS - runs once on mount)
   useEffect(() => {
     const fetchAllActiveListings = async () => {
-      console.log('🌍 Fetching ALL active listings for map background (green pins)...');
+      logger.debug('🌍 Fetching ALL active listings for map background (green pins)...');
 
       try {
         const { data, error } = await supabase
@@ -1541,7 +791,7 @@ export default function SearchPage() {
 
         if (error) throw error;
 
-        console.log('📊 fetchAllActiveListings: Supabase returned', data.length, 'active listings');
+        logger.debug('📊 fetchAllActiveListings: Supabase returned', data.length, 'active listings');
 
         // Collect legacy photo IDs (strings) for batch fetch
         // New format has embedded objects with URLs, no fetch needed
@@ -1611,7 +861,7 @@ export default function SearchPage() {
         const listingsWithCoordinates = transformedListings.filter(listing => {
           const hasValidCoords = listing.coordinates && listing.coordinates.lat && listing.coordinates.lng;
           if (!hasValidCoords) {
-            console.warn('⚠️ fetchAllActiveListings: Excluding listing without coordinates:', {
+            logger.warn('⚠️ fetchAllActiveListings: Excluding listing without coordinates:', {
               id: listing.id,
               title: listing.title
             });
@@ -1619,10 +869,10 @@ export default function SearchPage() {
           return hasValidCoords;
         });
 
-        console.log(`✅ Fetched ${listingsWithCoordinates.length} active listings with coordinates for green markers`);
+        logger.debug(`✅ Fetched ${listingsWithCoordinates.length} active listings with coordinates for green markers`);
         setAllActiveListings(listingsWithCoordinates);
       } catch (error) {
-        console.error('❌ Failed to fetch all active listings:', error);
+        logger.error('❌ Failed to fetch all active listings:', error);
         // Don't set error state - this shouldn't block the page, filtered results will still work
       }
     };
@@ -1653,7 +903,7 @@ export default function SearchPage() {
   // Watch for browser back/forward navigation
   useEffect(() => {
     const cleanup = watchUrlChanges((newFilters) => {
-      console.log('URL changed via browser navigation, updating filters:', newFilters);
+      logger.debug('URL changed via browser navigation, updating filters:', newFilters);
 
       // Update all filter states from URL
       setSelectedBorough(newFilters.selectedBorough);
@@ -1670,7 +920,7 @@ export default function SearchPage() {
   useEffect(() => {
     const loadBoroughs = async () => {
       try {
-        console.log('[DEBUG] Loading boroughs from zat_geo_borough_toplevel...');
+        logger.debug('[DEBUG] Loading boroughs from zat_geo_borough_toplevel...');
         const { data, error } = await supabase
           .schema('reference_table')
           .from('zat_geo_borough_toplevel')
@@ -1679,7 +929,7 @@ export default function SearchPage() {
 
         if (error) throw error;
 
-        console.log('[DEBUG] Raw borough data from Supabase:', data);
+        logger.debug('[DEBUG] Raw borough data from Supabase:', data);
 
         const boroughList = data
           .filter(b => b['Display Borough'] && b['Display Borough'].trim())
@@ -1691,7 +941,7 @@ export default function SearchPage() {
               .replace(/\s+/g, '-')
           }));
 
-        console.log('[DEBUG] Processed borough list:', boroughList.map(b => ({
+        logger.debug('[DEBUG] Processed borough list:', boroughList.map(b => ({
           id: b.id,
           name: b.name,
           value: b.value
@@ -1709,7 +959,7 @@ export default function SearchPage() {
           // Validate borough from URL exists in list
           const boroughExists = boroughList.find(b => b.value === selectedBorough);
           if (!boroughExists) {
-            console.warn(`Borough "${selectedBorough}" from URL not found, defaulting to Manhattan`);
+            logger.warn(`Borough "${selectedBorough}" from URL not found, defaulting to Manhattan`);
             const manhattan = boroughList.find(b => b.value === 'manhattan');
             if (manhattan) {
               setSelectedBorough(manhattan.value);
@@ -1717,7 +967,7 @@ export default function SearchPage() {
           }
         }
       } catch (err) {
-        console.error('Failed to load boroughs:', err);
+        logger.error('Failed to load boroughs:', err);
       }
     };
 
@@ -1727,16 +977,16 @@ export default function SearchPage() {
   // Load neighborhoods when borough changes
   useEffect(() => {
     const loadNeighborhoods = async () => {
-      console.log('[DEBUG] loadNeighborhoods called - selectedBorough:', selectedBorough, 'boroughs.length:', boroughs.length);
+      logger.debug('[DEBUG] loadNeighborhoods called - selectedBorough:', selectedBorough, 'boroughs.length:', boroughs.length);
 
       if (!selectedBorough || boroughs.length === 0) {
-        console.log('[DEBUG] Skipping neighborhood load - missing selectedBorough or boroughs');
+        logger.debug('[DEBUG] Skipping neighborhood load - missing selectedBorough or boroughs');
         return;
       }
 
       // When "all" boroughs is selected, clear neighborhoods and load all
       if (selectedBorough === 'all') {
-        console.log('[DEBUG] All boroughs selected - loading all neighborhoods');
+        logger.debug('[DEBUG] All boroughs selected - loading all neighborhoods');
         try {
           const { data, error } = await supabase
             .schema('reference_table')
@@ -1754,21 +1004,21 @@ export default function SearchPage() {
 
           setNeighborhoods(formattedNeighborhoods);
           setSelectedNeighborhoods([]); // Clear neighborhood selection when switching to all boroughs
-          console.log('[DEBUG] Loaded all neighborhoods:', formattedNeighborhoods.length);
+          logger.debug('[DEBUG] Loaded all neighborhoods:', formattedNeighborhoods.length);
         } catch (error) {
-          console.error('Failed to load all neighborhoods:', error);
+          logger.error('Failed to load all neighborhoods:', error);
         }
         return;
       }
 
       const borough = boroughs.find(b => b.value === selectedBorough);
       if (!borough) {
-        console.warn('[DEBUG] Borough not found for value:', selectedBorough);
-        console.log('[DEBUG] Available borough values:', boroughs.map(b => b.value));
+        logger.warn('[DEBUG] Borough not found for value:', selectedBorough);
+        logger.debug('[DEBUG] Available borough values:', boroughs.map(b => b.value));
         return;
       }
 
-      console.log('[DEBUG] Loading neighborhoods for borough:', {
+      logger.debug('[DEBUG] Loading neighborhoods for borough:', {
         boroughName: borough.name,
         boroughId: borough.id,
         boroughIdType: typeof borough.id,
@@ -1783,7 +1033,7 @@ export default function SearchPage() {
           .select('_id, Display, "Geo-Borough"')
           .limit(5);
 
-        console.log('[DEBUG] Sample neighborhoods (first 5):', allNeighborhoods?.map(n => ({
+        logger.debug('[DEBUG] Sample neighborhoods (first 5):', allNeighborhoods?.map(n => ({
           id: n._id,
           name: n.Display,
           geoBoroughValue: n['Geo-Borough'],
@@ -1800,16 +1050,16 @@ export default function SearchPage() {
 
         if (error) throw error;
 
-        console.log(`[DEBUG] Found ${data.length} neighborhoods for ${borough.name}:`,
+        logger.debug(`[DEBUG] Found ${data.length} neighborhoods for ${borough.name}:`,
           data.slice(0, 5).map(n => ({ id: n._id, name: n.Display, boroughRef: n['Geo-Borough'] }))
         );
 
         // Debug: Check if borough.id matches any Geo-Borough values
         if (data.length === 0 && allNeighborhoods && allNeighborhoods.length > 0) {
-          console.warn('[DEBUG] No neighborhoods found! Comparing IDs:');
-          console.log('[DEBUG] Looking for borough.id:', borough.id);
-          console.log('[DEBUG] Sample Geo-Borough values:', allNeighborhoods.map(n => n['Geo-Borough']));
-          console.log('[DEBUG] ID match check:', allNeighborhoods.some(n => n['Geo-Borough'] === borough.id));
+          logger.warn('[DEBUG] No neighborhoods found! Comparing IDs:');
+          logger.debug('[DEBUG] Looking for borough.id:', borough.id);
+          logger.debug('[DEBUG] Sample Geo-Borough values:', allNeighborhoods.map(n => n['Geo-Borough']));
+          logger.debug('[DEBUG] ID match check:', allNeighborhoods.some(n => n['Geo-Borough'] === borough.id));
         }
 
         const neighborhoodList = data
@@ -1823,7 +1073,7 @@ export default function SearchPage() {
         setNeighborhoods(neighborhoodList);
         setSelectedNeighborhoods([]); // Clear selections when borough changes
       } catch (err) {
-        console.error('Failed to load neighborhoods:', err);
+        logger.error('Failed to load neighborhoods:', err);
       }
     };
 
@@ -1840,14 +1090,14 @@ export default function SearchPage() {
     // Skip if same parameters are already being fetched or were just fetched
     if (fetchInProgressRef.current) {
       if (import.meta.env.DEV) {
-        console.log('⏭️ Skipping duplicate fetch - already in progress');
+        logger.debug('⏭️ Skipping duplicate fetch - already in progress');
       }
       return;
     }
 
     if (lastFetchParamsRef.current === fetchParams) {
       if (import.meta.env.DEV) {
-        console.log('⏭️ Skipping duplicate fetch - same parameters as last fetch');
+        logger.debug('⏭️ Skipping duplicate fetch - same parameters as last fetch');
       }
       return;
     }
@@ -1856,7 +1106,7 @@ export default function SearchPage() {
     lastFetchParamsRef.current = fetchParams;
 
     if (import.meta.env.DEV) {
-      console.log('🔍 Starting fetch:', fetchParams);
+      logger.debug('🔍 Starting fetch:', fetchParams);
     }
 
     setIsLoading(true);
@@ -1915,8 +1165,8 @@ export default function SearchPage() {
 
       if (error) throw error;
 
-      console.log('📊 SearchPage: Supabase query returned', data.length, 'listings');
-      console.log('📍 SearchPage: First 3 raw listings from DB:', data.slice(0, 3).map(l => ({
+      logger.debug('📊 SearchPage: Supabase query returned', data.length, 'listings');
+      logger.debug('📍 SearchPage: First 3 raw listings from DB:', data.slice(0, 3).map(l => ({
         id: l._id,
         name: l.Name,
         locationAddress: l['Location - Address'],
@@ -1929,7 +1179,7 @@ export default function SearchPage() {
       // Check coordinate coverage
       const listingsWithCoords = data.filter(l => l['Location - Address']?.lat && l['Location - Address']?.lng);
       const listingsWithoutCoords = data.filter(l => !l['Location - Address']?.lat || !l['Location - Address']?.lng);
-      console.log('📍 SearchPage: Coordinate coverage:', {
+      logger.debug('📍 SearchPage: Coordinate coverage:', {
         total: data.length,
         withCoordinates: listingsWithCoords.length,
         withoutCoordinates: listingsWithoutCoords.length,
@@ -1937,7 +1187,7 @@ export default function SearchPage() {
       });
 
       if (listingsWithoutCoords.length > 0) {
-        console.error('❌ SearchPage: Listings WITHOUT coordinates:', listingsWithoutCoords.map(l => ({
+        logger.error('❌ SearchPage: Listings WITHOUT coordinates:', listingsWithoutCoords.map(l => ({
           id: l._id,
           name: l.Name,
           locationAddress: l['Location - Address'],
@@ -2006,12 +1256,12 @@ export default function SearchPage() {
       });
 
       // Transform and filter data
-      console.log('🔄 SearchPage: Starting transformation of', data.length, 'listings');
+      logger.debug('🔄 SearchPage: Starting transformation of', data.length, 'listings');
       const transformedListings = data.map(listing =>
         transformListing(listing, resolvedPhotos[listing._id], resolvedHosts[listing._id])
       );
-      console.log('✅ SearchPage: Transformation complete. Transformed', transformedListings.length, 'listings');
-      console.log('📍 SearchPage: First 3 transformed listings:', transformedListings.slice(0, 3).map(l => ({
+      logger.debug('✅ SearchPage: Transformation complete. Transformed', transformedListings.length, 'listings');
+      logger.debug('📍 SearchPage: First 3 transformed listings:', transformedListings.slice(0, 3).map(l => ({
         id: l.id,
         title: l.title,
         coordinates: l.coordinates,
@@ -2022,7 +1272,7 @@ export default function SearchPage() {
       const listingsWithCoordinates = transformedListings.filter(listing => {
         const hasValidCoords = listing.coordinates && listing.coordinates.lat && listing.coordinates.lng;
         if (!hasValidCoords) {
-          console.warn('⚠️ SearchPage: Excluding listing without valid coordinates:', {
+          logger.warn('⚠️ SearchPage: Excluding listing without valid coordinates:', {
             id: listing.id,
             title: listing.title,
             coordinates: listing.coordinates
@@ -2031,7 +1281,7 @@ export default function SearchPage() {
         return hasValidCoords;
       });
 
-      console.log('📍 SearchPage: Coordinate filter results:', {
+      logger.debug('📍 SearchPage: Coordinate filter results:', {
         before: transformedListings.length,
         after: listingsWithCoordinates.length,
         excluded: transformedListings.length - listingsWithCoordinates.length
@@ -2041,7 +1291,7 @@ export default function SearchPage() {
       const listingsWithPhotos = listingsWithCoordinates.filter(listing => {
         const hasPhotos = listing.images && listing.images.length > 0;
         if (!hasPhotos) {
-          console.warn('⚠️ SearchPage: Excluding listing without photos:', {
+          logger.warn('⚠️ SearchPage: Excluding listing without photos:', {
             id: listing.id,
             title: listing.title,
             imageCount: listing.images?.length || 0
@@ -2050,7 +1300,7 @@ export default function SearchPage() {
         return hasPhotos;
       });
 
-      console.log('📸 SearchPage: Photo filter results:', {
+      logger.debug('📸 SearchPage: Photo filter results:', {
         before: listingsWithCoordinates.length,
         after: listingsWithPhotos.length,
         excluded: listingsWithCoordinates.length - listingsWithPhotos.length
@@ -2059,7 +1309,7 @@ export default function SearchPage() {
       // No day filtering applied - show all listings with valid coordinates and photos
       const filteredListings = listingsWithPhotos;
 
-      console.log('📊 SearchPage: Final filtered listings being set to state:', {
+      logger.debug('📊 SearchPage: Final filtered listings being set to state:', {
         count: filteredListings.length,
         firstThree: filteredListings.slice(0, 3).map(l => ({
           id: l.id,
@@ -2072,10 +1322,10 @@ export default function SearchPage() {
       setAllListings(filteredListings);
       setLoadedCount(0);
 
-      console.log('✅ SearchPage: State updated with', filteredListings.length, 'filtered listings');
+      logger.debug('✅ SearchPage: State updated with', filteredListings.length, 'filtered listings');
     } catch (err) {
       // Log technical details for debugging
-      console.error('Failed to fetch listings:', {
+      logger.error('Failed to fetch listings:', {
         message: err.message,
         stack: err.stack,
         timestamp: new Date().toISOString(),
@@ -2114,7 +1364,7 @@ export default function SearchPage() {
 
       if (error) throw error;
 
-      console.log('📊 SearchPage: Fallback query returned', data.length, 'listings');
+      logger.debug('📊 SearchPage: Fallback query returned', data.length, 'listings');
 
       // Collect legacy photo IDs (strings) for batch fetch
       // New format has embedded objects with URLs, no fetch needed
@@ -2190,12 +1440,12 @@ export default function SearchPage() {
         return listing.images && listing.images.length > 0;
       });
 
-      console.log('📊 SearchPage: Fallback listings ready:', listingsWithPhotos.length);
+      logger.debug('📊 SearchPage: Fallback listings ready:', listingsWithPhotos.length);
 
       setFallbackListings(listingsWithPhotos);
       setFallbackLoadedCount(0);
     } catch (err) {
-      console.error('Failed to fetch fallback listings:', err);
+      logger.error('Failed to fetch fallback listings:', err);
       // Don't set error state - this is a fallback, so we just show nothing
       setFallbackListings([]);
     } finally {
@@ -2228,7 +1478,7 @@ export default function SearchPage() {
       try {
         locationSlightlyDifferent = JSON.parse(locationSlightlyDifferent);
       } catch (error) {
-        console.error('❌ SearchPage: Failed to parse Location - slightly different address:', {
+        logger.error('❌ SearchPage: Failed to parse Location - slightly different address:', {
           id: dbListing._id,
           name: dbListing.Name,
           rawValue: locationSlightlyDifferent,
@@ -2242,7 +1492,7 @@ export default function SearchPage() {
       try {
         locationAddress = JSON.parse(locationAddress);
       } catch (error) {
-        console.error('❌ SearchPage: Failed to parse Location - Address:', {
+        logger.error('❌ SearchPage: Failed to parse Location - Address:', {
           id: dbListing._id,
           name: dbListing.Name,
           rawValue: locationAddress,
@@ -2270,7 +1520,7 @@ export default function SearchPage() {
       coordinateSource = 'main-address';
     }
 
-    console.log('🔄 SearchPage: Transforming listing:', {
+    logger.debug('🔄 SearchPage: Transforming listing:', {
       id: dbListing._id,
       name: dbListing.Name,
       hasSlightlyDifferentAddress: !!locationSlightlyDifferent,
@@ -2281,14 +1531,14 @@ export default function SearchPage() {
     });
 
     if (!coordinates) {
-      console.error('❌ SearchPage: Missing coordinates for listing - will be filtered out:', {
+      logger.error('❌ SearchPage: Missing coordinates for listing - will be filtered out:', {
         id: dbListing._id,
         name: dbListing.Name,
         locationSlightlyDifferent: locationSlightlyDifferent,
         locationAddress: locationAddress
       });
     } else {
-      console.log('✅ SearchPage: Valid coordinates found from', coordinateSource, ':', {
+      logger.debug('✅ SearchPage: Valid coordinates found from', coordinateSource, ':', {
         id: dbListing._id,
         name: dbListing.Name,
         lat: coordinates.lat,
@@ -2296,7 +1546,7 @@ export default function SearchPage() {
       });
     }
 
-    console.log('📍 SearchPage: Final coordinates for listing:', {
+    logger.debug('📍 SearchPage: Final coordinates for listing:', {
       id: dbListing._id,
       coordinates,
       hasValidCoordinates: !!coordinates
@@ -2430,6 +1680,20 @@ export default function SearchPage() {
     setNeighborhoodSearch('');
   };
 
+  // Card interaction handlers
+  const handleCardLeave = useCallback(() => {
+    // Delay stopPulse to allow hovering to map without losing pulse
+    if (pulseTimeoutRef.current) {
+      clearTimeout(pulseTimeoutRef.current);
+    }
+    pulseTimeoutRef.current = setTimeout(() => {
+      if (mapRef.current) {
+        mapRef.current.stopPulse();
+      }
+      pulseTimeoutRef.current = null;
+    }, 150); // Short delay to allow transition to map
+  }, []);
+
   // Modal handler functions
   const handleOpenContactModal = (listing) => {
     setSelectedListing(listing);
@@ -2465,11 +1729,11 @@ export default function SearchPage() {
   // Ensures the listing is loaded (lazy-loading) before scrolling
   const scrollToListingCard = (listing) => {
     const listingId = listing.id || listing._id;
-    console.log('[scrollToListingCard] Looking for listing:', listingId);
+    logger.debug('[scrollToListingCard] Looking for listing:', listingId);
 
     // First check if the listing card already exists in the DOM
     let listingCard = document.querySelector(`[data-listing-id="${listingId}"]`);
-    console.log('[scrollToListingCard] Initial card search result:', listingCard);
+    logger.debug('[scrollToListingCard] Initial card search result:', listingCard);
 
     if (listingCard) {
       // Card exists, scroll to it
@@ -2487,20 +1751,20 @@ export default function SearchPage() {
       // Card not in DOM - might not be lazy-loaded yet
       // Find the listing's position in allListings and load up to that point
       const listingIndex = allListings.findIndex(l => (l.id || l._id) === listingId);
-      console.log('[scrollToListingCard] Listing index in allListings:', listingIndex);
+      logger.debug('[scrollToListingCard] Listing index in allListings:', listingIndex);
 
       if (listingIndex >= 0) {
         // Load listings up to and including the clicked one
         const needToLoad = listingIndex + 1;
         if (needToLoad > loadedCount) {
-          console.log('[scrollToListingCard] Loading more listings to show card. Need:', needToLoad, 'Currently loaded:', loadedCount);
+          logger.debug('[scrollToListingCard] Loading more listings to show card. Need:', needToLoad, 'Currently loaded:', loadedCount);
           setDisplayedListings(allListings.slice(0, needToLoad));
           setLoadedCount(needToLoad);
 
           // Wait for React to render the new cards, then scroll
           setTimeout(() => {
             const newListingCard = document.querySelector(`[data-listing-id="${listingId}"]`);
-            console.log('[scrollToListingCard] After load, found card:', newListingCard);
+            logger.debug('[scrollToListingCard] After load, found card:', newListingCard);
 
             if (newListingCard) {
               newListingCard.scrollIntoView({
@@ -2516,7 +1780,7 @@ export default function SearchPage() {
           }, 100); // Small delay to allow React to render
         }
       } else {
-        console.warn('[scrollToListingCard] Listing not found in allListings:', listingId);
+        logger.warn('[scrollToListingCard] Listing not found in allListings:', listingId);
       }
     }
   };
@@ -2536,7 +1800,7 @@ export default function SearchPage() {
           .filter(d => d >= 0 && d <= 6)  // Valid 0-based day range
           .map(dayIndex => createDay(dayIndex, true));
       } catch (e) {
-        console.warn('Failed to parse days from URL:', e);
+        logger.warn('Failed to parse days from URL:', e);
       }
     }
 
@@ -2560,7 +1824,7 @@ export default function SearchPage() {
         previousMoveInDate: lastProposalDefaults.moveInDate,
         minDate: minMoveInDate
       }) || minMoveInDate;
-      console.log('[SearchPage] Pre-filling move-in from last proposal:', lastProposalDefaults.moveInDate, '->', smartMoveInDate);
+      logger.debug('[SearchPage] Pre-filling move-in from last proposal:', lastProposalDefaults.moveInDate, '->', smartMoveInDate);
     } else if (initialDays.length > 0) {
       // Fallback: calculate based on selected days
       try {
@@ -2570,7 +1834,7 @@ export default function SearchPage() {
           minDate: minMoveInDate
         });
       } catch (err) {
-        console.error('Error calculating smart move-in date:', err);
+        logger.error('Error calculating smart move-in date:', err);
         smartMoveInDate = minMoveInDate;
       }
     }
@@ -2602,9 +1866,9 @@ export default function SearchPage() {
         throw new Error('User ID not found. Please log in again.');
       }
 
-      console.log('[SearchPage] Submitting proposal to Edge Function...');
-      console.log('   Guest ID:', guestId);
-      console.log('   Listing ID:', selectedListingForProposal?.id || selectedListingForProposal?._id);
+      logger.debug('[SearchPage] Submitting proposal to Edge Function...');
+      logger.debug('   Guest ID:', guestId);
+      logger.debug('   Listing ID:', selectedListingForProposal?.id || selectedListingForProposal?._id);
 
       // Days are already in JS format (0-6) - database now uses 0-indexed natively
       // proposalData.daysSelectedObjects contains Day objects with dayOfWeek property
@@ -2687,7 +1951,7 @@ export default function SearchPage() {
         fourWeekCompensation: proposalData.pricePerFourWeeks
       };
 
-      console.log('[SearchPage] Edge Function payload:', edgeFunctionPayload);
+      logger.debug('[SearchPage] Edge Function payload:', edgeFunctionPayload);
 
       // Call the proposal Edge Function (Supabase-native)
       const { data, error } = await supabase.functions.invoke('proposal', {
@@ -2698,17 +1962,17 @@ export default function SearchPage() {
       });
 
       if (error) {
-        console.error('[SearchPage] Edge Function error:', error);
+        logger.error('[SearchPage] Edge Function error:', error);
         throw new Error(error.message || 'Failed to submit proposal');
       }
 
       if (!data?.success) {
-        console.error('[SearchPage] Proposal submission failed:', data?.error);
+        logger.error('[SearchPage] Proposal submission failed:', data?.error);
         throw new Error(data?.error || 'Failed to submit proposal');
       }
 
-      console.log('[SearchPage] Proposal submitted successfully:', data);
-      console.log('   Proposal ID:', data.data?.proposalId);
+      logger.debug('[SearchPage] Proposal submitted successfully:', data);
+      logger.debug('   Proposal ID:', data.data?.proposalId);
 
       // Clear the localStorage draft on successful submission
       clearProposalDraft(proposalData.listingId);
@@ -2730,14 +1994,14 @@ export default function SearchPage() {
           setProposalsByListingId(prev => {
             const updated = new Map(prev);
             updated.set(listingId, { _id: newProposalId });
-            console.log(`[SearchPage] Added proposal ${newProposalId} to listing ${listingId}`);
+            logger.debug(`[SearchPage] Added proposal ${newProposalId} to listing ${listingId}`);
             return updated;
           });
         }
       }
 
     } catch (error) {
-      console.error('[SearchPage] Error submitting proposal:', error);
+      logger.error('[SearchPage] Error submitting proposal:', error);
       showToast(error.message || 'Failed to submit proposal. Please try again.', 'error');
       // Keep the modal open on error so user can retry
     } finally {
@@ -2747,13 +2011,13 @@ export default function SearchPage() {
 
   // Handle proposal submission - checks auth first
   const handleCreateProposalSubmit = async (proposalData) => {
-    console.log('[SearchPage] Proposal submission initiated:', proposalData);
+    logger.debug('[SearchPage] Proposal submission initiated:', proposalData);
 
     // Check if user is logged in
     const isAuthenticated = await checkAuthStatus();
 
     if (!isAuthenticated) {
-      console.log('[SearchPage] User not logged in, showing auth modal');
+      logger.debug('[SearchPage] User not logged in, showing auth modal');
       // Store the proposal data for later submission
       setPendingProposalData(proposalData);
       // Close the proposal modal
@@ -2764,13 +2028,13 @@ export default function SearchPage() {
     }
 
     // User is logged in, proceed with submission
-    console.log('[SearchPage] User is logged in, submitting proposal');
+    logger.debug('[SearchPage] User is logged in, submitting proposal');
     await submitProposal(proposalData);
   };
 
   // Handle successful authentication for proposal submission
   const handleAuthSuccessForProposal = async (authResult) => {
-    console.log('[SearchPage] Auth success for proposal:', authResult);
+    logger.debug('[SearchPage] Auth success for proposal:', authResult);
 
     // Close the auth modal
     setShowAuthModalForProposal(false);
@@ -2792,15 +2056,15 @@ export default function SearchPage() {
           userType: userData.userType || 'GUEST',
           avatarUrl: userData.profilePhoto || null
         });
-        console.log('[SearchPage] User data updated after auth:', userData.firstName);
+        logger.debug('[SearchPage] User data updated after auth:', userData.firstName);
       }
     } catch (err) {
-      console.error('[SearchPage] Error fetching user data after auth:', err);
+      logger.error('[SearchPage] Error fetching user data after auth:', err);
     }
 
     // If there's a pending proposal, submit it now
     if (pendingProposalData) {
-      console.log('[SearchPage] Submitting pending proposal after auth');
+      logger.debug('[SearchPage] Submitting pending proposal after auth');
       // Small delay to ensure auth state is fully updated
       setTimeout(async () => {
         await submitProposal(pendingProposalData);
@@ -2840,7 +2104,7 @@ export default function SearchPage() {
 
   // Update favorites count and show toast (API call handled by FavoriteButton component)
   const handleToggleFavorite = (listingId, listingTitle, newState) => {
-    console.log('[SearchPage] handleToggleFavorite called:', {
+    logger.debug('[SearchPage] handleToggleFavorite called:', {
       listingId,
       listingTitle,
       newState,
@@ -2881,7 +2145,7 @@ export default function SearchPage() {
       // Optionally redirect to home or refresh the page
       window.location.reload();
     } catch (error) {
-      console.error('[SearchPage] Logout error:', error);
+      logger.error('[SearchPage] Logout error:', error);
     }
   };
 
@@ -2894,14 +2158,14 @@ export default function SearchPage() {
 
     const selectorProps = {
       onSelectionChange: (days) => {
-        console.log('Schedule selector changed:', days);
+        logger.debug('Schedule selector changed:', days);
         // Calculate nights from days (nights = days - 1)
         const nightsCount = countSelectedNights(days);
-        console.log(`[SearchPage] Days selected: ${days.length}, Nights: ${nightsCount}`);
+        logger.debug(`[SearchPage] Days selected: ${days.length}, Nights: ${nightsCount}`);
         // Update nights count for dynamic pricing (0 nights is valid - shows starting price)
         setSelectedNightsCount(nightsCount);
       },
-      onError: (error) => console.error('AuthAwareSearchScheduleSelector error:', error),
+      onError: (error) => logger.error('AuthAwareSearchScheduleSelector error:', error),
       weekPattern: weekPattern
     };
 
@@ -2929,6 +2193,14 @@ export default function SearchPage() {
     const userIsGuest = isGuest({ userType: currentUser.userType });
     const hasExistingProposals = (currentUser.proposalCount ?? 0) > 0;
     return userIsGuest && hasExistingProposals;
+  }, [isLoggedIn, currentUser]);
+
+  // Determine if "Message" button should be visible on listing cards
+  // Hidden for logged-in host users (hosts shouldn't message other hosts)
+  const showMessageButton = useMemo(() => {
+    if (!isLoggedIn || !currentUser) return true; // Show for guests (not logged in)
+    const userIsHost = isHost({ userType: currentUser.userType });
+    return !userIsHost;
   }, [isLoggedIn, currentUser]);
 
   // Render
@@ -3390,6 +2662,7 @@ export default function SearchPage() {
                       onOpenContactModal={handleOpenContactModal}
                       onOpenInfoModal={handleOpenInfoModal}
                       mapRef={mapRef}
+                      onCardLeave={handleCardLeave}
                       isLoggedIn={isLoggedIn}
                       userId={currentUser?.id}
                       favoritedListingIds={favoritedListingIds}
@@ -3402,6 +2675,7 @@ export default function SearchPage() {
                       onOpenCreateProposalModal={handleOpenCreateProposalModal}
                       proposalsByListingId={proposalsByListingId}
                       selectedNightsCount={selectedNightsCount}
+                      showMessageButton={showMessageButton}
                     />
                   </div>
                 )}
@@ -3417,6 +2691,7 @@ export default function SearchPage() {
                 onOpenContactModal={handleOpenContactModal}
                 onOpenInfoModal={handleOpenInfoModal}
                 mapRef={mapRef}
+                onCardLeave={handleCardLeave}
                 isLoggedIn={isLoggedIn}
                 userId={currentUser?.id}
                 favoritedListingIds={favoritedListingIds}
@@ -3429,6 +2704,7 @@ export default function SearchPage() {
                 onOpenCreateProposalModal={handleOpenCreateProposalModal}
                 proposalsByListingId={proposalsByListingId}
                 selectedNightsCount={selectedNightsCount}
+                showMessageButton={showMessageButton}
               />
             )}
           </div>
@@ -3544,11 +2820,11 @@ export default function SearchPage() {
             selectedBorough={selectedBorough}
             selectedNightsCount={selectedNightsCount}
             onMarkerClick={(listing) => {
-              console.log('Marker clicked:', listing.title);
+              logger.debug('Marker clicked:', listing.title);
               scrollToListingCard(listing);
             }}
             onMessageClick={(listing) => {
-              console.log('[SearchPage] Map card message clicked for:', listing?.id);
+              logger.debug('[SearchPage] Map card message clicked for:', listing?.id);
               handleOpenContactModal(listing);
             }}
             onAIResearchClick={handleOpenAIResearchModal}
@@ -3560,6 +2836,7 @@ export default function SearchPage() {
               setAuthModalView('signup');
               setIsAuthModalOpen(true);
             }}
+            showMessageButton={showMessageButton}
           />
         </section>
       </main>
@@ -3594,7 +2871,7 @@ export default function SearchPage() {
         onClose={() => setIsAuthModalOpen(false)}
         initialView={authModalView}
         onAuthSuccess={() => {
-          console.log('Auth successful from SearchPage');
+          logger.debug('Auth successful from SearchPage');
         }}
       />
       {isCreateProposalModalOpen && selectedListingForProposal && (
@@ -3671,13 +2948,13 @@ export default function SearchPage() {
               selectedBorough={selectedBorough}
               selectedNightsCount={selectedNightsCount}
               onMarkerClick={(listing) => {
-                console.log('Marker clicked:', listing.title);
+                logger.debug('Marker clicked:', listing.title);
                 // Close mobile map and scroll to listing
                 setIsMobileMapVisible(false);
                 setTimeout(() => scrollToListingCard(listing), 300);
               }}
               onMessageClick={(listing) => {
-                console.log('[SearchPage] Mobile map card message clicked for:', listing?.id);
+                logger.debug('[SearchPage] Mobile map card message clicked for:', listing?.id);
                 handleOpenContactModal(listing);
               }}
               onAIResearchClick={handleOpenAIResearchModal}
@@ -3689,6 +2966,7 @@ export default function SearchPage() {
                 setAuthModalView('signup');
                 setIsAuthModalOpen(true);
               }}
+              showMessageButton={showMessageButton}
             />
           </div>
         </div>

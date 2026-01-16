@@ -6,6 +6,7 @@ import { SEARCH_URL, VIEW_LISTING_URL } from '../../lib/constants.js';
 import { supabase } from '../../lib/supabase.js';
 import { fetchPhotoUrls, parseJsonArray } from '../../lib/supabaseUtils.js';
 import { getNeighborhoodName, getBoroughName, initializeLookups } from '../../lib/dataLookups.js';
+import { toast } from '../../lib/toastService.js';
 
 export default function WhySplitLeasePage() {
   // Dynamic text rotation state
@@ -213,7 +214,7 @@ export default function WhySplitLeasePage() {
     const currentSelection = selectedDaysRef.current;
 
     if (currentSelection.length === 0) {
-      alert('Please select at least one night per week');
+      toast.warning('Please select at least one night per week');
       return;
     }
     // Convert 0-based indices to 1-based for URL (0→1, 1→2, etc.)

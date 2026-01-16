@@ -12,14 +12,68 @@ import os
 import json
 import time
 import re
+import requests
 from pathlib import Path
 from typing import Dict, Any, Optional
 from .agent import prompt_claude_code
 from .data_types import AgentPromptRequest
+from .mcp_config import get_session_config, get_url_for_session
 
 
-LIVE_BASE_URL = "https://split.lease"
-DEV_BASE_URL = "http://localhost"
+def verify_environment_accessibility(
+    live_url: str,
+    dev_url: str,
+    timeout: int = 5
+) -> Dict[str, Any]:
+    """
+    Verify both LIVE and DEV environments are accessible before visual comparison.
+
+    Args:
+        live_url: Full LIVE URL to check
+        dev_url: Full DEV URL to check
+        timeout: Request timeout in seconds
+
+    Returns:
+        Dict with accessibility status for both environments
+    """
+    results = {
+        "live": {"accessible": False, "status_code": None, "error": None},
+        "dev": {"accessible": False, "status_code": None, "error": None},
+        "can_proceed": False
+    }
+
+    # Check LIVE
+    try:
+        resp = requests.head(live_url, timeout=timeout, allow_redirects=False)
+        results["live"]["status_code"] = resp.status_code
+        # 200, 301, 302 are acceptable (redirects may be auth-related)
+        results["live"]["accessible"] = resp.status_code < 500
+    except requests.exceptions.ConnectionError as e:
+        results["live"]["error"] = f"Connection refused: {str(e)}"
+    except requests.exceptions.Timeout:
+        results["live"]["error"] = f"Timeout after {timeout}s"
+    except Exception as e:
+        results["live"]["error"] = str(e)
+
+    # Check DEV
+    try:
+        resp = requests.head(dev_url, timeout=timeout, allow_redirects=False)
+        results["dev"]["status_code"] = resp.status_code
+        results["dev"]["accessible"] = resp.status_code < 500
+    except requests.exceptions.ConnectionError as e:
+        results["dev"]["error"] = f"Connection refused: {str(e)}"
+    except requests.exceptions.Timeout:
+        results["dev"]["error"] = f"Timeout after {timeout}s"
+    except Exception as e:
+        results["dev"]["error"] = str(e)
+
+    # Can only proceed if BOTH are accessible
+    results["can_proceed"] = (
+        results["live"]["accessible"] and
+        results["dev"]["accessible"]
+    )
+
+    return results
 
 
 def check_visual_parity(
@@ -50,6 +104,35 @@ def check_visual_parity(
     """
     session_info = f"LIVE:{mcp_session or 'public'}, DEV:{mcp_session_dev or 'public'}" if concurrent else f"Session:{mcp_session}"
     print(f"  [Visual Check] Comparing {page_path} ({session_info})")
+
+    # Pre-flight check: Verify both environments are accessible before agent invocation
+    if concurrent and mcp_session and mcp_session_dev:
+        live_config = get_session_config(mcp_session)
+        dev_config = get_session_config(mcp_session_dev)
+        live_url = live_config.get_full_url(page_path)
+        dev_url = dev_config.get_full_url(page_path)
+
+        print(f"  [Pre-flight] Checking accessibility: LIVE={live_url}, DEV={dev_url}")
+        accessibility = verify_environment_accessibility(live_url, dev_url)
+
+        if not accessibility["can_proceed"]:
+            issues = []
+            if not accessibility["live"]["accessible"]:
+                error_detail = accessibility['live']['error'] or f"status {accessibility['live']['status_code']}"
+                issues.append(f"LIVE environment unreachable: {error_detail}")
+            if not accessibility["dev"]["accessible"]:
+                error_detail = accessibility['dev']['error'] or f"status {accessibility['dev']['status_code']}"
+                issues.append(f"DEV environment unreachable: {error_detail}")
+
+            print(f"  [Pre-flight] BLOCKED: {', '.join(issues)}")
+            return {
+                "visualParity": "BLOCKED",
+                "issues": issues,
+                "consoleErrors": [],
+                "accessibility": accessibility
+            }
+
+        print(f"  [Pre-flight] Both environments accessible, proceeding with visual check")
 
     # Build appropriate prompt based on concurrent mode
     if concurrent and mcp_session and mcp_session_dev:
@@ -162,20 +245,32 @@ def check_visual_parity(
 def _build_sequential_prompt(page_path: str, mcp_session: Optional[str], port: int) -> str:
     """Build prompt for sequential (single session) visual check."""
     prompt_template_path = Path(__file__).parent.parent / "prompts" / "visual_check_gemini.txt"
+
+    # Determine URLs from config if session provided
+    if mcp_session:
+        config = get_session_config(mcp_session)
+        base_url = config.base_url
+    else:
+        base_url = "https://split.lease"  # Default for public pages
+
+    dev_base_url = f"http://localhost:{port}"
+
     if prompt_template_path.exists():
         prompt_template = prompt_template_path.read_text(encoding='utf-8')
         return prompt_template.format(
             page_path=page_path,
             mcp_session=mcp_session or "none",
             auth_type="protected" if mcp_session else "public",
-            port=port
+            port=port,
+            live_url=f"{base_url}{page_path}",
+            dev_url=f"{dev_base_url}{page_path}"
         )
     else:
         return f"""Compare the refactored version of {page_path} against live production.
 
-1. Navigate to LIVE: {LIVE_BASE_URL}{page_path}
+1. Navigate to LIVE: {base_url}{page_path}
 2. Take screenshot
-3. Navigate to DEV: {DEV_BASE_URL}:{port}{page_path}
+3. Navigate to DEV: {dev_base_url}{page_path}
 4. Take screenshot
 5. Compare visually
 
@@ -187,62 +282,77 @@ def _build_concurrent_prompt(
     page_path: str,
     mcp_live: str,
     mcp_dev: str,
-    port: int
+    port: int  # Kept for backwards compatibility but ignored - URL from config
 ) -> str:
     """
     Build prompt for concurrent dual-session visual check.
 
-    This prompt instructs the agent to use TWO MCP sessions simultaneously:
-    - mcp_live session navigates to LIVE (split.lease)
-    - mcp_dev session navigates to DEV (localhost)
-
-    Both screenshots are captured before comparison to ensure state parity.
+    URLs are derived from MCP session configuration, NOT from parameters.
+    This ensures sessions always navigate to their authenticated domains.
     """
+    # Get URLs from configuration - NEVER build manually
+    live_config = get_session_config(mcp_live)
+    dev_config = get_session_config(mcp_dev)
+
+    live_url = live_config.get_full_url(page_path)
+    dev_url = dev_config.get_full_url(page_path)
+
+    # Convert session names to MCP tool format (dashes to underscores)
+    mcp_live_tool = mcp_live.replace('-', '_')
+    mcp_dev_tool = mcp_dev.replace('-', '_')
+
     return f"""# Concurrent Visual Parity Check
 
 ## Objective
 Compare {page_path} between LIVE and DEV environments using parallel MCP sessions.
 
-## MCP Sessions
-- **LIVE Session**: `{mcp_live}` → {LIVE_BASE_URL}{page_path}
-- **DEV Session**: `{mcp_dev}` → {DEV_BASE_URL}:{port}{page_path}
+## CRITICAL: Session-URL Binding
+Each MCP session is authenticated for a SPECIFIC domain. Using the wrong URL
+will cause authentication failures. The bindings below are MANDATORY:
+
+| Session | MUST Navigate To | Environment |
+|---------|------------------|-------------|
+| `{mcp_live}` | `{live_config.base_url}` | LIVE (Production) |
+| `{mcp_dev}` | `{dev_config.base_url}` | DEV (Development) |
+
+⚠️ DO NOT navigate `{mcp_live}` to localhost or `{mcp_dev}` to split.lease!
 
 ## Instructions
 
-### Step 1: Concurrent Navigation
-Use BOTH MCP sessions to navigate simultaneously:
+### Step 1: Navigate LIVE Environment
+Use `{mcp_live}` session (authenticated for {live_config.base_url}):
 
-**{mcp_live}** (LIVE):
 ```
-mcp__{mcp_live}__browser_navigate
-url: {LIVE_BASE_URL}{page_path}
-```
-
-**{mcp_dev}** (DEV):
-```
-mcp__{mcp_dev}__browser_navigate
-url: {DEV_BASE_URL}:{port}{page_path}
+mcp__{mcp_live_tool}__browser_navigate
+url: {live_url}
 ```
 
-### Step 2: Wait for Load
-Wait 2 seconds for both pages to fully render.
+### Step 2: Navigate DEV Environment
+Use `{mcp_dev}` session (authenticated for {dev_config.base_url}):
 
-### Step 3: Concurrent Screenshots
-Take screenshots from BOTH sessions:
-
-**{mcp_live}** (LIVE):
 ```
-mcp__{mcp_live}__browser_take_screenshot
-filename: parity_LIVE_{page_path.replace('/', '_')}.png
+mcp__{mcp_dev_tool}__browser_navigate
+url: {dev_url}
 ```
 
-**{mcp_dev}** (DEV):
+### Step 3: Wait for Load
+Wait 2-3 seconds for both pages to fully render.
+
+### Step 4: Take Screenshots
+
+**LIVE Screenshot** (using {mcp_live}):
 ```
-mcp__{mcp_dev}__browser_take_screenshot
-filename: parity_DEV_{page_path.replace('/', '_')}.png
+mcp__{mcp_live_tool}__browser_take_screenshot
+filename: parity_LIVE{page_path.replace('/', '_')}.png
 ```
 
-### Step 4: Visual Comparison
+**DEV Screenshot** (using {mcp_dev}):
+```
+mcp__{mcp_dev_tool}__browser_take_screenshot
+filename: parity_DEV{page_path.replace('/', '_')}.png
+```
+
+### Step 5: Visual Comparison
 Compare the two screenshots for:
 - Layout consistency
 - Text content matching
@@ -250,24 +360,29 @@ Compare the two screenshots for:
 - Component positioning
 - Missing or extra elements
 
-### Step 5: Return Result
+### Step 6: Return Result
 Return a JSON object:
 
 ```json
 {{
-    "visualParity": "PASS" | "FAIL",
-    "issues": ["List any visual differences found"],
+    "visualParity": "PASS" | "FAIL" | "BLOCKED",
+    "issues": ["List any visual differences or access problems"],
     "explanation": "Brief summary of comparison",
     "screenshots": {{
-        "live": "parity_LIVE_{page_path.replace('/', '_')}.png",
-        "dev": "parity_DEV_{page_path.replace('/', '_')}.png"
+        "live": "parity_LIVE{page_path.replace('/', '_')}.png",
+        "dev": "parity_DEV{page_path.replace('/', '_')}.png"
+    }},
+    "urls_checked": {{
+        "live": "{live_url}",
+        "dev": "{dev_url}"
     }}
 }}
 ```
 
-## Important
-- PASS if pages are visually identical or have only minor acceptable differences
-- FAIL if there are significant layout shifts, missing elements, or broken styling
+## Result Guidelines
+- **PASS**: Pages are visually identical or have only minor acceptable differences
+- **FAIL**: Significant layout shifts, missing elements, or broken styling
+- **BLOCKED**: Unable to access one or both environments (auth failure, connection refused)
 - Ignore dynamic content like timestamps, user-specific data, or loading states
 """
 

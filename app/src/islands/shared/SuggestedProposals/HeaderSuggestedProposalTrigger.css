@@ -1,0 +1,132 @@
+/**
+ * HeaderSuggestedProposalTrigger Styles
+ *
+ * Inline button styled to match the header's design language.
+ * Positioned inline within nav-right, between nav links.
+ * Features a glowing pulse animation to draw attention.
+ */
+
+.header-sp-trigger {
+  /* Reset button defaults */
+  appearance: none;
+  -webkit-appearance: none;
+  outline: none;
+  font: inherit;
+  color: inherit;
+
+  /* Layout */
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  margin-right: 12px;
+
+  /* Visual */
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.25) 0%, rgba(255, 152, 0, 0.2) 100%);
+  border: 2px solid rgba(255, 193, 7, 0.7);
+  cursor: pointer;
+
+  /* Animation */
+  transition: all 0.2s ease;
+  animation: header-sp-glow 2s ease-in-out infinite;
+}
+
+/* Glowing pulse animation on the button */
+@keyframes header-sp-glow {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(255, 193, 7, 0.5), 0 0 20px rgba(255, 193, 7, 0.3);
+    border-color: rgba(255, 193, 7, 0.7);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 193, 7, 0.7), 0 0 40px rgba(255, 193, 7, 0.5);
+    border-color: rgba(255, 193, 7, 1);
+    transform: scale(1.05);
+  }
+}
+
+.header-sp-trigger:hover {
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.4) 0%, rgba(255, 152, 0, 0.3) 100%);
+  border-color: rgba(255, 193, 7, 1);
+  transform: scale(1.15) !important;
+  animation: none;
+  box-shadow: 0 0 25px rgba(255, 193, 7, 0.8), 0 0 50px rgba(255, 193, 7, 0.5);
+}
+
+.header-sp-trigger:active {
+  transform: scale(0.95) !important;
+}
+
+.header-sp-trigger--active {
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.45) 0%, rgba(255, 152, 0, 0.35) 100%);
+  border-color: rgba(255, 193, 7, 1);
+  animation: none;
+  box-shadow: 0 0 20px rgba(255, 193, 7, 0.7);
+}
+
+/* Lightbulb emoji icon */
+.header-sp-trigger__icon {
+  font-size: 22px;
+  line-height: 1;
+  filter: drop-shadow(0 0 4px rgba(255, 193, 7, 0.8));
+  /* Ensure emoji is visible */
+  display: inline-block;
+  text-align: center;
+}
+
+/* Count badge */
+.header-sp-trigger__badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 22px;
+  height: 22px;
+  background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+  color: #FFFFFF;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.6);
+  border: 2px solid #250856;
+  animation: header-sp-badge-pulse 1.5s ease-in-out infinite;
+}
+
+/* Badge pulse animation */
+@keyframes header-sp-badge-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .header-sp-trigger {
+    width: 40px;
+    height: 40px;
+    margin-right: 8px;
+  }
+
+  .header-sp-trigger__icon {
+    font-size: 20px;
+  }
+
+  .header-sp-trigger__badge {
+    min-width: 20px;
+    height: 20px;
+    font-size: 11px;
+    top: -5px;
+    right: -5px;
+  }
+}

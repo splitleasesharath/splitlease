@@ -75,8 +75,10 @@ async function sendInquiryWelcomeMessages(
     listingName || undefined
   );
 
+  // Guest gets "Create Proposal" CTA since this is a new inquiry without a proposal
+  // Host gets "View Listing" CTA to see what listing the guest is inquiring about
   const [guestCTA, hostCTA] = await Promise.all([
-    getCTAByName(supabase, 'new_inquiry_guest_view'),
+    getCTAByName(supabase, 'create_proposal_guest'),
     getCTAByName(supabase, 'new_inquiry_host_view'),
   ]);
 

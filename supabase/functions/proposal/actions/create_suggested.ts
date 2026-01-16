@@ -49,6 +49,20 @@ import {
   getDefaultMessage,
   getVisibilityForRole,
 } from "../../_shared/ctaHelpers.ts";
+import {
+  generateSuggestedProposalSummary,
+  formatPreviousProposals,
+  formatDaysAsRange,
+} from "../../_shared/negotiationSummaryHelpers.ts";
+import {
+  getNotificationPreferences,
+  shouldSendEmail,
+  shouldSendSms,
+  sendProposalEmail,
+  sendProposalSms,
+  EMAIL_TEMPLATES,
+} from "../../_shared/notificationHelpers.ts";
+import { sendToSlack } from "../../_shared/slack.ts";
 
 // ─────────────────────────────────────────────────────────────
 // INPUT TYPE
@@ -242,11 +256,13 @@ export async function handleCreateSuggested(
       "Nights Available (List of Nights) ",
       "Location - Address",
       "Location - slightly different address",
+      "Location - Borough",
       "💰Weekly Host Rate",
       "💰Nightly Host Rate for 2 nights",
       "💰Nightly Host Rate for 3 nights",
       "💰Nightly Host Rate for 4 nights",
       "💰Nightly Host Rate for 5 nights",
+      "💰Nightly Host Rate for 6 nights",
       "💰Nightly Host Rate for 7 nights",
       "💰Monthly Host Rate",
       "Deleted"
@@ -275,7 +291,9 @@ export async function handleCreateSuggested(
       "Rental Application",
       "Proposals List",
       "Favorited Listings",
-      "Tasks Completed"
+      "Tasks Completed",
+      "About Me / Bio",
+      "need for Space"
     `)
     .eq("_id", input.guestId)
     .single();
@@ -305,6 +323,7 @@ export async function handleCreateSuggested(
 
   // Fetch Rental Application (if exists)
   let rentalApp: RentalApplicationData | null = null;
+  let hasRentalApp = false;
   if (guestData["Rental Application"]) {
     const { data: app } = await supabase
       .from("rentalapplication")
@@ -312,6 +331,7 @@ export async function handleCreateSuggested(
       .eq("_id", guestData["Rental Application"])
       .single();
     rentalApp = app as RentalApplicationData | null;
+    hasRentalApp = rentalApp !== null;
     console.log(`[proposal:create_suggested] Rental app found, submitted: ${rentalApp?.submitted}`);
   }
 
@@ -489,11 +509,8 @@ export async function handleCreateSuggested(
     _id: threadId,
     Proposal: proposalId,
     Listing: input.listingId,
-    Guest: input.guestId,
-    Host: hostUserData._id,
-    "Is Active": true,
-    "Message Count": 0,
-    Deleted: false,
+    "-Guest User": input.guestId,
+    "-Host User": hostUserData._id,
     "Created Date": now,
     "Modified Date": now,
   };
@@ -511,22 +528,24 @@ export async function handleCreateSuggested(
   } else {
     console.log(`[proposal:create_suggested] Thread created successfully`);
 
+    // Fetch user profiles and listing name for message templates (used by SplitBot + notifications)
+    const [guestProfile, hostProfile, listingName] = await Promise.all([
+      getUserProfile(supabase, input.guestId),
+      getUserProfile(supabase, hostUserData._id),
+      getListingName(supabase, input.listingId),
+    ]);
+
+    const guestFirstName = guestProfile?.firstName || "Guest";
+    const hostFirstName = hostProfile?.firstName || "Host";
+    const resolvedListingName = listingName || "this listing";
+
     // ================================================
     // SEND SPLITBOT WELCOME MESSAGES
     // ================================================
     // Send automated messages to both guest and host so they see the thread immediately
+    // For suggested proposals, generate AI-powered summary explaining WHY this match
 
     try {
-      // Fetch user profiles and listing name for message templates
-      const [guestProfile, hostProfile, listingName] = await Promise.all([
-        getUserProfile(supabase, input.guestId),
-        getUserProfile(supabase, hostUserData._id),
-        getListingName(supabase, input.listingId),
-      ]);
-
-      const guestFirstName = guestProfile?.firstName || "Guest";
-      const hostFirstName = hostProfile?.firstName || "Host";
-      const resolvedListingName = listingName || "this listing";
 
       // Build template context for CTA rendering
       const templateContext = buildTemplateContext(hostFirstName, guestFirstName, resolvedListingName);
@@ -539,9 +558,53 @@ export async function handleCreateSuggested(
         getCTAForProposalStatus(supabase, status, "host", templateContext),
       ]);
 
-      // Send SplitBot message to GUEST
+      // ================================================
+      // GENERATE AI SUMMARY FOR GUEST (suggested proposals only)
+      // ================================================
+      let aiGuestSummary: string | null = null;
+      if (status.includes("Split Lease")) {
+        try {
+          console.log(`[proposal:create_suggested] Generating AI summary for suggested proposal...`);
+
+          // Fetch previous proposals for comparison
+          const previousProposals = await formatPreviousProposals(
+            supabase,
+            input.guestId,
+            proposalId
+          );
+
+          // Generate AI-powered summary explaining why this listing was suggested
+          aiGuestSummary = await generateSuggestedProposalSummary(supabase, {
+            guestFirstName: guestFirstName,
+            guestBio: input.aboutMe || guestData["About Me / Bio"] || "",
+            needForSpace: input.needForSpace || guestData["need for Space"] || "",
+            listingName: resolvedListingName,
+            listingBorough: listingData["Location - Borough"] || "NYC",
+            reservationWeeks: input.reservationSpanWeeks,
+            moveInStart: input.moveInStartRange,
+            moveInEnd: input.moveInEndRange,
+            selectedDays: formatDaysAsRange(input.daysSelected),
+            nightlyPrice: input.nightlyPrice,
+            totalPrice: input.totalPrice,
+            previousProposals,
+          });
+
+          if (aiGuestSummary) {
+            console.log(`[proposal:create_suggested] AI summary generated successfully`);
+          } else {
+            console.log(`[proposal:create_suggested] AI summary returned null, using default message`);
+          }
+        } catch (aiError) {
+          console.warn(`[proposal:create_suggested] AI summary generation failed, using default:`, aiError);
+        }
+      }
+
+      // Send SplitBot message to GUEST (with AI summary if available)
       if (guestCTA) {
-        const guestMessageBody = guestCTA.message || getDefaultMessage(status, "guest", templateContext);
+        // Use AI summary if available, otherwise fall back to CTA template or default
+        const guestMessageBody = aiGuestSummary ||
+          guestCTA.message ||
+          getDefaultMessage(status, "guest", templateContext);
         const guestVisibility = getVisibilityForRole("guest");
 
         await createSplitBotMessage(supabase, {
@@ -572,7 +635,7 @@ export async function handleCreateSuggested(
       }
 
       // Update thread's last message preview
-      const lastMessageBody = guestCTA?.message || hostCTA?.message || `Proposal for ${resolvedListingName}`;
+      const lastMessageBody = aiGuestSummary || guestCTA?.message || hostCTA?.message || `Proposal for ${resolvedListingName}`;
       await updateThreadLastMessage(supabase, threadId, lastMessageBody);
 
       console.log(`[proposal:create_suggested] SplitBot messages complete`);
@@ -580,6 +643,90 @@ export async function handleCreateSuggested(
       // Non-blocking - proposal and thread are created, messages are secondary
       console.error(`[proposal:create_suggested] SplitBot messages failed:`, msgError);
       console.warn(`[proposal:create_suggested] Proposal and thread created, but SplitBot messages failed - host may not see notification`);
+    }
+
+    // ================================================
+    // GUEST NOTIFICATIONS (Email & SMS)
+    // ================================================
+    // Fire-and-forget: Notification failures don't block proposal creation
+    // Privacy-first: Only send if user has opted-in via notification_preferences
+
+    try {
+      console.log(`[proposal:create_suggested] Checking guest notification preferences...`);
+
+      const guestPrefs = await getNotificationPreferences(supabase, input.guestId);
+
+      // Send celebratory email to guest if opted-in
+      if (shouldSendEmail(guestPrefs, 'proposal_updates')) {
+        console.log(`[proposal:create_suggested] Guest opted-in for email notifications`);
+
+        sendProposalEmail({
+          templateId: EMAIL_TEMPLATES.GUEST_PROPOSAL_SUBMITTED,
+          toEmail: guestData.email,
+          toName: guestFirstName,
+          variables: {
+            guest_name: guestFirstName,
+            listing_name: resolvedListingName,
+            proposal_id: proposalId,
+            dashboard_link: `https://splitlease.com/guest/proposals`,
+          },
+        });
+      } else {
+        console.log(`[proposal:create_suggested] Guest not opted-in for email (skipping)`);
+      }
+
+      // Send confirmation SMS to guest if opted-in
+      if (shouldSendSms(guestPrefs, 'proposal_updates')) {
+        // Fetch guest phone number
+        const { data: guestPhone } = await supabase
+          .from('user')
+          .select('"Phone Number"')
+          .eq('_id', input.guestId)
+          .single();
+
+        const phoneNumber = guestPhone?.["Phone Number"] as string | undefined;
+
+        if (phoneNumber) {
+          console.log(`[proposal:create_suggested] Guest opted-in for SMS notifications`);
+
+          sendProposalSms({
+            to: phoneNumber,
+            body: `🎉 Your proposal for ${resolvedListingName} has been submitted! We're reviewing it now. View details: https://splitlease.com/guest/proposals`,
+          });
+        } else {
+          console.log(`[proposal:create_suggested] Guest has no phone number (skipping SMS)`);
+        }
+      } else {
+        console.log(`[proposal:create_suggested] Guest not opted-in for SMS (skipping)`);
+      }
+
+      console.log(`[proposal:create_suggested] Guest notifications complete`);
+    } catch (notifError) {
+      // Non-blocking - notifications are secondary to proposal creation
+      console.error(`[proposal:create_suggested] Guest notifications failed:`, notifError);
+    }
+
+    // ================================================
+    // SLACK ACTIVATION NOTIFICATION
+    // ================================================
+    // Post to acquisition channel for team visibility
+
+    try {
+      sendToSlack('acquisition', {
+        text: `🎯 *New Suggested Proposal Created*\n` +
+          `• Guest: ${guestFirstName} (${guestData.email})\n` +
+          `• Listing: ${resolvedListingName}\n` +
+          `• Nights/week: ${input.nightsSelected.length}\n` +
+          `• Duration: ${input.reservationSpanWeeks} weeks\n` +
+          `• Total: $${input.totalPrice}\n` +
+          `• Status: ${status}\n` +
+          `• Proposal ID: ${proposalId}`,
+      });
+
+      console.log(`[proposal:create_suggested] Slack notification sent`);
+    } catch (slackError) {
+      // Non-blocking
+      console.error(`[proposal:create_suggested] Slack notification failed:`, slackError);
     }
   }
 

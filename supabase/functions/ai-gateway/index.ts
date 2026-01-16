@@ -53,6 +53,9 @@ import "./prompts/listing-description.ts";
 import "./prompts/listing-title.ts";
 import "./prompts/neighborhood-description.ts";
 import "./prompts/parse-call-transcription.ts";
+import "./prompts/negotiation-summary-suggested.ts";
+import "./prompts/negotiation-summary-counteroffer.ts";
+import "./prompts/negotiation-summary-host.ts";
 
 // ─────────────────────────────────────────────────────────────
 // Configuration (Immutable)

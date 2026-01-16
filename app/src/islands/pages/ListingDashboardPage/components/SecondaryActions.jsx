@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useListingDashboard } from '../context/ListingDashboardContext';
 
 // Icon components (inline SVGs)
 const SparklesIcon = () => (
@@ -49,13 +50,10 @@ const SECTIONS = [
   { id: 'cancellation-policy', label: 'Cancellation Policy' },
 ];
 
-export default function SecondaryActions({ onAIAssistant }) {
+export default function SecondaryActions() {
+  const { handleAIAssistant } = useListingDashboard();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
-
-  const handleAIAssistant = () => {
-    onAIAssistant?.();
-  };
 
   const handleSectionSelect = (sectionId) => {
     setIsDropdownOpen(false);

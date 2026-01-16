@@ -17,7 +17,7 @@ import InformationalText from '../shared/InformationalText.jsx';
 import SignUpLoginModal from '../shared/SignUpLoginModal.jsx';
 import ProposalSuccessModal from '../modals/ProposalSuccessModal.jsx';
 import { initializeLookups } from '../../lib/dataLookups.js';
-import { checkAuthStatus, validateTokenAndFetchUser, getSessionId } from '../../lib/auth.js';
+import { checkAuthStatus, validateTokenAndFetchUser, getSessionId, getUserId, getUserType } from '../../lib/auth.js';
 import { fetchListingComplete, getListingIdFromUrl, fetchZatPriceConfiguration } from '../../lib/listingDataFetcher.js';
 import {
   calculatePricingBreakdown,
@@ -34,9 +34,12 @@ import {
 import { DAY_ABBREVIATIONS, DEFAULTS, COLORS, SCHEDULE_PATTERNS } from '../../lib/constants.js';
 import { createDay } from '../../lib/scheduleSelector/dayHelpers.js';
 import { supabase } from '../../lib/supabase.js';
+import { logger } from '../../lib/logger.js';
+import { toast } from '../../lib/toastService.js';
 // NOTE: adaptDaysToBubble removed - database now uses 0-indexed days natively
 import '../../styles/listing-schedule-selector.css';
 import '../../styles/components/toast.css';
+import styles from './ViewSplitLeasePage.module.css';
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -52,7 +55,7 @@ function getInitialScheduleFromUrl() {
   const daysParam = urlParams.get('days-selected');
 
   if (!daysParam) {
-    console.log('📅 ViewSplitLeasePage: No days-selected URL param, using empty initial selection');
+    logger.debug('📅 ViewSplitLeasePage: No days-selected URL param, using empty initial selection');
     return [];
   }
 
@@ -64,7 +67,7 @@ function getInitialScheduleFromUrl() {
     if (validDays.length > 0) {
       // Convert to Day objects using createDay
       const dayObjects = validDays.map(dayIndex => createDay(dayIndex, true));
-      console.log('📅 ViewSplitLeasePage: Loaded schedule from URL:', {
+      logger.debug('📅 ViewSplitLeasePage: Loaded schedule from URL:', {
         urlParam: daysParam,
         dayIndices: validDays,
         dayObjects: dayObjects.map(d => d.name)
@@ -72,7 +75,7 @@ function getInitialScheduleFromUrl() {
       return dayObjects;
     }
   } catch (e) {
-    console.warn('⚠️ ViewSplitLeasePage: Failed to parse days-selected URL parameter:', e);
+    logger.warn('⚠️ ViewSplitLeasePage: Failed to parse days-selected URL parameter:', e);
   }
 
   return [];
@@ -91,7 +94,7 @@ function getInitialReservationSpanFromUrl() {
 
   const parsed = parseInt(spanParam, 10);
   if (!isNaN(parsed) && parsed > 0) {
-    console.log('📅 ViewSplitLeasePage: Loaded reservation span from URL:', parsed);
+    logger.debug('📅 ViewSplitLeasePage: Loaded reservation span from URL:', parsed);
     return parsed;
   }
 
@@ -111,7 +114,7 @@ function getInitialMoveInFromUrl() {
 
   // Basic validation: YYYY-MM-DD format
   if (/^\d{4}-\d{2}-\d{2}$/.test(moveInParam)) {
-    console.log('📅 ViewSplitLeasePage: Loaded move-in date from URL:', moveInParam);
+    logger.debug('📅 ViewSplitLeasePage: Loaded move-in date from URL:', moveInParam);
     return moveInParam;
   }
 
@@ -127,13 +130,13 @@ async function fetchInformationalTexts() {
   const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    console.error('❌ Missing Supabase environment variables');
+    logger.error('❌ Missing Supabase environment variables');
     return {};
   }
 
   try {
-    console.log('🔍 Fetching informational texts from Supabase...');
-    console.log('🌐 Using Supabase URL:', SUPABASE_URL);
+    logger.debug('🔍 Fetching informational texts from Supabase...');
+    logger.debug('🌐 Using Supabase URL:', SUPABASE_URL);
 
     // Use select=* to get all columns (safer with special characters in column names)
     const response = await fetch(
@@ -147,24 +150,24 @@ async function fetchInformationalTexts() {
       }
     );
 
-    console.log('📡 Response status:', response.status, response.statusText);
+    logger.debug('📡 Response status:', response.status, response.statusText);
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ Failed to fetch informational texts:', response.statusText, errorText);
+      logger.error('❌ Failed to fetch informational texts:', response.statusText, errorText);
       return {};
     }
 
     const data = await response.json();
-    console.log('📦 Raw data received:', data?.length, 'items');
-    console.log('📦 First item structure:', data?.[0] ? Object.keys(data[0]) : 'No items');
+    logger.debug('📦 Raw data received:', data?.length, 'items');
+    logger.debug('📦 First item structure:', data?.[0] ? Object.keys(data[0]) : 'No items');
 
     // Create a lookup object by tag-title
     const textsByTag = {};
     data.forEach((item, index) => {
       const tag = item['Information Tag-Title'];
       if (!tag) {
-        console.warn(`⚠️ Item ${index} has no Information Tag-Title:`, item);
+        logger.warn(`⚠️ Item ${index} has no Information Tag-Title:`, item);
         return;
       }
 
@@ -181,7 +184,7 @@ async function fetchInformationalTexts() {
       if (tag === 'aligned schedule with move-in' ||
           tag === 'move-in flexibility' ||
           tag === 'Reservation Span') {
-        console.log(`✅ Found "${tag}":`, {
+        logger.debug(`✅ Found "${tag}":`, {
           desktop: item['Desktop copy']?.substring(0, 50) + '...',
           mobile: item['Mobile copy']?.substring(0, 50) + '...',
           showMore: item['show more available?']
@@ -189,8 +192,8 @@ async function fetchInformationalTexts() {
       }
     });
 
-    console.log('📚 Fetched informational texts:', Object.keys(textsByTag).length, 'total');
-    console.log('🎯 Required tags present:', {
+    logger.debug('📚 Fetched informational texts:', Object.keys(textsByTag).length, 'total');
+    logger.debug('🎯 Required tags present:', {
       'aligned schedule with move-in': !!textsByTag['aligned schedule with move-in'],
       'move-in flexibility': !!textsByTag['move-in flexibility'],
       'Reservation Span': !!textsByTag['Reservation Span']
@@ -198,7 +201,7 @@ async function fetchInformationalTexts() {
 
     return textsByTag;
   } catch (error) {
-    console.error('❌ Error fetching informational texts:', error);
+    logger.error('❌ Error fetching informational texts:', error);
     return {};
   }
 }
@@ -284,20 +287,8 @@ function SchedulePatternHighlight({ reservationSpan, weeksOffered }) {
   }
 
   return (
-    <div style={{
-      marginTop: '8px',
-      padding: '10px 12px',
-      background: 'linear-gradient(135deg, #EDE9FE 0%, #F3E8FF 100%)',
-      borderRadius: '8px',
-      border: '1px solid #C4B5FD',
-      fontSize: '13px'
-    }}>
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '6px',
-        marginBottom: '4px'
-      }}>
+    <div className={styles.schedulePatternContainer}>
+      <div className={styles.schedulePatternHeader}>
         <svg
           width="14"
           height="14"
@@ -308,19 +299,13 @@ function SchedulePatternHighlight({ reservationSpan, weeksOffered }) {
         >
           <path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z" />
         </svg>
-        <span style={{
-          fontWeight: '600',
-          color: '#5B21B6',
-          textTransform: 'uppercase',
-          letterSpacing: '0.3px',
-          fontSize: '11px'
-        }}>
+        <span className={styles.schedulePatternLabel}>
           {patternInfo.cycleDescription}
         </span>
       </div>
-      <div style={{ color: '#6B21A8' }}>
-        <span style={{ fontWeight: '700' }}>{patternInfo.actualWeeks} actual weeks</span>
-        <span style={{ color: '#7C3AED' }}> of stay within {reservationSpan}-week span</span>
+      <div className={styles.schedulePatternContent}>
+        <span className={styles.schedulePatternWeeks}>{patternInfo.actualWeeks} actual weeks</span>
+        <span className={styles.schedulePatternSpan}> of stay within {reservationSpan}-week span</span>
       </div>
     </div>
   );
@@ -332,69 +317,23 @@ function SchedulePatternHighlight({ reservationSpan, weeksOffered }) {
 
 function LoadingState() {
   return (
-    <div style={{
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      minHeight: '60vh',
-      padding: '2rem'
-    }}>
-      <div style={{
-        width: '60px',
-        height: '60px',
-        border: `4px solid ${COLORS.BG_LIGHT}`,
-        borderTop: `4px solid ${COLORS.PRIMARY}`,
-        borderRadius: '50%',
-        animation: 'spin 1s linear infinite'
-      }}></div>
-      <style>{`
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
+    <div className={styles.loadingStateContainer}>
+      <div className={styles.loadingSpinner}></div>
     </div>
   );
 }
 
 function ErrorState({ message }) {
   return (
-    <div style={{
-      textAlign: 'center',
-      padding: '4rem 2rem',
-      maxWidth: '600px',
-      margin: '0 auto'
-    }}>
-      <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>⚠️</div>
-      <h2 style={{
-        fontSize: '2rem',
-        fontWeight: '700',
-        marginBottom: '1rem',
-        color: COLORS.TEXT_DARK
-      }}>
+    <div className={styles.errorStateContainer}>
+      <div className={styles.errorIcon}>⚠️</div>
+      <h2 className={styles.errorTitle}>
         Property Not Found
       </h2>
-      <p style={{
-        fontSize: '1.125rem',
-        color: COLORS.TEXT_LIGHT,
-        marginBottom: '2rem'
-      }}>
+      <p className={styles.errorMessage}>
         {message || 'The property you are looking for does not exist or has been removed.'}
       </p>
-      <a
-        href="/search.html"
-        style={{
-          display: 'inline-block',
-          padding: '1rem 2rem',
-          background: COLORS.PRIMARY,
-          color: 'white',
-          textDecoration: 'none',
-          borderRadius: '8px',
-          fontWeight: '600',
-          transition: 'background 0.2s'
-        }}
-        onMouseEnter={(e) => e.target.style.background = COLORS.PRIMARY_HOVER}
-        onMouseLeave={(e) => e.target.style.background = COLORS.PRIMARY}
-      >
+      <a href="/search.html" className={styles.errorButton}>
         Browse All Listings
       </a>
     </div>
@@ -419,47 +358,16 @@ function PhotoGallery({ photos, listingName, onPhotoClick, isMobile }) {
   // On mobile: always show single image with "Show all" button
   if (isMobile) {
     return (
-      <div style={{ position: 'relative' }}>
-        <div
-          onClick={() => onPhotoClick(0)}
-          style={{
-            cursor: 'pointer',
-            borderRadius: '12px',
-            overflow: 'hidden',
-            height: '280px'
-          }}
-        >
+      <div className={styles.photoGalleryMobileWrapper}>
+        <div onClick={() => onPhotoClick(0)} className={styles.photoGalleryMobileMain}>
           <img
             src={photos[0].Photo}
             alt={`${listingName} - main`}
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              display: 'block'
-            }}
+            className={styles.photoGalleryImage}
           />
         </div>
         {photoCount > 1 && (
-          <button
-            onClick={() => onPhotoClick(0)}
-            style={{
-              position: 'absolute',
-              bottom: '12px',
-              right: '12px',
-              background: 'white',
-              border: 'none',
-              padding: '8px 14px',
-              borderRadius: '8px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-              cursor: 'pointer',
-              fontWeight: '600',
-              fontSize: '0.85rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
-          >
+          <button onClick={() => onPhotoClick(0)} className={styles.photoGalleryShowAllButton}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="3" y="3" width="7" height="7" rx="1" />
               <rect x="14" y="3" width="7" height="7" rx="1" />
@@ -473,71 +381,24 @@ function PhotoGallery({ photos, listingName, onPhotoClick, isMobile }) {
     );
   }
 
-  // Desktop: Determine grid style based on photo count
-  const getGridStyle = () => {
-    if (photoCount === 1) {
-      return {
-        display: 'grid',
-        gridTemplateColumns: '1fr',
-        gridTemplateRows: '400px',
-        gap: '10px'
-      };
-    } else if (photoCount === 2) {
-      return {
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gridTemplateRows: '400px',
-        gap: '10px'
-      };
-    } else if (photoCount === 3) {
-      return {
-        display: 'grid',
-        gridTemplateColumns: '2fr 1fr',
-        gridTemplateRows: '200px 200px',
-        gap: '10px'
-      };
-    } else if (photoCount === 4) {
-      return {
-        display: 'grid',
-        gridTemplateColumns: '2fr 1fr',
-        gridTemplateRows: '133px 133px 133px',
-        gap: '10px'
-      };
-    } else {
-      // 5+ photos
-      return {
-        display: 'grid',
-        gridTemplateColumns: '2fr 1fr 1fr',
-        gridTemplateRows: '200px 200px',
-        gap: '10px'
-      };
-    }
-  };
-
-  // Desktop only styles (mobile handled above)
-  const imageStyle = {
-    cursor: 'pointer',
-    borderRadius: '12px',
-    overflow: 'hidden',
-    position: 'relative'
-  };
-
-  const imgStyle = {
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover',
-    display: 'block'
+  // Desktop: Determine grid class based on photo count
+  const getGridClass = () => {
+    if (photoCount === 1) return styles.photoGalleryGrid1;
+    if (photoCount === 2) return styles.photoGalleryGrid2;
+    if (photoCount === 3) return styles.photoGalleryGrid3;
+    if (photoCount === 4) return styles.photoGalleryGrid4;
+    return styles.photoGalleryGrid5;
   };
 
   // Render based on photo count
   if (photoCount === 1) {
     return (
-      <div style={getGridStyle()}>
-        <div onClick={() => onPhotoClick(0)} style={imageStyle}>
+      <div className={getGridClass()}>
+        <div onClick={() => onPhotoClick(0)} className={styles.photoGalleryItem}>
           <img
             src={photos[0].Photo}
             alt={`${listingName} - main`}
-            style={imgStyle}
+            className={styles.photoGalleryImage}
           />
         </div>
       </div>
@@ -546,13 +407,13 @@ function PhotoGallery({ photos, listingName, onPhotoClick, isMobile }) {
 
   if (photoCount === 2) {
     return (
-      <div style={getGridStyle()}>
+      <div className={getGridClass()}>
         {photos.map((photo, idx) => (
-          <div key={photo._id} onClick={() => onPhotoClick(idx)} style={imageStyle}>
+          <div key={photo._id} onClick={() => onPhotoClick(idx)} className={styles.photoGalleryItem}>
             <img
               src={photo.Photo}
               alt={`${listingName} - ${idx + 1}`}
-              style={imgStyle}
+              className={styles.photoGalleryImage}
             />
           </div>
         ))}
@@ -562,23 +423,20 @@ function PhotoGallery({ photos, listingName, onPhotoClick, isMobile }) {
 
   if (photoCount === 3) {
     return (
-      <div style={getGridStyle()}>
-        <div
-          onClick={() => onPhotoClick(0)}
-          style={{ ...imageStyle, gridRow: '1 / 3' }}
-        >
+      <div className={getGridClass()}>
+        <div onClick={() => onPhotoClick(0)} className={`${styles.photoGalleryItem} ${styles.photoGalleryMainItem}`}>
           <img
             src={photos[0].Photo}
             alt={`${listingName} - main`}
-            style={imgStyle}
+            className={styles.photoGalleryImage}
           />
         </div>
         {photos.slice(1, 3).map((photo, idx) => (
-          <div key={photo._id} onClick={() => onPhotoClick(idx + 1)} style={imageStyle}>
+          <div key={photo._id} onClick={() => onPhotoClick(idx + 1)} className={styles.photoGalleryItem}>
             <img
               src={photo['Photo (thumbnail)'] || photo.Photo}
               alt={`${listingName} - ${idx + 2}`}
-              style={imgStyle}
+              className={styles.photoGalleryImage}
             />
           </div>
         ))}
@@ -588,23 +446,20 @@ function PhotoGallery({ photos, listingName, onPhotoClick, isMobile }) {
 
   if (photoCount === 4) {
     return (
-      <div style={getGridStyle()}>
-        <div
-          onClick={() => onPhotoClick(0)}
-          style={{ ...imageStyle, gridRow: '1 / 4' }}
-        >
+      <div className={getGridClass()}>
+        <div onClick={() => onPhotoClick(0)} className={`${styles.photoGalleryItem} ${styles.photoGalleryMainItem4}`}>
           <img
             src={photos[0].Photo}
             alt={`${listingName} - main`}
-            style={imgStyle}
+            className={styles.photoGalleryImage}
           />
         </div>
         {photos.slice(1, 4).map((photo, idx) => (
-          <div key={photo._id} onClick={() => onPhotoClick(idx + 1)} style={imageStyle}>
+          <div key={photo._id} onClick={() => onPhotoClick(idx + 1)} className={styles.photoGalleryItem}>
             <img
               src={photo['Photo (thumbnail)'] || photo.Photo}
               alt={`${listingName} - ${idx + 2}`}
-              style={imgStyle}
+              className={styles.photoGalleryImage}
             />
           </div>
         ))}
@@ -616,23 +471,20 @@ function PhotoGallery({ photos, listingName, onPhotoClick, isMobile }) {
   const photosToShow = photos.slice(1, 5);
 
   return (
-    <div style={getGridStyle()}>
-      <div
-        onClick={() => onPhotoClick(0)}
-        style={{ ...imageStyle, gridRow: '1 / 3' }}
-      >
+    <div className={getGridClass()}>
+      <div onClick={() => onPhotoClick(0)} className={`${styles.photoGalleryItem} ${styles.photoGalleryMainItem}`}>
         <img
           src={photos[0].Photo}
           alt={`${listingName} - main`}
-          style={imgStyle}
+          className={styles.photoGalleryImage}
         />
       </div>
       {photosToShow.map((photo, idx) => (
-        <div key={photo._id} onClick={() => onPhotoClick(idx + 1)} style={imageStyle}>
+        <div key={photo._id} onClick={() => onPhotoClick(idx + 1)} className={styles.photoGalleryItem}>
           <img
             src={photo['Photo (thumbnail)'] || photo.Photo}
             alt={`${listingName} - ${idx + 2}`}
-            style={imgStyle}
+            className={styles.photoGalleryImage}
           />
           {idx === 3 && photoCount > 5 && (
             <button
@@ -640,22 +492,7 @@ function PhotoGallery({ photos, listingName, onPhotoClick, isMobile }) {
                 e.stopPropagation();
                 onPhotoClick(0);
               }}
-              style={{
-                position: 'absolute',
-                bottom: '12px',
-                right: '12px',
-                background: 'white',
-                border: 'none',
-                padding: '8px 12px',
-                borderRadius: '8px',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
-                cursor: 'pointer',
-                fontWeight: '600',
-                fontSize: '0.875rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}
+              className={styles.photoGalleryShowAllButton}
             >
               <svg
                 width="16"
@@ -778,14 +615,14 @@ export default function ViewSplitLeasePage() {
           const dayNumbers = selectedDayObjects.map(day => day.dayOfWeek);
           const smartDate = calculateSmartMoveInDate(dayNumbers);
           setMoveInDate(smartDate);
-          console.log('📅 ViewSplitLeasePage: URL move-in date was before minimum, using smart date:', smartDate);
+          logger.debug('📅 ViewSplitLeasePage: URL move-in date was before minimum, using smart date:', smartDate);
         }
       } else {
         // No URL date provided, calculate smart default
         const dayNumbers = selectedDayObjects.map(day => day.dayOfWeek);
         const smartDate = calculateSmartMoveInDate(dayNumbers);
         setMoveInDate(smartDate);
-        console.log('📅 ViewSplitLeasePage: Set initial move-in date from URL selection:', smartDate);
+        logger.debug('📅 ViewSplitLeasePage: Set initial move-in date from URL selection:', smartDate);
       }
     }
   }, []); // Run only once on mount - empty deps to prevent recalculation on state changes
@@ -809,8 +646,8 @@ export default function ViewSplitLeasePage() {
 
   // Debug: Log when activeInfoTooltip changes
   useEffect(() => {
-    console.log('🎯 activeInfoTooltip changed to:', activeInfoTooltip);
-    console.log('🔗 Refs status:', {
+    logger.debug('🎯 activeInfoTooltip changed to:', activeInfoTooltip);
+    logger.debug('🔗 Refs status:', {
       moveInInfoRef: !!moveInInfoRef.current,
       reservationSpanInfoRef: !!reservationSpanInfoRef.current,
       flexibilityInfoRef: !!flexibilityInfoRef.current
@@ -820,8 +657,8 @@ export default function ViewSplitLeasePage() {
   // Debug: Log when informationalTexts are loaded
   useEffect(() => {
     if (Object.keys(informationalTexts).length > 0) {
-      console.log('📚 informationalTexts loaded with', Object.keys(informationalTexts).length, 'entries');
-      console.log('🎯 Specific tags:', {
+      logger.debug('📚 informationalTexts loaded with', Object.keys(informationalTexts).length, 'entries');
+      logger.debug('🎯 Specific tags:', {
         'aligned schedule with move-in': informationalTexts['aligned schedule with move-in'],
         'move-in flexibility': informationalTexts['move-in flexibility'],
         'Reservation Span': informationalTexts['Reservation Span']
@@ -859,7 +696,7 @@ export default function ViewSplitLeasePage() {
           const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
           if (userData) {
             setLoggedInUserData(userData);
-            console.log('👤 ViewSplitLeasePage: User data loaded:', userData.firstName);
+            logger.debug('👤 ViewSplitLeasePage: User data loaded:', userData.firstName);
           }
         }
 
@@ -879,7 +716,7 @@ export default function ViewSplitLeasePage() {
 
         // Fetch complete listing data
         const listingData = await fetchListingComplete(listingId);
-        console.log('📋 ViewSplitLeasePage: Listing data fetched:', {
+        logger.debug('📋 ViewSplitLeasePage: Listing data fetched:', {
           id: listingData._id,
           name: listingData.Name,
           amenitiesInUnit: listingData.amenitiesInUnit,
@@ -896,7 +733,7 @@ export default function ViewSplitLeasePage() {
         setLoading(false);
 
       } catch (err) {
-        console.error('Error initializing page:', err);
+        logger.error('Error initializing page:', err);
         setError(err.message);
         setLoading(false);
       }
@@ -953,13 +790,13 @@ export default function ViewSplitLeasePage() {
     // Automatically center and zoom the map when it loads for the first time
     // This replicates the behavior of clicking "Located in" link, but without scrolling
     if (shouldLoadMap && mapRef.current && listing && !hasAutoZoomedRef.current) {
-      console.log('🗺️ ViewSplitLeasePage: Auto-zooming map on initial load');
+      logger.debug('🗺️ ViewSplitLeasePage: Auto-zooming map on initial load');
 
       // Wait for map to fully initialize before calling zoomToListing
       // Same 600ms timeout as handleLocationClick
       setTimeout(() => {
         if (mapRef.current && listing) {
-          console.log('🗺️ ViewSplitLeasePage: Calling zoomToListing for initial auto-zoom');
+          logger.debug('🗺️ ViewSplitLeasePage: Calling zoomToListing for initial auto-zoom');
           mapRef.current.zoomToListing(listing._id);
           hasAutoZoomedRef.current = true;
         }
@@ -991,7 +828,7 @@ export default function ViewSplitLeasePage() {
       }
 
       try {
-        console.log('🔍 ViewSplitLeasePage: Checking for existing proposals for listing:', listing._id);
+        logger.debug('🔍 ViewSplitLeasePage: Checking for existing proposals for listing:', listing._id);
 
         const { data: existingProposals, error } = await supabase
           .from('proposal')
@@ -1004,20 +841,20 @@ export default function ViewSplitLeasePage() {
           .limit(1);
 
         if (error) {
-          console.error('Error checking for existing proposals:', error);
+          logger.error('Error checking for existing proposals:', error);
           setExistingProposalForListing(null);
           return;
         }
 
         if (existingProposals && existingProposals.length > 0) {
-          console.log('📋 ViewSplitLeasePage: User already has a proposal for this listing:', existingProposals[0]);
+          logger.debug('📋 ViewSplitLeasePage: User already has a proposal for this listing:', existingProposals[0]);
           setExistingProposalForListing(existingProposals[0]);
         } else {
-          console.log('✅ ViewSplitLeasePage: No existing proposal found for this listing');
+          logger.debug('✅ ViewSplitLeasePage: No existing proposal found for this listing');
           setExistingProposalForListing(null);
         }
       } catch (err) {
-        console.error('Error checking for existing proposals:', err);
+        logger.error('Error checking for existing proposals:', err);
         setExistingProposalForListing(null);
       }
     }
@@ -1139,8 +976,8 @@ export default function ViewSplitLeasePage() {
   };
 
   const handlePriceChange = useCallback((newPriceBreakdown) => {
-    console.log('=== PRICE CHANGE CALLBACK ===');
-    console.log('Received price breakdown:', newPriceBreakdown);
+    logger.debug('=== PRICE CHANGE CALLBACK ===');
+    logger.debug('Received price breakdown:', newPriceBreakdown);
     // Only update if the values have actually changed to prevent infinite loops
     setPriceBreakdown((prev) => {
       if (!prev ||
@@ -1168,12 +1005,12 @@ export default function ViewSplitLeasePage() {
   const handleCreateProposal = () => {
     // Validate before opening modal
     if (!scheduleValidation?.valid) {
-      alert('Please select a valid contiguous schedule');
+      toast.warning('Please select a valid contiguous schedule');
       return;
     }
 
     if (!moveInDate) {
-      alert('Please select a move-in date');
+      toast.warning('Please select a move-in date');
       return;
     }
 
@@ -1192,9 +1029,9 @@ export default function ViewSplitLeasePage() {
         throw new Error('User ID not found. Please log in again.');
       }
 
-      console.log('📤 Submitting proposal to Edge Function...');
-      console.log('   Guest ID:', guestId);
-      console.log('   Listing ID:', proposalData.listingId);
+      logger.debug('📤 Submitting proposal to Edge Function...');
+      logger.debug('   Guest ID:', guestId);
+      logger.debug('   Listing ID:', proposalData.listingId);
 
       // Days are already in JS format (0-6) - database now uses 0-indexed natively
       // proposalData.daysSelectedObjects contains Day objects with dayOfWeek property
@@ -1285,8 +1122,8 @@ export default function ViewSplitLeasePage() {
         customScheduleDescription: customScheduleDescription || ''
       };
 
-      console.log('📋 Edge Function payload:', edgeFunctionPayload);
-      console.log('📋 Payload field types:', {
+      logger.debug('📋 Edge Function payload:', edgeFunctionPayload);
+      logger.debug('📋 Payload field types:', {
         guestId: typeof edgeFunctionPayload.guestId,
         listingId: typeof edgeFunctionPayload.listingId,
         moveInStartRange: typeof edgeFunctionPayload.moveInStartRange,
@@ -1310,9 +1147,9 @@ export default function ViewSplitLeasePage() {
       });
 
       if (error) {
-        console.error('❌ Edge Function error:', error);
-        console.error('❌ Error properties:', Object.keys(error));
-        console.error('❌ Error context:', error.context);
+        logger.error('❌ Edge Function error:', error);
+        logger.error('❌ Error properties:', Object.keys(error));
+        logger.error('❌ Error context:', error.context);
 
         // Extract actual error message from response context if available
         let errorMessage = error.message || 'Failed to submit proposal';
@@ -1322,7 +1159,7 @@ export default function ViewSplitLeasePage() {
           if (error.context && typeof error.context.json === 'function') {
             // context is a Response object
             const errorBody = await error.context.json();
-            console.error('❌ Edge Function error body (from json()):', errorBody);
+            logger.error('❌ Edge Function error body (from json()):', errorBody);
             if (errorBody?.error) {
               errorMessage = errorBody.error;
             }
@@ -1331,25 +1168,25 @@ export default function ViewSplitLeasePage() {
             const errorBody = typeof error.context.body === 'string'
               ? JSON.parse(error.context.body)
               : error.context.body;
-            console.error('❌ Edge Function error body (from body):', errorBody);
+            logger.error('❌ Edge Function error body (from body):', errorBody);
             if (errorBody?.error) {
               errorMessage = errorBody.error;
             }
           }
         } catch (e) {
-          console.error('❌ Could not parse error body:', e);
+          logger.error('❌ Could not parse error body:', e);
         }
 
         throw new Error(errorMessage);
       }
 
       if (!data?.success) {
-        console.error('❌ Proposal submission failed:', data?.error);
+        logger.error('❌ Proposal submission failed:', data?.error);
         throw new Error(data?.error || 'Failed to submit proposal');
       }
 
-      console.log('✅ Proposal submitted successfully:', data);
-      console.log('   Proposal ID:', data.data?.proposalId);
+      logger.debug('✅ Proposal submitted successfully:', data);
+      logger.debug('   Proposal ID:', data.data?.proposalId);
 
       // Clear the localStorage draft on successful submission
       clearProposalDraft(proposalData.listingId);
@@ -1372,12 +1209,12 @@ export default function ViewSplitLeasePage() {
 
       // Create messaging thread for the proposal (non-blocking)
       try {
-        console.log('💬 Creating proposal messaging thread...');
+        logger.debug('💬 Creating proposal messaging thread...');
         // Use the actual status returned from the Edge Function
         const actualProposalStatus = data.data?.status || 'Host Review';
         const actualHostId = data.data?.hostId || listing.host?.userId;
 
-        console.log('   Thread params:', {
+        logger.debug('   Thread params:', {
           proposalId: newProposalId,
           guestId: guestId,
           hostId: actualHostId,
@@ -1399,17 +1236,17 @@ export default function ViewSplitLeasePage() {
         });
 
         if (threadResponse.error) {
-          console.warn('⚠️ Thread creation failed (non-blocking):', threadResponse.error);
+          logger.warn('⚠️ Thread creation failed (non-blocking):', threadResponse.error);
         } else {
-          console.log('✅ Proposal thread created:', threadResponse.data);
+          logger.debug('✅ Proposal thread created:', threadResponse.data);
         }
       } catch (threadError) {
         // Non-blocking - don't fail the proposal if thread creation fails
-        console.warn('⚠️ Thread creation error (non-blocking):', threadError);
+        logger.warn('⚠️ Thread creation error (non-blocking):', threadError);
       }
 
     } catch (error) {
-      console.error('❌ Error submitting proposal:', error);
+      logger.error('❌ Error submitting proposal:', error);
 
       // Provide user-friendly error messages for common failure cases
       let userMessage = error.message || 'Failed to submit proposal. Please try again.';
@@ -1437,13 +1274,13 @@ export default function ViewSplitLeasePage() {
 
   // Handle proposal submission - checks auth first
   const handleProposalSubmit = async (proposalData) => {
-    console.log('📋 Proposal submission initiated:', proposalData);
+    logger.debug('📋 Proposal submission initiated:', proposalData);
 
     // Check if user is logged in
     const isLoggedIn = await checkAuthStatus();
 
     if (!isLoggedIn) {
-      console.log('🔐 User not logged in, showing auth modal');
+      logger.debug('🔐 User not logged in, showing auth modal');
       // Store the proposal data for later submission
       setPendingProposalData(proposalData);
       // Close the proposal modal
@@ -1454,13 +1291,13 @@ export default function ViewSplitLeasePage() {
     }
 
     // User is logged in, proceed with submission
-    console.log('✅ User is logged in, submitting proposal');
+    logger.debug('✅ User is logged in, submitting proposal');
     await submitProposal(proposalData);
   };
 
   // Handle successful authentication
   const handleAuthSuccess = async (authResult) => {
-    console.log('🎉 Auth success:', authResult);
+    logger.debug('🎉 Auth success:', authResult);
 
     // Close the auth modal
     setShowAuthModal(false);
@@ -1471,15 +1308,15 @@ export default function ViewSplitLeasePage() {
       const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
       if (userData) {
         setLoggedInUserData(userData);
-        console.log('👤 User data updated after auth:', userData.firstName);
+        logger.debug('👤 User data updated after auth:', userData.firstName);
       }
     } catch (err) {
-      console.error('❌ Error fetching user data after auth:', err);
+      logger.error('❌ Error fetching user data after auth:', err);
     }
 
     // If there's a pending proposal, submit it now
     if (pendingProposalData) {
-      console.log('📤 Submitting pending proposal after auth');
+      logger.debug('📤 Submitting pending proposal after auth');
       // Small delay to ensure auth state is fully updated
       setTimeout(async () => {
         await submitProposal(pendingProposalData);
@@ -1573,77 +1410,30 @@ export default function ViewSplitLeasePage() {
         </div>
       )}
 
-      <main style={{
-        maxWidth: isMobile ? '100%' : '1400px',
-        margin: '0 auto',
-        padding: isMobile ? '1rem' : '2rem',
-        paddingTop: isMobile ? 'calc(80px + 1rem)' : 'calc(100px + 2rem)',
-        display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr' : '1fr 440px',
-        gap: isMobile ? '1.5rem' : '2rem',
-        boxSizing: 'border-box',
-        width: '100%'
-      }}>
+      <main className={styles.mainGrid}>
 
         {/* LEFT COLUMN - CONTENT */}
-        <div className="left-column" style={{
-          minWidth: 0,
-          width: '100%',
-          boxSizing: 'border-box',
-          overflow: 'hidden'
-        }}>
+        <div className={styles.leftColumn}>
 
           {/* Photo Gallery - Magazine Editorial Style */}
-          <section style={{ marginBottom: isMobile ? '1.5rem' : '2rem' }}>
+          <section className={styles.section}>
             {listing.photos && listing.photos.length > 0 ? (
               <PhotoGallery photos={listing.photos} listingName={listing.Name} onPhotoClick={handlePhotoClick} isMobile={isMobile} />
             ) : (
-              <div style={{
-                width: '100%',
-                height: isMobile ? '250px' : '400px',
-                background: COLORS.BG_LIGHT,
-                borderRadius: isMobile ? '8px' : '12px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: COLORS.TEXT_LIGHT
-              }}>
+              <div className={styles.noImagesPlaceholder}>
                 No images available
               </div>
             )}
           </section>
 
           {/* Listing Header */}
-          <section style={{ marginBottom: isMobile ? '1.5rem' : '2rem' }}>
-            <h1 style={{
-              fontSize: isMobile ? '1.5rem' : '2rem',
-              fontWeight: '700',
-              marginBottom: isMobile ? '0.75rem' : '1rem',
-              color: COLORS.TEXT_DARK
-            }}>
+          <section className={styles.section}>
+            <h1 className={styles.listingTitle}>
               {listing.Name}
             </h1>
-            <div style={{
-              display: 'flex',
-              gap: isMobile ? '0.5rem' : '1rem',
-              flexWrap: 'wrap',
-              color: COLORS.TEXT_LIGHT,
-              fontSize: isMobile ? '0.875rem' : '1rem'
-            }}>
+            <div className={styles.listingMeta}>
               {listing.resolvedNeighborhood && listing.resolvedBorough && (
-                <span
-                  onClick={handleLocationClick}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    cursor: 'pointer',
-                    textDecoration: 'underline',
-                    transition: 'color 0.2s'
-                  }}
-                  onMouseEnter={(e) => e.target.style.color = COLORS.PRIMARY}
-                  onMouseLeave={(e) => e.target.style.color = COLORS.TEXT_LIGHT}
-                >
+                <span onClick={handleLocationClick} className={styles.locationLink}>
                   Located in {listing.resolvedNeighborhood}, {listing.resolvedBorough}
                 </span>
               )}
@@ -1656,79 +1446,54 @@ export default function ViewSplitLeasePage() {
           </section>
 
           {/* Features Grid */}
-          <section style={{
-            marginBottom: isMobile ? '1.5rem' : '2rem',
-            display: 'grid',
-            gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(150px, 1fr))',
-            gap: isMobile ? '0.5rem' : '1rem'
-          }}>
+          <section className={styles.featuresGrid}>
             {listing['Kitchen Type'] && (
-              <div style={{ textAlign: 'center', padding: isMobile ? '0.75rem' : '1rem', background: COLORS.BG_LIGHT, borderRadius: isMobile ? '6px' : '8px' }}>
-                <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', height: isMobile ? '1.5rem' : '2rem' }}>
-                  <img src="/assets/images/fridge.svg" alt="Kitchen" style={{ width: isMobile ? '1.5rem' : '2rem', height: isMobile ? '1.5rem' : '2rem' }} />
+              <div className={styles.featureCard}>
+                <div className={styles.featureIcon}>
+                  <img src="/assets/images/fridge.svg" alt="Kitchen" className={styles.featureImage} />
                 </div>
-                <div style={{ fontSize: isMobile ? '0.8125rem' : '1rem' }}>{listing['Kitchen Type']}</div>
+                <div className={styles.featureText}>{listing['Kitchen Type']}</div>
               </div>
             )}
             {listing['Features - Qty Bathrooms'] !== null && (
-              <div style={{ textAlign: 'center', padding: isMobile ? '0.75rem' : '1rem', background: COLORS.BG_LIGHT, borderRadius: isMobile ? '6px' : '8px' }}>
-                <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', height: isMobile ? '1.5rem' : '2rem' }}>
-                  <img src="/assets/images/bath.svg" alt="Bathroom" style={{ width: isMobile ? '1.5rem' : '2rem', height: isMobile ? '1.5rem' : '2rem' }} />
+              <div className={styles.featureCard}>
+                <div className={styles.featureIcon}>
+                  <img src="/assets/images/bath.svg" alt="Bathroom" className={styles.featureImage} />
                 </div>
-                <div style={{ fontSize: isMobile ? '0.8125rem' : '1rem' }}>{listing['Features - Qty Bathrooms']} Bathroom(s)</div>
+                <div className={styles.featureText}>{listing['Features - Qty Bathrooms']} Bathroom(s)</div>
               </div>
             )}
             {listing['Features - Qty Bedrooms'] !== null && (
-              <div style={{ textAlign: 'center', padding: isMobile ? '0.75rem' : '1rem', background: COLORS.BG_LIGHT, borderRadius: isMobile ? '6px' : '8px' }}>
-                <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', height: isMobile ? '1.5rem' : '2rem' }}>
-                  <img src="/assets/images/sleeping.svg" alt="Bedroom" style={{ width: isMobile ? '1.5rem' : '2rem', height: isMobile ? '1.5rem' : '2rem' }} />
+              <div className={styles.featureCard}>
+                <div className={styles.featureIcon}>
+                  <img src="/assets/images/sleeping.svg" alt="Bedroom" className={styles.featureImage} />
                 </div>
-                <div style={{ fontSize: isMobile ? '0.8125rem' : '1rem' }}>{listing['Features - Qty Bedrooms'] === 0 ? 'Studio' : `${listing['Features - Qty Bedrooms']} Bedroom${listing['Features - Qty Bedrooms'] === 1 ? '' : 's'}`}</div>
+                <div className={styles.featureText}>{listing['Features - Qty Bedrooms'] === 0 ? 'Studio' : `${listing['Features - Qty Bedrooms']} Bedroom${listing['Features - Qty Bedrooms'] === 1 ? '' : 's'}`}</div>
               </div>
             )}
             {listing['Features - Qty Beds'] !== null && (
-              <div style={{ textAlign: 'center', padding: isMobile ? '0.75rem' : '1rem', background: COLORS.BG_LIGHT, borderRadius: isMobile ? '6px' : '8px' }}>
-                <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', height: isMobile ? '1.5rem' : '2rem' }}>
-                  <img src="/assets/images/bed.svg" alt="Bed" style={{ width: isMobile ? '1.5rem' : '2rem', height: isMobile ? '1.5rem' : '2rem' }} />
+              <div className={styles.featureCard}>
+                <div className={styles.featureIcon}>
+                  <img src="/assets/images/bed.svg" alt="Bed" className={styles.featureImage} />
                 </div>
-                <div style={{ fontSize: isMobile ? '0.8125rem' : '1rem' }}>{listing['Features - Qty Beds']} Bed(s)</div>
+                <div className={styles.featureText}>{listing['Features - Qty Beds']} Bed(s)</div>
               </div>
             )}
           </section>
 
           {/* Description */}
-          <section style={{ marginBottom: isMobile ? '1.25rem' : '1.5rem' }}>
-            <h2 style={{
-              fontSize: isMobile ? '1rem' : '1.125rem',
-              fontWeight: '600',
-              marginBottom: isMobile ? '0.5rem' : '0.75rem',
-              color: COLORS.TEXT_DARK
-            }}>
+          <section className={styles.sectionSmall}>
+            <h2 className={styles.sectionTitle}>
               Description of Lodging
             </h2>
-            <p style={{
-              lineHeight: '1.6',
-              color: COLORS.TEXT_LIGHT,
-              whiteSpace: 'pre-wrap'
-            }}>
+            <p className={styles.descriptionText}>
               {expandedSections.description
                 ? listing.Description
                 : listing.Description?.slice(0, 360)}
               {listing.Description?.length > 360 && !expandedSections.description && '...'}
             </p>
             {listing.Description?.length > 360 && (
-              <button
-                onClick={() => toggleSection('description')}
-                style={{
-                  marginTop: '0.5rem',
-                  background: 'none',
-                  border: 'none',
-                  color: COLORS.PRIMARY,
-                  cursor: 'pointer',
-                  fontWeight: '600',
-                  textDecoration: 'underline'
-                }}
-              >
+              <button onClick={() => toggleSection('description')} className={styles.readMoreButton}>
                 {expandedSections.description ? 'Read Less' : 'Read More'}
               </button>
             )}
@@ -1736,25 +1501,12 @@ export default function ViewSplitLeasePage() {
 
           {/* Storage Section */}
           {listing.storageOption && (
-            <section style={{ marginBottom: isMobile ? '1.25rem' : '1.5rem' }}>
-              <h2 style={{
-                fontSize: isMobile ? '1rem' : '1.125rem',
-                fontWeight: '600',
-                marginBottom: isMobile ? '0.5rem' : '0.75rem',
-                color: COLORS.TEXT_DARK
-              }}>
+            <section className={styles.sectionSmall}>
+              <h2 className={styles.sectionTitle}>
                 Storage
               </h2>
-              <div style={{
-                padding: isMobile ? '1rem' : '1.5rem',
-                background: COLORS.BG_LIGHT,
-                borderRadius: isMobile ? '8px' : '12px'
-              }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'start',
-                  gap: '1rem'
-                }}>
+              <div className={styles.infoCard}>
+                <div className={styles.infoCardRow}>
                   <svg
                     width="24"
                     height="24"
@@ -1764,17 +1516,17 @@ export default function ViewSplitLeasePage() {
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    style={{ minWidth: '24px', minHeight: '24px', color: COLORS.PRIMARY }}
+                    className={styles.infoCardIcon}
                   >
                     <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
                     <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
                     <line x1="12" y1="22.08" x2="12" y2="12"></line>
                   </svg>
                   <div>
-                    <div style={{ fontWeight: '600', marginBottom: '0.5rem' }}>
+                    <div className={styles.infoCardTitle}>
                       {listing.storageOption.title}
                     </div>
-                    <div style={{ color: COLORS.TEXT_LIGHT, fontSize: '0.9375rem' }}>
+                    <div className={styles.infoCardSubtext}>
                       {listing.storageOption.summaryGuest ||
                        'Store your things between stays, ready when you return.'}
                     </div>
@@ -1786,20 +1538,11 @@ export default function ViewSplitLeasePage() {
 
           {/* Neighborhood Description */}
           {listing['Description - Neighborhood'] && (
-            <section style={{ marginBottom: isMobile ? '1.25rem' : '1.5rem' }}>
-              <h2 style={{
-                fontSize: isMobile ? '1rem' : '1.125rem',
-                fontWeight: '600',
-                marginBottom: isMobile ? '0.5rem' : '0.75rem',
-                color: COLORS.TEXT_DARK
-              }}>
+            <section className={styles.sectionSmall}>
+              <h2 className={styles.sectionTitle}>
                 Neighborhood
               </h2>
-              <p style={{
-                lineHeight: '1.6',
-                color: COLORS.TEXT_LIGHT,
-                whiteSpace: 'pre-wrap'
-              }}>
+              <p className={styles.descriptionText}>
                 {expandedSections.neighborhood
                   ? listing['Description - Neighborhood']
                   : listing['Description - Neighborhood']?.slice(0, 500)}
@@ -1807,18 +1550,7 @@ export default function ViewSplitLeasePage() {
                  !expandedSections.neighborhood && '...'}
               </p>
               {listing['Description - Neighborhood']?.length > 500 && (
-                <button
-                  onClick={() => toggleSection('neighborhood')}
-                  style={{
-                    marginTop: '0.5rem',
-                    background: 'none',
-                    border: 'none',
-                    color: COLORS.PRIMARY,
-                    cursor: 'pointer',
-                    fontWeight: '600',
-                    textDecoration: 'underline'
-                  }}
-                >
+                <button onClick={() => toggleSection('neighborhood')} className={styles.readMoreButton}>
                   {expandedSections.neighborhood ? 'Read Less' : 'Read More'}
                 </button>
               )}
@@ -1827,18 +1559,13 @@ export default function ViewSplitLeasePage() {
 
           {/* Commute Section */}
           {(listing.parkingOption || listing['Time to Station (commute)']) && (
-            <section ref={commuteSectionRef} style={{ marginBottom: isMobile ? '1.25rem' : '1.5rem' }}>
-              <h2 style={{
-                fontSize: isMobile ? '1rem' : '1.125rem',
-                fontWeight: '600',
-                marginBottom: isMobile ? '0.5rem' : '0.75rem',
-                color: COLORS.TEXT_DARK
-              }}>
+            <section ref={commuteSectionRef} className={styles.sectionSmall}>
+              <h2 className={styles.sectionTitle}>
                 Commute
               </h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div className={styles.commuteList}>
                 {listing.parkingOption && (
-                  <div style={{ display: 'flex', alignItems: 'start', gap: '1rem' }}>
+                  <div className={styles.infoCardRow}>
                     <svg
                       width="24"
                       height="24"
@@ -1848,22 +1575,22 @@ export default function ViewSplitLeasePage() {
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      style={{ minWidth: '24px', minHeight: '24px', color: COLORS.PRIMARY }}
+                      className={styles.infoCardIcon}
                     >
                       <path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"></path>
                       <circle cx="6.5" cy="16.5" r="2.5"></circle>
                       <circle cx="16.5" cy="16.5" r="2.5"></circle>
                     </svg>
                     <div>
-                      <div style={{ fontWeight: '600' }}>{listing.parkingOption.label}</div>
-                      <div style={{ color: COLORS.TEXT_LIGHT, fontSize: '0.875rem' }}>
+                      <div className={styles.infoCardTitle}>{listing.parkingOption.label}</div>
+                      <div className={styles.infoCardSubtextSmall}>
                         Convenient parking for your car
                       </div>
                     </div>
                   </div>
                 )}
                 {listing['Time to Station (commute)'] && (
-                  <div style={{ display: 'flex', alignItems: 'start', gap: '1rem' }}>
+                  <div className={styles.infoCardRow}>
                     <svg
                       width="24"
                       height="24"
@@ -1873,15 +1600,15 @@ export default function ViewSplitLeasePage() {
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      style={{ minWidth: '24px', minHeight: '24px', color: COLORS.PRIMARY }}
+                      className={styles.infoCardIcon}
                     >
                       <rect x="3" y="6" width="18" height="11" rx="2"></rect>
                       <path d="M7 15h.01M17 15h.01M8 6v5M16 6v5"></path>
                       <path d="M3 12h18"></path>
                     </svg>
                     <div>
-                      <div style={{ fontWeight: '600' }}>{listing['Time to Station (commute)']} to Metro</div>
-                      <div style={{ color: COLORS.TEXT_LIGHT, fontSize: '0.875rem' }}>
+                      <div className={styles.infoCardTitle}>{listing['Time to Station (commute)']} to Metro</div>
+                      <div className={styles.infoCardSubtextSmall}>
                         Quick walk to nearest station
                       </div>
                     </div>
@@ -1893,38 +1620,21 @@ export default function ViewSplitLeasePage() {
 
           {/* Amenities Section */}
           {(listing.amenitiesInUnit?.length > 0 || listing.safetyFeatures?.length > 0) && (
-            <section ref={amenitiesSectionRef} style={{ marginBottom: isMobile ? '1.25rem' : '1.5rem' }}>
-              <h2 style={{
-                fontSize: isMobile ? '1rem' : '1.125rem',
-                fontWeight: '600',
-                marginBottom: isMobile ? '0.5rem' : '0.75rem',
-                color: COLORS.TEXT_DARK
-              }}>
+            <section ref={amenitiesSectionRef} className={styles.sectionSmall}>
+              <h2 className={styles.sectionTitle}>
                 Amenities
               </h2>
 
               {listing.amenitiesInUnit?.length > 0 && (
-                <div style={{ marginBottom: '1rem' }}>
-                  <h3 style={{ fontSize: isMobile ? '0.75rem' : '0.875rem', fontWeight: '600', marginBottom: '0.5rem', color: COLORS.TEXT_LIGHT, textTransform: 'uppercase', letterSpacing: '0.5px' }}>In-Unit</h3>
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: isMobile ? 'repeat(auto-fill, minmax(140px, 1fr))' : 'repeat(auto-fill, minmax(200px, 1fr))',
-                    gap: isMobile ? '0.5rem' : '0.75rem'
-                  }}>
+                <div className={styles.amenitiesGroup}>
+                  <h3 className={styles.amenitiesSubtitle}>In-Unit</h3>
+                  <div className={styles.amenitiesGrid}>
                     {listing.amenitiesInUnit.map(amenity => (
-                      <div
-                        key={amenity.id}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem',
-                          padding: isMobile ? '0.375rem' : '0.5rem'
-                        }}
-                      >
+                      <div key={amenity.id} className={styles.amenityItem}>
                         {amenity.icon && (
-                          <img src={amenity.icon} alt="" style={{ width: isMobile ? '20px' : '24px', height: isMobile ? '20px' : '24px' }} />
+                          <img src={amenity.icon} alt="" className={styles.amenityIcon} />
                         )}
-                        <span style={{ fontSize: isMobile ? '0.8125rem' : '0.875rem' }}>{amenity.name}</span>
+                        <span className={styles.amenityText}>{amenity.name}</span>
                       </div>
                     ))}
                   </div>
@@ -1933,26 +1643,14 @@ export default function ViewSplitLeasePage() {
 
               {listing.safetyFeatures?.length > 0 && (
                 <div>
-                  <h3 style={{ fontSize: isMobile ? '0.75rem' : '0.875rem', fontWeight: '600', marginBottom: '0.5rem', color: COLORS.TEXT_LIGHT, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Safety Features</h3>
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: isMobile ? 'repeat(auto-fill, minmax(140px, 1fr))' : 'repeat(auto-fill, minmax(200px, 1fr))',
-                    gap: isMobile ? '0.5rem' : '0.75rem'
-                  }}>
+                  <h3 className={styles.amenitiesSubtitle}>Safety Features</h3>
+                  <div className={styles.amenitiesGrid}>
                     {listing.safetyFeatures.map(feature => (
-                      <div
-                        key={feature.id}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem',
-                          padding: isMobile ? '0.375rem' : '0.5rem'
-                        }}
-                      >
+                      <div key={feature.id} className={styles.amenityItem}>
                         {feature.icon && (
-                          <img src={feature.icon} alt="" style={{ width: isMobile ? '20px' : '24px', height: isMobile ? '20px' : '24px' }} />
+                          <img src={feature.icon} alt="" className={styles.amenityIcon} />
                         )}
-                        <span style={{ fontSize: isMobile ? '0.8125rem' : '0.875rem' }}>{feature.name}</span>
+                        <span className={styles.amenityText}>{feature.name}</span>
                       </div>
                     ))}
                   </div>
@@ -1963,30 +1661,17 @@ export default function ViewSplitLeasePage() {
 
           {/* House Rules */}
           {listing.houseRules?.length > 0 && (
-            <section ref={houseRulesSectionRef} style={{ marginBottom: isMobile ? '1.25rem' : '1.5rem' }}>
-              <h2 style={{
-                fontSize: isMobile ? '1rem' : '1.125rem',
-                fontWeight: '600',
-                marginBottom: isMobile ? '0.5rem' : '0.75rem',
-                color: COLORS.TEXT_DARK
-              }}>
+            <section ref={houseRulesSectionRef} className={styles.sectionSmall}>
+              <h2 className={styles.sectionTitle}>
                 House Rules
               </h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <div className={styles.houseRulesList}>
                 {listing.houseRules.map(rule => (
-                  <div
-                    key={rule.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      padding: isMobile ? '0.375rem' : '0.5rem'
-                    }}
-                  >
+                  <div key={rule.id} className={styles.houseRuleItem}>
                     {rule.icon && (
-                      <img src={rule.icon} alt="" style={{ width: isMobile ? '20px' : '24px', height: isMobile ? '20px' : '24px' }} />
+                      <img src={rule.icon} alt="" className={styles.houseRuleIcon} />
                     )}
-                    <span style={{ fontSize: isMobile ? '0.875rem' : '1rem' }}>{rule.name}</span>
+                    <span className={styles.houseRuleText}>{rule.name}</span>
                   </div>
                 ))}
               </div>
@@ -1994,26 +1679,11 @@ export default function ViewSplitLeasePage() {
           )}
 
           {/* Map Section */}
-          <section ref={mapSectionRef} style={{ marginBottom: isMobile ? '1.25rem' : '1.5rem' }}>
-            <h2 style={{
-              fontSize: isMobile ? '1rem' : '1.125rem',
-              fontWeight: '600',
-              marginBottom: isMobile ? '0.5rem' : '0.75rem',
-              color: COLORS.TEXT_DARK
-            }}>
+          <section ref={mapSectionRef} className={styles.sectionSmall}>
+            <h2 className={styles.sectionTitle}>
               Map
             </h2>
-            <div style={{
-              height: isMobile ? '300px' : '400px',
-              borderRadius: isMobile ? '8px' : '12px',
-              overflow: 'hidden',
-              border: `1px solid ${COLORS.BG_LIGHT}`,
-              position: 'relative',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: COLORS.BG_LIGHT
-            }}>
+            <div className={styles.mapContainer}>
               {shouldLoadMap ? (
                 <GoogleMap
                   ref={mapRef}
@@ -2025,11 +1695,7 @@ export default function ViewSplitLeasePage() {
                   disableAutoZoom={false}
                 />
               ) : (
-                <div style={{
-                  color: COLORS.TEXT_LIGHT,
-                  fontSize: '0.9rem',
-                  textAlign: 'center'
-                }}>
+                <div className={styles.mapPlaceholder}>
                   Loading map...
                 </div>
               )}
@@ -2038,92 +1704,34 @@ export default function ViewSplitLeasePage() {
 
           {/* Host Section */}
           {listing.host && (
-            <section style={{ marginBottom: isMobile ? '1.25rem' : '1.5rem' }}>
-              <h2 style={{
-                fontSize: isMobile ? '1rem' : '1.125rem',
-                fontWeight: '600',
-                marginBottom: isMobile ? '0.5rem' : '0.75rem',
-                color: COLORS.TEXT_DARK
-              }}>
+            <section className={styles.sectionSmall}>
+              <h2 className={styles.sectionTitle}>
                 Meet Your Host
               </h2>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                padding: isMobile ? '0.75rem' : '1rem',
-                background: COLORS.BG_LIGHT,
-                borderRadius: isMobile ? '8px' : '10px'
-              }}>
+              <div className={styles.hostCard}>
                 {listing.host['Profile Photo'] && (
                   <img
                     src={listing.host['Profile Photo']}
                     alt={listing.host['Name - First']}
-                    style={{
-                      width: isMobile ? '40px' : '48px',
-                      height: isMobile ? '40px' : '48px',
-                      borderRadius: '50%',
-                      objectFit: 'cover'
-                    }}
+                    className={styles.hostPhoto}
                   />
                 )}
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: isMobile ? '0.875rem' : '0.9375rem', fontWeight: '600', marginBottom: '0.125rem' }}>
+                <div className={styles.hostInfo}>
+                  <div className={styles.hostName}>
                     {listing.host['Name - First']} {listing.host['Name - Last']?.charAt(0)}.
                   </div>
-                  <div style={{ color: COLORS.TEXT_LIGHT, fontSize: isMobile ? '0.75rem' : '0.8125rem' }}>Host</div>
+                  <div className={styles.hostLabel}>Host</div>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button
-                    onClick={() => setShowContactHostModal(true)}
-                    style={{
-                      padding: isMobile ? '0.375rem 0.75rem' : '0.5rem 1rem',
-                      background: COLORS.PRIMARY,
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '6px',
-                      fontSize: isMobile ? '0.8125rem' : '0.875rem',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.375rem',
-                      boxShadow: '0 2px 6px rgba(49, 19, 93, 0.2)'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.background = COLORS.PRIMARY_HOVER;
-                      e.target.style.transform = 'translateY(-1px)';
-                      e.target.style.boxShadow = '0 3px 8px rgba(49, 19, 93, 0.25)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.background = COLORS.PRIMARY;
-                      e.target.style.transform = '';
-                      e.target.style.boxShadow = '0 2px 6px rgba(49, 19, 93, 0.2)';
-                    }}
-                  >
-                    <svg
-                      width={isMobile ? '14' : '16'}
-                      height={isMobile ? '14' : '16'}
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                    </svg>
-                    <span>Message</span>
-                  </button>
-                  {listing.host?.userId && (
+                  {/* Hide Message button for Host users - only Guests can message */}
+                  {(loggedInUserData?.userType || getUserType()) !== 'Host' && (
                     <button
-                      onClick={() => window.location.href = '/account-profile'}
+                      onClick={() => setShowContactHostModal(true)}
                       style={{
                         padding: isMobile ? '0.375rem 0.75rem' : '0.5rem 1rem',
-                        background: 'transparent',
-                        color: COLORS.PRIMARY,
-                        border: `1.5px solid ${COLORS.PRIMARY}`,
+                        background: COLORS.PRIMARY,
+                        color: 'white',
+                        border: 'none',
                         borderRadius: '6px',
                         fontSize: isMobile ? '0.8125rem' : '0.875rem',
                         fontWeight: '600',
@@ -2131,22 +1739,43 @@ export default function ViewSplitLeasePage() {
                         transition: 'all 0.2s ease',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.375rem'
+                        gap: '0.375rem',
+                        boxShadow: '0 2px 6px rgba(49, 19, 93, 0.2)'
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = COLORS.PRIMARY;
-                        e.currentTarget.style.color = 'white';
-                        e.currentTarget.style.transform = 'translateY(-1px)';
+                        e.target.style.background = COLORS.PRIMARY_HOVER;
+                        e.target.style.transform = 'translateY(-1px)';
+                        e.target.style.boxShadow = '0 3px 8px rgba(49, 19, 93, 0.25)';
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'transparent';
-                        e.currentTarget.style.color = COLORS.PRIMARY;
-                        e.currentTarget.style.transform = '';
+                        e.target.style.background = COLORS.PRIMARY;
+                        e.target.style.transform = '';
+                        e.target.style.boxShadow = '0 2px 6px rgba(49, 19, 93, 0.2)';
                       }}
                     >
                       <svg
                         width={isMobile ? '14' : '16'}
                         height={isMobile ? '14' : '16'}
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                      </svg>
+                      <span>Message</span>
+                    </button>
+                  )}
+                  {listing.host?.userId && (
+                    <button
+                      onClick={() => window.location.href = '/account-profile'}
+                      className={styles.hostButtonSecondary}
+                    >
+                      <svg
+                        width="16"
+                        height="16"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
@@ -2167,37 +1796,22 @@ export default function ViewSplitLeasePage() {
 
           {/* Cancellation Policy */}
           {listing.cancellationPolicy && (
-            <section style={{ marginBottom: isMobile ? '1.25rem' : '1.5rem' }}>
-              <h2 style={{
-                fontSize: isMobile ? '1rem' : '1.125rem',
-                fontWeight: '600',
-                marginBottom: isMobile ? '0.5rem' : '0.75rem',
-                color: COLORS.TEXT_DARK
-              }}>
+            <section className={styles.sectionSmall}>
+              <h2 className={styles.sectionTitle}>
                 Cancellation Policy
               </h2>
-              <div style={{
-                padding: isMobile ? '1rem' : '1.5rem',
-                background: COLORS.BG_LIGHT,
-                borderRadius: isMobile ? '8px' : '12px',
-                border: `1px solid ${COLORS.BG_LIGHT}`
-              }}>
-                <div style={{
-                  fontSize: isMobile ? '1rem' : '1.125rem',
-                  fontWeight: '600',
-                  marginBottom: isMobile ? '0.75rem' : '1rem',
-                  color: COLORS.PRIMARY
-                }}>
+              <div className={styles.cancellationCard}>
+                <div className={styles.cancellationTitle}>
                   {listing.cancellationPolicy.display}
                 </div>
 
                 {/* Best Case */}
                 {listing.cancellationPolicy.bestCaseText && (
-                  <div style={{ marginBottom: '0.75rem' }}>
-                    <div style={{ fontWeight: '600', color: '#16a34a', marginBottom: '0.25rem' }}>
-                      ✓ Best Case
+                  <div className={styles.cancellationCase}>
+                    <div className={styles.cancellationCaseBest}>
+                      Best Case
                     </div>
-                    <div style={{ color: COLORS.TEXT_LIGHT, fontSize: '0.9375rem', lineHeight: '1.6' }}>
+                    <div className={styles.cancellationCaseText}>
                       {listing.cancellationPolicy.bestCaseText}
                     </div>
                   </div>
@@ -2205,11 +1819,11 @@ export default function ViewSplitLeasePage() {
 
                 {/* Medium Case */}
                 {listing.cancellationPolicy.mediumCaseText && (
-                  <div style={{ marginBottom: '0.75rem' }}>
-                    <div style={{ fontWeight: '600', color: '#ea580c', marginBottom: '0.25rem' }}>
-                      ⚠ Medium Case
+                  <div className={styles.cancellationCase}>
+                    <div className={styles.cancellationCaseMedium}>
+                      Medium Case
                     </div>
-                    <div style={{ color: COLORS.TEXT_LIGHT, fontSize: '0.9375rem', lineHeight: '1.6' }}>
+                    <div className={styles.cancellationCaseText}>
                       {listing.cancellationPolicy.mediumCaseText}
                     </div>
                   </div>
@@ -2217,11 +1831,11 @@ export default function ViewSplitLeasePage() {
 
                 {/* Worst Case */}
                 {listing.cancellationPolicy.worstCaseText && (
-                  <div style={{ marginBottom: '0.75rem' }}>
-                    <div style={{ fontWeight: '600', color: '#dc2626', marginBottom: '0.25rem' }}>
-                      ✕ Worst Case
+                  <div className={styles.cancellationCase}>
+                    <div className={styles.cancellationCaseWorst}>
+                      Worst Case
                     </div>
-                    <div style={{ color: COLORS.TEXT_LIGHT, fontSize: '0.9375rem', lineHeight: '1.6' }}>
+                    <div className={styles.cancellationCaseText}>
                       {listing.cancellationPolicy.worstCaseText}
                     </div>
                   </div>
@@ -2229,35 +1843,22 @@ export default function ViewSplitLeasePage() {
 
                 {/* Summary Texts */}
                 {listing.cancellationPolicy.summaryTexts && Array.isArray(listing.cancellationPolicy.summaryTexts) && listing.cancellationPolicy.summaryTexts.length > 0 && (
-                  <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: `1px solid #e5e7eb` }}>
-                    <div style={{ fontWeight: '600', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
+                  <div className={styles.cancellationSummary}>
+                    <div className={styles.cancellationSummaryTitle}>
                       Summary:
                     </div>
-                    <ul style={{ margin: 0, paddingLeft: '1.25rem', color: COLORS.TEXT_LIGHT, fontSize: '0.875rem', lineHeight: '1.6' }}>
+                    <ul className={styles.cancellationSummaryList}>
                       {listing.cancellationPolicy.summaryTexts.map((text, idx) => (
-                        <li key={idx} style={{ marginBottom: '0.25rem' }}>{text}</li>
+                        <li key={idx}>{text}</li>
                       ))}
                     </ul>
                   </div>
                 )}
 
                 {/* Link to full policy page */}
-                <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: `1px solid #e5e7eb` }}>
-                  <a
-                    href="/policies#cancellation-and-refund-policy"
-                    style={{
-                      color: COLORS.PRIMARY,
-                      textDecoration: 'none',
-                      fontSize: '0.875rem',
-                      fontWeight: '600',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '0.25rem'
-                    }}
-                    onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
-                    onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
-                  >
-                    View full cancellation policy →
+                <div className={styles.cancellationLink}>
+                  <a href="/policies#cancellation-and-refund-policy" className={styles.cancellationLinkAnchor}>
+                    View full cancellation policy
                   </a>
                 </div>
               </div>
@@ -2266,86 +1867,27 @@ export default function ViewSplitLeasePage() {
         </div>
 
         {/* RIGHT COLUMN - BOOKING WIDGET (hidden on mobile) */}
-        <div
-          className="booking-widget"
-          style={{
-            display: isMobile ? 'none' : 'block',
-            position: 'sticky',
-            top: 'calc(80px + 20px)',
-            alignSelf: 'flex-start',
-            height: 'fit-content',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            borderRadius: '16px',
-            padding: '28px',
-            background: 'white',
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3), 0 0 1px rgba(0, 0, 0, 0.05)',
-            backdropFilter: 'blur(10px)',
-            transition: 'transform 0.3s ease, box-shadow 0.3s ease'
-          }}
-          onMouseEnter={(e) => {
-            if (!isMobile) {
-              e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.boxShadow = '0 24px 70px rgba(0, 0, 0, 0.35), 0 0 1px rgba(0, 0, 0, 0.05)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!isMobile) {
-              e.currentTarget.style.transform = '';
-              e.currentTarget.style.boxShadow = '0 20px 60px rgba(0, 0, 0, 0.3), 0 0 1px rgba(0, 0, 0, 0.05)';
-            }
-          }}
-        >
+        <div className={`${styles.bookingWidget} ${isMobile ? styles.hiddenMobile : ''}`}>
           {/* Price Display */}
-          <div style={{
-            background: 'linear-gradient(135deg, #f8f9ff 0%, #faf5ff 100%)',
-            padding: '12px',
-            borderRadius: '12px',
-            marginBottom: '16px',
-            border: '1px solid #e9d5ff'
-          }}>
-            <div style={{
-              fontSize: '32px',
-              fontWeight: '800',
-              background: 'linear-gradient(135deg, #31135d 0%, #31135d 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              letterSpacing: '-1px',
-              display: 'inline-block'
-            }}>
+          <div className={styles.bookingPriceDisplay}>
+            <div className={styles.bookingPriceAmount}>
               {pricingBreakdown?.valid && pricingBreakdown?.pricePerNight
                 ? `$${Number.isInteger(pricingBreakdown.pricePerNight) ? pricingBreakdown.pricePerNight : pricingBreakdown.pricePerNight.toFixed(2)}`
                 : 'Select Days'}
-              <span style={{
-                fontSize: '16px',
-                color: '#6B7280',
-                fontWeight: '500',
-                background: 'none',
-                WebkitTextFillColor: '#6B7280'
-              }}>/night</span>
+              <span className={styles.bookingPriceUnit}>/night</span>
             </div>
           </div>
 
           {/* Move-in Date */}
-          <div style={{ marginBottom: '10px' }}>
-            <label style={{
-              fontSize: '12px',
-              fontWeight: '700',
-              color: '#31135d',
-              marginBottom: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>
+          <div className={styles.bookingFieldGroup}>
+            <label className={styles.bookingLabel}>
               <span
                 onClick={(e) => {
                   e.stopPropagation();
-                  console.log('Move-in text clicked, current state:', activeInfoTooltip);
+                  logger.debug('Move-in text clicked, current state:', activeInfoTooltip);
                   setActiveInfoTooltip(activeInfoTooltip === 'moveIn' ? null : 'moveIn');
                 }}
-                style={{ cursor: 'pointer' }}
+                className={styles.bookingLabelClickable}
               >
                 Ideal Move-In
               </span>
@@ -2353,10 +1895,10 @@ export default function ViewSplitLeasePage() {
                 ref={moveInInfoRef}
                 onClick={(e) => {
                   e.stopPropagation();
-                  console.log('Move-in info icon clicked, current state:', activeInfoTooltip);
+                  logger.debug('Move-in info icon clicked, current state:', activeInfoTooltip);
                   setActiveInfoTooltip(activeInfoTooltip === 'moveIn' ? null : 'moveIn');
                 }}
-                style={{ width: '16px', height: '16px', color: '#9CA3AF', cursor: 'pointer' }}
+                className={styles.bookingInfoIcon}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -2364,107 +1906,35 @@ export default function ViewSplitLeasePage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
             </label>
-            <div style={{ position: 'relative', marginBottom: '8px' }}>
+            <div className={styles.bookingInputWrapper}>
               <input
                 type="date"
                 value={moveInDate || ''}
                 min={minMoveInDate}
                 onChange={(e) => setMoveInDate(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  border: '2px solid #E5E7EB',
-                  borderRadius: '10px',
-                  fontSize: '15px',
-                  fontWeight: '500',
-                  color: '#111827',
-                  transition: 'all 0.2s ease',
-                  cursor: 'pointer',
-                  background: 'white',
-                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.borderColor = '#31135d';
-                  e.target.style.boxShadow = '0 4px 6px rgba(49, 19, 93, 0.1)';
-                }}
-                onMouseLeave={(e) => {
-                  if (document.activeElement !== e.target) {
-                    e.target.style.borderColor = '#E5E7EB';
-                    e.target.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)';
-                  }
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = '#31135d';
-                  e.target.style.boxShadow = '0 0 0 4px rgba(49, 19, 93, 0.15)';
-                  e.target.style.transform = 'translateY(-1px)';
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = '#E5E7EB';
-                  e.target.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)';
-                  e.target.style.transform = '';
-                }}
+                className={styles.bookingDateInput}
               />
             </div>
-            <div style={{
-              fontSize: '12px',
-              color: '#6B7280',
-              lineHeight: '1.4',
-              marginBottom: '10px',
-              fontWeight: '400',
-              paddingLeft: '4px'
-            }}>
+            <div className={styles.bookingHelpText}>
               Minimum 2 weeks from today. Date auto-updates based on selected days.
             </div>
           </div>
 
           {/* Strict Mode */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: '10px',
-              marginBottom: '14px',
-              padding: '12px',
-              background: 'linear-gradient(135deg, #f8f9ff 0%, #faf5ff 100%)',
-              borderRadius: '10px',
-              border: '1px solid #e9d5ff',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'linear-gradient(135deg, #f5f3ff 0%, #faf5ff 100%)';
-              e.currentTarget.style.borderColor = '#d8b4fe';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'linear-gradient(135deg, #f8f9ff 0%, #faf5ff 100%)';
-              e.currentTarget.style.borderColor = '#e9d5ff';
-            }}
-          >
+          <div className={styles.bookingStrictMode}>
             <input
               type="checkbox"
               checked={strictMode}
               onChange={() => setStrictMode(!strictMode)}
-              style={{
-                width: '18px',
-                height: '18px',
-                cursor: 'pointer',
-                accentColor: '#31135d',
-                marginTop: '2px',
-                flexShrink: 0
-              }}
+              className={styles.bookingCheckbox}
             />
-            <label style={{
-              fontSize: '14px',
-              color: '#111827',
-              userSelect: 'none',
-              lineHeight: '1.5',
-              fontWeight: '500'
-            }}>
+            <label className={styles.bookingCheckboxLabel}>
               <span
                 onClick={(e) => {
                   e.stopPropagation();
                   setActiveInfoTooltip(activeInfoTooltip === 'flexibility' ? null : 'flexibility');
                 }}
-                style={{ cursor: 'pointer' }}
+                className={styles.bookingLabelClickable}
               >
                 Strict (no negotiation on exact move in)
               </span>
@@ -2474,15 +1944,7 @@ export default function ViewSplitLeasePage() {
                   e.stopPropagation();
                   setActiveInfoTooltip(activeInfoTooltip === 'flexibility' ? null : 'flexibility');
                 }}
-                style={{
-                  display: 'inline-block',
-                  width: '14px',
-                  height: '14px',
-                  verticalAlign: 'middle',
-                  marginLeft: '2px',
-                  opacity: 0.6,
-                  cursor: 'pointer'
-                }}
+                className={styles.bookingInfoIconSmall}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -2494,13 +1956,7 @@ export default function ViewSplitLeasePage() {
 
           {/* Weekly Schedule Selector - Only render on desktop to prevent race conditions with mobile instances */}
           {!isMobile && scheduleSelectorListing && (
-            <div style={{
-              marginBottom: '14px',
-              padding: '12px',
-              background: 'linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)',
-              borderRadius: '12px',
-              border: '1px solid #E5E7EB'
-            }}>
+            <div className={styles.bookingScheduleWrapper}>
               <ListingScheduleSelector
                 listing={scheduleSelectorListing}
                 initialSelectedDays={selectedDayObjects}
@@ -2513,28 +1969,15 @@ export default function ViewSplitLeasePage() {
               />
 
               {/* Listing's weekly pattern info + custom schedule option */}
-              <div style={{
-                marginTop: '12px',
-                fontSize: '13px',
-                color: '#4B5563'
-              }}>
+              <div className={styles.bookingScheduleInfo}>
                 <span>This listing is </span>
-                <strong style={{ color: '#31135d' }}>
+                <strong className={styles.bookingScheduleHighlight}>
                   {listing?.['Weeks offered'] || 'Every week'}
                 </strong>
                 <span>. </span>
                 <button
                   onClick={() => setShowCustomScheduleInput(!showCustomScheduleInput)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#7C3AED',
-                    textDecoration: 'underline',
-                    cursor: 'pointer',
-                    padding: 0,
-                    fontSize: '13px',
-                    fontWeight: '500'
-                  }}
+                  className={styles.bookingCustomScheduleToggle}
                 >
                   {showCustomScheduleInput ? 'Hide custom schedule' : 'Click here if you want to specify another recurrent schedule'}
                 </button>
@@ -2542,35 +1985,14 @@ export default function ViewSplitLeasePage() {
 
               {/* Custom schedule freeform input */}
               {showCustomScheduleInput && (
-                <div style={{ marginTop: '10px' }}>
+                <div className={styles.bookingCustomScheduleInput}>
                   <textarea
                     value={customScheduleDescription}
                     onChange={(e) => setCustomScheduleDescription(e.target.value)}
                     placeholder="Describe your preferred schedule pattern in detail (e.g., 'I need the space every other week starting January 15th' or 'Weekdays only for the first month, then full weeks')"
-                    style={{
-                      width: '100%',
-                      minHeight: '80px',
-                      padding: '10px 12px',
-                      border: '2px solid #E5E7EB',
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      fontFamily: 'inherit',
-                      resize: 'vertical',
-                      boxSizing: 'border-box'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#7C3AED';
-                      e.target.style.outline = 'none';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#E5E7EB';
-                    }}
+                    className={styles.bookingTextarea}
                   />
-                  <p style={{
-                    marginTop: '6px',
-                    fontSize: '11px',
-                    color: '#6B7280'
-                  }}>
+                  <p className={styles.bookingCustomScheduleHelp}>
                     The host will review your custom schedule request and may adjust the proposal accordingly.
                   </p>
                 </div>
@@ -2579,25 +2001,15 @@ export default function ViewSplitLeasePage() {
           )}
 
           {/* Reservation Span */}
-          <div style={{ marginBottom: '12px' }}>
-            <label style={{
-              fontSize: '12px',
-              fontWeight: '700',
-              color: '#31135d',
-              marginBottom: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>
+          <div className={styles.bookingFieldGroup}>
+            <label className={styles.bookingLabel}>
               <span
                 onClick={(e) => {
                   e.stopPropagation();
-                  console.log('Reservation span text clicked, current state:', activeInfoTooltip);
+                  logger.debug('Reservation span text clicked, current state:', activeInfoTooltip);
                   setActiveInfoTooltip(activeInfoTooltip === 'reservationSpan' ? null : 'reservationSpan');
                 }}
-                style={{ cursor: 'pointer' }}
+                className={styles.bookingLabelClickable}
               >
                 Reservation Span
               </span>
@@ -2605,10 +2017,10 @@ export default function ViewSplitLeasePage() {
                 ref={reservationSpanInfoRef}
                 onClick={(e) => {
                   e.stopPropagation();
-                  console.log('Reservation span info icon clicked, current state:', activeInfoTooltip);
+                  logger.debug('Reservation span info icon clicked, current state:', activeInfoTooltip);
                   setActiveInfoTooltip(activeInfoTooltip === 'reservationSpan' ? null : 'reservationSpan');
                 }}
-                style={{ width: '16px', height: '16px', color: '#9CA3AF', cursor: 'pointer' }}
+                className={styles.bookingInfoIcon}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -2616,43 +2028,11 @@ export default function ViewSplitLeasePage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
             </label>
-            <div style={{ position: 'relative' }}>
+            <div className={styles.bookingSelectWrapper}>
               <select
                 value={reservationSpan}
                 onChange={(e) => setReservationSpan(Number(e.target.value))}
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  paddingRight: '40px',
-                  border: '2px solid #E5E7EB',
-                  borderRadius: '10px',
-                  fontSize: '15px',
-                  fontWeight: '500',
-                  color: '#111827',
-                  background: 'white',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  appearance: 'none',
-                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.borderColor = '#31135d';
-                  e.target.style.boxShadow = '0 4px 6px rgba(49, 19, 93, 0.1)';
-                }}
-                onMouseLeave={(e) => {
-                  if (document.activeElement !== e.target) {
-                    e.target.style.borderColor = '#E5E7EB';
-                    e.target.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)';
-                  }
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = '#31135d';
-                  e.target.style.boxShadow = '0 0 0 4px rgba(49, 19, 93, 0.15)';
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = '#E5E7EB';
-                  e.target.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)';
-                }}
+                className={styles.bookingSelect}
               >
                 {[6, 7, 8, 9, 10, 12, 13, 16, 17, 20, 22, 26].map(weeks => (
                   <option key={weeks} value={weeks}>
@@ -2660,18 +2040,7 @@ export default function ViewSplitLeasePage() {
                   </option>
                 ))}
               </select>
-              <div style={{
-                position: 'absolute',
-                right: '14px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                width: '0',
-                height: '0',
-                borderLeft: '5px solid transparent',
-                borderRight: '5px solid transparent',
-                borderTop: '5px solid #31135d',
-                pointerEvents: 'none'
-              }}></div>
+              <div className={styles.bookingSelectArrow}></div>
             </div>
             {/* Schedule Pattern Highlight - shows actual weeks for alternating patterns */}
             <SchedulePatternHighlight
@@ -2681,22 +2050,11 @@ export default function ViewSplitLeasePage() {
           </div>
 
           {/* Price Breakdown */}
-          <div style={{
-            marginBottom: '12px',
-            padding: '12px',
-            background: 'linear-gradient(135deg, #f9fafb 0%, #ffffff 100%)',
-            borderRadius: '10px',
-            border: '1px solid #E5E7EB'
-          }}>
-            {console.log('Rendering prices - pricingBreakdown:', pricingBreakdown)}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              fontSize: '15px'
-            }}>
-              <span style={{ color: '#111827', fontWeight: '500' }}>4-Week Rent</span>
-              <span style={{ color: '#111827', fontWeight: '700', fontSize: '16px' }}>
+          <div className={styles.bookingPriceBreakdown}>
+            {logger.debug('Rendering prices - pricingBreakdown:', pricingBreakdown)}
+            <div className={styles.bookingPriceRow}>
+              <span className={styles.bookingPriceLabel}>4-Week Rent</span>
+              <span className={styles.bookingPriceValue}>
                 {pricingBreakdown?.valid && pricingBreakdown?.fourWeekRent
                   ? formatPrice(pricingBreakdown.fourWeekRent)
                   : priceMessage || 'Please Add More Days'}
@@ -2705,27 +2063,9 @@ export default function ViewSplitLeasePage() {
           </div>
 
           {/* Total Row */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '12px 0',
-            borderTop: '2px solid #E5E7EB',
-            marginBottom: '10px'
-          }}>
-            <span style={{
-              fontSize: '16px',
-              fontWeight: '700',
-              color: '#111827'
-            }}>Reservation Estimated Total</span>
-            <span style={{
-              fontSize: '28px',
-              fontWeight: '800',
-              background: 'linear-gradient(135deg, #31135d 0%, #31135d 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text'
-            }}>
+          <div className={styles.bookingTotalRow}>
+            <span className={styles.bookingTotalLabel}>Reservation Estimated Total</span>
+            <span className={styles.bookingTotalValue}>
               {pricingBreakdown?.valid && pricingBreakdown?.reservationTotal
                 ? formatPrice(pricingBreakdown.reservationTotal)
                 : priceMessage || 'Please Add More Days'}
@@ -2734,49 +2074,17 @@ export default function ViewSplitLeasePage() {
 
           {/* Create Proposal Button */}
           <button
-            onClick={(e) => {
+            onClick={() => {
               if (scheduleValidation?.valid && pricingBreakdown?.valid && !existingProposalForListing) {
-                e.target.style.transform = 'scale(0.98)';
-                setTimeout(() => {
-                  e.target.style.transform = '';
-                }, 150);
                 handleCreateProposal();
               }
             }}
             disabled={!scheduleValidation?.valid || !pricingBreakdown?.valid || !!existingProposalForListing}
-            style={{
-              width: '100%',
-              padding: '14px',
-              background: existingProposalForListing
-                ? '#D1D5DB'
-                : scheduleValidation?.valid && pricingBreakdown?.valid
-                  ? 'linear-gradient(135deg, #31135d 0%, #31135d 100%)'
-                  : '#D1D5DB',
-              color: 'white',
-              border: 'none',
-              borderRadius: '10px',
-              fontSize: '16px',
-              fontWeight: '700',
-              cursor: existingProposalForListing || !scheduleValidation?.valid || !pricingBreakdown?.valid ? 'not-allowed' : 'pointer',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              boxShadow: !existingProposalForListing && scheduleValidation?.valid && pricingBreakdown?.valid
-                ? '0 4px 14px rgba(49, 19, 93, 0.4)'
-                : 'none',
-              position: 'relative',
-              overflow: 'hidden'
-            }}
-            onMouseEnter={(e) => {
-              if (!existingProposalForListing && scheduleValidation?.valid && pricingBreakdown?.valid) {
-                e.target.style.transform = 'translateY(-2px)';
-                e.target.style.boxShadow = '0 8px 24px rgba(49, 19, 93, 0.5)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!existingProposalForListing && scheduleValidation?.valid && pricingBreakdown?.valid) {
-                e.target.style.transform = '';
-                e.target.style.boxShadow = '0 4px 14px rgba(49, 19, 93, 0.4)';
-              }
-            }}
+            className={`${styles.bookingCreateButton} ${
+              !existingProposalForListing && scheduleValidation?.valid && pricingBreakdown?.valid
+                ? styles.bookingCreateButtonEnabled
+                : styles.bookingCreateButtonDisabled
+            }`}
           >
             {existingProposalForListing
               ? 'Proposal Already Exists'
@@ -2789,21 +2097,7 @@ export default function ViewSplitLeasePage() {
           {existingProposalForListing && loggedInUserData?.userId && (
             <a
               href={`/guest-proposals/${loggedInUserData.userId}?proposal=${existingProposalForListing._id}`}
-              style={{
-                display: 'block',
-                textAlign: 'center',
-                marginTop: '12px',
-                color: '#31135d',
-                fontSize: '14px',
-                fontWeight: '500',
-                textDecoration: 'none'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.textDecoration = 'underline';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.textDecoration = 'none';
-              }}
+              className={styles.bookingExistingProposalLink}
             >
               View your proposal in Dashboard
             </a>
@@ -2814,103 +2108,46 @@ export default function ViewSplitLeasePage() {
       {/* Tutorial Modal */}
       {showTutorialModal && (
         <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '1rem'
-          }}
+          className={styles.modalOverlay}
           onClick={() => setShowTutorialModal(false)}
         >
           <div
-            style={{
-              background: 'white',
-              borderRadius: '12px',
-              padding: '2rem',
-              maxWidth: '500px',
-              position: 'relative'
-            }}
+            className={styles.tutorialModalContent}
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => setShowTutorialModal(false)}
-              style={{
-                position: 'absolute',
-                top: '1rem',
-                right: '1rem',
-                background: 'none',
-                border: 'none',
-                fontSize: '1.5rem',
-                cursor: 'pointer',
-                color: COLORS.TEXT_LIGHT
-              }}
+              className={styles.tutorialModalClose}
             >
               ×
             </button>
 
-            <h2 style={{
-              fontSize: '1.5rem',
-              fontWeight: '700',
-              marginBottom: '1rem',
-              color: COLORS.TEXT_DARK
-            }}>
+            <h2 className={styles.tutorialModalTitle}>
               How to set a split schedule
             </h2>
 
-            <p style={{
-              lineHeight: '1.6',
-              color: COLORS.TEXT_LIGHT,
-              marginBottom: '1.5rem'
-            }}>
+            <p className={styles.tutorialModalText}>
               To create a valid split schedule, you must select consecutive days (for example, Monday through Friday).
               Non-consecutive selections like Monday, Wednesday, Friday are not allowed.
             </p>
 
-            <div style={{
-              padding: '1rem',
-              background: COLORS.BG_LIGHT,
-              borderRadius: '8px',
-              marginBottom: '1.5rem',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🏢</div>
-              <div style={{ fontSize: '0.875rem', color: COLORS.TEXT_DARK }}>
+            <div className={styles.tutorialModalHighlight}>
+              <div className={styles.tutorialModalIcon}>🏢</div>
+              <div className={styles.tutorialModalDescription}>
                 Stay 2-5 nights a week, save up to 50% off of a comparable Airbnb
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '1rem' }}>
+            <div className={styles.tutorialModalActions}>
               <button
                 onClick={() => setShowTutorialModal(false)}
-                style={{
-                  flex: 1,
-                  padding: '0.75rem',
-                  background: COLORS.PRIMARY,
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontWeight: '600',
-                  cursor: 'pointer'
-                }}
+                className={styles.tutorialModalButtonPrimary}
               >
                 Okay
               </button>
               <button
                 onClick={() => window.location.href = '/faq.html'}
-                style={{
-                  flex: 1,
-                  padding: '0.75rem',
-                  background: 'white',
-                  color: COLORS.PRIMARY,
-                  border: `2px solid ${COLORS.PRIMARY}`,
-                  borderRadius: '8px',
-                  fontWeight: '600',
-                  cursor: 'pointer'
-                }}
+                className={styles.tutorialModalButtonSecondary}
               >
                 Take me to FAQ
               </button>
@@ -2922,38 +2159,12 @@ export default function ViewSplitLeasePage() {
       {/* Photo Modal */}
       {showPhotoModal && listing.photos && listing.photos.length > 0 && (
         <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.9)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: isMobile ? '1rem' : '2rem'
-          }}
+          className={styles.photoModalOverlay}
           onClick={() => setShowPhotoModal(false)}
         >
           <button
             onClick={() => setShowPhotoModal(false)}
-            style={{
-              position: 'absolute',
-              top: isMobile ? '1rem' : '2rem',
-              right: isMobile ? '1rem' : '2rem',
-              background: 'rgba(255,255,255,0.2)',
-              border: 'none',
-              color: 'white',
-              fontSize: '2rem',
-              width: '48px',
-              height: '48px',
-              borderRadius: '50%',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 1002
-            }}
+            className={styles.photoModalCloseTop}
           >
             ×
           </button>
@@ -2961,53 +2172,22 @@ export default function ViewSplitLeasePage() {
           <img
             src={listing.photos[currentPhotoIndex]?.Photo}
             alt={`${listing.Name} - photo ${currentPhotoIndex + 1}`}
-            style={{
-              maxWidth: isMobile ? '95vw' : '90vw',
-              maxHeight: isMobile ? '75vh' : '80vh',
-              objectFit: 'contain',
-              marginBottom: isMobile ? '6rem' : '5rem'
-            }}
+            className={styles.photoModalImage}
             onClick={(e) => e.stopPropagation()}
           />
 
-          <div style={{
-            position: 'absolute',
-            bottom: isMobile ? '4rem' : '5rem',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            display: 'flex',
-            gap: isMobile ? '0.5rem' : '1.5rem',
-            alignItems: 'center',
-            flexWrap: isMobile ? 'nowrap' : 'nowrap',
-            zIndex: 1001
-          }}>
+          <div className={styles.photoModalControls}>
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 setCurrentPhotoIndex(prev => (prev > 0 ? prev - 1 : listing.photos.length - 1));
               }}
-              style={{
-                background: 'rgba(255,255,255,0.2)',
-                border: 'none',
-                color: 'white',
-                padding: isMobile ? '0.5rem 1rem' : '0.75rem 1.5rem',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontWeight: '600',
-                fontSize: isMobile ? '0.875rem' : '1rem',
-                whiteSpace: 'nowrap'
-              }}
+              className={styles.photoModalNavButton}
             >
               ← Previous
             </button>
 
-            <span style={{
-              color: 'white',
-              fontSize: isMobile ? '0.75rem' : '0.875rem',
-              whiteSpace: 'nowrap',
-              minWidth: isMobile ? '60px' : '80px',
-              textAlign: 'center'
-            }}>
+            <span className={styles.photoModalCounter}>
               {currentPhotoIndex + 1} / {listing.photos.length}
             </span>
 
@@ -3016,17 +2196,7 @@ export default function ViewSplitLeasePage() {
                 e.stopPropagation();
                 setCurrentPhotoIndex(prev => (prev < listing.photos.length - 1 ? prev + 1 : 0));
               }}
-              style={{
-                background: 'rgba(255,255,255,0.2)',
-                border: 'none',
-                color: 'white',
-                padding: isMobile ? '0.5rem 1rem' : '0.75rem 1.5rem',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontWeight: '600',
-                fontSize: isMobile ? '0.875rem' : '1rem',
-                whiteSpace: 'nowrap'
-              }}
+              className={styles.photoModalNavButton}
             >
               Next →
             </button>
@@ -3034,21 +2204,7 @@ export default function ViewSplitLeasePage() {
 
           <button
             onClick={() => setShowPhotoModal(false)}
-            style={{
-              position: 'absolute',
-              bottom: isMobile ? '1rem' : '1.5rem',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              background: 'white',
-              border: 'none',
-              color: COLORS.TEXT_DARK,
-              padding: isMobile ? '0.5rem 2rem' : '0.75rem 2.5rem',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: '600',
-              fontSize: isMobile ? '0.875rem' : '1rem',
-              zIndex: 1001
-            }}
+            className={styles.photoModalCloseBottom}
           >
             Close
           </button>
@@ -3133,7 +2289,7 @@ export default function ViewSplitLeasePage() {
 
       {/* Informational Text Tooltips */}
       {(() => {
-        console.log('📚 Rendering InformationalText components:', {
+        logger.debug('📚 Rendering InformationalText components:', {
           hasAlignedSchedule: !!informationalTexts['aligned schedule with move-in'],
           hasMoveInFlexibility: !!informationalTexts['move-in flexibility'],
           hasReservationSpan: !!informationalTexts['Reservation Span'],
@@ -3197,38 +2353,20 @@ export default function ViewSplitLeasePage() {
           {mobileBookingExpanded && (
             <div
               onClick={() => setMobileBookingExpanded(false)}
-              style={{
-                position: 'fixed',
-                inset: 0,
-                background: 'rgba(0, 0, 0, 0.5)',
-                zIndex: 9998
-              }}
+              className={styles.mobileBookingOverlay}
             />
           )}
 
           {/* Bottom Bar */}
           <div
-            style={{
-              position: 'fixed',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              background: 'white',
-              boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.15)',
-              zIndex: 9999,
-              borderTopLeftRadius: mobileBookingExpanded ? '20px' : '0',
-              borderTopRightRadius: mobileBookingExpanded ? '20px' : '0',
-              transition: 'all 0.3s ease',
-              maxHeight: mobileBookingExpanded ? '80vh' : 'auto',
-              overflowY: mobileBookingExpanded ? 'auto' : 'hidden'
-            }}
+            className={`${styles.mobileBookingBar} ${mobileBookingExpanded ? styles.mobileBookingBarExpanded : ''}`}
           >
             {/* Collapsed View */}
             {!mobileBookingExpanded ? (
-              <div style={{ padding: '12px 16px' }}>
+              <div className={styles.mobileBookingCollapsed}>
                 {/* Schedule Selector Row */}
                 {scheduleSelectorListing && (
-                  <div style={{ marginBottom: '12px' }}>
+                  <div className={styles.mobileBookingScheduleRow}>
                     <ListingScheduleSelector
                       listing={scheduleSelectorListing}
                       initialSelectedDays={selectedDayObjects}
@@ -3243,40 +2381,21 @@ export default function ViewSplitLeasePage() {
                 )}
 
                 {/* Price and Continue Row */}
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  gap: '12px'
-                }}>
+                <div className={styles.mobileBookingPriceRow}>
                   {/* Price Info */}
-                  <div style={{ flex: 1 }}>
-                    <div style={{
-                      fontSize: '18px',
-                      fontWeight: '700',
-                      color: '#31135d'
-                    }}>
+                  <div className={styles.mobileBookingPriceInfo}>
+                    <div className={styles.mobileBookingPriceAmount}>
                       {pricingBreakdown?.valid && pricingBreakdown?.pricePerNight
                         ? `$${Number.isInteger(pricingBreakdown.pricePerNight) ? pricingBreakdown.pricePerNight : pricingBreakdown.pricePerNight.toFixed(2)}`
                         : 'Select Days'}
-                      <span style={{ fontSize: '14px', color: '#6B7280', fontWeight: '500' }}>/night</span>
+                      <span className={styles.mobileBookingPriceUnit}>/night</span>
                     </div>
                   </div>
 
                   {/* Continue Button */}
                   <button
                     onClick={() => setMobileBookingExpanded(true)}
-                    style={{
-                      padding: '12px 24px',
-                      background: '#31135d',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '10px',
-                      fontSize: '16px',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      whiteSpace: 'nowrap'
-                    }}
+                    className={styles.mobileBookingContinueButton}
                   >
                     Continue
                   </button>
@@ -3284,68 +2403,33 @@ export default function ViewSplitLeasePage() {
               </div>
             ) : (
               /* Expanded View */
-              <div style={{ padding: '20px 16px', paddingBottom: '24px' }}>
+              <div className={styles.mobileBookingExpanded}>
                 {/* Header with close button */}
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '16px'
-                }}>
-                  <h3 style={{
-                    fontSize: '18px',
-                    fontWeight: '700',
-                    color: '#111827',
-                    margin: 0
-                  }}>
+                <div className={styles.mobileBookingHeader}>
+                  <h3 className={styles.mobileBookingTitle}>
                     Complete Your Booking
                   </h3>
                   <button
                     onClick={() => setMobileBookingExpanded(false)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      fontSize: '24px',
-                      cursor: 'pointer',
-                      color: '#6B7280',
-                      padding: '4px'
-                    }}
+                    className={styles.mobileBookingCloseButton}
                   >
                     ×
                   </button>
                 </div>
 
                 {/* Price Display */}
-                <div style={{
-                  background: 'linear-gradient(135deg, #f8f9ff 0%, #faf5ff 100%)',
-                  padding: '12px',
-                  borderRadius: '12px',
-                  marginBottom: '16px',
-                  border: '1px solid #e9d5ff'
-                }}>
-                  <div style={{
-                    fontSize: '24px',
-                    fontWeight: '800',
-                    color: '#31135d'
-                  }}>
+                <div className={styles.mobileBookingPriceDisplay}>
+                  <div className={styles.mobileBookingPriceLarge}>
                     {pricingBreakdown?.valid && pricingBreakdown?.pricePerNight
                       ? `$${Number.isInteger(pricingBreakdown.pricePerNight) ? pricingBreakdown.pricePerNight : pricingBreakdown.pricePerNight.toFixed(2)}`
                       : 'Select Days'}
-                    <span style={{ fontSize: '14px', color: '#6B7280', fontWeight: '500' }}>/night</span>
+                    <span className={styles.mobileBookingPriceUnit}>/night</span>
                   </div>
                 </div>
 
                 {/* Move-in Date */}
-                <div style={{ marginBottom: '16px' }}>
-                  <label style={{
-                    fontSize: '12px',
-                    fontWeight: '700',
-                    color: '#31135d',
-                    marginBottom: '8px',
-                    display: 'block',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
-                  }}>
+                <div className={styles.mobileBookingFieldGroup}>
+                  <label className={styles.mobileBookingLabel}>
                     Ideal Move-In
                   </label>
                   <input
@@ -3353,59 +2437,26 @@ export default function ViewSplitLeasePage() {
                     value={moveInDate || ''}
                     min={minMoveInDate}
                     onChange={(e) => setMoveInDate(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      border: '2px solid #E5E7EB',
-                      borderRadius: '10px',
-                      fontSize: '16px',
-                      fontWeight: '500',
-                      color: '#111827',
-                      boxSizing: 'border-box'
-                    }}
+                    className={styles.mobileBookingDateInput}
                   />
                 </div>
 
                 {/* Strict Mode - placed directly after Move-in Date for visual grouping */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  marginBottom: '16px',
-                  padding: '12px',
-                  background: '#f8f9ff',
-                  borderRadius: '10px',
-                  border: '1px solid #e9d5ff'
-                }}>
+                <div className={styles.mobileBookingStrictMode}>
                   <input
                     type="checkbox"
                     checked={strictMode}
                     onChange={() => setStrictMode(!strictMode)}
-                    style={{
-                      width: '20px',
-                      height: '20px',
-                      cursor: 'pointer',
-                      accentColor: '#31135d'
-                    }}
+                    className={styles.mobileBookingCheckbox}
                   />
-                  <label style={{
-                    fontSize: '14px',
-                    color: '#111827',
-                    fontWeight: '500'
-                  }}>
+                  <label className={styles.mobileBookingCheckboxLabel}>
                     Strict (no negotiation on exact move in)
                   </label>
                 </div>
 
                 {/* Weekly Schedule Selector */}
                 {scheduleSelectorListing && (
-                  <div style={{
-                    marginBottom: '16px',
-                    padding: '12px',
-                    background: '#f9fafb',
-                    borderRadius: '12px',
-                    border: '1px solid #E5E7EB'
-                  }}>
+                  <div className={styles.mobileBookingScheduleWrapper}>
                     <ListingScheduleSelector
                       listing={scheduleSelectorListing}
                       initialSelectedDays={selectedDayObjects}
@@ -3418,28 +2469,15 @@ export default function ViewSplitLeasePage() {
                     />
 
                     {/* Listing's weekly pattern info + custom schedule option (Mobile) */}
-                    <div style={{
-                      marginTop: '12px',
-                      fontSize: '13px',
-                      color: '#4B5563'
-                    }}>
+                    <div className={styles.mobileBookingScheduleInfo}>
                       <span>This listing is </span>
-                      <strong style={{ color: '#31135d' }}>
+                      <strong className={styles.mobileBookingScheduleHighlight}>
                         {listing?.['Weeks offered'] || 'Every week'}
                       </strong>
                       <span>. </span>
                       <button
                         onClick={() => setShowCustomScheduleInput(!showCustomScheduleInput)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: '#7C3AED',
-                          textDecoration: 'underline',
-                          cursor: 'pointer',
-                          padding: 0,
-                          fontSize: '13px',
-                          fontWeight: '500'
-                        }}
+                        className={styles.mobileBookingCustomScheduleToggle}
                       >
                         {showCustomScheduleInput ? 'Hide custom schedule' : 'Click here if you want to specify another recurrent schedule'}
                       </button>
@@ -3447,35 +2485,14 @@ export default function ViewSplitLeasePage() {
 
                     {/* Custom schedule freeform input (Mobile) */}
                     {showCustomScheduleInput && (
-                      <div style={{ marginTop: '10px' }}>
+                      <div className={styles.mobileBookingCustomScheduleInput}>
                         <textarea
                           value={customScheduleDescription}
                           onChange={(e) => setCustomScheduleDescription(e.target.value)}
                           placeholder="Describe your preferred schedule pattern in detail..."
-                          style={{
-                            width: '100%',
-                            minHeight: '80px',
-                            padding: '10px 12px',
-                            border: '2px solid #E5E7EB',
-                            borderRadius: '8px',
-                            fontSize: '14px',
-                            fontFamily: 'inherit',
-                            resize: 'vertical',
-                            boxSizing: 'border-box'
-                          }}
-                          onFocus={(e) => {
-                            e.target.style.borderColor = '#7C3AED';
-                            e.target.style.outline = 'none';
-                          }}
-                          onBlur={(e) => {
-                            e.target.style.borderColor = '#E5E7EB';
-                          }}
+                          className={styles.mobileBookingTextarea}
                         />
-                        <p style={{
-                          marginTop: '6px',
-                          fontSize: '11px',
-                          color: '#6B7280'
-                        }}>
+                        <p className={styles.mobileBookingCustomScheduleHelp}>
                           The host will review your custom schedule request.
                         </p>
                       </div>
@@ -3484,32 +2501,14 @@ export default function ViewSplitLeasePage() {
                 )}
 
                 {/* Reservation Span */}
-                <div style={{ marginBottom: '16px' }}>
-                  <label style={{
-                    fontSize: '12px',
-                    fontWeight: '700',
-                    color: '#31135d',
-                    marginBottom: '8px',
-                    display: 'block',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
-                  }}>
+                <div className={styles.mobileBookingFieldGroup}>
+                  <label className={styles.mobileBookingLabel}>
                     Reservation Span
                   </label>
                   <select
                     value={reservationSpan}
                     onChange={(e) => setReservationSpan(Number(e.target.value))}
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      border: '2px solid #E5E7EB',
-                      borderRadius: '10px',
-                      fontSize: '16px',
-                      fontWeight: '500',
-                      color: '#111827',
-                      background: 'white',
-                      boxSizing: 'border-box'
-                    }}
+                    className={styles.mobileBookingSelectInput}
                   >
                     {[6, 7, 8, 9, 10, 12, 13, 16, 17, 20, 22, 26].map(weeks => (
                       <option key={weeks} value={weeks}>
@@ -3520,42 +2519,20 @@ export default function ViewSplitLeasePage() {
                 </div>
 
                 {/* Price Breakdown */}
-                <div style={{
-                  marginBottom: '16px',
-                  padding: '12px',
-                  background: '#f9fafb',
-                  borderRadius: '10px',
-                  border: '1px solid #E5E7EB'
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '8px',
-                    fontSize: '15px'
-                  }}>
-                    <span style={{ color: '#111827', fontWeight: '500' }}>4-Week Rent</span>
-                    <span style={{ color: '#111827', fontWeight: '700' }}>
+                <div className={styles.mobileBookingPriceBreakdown}>
+                  <div className={styles.mobileBookingPriceBreakdownRow}>
+                    <span className={styles.mobileBookingPriceBreakdownLabel}>4-Week Rent</span>
+                    <span className={styles.mobileBookingPriceBreakdownValue}>
                       {pricingBreakdown?.valid && pricingBreakdown?.fourWeekRent
                         ? formatPrice(pricingBreakdown.fourWeekRent)
                         : '—'}
                     </span>
                   </div>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    paddingTop: '8px',
-                    borderTop: '1px solid #E5E7EB'
-                  }}>
-                    <span style={{ fontSize: '16px', fontWeight: '700', color: '#111827' }}>
+                  <div className={styles.mobileBookingTotalRow}>
+                    <span className={styles.mobileBookingTotalLabel}>
                       Reservation Total
                     </span>
-                    <span style={{
-                      fontSize: '20px',
-                      fontWeight: '800',
-                      color: '#31135d'
-                    }}>
+                    <span className={styles.mobileBookingTotalValue}>
                       {pricingBreakdown?.valid && pricingBreakdown?.reservationTotal
                         ? formatPrice(pricingBreakdown.reservationTotal)
                         : '—'}
@@ -3571,21 +2548,11 @@ export default function ViewSplitLeasePage() {
                     }
                   }}
                   disabled={!scheduleValidation?.valid || !pricingBreakdown?.valid || !!existingProposalForListing}
-                  style={{
-                    width: '100%',
-                    padding: '16px',
-                    background: existingProposalForListing
-                      ? '#D1D5DB'
-                      : scheduleValidation?.valid && pricingBreakdown?.valid
-                        ? '#31135d'
-                        : '#D1D5DB',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '10px',
-                    fontSize: '16px',
-                    fontWeight: '700',
-                    cursor: existingProposalForListing || !scheduleValidation?.valid || !pricingBreakdown?.valid ? 'not-allowed' : 'pointer'
-                  }}
+                  className={`${styles.mobileBookingCreateButton} ${
+                    !existingProposalForListing && scheduleValidation?.valid && pricingBreakdown?.valid
+                      ? styles.mobileBookingCreateButtonEnabled
+                      : styles.mobileBookingCreateButtonDisabled
+                  }`}
                 >
                   {existingProposalForListing
                     ? 'Proposal Already Exists'
@@ -3598,14 +2565,7 @@ export default function ViewSplitLeasePage() {
                 {existingProposalForListing && loggedInUserData?.userId && (
                   <a
                     href={`/guest-proposals/${loggedInUserData.userId}?proposal=${existingProposalForListing._id}`}
-                    style={{
-                      display: 'block',
-                      textAlign: 'center',
-                      marginTop: '12px',
-                      color: '#31135d',
-                      fontSize: '14px',
-                      fontWeight: '500'
-                    }}
+                    className={styles.mobileBookingExistingProposalLink}
                   >
                     View your proposal in Dashboard
                   </a>
@@ -3615,7 +2575,7 @@ export default function ViewSplitLeasePage() {
           </div>
 
           {/* Spacer to prevent content from being hidden behind fixed bar */}
-          <div style={{ height: mobileBookingExpanded ? '0' : '140px' }} />
+          <div className={mobileBookingExpanded ? styles.mobileBookingSpacerHidden : styles.mobileBookingSpacer} />
         </>
       )}
 

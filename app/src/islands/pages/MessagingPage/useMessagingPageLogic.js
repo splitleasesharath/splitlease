@@ -507,13 +507,41 @@ export function useMessagingPageLogic() {
     try {
       setIsLoadingMessages(true);
 
-      // Use supabase.functions.invoke() instead of raw fetch()
-      // This ensures automatic token refresh for stale sessions
+      // Get fresh session and ensure token is valid
+      const { data: sessionData } = await supabase.auth.getSession();
+      console.log('[fetchMessages] Session state:', {
+        hasSession: !!sessionData?.session,
+        hasAccessToken: !!sessionData?.session?.access_token,
+        tokenLength: sessionData?.session?.access_token?.length,
+        userId: sessionData?.session?.user?.id,
+      });
+
+      // If no session, try to refresh
+      if (!sessionData?.session?.access_token) {
+        console.log('[fetchMessages] No session, attempting refresh...');
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError || !refreshData?.session) {
+          console.error('[fetchMessages] Session refresh failed:', refreshError);
+          throw new Error('Not authenticated. Please log in again.');
+        }
+        console.log('[fetchMessages] Session refreshed successfully');
+      }
+
+      // Get the current access token for explicit header passing
+      const { data: currentSession } = await supabase.auth.getSession();
+      const accessToken = currentSession?.session?.access_token;
+      console.log('[fetchMessages] Making function call with token:', !!accessToken);
+
+      // Use supabase.functions.invoke() with explicit Authorization header
+      // This works around potential SDK issues where the token isn't auto-included
       const { data, error } = await supabase.functions.invoke('messages', {
         body: {
           action: 'get_messages',
           payload: { thread_id: threadId }
-        }
+        },
+        headers: accessToken ? {
+          Authorization: `Bearer ${accessToken}`
+        } : undefined
       });
 
       if (error) {
@@ -551,8 +579,12 @@ export function useMessagingPageLogic() {
         clearTimeout(typingTimeoutRef.current);
       }
 
-      // Use supabase.functions.invoke() instead of raw fetch()
-      // This ensures automatic token refresh for stale sessions
+      // Get the current access token for explicit header passing
+      const { data: currentSession } = await supabase.auth.getSession();
+      const accessToken = currentSession?.session?.access_token;
+
+      // Use supabase.functions.invoke() with explicit Authorization header
+      // This works around potential SDK issues where the token isn't auto-included
       const { data, error } = await supabase.functions.invoke('messages', {
         body: {
           action: 'send_message',
@@ -560,7 +592,10 @@ export function useMessagingPageLogic() {
             thread_id: selectedThread._id,
             message_body: messageInput.trim(),
           },
-        }
+        },
+        headers: accessToken ? {
+          Authorization: `Bearer ${accessToken}`
+        } : undefined
       });
 
       if (error) {

@@ -325,8 +325,8 @@ export async function parseCallTranscription(transcription) {
       throw new Error(result.error || result.message || 'Failed to parse transcription');
     }
 
-    // The AI gateway returns the completion in result.data.completion
-    const completion = result.data?.completion;
+    // The AI gateway returns the completion in result.data.content
+    const completion = result.data?.content;
 
     if (!completion) {
       throw new Error('No completion returned from AI');

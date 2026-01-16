@@ -10,6 +10,13 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import ReferralLandingPageV2 from './islands/pages/ReferralLandingPageV2';
+import { ErrorBoundary } from './islands/shared/ErrorBoundary';
 
-const root = createRoot(document.getElementById('referral-demo-page'));
-root.render(<ReferralLandingPageV2 />);
+const root = createRoot(document.getElementById('root'));
+root.render(
+  <React.StrictMode>
+    <ErrorBoundary>
+      <ReferralLandingPageV2 />
+    </ErrorBoundary>
+  </React.StrictMode>
+);

@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import LoggedInAvatar from './islands/shared/LoggedInAvatar';
+import { ErrorBoundary } from './islands/shared/ErrorBoundary';
 
 /**
  * Demo page for LoggedInAvatar component
@@ -155,6 +156,8 @@ function LoggedInAvatarDemo() {
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <LoggedInAvatarDemo />
+    <ErrorBoundary>
+      <LoggedInAvatarDemo />
+    </ErrorBoundary>
   </StrictMode>
 );

@@ -33,6 +33,15 @@ import {
   createStatusHistoryEntry,
   isValidStatus,
 } from "../lib/status.ts";
+import {
+  generateCounterOfferSummary,
+  formatDaysAsRange,
+  formatDateForDisplay,
+} from "../../_shared/negotiationSummaryHelpers.ts";
+import {
+  createSplitBotMessage,
+  findThreadByProposal,
+} from "../../_shared/messagingHelpers.ts";
 
 /**
  * Handle update proposal request
@@ -280,6 +289,65 @@ export async function handleUpdate(
       old_status: proposalData.Status,
       new_status: input.status,
     });
+  }
+
+  // ================================================
+  // COUNTEROFFER AI SUMMARY (when status becomes counteroffer)
+  // ================================================
+  // Send AI-generated summary to guest explaining what changed in the counteroffer
+
+  const isCounterOfferStatus = input.status === "Host Counteroffer Submitted / Awaiting Guest Review";
+  const hasCounterOfferFields = updatedFields.some(f => f.startsWith("hc_"));
+
+  if (isCounterOfferStatus && hasCounterOfferFields) {
+    try {
+      console.log(`[proposal:update] Generating AI counteroffer summary...`);
+
+      // Find the thread for this proposal
+      const threadId = await findThreadByProposal(supabase, input.proposal_id);
+
+      if (threadId) {
+        // Build context for AI summary
+        const originalDays = proposalData["Days Selected"] as number[] || [];
+        const counterDays = input.hc_days_selected || originalDays;
+
+        const counterSummary = await generateCounterOfferSummary(supabase, {
+          originalWeeks: proposalData["Reservation Span (Weeks)"] || 0,
+          originalMoveIn: formatDateForDisplay(proposalData["Move in range start"] || ""),
+          originalDays: formatDaysAsRange(originalDays),
+          originalNightlyPrice: proposalData["proposal nightly price"] || 0,
+          originalTotalPrice: proposalData["Total Price for Reservation (guest)"] || 0,
+          counterWeeks: input.hc_reservation_span_weeks || proposalData["Reservation Span (Weeks)"] || 0,
+          counterMoveIn: formatDateForDisplay(input.hc_move_in_date || proposalData["Move in range start"] || ""),
+          counterDays: formatDaysAsRange(counterDays),
+          counterNightlyPrice: input.hc_nightly_price || proposalData["proposal nightly price"] || 0,
+          counterTotalPrice: input.hc_total_price || proposalData["Total Price for Reservation (guest)"] || 0,
+        });
+
+        if (counterSummary) {
+          console.log(`[proposal:update] AI counteroffer summary generated, sending to guest...`);
+
+          // Send SplitBot message to guest with counteroffer summary
+          await createSplitBotMessage(supabase, {
+            threadId,
+            messageBody: counterSummary,
+            callToAction: "Respond to Counter Offer",
+            visibleToHost: false,
+            visibleToGuest: true,
+            recipientUserId: proposalData.Guest,
+          });
+
+          console.log(`[proposal:update] Counteroffer summary sent to guest`);
+        } else {
+          console.log(`[proposal:update] AI counteroffer summary returned null, skipping message`);
+        }
+      } else {
+        console.warn(`[proposal:update] No thread found for proposal, skipping counteroffer summary`);
+      }
+    } catch (counterError) {
+      // Non-blocking - the update was successful, AI summary is secondary
+      console.error(`[proposal:update] Counteroffer summary failed:`, counterError);
+    }
   }
 
   // ================================================

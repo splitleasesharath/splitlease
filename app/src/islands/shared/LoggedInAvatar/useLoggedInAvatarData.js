@@ -187,11 +187,11 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
 
         // 6. Count unread messages
         //    Uses _message table with "Unread Users" JSONB array containing user IDs
-        //    Must use raw filter since .contains() doesn't work with JSONB + quoted columns
+        //    Column name has space, must be quoted for PostgREST filter
         supabase
           .from('_message')
           .select('_id', { count: 'exact', head: true })
-          .filter('Unread Users', 'cs', JSON.stringify([userId])),
+          .filter('"Unread Users"', 'cs', JSON.stringify([userId])),
 
         // 7. Check for proposals suggested by Split Lease
         //    These are proposals created by SL agent on behalf of the guest
@@ -326,6 +326,13 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
         effectiveCount: proposalsCount
       });
 
+      // DEBUG: Log unread messages result to diagnose notification issue
+      console.log('[useLoggedInAvatarData] Unread messages result:', {
+        count: messagesResult.count,
+        error: messagesResult.error,
+        userId: userId
+      });
+
       const newData = {
         userType: normalizedType,
         proposalsCount,
@@ -370,7 +377,7 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
       const { count, error } = await supabase
         .from('_message')
         .select('_id', { count: 'exact', head: true })
-        .filter('Unread Users', 'cs', JSON.stringify([userId]));
+        .filter('"Unread Users"', 'cs', JSON.stringify([userId]));
 
       if (!error && count !== null) {
         setData(prev => {
@@ -441,10 +448,10 @@ export function getMenuVisibility(data, currentPath = '') {
     // 1. My Profile - ALWAYS visible for all users
     myProfile: true,
 
-    // 2. My Proposals - ALWAYS visible for all users
-    //    - Guests see their submitted proposals
-    //    - Hosts see proposals received from guests
-    myProposals: true,
+    // 2. My Proposals - Only visible when user HAS proposals
+    //    - Guests see their submitted proposals (proposalsCount from Guest query)
+    //    - Hosts see proposals received from guests (proposalsCount from Host query)
+    myProposals: proposalsCount > 0,
 
     // 3. My Proposals Suggested - GUEST only AND must have suggested proposals
     //    Only shows when user has proposals created by Split Lease agent

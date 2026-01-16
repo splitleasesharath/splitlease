@@ -12,6 +12,7 @@
 
 import { useState } from 'react';
 import { supabase } from '../../lib/supabase.js';
+import { toast } from '../../lib/toastService.js';
 
 export default function VirtualMeetingModal({
   proposal,
@@ -32,7 +33,7 @@ export default function VirtualMeetingModal({
   // Handle request submission (guest or host requesting meeting)
   async function handleSubmitRequest() {
     if (!bookedDate || !bookedTime) {
-      alert('Please select a date and time');
+      toast.warning('Please select a date and time');
       return;
     }
 
@@ -83,12 +84,12 @@ export default function VirtualMeetingModal({
         if (updateError) throw updateError;
       }
 
-      alert('Virtual meeting request sent!');
+      toast.success('Virtual meeting request sent!');
       if (onSuccess) onSuccess();
       onClose();
     } catch (error) {
       console.error('Error submitting VM request:', error);
-      alert('Failed to submit request. Please try again.');
+      toast.error('Failed to submit request. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -109,12 +110,12 @@ export default function VirtualMeetingModal({
 
       if (error) throw error;
 
-      alert('Meeting request accepted! Awaiting Split Lease confirmation.');
+      toast.success('Meeting request accepted! Awaiting Split Lease confirmation.');
       if (onSuccess) onSuccess();
       onClose();
     } catch (error) {
       console.error('Error accepting VM:', error);
-      alert('Failed to accept request. Please try again.');
+      toast.error('Failed to accept request. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -134,12 +135,12 @@ export default function VirtualMeetingModal({
 
       if (error) throw error;
 
-      alert('Meeting request declined. They can suggest a different time.');
+      toast.success('Meeting request declined. They can suggest a different time.');
       if (onSuccess) onSuccess();
       onClose();
     } catch (error) {
       console.error('Error declining VM:', error);
-      alert('Failed to decline request. Please try again.');
+      toast.error('Failed to decline request. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -168,12 +169,12 @@ export default function VirtualMeetingModal({
 
       if (updateError) throw updateError;
 
-      alert('Virtual meeting cancelled.');
+      toast.success('Virtual meeting cancelled.');
       if (onSuccess) onSuccess();
       onClose();
     } catch (error) {
       console.error('Error canceling VM:', error);
-      alert('Failed to cancel meeting. Please try again.');
+      toast.error('Failed to cancel meeting. Please try again.');
     } finally {
       setLoading(false);
     }

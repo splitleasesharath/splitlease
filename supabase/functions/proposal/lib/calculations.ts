@@ -209,6 +209,7 @@ export function getNightlyRateForNights(
     "💰Nightly Host Rate for 3 nights"?: number;
     "💰Nightly Host Rate for 4 nights"?: number;
     "💰Nightly Host Rate for 5 nights"?: number;
+    "💰Nightly Host Rate for 6 nights"?: number;
     "💰Nightly Host Rate for 7 nights"?: number;
     "💰Weekly Host Rate"?: number;
   },
@@ -220,6 +221,7 @@ export function getNightlyRateForNights(
     3: listing["💰Nightly Host Rate for 3 nights"],
     4: listing["💰Nightly Host Rate for 4 nights"],
     5: listing["💰Nightly Host Rate for 5 nights"],
+    6: listing["💰Nightly Host Rate for 6 nights"],
     7: listing["💰Nightly Host Rate for 7 nights"],
   };
 
@@ -228,7 +230,7 @@ export function getNightlyRateForNights(
     return rateMap[nightsPerWeek]!;
   }
 
-  // For 6 nights, interpolate or use 7-night rate
+  // For 6 nights without explicit rate, fall back to 7-night rate
   if (nightsPerWeek === 6 && rateMap[7]) {
     return rateMap[7]!;
   }
