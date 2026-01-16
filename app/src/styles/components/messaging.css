@@ -232,6 +232,9 @@ main.main-content:has(.messaging-page) {
 .sidebar-search__filter-btn svg {
   width: 18px;
   height: 18px;
+}
+
+.sidebar-search__filter-btn svg path {
   stroke: var(--text-secondary);
 }
 
