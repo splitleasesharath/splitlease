@@ -1029,10 +1029,10 @@ export function useAccountProfilePageLogic() {
   }, [isEditorView]);
 
   /**
-   * Navigate to create listing page
+   * Navigate to create listing page (Self Listing V2)
    */
   const handleCreateListing = useCallback(() => {
-    window.location.href = '/self-listing';
+    window.location.href = '/self-listing-v2';
   }, []);
 
   // ============================================================================
