@@ -17,7 +17,7 @@ import ProposalSuccessModal from '../../modals/ProposalSuccessModal.jsx';
 import SignUpLoginModal from '../../shared/SignUpLoginModal.jsx';
 import EmptyState from './components/EmptyState';
 import { getFavoritedListingIds, removeFromFavorites } from './favoritesApi';
-import { checkAuthStatus, getSessionId, validateTokenAndFetchUser, getUserId, logoutUser, getFirstName } from '../../../lib/auth';
+import { checkAuthStatus, getSessionId, logoutUser } from '../../../lib/auth';
 import { fetchProposalsByGuest, fetchLastProposalDefaults } from '../../../lib/proposalDataFetcher.js';
 import { fetchZatPriceConfiguration } from '../../../lib/listingDataFetcher.js';
 import { supabase } from '../../../lib/supabase.js';
@@ -28,6 +28,8 @@ import { createDay } from '../../../lib/scheduleSelector/dayHelpers.js';
 import { calculateNextAvailableCheckIn } from '../../../logic/calculators/scheduling/calculateNextAvailableCheckIn.js';
 import { shiftMoveInDateIfPast } from '../../../logic/calculators/scheduling/shiftMoveInDateIfPast.js';
 import { formatHostName } from '../../../logic/processors/display/formatHostName.js';
+import { useAuthenticatedUser } from '../../../hooks/useAuthenticatedUser.js';
+import PropertyCard from '../../shared/ListingCard/PropertyCard.jsx';
 import './FavoriteListingsPage.css';
 import '../../../styles/create-proposal-flow-v2.css';
 
@@ -61,302 +63,6 @@ async function fetchInformationalTexts() {
 }
 
 /**
- * PropertyCard - Individual listing card (matches SearchPage PropertyCard exactly)
- * @param {Object} proposalForListing - The user's existing proposal for this listing (if any)
- */
-function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfoModal, isLoggedIn, isFavorited, onToggleFavorite, userId, proposalForListing, onCreateProposal, onPhotoClick }) {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const priceInfoTriggerRef = useRef(null);
-
-  const hasImages = listing.images && listing.images.length > 0;
-  const hasMultipleImages = listing.images && listing.images.length > 1;
-
-  // Get listing ID for FavoriteButton
-  const favoriteListingId = listing.id || listing._id;
-
-  const handlePrevImage = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!hasMultipleImages) return;
-    setCurrentImageIndex((prev) =>
-      prev === 0 ? listing.images.length - 1 : prev - 1
-    );
-  };
-
-  const handleNextImage = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!hasMultipleImages) return;
-    setCurrentImageIndex((prev) =>
-      prev === listing.images.length - 1 ? 0 : prev + 1
-    );
-  };
-
-  // Calculate dynamic price using default 5 nights (Monday-Friday pattern)
-  // Uses the same formula as priceCalculations.js for Nightly rental type
-  const calculateDynamicPrice = () => {
-    const nightsCount = 5; // Default to 5 nights (Mon-Fri)
-
-    const priceFieldMap = {
-      2: 'Price 2 nights selected',
-      3: 'Price 3 nights selected',
-      4: 'Price 4 nights selected',
-      5: 'Price 5 nights selected',
-      6: 'Price 6 nights selected',
-      7: 'Price 7 nights selected'
-    };
-
-    // Get the host compensation rate for the selected nights
-    let nightlyHostRate = 0;
-    if (nightsCount >= 2 && nightsCount <= 7) {
-      const fieldName = priceFieldMap[nightsCount];
-      nightlyHostRate = listing[fieldName] || 0;
-    }
-
-    // Fallback to starting price if no specific rate found
-    if (!nightlyHostRate || nightlyHostRate === 0) {
-      nightlyHostRate = listing['Starting nightly price'] || listing.price?.starting || 0;
-    }
-
-    // Apply the same markup calculation as priceCalculations.js
-    // Step 1: Calculate base price (host rate × nights)
-    const basePrice = nightlyHostRate * nightsCount;
-
-    // Step 2: Apply full-time discount (only for 7 nights, 13% discount)
-    const fullTimeDiscount = nightsCount === 7 ? basePrice * 0.13 : 0;
-
-    // Step 3: Price after discounts
-    const priceAfterDiscounts = basePrice - fullTimeDiscount;
-
-    // Step 4: Apply site markup (17%)
-    const siteMarkup = priceAfterDiscounts * 0.17;
-
-    // Step 5: Calculate total price
-    const totalPrice = basePrice - fullTimeDiscount + siteMarkup;
-
-    // Step 6: Calculate price per night (guest-facing price)
-    const pricePerNight = totalPrice / nightsCount;
-
-    return pricePerNight;
-  };
-
-  const dynamicPrice = calculateDynamicPrice();
-  const startingPrice = listing['Starting nightly price'] || listing.price?.starting || 0;
-
-  const listingId = listing.id || listing._id;
-
-  // Handle click to pass days-selected parameter at click time (not render time)
-  // This ensures we get the current URL parameter after SearchScheduleSelector has updated it
-  const handleCardClick = (e) => {
-    if (!listingId) {
-      e.preventDefault();
-      console.error('[PropertyCard] No listing ID found', { listing });
-      return;
-    }
-
-    // Prevent default link behavior - we'll handle navigation manually
-    e.preventDefault();
-
-    // Get days-selected from URL at click time (after SearchScheduleSelector has updated it)
-    const urlParams = new URLSearchParams(window.location.search);
-    const daysSelected = urlParams.get('days-selected');
-
-    const url = daysSelected
-      ? `/view-split-lease/${listingId}?days-selected=${daysSelected}`
-      : `/view-split-lease/${listingId}`;
-
-    console.log('📅 PropertyCard: Opening listing with URL:', url);
-    window.open(url, '_blank', 'noopener,noreferrer');
-  };
-
-  return (
-    <a
-      className="listing-card"
-      href={listingId ? `/view-split-lease/${listingId}` : '#'}
-      target="_blank"
-      rel="noopener noreferrer"
-      style={{ textDecoration: 'none', color: 'inherit' }}
-      onClick={handleCardClick}
-    >
-      {/* Image Section */}
-      {hasImages && (
-        <div className="listing-images">
-          <img
-            src={listing.images[currentImageIndex]}
-            alt={listing.title}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              if (onPhotoClick) {
-                onPhotoClick(listing, currentImageIndex);
-              }
-            }}
-            style={{ cursor: 'pointer' }}
-          />
-          {hasMultipleImages && (
-            <>
-              <button className="image-nav prev-btn" onClick={handlePrevImage}>
-                ‹
-              </button>
-              <button className="image-nav next-btn" onClick={handleNextImage}>
-                ›
-              </button>
-              <div className="image-counter">
-                <span className="current-image">{currentImageIndex + 1}</span> /{' '}
-                <span className="total-images">{listing.images.length}</span>
-              </div>
-            </>
-          )}
-          <FavoriteButton
-            listingId={favoriteListingId}
-            userId={userId}
-            initialFavorited={isFavorited}
-            onToggle={(newState, listingId) => {
-              if (onToggleFavorite) {
-                onToggleFavorite(listingId, listing.title, newState);
-              }
-            }}
-            size="medium"
-          />
-          {listing.isNew && <span className="new-badge">New Listing</span>}
-          {listing.type === 'Entire Place' && (
-            <span className="family-friendly-tag" aria-label="Family Friendly - Entire place listing suitable for families">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-              </svg>
-              Family Friendly
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Content Section - F7b Layout */}
-      <div className="listing-content">
-        {/* Main Info - Left Side */}
-        <div className="listing-main-info">
-          <div className="listing-info-top">
-            <div
-              className="listing-location"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (onLocationClick) {
-                  onLocationClick(listing);
-                }
-              }}
-              style={{ cursor: onLocationClick ? 'pointer' : 'default' }}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                <circle cx="12" cy="10" r="3" />
-              </svg>
-              <span className="location-text">{listing.location}</span>
-            </div>
-            <h3 className="listing-title">{listing.title}</h3>
-          </div>
-
-          {/* Meta Section - Info Dense Style */}
-          <div className="listing-meta">
-            <span className="meta-item"><strong>{listing.type || 'Entire Place'}</strong></span>
-            <span className="meta-item"><strong>{listing.maxGuests}</strong> guests</span>
-            <span className="meta-item"><strong>{listing.bedrooms === 0 ? 'Studio' : `${listing.bedrooms} bed`}</strong></span>
-            <span className="meta-item"><strong>{listing.bathrooms}</strong> bath</span>
-          </div>
-
-          {/* Host Row - Bottom Left */}
-          <div className="listing-host-row">
-            <div className="host">
-              {listing.host?.image ? (
-                <img src={listing.host.image} alt={listing.host.name} className="host-avatar" />
-              ) : (
-                <div className="host-avatar-placeholder">?</div>
-              )}
-              <span className="host-name">
-                {formatHostName({ fullName: listing.host?.name || 'Host' })}
-                {listing.host?.verified && <span className="verified-badge" title="Verified">✓</span>}
-              </span>
-            </div>
-            <div className="listing-cta-buttons">
-              <button
-                className="message-btn"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onOpenContactModal(listing);
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-                </svg>
-                Message
-              </button>
-              {/* Proposal CTAs - Show Create or View based on existing proposal */}
-              {proposalForListing ? (
-                <button
-                  className="view-proposal-btn"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    window.location.href = `/guest-proposals?proposal=${proposalForListing._id}`;
-                  }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                    <polyline points="14 2 14 8 20 8" />
-                    <line x1="16" y1="13" x2="8" y2="13" />
-                    <line x1="16" y1="17" x2="8" y2="17" />
-                    <polyline points="10 9 9 9 8 9" />
-                  </svg>
-                  View Proposal
-                </button>
-              ) : (
-                <button
-                  className="create-proposal-btn"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    // Open inline proposal modal instead of navigating
-                    if (onCreateProposal) {
-                      onCreateProposal(listing);
-                    }
-                  }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19" />
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                  </svg>
-                  Create Proposal
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Price Sidebar - Right Side */}
-        <div
-          className="listing-price-sidebar"
-          ref={priceInfoTriggerRef}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onOpenInfoModal(listing, priceInfoTriggerRef);
-          }}
-        >
-          <div className="price-main">${dynamicPrice.toFixed(2)}</div>
-          <div className="price-period">/night</div>
-          <div className="price-divider"></div>
-          <div className="price-starting">Starting at<span>${parseFloat(startingPrice).toFixed(2)}/night</span></div>
-          <div className="availability-note">Message Split Lease<br/>for Availability</div>
-        </div>
-      </div>
-    </a>
-  );
-}
-
-/**
  * ListingsGrid - Grid of property cards
  * Note: On favorites page, all listings are favorited by definition
  * @param {Map} proposalsByListingId - Map of listing ID to proposal object
@@ -384,8 +90,9 @@ function ListingsGrid({ listings, onOpenContactModal, onOpenInfoModal, mapRef, i
             onToggleFavorite={onToggleFavorite}
             userId={userId}
             proposalForListing={proposalForListing}
-            onCreateProposal={onCreateProposal}
+            onOpenCreateProposalModal={onCreateProposal}
             onPhotoClick={onPhotoClick}
+            variant="favorites"
           />
         );
       })}
@@ -435,6 +142,9 @@ function ErrorState({ message, onRetry }) {
 }
 
 const FavoriteListingsPage = () => {
+  // GOLD STANDARD AUTH PATTERN - Use consolidated hook
+  const { user: authenticatedUser, userId: authUserId, loading: authLoading, isAuthenticated } = useAuthenticatedUser();
+
   // State management
   const [listings, setListings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -643,107 +353,57 @@ const FavoriteListingsPage = () => {
         setIsLoading(true);
         setError(null);
 
-        // Check auth status
-        const isAuthenticated = await checkAuthStatus();
-        setIsLoggedIn(isAuthenticated);
+        // Wait for auth hook to complete
+        if (authLoading) return;
 
-        if (!isAuthenticated) {
+        // GOLD STANDARD AUTH PATTERN - Use hook result
+        if (!isAuthenticated || !authUserId) {
           setError('Please log in to view your favorite listings.');
           setIsLoading(false);
           return;
         }
 
-        // ========================================================================
-        // GOLD STANDARD AUTH PATTERN - Step 2: Deep validation with clearOnFailure: false
-        // ========================================================================
-        const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
-        let sessionId = getSessionId();
-        let finalUserId = sessionId;
+        // Set auth state from hook
+        setIsLoggedIn(true);
+        setUserId(authUserId);
+        setCurrentUser(authenticatedUser);
 
-        if (userData) {
-          // Success path: Use validated user data
-          finalUserId = sessionId || userData.userId || userData._id;
-          setUserId(finalUserId);
-          setCurrentUser({
-            id: finalUserId,
-            name: userData.fullName || userData.firstName || '',
-            email: userData.email || '',
-            userType: userData.userType || 'GUEST',
-            avatarUrl: userData.profilePhoto || null
-          });
-          console.log('[FavoriteListingsPage] User data loaded:', userData.firstName);
+        // Fetch user profile + counts from junction tables (Phase 5b migration)
+        try {
+          const [profileResult, countsResult] = await Promise.all([
+            supabase
+              .from('user')
+              .select('"About Me / Bio", "need for Space", "special needs"')
+              .eq('_id', authUserId)
+              .single(),
+            supabase.rpc('get_user_junction_counts', { p_user_id: authUserId })
+          ]);
 
-          // Fetch user profile + counts from junction tables (Phase 5b migration)
-          try {
-            const [profileResult, countsResult] = await Promise.all([
-              supabase
-                .from('user')
-                .select('"About Me / Bio", "need for Space", "special needs"')
-                .eq('_id', finalUserId)
-                .single(),
-              supabase.rpc('get_user_junction_counts', { p_user_id: finalUserId })
-            ]);
-
-            if (!profileResult.error && profileResult.data) {
-              const junctionCounts = countsResult.data?.[0] || {};
-              const proposalCount = Number(junctionCounts.proposals_count) || 0;
-              setLoggedInUserData({
-                aboutMe: profileResult.data['About Me / Bio'] || '',
-                needForSpace: profileResult.data['need for Space'] || '',
-                specialNeeds: profileResult.data['special needs'] || '',
-                proposalCount: proposalCount
-              });
-
-              // Fetch last proposal defaults for pre-population
-              const proposalDefaults = await fetchLastProposalDefaults(finalUserId);
-              if (proposalDefaults) {
-                setLastProposalDefaults(proposalDefaults);
-                console.log('[FavoriteListingsPage] Loaded last proposal defaults:', proposalDefaults);
-              }
-            }
-          } catch (e) {
-            console.warn('Failed to fetch user proposal data:', e);
-          }
-        } else {
-          // ========================================================================
-          // GOLD STANDARD AUTH PATTERN - Step 3: Fallback to Supabase session metadata
-          // ========================================================================
-          const { data: { session } } = await supabase.auth.getSession();
-
-          if (session?.user) {
-            // Session valid but profile fetch failed - use session metadata
-            finalUserId = session.user.user_metadata?.user_id || getUserId() || session.user.id;
-            setUserId(finalUserId);
-            setCurrentUser({
-              id: finalUserId,
-              name: session.user.user_metadata?.full_name || session.user.user_metadata?.first_name || getFirstName() || session.user.email?.split('@')[0] || 'User',
-              email: session.user.email || '',
-              userType: session.user.user_metadata?.user_type || 'GUEST',
-              avatarUrl: session.user.user_metadata?.avatar_url || null
+          if (!profileResult.error && profileResult.data) {
+            const junctionCounts = countsResult.data?.[0] || {};
+            const proposalCount = Number(junctionCounts.proposals_count) || 0;
+            setLoggedInUserData({
+              aboutMe: profileResult.data['About Me / Bio'] || '',
+              needForSpace: profileResult.data['need for Space'] || '',
+              specialNeeds: profileResult.data['special needs'] || '',
+              proposalCount: proposalCount
             });
-            console.log('[FavoriteListingsPage] Using fallback session data, userId:', finalUserId);
-          } else {
-            // No valid session - show error
-            console.log('[FavoriteListingsPage] No valid session');
-            setError('Please log in to view your favorites.');
-            setIsLoading(false);
-            return;
+
+            // Fetch last proposal defaults for pre-population
+            const proposalDefaults = await fetchLastProposalDefaults(authUserId);
+            if (proposalDefaults) {
+              setLastProposalDefaults(proposalDefaults);
+              console.log('[FavoriteListingsPage] Loaded last proposal defaults:', proposalDefaults);
+            }
           }
+        } catch (e) {
+          console.warn('Failed to fetch user proposal data:', e);
         }
-
-        if (!finalUserId) {
-          setError('Please log in to view your favorites.');
-          setIsLoading(false);
-          return;
-        }
-
-        // Use finalUserId for remaining operations
-        sessionId = finalUserId;
 
         // Fetch user's favorited listing IDs from user table
         let favoritedIds = [];
         try {
-          favoritedIds = await getFavoritedListingIds(sessionId);
+          favoritedIds = await getFavoritedListingIds(authUserId);
         } catch (favError) {
           console.error('Error fetching favorites:', favError);
           setError('Failed to load your favorites. Please try again.');
@@ -842,7 +502,7 @@ const FavoriteListingsPage = () => {
 
         // Fetch user's proposals to check if any exist for these listings
         try {
-          const proposals = await fetchProposalsByGuest(sessionId);
+          const proposals = await fetchProposalsByGuest(authUserId);
           console.log(`📋 Loaded ${proposals.length} proposals for user`);
 
           // Create a map of listing ID to proposal (only include non-terminal proposals)
@@ -873,7 +533,7 @@ const FavoriteListingsPage = () => {
     };
 
     initializePage();
-  }, [transformListing]);
+  }, [authLoading, isAuthenticated, authUserId, authenticatedUser, transformListing]);
 
   // Show toast notification
   const showToast = (message, type = 'success') => {

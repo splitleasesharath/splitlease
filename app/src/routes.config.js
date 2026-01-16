@@ -49,14 +49,6 @@ export const routes = [
     internalName: 'search-view',
     hasDynamicSegment: false
   },
-  {
-    path: '/search-test',
-    file: 'search-test.html',
-    aliases: ['/search-test.html'],
-    protected: false,
-    cloudflareInternal: false,
-    hasDynamicSegment: false
-  },
 
   // ===== DYNAMIC ROUTES (WITH ID PARAMS) =====
   {

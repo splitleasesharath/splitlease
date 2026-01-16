@@ -246,7 +246,6 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'public/index.html'),
         search: resolve(__dirname, 'public/search.html'),
-        'search-test': resolve(__dirname, 'public/search-test.html'),
         'view-split-lease': resolve(__dirname, 'public/view-split-lease.html'),
         'preview-split-lease': resolve(__dirname, 'public/preview-split-lease.html'),
         '404': resolve(__dirname, 'public/404.html'),

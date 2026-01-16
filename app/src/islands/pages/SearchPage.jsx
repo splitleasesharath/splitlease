@@ -14,7 +14,8 @@ import { supabase } from '../../lib/supabase.js';
 import { logger } from '../../lib/logger.js';
 import { fetchProposalsByGuest, fetchLastProposalDefaults } from '../../lib/proposalDataFetcher.js';
 import { fetchZatPriceConfiguration } from '../../lib/listingDataFetcher.js';
-import { checkAuthStatus, validateTokenAndFetchUser, getUserId, getSessionId, logoutUser } from '../../lib/auth.js';
+import { checkAuthStatus, getUserId, getSessionId, logoutUser } from '../../lib/auth.js';
+import { useAuthenticatedUser } from '../../hooks/useAuthenticatedUser.js';
 import { PRICE_TIERS, SORT_OPTIONS, WEEK_PATTERNS, LISTING_CONFIG, VIEW_LISTING_URL, SEARCH_URL } from '../../lib/constants.js';
 import { initializeLookups, getNeighborhoodName, getBoroughName, getPropertyTypeLabel, isInitialized } from '../../lib/dataLookups.js';
 import { parseUrlToFilters, updateUrlParams, watchUrlChanges, hasUrlFilters } from '../../lib/urlParams.js';
@@ -33,6 +34,7 @@ import { fetchInformationalTexts } from '../../lib/informationalTextsFetcher.js'
 import CompactScheduleIndicator from './SearchPage/components/CompactScheduleIndicator.jsx';
 import MobileFilterBar from './SearchPage/components/MobileFilterBar.jsx';
 import { NeighborhoodCheckboxList, NeighborhoodDropdownFilter } from './SearchPage/components/NeighborhoodFilters.jsx';
+import PropertyCard from '../shared/ListingCard/PropertyCard.jsx';
 
 // ============================================================================
 // Internal Components
@@ -163,373 +165,9 @@ function FilterPanel({
 }
 
 /**
- * PropertyCard - Individual listing card
- */
-function PropertyCard({ listing, onLocationClick, onCardHover, onCardLeave, onOpenContactModal, onOpenInfoModal, isLoggedIn, isFavorited, userId, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalForListing, selectedNightsCount }) {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const priceInfoTriggerRef = useRef(null);
-  const mobilePriceInfoTriggerRef = useRef(null);
-
-  const hasImages = listing.images && listing.images.length > 0;
-  const hasMultipleImages = listing.images && listing.images.length > 1;
-
-  const handlePrevImage = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!hasMultipleImages) return;
-    setCurrentImageIndex((prev) =>
-      prev === 0 ? listing.images.length - 1 : prev - 1
-    );
-  };
-
-  const handleNextImage = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!hasMultipleImages) return;
-    setCurrentImageIndex((prev) =>
-      prev === listing.images.length - 1 ? 0 : prev + 1
-    );
-  };
-
-  // Get listing ID for FavoriteButton
-  const favoriteListingId = listing.id || listing._id;
-
-  // Get availability message - hardcoded variety for now
-  const getAvailabilityMessage = () => {
-    const id = listing.id || listing._id || '';
-    // Use a simple hash of the listing ID to deterministically assign messages
-    const hash = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const messageIndex = hash % 4;
-
-    const messages = [
-      { text: 'Available in 1 week', className: 'availability-soon' },
-      { text: 'Available in 2 weeks', className: 'availability-soon' },
-      { text: 'Available in 3 weeks', className: 'availability-later' },
-      { text: 'Message Split Lease\nfor Availability', className: '' },
-    ];
-
-    return messages[messageIndex];
-  };
-
-  const availabilityInfo = getAvailabilityMessage();
-
-  // Calculate dynamic price based on selected nights from day selector
-  // Uses the same calculatePrice function as View Split Lease page
-  const calculateDynamicPrice = () => {
-    const nightsCount = selectedNightsCount;
-
-    // If 0 nights, show starting price (need at least 2 days = 1 night for a valid stay)
-    if (nightsCount < 1) {
-      return listing['Starting nightly price'] || listing.price?.starting || 0;
-    }
-
-    try {
-      // Create a mock nights array with the correct length
-      // calculatePrice only uses .length to get nightsCount
-      const mockNightsArray = Array(nightsCount).fill({ nightNumber: 0 });
-
-      // Use the same pricing calculation as View Split Lease page
-      // Default reservationSpan of 13 weeks (standard booking period)
-      const priceBreakdown = calculatePrice(mockNightsArray, listing, 13, null);
-
-      logger.debug(`[PropertyCard] Dynamic price for ${listing.title}:`, {
-        nightsCount,
-        rentalType: listing.rentalType,
-        hostRate: listing[`💰Nightly Host Rate for ${nightsCount} nights`],
-        pricePerNight: priceBreakdown.pricePerNight,
-        valid: priceBreakdown.valid
-      });
-
-      // Return the guest-facing price per night
-      return priceBreakdown.pricePerNight || listing['Starting nightly price'] || listing.price?.starting || 0;
-    } catch (error) {
-      logger.warn(`[PropertyCard] Price calculation failed for listing ${listing.id}:`, error.message);
-      return listing['Starting nightly price'] || listing.price?.starting || 0;
-    }
-  };
-
-  const dynamicPrice = calculateDynamicPrice();
-  const startingPrice = listing['Starting nightly price'] || listing.price?.starting || 0;
-
-  // Render amenity icons
-  const renderAmenityIcons = () => {
-    if (!listing.amenities || listing.amenities.length === 0) return null;
-
-    const maxVisible = 6;
-    const visibleAmenities = listing.amenities.slice(0, maxVisible);
-    const hiddenCount = Math.max(0, listing.amenities.length - maxVisible);
-
-    return (
-      <div className="listing-amenities">
-        {visibleAmenities.map((amenity, idx) => (
-          <span key={idx} className="amenity-icon" data-tooltip={amenity.name}>
-            {amenity.icon}
-          </span>
-        ))}
-        {hiddenCount > 0 && (
-          <span className="amenity-more-count" title="Show all amenities">
-            +{hiddenCount} more
-          </span>
-        )}
-      </div>
-    );
-  };
-
-  const listingId = listing.id || listing._id;
-
-  // Handle click to pass days-selected parameter at click time (not render time)
-  // This ensures we get the current URL parameter after SearchScheduleSelector has updated it
-  const handleCardClick = (e) => {
-    if (!listingId) {
-      e.preventDefault();
-      logger.error('[PropertyCard] No listing ID found', { listing });
-      return;
-    }
-
-    // Prevent default link behavior - we'll handle navigation manually
-    e.preventDefault();
-
-    // Get days-selected from URL at click time (after SearchScheduleSelector has updated it)
-    const urlParams = new URLSearchParams(window.location.search);
-    const daysSelected = urlParams.get('days-selected');
-
-    const url = daysSelected
-      ? `/view-split-lease/${listingId}?days-selected=${daysSelected}`
-      : `/view-split-lease/${listingId}`;
-
-    logger.debug('📅 PropertyCard: Opening listing with URL:', url);
-
-    // Detect mobile viewport (matches CSS breakpoint at 768px)
-    const isMobile = window.innerWidth <= 768;
-
-    if (isMobile) {
-      // On mobile, navigate in the same tab for better UX and to avoid popup blockers
-      window.location.href = url;
-    } else {
-      // On desktop, open in new tab
-      window.open(url, '_blank', 'noopener,noreferrer');
-    }
-  };
-
-  return (
-    <a
-      className="listing-card"
-      data-listing-id={listingId}
-      href={listingId ? `/view-split-lease/${listingId}` : '#'}
-      target="_blank"
-      rel="noopener noreferrer"
-      style={{ textDecoration: 'none', color: 'inherit' }}
-      onClick={handleCardClick}
-      onMouseEnter={() => {
-        if (onCardHover) {
-          onCardHover(listing);
-        }
-      }}
-      onMouseLeave={() => {
-        if (onCardLeave) {
-          onCardLeave();
-        }
-      }}
-    >
-      {/* Image Section */}
-      {hasImages && (
-        <div className="listing-images">
-          <img
-            src={listing.images[currentImageIndex]}
-            alt={listing.title}
-          />
-          {hasMultipleImages && (
-            <>
-              <button className="image-nav prev-btn" onClick={handlePrevImage}>
-                ‹
-              </button>
-              <button className="image-nav next-btn" onClick={handleNextImage}>
-                ›
-              </button>
-              <div className="image-counter">
-                <span className="current-image">{currentImageIndex + 1}</span> /{' '}
-                <span className="total-images">{listing.images.length}</span>
-              </div>
-            </>
-          )}
-          <FavoriteButton
-            listingId={favoriteListingId}
-            userId={userId}
-            initialFavorited={isFavorited}
-            onToggle={(newState, listingId) => {
-              if (onToggleFavorite) {
-                onToggleFavorite(listingId, listing.title, newState);
-              }
-            }}
-            onRequireAuth={onRequireAuth}
-            size="medium"
-          />
-          {listing.isNew && <span className="new-badge">New Listing</span>}
-          {listing.type === 'Entire Place' && (
-            <span className="family-friendly-tag" aria-label="Family Friendly - Entire place listing suitable for families">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-              </svg>
-              Family Friendly
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Content Section - F7b Layout */}
-      <div className="listing-content">
-        {/* Main Info - Left Side */}
-        <div className="listing-main-info">
-          <div className="listing-info-top">
-            <div
-              className="listing-location"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (onLocationClick) {
-                  onLocationClick(listing);
-                }
-              }}
-              style={{ cursor: onLocationClick ? 'pointer' : 'default' }}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                <circle cx="12" cy="10" r="3" />
-              </svg>
-              <span className="location-text">{listing.location}</span>
-            </div>
-            <h3 className="listing-title">{listing.title}</h3>
-          </div>
-
-          {/* Meta Section - Info Dense Style */}
-          <div className="listing-meta">
-            <span className="meta-item"><strong>{listing.type || 'Entire Place'}</strong></span>
-            <span className="meta-item"><strong>{listing.maxGuests}</strong> guests</span>
-            <span className="meta-item"><strong>{listing.bedrooms === 0 ? 'Studio' : `${listing.bedrooms} bedroom${listing.bedrooms > 1 ? 's' : ''}`}</strong></span>
-            <span className="meta-item"><strong>{listing.bathrooms}</strong> bath</span>
-          </div>
-
-          {/* Host Section - Price, CTA, Hosted by */}
-          <div className="listing-host-section">
-            {/* Inline Price Display */}
-            <div className="inline-price">
-              <span className="price-current">${dynamicPrice.toFixed(2)}</span>
-              <span className="price-period">/ night</span>
-              {startingPrice > 0 && startingPrice !== dynamicPrice && (
-                <span
-                  ref={mobilePriceInfoTriggerRef}
-                  className="price-min-trigger"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onOpenInfoModal(listing, mobilePriceInfoTriggerRef);
-                  }}
-                >
-                  from ${parseFloat(startingPrice).toFixed(2)}/night
-                  <span className="price-info-icon">?</span>
-                </span>
-              )}
-            </div>
-            {/* Action Buttons */}
-            <div className="action-buttons">
-              <button
-                className="action-button secondary"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onOpenContactModal(listing);
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-                </svg>
-                Message
-              </button>
-              {/* Proposal CTAs - Show Create or View based on existing proposal */}
-              {showCreateProposalButton && (
-                proposalForListing ? (
-                  <button
-                    className="view-proposal-btn"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      window.location.href = `/guest-proposals?proposal=${proposalForListing._id}`;
-                    }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                      <polyline points="14 2 14 8 20 8" />
-                      <line x1="16" y1="13" x2="8" y2="13" />
-                      <line x1="16" y1="17" x2="8" y2="17" />
-                      <polyline points="10 9 9 9 8 9" />
-                    </svg>
-                    View Proposal
-                  </button>
-                ) : (
-                  <button
-                    className="create-proposal-btn"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      onOpenCreateProposalModal(listing);
-                    }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="12" y1="5" x2="12" y2="19" />
-                      <line x1="5" y1="12" x2="19" y2="12" />
-                    </svg>
-                    Create Proposal
-                  </button>
-                )
-              )}
-            </div>
-            {/* Host Profile - Simple text */}
-            <div className="host-profile">
-              {listing.host?.image ? (
-                <img src={listing.host.image} alt={listing.host.name} className="host-avatar" />
-              ) : (
-                <div className="host-avatar-placeholder">?</div>
-              )}
-              <span className="host-name">
-                Hosted by {formatHostName({ fullName: listing.host?.name || 'Host' })}
-                {listing.host?.verified && <span className="verified-badge" title="Verified">✓</span>}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Price Sidebar - Right Side */}
-        <div
-          className="listing-price-sidebar"
-          ref={priceInfoTriggerRef}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onOpenInfoModal(listing, priceInfoTriggerRef);
-          }}
-        >
-          <div className="price-main">${dynamicPrice.toFixed(2)}</div>
-          <div className="price-period">/night</div>
-          <div className="price-divider"></div>
-          {selectedNightsCount >= 1 ? (
-            <div className="price-context">for {selectedNightsCount} night{selectedNightsCount !== 1 ? 's' : ''}/week</div>
-          ) : (
-            <div className="price-starting">Starting at<span>${parseFloat(startingPrice).toFixed(2)}/night</span></div>
-          )}
-          <div className={`availability-note ${availabilityInfo.className}`}>{availabilityInfo.text.split('\n').map((line, i) => i === 0 ? line : <><br key={i}/>{line}</>)}</div>
-        </div>
-      </div>
-    </a>
-  );
-}
-
-/**
  * ListingsGrid - Grid of property cards with lazy loading
  */
-function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef, pulseTimeoutRef, isLoggedIn, userId, favoritedListingIds, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalsByListingId, selectedNightsCount }) {
+function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef, onCardLeave, isLoggedIn, userId, favoritedListingIds, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalsByListingId, selectedNightsCount }) {
 
   const sentinelRef = useRef(null);
 
@@ -578,18 +216,7 @@ function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactM
                 mapRef.current.highlightListing(listing.id);
               }
             }}
-            onCardLeave={() => {
-              // Delay stopPulse to allow hovering to map without losing pulse
-              if (pulseTimeoutRef.current) {
-                clearTimeout(pulseTimeoutRef.current);
-              }
-              pulseTimeoutRef.current = setTimeout(() => {
-                if (mapRef.current) {
-                  mapRef.current.stopPulse();
-                }
-                pulseTimeoutRef.current = null;
-              }, 150); // Short delay to allow transition to map
-            }}
+            onCardLeave={onCardLeave}
             onOpenContactModal={onOpenContactModal}
             onOpenInfoModal={onOpenInfoModal}
             isLoggedIn={isLoggedIn}
@@ -601,6 +228,7 @@ function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactM
             onOpenCreateProposalModal={onOpenCreateProposalModal}
             proposalForListing={proposalForListing}
             selectedNightsCount={selectedNightsCount}
+            variant="search"
           />
         );
       })}
@@ -682,6 +310,9 @@ function EmptyState({ onResetFilters }) {
 // ============================================================================
 
 export default function SearchPage() {
+  // GOLD STANDARD AUTH PATTERN - Use consolidated hook
+  const { user: authenticatedUser, userId: authUserId, loading: authLoading, isAuthenticated } = useAuthenticatedUser();
+
   // State management
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -1015,115 +646,103 @@ export default function SearchPage() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const authenticated = await checkAuthStatus();
-        setIsLoggedIn(authenticated);
+        // Wait for auth hook to complete
+        if (authLoading) return;
 
-        if (authenticated) {
-          // Validate token and get user data
-          // CRITICAL: Use clearOnFailure: false to preserve session if Edge Function fails
-          const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
-          if (userData) {
-            const userId = getUserId();
-            setCurrentUser({
-              id: userId,
-              name: userData.fullName || userData.firstName || '',
-              email: userData.email || '',
-              userType: userData.userType || 'GUEST',
-              avatarUrl: userData.profilePhoto || null,
-              proposalCount: userData.proposalCount ?? 0
+        // GOLD STANDARD AUTH PATTERN - Use hook result
+        setIsLoggedIn(isAuthenticated);
+
+        if (isAuthenticated && authUserId) {
+          // Set auth state from hook
+          setCurrentUser(authenticatedUser);
+
+          // Fetch favorites, proposals count, and profile data from Supabase
+          // Uses junction table RPCs for favorites/proposals (Phase 5b migration)
+          // Parallel fetch: profile data + junction counts + favorites list
+          const [userResult, countsResult] = await Promise.all([
+            // Profile data + favorites for proposal form prefilling and heart icons
+            supabase
+              .from('user')
+              .select('"About Me / Bio", "need for Space", "special needs", "Favorited Listings"')
+              .eq('_id', authUserId)
+              .single(),
+            // Junction counts for proposals
+            supabase.rpc('get_user_junction_counts', { p_user_id: authUserId })
+          ]);
+
+          const userRecord = userResult.data;
+          const error = userResult.error;
+
+          // Handle favorites from user table JSONB field
+          const favorites = userRecord?.['Favorited Listings'] || [];
+          if (Array.isArray(favorites) && favorites.length > 0) {
+            // Filter to only valid Bubble listing IDs (pattern: digits + 'x' + digits)
+            const validFavorites = favorites.filter(id =>
+              typeof id === 'string' && /^\d+x\d+$/.test(id)
+            );
+
+            // Store all favorited IDs for heart icon state
+            setFavoritedListingIds(new Set(validFavorites));
+            // Set count to match - all favorites count regardless of Active status
+            setFavoritesCount(validFavorites.length);
+            logger.debug('[SearchPage] Favorites count from user table:', validFavorites.length);
+          } else {
+            setFavoritesCount(0);
+            setFavoritedListingIds(new Set());
+          }
+
+          // Handle proposals count from junction RPC
+          const junctionCounts = countsResult.data?.[0] || {};
+          const proposalCount = Number(junctionCounts.proposals_count) || 0;
+          logger.debug('[SearchPage] Proposals count from junction:', proposalCount);
+
+          if (!error && userRecord) {
+            // Update currentUser with actual proposal count
+            setCurrentUser(prev => ({
+              ...prev,
+              proposalCount: proposalCount
+            }));
+
+            // Set logged in user data for proposal form prefilling
+            setLoggedInUserData({
+              aboutMe: userRecord['About Me / Bio'] || '',
+              needForSpace: userRecord['need for Space'] || '',
+              specialNeeds: userRecord['special needs'] || '',
+              proposalCount: proposalCount
             });
 
-            // Fetch favorites, proposals count, and profile data from Supabase
-            // Uses junction table RPCs for favorites/proposals (Phase 5b migration)
-            if (userId) {
-              // Parallel fetch: profile data + junction counts + favorites list
-              const [userResult, countsResult] = await Promise.all([
-                // Profile data + favorites for proposal form prefilling and heart icons
-                supabase
-                  .from('user')
-                  .select('"About Me / Bio", "need for Space", "special needs", "Favorited Listings"')
-                  .eq('_id', userId)
-                  .single(),
-                // Junction counts for proposals
-                supabase.rpc('get_user_junction_counts', { p_user_id: userId })
-              ]);
+            // Fetch last proposal defaults for pre-population
+            const proposalDefaults = await fetchLastProposalDefaults(authUserId);
+            if (proposalDefaults) {
+              setLastProposalDefaults(proposalDefaults);
+              logger.debug('[SearchPage] Loaded last proposal defaults:', proposalDefaults);
+            }
 
-              const userRecord = userResult.data;
-              const error = userResult.error;
+            // Fetch user's proposals to check if any exist for specific listings
+            const userIsGuest = isGuest({ userType: authenticatedUser.userType });
+            if (userIsGuest && authUserId && proposalCount > 0) {
+              try {
+                const proposals = await fetchProposalsByGuest(authUserId);
+                logger.debug(`[SearchPage] Loaded ${proposals.length} proposals for user`);
 
-              // Handle favorites from user table JSONB field
-              const favorites = userRecord?.['Favorited Listings'] || [];
-              if (Array.isArray(favorites) && favorites.length > 0) {
-                // Filter to only valid Bubble listing IDs (pattern: digits + 'x' + digits)
-                const validFavorites = favorites.filter(id =>
-                  typeof id === 'string' && /^\d+x\d+$/.test(id)
-                );
-
-                // Store all favorited IDs for heart icon state
-                setFavoritedListingIds(new Set(validFavorites));
-                // Set count to match - all favorites count regardless of Active status
-                setFavoritesCount(validFavorites.length);
-                logger.debug('[SearchPage] Favorites count from user table:', validFavorites.length);
-              } else {
-                setFavoritesCount(0);
-                setFavoritedListingIds(new Set());
-              }
-
-              // Handle proposals count from junction RPC
-              const junctionCounts = countsResult.data?.[0] || {};
-              const proposalCount = Number(junctionCounts.proposals_count) || 0;
-              logger.debug('[SearchPage] Proposals count from junction:', proposalCount);
-
-              if (!error && userRecord) {
-
-                // Update currentUser with actual proposal count
-                setCurrentUser(prev => ({
-                  ...prev,
-                  proposalCount: proposalCount
-                }));
-
-                // Set logged in user data for proposal form prefilling
-                setLoggedInUserData({
-                  aboutMe: userRecord['About Me / Bio'] || '',
-                  needForSpace: userRecord['need for Space'] || '',
-                  specialNeeds: userRecord['special needs'] || '',
-                  proposalCount: proposalCount
+                // Create a map of listing ID to proposal (only include non-terminal proposals)
+                const proposalsMap = new Map();
+                proposals.forEach(proposal => {
+                  const listingId = proposal.Listing;
+                  if (listingId) {
+                    // If multiple proposals exist for same listing, keep the most recent one
+                    // (proposals are already sorted by Created Date descending)
+                    if (!proposalsMap.has(listingId)) {
+                      proposalsMap.set(listingId, proposal);
+                    }
+                  }
                 });
 
-                // Fetch last proposal defaults for pre-population
-                const proposalDefaults = await fetchLastProposalDefaults(userId);
-                if (proposalDefaults) {
-                  setLastProposalDefaults(proposalDefaults);
-                  logger.debug('[SearchPage] Loaded last proposal defaults:', proposalDefaults);
-                }
-
-                // Fetch user's proposals to check if any exist for specific listings
-                const userIsGuest = isGuest({ userType: userData.userType });
-                if (userIsGuest && userId && proposalCount > 0) {
-                  try {
-                    const proposals = await fetchProposalsByGuest(userId);
-                    logger.debug(`[SearchPage] Loaded ${proposals.length} proposals for user`);
-
-                    // Create a map of listing ID to proposal (only include non-terminal proposals)
-                    const proposalsMap = new Map();
-                    proposals.forEach(proposal => {
-                      const listingId = proposal.Listing;
-                      if (listingId) {
-                        // If multiple proposals exist for same listing, keep the most recent one
-                        // (proposals are already sorted by Created Date descending)
-                        if (!proposalsMap.has(listingId)) {
-                          proposalsMap.set(listingId, proposal);
-                        }
-                      }
-                    });
-
-                    setProposalsByListingId(proposalsMap);
-                    logger.debug(`[SearchPage] Mapped ${proposalsMap.size} listings with proposals`);
-                  } catch (proposalErr) {
-                    logger.warn('[SearchPage] Failed to fetch proposals (non-critical):', proposalErr);
-                    // Don't fail the page if proposals can't be loaded - just show Create Proposal for all
-                  }
-                }
+                setProposalsByListingId(proposalsMap);
+                logger.debug(`[SearchPage] Mapped ${proposalsMap.size} listings with proposals`);
+              } catch (proposalErr) {
+                logger.warn('[SearchPage] Failed to fetch proposals (non-critical):', proposalErr);
+                // Don't fail the page if proposals can't be loaded - just show Create Proposal for all
               }
             }
           }
@@ -1136,7 +755,7 @@ export default function SearchPage() {
     };
 
     checkAuth();
-  }, []);
+  }, [authLoading, isAuthenticated, authUserId, authenticatedUser]);
 
   // Fetch ALL active listings for green markers (NO FILTERS - runs once on mount)
   useEffect(() => {
@@ -2041,6 +1660,20 @@ export default function SearchPage() {
     setSortBy('recommended');
     setNeighborhoodSearch('');
   };
+
+  // Card interaction handlers
+  const handleCardLeave = useCallback(() => {
+    // Delay stopPulse to allow hovering to map without losing pulse
+    if (pulseTimeoutRef.current) {
+      clearTimeout(pulseTimeoutRef.current);
+    }
+    pulseTimeoutRef.current = setTimeout(() => {
+      if (mapRef.current) {
+        mapRef.current.stopPulse();
+      }
+      pulseTimeoutRef.current = null;
+    }, 150); // Short delay to allow transition to map
+  }, []);
 
   // Modal handler functions
   const handleOpenContactModal = (listing) => {
@@ -3002,7 +2635,7 @@ export default function SearchPage() {
                       onOpenContactModal={handleOpenContactModal}
                       onOpenInfoModal={handleOpenInfoModal}
                       mapRef={mapRef}
-                      pulseTimeoutRef={pulseTimeoutRef}
+                      onCardLeave={handleCardLeave}
                       isLoggedIn={isLoggedIn}
                       userId={currentUser?.id}
                       favoritedListingIds={favoritedListingIds}
@@ -3030,7 +2663,7 @@ export default function SearchPage() {
                 onOpenContactModal={handleOpenContactModal}
                 onOpenInfoModal={handleOpenInfoModal}
                 mapRef={mapRef}
-                pulseTimeoutRef={pulseTimeoutRef}
+                onCardLeave={handleCardLeave}
                 isLoggedIn={isLoggedIn}
                 userId={currentUser?.id}
                 favoritedListingIds={favoritedListingIds}

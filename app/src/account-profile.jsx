@@ -13,10 +13,17 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import AccountProfilePage from './islands/pages/AccountProfilePage/AccountProfilePage.jsx';
+import { ErrorBoundary } from './islands/shared/ErrorBoundary';
 
 // Mount the Account Profile Page
 const rootElement = document.getElementById('root');
 if (rootElement) {
   const root = createRoot(rootElement);
-  root.render(<AccountProfilePage />);
+  root.render(
+    <React.StrictMode>
+      <ErrorBoundary>
+        <AccountProfilePage />
+      </ErrorBoundary>
+    </React.StrictMode>
+  );
 }
