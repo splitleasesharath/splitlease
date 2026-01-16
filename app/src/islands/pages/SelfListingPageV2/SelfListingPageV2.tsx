@@ -1115,11 +1115,12 @@ export function SelfListingPageV2() {
         blockedDates: [],
       },
 
-      // Photos
+      // Photos - include file property for upload to Supabase Storage
       photos: {
         photos: data.photos.map((p, i) => ({
           id: p.id,
           url: p.url,
+          file: p.file, // Required for photoUpload.js to upload to storage
           caption: '',
           displayOrder: i,
         })),
