@@ -50,6 +50,11 @@ import {
   getVisibilityForRole,
 } from "../../_shared/ctaHelpers.ts";
 import {
+  generateSuggestedProposalSummary,
+  formatPreviousProposals,
+  formatDaysAsRange,
+} from "../../_shared/negotiationSummaryHelpers.ts";
+import {
   getNotificationPreferences,
   shouldSendEmail,
   shouldSendSms,
@@ -251,6 +256,7 @@ export async function handleCreateSuggested(
       "Nights Available (List of Nights) ",
       "Location - Address",
       "Location - slightly different address",
+      "Location - Borough",
       "💰Weekly Host Rate",
       "💰Nightly Host Rate for 2 nights",
       "💰Nightly Host Rate for 3 nights",
@@ -285,7 +291,9 @@ export async function handleCreateSuggested(
       "Rental Application",
       "Proposals List",
       "Favorited Listings",
-      "Tasks Completed"
+      "Tasks Completed",
+      "About Me / Bio",
+      "need for Space"
     `)
     .eq("_id", input.guestId)
     .single();
@@ -535,6 +543,7 @@ export async function handleCreateSuggested(
     // SEND SPLITBOT WELCOME MESSAGES
     // ================================================
     // Send automated messages to both guest and host so they see the thread immediately
+    // For suggested proposals, generate AI-powered summary explaining WHY this match
 
     try {
 
@@ -549,9 +558,53 @@ export async function handleCreateSuggested(
         getCTAForProposalStatus(supabase, status, "host", templateContext),
       ]);
 
-      // Send SplitBot message to GUEST
+      // ================================================
+      // GENERATE AI SUMMARY FOR GUEST (suggested proposals only)
+      // ================================================
+      let aiGuestSummary: string | null = null;
+      if (status.includes("Split Lease")) {
+        try {
+          console.log(`[proposal:create_suggested] Generating AI summary for suggested proposal...`);
+
+          // Fetch previous proposals for comparison
+          const previousProposals = await formatPreviousProposals(
+            supabase,
+            input.guestId,
+            proposalId
+          );
+
+          // Generate AI-powered summary explaining why this listing was suggested
+          aiGuestSummary = await generateSuggestedProposalSummary(supabase, {
+            guestFirstName: guestFirstName,
+            guestBio: input.aboutMe || guestData["About Me / Bio"] || "",
+            needForSpace: input.needForSpace || guestData["need for Space"] || "",
+            listingName: resolvedListingName,
+            listingBorough: listingData["Location - Borough"] || "NYC",
+            reservationWeeks: input.reservationSpanWeeks,
+            moveInStart: input.moveInStartRange,
+            moveInEnd: input.moveInEndRange,
+            selectedDays: formatDaysAsRange(input.daysSelected),
+            nightlyPrice: input.nightlyPrice,
+            totalPrice: input.totalPrice,
+            previousProposals,
+          });
+
+          if (aiGuestSummary) {
+            console.log(`[proposal:create_suggested] AI summary generated successfully`);
+          } else {
+            console.log(`[proposal:create_suggested] AI summary returned null, using default message`);
+          }
+        } catch (aiError) {
+          console.warn(`[proposal:create_suggested] AI summary generation failed, using default:`, aiError);
+        }
+      }
+
+      // Send SplitBot message to GUEST (with AI summary if available)
       if (guestCTA) {
-        const guestMessageBody = guestCTA.message || getDefaultMessage(status, "guest", templateContext);
+        // Use AI summary if available, otherwise fall back to CTA template or default
+        const guestMessageBody = aiGuestSummary ||
+          guestCTA.message ||
+          getDefaultMessage(status, "guest", templateContext);
         const guestVisibility = getVisibilityForRole("guest");
 
         await createSplitBotMessage(supabase, {
@@ -582,7 +635,7 @@ export async function handleCreateSuggested(
       }
 
       // Update thread's last message preview
-      const lastMessageBody = guestCTA?.message || hostCTA?.message || `Proposal for ${resolvedListingName}`;
+      const lastMessageBody = aiGuestSummary || guestCTA?.message || hostCTA?.message || `Proposal for ${resolvedListingName}`;
       await updateThreadLastMessage(supabase, threadId, lastMessageBody);
 
       console.log(`[proposal:create_suggested] SplitBot messages complete`);
