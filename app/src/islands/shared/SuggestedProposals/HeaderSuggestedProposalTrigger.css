@@ -7,20 +7,32 @@
  */
 
 .header-sp-trigger {
+  /* Reset button defaults */
+  appearance: none;
+  -webkit-appearance: none;
+  outline: none;
+  font: inherit;
+  color: inherit;
+
+  /* Layout */
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 44px;
   height: 44px;
+  padding: 0;
+  margin-right: 12px;
+
+  /* Visual */
   border-radius: 50%;
   background: linear-gradient(135deg, rgba(255, 193, 7, 0.25) 0%, rgba(255, 152, 0, 0.2) 100%);
   border: 2px solid rgba(255, 193, 7, 0.7);
   cursor: pointer;
+
+  /* Animation */
   transition: all 0.2s ease;
-  margin-right: 12px;
   animation: header-sp-glow 2s ease-in-out infinite;
-  padding: 0;
 }
 
 /* Glowing pulse animation on the button */
@@ -61,6 +73,9 @@
   font-size: 22px;
   line-height: 1;
   filter: drop-shadow(0 0 4px rgba(255, 193, 7, 0.8));
+  /* Ensure emoji is visible */
+  display: inline-block;
+  text-align: center;
 }
 
 /* Count badge */
