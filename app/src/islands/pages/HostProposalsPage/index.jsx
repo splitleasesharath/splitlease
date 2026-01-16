@@ -197,6 +197,9 @@ export default function HostProposalsPage() {
     isLoading: realIsLoading,
     error: realError,
 
+    // Proposal counts for pill selector
+    proposalCountsByListing: realProposalCounts,
+
     // Handlers
     handleListingChange: realHandleListingChange,
     handleProposalClick,
@@ -240,27 +243,13 @@ export default function HostProposalsPage() {
   const handleListingChange = DEMO_MODE
     ? (listingId) => setDemoSelectedListingId(listingId)
     : realHandleListingChange;
+  const proposalCountsByListing = DEMO_MODE
+    ? { [MOCK_LISTINGS[0]._id]: 1, [MOCK_LISTINGS[1]._id]: 0 }
+    : realProposalCounts;
 
   // ============================================================================
   // V7 COMPUTED VALUES
   // ============================================================================
-
-  // Calculate proposal counts per listing for the pill selector
-  const proposalCountsByListing = useMemo(() => {
-    const counts = {};
-    // Initialize all listings with 0
-    listings?.forEach(listing => {
-      const id = listing._id || listing.id;
-      counts[id] = 0;
-    });
-    // Count proposals - this would need access to all proposals, not just filtered
-    // For now, show count for selected listing
-    if (selectedListing) {
-      const selectedId = selectedListing._id || selectedListing.id;
-      counts[selectedId] = proposals?.length || 0;
-    }
-    return counts;
-  }, [listings, selectedListing, proposals]);
 
   // Group proposals into sections
   const groupedProposals = useMemo(() => {

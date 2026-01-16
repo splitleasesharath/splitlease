@@ -170,6 +170,11 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
   const [error, setError] = useState(null);
 
   // ============================================================================
+  // PROPOSAL COUNTS STATE (for pill selector badges)
+  // ============================================================================
+  const [proposalCountsByListing, setProposalCountsByListing] = useState({});
+
+  // ============================================================================
   // REFERENCE DATA STATE
   // ============================================================================
   const [allHouseRules, setAllHouseRules] = useState([]);
@@ -349,17 +354,22 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
 
         // Calculate stats per listing
         const statsMap = {};
+        const countsMap = {}; // Simple count map for UI
         (proposalStats || []).forEach(p => {
           const listingId = p.Listing;
           if (!statsMap[listingId]) {
             statsMap[listingId] = { count: 0, mostRecent: null };
           }
           statsMap[listingId].count++;
+          countsMap[listingId] = (countsMap[listingId] || 0) + 1;
           const createdDate = new Date(p['Created Date']);
           if (!statsMap[listingId].mostRecent || createdDate > statsMap[listingId].mostRecent) {
             statsMap[listingId].mostRecent = createdDate;
           }
         });
+
+        // Store proposal counts for pill selector badges
+        setProposalCountsByListing(countsMap);
 
         // Sort listings: most recent proposal first, then by proposal count
         const sortedListings = [...listingsResult].sort((a, b) => {
@@ -957,6 +967,9 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
     // UI state
     isLoading,
     error,
+
+    // Proposal counts for pill selector
+    proposalCountsByListing,
 
     // Handlers
     handleListingChange,
