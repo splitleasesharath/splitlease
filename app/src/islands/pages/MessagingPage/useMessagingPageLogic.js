@@ -537,6 +537,28 @@ export function useMessagingPageLogic() {
         userId: sessionData?.session?.user?.id,
       });
 
+      // Check if the token is a valid Supabase JWT (HS256)
+      // Supabase tokens start with eyJhbGciOiJIUzI1NiIs (HS256)
+      // If we see ES256 or other algorithms, the session is corrupted
+      const tokenPreview = sessionData?.session?.access_token?.substring(0, 20);
+      if (tokenPreview && !tokenPreview.startsWith('eyJhbGciOiJIUzI1NiIs')) {
+        console.warn('[fetchMessages] ⚠️ Invalid token algorithm detected!');
+        console.warn('[fetchMessages] Expected: HS256 (eyJhbGciOiJIUzI1NiIs)');
+        console.warn('[fetchMessages] Got:', tokenPreview);
+        console.log('[fetchMessages] Clearing corrupted session and attempting refresh...');
+
+        // Force sign out to clear corrupted session
+        await supabase.auth.signOut();
+
+        // Try to refresh - this may re-authenticate if refresh token is valid
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError || !refreshData?.session) {
+          console.error('[fetchMessages] Session recovery failed. User must log in again.');
+          throw new Error('Session corrupted. Please log in again.');
+        }
+        console.log('[fetchMessages] Session recovered after clearing corrupted data');
+      }
+
       // If no session, try to refresh
       if (!sessionData?.session?.access_token) {
         console.log('[fetchMessages] No session, attempting refresh...');
