@@ -2,12 +2,30 @@
  * ThreadCard Component
  *
  * Individual thread card in the sidebar.
- * Shows contact avatar, name, property, last message preview, and unread count.
+ * Upwork-style design with rounded pill selected state.
+ * Shows contact avatar, name, role badge, property, last message preview, and unread count.
  */
 
+/**
+ * Get initials from a name
+ * @param {string} name - Full name
+ * @returns {string} - Two letter initials
+ */
+function getInitials(name) {
+  if (!name) return '??';
+  const parts = name.trim().split(' ').filter(Boolean);
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+  return name.slice(0, 2).toUpperCase();
+}
+
 export default function ThreadCard({ thread, isSelected, onClick }) {
-  // Time is already pre-formatted by the Edge Function
-  // Examples: "2:30 PM", "Yesterday", "Wed", "Dec 10"
+  const initials = getInitials(thread.contact_name);
+
+  // Determine role badge - if contact is a host or guest relative to current user
+  // This is determined by the contact_role field from the API
+  const contactRole = thread.contact_role; // 'host' or 'guest'
 
   return (
     <div
@@ -25,14 +43,27 @@ export default function ThreadCard({ thread, isSelected, onClick }) {
     >
       {/* Avatar */}
       <div className="thread-card__avatar-container">
-        <img
-          src={thread.contact_avatar || '/assets/images/default-avatar.svg'}
-          alt={thread.contact_name || 'Contact'}
-          className="thread-card__avatar"
-          onError={(e) => {
-            e.target.src = '/assets/images/default-avatar.svg';
-          }}
-        />
+        {thread.contact_avatar ? (
+          <img
+            src={thread.contact_avatar}
+            alt={thread.contact_name || 'Contact'}
+            className="thread-card__avatar"
+            onError={(e) => {
+              // Hide broken image and show placeholder
+              e.target.style.display = 'none';
+              e.target.nextElementSibling.style.display = 'flex';
+            }}
+          />
+        ) : null}
+        <div
+          className="thread-card__avatar-placeholder"
+          style={{ display: thread.contact_avatar ? 'none' : 'flex' }}
+        >
+          {initials}
+        </div>
+        {thread.is_online && (
+          <span className="thread-card__online-dot" />
+        )}
         {thread.is_with_splitbot && (
           <span className="thread-card__bot-badge" title="Split Bot">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
@@ -44,14 +75,26 @@ export default function ThreadCard({ thread, isSelected, onClick }) {
 
       {/* Content */}
       <div className="thread-card__content">
-        <span className="thread-card__name">
-          {thread.contact_name || 'Unknown Contact'}
-        </span>
+        {/* Header row: Name + Role Badge */}
+        <div className="thread-card__name-row">
+          <span className="thread-card__name">
+            {thread.contact_name || 'Unknown Contact'}
+          </span>
+          {contactRole && (
+            <span className={`thread-card__role-badge thread-card__role-badge--${contactRole}`}>
+              {contactRole}
+            </span>
+          )}
+        </div>
+
+        {/* Property/Listing name */}
         {thread.property_name && (
           <span className="thread-card__property">
             <span className="thread-card__property-prefix">Split:</span> {thread.property_name}
           </span>
         )}
+
+        {/* Message preview */}
         <p className="thread-card__preview">
           {thread.last_message_preview || 'No messages yet'}
         </p>

@@ -1,0 +1,435 @@
+/* Virtual Meeting Modal Component Styles */
+/* Matches GuestEditingProposalModal design system */
+
+/* =====================================================
+   CSS VARIABLES - Consistent with GEP Modal
+   ===================================================== */
+
+:root {
+  --vmm-bg-primary: #FFFFFF;
+  --vmm-bg-secondary: #fafafa;
+  --vmm-text-primary: #1a1a1a;
+  --vmm-text-secondary: #4b5563;
+  --vmm-text-muted: #6b7280;
+  --vmm-text-header: #31135D;
+  --vmm-border-color: #e5e5e5;
+  --vmm-border-light: #f0f0f0;
+  --vmm-primary-color: #6B4EFF;
+  --vmm-primary-hover: #31135D;
+  --vmm-primary-bg: #f3f0ff;
+  --vmm-success-color: #16a34a;
+  --vmm-success-bg: #f0fdf4;
+  --vmm-warning-color: #ca8a04;
+  --vmm-warning-bg: #fefce8;
+  --vmm-destructive-color: #DC2626;
+  --vmm-destructive-hover: #B91C1C;
+  --vmm-destructive-bg: #fef2f2;
+  --vmm-font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --vmm-shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.2);
+  --vmm-roundness: 10px;
+  --vmm-roundness-large: 16px;
+}
+
+/* =====================================================
+   MODAL OVERLAY
+   ===================================================== */
+
+.vmm-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(107, 114, 128, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 80px 16px 16px;
+  overflow-y: auto;
+  animation: vmmFadeIn 0.2s ease-in-out;
+}
+
+@keyframes vmmFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* =====================================================
+   MODAL CONTAINER
+   ===================================================== */
+
+.vmm-container {
+  width: 100%;
+  max-width: 480px;
+  min-height: 100px;
+  max-height: calc(100vh - 96px);
+  background-color: var(--vmm-bg-primary);
+  border-radius: var(--vmm-roundness-large);
+  box-sizing: border-box;
+  font-family: var(--vmm-font-primary);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--vmm-shadow-modal);
+  animation: vmmSlideIn 0.3s ease-out;
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes vmmSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* =====================================================
+   HEADER - Matches GuestEditingProposalModal
+   ===================================================== */
+
+.vmm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--vmm-border-light);
+  background-color: var(--vmm-bg-primary);
+}
+
+.vmm-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.vmm-header-icon {
+  width: 36px;
+  height: 36px;
+  background: var(--vmm-primary-bg);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--vmm-primary-color);
+}
+
+.vmm-header-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--vmm-text-header);
+}
+
+.vmm-header-subtitle {
+  font-size: 13px;
+  color: var(--vmm-text-muted);
+}
+
+.vmm-close-button {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--vmm-text-muted);
+  border-radius: 8px;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.vmm-close-button:hover {
+  background-color: var(--vmm-bg-secondary);
+  color: var(--vmm-text-primary);
+}
+
+/* =====================================================
+   CONTENT AREA
+   ===================================================== */
+
+.vmm-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+}
+
+/* =====================================================
+   FORM STYLES
+   ===================================================== */
+
+.vmm-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.vmm-form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vmm-form-label {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--vmm-text-primary);
+}
+
+.vmm-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--vmm-border-color);
+  border-radius: var(--vmm-roundness);
+  font-size: 14px;
+  font-family: var(--vmm-font-primary);
+  color: var(--vmm-text-primary);
+  background-color: var(--vmm-bg-primary);
+  box-sizing: border-box;
+}
+
+.vmm-input:focus {
+  outline: none;
+  border-color: var(--vmm-primary-color);
+}
+
+.vmm-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--vmm-border-color);
+  border-radius: var(--vmm-roundness);
+  font-size: 14px;
+  font-family: var(--vmm-font-primary);
+  color: var(--vmm-text-primary);
+  background-color: var(--vmm-bg-primary);
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.vmm-textarea:focus {
+  outline: none;
+  border-color: var(--vmm-primary-color);
+}
+
+.vmm-info-text {
+  font-size: 14px;
+  color: var(--vmm-text-secondary);
+  margin: 0;
+  padding: 12px;
+  background-color: var(--vmm-bg-secondary);
+  border-radius: var(--vmm-roundness);
+}
+
+/* =====================================================
+   DETAILS VIEW STYLES
+   ===================================================== */
+
+.vmm-details {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.vmm-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--vmm-border-light);
+}
+
+.vmm-detail-row:last-of-type {
+  border-bottom: none;
+}
+
+.vmm-detail-label {
+  font-size: 13px;
+  color: var(--vmm-text-secondary);
+}
+
+.vmm-detail-value {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--vmm-text-primary);
+  text-align: right;
+}
+
+.vmm-detail-link {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--vmm-primary-color);
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.vmm-detail-link:hover {
+  text-decoration: underline;
+}
+
+/* =====================================================
+   BANNERS
+   ===================================================== */
+
+.vmm-success-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background-color: var(--vmm-success-bg);
+  border-radius: var(--vmm-roundness);
+  color: var(--vmm-success-color);
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+.vmm-warning-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background-color: var(--vmm-warning-bg);
+  border-radius: var(--vmm-roundness);
+  color: var(--vmm-warning-color);
+  font-size: 14px;
+}
+
+/* =====================================================
+   CANCEL VIEW
+   ===================================================== */
+
+.vmm-cancel-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.vmm-cancel-text {
+  font-size: 14px;
+  color: var(--vmm-text-primary);
+  margin: 0;
+}
+
+/* =====================================================
+   BUTTONS - Matches GuestEditingProposalModal
+   ===================================================== */
+
+.vmm-buttons {
+  display: flex;
+  gap: 10px;
+  padding: 14px 20px;
+  justify-content: center;
+  background: var(--vmm-bg-secondary);
+  border-top: 1px solid var(--vmm-border-light);
+}
+
+.vmm-button {
+  padding: 10px 18px;
+  border-radius: var(--vmm-roundness);
+  font-family: var(--vmm-font-primary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-width: 100px;
+}
+
+.vmm-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.vmm-button--primary {
+  background-color: var(--vmm-primary-color);
+  color: white;
+  border: none;
+}
+
+.vmm-button--primary:hover:not(:disabled) {
+  background-color: var(--vmm-primary-hover);
+}
+
+.vmm-button--secondary {
+  background-color: transparent;
+  color: var(--vmm-text-secondary);
+  border: 1px solid var(--vmm-border-color);
+}
+
+.vmm-button--secondary:hover:not(:disabled) {
+  border-color: var(--vmm-text-secondary);
+  color: var(--vmm-text-primary);
+}
+
+.vmm-button--success {
+  background-color: var(--vmm-success-color);
+  color: white;
+  border: none;
+}
+
+.vmm-button--success:hover:not(:disabled) {
+  background-color: #15803d;
+}
+
+.vmm-button--destructive {
+  background-color: var(--vmm-destructive-color);
+  color: white;
+  border: none;
+}
+
+.vmm-button--destructive:hover:not(:disabled) {
+  background-color: var(--vmm-destructive-hover);
+}
+
+/* =====================================================
+   RESPONSIVE STYLES
+   ===================================================== */
+
+@media (max-width: 500px) {
+  .vmm-buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .vmm-button {
+    width: 100%;
+    min-width: auto;
+  }
+
+  .vmm-header-title {
+    font-size: 16px;
+  }
+
+  .vmm-header {
+    padding: 12px 16px;
+  }
+
+  .vmm-content {
+    padding: 12px 16px;
+  }
+}
+
+/* =====================================================
+   SCROLLBAR STYLING
+   ===================================================== */
+
+.vmm-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.vmm-content::-webkit-scrollbar-track {
+  background: var(--vmm-bg-secondary);
+  border-radius: 3px;
+}
+
+.vmm-content::-webkit-scrollbar-thumb {
+  background: var(--vmm-border-color);
+  border-radius: 3px;
+}
+
+.vmm-content::-webkit-scrollbar-thumb:hover {
+  background: var(--vmm-primary-color);
+}
