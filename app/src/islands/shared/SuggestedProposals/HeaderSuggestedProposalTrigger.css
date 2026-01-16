@@ -11,54 +11,56 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  background: linear-gradient(135deg, rgba(255, 193, 7, 0.2) 0%, rgba(255, 152, 0, 0.15) 100%);
-  border: 2px solid rgba(255, 193, 7, 0.6);
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.25) 0%, rgba(255, 152, 0, 0.2) 100%);
+  border: 2px solid rgba(255, 193, 7, 0.7);
   cursor: pointer;
   transition: all 0.2s ease;
   margin-right: 12px;
   animation: header-sp-glow 2s ease-in-out infinite;
+  padding: 0;
 }
 
 /* Glowing pulse animation on the button */
 @keyframes header-sp-glow {
   0%, 100% {
-    box-shadow: 0 0 8px rgba(255, 193, 7, 0.4), 0 0 16px rgba(255, 193, 7, 0.2);
-    border-color: rgba(255, 193, 7, 0.6);
+    box-shadow: 0 0 10px rgba(255, 193, 7, 0.5), 0 0 20px rgba(255, 193, 7, 0.3);
+    border-color: rgba(255, 193, 7, 0.7);
+    transform: scale(1);
   }
   50% {
-    box-shadow: 0 0 16px rgba(255, 193, 7, 0.6), 0 0 32px rgba(255, 193, 7, 0.4);
-    border-color: rgba(255, 193, 7, 0.9);
+    box-shadow: 0 0 20px rgba(255, 193, 7, 0.7), 0 0 40px rgba(255, 193, 7, 0.5);
+    border-color: rgba(255, 193, 7, 1);
+    transform: scale(1.05);
   }
 }
 
 .header-sp-trigger:hover {
-  background: linear-gradient(135deg, rgba(255, 193, 7, 0.35) 0%, rgba(255, 152, 0, 0.25) 100%);
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.4) 0%, rgba(255, 152, 0, 0.3) 100%);
   border-color: rgba(255, 193, 7, 1);
-  transform: scale(1.1);
+  transform: scale(1.15) !important;
   animation: none;
-  box-shadow: 0 0 20px rgba(255, 193, 7, 0.7), 0 0 40px rgba(255, 193, 7, 0.4);
+  box-shadow: 0 0 25px rgba(255, 193, 7, 0.8), 0 0 50px rgba(255, 193, 7, 0.5);
 }
 
 .header-sp-trigger:active {
-  transform: scale(0.95);
+  transform: scale(0.95) !important;
 }
 
 .header-sp-trigger--active {
-  background: linear-gradient(135deg, rgba(255, 193, 7, 0.4) 0%, rgba(255, 152, 0, 0.3) 100%);
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.45) 0%, rgba(255, 152, 0, 0.35) 100%);
   border-color: rgba(255, 193, 7, 1);
   animation: none;
-  box-shadow: 0 0 16px rgba(255, 193, 7, 0.6);
+  box-shadow: 0 0 20px rgba(255, 193, 7, 0.7);
 }
 
-/* Lightbulb icon - golden/yellow color */
+/* Lightbulb emoji icon */
 .header-sp-trigger__icon {
-  width: 22px;
-  height: 22px;
-  color: #FFC107;
-  filter: drop-shadow(0 0 2px rgba(255, 193, 7, 0.5));
+  font-size: 22px;
+  line-height: 1;
+  filter: drop-shadow(0 0 4px rgba(255, 193, 7, 0.8));
 }
 
 /* Count badge */
@@ -66,19 +68,19 @@
   position: absolute;
   top: -6px;
   right: -6px;
-  min-width: 20px;
-  height: 20px;
+  min-width: 22px;
+  height: 22px;
   background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
   color: #FFFFFF;
   font-family: 'Inter', sans-serif;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
-  border-radius: 10px;
+  border-radius: 11px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 5px;
-  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.5);
+  padding: 0 6px;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.6);
   border: 2px solid #250856;
   animation: header-sp-badge-pulse 1.5s ease-in-out infinite;
 }
@@ -89,27 +91,26 @@
     transform: scale(1);
   }
   50% {
-    transform: scale(1.1);
+    transform: scale(1.15);
   }
 }
 
 /* Mobile adjustments */
 @media (max-width: 768px) {
   .header-sp-trigger {
-    width: 38px;
-    height: 38px;
+    width: 40px;
+    height: 40px;
     margin-right: 8px;
   }
 
   .header-sp-trigger__icon {
-    width: 20px;
-    height: 20px;
+    font-size: 20px;
   }
 
   .header-sp-trigger__badge {
-    min-width: 18px;
-    height: 18px;
-    font-size: 10px;
+    min-width: 20px;
+    height: 20px;
+    font-size: 11px;
     top: -5px;
     right: -5px;
   }
