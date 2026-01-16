@@ -38,6 +38,54 @@ export const GUEST_MENU_STATES = {
 };
 
 /**
+ * Featured card content for each guest state
+ */
+export const GUEST_FEATURED_CONTENT = {
+  [GUEST_MENU_STATES.LOGGED_OUT]: {
+    title: 'Find Your Stay',
+    desc: 'Flexible rentals in NYC with weekly and monthly options.',
+    cta: 'Explore Rentals',
+    ctaHref: SEARCH_URL,
+    image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=260&fit=crop&q=80'
+  },
+  [GUEST_MENU_STATES.NO_PROPOSALS_NO_APP]: {
+    title: 'Start Your Search',
+    desc: 'Browse 200+ verified listings and find your NYC home base.',
+    cta: 'Find a Place',
+    ctaHref: SEARCH_URL,
+    image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=260&fit=crop&q=80'
+  },
+  [GUEST_MENU_STATES.NO_PROPOSALS_WITH_APP]: {
+    title: 'Start Your Search',
+    desc: 'Your rental profile is ready! Now find your perfect place.',
+    cta: 'Browse Listings',
+    ctaHref: SEARCH_URL,
+    image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=260&fit=crop&q=80'
+  },
+  [GUEST_MENU_STATES.WITH_PROPOSALS]: {
+    title: 'Your Search',
+    desc: 'Track your proposals and manage your favorites.',
+    cta: 'View Proposals',
+    ctaHref: '/guest-proposals',
+    image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=260&fit=crop&q=80'
+  },
+  [GUEST_MENU_STATES.WITH_SUGGESTED]: {
+    title: 'Suggested for You',
+    desc: 'We found listings that match your preferences!',
+    cta: 'View Suggestions',
+    ctaHref: '/guest-proposals?filter=suggested',
+    image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=260&fit=crop&q=80'
+  },
+  [GUEST_MENU_STATES.WITH_LEASES]: {
+    title: 'Your Stays',
+    desc: 'Manage your active leases and upcoming visits.',
+    cta: 'View Leases',
+    ctaHref: '/guest-proposals#leases',
+    image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=260&fit=crop&q=80'
+  }
+};
+
+/**
  * Get guest menu items based on current state
  * @param {string} state - Current guest menu state
  * @param {function} onSignupClick - Callback for signup action
@@ -111,6 +159,9 @@ export function getGuestMenuConfig(state, onSignupClick) {
     }
   };
 
+  // Get featured content for this state
+  const featured = GUEST_FEATURED_CONTENT[state] || GUEST_FEATURED_CONTENT[GUEST_MENU_STATES.LOGGED_OUT];
+
   switch (state) {
     case GUEST_MENU_STATES.LOGGED_OUT:
       return {
@@ -119,7 +170,9 @@ export function getGuestMenuConfig(state, onSignupClick) {
           baseItems.successStories,
           baseItems.faqs
         ],
-        cta: { label: 'Sign Up', action: onSignupClick, icon: '/assets/icons/user-bubble-purple.svg' }
+        cta: { label: 'Sign Up', action: onSignupClick, icon: '/assets/icons/user-bubble-purple.svg' },
+        featured,
+        showAuthCta: true
       };
 
     case GUEST_MENU_STATES.NO_PROPOSALS_NO_APP:
@@ -131,7 +184,9 @@ export function getGuestMenuConfig(state, onSignupClick) {
           baseItems.favoriteListings,
           baseItems.faqs
         ],
-        cta: { label: 'Explore Rentals', href: SEARCH_URL, icon: '/assets/icons/listing-purple.svg' }
+        cta: { label: 'Explore Rentals', href: SEARCH_URL, icon: '/assets/icons/listing-purple.svg' },
+        featured,
+        showAuthCta: false
       };
 
     case GUEST_MENU_STATES.NO_PROPOSALS_WITH_APP:
@@ -143,7 +198,9 @@ export function getGuestMenuConfig(state, onSignupClick) {
           baseItems.favoriteListings,
           baseItems.faqs
         ],
-        cta: { label: 'Explore Rentals', href: SEARCH_URL, icon: '/assets/icons/listing-purple.svg' }
+        cta: { label: 'Explore Rentals', href: SEARCH_URL, icon: '/assets/icons/listing-purple.svg' },
+        featured,
+        showAuthCta: false
       };
 
     case GUEST_MENU_STATES.WITH_PROPOSALS:
@@ -156,7 +213,9 @@ export function getGuestMenuConfig(state, onSignupClick) {
           baseItems.manageProposals,
           baseItems.faqs
         ],
-        cta: { label: 'Manage Proposals', href: '/guest-proposals', icon: '/assets/icons/document-purple.svg' }
+        cta: { label: 'Manage Proposals', href: '/guest-proposals', icon: '/assets/icons/document-purple.svg' },
+        featured,
+        showAuthCta: false
       };
 
     case GUEST_MENU_STATES.WITH_SUGGESTED:
@@ -168,7 +227,9 @@ export function getGuestMenuConfig(state, onSignupClick) {
           baseItems.favoriteListings,
           baseItems.faqs
         ],
-        cta: { label: 'See Suggested Proposal', href: '/guest-proposals?filter=suggested', icon: '/assets/icons/star-purple.svg' }
+        cta: { label: 'See Suggested Proposal', href: '/guest-proposals?filter=suggested', icon: '/assets/icons/star-purple.svg' },
+        featured,
+        showAuthCta: false
       };
 
     case GUEST_MENU_STATES.WITH_LEASES:
@@ -181,7 +242,9 @@ export function getGuestMenuConfig(state, onSignupClick) {
           baseItems.manageLeases,
           baseItems.faqs
         ],
-        cta: { label: 'Manage Leases', href: '/guest-proposals#leases', icon: '/assets/icons/leases-purple.svg' }
+        cta: { label: 'Manage Leases', href: '/guest-proposals#leases', icon: '/assets/icons/leases-purple.svg' },
+        featured,
+        showAuthCta: false
       };
 
     default:
@@ -191,7 +254,9 @@ export function getGuestMenuConfig(state, onSignupClick) {
           baseItems.successStories,
           baseItems.faqs
         ],
-        cta: { label: 'Sign Up', action: onSignupClick, icon: '/assets/icons/user-bubble-purple.svg' }
+        cta: { label: 'Sign Up', action: onSignupClick, icon: '/assets/icons/user-bubble-purple.svg' },
+        featured: GUEST_FEATURED_CONTENT[GUEST_MENU_STATES.LOGGED_OUT],
+        showAuthCta: true
       };
   }
 }

@@ -655,6 +655,16 @@ export function useMessagingPageLogic() {
   }, []);
 
   /**
+   * Insert suggestion text into message input
+   * Called when a user clicks a suggestion chip in the empty state
+   */
+  const insertSuggestion = useCallback((suggestionText) => {
+    setMessageInput(suggestionText);
+    // Trigger typing indicator so recipient sees activity
+    trackTyping(true);
+  }, [trackTyping]);
+
+  /**
    * Handle message input change with typing indicator
    */
   const handleMessageInputChange = useCallback((value) => {
@@ -724,6 +734,7 @@ export function useMessagingPageLogic() {
     handleMessageInputChange,
     handleSendMessage,
     handleRetry,
+    insertSuggestion,
 
     // CTA handlers
     handleCTAClick,
