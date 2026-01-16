@@ -74,7 +74,7 @@
 .guest-editing-proposal {
   width: 100%;
   max-width: 480px;
-  height: 620px; /* Fixed height - same for both pristine and editing views */
+  height: 713px; /* Fixed height - same for both pristine and editing views */
   max-height: calc(100vh - 120px); /* Fallback for small screens, ensures gap from header */
   background-color: var(--gep-bg-primary);
   border-radius: var(--gep-roundness-large);
