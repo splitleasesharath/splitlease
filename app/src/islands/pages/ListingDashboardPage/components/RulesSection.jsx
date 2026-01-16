@@ -21,6 +21,22 @@ const RuleIcon = ({ icon, name }) => {
   return <DefaultRuleIcon />;
 };
 
+// Empty state component - clickable tag to add rules
+const EmptyRuleTag = ({ onClick }) => (
+  <button
+    type="button"
+    className="listing-dashboard-rules__empty-tag"
+    onClick={onClick}
+  >
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M8 12h8" />
+      <path d="M12 8v8" />
+    </svg>
+    <span>No rules selected</span>
+  </button>
+);
+
 // Guest icons
 const GenderIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -39,6 +55,8 @@ export default function RulesSection({ listing, onEdit }) {
   const preferredGender = listing?.preferredGender?.display || 'Any';
   const maxGuests = listing?.maxGuests || 2;
 
+  const hasHouseRules = houseRules.length > 0;
+
   return (
     <div id="rules" className="listing-dashboard-section">
       {/* Section Header */}
@@ -51,17 +69,21 @@ export default function RulesSection({ listing, onEdit }) {
 
       {/* Content */}
       <div className="listing-dashboard-rules">
-        {/* House Rules Grid */}
-        <div className="listing-dashboard-rules__grid">
-          {houseRules.map((rule) => (
-            <div key={rule.id} className="listing-dashboard-rules__item">
-              <span className="listing-dashboard-rules__icon">
-                <RuleIcon icon={rule.icon} name={rule.name} />
-              </span>
-              <span className="listing-dashboard-rules__name">{rule.name}</span>
-            </div>
-          ))}
-        </div>
+        {/* House Rules Grid or Empty State */}
+        {hasHouseRules ? (
+          <div className="listing-dashboard-rules__grid">
+            {houseRules.map((rule) => (
+              <div key={rule.id} className="listing-dashboard-rules__item">
+                <span className="listing-dashboard-rules__icon">
+                  <RuleIcon icon={rule.icon} name={rule.name} />
+                </span>
+                <span className="listing-dashboard-rules__name">{rule.name}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <EmptyRuleTag onClick={onEdit} />
+        )}
 
         {/* Guest Restrictions */}
         <div className="listing-dashboard-rules__restrictions">
