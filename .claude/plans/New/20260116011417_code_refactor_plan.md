@@ -782,6 +782,12 @@ app/src/islands/pages/
 8. **Chunk 3, 10** - Extract image carousel hook
 9. **Chunk 13** - Consolidate parseJsonArray
 
+**Performance & Architecture (From Pages Audit)**
+10. **Chunk 18** - Add memoization to calculateDynamicPrice (performance)
+11. **Chunk 19** - Extract shared PropertyCard component (600+ lines duplication)
+12. **Chunk 20** - Create useAuthenticatedUser hook (auth logic consolidation)
+13. **Chunk 21** - ListingDashboardPage Context migration (prop drilling fix)
+
 ### Files to DELETE:
 - `app/src/islands/shared/AuthAwareSearchScheduleSelector (1).jsx`
 - `app/src/islands/shared/AuthAwareSearchScheduleSelector (1) (1).jsx`
@@ -794,8 +800,11 @@ app/src/islands/pages/
 
 ### Files to CREATE:
 - `app/src/hooks/useImageCarousel.js`
+- `app/src/hooks/useAuthenticatedUser.js`
 - `app/src/islands/pages/SearchPage/` directory structure
 - `app/src/islands/pages/SearchPage/components/` directory with extracted components
+- `app/src/islands/shared/ListingCard/PropertyCard.jsx` (shared component)
+- `app/src/islands/pages/ListingDashboardPage/context/ListingDashboardContext.jsx`
 
 ~~~~~
 
@@ -897,8 +906,309 @@ const handleCardLeave = useCallback(() => {
 
 ~~~~~
 
+### CHUNK 18: Missing memoization for calculateDynamicPrice
+**File:** `app/src/islands/pages/SearchPage.jsx`
+**Line:** 230-261
+**Issue:** **PERFORMANCE** - `calculateDynamicPrice()` is called on every render of PropertyCard without memoization. For 20 listings, this causes 20 unnecessary recalculations per keystroke/filter change.
+**Affected Pages:** /search, /favorite-listings
+
+**Current Code:**
+```javascript
+// Lines 230-261 inside PropertyCard (recalculated on EVERY render)
+const calculateDynamicPrice = () => {
+  const nightsCount = selectedNightsCount;
+  if (nightsCount < 1) {
+    return listing['Starting nightly price'] || listing.price?.starting || 0;
+  }
+  try {
+    const mockNightsArray = Array(nightsCount).fill({ nightNumber: 0 });
+    const priceBreakdown = calculatePrice(mockNightsArray, listing, 13, null);
+    return priceBreakdown.pricePerNight || listing['Starting nightly price'] || 0;
+  } catch (error) {
+    return listing['Starting nightly price'] || listing.price?.starting || 0;
+  }
+};
+
+const dynamicPrice = calculateDynamicPrice(); // ❌ No memoization!
+```
+
+**Refactored Code:**
+```javascript
+// ✅ Memoize expensive calculation
+const dynamicPrice = useMemo(() => {
+  const nightsCount = selectedNightsCount;
+  if (nightsCount < 1) {
+    return listing['Starting nightly price'] || listing.price?.starting || 0;
+  }
+  try {
+    const mockNightsArray = Array(nightsCount).fill({ nightNumber: 0 });
+    const priceBreakdown = calculatePrice(mockNightsArray, listing, 13, null);
+    return priceBreakdown.pricePerNight || listing['Starting nightly price'] || 0;
+  } catch (error) {
+    return listing['Starting nightly price'] || listing.price?.starting || 0;
+  }
+}, [selectedNightsCount, listing._id, listing['Starting nightly price']]);
+```
+
+**Testing:**
+- [ ] Verify pricing still displays correctly
+- [ ] Profile render performance improvement with React DevTools
+- [ ] Test with filter changes to confirm memoization works
+
+~~~~~
+
+### CHUNK 19: Duplicate PropertyCard component (600+ lines)
+**File:** `app/src/islands/pages/SearchPage.jsx` AND `app/src/islands/pages/FavoriteListingsPage/FavoriteListingsPage.jsx`
+**Line:** SearchPage:167-500+, FavoriteListingsPage:66-369
+**Issue:** **DUPLICATION** - PropertyCard is completely duplicated between SearchPage (300+ lines) and FavoriteListingsPage (300+ lines) with 95% identical code. This is 600+ lines of duplicated code.
+**Affected Pages:** /search, /favorite-listings
+
+**Current Code:**
+```javascript
+// SearchPage.jsx - Line 167
+function PropertyCard({ listing, onLocationClick, onCardHover, ... }) {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const formatHostName = (fullName) => { /* ... */ };
+  const calculateDynamicPrice = () => { /* 50+ lines */ };
+  // ... 300+ more lines
+}
+
+// FavoriteListingsPage.jsx - Line 66 (IDENTICAL!)
+function PropertyCard({ listing, onLocationClick, ... }) {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const formatHostName = (fullName) => { /* SAME CODE */ };
+  const calculateDynamicPrice = () => { /* SAME 50+ lines */ };
+  // ... 300+ more lines
+}
+```
+
+**Refactored Code:**
+```javascript
+// CREATE: app/src/islands/shared/ListingCard/PropertyCard.jsx
+import { useImageCarousel } from '../../../hooks/useImageCarousel.js';
+import { formatHostName } from '../../../logic/processors/display/formatHostName.js';
+
+export default function PropertyCard({
+  listing,
+  onLocationClick,
+  onCardHover,
+  onCardLeave,
+  onOpenContactModal,
+  onOpenInfoModal,
+  isLoggedIn,
+  isFavorited,
+  userId,
+  onToggleFavorite,
+  onRequireAuth,
+  showCreateProposalButton,
+  onOpenCreateProposalModal,
+  proposalForListing,
+  selectedNightsCount
+}) {
+  const { currentImageIndex, handlePrevImage, handleNextImage, hasMultipleImages } =
+    useImageCarousel(listing.images);
+
+  // Single source of truth for listing card rendering
+  // ... component implementation
+}
+
+// SearchPage.jsx & FavoriteListingsPage.jsx - IMPORT
+import PropertyCard from '../../shared/ListingCard/PropertyCard.jsx';
+```
+
+**Testing:**
+- [ ] Verify PropertyCard renders correctly in SearchPage
+- [ ] Verify PropertyCard renders correctly in FavoriteListingsPage
+- [ ] Test all interactions (hover, click, favorite, proposal)
+- [ ] Compare visual appearance before/after
+
+~~~~~
+
+### CHUNK 20: Create useAuthenticatedUser hook for auth logic consolidation
+**File:** Multiple pages have duplicated auth logic
+**Line:** FavoriteListingsPage:652-888, SearchPage:similar
+**Issue:** **DUPLICATION** - Complex "Gold Standard Auth Pattern" (3-step fallback with 80+ lines) is duplicated across multiple pages. Should be a single shared hook.
+**Affected Pages:** /search, /favorite-listings, /guest-proposals, /host-proposals, /account-profile
+
+**Current Code:**
+```javascript
+// FavoriteListingsPage.jsx - Lines 668-744 (80 lines of auth logic)
+const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
+let sessionId = getSessionId();
+let finalUserId = sessionId;
+
+if (userData) {
+  finalUserId = sessionId || userData.userId || userData._id;
+  setUserId(finalUserId);
+  // ... 20 more lines
+} else {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session?.user) {
+    // ... another 20 lines
+  } else {
+    // ... 10 more lines
+  }
+}
+```
+
+**Refactored Code:**
+```javascript
+// CREATE: app/src/hooks/useAuthenticatedUser.js
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase.js';
+import { validateTokenAndFetchUser, getSessionId } from '../lib/auth.js';
+
+/**
+ * Gold Standard Auth Pattern - consolidated hook
+ * 3-step fallback: Token → Session → Guest fallback
+ */
+export function useAuthenticatedUser({ requireGuest = false, requireHost = false } = {}) {
+  const [user, setUser] = useState(null);
+  const [userId, setUserId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const authenticate = async () => {
+      try {
+        // Step 1: Try token validation
+        const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
+        const sessionId = getSessionId();
+
+        if (userData) {
+          setUser(userData);
+          setUserId(sessionId || userData.userId || userData._id);
+          setLoading(false);
+          return;
+        }
+
+        // Step 2: Fall back to Supabase session
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const bubbleUserId = session.user.user_metadata?.bubble_user_id;
+          setUser({ ...session.user, bubbleUserId });
+          setUserId(bubbleUserId || session.user.id);
+          setLoading(false);
+          return;
+        }
+
+        // Step 3: No auth found
+        setUser(null);
+        setUserId(null);
+        setLoading(false);
+      } catch (err) {
+        setError(err);
+        setLoading(false);
+      }
+    };
+
+    authenticate();
+  }, []);
+
+  return { user, userId, loading, error, isAuthenticated: !!user };
+}
+
+// FavoriteListingsPage.jsx - USE HOOK (3 lines instead of 80)
+const { user, userId, loading, error, isAuthenticated } = useAuthenticatedUser();
+```
+
+**Testing:**
+- [ ] Test auth flow on FavoriteListingsPage
+- [ ] Test auth flow on SearchPage
+- [ ] Test auth flow on GuestProposalsPage
+- [ ] Verify 3-step fallback works correctly
+- [ ] Test logout/login transitions
+
+~~~~~
+
+### CHUNK 21: ListingDashboardPage prop drilling - migrate to Context
+**File:** `app/src/islands/pages/ListingDashboardPage/ListingDashboardPage.jsx`
+**Line:** 40-86, 145-360
+**Issue:** **ANTI-PATTERN** - The hook returns 40+ values that are passed down through 15+ section components. This creates fragile coupling and makes refactoring difficult.
+**Affected Pages:** /listing-dashboard
+
+**Current Code:**
+```javascript
+// ListingDashboardPage.jsx - Lines 40-86 (40+ destructured values)
+const {
+  activeTab,
+  listing,
+  counts,
+  isLoading,
+  error,
+  editSection,
+  showScheduleCohost,
+  showImportReviews,
+  currentUser,
+  handleTabChange,
+  handleCardClick,
+  handleBackClick,
+  handleDescriptionChange,
+  // ... 20+ more handlers
+} = useListingDashboardPageLogic();
+
+// Then passed to 15+ section components via props
+<PropertyInfoSection
+  listing={listing}
+  onImportReviews={handleImportReviews}
+  onEdit={() => handleEditSection('name')}
+  reviewCount={counts.reviews}
+/>
+```
+
+**Refactored Code:**
+```javascript
+// CREATE: ListingDashboardPage/context/ListingDashboardContext.jsx
+import { createContext, useContext } from 'react';
+import { useListingDashboardPageLogic } from '../useListingDashboardPageLogic.js';
+
+const ListingDashboardContext = createContext(null);
+
+export function ListingDashboardProvider({ children, listingId }) {
+  const logic = useListingDashboardPageLogic(listingId);
+  return (
+    <ListingDashboardContext.Provider value={logic}>
+      {children}
+    </ListingDashboardContext.Provider>
+  );
+}
+
+export function useListingDashboard() {
+  const context = useContext(ListingDashboardContext);
+  if (!context) {
+    throw new Error('useListingDashboard must be used within ListingDashboardProvider');
+  }
+  return context;
+}
+
+// ListingDashboardPage.jsx - CLEANER (no prop drilling)
+export default function ListingDashboardPage() {
+  return (
+    <ListingDashboardProvider listingId={listingId}>
+      <PropertyInfoSection />  {/* No props! */}
+      <DescriptionSection />
+      <AmenitiesSection />
+    </ListingDashboardProvider>
+  );
+}
+
+// PropertyInfoSection.jsx - ACCESS VIA HOOK
+function PropertyInfoSection() {
+  const { listing, counts, handleImportReviews, handleEditSection } = useListingDashboard();
+  // ... render with values from context
+}
+```
+
+**Testing:**
+- [ ] Verify all sections render correctly after migration
+- [ ] Test edit functionality in each section
+- [ ] Test tab switching
+- [ ] Profile for performance impact (should be minimal)
+
+~~~~~
+
 ### Key Metrics:
-- **Total chunks:** 17
-- **Files affected:** ~15+ files
-- **Lines of duplicated code to remove:** ~500+
+- **Total chunks:** 21
+- **Files affected:** ~20+ files
+- **Lines of duplicated code to remove:** ~1000+
 - **Estimated complexity reduction:** SearchPage from 3,322 lines to ~300 lines (render only)
