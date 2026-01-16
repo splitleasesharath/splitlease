@@ -36,6 +36,23 @@ import {
   addUserProposal,
   addUserListingFavorite,
 } from "../../_shared/junctionHelpers.ts";
+import {
+  createSplitBotMessage,
+  updateThreadLastMessage,
+  getUserProfile,
+  getListingName,
+} from "../../_shared/messagingHelpers.ts";
+import {
+  getCTAForProposalStatus,
+  buildTemplateContext,
+  getDefaultMessage,
+  getVisibilityForRole,
+} from "../../_shared/ctaHelpers.ts";
+import {
+  generateHostProposalSummary,
+  formatDaysAsRange,
+  formatDateForDisplay,
+} from "../../_shared/negotiationSummaryHelpers.ts";
 
 // ID generation is now done via RPC: generate_bubble_id()
 
@@ -536,23 +553,144 @@ export async function handleCreate(
   await addUserProposal(supabase, hostAccountData.User, proposalId, 'host');
 
   // ================================================
-  // TRIGGER ASYNC WORKFLOWS (Non-blocking)
+  // CREATE THREAD FOR PROPOSAL
   // ================================================
 
-  // These are placeholder logs - actual async calls will be implemented in Phase 4
-  console.log(`[proposal:create] [ASYNC] Would trigger: proposal-communications`, {
-    proposalId: proposalId,
-    guestId: input.guestId,
-    hostId: hostAccountData.User,
-  });
+  // Generate Bubble-compatible ID for thread
+  const { data: threadId, error: threadIdError } = await supabase.rpc('generate_bubble_id');
+  if (threadIdError || !threadId) {
+    console.error(`[proposal:create] Thread ID generation failed:`, threadIdError);
+    // Non-blocking - proposal already created, thread can be created later
+  }
 
-  console.log(`[proposal:create] [ASYNC] Would trigger: proposal-summary (ai-gateway)`, {
-    proposalId: proposalId,
-  });
+  let threadCreated = false;
+  if (threadId) {
+    const threadData = {
+      _id: threadId,
+      Proposal: proposalId,
+      Listing: input.listingId,
+      "-Guest User": input.guestId,
+      "-Host User": hostUserData._id,
+      "Created Date": now,
+      "Modified Date": now,
+    };
 
-  console.log(`[proposal:create] [ASYNC] Would trigger: proposal-suggestions`, {
-    proposalId: proposalId,
-  });
+    console.log(`[proposal:create] Inserting thread: ${threadId}`);
+
+    const { error: threadInsertError } = await supabase
+      .from("thread")
+      .insert(threadData);
+
+    if (threadInsertError) {
+      console.error(`[proposal:create] Thread insert failed:`, threadInsertError);
+      // Non-blocking - proposal created, thread creation failed
+    } else {
+      threadCreated = true;
+      console.log(`[proposal:create] Thread created successfully`);
+    }
+  }
+
+  // ================================================
+  // SEND SPLITBOT MESSAGES & HOST AI SUMMARY (Non-blocking)
+  // ================================================
+  // This entire section is wrapped in try/catch - failures don't block proposal creation
+
+  if (threadCreated && threadId) {
+    try {
+      // Fetch user profiles and listing name for messages
+      const [guestProfile, hostProfile, listingName] = await Promise.all([
+        getUserProfile(supabase, input.guestId),
+        getUserProfile(supabase, hostUserData._id),
+        getListingName(supabase, input.listingId),
+      ]);
+
+      const guestFirstName = guestProfile?.firstName || "Guest";
+      const hostFirstName = hostProfile?.firstName || "Host";
+      const resolvedListingName = listingName || "this listing";
+
+      // Build template context for CTA rendering
+      const templateContext = buildTemplateContext(hostFirstName, guestFirstName, resolvedListingName);
+
+      console.log(`[proposal:create] Sending SplitBot messages for status: ${status}`);
+
+      // Get CTAs for guest and host based on proposal status
+      const [guestCTA, hostCTA] = await Promise.all([
+        getCTAForProposalStatus(supabase, status, "guest", templateContext),
+        getCTAForProposalStatus(supabase, status, "host", templateContext),
+      ]);
+
+      // ================================================
+      // GENERATE AI SUMMARY FOR HOST (non-blocking)
+      // ================================================
+      let aiHostSummary: string | null = null;
+      try {
+        console.log(`[proposal:create] Generating AI summary for host...`);
+
+        aiHostSummary = await generateHostProposalSummary(supabase, {
+          listingName: resolvedListingName,
+          reservationWeeks: input.reservationSpanWeeks,
+          moveInStart: formatDateForDisplay(input.moveInStartRange),
+          moveInEnd: formatDateForDisplay(input.moveInEndRange),
+          selectedDays: formatDaysAsRange(input.daysSelected),
+          hostCompensation: compensation.host_compensation_per_night,
+          totalCompensation: compensation.total_compensation,
+          guestComment: input.comment || undefined,
+        });
+
+        if (aiHostSummary) {
+          console.log(`[proposal:create] AI host summary generated successfully`);
+        } else {
+          console.log(`[proposal:create] AI host summary returned null, using default message`);
+        }
+      } catch (aiError) {
+        console.warn(`[proposal:create] AI host summary generation failed, using default:`, aiError);
+      }
+
+      // Send SplitBot message to GUEST
+      if (guestCTA) {
+        const guestMessageBody = guestCTA.message || getDefaultMessage(status, "guest", templateContext);
+        const guestVisibility = getVisibilityForRole("guest");
+
+        await createSplitBotMessage(supabase, {
+          threadId,
+          messageBody: guestMessageBody,
+          callToAction: guestCTA.display,
+          visibleToHost: guestVisibility.visibleToHost,
+          visibleToGuest: guestVisibility.visibleToGuest,
+          recipientUserId: input.guestId,
+        });
+        console.log(`[proposal:create] SplitBot message sent to guest`);
+      }
+
+      // Send SplitBot message to HOST (with AI summary if available)
+      if (hostCTA) {
+        // Use AI summary if available, otherwise fall back to CTA template or default
+        const hostMessageBody = aiHostSummary ||
+          hostCTA.message ||
+          getDefaultMessage(status, "host", templateContext);
+        const hostVisibility = getVisibilityForRole("host");
+
+        await createSplitBotMessage(supabase, {
+          threadId,
+          messageBody: hostMessageBody,
+          callToAction: hostCTA.display,
+          visibleToHost: hostVisibility.visibleToHost,
+          visibleToGuest: hostVisibility.visibleToGuest,
+          recipientUserId: hostUserData._id,
+        });
+        console.log(`[proposal:create] SplitBot message sent to host`);
+      }
+
+      // Update thread's last message preview
+      const lastMessageBody = aiHostSummary || hostCTA?.message || guestCTA?.message || `Proposal for ${resolvedListingName}`;
+      await updateThreadLastMessage(supabase, threadId, lastMessageBody);
+
+      console.log(`[proposal:create] SplitBot messages complete`);
+    } catch (msgError) {
+      // Non-blocking - proposal and thread created, messages are secondary
+      console.error(`[proposal:create] SplitBot messages failed:`, msgError);
+    }
+  }
 
   // ================================================
   // RETURN RESPONSE
