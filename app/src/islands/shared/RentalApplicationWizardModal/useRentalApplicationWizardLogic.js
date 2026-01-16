@@ -331,12 +331,12 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
 
           // For submitted/existing applications being reviewed, mark ALL steps as visited
           // This ensures optional steps show as completed when editing a submitted application
-          setVisitedSteps([1, 2, 3, 4, 5, 6, 7]);
+          // Use the stable ALL_STEPS_COMPLETE reference to avoid infinite loops
+          setVisitedSteps(ALL_STEPS_COMPLETE);
 
-          // Initialize completed steps from database data
-          if (dbCompletedSteps && dbCompletedSteps.length > 0) {
-            setCompletedSteps(dbCompletedSteps);
-          }
+          // For submitted apps, all steps are complete - use stable reference
+          // (dbCompletedSteps is likely undefined now since it was removed from fieldMapper)
+          setCompletedSteps(ALL_STEPS_COMPLETE);
 
           // Navigate to the review step (7) for submitted applications
           // This shows the user their complete application
@@ -517,6 +517,11 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
   const previousStepRef = useRef(currentStep);
 
   useEffect(() => {
+    // Skip for submitted apps - all steps already visited
+    if (applicationStatus === 'submitted' || hasInitializedSubmittedSteps.current) {
+      return;
+    }
+
     const previousStep = previousStepRef.current;
 
     // When step changes, mark the PREVIOUS step as visited (confirmed)
@@ -526,7 +531,7 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
 
     // Update ref for next change
     previousStepRef.current = currentStep;
-  }, [currentStep, visitedSteps]);
+  }, [currentStep, visitedSteps, applicationStatus]);
 
   // ============================================================================
   // STEP COMPLETION TRACKING
