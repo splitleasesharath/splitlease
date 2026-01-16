@@ -49,6 +49,15 @@ import {
   getDefaultMessage,
   getVisibilityForRole,
 } from "../../_shared/ctaHelpers.ts";
+import {
+  getNotificationPreferences,
+  shouldSendEmail,
+  shouldSendSms,
+  sendProposalEmail,
+  sendProposalSms,
+  EMAIL_TEMPLATES,
+} from "../../_shared/notificationHelpers.ts";
+import { sendToSlack } from "../../_shared/slack.ts";
 
 // ─────────────────────────────────────────────────────────────
 // INPUT TYPE
@@ -511,22 +520,23 @@ export async function handleCreateSuggested(
   } else {
     console.log(`[proposal:create_suggested] Thread created successfully`);
 
+    // Fetch user profiles and listing name for message templates (used by SplitBot + notifications)
+    const [guestProfile, hostProfile, listingName] = await Promise.all([
+      getUserProfile(supabase, input.guestId),
+      getUserProfile(supabase, hostUserData._id),
+      getListingName(supabase, input.listingId),
+    ]);
+
+    const guestFirstName = guestProfile?.firstName || "Guest";
+    const hostFirstName = hostProfile?.firstName || "Host";
+    const resolvedListingName = listingName || "this listing";
+
     // ================================================
     // SEND SPLITBOT WELCOME MESSAGES
     // ================================================
     // Send automated messages to both guest and host so they see the thread immediately
 
     try {
-      // Fetch user profiles and listing name for message templates
-      const [guestProfile, hostProfile, listingName] = await Promise.all([
-        getUserProfile(supabase, input.guestId),
-        getUserProfile(supabase, hostUserData._id),
-        getListingName(supabase, input.listingId),
-      ]);
-
-      const guestFirstName = guestProfile?.firstName || "Guest";
-      const hostFirstName = hostProfile?.firstName || "Host";
-      const resolvedListingName = listingName || "this listing";
 
       // Build template context for CTA rendering
       const templateContext = buildTemplateContext(hostFirstName, guestFirstName, resolvedListingName);
@@ -580,6 +590,90 @@ export async function handleCreateSuggested(
       // Non-blocking - proposal and thread are created, messages are secondary
       console.error(`[proposal:create_suggested] SplitBot messages failed:`, msgError);
       console.warn(`[proposal:create_suggested] Proposal and thread created, but SplitBot messages failed - host may not see notification`);
+    }
+
+    // ================================================
+    // GUEST NOTIFICATIONS (Email & SMS)
+    // ================================================
+    // Fire-and-forget: Notification failures don't block proposal creation
+    // Privacy-first: Only send if user has opted-in via notification_preferences
+
+    try {
+      console.log(`[proposal:create_suggested] Checking guest notification preferences...`);
+
+      const guestPrefs = await getNotificationPreferences(supabase, input.guestId);
+
+      // Send celebratory email to guest if opted-in
+      if (shouldSendEmail(guestPrefs, 'proposal_updates')) {
+        console.log(`[proposal:create_suggested] Guest opted-in for email notifications`);
+
+        sendProposalEmail({
+          templateId: EMAIL_TEMPLATES.GUEST_PROPOSAL_SUBMITTED,
+          toEmail: guestData.email,
+          toName: guestFirstName,
+          variables: {
+            guest_name: guestFirstName,
+            listing_name: resolvedListingName,
+            proposal_id: proposalId,
+            dashboard_link: `https://splitlease.com/guest/proposals`,
+          },
+        });
+      } else {
+        console.log(`[proposal:create_suggested] Guest not opted-in for email (skipping)`);
+      }
+
+      // Send confirmation SMS to guest if opted-in
+      if (shouldSendSms(guestPrefs, 'proposal_updates')) {
+        // Fetch guest phone number
+        const { data: guestPhone } = await supabase
+          .from('user')
+          .select('"Phone Number"')
+          .eq('_id', input.guestId)
+          .single();
+
+        const phoneNumber = guestPhone?.["Phone Number"] as string | undefined;
+
+        if (phoneNumber) {
+          console.log(`[proposal:create_suggested] Guest opted-in for SMS notifications`);
+
+          sendProposalSms({
+            to: phoneNumber,
+            body: `🎉 Your proposal for ${resolvedListingName} has been submitted! We're reviewing it now. View details: https://splitlease.com/guest/proposals`,
+          });
+        } else {
+          console.log(`[proposal:create_suggested] Guest has no phone number (skipping SMS)`);
+        }
+      } else {
+        console.log(`[proposal:create_suggested] Guest not opted-in for SMS (skipping)`);
+      }
+
+      console.log(`[proposal:create_suggested] Guest notifications complete`);
+    } catch (notifError) {
+      // Non-blocking - notifications are secondary to proposal creation
+      console.error(`[proposal:create_suggested] Guest notifications failed:`, notifError);
+    }
+
+    // ================================================
+    // SLACK ACTIVATION NOTIFICATION
+    // ================================================
+    // Post to acquisition channel for team visibility
+
+    try {
+      sendToSlack('acquisition', {
+        text: `🎯 *New Suggested Proposal Created*\n` +
+          `• Guest: ${guestFirstName} (${guestData.email})\n` +
+          `• Listing: ${resolvedListingName}\n` +
+          `• Nights/week: ${input.nightsSelected.length}\n` +
+          `• Duration: ${input.reservationSpanWeeks} weeks\n` +
+          `• Total: $${input.totalPrice}\n` +
+          `• Status: ${status}\n` +
+          `• Proposal ID: ${proposalId}`,
+      });
+
+      console.log(`[proposal:create_suggested] Slack notification sent`);
+    } catch (slackError) {
+      // Non-blocking
+      console.error(`[proposal:create_suggested] Slack notification failed:`, slackError);
     }
   }
 

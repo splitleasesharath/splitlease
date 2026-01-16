@@ -17,7 +17,7 @@ import InformationalText from '../shared/InformationalText.jsx';
 import SignUpLoginModal from '../shared/SignUpLoginModal.jsx';
 import ProposalSuccessModal from '../modals/ProposalSuccessModal.jsx';
 import { initializeLookups } from '../../lib/dataLookups.js';
-import { checkAuthStatus, validateTokenAndFetchUser, getSessionId, getUserId } from '../../lib/auth.js';
+import { checkAuthStatus, validateTokenAndFetchUser, getSessionId, getUserId, getUserType } from '../../lib/auth.js';
 import { fetchListingComplete, getListingIdFromUrl, fetchZatPriceConfiguration } from '../../lib/listingDataFetcher.js';
 import {
   calculatePricingBreakdown,
@@ -2074,8 +2074,8 @@ export default function ViewSplitLeasePage() {
                   <div style={{ color: COLORS.TEXT_LIGHT, fontSize: isMobile ? '0.75rem' : '0.8125rem' }}>Host</div>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  {/* Hide Message button if user is viewing their own listing */}
-                  {(loggedInUserData?.userId || getUserId()) !== listing.host?.userId && (
+                  {/* Hide Message button for Host users - only Guests can message */}
+                  {(loggedInUserData?.userType || getUserType()) !== 'Host' && (
                     <button
                       onClick={() => setShowContactHostModal(true)}
                       style={{

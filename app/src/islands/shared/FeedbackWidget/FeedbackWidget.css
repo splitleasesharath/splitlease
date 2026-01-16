@@ -1,0 +1,337 @@
+/**
+ * FeedbackWidget Styles
+ *
+ * Scoped styles for the FeedbackWidget component.
+ * Prefixed with 'feedback-' to avoid conflicts with other components.
+ *
+ * Design matches Split Lease brand colors:
+ * - Primary purple: #6D31C2
+ * - Dark purple: #31135D
+ * - Text gray: #424242
+ */
+
+/* ============================================================================
+   Main Widget Container
+   ============================================================================ */
+
+.feedback-widget {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  margin: 20px 0;
+}
+
+.feedback-widget__prompt {
+  font-family: 'Lato', sans-serif;
+  font-weight: 400;
+  font-size: 18px;
+  color: #424242;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.feedback-widget__icons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 232px;
+  gap: 40px;
+}
+
+/* ============================================================================
+   Thumbs Up/Down Buttons
+   ============================================================================ */
+
+.feedback-widget__btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 12px;
+  font-size: 28px;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.feedback-widget__btn:hover:not(:disabled) {
+  transform: scale(1.15);
+}
+
+.feedback-widget__btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.feedback-widget__btn--up {
+  color: #6D31C2;
+}
+
+.feedback-widget__btn--down {
+  color: #424242;
+}
+
+.feedback-widget__btn--up:hover:not(:disabled) {
+  color: #5a28a3;
+}
+
+.feedback-widget__btn--down:hover:not(:disabled) {
+  color: #c23131;
+}
+
+.feedback-widget__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.feedback-icon {
+  width: 28px;
+  height: 28px;
+}
+
+/* ============================================================================
+   Modal Overlay & Container
+   ============================================================================ */
+
+.feedback-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.feedback-modal-overlay--open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.feedback-modal {
+  background: white;
+  border-radius: 12px;
+  padding: 32px;
+  max-width: 480px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  transform: scale(0.9) translateY(20px);
+  transition: transform 0.3s ease;
+  font-family: 'Lato', sans-serif;
+}
+
+.feedback-modal-overlay--open .feedback-modal {
+  transform: scale(1) translateY(0);
+}
+
+/* ============================================================================
+   Modal Header
+   ============================================================================ */
+
+.feedback-modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.feedback-modal__title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #31135D;
+  margin: 0;
+}
+
+.feedback-modal__close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.2s;
+  width: 24px;
+  height: 24px;
+}
+
+.feedback-modal__close:hover {
+  color: #374151;
+}
+
+.feedback-modal__close svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* ============================================================================
+   Modal Subtitle
+   ============================================================================ */
+
+.feedback-modal__subtitle {
+  font-size: 14px;
+  color: #6D31C2;
+  margin: 0 0 24px 0;
+  padding: 12px 16px;
+  background: #f3e8ff;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.feedback-subtitle-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+/* ============================================================================
+   Form Elements
+   ============================================================================ */
+
+.feedback-form-group {
+  margin-bottom: 20px;
+}
+
+.feedback-form-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.feedback-form-group textarea,
+.feedback-form-group input,
+.feedback-form-group select {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-family: 'Lato', sans-serif;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.feedback-form-group textarea:focus,
+.feedback-form-group input:focus,
+.feedback-form-group select:focus {
+  outline: none;
+  border-color: #6D31C2;
+  box-shadow: 0 0 0 3px rgba(109, 49, 194, 0.1);
+}
+
+.feedback-form-group textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.feedback-form-group textarea::placeholder,
+.feedback-form-group input::placeholder {
+  color: #9ca3af;
+}
+
+/* ============================================================================
+   Contact Info Section
+   ============================================================================ */
+
+.feedback-contact-info {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.feedback-contact-info__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ============================================================================
+   Modal Action Buttons
+   ============================================================================ */
+
+.feedback-modal__actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.feedback-btn {
+  flex: 1;
+  padding: 14px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: 'Lato', sans-serif;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.feedback-btn--primary {
+  background: #6D31C2;
+  color: white;
+  border: none;
+}
+
+.feedback-btn--primary:hover:not(:disabled) {
+  background: #5a28a3;
+}
+
+.feedback-btn--primary:disabled {
+  background: #c4b5fd;
+  cursor: not-allowed;
+}
+
+.feedback-btn--secondary {
+  background: white;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.feedback-btn--secondary:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+/* ============================================================================
+   Responsive Adjustments
+   ============================================================================ */
+
+@media (max-width: 480px) {
+  .feedback-modal {
+    padding: 24px;
+    margin: 16px;
+    max-height: calc(100vh - 32px);
+  }
+
+  .feedback-modal__title {
+    font-size: 20px;
+  }
+
+  .feedback-modal__actions {
+    flex-direction: column;
+  }
+
+  .feedback-btn {
+    width: 100%;
+  }
+
+  .feedback-widget__icons {
+    gap: 30px;
+  }
+}
