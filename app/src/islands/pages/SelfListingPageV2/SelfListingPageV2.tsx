@@ -960,6 +960,9 @@ export function SelfListingPageV2() {
 
   // Submit handler
   const handleSubmit = async () => {
+    // IMMEDIATELY disable the button to prevent double-clicks
+    setIsSubmitting(true);
+
     // Try to get user data from Edge Function first
     // CRITICAL: Use clearOnFailure: false to preserve session if Edge Function fails
     const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
@@ -975,13 +978,14 @@ export function SelfListingPageV2() {
 
     if (!loggedIn) {
       console.log('[SelfListingPageV2] User not logged in, showing auth modal');
+      setIsSubmitting(false); // RE-ENABLE button so user can try again after login
       setShowAuthModal(true);
       setPendingSubmit(true);
       return;
     }
 
     console.log('[SelfListingPageV2] User is logged in, proceeding with submission');
-    setIsSubmitting(true);
+    // isSubmitting already true, no need to set again
 
     try {
       // Map form data to listingService format
@@ -995,12 +999,13 @@ export function SelfListingPageV2() {
       localStorage.setItem(LAST_HOST_TYPE_KEY, formData.hostType);
       localStorage.setItem(LAST_MARKET_STRATEGY_KEY, formData.marketStrategy);
       localStorage.removeItem(STORAGE_KEY);
+      // NOTE: Do NOT reset isSubmitting on success - button stays disabled as success modal appears
     } catch (error) {
       console.error('[SelfListingPageV2] Submit error:', error);
       alert('Failed to create listing. Please try again.');
-    } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false); // Re-enable button on error for retry
     }
+    // Remove the finally block since we handle success/error separately
   };
 
   // Map form data to listingService format
@@ -2029,7 +2034,7 @@ export function SelfListingPageV2() {
             onClick={handleSubmit}
             disabled={isSubmitting}
           >
-            {isSubmitting ? 'Creating...' : 'Activate Listing'}
+            {isSubmitting ? 'Activating...' : 'Activate Listing'}
           </button>
           <button className="btn-back" onClick={prevStep} disabled={isSubmitting}>Back</button>
         </div>
