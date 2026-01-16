@@ -9,14 +9,15 @@
     "dev:test:restart": "bun run dev:test:stop && bun run dev:test",
     "generate-routes": "node scripts/generate-redirects.js",
     "prebuild": "bun run generate-routes",
-    "build": "bun run lint && vite build",
-    "build:dev": "bun run lint && vite build --mode development",
+    "build": "bun run lint && bun run typecheck && vite build",
+    "build:dev": "bun run lint && bun run typecheck && vite build --mode development",
     "preview": "vite preview --port 8000",
     "deploy": "node scripts/check-branch.js --require-main && wrangler pages deploy dist --project-name splitlease",
     "deploy:dev": "node scripts/check-branch.js --block-main && bun run build:dev && wrangler pages deploy dist --project-name splitlease --branch development",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
-    "lint:check": "eslint src/ --max-warnings 0"
+    "lint:check": "eslint src/ --max-warnings 0",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
