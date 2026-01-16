@@ -71,8 +71,9 @@ export default function NotInterestedModal({
   }
 
   // Extract listing name for display
-  const listing = proposal?._listing || {};
-  const listingName = listing['Name'] || 'this property';
+  // Support both _listing (from SuggestedProposals) and listing (from ProposalCard)
+  const listing = proposal?._listing || proposal?.listing || {};
+  const listingName = listing['Name'] || listing?.Name || 'this property';
 
   // Inline styles for portal rendering
   const overlayStyle = {
