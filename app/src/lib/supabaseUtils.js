@@ -13,40 +13,12 @@ import { logger } from './logger.js';
 
 /**
  * Parse a value that may be a native array or stringified JSON array
+ * Re-exported from logic layer to maintain backward compatibility.
  *
- * Supabase JSONB fields can be returned as either:
- * - Native JavaScript arrays: ["Monday", "Tuesday"]
- * - Stringified JSON arrays: '["Monday", "Tuesday"]'
- *
- * This utility handles both cases robustly, following the NO FALLBACK principle.
- *
- * @param {any} value - Value from Supabase JSONB field
- * @returns {Array} - Parsed array or empty array if parsing fails
+ * @deprecated Prefer importing parseJsonArrayFieldOptional directly from logic layer
+ * @see app/src/logic/processors/listing/parseJsonArrayField.js
  */
-export function parseJsonArray(value) {
-  // Already a native array? Return as-is
-  if (Array.isArray(value)) {
-    return value;
-  }
-
-  // Stringified JSON? Try to parse
-  if (typeof value === 'string') {
-    try {
-      const parsed = JSON.parse(value);
-      // Verify the parsed result is actually an array
-      return Array.isArray(parsed) ? parsed : [];
-    } catch (error) {
-      logger.warn('Failed to parse JSON array:', { value, error: error.message });
-      return []; // Return empty array - NO FALLBACK to hardcoded data
-    }
-  }
-
-  // Unexpected type (null, undefined, object, number, etc.)
-  if (value != null) {
-    logger.warn('Unexpected type for JSONB array field:', { type: typeof value, value });
-  }
-  return []; // Return empty array - NO FALLBACK
-}
+export { parseJsonArrayFieldOptional as parseJsonArray } from '../logic/processors/listing/parseJsonArrayField.js';
 
 /**
  * Fetch photo URLs in batch from database
@@ -158,7 +130,7 @@ export async function fetchHostData(hostIds) {
  */
 export function extractPhotos(photosField, photoMap = {}, listingId = null) {
   // Handle double-encoded JSONB using the centralized parser
-  const photos = parseJsonArray(photosField);
+  const photos = parseJsonArray({ field: photosField, fieldName: 'photos' });
 
   if (photos.length === 0) {
     return []; // Return empty array - NO FALLBACK
