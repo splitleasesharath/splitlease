@@ -1,14 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { redirectToLogin, loginUser, signupUser, logoutUser, validateTokenAndFetchUser, isProtectedPage, getAuthToken, getFirstName, getAvatarUrl, checkUrlForAuthError } from '../../lib/auth.js';
 import { SIGNUP_LOGIN_URL, SEARCH_URL, HOST_OVERVIEW_URL } from '../../lib/constants.js';
-import { getUserType as getStoredUserType, getAuthState, getUserId } from '../../lib/secureStorage.js';
+import { getUserType as getStoredUserType, getAuthState } from '../../lib/secureStorage.js';
 import { supabase } from '../../lib/supabase.js';
 import CreateDuplicateListingModal from './CreateDuplicateListingModal/CreateDuplicateListingModal.jsx';
 import LoggedInAvatar from './LoggedInAvatar/LoggedInAvatar.jsx';
 import SignUpLoginModal from './SignUpLoginModal.jsx';
-import HeaderSuggestedProposalTrigger from './SuggestedProposals/HeaderSuggestedProposalTrigger.jsx';
-import SuggestedProposalPopup from './SuggestedProposals/SuggestedProposalPopup.jsx';
-import { fetchPendingConfirmationCount, fetchPendingConfirmationProposals, markProposalInterested, dismissProposal } from './SuggestedProposals/suggestedProposalService.js';
+import { useHostMenuData, getHostMenuConfig } from './Header/useHostMenuData.js';
+import { useGuestMenuData, getGuestMenuConfig } from './Header/useGuestMenuData.js';
 
 export default function Header({ autoShowLogin = false }) {
   const [mobileMenuActive, setMobileMenuActive] = useState(false);
@@ -47,12 +46,11 @@ export default function Header({ autoShowLogin = false }) {
   // CreateDuplicateListingModal State
   const [showListPropertyModal, setShowListPropertyModal] = useState(false);
 
-  // Suggested Proposals State (for pending confirmation proposals)
-  const [pendingProposalCount, setPendingProposalCount] = useState(0);
-  const [pendingProposals, setPendingProposals] = useState([]);
-  const [showSuggestedPopup, setShowSuggestedPopup] = useState(false);
-  const [currentProposalIndex, setCurrentProposalIndex] = useState(0);
-  const [isProcessingProposal, setIsProcessingProposal] = useState(false);
+  // Dynamic menu data hooks for Host and Guest dropdowns
+  const userId = currentUser?.userId || currentUser?.id || '';
+  const isAuthenticated = !!currentUser;
+  const { state: hostMenuState } = useHostMenuData(userId, isAuthenticated);
+  const { state: guestMenuState } = useGuestMenuData(userId, isAuthenticated);
 
   // Background validation: Validate cached auth state and update with real data
   // The optimistic UI is already set synchronously in useState initializer above
@@ -120,23 +118,13 @@ export default function Header({ autoShowLogin = false }) {
           if (hasSupabaseSession) {
             console.log('[Header] Supabase session exists - preserving auth state');
             // Set basic user info from session if available
-            // CRITICAL: Include userId and userType so useHostMenuData and LoggedInAvatar can function
-            // Use Bubble-format user_id from metadata (or localStorage) for downstream queries
-            // Fallback to Supabase UUID only if neither is available
             if (session?.user) {
               const bubbleUserId = session.user.user_metadata?.user_id || getUserId() || session.user.id;
               setCurrentUser({
-                userId: bubbleUserId,
-                id: bubbleUserId,
                 firstName: session.user.user_metadata?.first_name || session.user.email?.split('@')[0] || 'User',
                 email: session.user.email,
-                userType: session.user.user_metadata?.user_type || null,
                 _isFromSession: true
               });
-              // Also update userType state so isHost()/isGuest() work correctly
-              if (session.user.user_metadata?.user_type) {
-                setUserType(session.user.user_metadata.user_type);
-              }
             }
           } else {
             setCurrentUser(null);
@@ -217,24 +205,13 @@ export default function Header({ autoShowLogin = false }) {
               console.log('[Header] UI updated for:', userData.firstName);
             } else {
               // Validation failed but we have a valid session - set basic info from session
-              // CRITICAL: Include userId and userType so useHostMenuData and LoggedInAvatar can function
-              // Use Bubble-format user_id from metadata (or localStorage) for downstream queries
-              // Fallback to Supabase UUID only if neither is available
               console.log('[Header] User profile fetch failed, using session data');
               if (session?.user) {
-                const bubbleUserId = session.user.user_metadata?.user_id || getUserId() || session.user.id;
                 setCurrentUser({
-                  userId: bubbleUserId,
-                  id: bubbleUserId,
                   firstName: session.user.user_metadata?.first_name || session.user.email?.split('@')[0] || 'User',
                   email: session.user.email,
-                  userType: session.user.user_metadata?.user_type || null,
                   _isFromSession: true
                 });
-                // Also update userType state so isHost()/isGuest() work correctly
-                if (session.user.user_metadata?.user_type) {
-                  setUserType(session.user.user_metadata.user_type);
-                }
                 setAuthChecked(true);
               }
             }
@@ -604,64 +581,67 @@ export default function Header({ autoShowLogin = false }) {
               role="menu"
               aria-label="Host with Us menu"
             >
-              <a
-                href="/list-with-us"
-                className="dropdown-item"
-                role="menuitem"
-              >
-                <span className="dropdown-title">Why List with Us</span>
-                <span className="dropdown-desc">New to Split Lease? Learn more about hosting</span>
-              </a>
-              <a
-                href="/host-success"
-                className="dropdown-item"
-                role="menuitem"
-              >
-                <span className="dropdown-title">Success Stories</span>
-                <span className="dropdown-desc">Explore other hosts' feedback</span>
-              </a>
-              <a
-                href="/self-listing-v2"
-                className="dropdown-item"
-                role="menuitem"
-                onClick={() => {
-                  setActiveDropdown(null);
-                  setMobileMenuActive(false);
-                }}
-              >
-                <span className="dropdown-title">List Property</span>
-              </a>
-              <a
-                href="/policies"
-                className="dropdown-item"
-                role="menuitem"
-              >
-                <span className="dropdown-title">Legal Information</span>
-                <span className="dropdown-desc">Review most important policies</span>
-              </a>
-              <a
-                href="/faq?section=hosts"
-                className="dropdown-item"
-                role="menuitem"
-              >
-                <span className="dropdown-title">FAQs</span>
-                <span className="dropdown-desc">Frequently Asked Questions</span>
-              </a>
-              {!currentUser && (
-              <a
-                href="#"
-                className="dropdown-item"
-                role="menuitem"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setActiveDropdown(null);
-                  setMobileMenuActive(false);
-                  handleSignupClick();
-                }}
-              >
-                <span className="dropdown-title">Sign Up</span>
-              </a>
-              )}
+              {/* Dynamic menu items based on host state */}
+              {(() => {
+                const hostMenuConfig = getHostMenuConfig(hostMenuState, handleSignupClick);
+                const currentPath = window.location.pathname;
+                // Filter out items that link to the current page
+                const filteredItems = hostMenuConfig.items.filter(item =>
+                  !item.href || !currentPath.startsWith(item.href.split('?')[0].split('#')[0])
+                );
+                // Check if CTA links to current page
+                const ctaHref = hostMenuConfig.cta.href?.split('?')[0].split('#')[0];
+                const showCta = !ctaHref || !currentPath.startsWith(ctaHref);
+
+                return (
+                  <>
+                    {filteredItems.map((item) => (
+                      <a
+                        key={item.id}
+                        href={item.href}
+                        className="dropdown-item"
+                        role="menuitem"
+                        onClick={item.action ? (e) => {
+                          e.preventDefault();
+                          setActiveDropdown(null);
+                          setMobileMenuActive(false);
+                          item.action();
+                        } : undefined}
+                      >
+                        {item.icon && <img src={item.icon} alt="" className="dropdown-icon" />}
+                        <div className="dropdown-content">
+                          <span className="dropdown-title">{item.title}</span>
+                          {item.desc && <span className="dropdown-desc">{item.desc}</span>}
+                        </div>
+                      </a>
+                    ))}
+
+                    {/* Separator - only show if CTA is visible */}
+                    {showCta && <div className="dropdown-separator" />}
+
+                    {/* Bottom CTA - hide if it links to current page */}
+                    {showCta && (
+                    <a
+                      href={hostMenuConfig.cta.href || '#'}
+                      className="dropdown-cta"
+                      role="menuitem"
+                      onClick={hostMenuConfig.cta.action ? (e) => {
+                        e.preventDefault();
+                        setActiveDropdown(null);
+                        setMobileMenuActive(false);
+                        hostMenuConfig.cta.action();
+                      } : () => {
+                        setActiveDropdown(null);
+                        setMobileMenuActive(false);
+                      }}
+                    >
+                      {hostMenuConfig.cta.icon && <img src={hostMenuConfig.cta.icon} alt="" className="dropdown-icon" />}
+                      {hostMenuConfig.cta.label}
+                    </a>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           </div>
           )}
@@ -704,53 +684,67 @@ export default function Header({ autoShowLogin = false }) {
               role="menu"
               aria-label="Stay with Us menu"
             >
-              <a
-                href={SEARCH_URL}
-                className="dropdown-item"
-                role="menuitem"
-              >
-                <span className="dropdown-title">Explore Rentals</span>
-                <span className="dropdown-desc">See available listings!</span>
-              </a>
-              <a
-                href="/why-split-lease"
-                className="dropdown-item"
-                role="menuitem"
-              >
-                <span className="dropdown-title">Why Split Lease</span>
-                <span className="dropdown-desc">Learn why guests choose Split Lease</span>
-              </a>
-              <a
-                href="/guest-success"
-                className="dropdown-item"
-                role="menuitem"
-              >
-                <span className="dropdown-title">Success Stories</span>
-                <span className="dropdown-desc">Explore other guests' feedback</span>
-              </a>
-              <a
-                href="/faq?section=travelers"
-                className="dropdown-item"
-                role="menuitem"
-              >
-                <span className="dropdown-title">FAQs</span>
-                <span className="dropdown-desc">Frequently Asked Questions</span>
-              </a>
-              {!currentUser && (
-              <a
-                href="#"
-                className="dropdown-item"
-                role="menuitem"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setActiveDropdown(null);
-                  setMobileMenuActive(false);
-                  handleSignupClick();
-                }}
-              >
-                <span className="dropdown-title">Sign Up</span>
-              </a>
-              )}
+              {/* Dynamic menu items based on guest state */}
+              {(() => {
+                const guestMenuConfig = getGuestMenuConfig(guestMenuState, handleSignupClick);
+                const currentPath = window.location.pathname;
+                // Filter out items that link to the current page
+                const filteredItems = guestMenuConfig.items.filter(item =>
+                  !item.href || !currentPath.startsWith(item.href.split('?')[0].split('#')[0])
+                );
+                // Check if CTA links to current page
+                const ctaHref = guestMenuConfig.cta.href?.split('?')[0].split('#')[0];
+                const showCta = !ctaHref || !currentPath.startsWith(ctaHref);
+
+                return (
+                  <>
+                    {filteredItems.map((item) => (
+                      <a
+                        key={item.id}
+                        href={item.href}
+                        className="dropdown-item"
+                        role="menuitem"
+                        onClick={item.action ? (e) => {
+                          e.preventDefault();
+                          setActiveDropdown(null);
+                          setMobileMenuActive(false);
+                          item.action();
+                        } : undefined}
+                      >
+                        {item.icon && <img src={item.icon} alt="" className="dropdown-icon" />}
+                        <div className="dropdown-content">
+                          <span className="dropdown-title">{item.title}</span>
+                          {item.desc && <span className="dropdown-desc">{item.desc}</span>}
+                        </div>
+                      </a>
+                    ))}
+
+                    {/* Separator - only show if CTA is visible */}
+                    {showCta && <div className="dropdown-separator" />}
+
+                    {/* Bottom CTA - hide if it links to current page */}
+                    {showCta && (
+                    <a
+                      href={guestMenuConfig.cta.href || '#'}
+                      className="dropdown-cta"
+                      role="menuitem"
+                      onClick={guestMenuConfig.cta.action ? (e) => {
+                        e.preventDefault();
+                        setActiveDropdown(null);
+                        setMobileMenuActive(false);
+                        guestMenuConfig.cta.action();
+                      } : () => {
+                        setActiveDropdown(null);
+                        setMobileMenuActive(false);
+                      }}
+                    >
+                      {guestMenuConfig.cta.icon && <img src={guestMenuConfig.cta.icon} alt="" className="dropdown-icon" />}
+                      {guestMenuConfig.cta.label}
+                    </a>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           </div>
           )}

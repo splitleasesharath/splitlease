@@ -9,12 +9,15 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import MessagingPage from './islands/pages/MessagingPage/MessagingPage.jsx';
+import { ErrorBoundary } from './islands/shared/ErrorBoundary';
 import './styles/main.css';
 import './styles/components/messaging.css';
 
 const root = createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <MessagingPage />
+    <ErrorBoundary>
+      <MessagingPage />
+    </ErrorBoundary>
   </React.StrictMode>
 );

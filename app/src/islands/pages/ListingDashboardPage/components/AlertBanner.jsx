@@ -1,3 +1,5 @@
+import { useListingDashboard } from '../context/ListingDashboardContext';
+
 // Icon components (inline SVGs)
 const InfoIcon = () => (
   <svg
@@ -50,14 +52,16 @@ const ChevronRightIcon = () => (
   </svg>
 );
 
-export default function AlertBanner({ onScheduleCohost, existingRequest }) {
-  const hasRequest = !!existingRequest;
-  const status = existingRequest?.['Status - Co-Host Request'] || existingRequest?.status;
+export default function AlertBanner() {
+  const { existingCohostRequest, handleScheduleCohost } = useListingDashboard();
+
+  const hasRequest = !!existingCohostRequest;
+  const status = existingCohostRequest?.['Status - Co-Host Request'] || existingCohostRequest?.status;
 
   return (
     <button
       className={`listing-dashboard-alert listing-dashboard-alert--clickable ${hasRequest ? 'listing-dashboard-alert--has-request' : ''}`}
-      onClick={onScheduleCohost}
+      onClick={handleScheduleCohost}
       type="button"
     >
       {/* Icon */}

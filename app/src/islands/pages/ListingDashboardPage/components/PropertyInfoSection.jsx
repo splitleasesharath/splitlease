@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import InformationalText from '../../../shared/InformationalText';
+import { useListingDashboard } from '../context/ListingDashboardContext';
 
 // Icon components (inline SVGs)
 const DownloadIcon = () => (
@@ -112,7 +113,8 @@ function formatDate(date) {
   return new Date(date).toLocaleDateString('en-US', options);
 }
 
-export default function PropertyInfoSection({ listing, onImportReviews, onEdit, reviewCount = 0 }) {
+export default function PropertyInfoSection() {
+  const { listing, counts, handleImportReviews, handleEditSection } = useListingDashboard();
   const [showStatusInfo, setShowStatusInfo] = useState(false);
   const statusTriggerRef = useRef(null);
 
@@ -125,13 +127,13 @@ export default function PropertyInfoSection({ listing, onImportReviews, onEdit, 
         <h2 className="listing-dashboard-property__listing-name">
           {listing.title || 'Untitled Listing'}
         </h2>
-        <button className="listing-dashboard-section__edit" onClick={onEdit}>
+        <button className="listing-dashboard-section__edit" onClick={() => handleEditSection('name')}>
           edit
         </button>
       </div>
 
       {/* Import Reviews Link */}
-      <button className="listing-dashboard-property__import-btn" onClick={onImportReviews}>
+      <button className="listing-dashboard-property__import-btn" onClick={handleImportReviews}>
         <DownloadIcon />
         <span>Import reviews from other sites</span>
       </button>
@@ -178,14 +180,14 @@ export default function PropertyInfoSection({ listing, onImportReviews, onEdit, 
       </div>
 
       {/* Review Section - Only show when reviews exist */}
-      {reviewCount > 0 && (
+      {counts.reviews > 0 && (
         <div className="listing-dashboard-property__reviews">
           <button
             className="listing-dashboard-property__reviews-btn"
             onClick={onImportReviews}
           >
             <StarIcon />
-            <span>Show my reviews ({reviewCount})</span>
+            <span>Show my reviews ({counts.reviews})</span>
           </button>
         </div>
       )}

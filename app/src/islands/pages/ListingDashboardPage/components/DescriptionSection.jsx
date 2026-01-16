@@ -1,11 +1,15 @@
-export default function DescriptionSection({ listing, onEditLodging, onEditNeighborhood }) {
+import { useListingDashboard } from '../context/ListingDashboardContext';
+
+export default function DescriptionSection() {
+  const { listing, handleEditSection } = useListingDashboard();
+
   return (
     <div id="description" className="listing-dashboard-descriptions">
       {/* Description of Lodging */}
       <div className="listing-dashboard-section">
         <div className="listing-dashboard-section__header">
           <h2 className="listing-dashboard-section__title">Description of Lodging</h2>
-          <button className="listing-dashboard-section__edit" onClick={onEditLodging}>
+          <button className="listing-dashboard-section__edit" onClick={() => handleEditSection('description')}>
             edit
           </button>
         </div>
@@ -20,7 +24,7 @@ export default function DescriptionSection({ listing, onEditLodging, onEditNeigh
       <div className="listing-dashboard-section">
         <div className="listing-dashboard-section__header">
           <h2 className="listing-dashboard-section__title">Neighborhood Description</h2>
-          <button className="listing-dashboard-section__edit" onClick={onEditNeighborhood}>
+          <button className="listing-dashboard-section__edit" onClick={() => handleEditSection('neighborhood')}>
             edit
           </button>
         </div>

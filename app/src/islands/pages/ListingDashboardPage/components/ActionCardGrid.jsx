@@ -1,4 +1,5 @@
 import ActionCard from './ActionCard';
+import { useListingDashboard } from '../context/ListingDashboardContext';
 
 // Icon components (inline SVGs)
 const EyeIcon = () => (
@@ -92,7 +93,8 @@ const FileCheckIcon = () => (
   </svg>
 );
 
-export default function ActionCardGrid({ counts, onCardClick }) {
+export default function ActionCardGrid() {
+  const { counts, handleCardClick } = useListingDashboard();
   // Define all cards with visibility condition
   // Cards for proposals, virtual meetings, and leases only show when count > 0
   const allCards = [
@@ -135,8 +137,8 @@ export default function ActionCardGrid({ counts, onCardClick }) {
   const visibleCards = allCards.filter((card) => card.visible);
 
   const handleClick = (cardId) => {
-    if (onCardClick) {
-      onCardClick(cardId);
+    if (handleCardClick) {
+      handleCardClick(cardId);
     }
   };
 

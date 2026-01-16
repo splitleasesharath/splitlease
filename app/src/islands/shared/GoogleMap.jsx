@@ -16,7 +16,7 @@
  *     listings={allListings}
  *     filteredListings={filteredListings}
  *     selectedListing={selectedListing}
- *     onMarkerClick={(listing) => console.log('Clicked:', listing)}
+ *     onMarkerClick={(listing) => logger.debug('Clicked:', listing)}
  *   />
  */
 
@@ -24,6 +24,7 @@ import { useEffect, useRef, useState, forwardRef, useImperativeHandle, useCallba
 import { DEFAULTS, COLORS, getBoroughMapConfig } from '../../lib/constants.js';
 import ListingCardForMap from './ListingCard/ListingCardForMap.jsx';
 import { supabase } from '../../lib/supabase.js';
+import { logger } from '../../lib/logger.js';
 import { fetchPhotoUrls, extractPhotos } from '../../lib/supabaseUtils.js';
 import { calculatePrice } from '../../lib/scheduleSelector/priceCalculations.js';
 
@@ -122,7 +123,7 @@ const GoogleMap = forwardRef(({
   selectedNightsCount = 0, // Number of nights selected for dynamic price calculation
   showMessageButton = true // Whether to show message button (hidden for host users)
 }, ref) => {
-  console.log('🗺️ GoogleMap: Component rendered with props:', {
+  logger.debug('🗺️ GoogleMap: Component rendered with props:', {
     listingsCount: listings.length,
     filteredListingsCount: filteredListings.length,
     selectedBorough,
@@ -183,7 +184,7 @@ const GoogleMap = forwardRef(({
     // Highlight marker: pan to center on it (no zoom change), pulse, and show card
     highlightListing(listingId) {
       if (!googleMapRef.current || !mapLoaded) {
-        console.error('Map not initialized yet');
+        logger.error('Map not initialized yet');
         return;
       }
 
@@ -192,13 +193,13 @@ const GoogleMap = forwardRef(({
                      listings.find(l => l.id === listingId);
 
       if (!listing) {
-        console.error('Listing not found:', listingId);
+        logger.error('Listing not found:', listingId);
         return;
       }
 
       const coords = listing.coordinates;
       if (!coords || !coords.lat || !coords.lng) {
-        console.error('Invalid coordinates for listing:', listingId);
+        logger.error('Invalid coordinates for listing:', listingId);
         return;
       }
 
@@ -246,7 +247,7 @@ const GoogleMap = forwardRef(({
     },
     zoomToListing(listingId) {
       if (!googleMapRef.current || !mapLoaded) {
-        console.error('Map not initialized yet');
+        logger.error('Map not initialized yet');
         return;
       }
 
@@ -255,13 +256,13 @@ const GoogleMap = forwardRef(({
                      listings.find(l => l.id === listingId);
 
       if (!listing) {
-        console.error('Listing not found:', listingId);
+        logger.error('Listing not found:', listingId);
         return;
       }
 
       const coords = listing.coordinates;
       if (!coords || !coords.lat || !coords.lng) {
-        console.error('Invalid coordinates for listing:', listingId);
+        logger.error('Invalid coordinates for listing:', listingId);
         return;
       }
 
@@ -331,11 +332,11 @@ const GoogleMap = forwardRef(({
    * Fetch detailed listing data from Supabase when a pin is clicked
    */
   const fetchDetailedListingData = async (listingId) => {
-    console.log('🔍 fetchDetailedListingData: Starting fetch for listing:', listingId);
+    logger.debug('🔍 fetchDetailedListingData: Starting fetch for listing:', listingId);
     setIsLoadingListingDetails(true);
 
     try {
-      console.log('📊 fetchDetailedListingData: Querying Supabase...');
+      logger.debug('📊 fetchDetailedListingData: Querying Supabase...');
       const { data: listingData, error: listingError } = await supabase
         .from('listing')
         .select('*')
@@ -343,17 +344,17 @@ const GoogleMap = forwardRef(({
         .single();
 
       if (listingError) {
-        console.error('❌ fetchDetailedListingData: Supabase error:', listingError);
+        logger.error('❌ fetchDetailedListingData: Supabase error:', listingError);
         throw listingError;
       }
 
-      console.log('✅ fetchDetailedListingData: Listing data received:', {
+      logger.debug('✅ fetchDetailedListingData: Listing data received:', {
         id: listingData._id,
         name: listingData.Name,
         borough: listingData['Location - Borough']
       });
 
-      console.log('📸 fetchDetailedListingData: Fetching photos...');
+      logger.debug('📸 fetchDetailedListingData: Fetching photos...');
       // Extract photo IDs from the Features - Photos field
       const photosField = listingData['Features - Photos'];
       const photoIds = [];
@@ -367,18 +368,18 @@ const GoogleMap = forwardRef(({
             photoIds.push(...parsed);
           }
         } catch (e) {
-          console.error('📸 fetchDetailedListingData: Failed to parse photos field:', e);
+          logger.error('📸 fetchDetailedListingData: Failed to parse photos field:', e);
         }
       }
 
-      console.log('📸 fetchDetailedListingData: Extracted photo IDs:', photoIds);
+      logger.debug('📸 fetchDetailedListingData: Extracted photo IDs:', photoIds);
 
       // Fetch URLs for the photo IDs
       const photoMap = await fetchPhotoUrls(photoIds);
 
       // Convert photo IDs to URLs using extractPhotos
       const images = extractPhotos(photosField, photoMap, listingId);
-      console.log('📸 fetchDetailedListingData: Photos received:', images.length, 'images');
+      logger.debug('📸 fetchDetailedListingData: Photos received:', images.length, 'images');
 
       const detailedListing = {
         id: listingData._id,
@@ -395,14 +396,14 @@ const GoogleMap = forwardRef(({
         isAvailable: listingData.Active || false
       };
 
-      console.log('✅ fetchDetailedListingData: Detailed listing built:', detailedListing);
+      logger.debug('✅ fetchDetailedListingData: Detailed listing built:', detailedListing);
       return detailedListing;
     } catch (error) {
-      console.error('❌ fetchDetailedListingData: Failed to fetch listing details:', error);
+      logger.error('❌ fetchDetailedListingData: Failed to fetch listing details:', error);
       return null;
     } finally {
       setIsLoadingListingDetails(false);
-      console.log('🏁 fetchDetailedListingData: Loading state set to false');
+      logger.debug('🏁 fetchDetailedListingData: Loading state set to false');
     }
   };
 
@@ -416,7 +417,7 @@ const GoogleMap = forwardRef(({
    */
   const handlePinClick = useCallback(async (listing, priceTag, options = {}) => {
     const { skipParentCallback = false } = options;
-    console.log('🖱️ handlePinClick (React callback): Pin clicked:', {
+    logger.debug('🖱️ handlePinClick (React callback): Pin clicked:', {
       listingId: listing.id,
       listingTitle: listing.title,
       skipParentCallback
@@ -424,14 +425,14 @@ const GoogleMap = forwardRef(({
 
     // Call parent callback FIRST (before any async operations) so scroll/highlight happens immediately
     if (onMarkerClick && !skipParentCallback) {
-      console.log('📜 handlePinClick: Calling onMarkerClick to scroll to listing card');
+      logger.debug('📜 handlePinClick: Calling onMarkerClick to scroll to listing card');
       onMarkerClick(listing);
     }
 
     // Calculate card position relative to map container
     const mapContainer = mapRef.current;
     if (!mapContainer) {
-      console.error('❌ handlePinClick: Map container ref not available');
+      logger.error('❌ handlePinClick: Map container ref not available');
       return;
     }
 
@@ -462,7 +463,7 @@ const GoogleMap = forwardRef(({
     // Check if card would go above map (marker is in upper portion)
     // If so, pan the map down to create space for the card above the marker
     if (cardTop < margin && map && listing.coordinates) {
-      console.log('📍 handlePinClick: Marker in upper portion, panning map down to create space');
+      logger.debug('📍 handlePinClick: Marker in upper portion, panning map down to create space');
 
       // Calculate how much vertical space we need (card height + gap + margin)
       const spaceNeeded = cardHeight + arrowHeight + gapFromPin + margin;
@@ -507,42 +508,42 @@ const GoogleMap = forwardRef(({
         const newPinCenterX = newPriceTagRect.left - mapRect.left + (newPriceTagRect.width / 2);
         cardLeft = Math.max(minLeft, Math.min(maxLeft, newPinCenterX));
 
-        console.log('📍 handlePinClick: Recalculated card position after pan:', { x: cardLeft, y: cardTop });
+        logger.debug('📍 handlePinClick: Recalculated card position after pan:', { x: cardLeft, y: cardTop });
       }
     }
 
-    console.log('📍 handlePinClick: Card position calculated:', { x: cardLeft, y: cardTop });
+    logger.debug('📍 handlePinClick: Card position calculated:', { x: cardLeft, y: cardTop });
 
     // Set position first
     setCardPosition({ x: cardLeft, y: cardTop });
-    console.log('✅ handlePinClick: Card position state updated');
+    logger.debug('✅ handlePinClick: Card position state updated');
 
     // Show card immediately
     setCardVisible(true);
-    console.log('✅ handlePinClick: Card visibility state set to true');
+    logger.debug('✅ handlePinClick: Card visibility state set to true');
 
     // Check if listing already has images (e.g., from filteredListings)
     // If so, use it directly instead of fetching from database
     let detailedListing;
     if (listing.images && listing.images.length > 0) {
-      console.log('✅ handlePinClick: Listing already has images, using existing data:', {
+      logger.debug('✅ handlePinClick: Listing already has images, using existing data:', {
         id: listing.id,
         imageCount: listing.images.length
       });
       detailedListing = listing;
     } else {
-      console.log('🔍 handlePinClick: Listing has no images, fetching from database...');
+      logger.debug('🔍 handlePinClick: Listing has no images, fetching from database...');
       detailedListing = await fetchDetailedListingData(listing.id);
     }
 
     if (detailedListing && detailedListing.images && detailedListing.images.length > 0) {
-      console.log('✅ handlePinClick: Setting detailed listing to card:', detailedListing);
+      logger.debug('✅ handlePinClick: Setting detailed listing to card:', detailedListing);
       setSelectedListingForCard(detailedListing);
     } else {
-      console.error('❌ handlePinClick: Failed to get listing details or no images available, not showing card');
+      logger.error('❌ handlePinClick: Failed to get listing details or no images available, not showing card');
       setCardVisible(false);
     }
-    console.log('✅ handlePinClick: Selected listing state updated');
+    logger.debug('✅ handlePinClick: Selected listing state updated');
   }, [onMarkerClick]);
 
   // Keep ref updated with latest handlePinClick so event listeners always use current version
@@ -551,7 +552,7 @@ const GoogleMap = forwardRef(({
   // Initialize Google Map when API is loaded
   useEffect(() => {
     const initMap = () => {
-      console.log('🗺️ GoogleMap: Initializing map...', {
+      logger.debug('🗺️ GoogleMap: Initializing map...', {
         mapRefExists: !!mapRef.current,
         googleMapsLoaded: !!(window.google && window.google.maps),
         simpleMode,
@@ -561,13 +562,13 @@ const GoogleMap = forwardRef(({
       });
 
       if (!mapRef.current || !window.google) {
-        console.warn('⚠️ GoogleMap: Cannot initialize - missing mapRef or Google Maps API');
+        logger.warn('⚠️ GoogleMap: Cannot initialize - missing mapRef or Google Maps API');
         return;
       }
 
       // Don't recreate map if it already exists
       if (googleMapRef.current) {
-        console.log('⏭️ GoogleMap: Map already exists, skipping re-initialization');
+        logger.debug('⏭️ GoogleMap: Map already exists, skipping re-initialization');
         return;
       }
 
@@ -581,7 +582,7 @@ const GoogleMap = forwardRef(({
         if (listing?.coordinates?.lat && listing?.coordinates?.lng) {
           initialCenter = { lat: listing.coordinates.lat, lng: listing.coordinates.lng };
           initialZoomLevel = initialZoom || 17;
-          console.log('🗺️ GoogleMap: Using listing coordinates for initial center:', initialCenter);
+          logger.debug('🗺️ GoogleMap: Using listing coordinates for initial center:', initialCenter);
         }
       }
 
@@ -590,7 +591,7 @@ const GoogleMap = forwardRef(({
         const defaultMapConfig = getBoroughMapConfig('default');
         initialCenter = defaultMapConfig.center;
         initialZoomLevel = defaultMapConfig.zoom;
-        console.log('🗺️ GoogleMap: Using default center');
+        logger.debug('🗺️ GoogleMap: Using default center');
       }
 
       // Create map instance
@@ -617,16 +618,16 @@ const GoogleMap = forwardRef(({
       // Reset marker signature so markers are recreated on new map instance
       lastMarkersUpdateRef.current = null;
       setMapLoaded(true);
-      console.log('✅ GoogleMap: Map initialized successfully with zoom controls enabled');
+      logger.debug('✅ GoogleMap: Map initialized successfully with zoom controls enabled');
     };
 
     // Wait for Google Maps API to fully load
     // Check that both google.maps exists AND ControlPosition is available (indicates full load)
     if (window.google && window.google.maps && window.google.maps.ControlPosition) {
-      console.log('✅ GoogleMap: Google Maps API already loaded, initializing...');
+      logger.debug('✅ GoogleMap: Google Maps API already loaded, initializing...');
       initMap();
     } else {
-      console.log('⏳ GoogleMap: Waiting for Google Maps API to load...');
+      logger.debug('⏳ GoogleMap: Waiting for Google Maps API to load...');
       window.addEventListener('google-maps-loaded', initMap);
       return () => window.removeEventListener('google-maps-loaded', initMap);
     }
@@ -636,7 +637,7 @@ const GoogleMap = forwardRef(({
   useEffect(() => {
     if (!mapLoaded || !googleMapRef.current) {
       if (import.meta.env.DEV) {
-        console.warn('⚠️ GoogleMap: Skipping marker update - map not ready');
+        logger.warn('⚠️ GoogleMap: Skipping marker update - map not ready');
       }
       return;
     }
@@ -645,7 +646,7 @@ const GoogleMap = forwardRef(({
     const markerSignature = `${listings.map(l => l.id).join(',')}-${filteredListings.map(l => l.id).join(',')}-${showAllListings}`;
     if (lastMarkersUpdateRef.current === markerSignature) {
       if (import.meta.env.DEV) {
-        console.log('⏭️ GoogleMap: Skipping duplicate marker update - same listings');
+        logger.debug('⏭️ GoogleMap: Skipping duplicate marker update - same listings');
       }
       return;
     }
@@ -655,7 +656,7 @@ const GoogleMap = forwardRef(({
     // Defer marker creation to next frame to prevent blocking render
     function createMarkers() {
       if (import.meta.env.DEV) {
-        console.log('🗺️ GoogleMap: Markers update triggered', {
+        logger.debug('🗺️ GoogleMap: Markers update triggered', {
           mapLoaded,
           googleMapExists: !!googleMapRef.current,
           totalListings: listings.length,
@@ -669,7 +670,7 @@ const GoogleMap = forwardRef(({
       // Clear existing markers
       markersRef.current.forEach(marker => marker.setMap(null));
       markersRef.current = [];
-      console.log('🗺️ GoogleMap: Cleared existing markers');
+      logger.debug('🗺️ GoogleMap: Cleared existing markers');
 
       const map = googleMapRef.current;
       const bounds = new window.google.maps.LatLngBounds();
@@ -677,8 +678,8 @@ const GoogleMap = forwardRef(({
 
       // Create markers for filtered listings (simple or purple depending on mode)
       if (filteredListings && filteredListings.length > 0) {
-        console.log(`🗺️ GoogleMap: Starting ${simpleMode ? 'simple' : 'purple'} marker creation for filtered listings:`, filteredListings.length);
-        console.log('🗺️ GoogleMap: First 3 filtered listings:', filteredListings.slice(0, 3).map(l => ({
+        logger.debug(`🗺️ GoogleMap: Starting ${simpleMode ? 'simple' : 'purple'} marker creation for filtered listings:`, filteredListings.length);
+        logger.debug('🗺️ GoogleMap: First 3 filtered listings:', filteredListings.slice(0, 3).map(l => ({
           id: l.id,
           title: l.title,
           coordinates: l.coordinates,
@@ -690,7 +691,7 @@ const GoogleMap = forwardRef(({
         const skippedInvalidCoordinates = [];
 
         filteredListings.forEach((listing, index) => {
-          console.log(`🗺️ GoogleMap: [${index + 1}/${filteredListings.length}] Processing filtered listing:`, {
+          logger.debug(`🗺️ GoogleMap: [${index + 1}/${filteredListings.length}] Processing filtered listing:`, {
             id: listing.id,
             title: listing.title,
             coordinates: listing.coordinates,
@@ -702,7 +703,7 @@ const GoogleMap = forwardRef(({
           });
 
           if (!listing.coordinates || !listing.coordinates.lat || !listing.coordinates.lng) {
-            console.error(`❌ GoogleMap: Skipping filtered listing ${listing.id} - Missing or invalid coordinates:`, {
+            logger.error(`❌ GoogleMap: Skipping filtered listing ${listing.id} - Missing or invalid coordinates:`, {
               coordinates: listing.coordinates,
               hasCoordinates: !!listing.coordinates,
               lat: listing.coordinates?.lat,
@@ -725,7 +726,7 @@ const GoogleMap = forwardRef(({
           // Calculate dynamic price based on selected nights
           const displayPrice = getDisplayPrice(listing);
 
-          console.log(`✅ GoogleMap: Creating ${simpleMode ? 'simple' : 'purple'} marker for listing ${listing.id}:`, {
+          logger.debug(`✅ GoogleMap: Creating ${simpleMode ? 'simple' : 'purple'} marker for listing ${listing.id}:`, {
             position,
             displayPrice,
             startingPrice: listing.price?.starting || listing['Starting nightly price'],
@@ -750,10 +751,10 @@ const GoogleMap = forwardRef(({
           hasValidMarkers = true;
           markersCreated++;
 
-          console.log(`✅ GoogleMap: ${simpleMode ? 'Simple' : 'Purple'} marker created successfully for ${listing.id}, total markers so far: ${markersRef.current.length}`);
+          logger.debug(`✅ GoogleMap: ${simpleMode ? 'Simple' : 'Purple'} marker created successfully for ${listing.id}, total markers so far: ${markersRef.current.length}`);
         });
 
-        console.log(`📊 GoogleMap: ${simpleMode ? 'Simple' : 'Purple'} marker creation summary:`, {
+        logger.debug(`📊 GoogleMap: ${simpleMode ? 'Simple' : 'Purple'} marker creation summary:`, {
           totalFiltered: filteredListings.length,
           markersCreated: markersCreated,
           skippedNoCoordinates,
@@ -761,13 +762,13 @@ const GoogleMap = forwardRef(({
           invalidListings: skippedInvalidCoordinates
         });
       } else {
-        console.log('⚠️ GoogleMap: No filtered listings to create purple markers for');
+        logger.debug('⚠️ GoogleMap: No filtered listings to create purple markers for');
       }
 
       // Create markers for all listings (grey) - background context
       if (showAllListings && listings && listings.length > 0) {
-        console.log('🗺️ GoogleMap: Starting grey marker creation for all listings (background layer):', listings.length);
-        console.log('🗺️ GoogleMap: First 3 all listings:', listings.slice(0, 3).map(l => ({
+        logger.debug('🗺️ GoogleMap: Starting grey marker creation for all listings (background layer):', listings.length);
+        logger.debug('🗺️ GoogleMap: First 3 all listings:', listings.slice(0, 3).map(l => ({
           id: l.id,
           title: l.title,
           coordinates: l.coordinates,
@@ -783,12 +784,12 @@ const GoogleMap = forwardRef(({
           // Skip if already shown as filtered listing
           const isFiltered = filteredListings?.some(fl => fl.id === listing.id);
           if (isFiltered) {
-            console.log(`⏭️ GoogleMap: [${index + 1}/${listings.length}] Skipping ${listing.id} - Already shown as purple marker`);
+            logger.debug(`⏭️ GoogleMap: [${index + 1}/${listings.length}] Skipping ${listing.id} - Already shown as purple marker`);
             skippedAlreadyFiltered++;
             return;
           }
 
-          console.log(`🗺️ GoogleMap: [${index + 1}/${listings.length}] Processing all listing:`, {
+          logger.debug(`🗺️ GoogleMap: [${index + 1}/${listings.length}] Processing all listing:`, {
             id: listing.id,
             title: listing.title,
             coordinates: listing.coordinates,
@@ -800,7 +801,7 @@ const GoogleMap = forwardRef(({
           });
 
           if (!listing.coordinates || !listing.coordinates.lat || !listing.coordinates.lng) {
-            console.error(`❌ GoogleMap: Skipping all listing ${listing.id} - Missing or invalid coordinates:`, {
+            logger.error(`❌ GoogleMap: Skipping all listing ${listing.id} - Missing or invalid coordinates:`, {
               coordinates: listing.coordinates,
               hasCoordinates: !!listing.coordinates,
               lat: listing.coordinates?.lat,
@@ -823,7 +824,7 @@ const GoogleMap = forwardRef(({
           // Calculate dynamic price based on selected nights
           const displayPrice = getDisplayPrice(listing);
 
-          console.log(`✅ GoogleMap: Creating grey marker for listing ${listing.id}:`, {
+          logger.debug(`✅ GoogleMap: Creating grey marker for listing ${listing.id}:`, {
             position,
             displayPrice,
             startingPrice: listing.price?.starting || listing['Starting nightly price'],
@@ -845,10 +846,10 @@ const GoogleMap = forwardRef(({
           hasValidMarkers = true;
           greenMarkersCreated++;
 
-          console.log(`✅ GoogleMap: Grey marker created successfully for ${listing.id}, total markers so far: ${markersRef.current.length}`);
+          logger.debug(`✅ GoogleMap: Grey marker created successfully for ${listing.id}, total markers so far: ${markersRef.current.length}`);
         });
 
-        console.log('📊 GoogleMap: Grey marker creation summary:', {
+        logger.debug('📊 GoogleMap: Grey marker creation summary:', {
           totalAllListings: listings.length,
           markersCreated: greenMarkersCreated,
           skippedAlreadyFiltered,
@@ -857,13 +858,13 @@ const GoogleMap = forwardRef(({
           invalidListings: skippedInvalidCoordinates
         });
       } else {
-        console.log('⚠️ GoogleMap: No all listings to create grey markers for (showAllListings:', showAllListings, ', listings.length:', listings?.length, ')');
+        logger.debug('⚠️ GoogleMap: No all listings to create grey markers for (showAllListings:', showAllListings, ', listings.length:', listings?.length, ')');
       }
 
       // Fit map to show all markers
       if (hasValidMarkers) {
         if (import.meta.env.DEV) {
-          console.log('✅ GoogleMap: Fitting bounds to markers', {
+          logger.debug('✅ GoogleMap: Fitting bounds to markers', {
             markerCount: markersRef.current.length,
             bounds: bounds.toString(),
             disableAutoZoom,
@@ -875,7 +876,7 @@ const GoogleMap = forwardRef(({
         // In simple mode, skip auto-centering here because parent will call zoomToListing explicitly
         // This prevents double-zooming and ensures exact same behavior as clicking "Located in" link
         if (simpleMode && markersRef.current.length === 1) {
-          console.log('🗺️ GoogleMap: Simple mode - Skipping auto-center, parent will call zoomToListing');
+          logger.debug('🗺️ GoogleMap: Simple mode - Skipping auto-center, parent will call zoomToListing');
           // Do nothing - parent component will call zoomToListing to center the map
         } else if (!disableAutoZoom) {
           // Normal auto-fit behavior
@@ -890,7 +891,7 @@ const GoogleMap = forwardRef(({
           }
         }
       } else {
-        console.warn('⚠️ GoogleMap: No valid markers to display');
+        logger.warn('⚠️ GoogleMap: No valid markers to display');
       }
     }
 
@@ -902,7 +903,7 @@ const GoogleMap = forwardRef(({
   useEffect(() => {
     if (!mapLoaded || !googleMapRef.current || !selectedBorough) return;
 
-    console.log('🗺️ GoogleMap: Borough changed, recentering map:', selectedBorough);
+    logger.debug('🗺️ GoogleMap: Borough changed, recentering map:', selectedBorough);
 
     const boroughConfig = getBoroughMapConfig(selectedBorough);
     const map = googleMapRef.current;
@@ -911,7 +912,7 @@ const GoogleMap = forwardRef(({
     map.panTo(boroughConfig.center);
     map.setZoom(boroughConfig.zoom);
 
-    console.log(`✅ GoogleMap: Map recentered to ${boroughConfig.name}`);
+    logger.debug(`✅ GoogleMap: Map recentered to ${boroughConfig.name}`);
   }, [selectedBorough, mapLoaded]);
 
   // Highlight selected listing marker
@@ -943,7 +944,7 @@ const GoogleMap = forwardRef(({
     // Store listing ID for reference
     marker.listingId = listing.id;
 
-    console.log('✅ GoogleMap: Simple marker created successfully for listing:', {
+    logger.debug('✅ GoogleMap: Simple marker created successfully for listing:', {
       id: listing.id,
       title: listing.title,
       position: { lat: coordinates.lat, lng: coordinates.lng }
@@ -996,9 +997,32 @@ const GoogleMap = forwardRef(({
         text-align: center;
       `;
 
-      // HOVER EFFECTS TEMPORARILY REMOVED TO ISOLATE BUNCHING BUG
-      // TODO: Re-implement hover effects after fixing positioning bug
-      // Previous implementation was overwriting transform position from draw()
+      // In marker creation, add proper hover handling
+      const handleMarkerHover = (listing, isEntering) => {
+        if (!listing || !googleMapRef.current) return;
+
+        const marker = markersRef.current.find(m => m.listingId === listing.id);
+        if (!marker) return;
+
+        if (isEntering) {
+          // Scale up marker
+          priceTag.style.zIndex = String(google.maps.Marker.MAX_ZINDEX + 1);
+          // Show info window or tooltip
+          if (infoWindowRef.current) {
+            infoWindowRef.current.setContent(renderMarkerTooltip(listing));
+            infoWindowRef.current.open(googleMapRef.current, marker);
+          }
+        } else {
+          // Reset marker
+          priceTag.style.zIndex = color === '#5B21B6' ? '1002' : '1001';
+          if (infoWindowRef.current) {
+            infoWindowRef.current.close();
+          }
+        }
+      };
+
+      priceTag.addEventListener('mouseenter', () => handleMarkerHover(listing, true));
+      priceTag.addEventListener('mouseleave', () => handleMarkerHover(listing, false));
 
       // Use ref to always call latest handlePinClick (avoids stale closure issue)
       priceTag.addEventListener('click', (e) => {
@@ -1012,7 +1036,7 @@ const GoogleMap = forwardRef(({
       const panes = this.getPanes();
       // Use overlayMouseTarget pane for clickable overlays (sits above map tiles)
       panes.overlayMouseTarget.appendChild(priceTag);
-      console.log('📍 MarkerOverlay.onAdd: marker appended to DOM', {
+      logger.debug('📍 MarkerOverlay.onAdd: marker appended to DOM', {
         listingId: listing.id,
         price: price,
         innerHTML: priceTag.innerHTML,
@@ -1023,14 +1047,14 @@ const GoogleMap = forwardRef(({
 
     markerOverlay.draw = function() {
       if (!this.div) {
-        console.warn('📍 MarkerOverlay.draw: div not found for listing:', listing.id);
+        logger.warn('📍 MarkerOverlay.draw: div not found for listing:', listing.id);
         return;
       }
 
       // Immediate rendering without RAF - no lazy loading
       const projection = this.getProjection();
       if (!projection) {
-        console.warn('📍 MarkerOverlay.draw: projection not available for listing:', listing.id);
+        logger.warn('📍 MarkerOverlay.draw: projection not available for listing:', listing.id);
         return;
       }
 
@@ -1038,7 +1062,7 @@ const GoogleMap = forwardRef(({
         new window.google.maps.LatLng(coordinates.lat, coordinates.lng)
       );
 
-      console.log('📍 MarkerOverlay.draw: positioning marker', {
+      logger.debug('📍 MarkerOverlay.draw: positioning marker', {
         listingId: listing.id,
         coordinates: { lat: coordinates.lat, lng: coordinates.lng },
         pixelPosition: position ? { x: position.x, y: position.y } : null
@@ -1063,13 +1087,13 @@ const GoogleMap = forwardRef(({
     try {
       markerOverlay.setMap(map);
       markerOverlay.listingId = listing.id;
-      console.log('📍 createPriceMarker: marker set on map', {
+      logger.debug('📍 createPriceMarker: marker set on map', {
         listingId: listing.id,
         hasDiv: !!markerOverlay.div,
         mapSet: markerOverlay.getMap() === map
       });
     } catch (error) {
-      console.error('📍 createPriceMarker: error setting map', {
+      logger.error('📍 createPriceMarker: error setting map', {
         listingId: listing.id,
         error: error.message
       });
@@ -1080,7 +1104,7 @@ const GoogleMap = forwardRef(({
 
   // Close card when clicking on map
   const handleMapClick = () => {
-    console.log('🗺️ handleMapClick: Map clicked, closing card');
+    logger.debug('🗺️ handleMapClick: Map clicked, closing card');
     setCardVisible(false);
     setSelectedListingForCard(null);
   };
@@ -1121,7 +1145,7 @@ const GoogleMap = forwardRef(({
 
       {/* Listing Card Overlay - Only in normal mode, not in simple mode */}
       {(() => {
-        console.log('🎨 Rendering card overlay - State check:', {
+        logger.debug('🎨 Rendering card overlay - State check:', {
           mapLoaded,
           cardVisible,
           isLoadingListingDetails,
@@ -1154,7 +1178,7 @@ const GoogleMap = forwardRef(({
           )}
           {!isLoadingListingDetails && selectedListingForCard && (() => {
             const listingId = selectedListingForCard.id || selectedListingForCard._id;
-            console.log('[GoogleMap] Rendering ListingCardForMap', {
+            logger.debug('[GoogleMap] Rendering ListingCardForMap', {
               listingId,
               hasMessageCallback: !!onMessageClick
             });

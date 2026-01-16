@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { toast } from '../../lib/toastService.js';
 
 export default function EditPhoneNumberModal({ isOpen, currentPhoneNumber, onSave, onClose }) {
   const [newPhoneNumber, setNewPhoneNumber] = useState('');
@@ -21,7 +22,7 @@ export default function EditPhoneNumberModal({ isOpen, currentPhoneNumber, onSav
 
   const handleSave = async () => {
     if (!newPhoneNumber.trim()) {
-      alert('Please enter a new phone number');
+      toast.warning('Please enter a new phone number');
       return;
     }
 
@@ -30,7 +31,7 @@ export default function EditPhoneNumberModal({ isOpen, currentPhoneNumber, onSav
       await onSave(newPhoneNumber.trim());
       onClose();
     } catch (error) {
-      alert('Error saving phone number: ' + error.message);
+      toast.error(`Error saving phone number: ${error.message}`);
     } finally {
       setSaving(false);
     }

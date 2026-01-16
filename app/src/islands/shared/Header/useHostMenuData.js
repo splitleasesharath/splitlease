@@ -27,10 +27,51 @@ export const HOST_MENU_STATES = {
 };
 
 /**
+ * Featured card content for each host state
+ */
+export const HOST_FEATURED_CONTENT = {
+  [HOST_MENU_STATES.LOGGED_OUT]: {
+    title: 'Become a Host',
+    desc: 'List your property and start earning with flexible scheduling.',
+    cta: 'Get Started',
+    ctaHref: '/self-listing-v2',
+    image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=260&fit=crop&q=80'
+  },
+  [HOST_MENU_STATES.NO_LISTING]: {
+    title: 'List Your First Property',
+    desc: 'Create your listing in minutes and start receiving proposals.',
+    cta: 'Create Listing',
+    ctaHref: '/self-listing-v2',
+    image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=260&fit=crop&q=80'
+  },
+  [HOST_MENU_STATES.WITH_LISTING_NO_PROPOSALS]: {
+    title: 'Your Listings',
+    desc: 'Manage your properties and optimize for more proposals.',
+    cta: 'View Listings',
+    ctaHref: '/host-overview',
+    image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=260&fit=crop&q=80'
+  },
+  [HOST_MENU_STATES.WITH_PROPOSALS]: {
+    title: 'Host Dashboard',
+    desc: 'Manage your listings and respond to guest proposals.',
+    cta: 'View Proposals',
+    ctaHref: '/host-proposals',
+    image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=260&fit=crop&q=80'
+  },
+  [HOST_MENU_STATES.WITH_LEASES]: {
+    title: 'Host Dashboard',
+    desc: 'Manage your leases, earnings, and property calendar.',
+    cta: 'View Earnings',
+    ctaHref: '/host-overview#leases',
+    image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=260&fit=crop&q=80'
+  }
+};
+
+/**
  * Get host menu items based on current state
  * @param {string} state - Current host menu state
  * @param {function} onSignupClick - Callback for signup action
- * @returns {Object} { items: Array, cta: Object }
+ * @returns {Object} { items: Array, cta: Object, featured: Object }
  */
 export function getHostMenuConfig(state, onSignupClick) {
   const baseItems = {
@@ -107,6 +148,9 @@ export function getHostMenuConfig(state, onSignupClick) {
     }
   };
 
+  // Get featured content for this state
+  const featured = HOST_FEATURED_CONTENT[state] || HOST_FEATURED_CONTENT[HOST_MENU_STATES.LOGGED_OUT];
+
   switch (state) {
     case HOST_MENU_STATES.LOGGED_OUT:
       return {
@@ -116,7 +160,9 @@ export function getHostMenuConfig(state, onSignupClick) {
           baseItems.legalInfo,
           baseItems.faqs
         ],
-        cta: { label: 'Sign Up', action: onSignupClick, icon: '/assets/icons/user-bubble-purple.svg' }
+        cta: { label: 'Sign Up', action: onSignupClick, icon: '/assets/icons/user-bubble-purple.svg' },
+        featured,
+        showAuthCta: true
       };
 
     case HOST_MENU_STATES.NO_LISTING:
@@ -128,7 +174,9 @@ export function getHostMenuConfig(state, onSignupClick) {
           baseItems.legalInfo,
           baseItems.faqs
         ],
-        cta: { label: 'List Property', href: '/self-listing-v2', icon: '/assets/icons/listing-purple.svg' }
+        cta: { label: 'List Property', href: '/self-listing-v2', icon: '/assets/icons/listing-purple.svg' },
+        featured,
+        showAuthCta: false
       };
 
     case HOST_MENU_STATES.WITH_LISTING_NO_PROPOSALS:
@@ -140,7 +188,9 @@ export function getHostMenuConfig(state, onSignupClick) {
           baseItems.legalInfo,
           baseItems.faqs
         ],
-        cta: { label: 'Manage Listing', href: '/host-overview', icon: '/assets/icons/listing-purple.svg' }
+        cta: { label: 'Manage Listing', href: '/host-overview', icon: '/assets/icons/listing-purple.svg' },
+        featured,
+        showAuthCta: false
       };
 
     case HOST_MENU_STATES.WITH_PROPOSALS:
@@ -153,7 +203,9 @@ export function getHostMenuConfig(state, onSignupClick) {
           baseItems.legalInfo,
           baseItems.faqs
         ],
-        cta: { label: 'Manage Proposals', href: '/host-proposals', icon: '/assets/icons/document-purple.svg' }
+        cta: { label: 'Manage Proposals', href: '/host-proposals', icon: '/assets/icons/document-purple.svg' },
+        featured,
+        showAuthCta: false
       };
 
     case HOST_MENU_STATES.WITH_LEASES:
@@ -166,7 +218,9 @@ export function getHostMenuConfig(state, onSignupClick) {
           baseItems.legalInfo,
           baseItems.faqs
         ],
-        cta: { label: 'Manage Leases', href: '/host-overview#leases', icon: '/assets/icons/leases-purple.svg' }
+        cta: { label: 'Manage Leases', href: '/host-overview#leases', icon: '/assets/icons/leases-purple.svg' },
+        featured,
+        showAuthCta: false
       };
 
     default:
@@ -177,7 +231,9 @@ export function getHostMenuConfig(state, onSignupClick) {
           baseItems.legalInfo,
           baseItems.faqs
         ],
-        cta: { label: 'Sign Up', action: onSignupClick, icon: '/assets/icons/user-bubble-purple.svg' }
+        cta: { label: 'Sign Up', action: onSignupClick, icon: '/assets/icons/user-bubble-purple.svg' },
+        featured: HOST_FEATURED_CONTENT[HOST_MENU_STATES.LOGGED_OUT],
+        showAuthCta: true
       };
   }
 }

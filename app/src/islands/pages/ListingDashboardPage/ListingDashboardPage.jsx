@@ -6,7 +6,7 @@ import ScheduleCohost from '../../shared/ScheduleCohost';
 import ImportListingReviewsModal from '../../shared/ImportListingReviewsModal';
 import AIImportAssistantModal from '../../shared/AIImportAssistantModal';
 import ReferralModal from '../AccountProfilePage/components/ReferralModal';
-import useListingDashboardPageLogic from './useListingDashboardPageLogic';
+import { ListingDashboardProvider, useListingDashboard } from './context/ListingDashboardContext';
 import {
   NavigationHeader,
   ActionCardGrid,
@@ -26,17 +26,9 @@ import {
 import '../../../styles/components/listing-dashboard.css';
 import '../AccountProfilePage/AccountProfilePage.css'; // For ReferralModal styles
 
-export default function ListingDashboardPage() {
+// Inner component that uses context
+function ListingDashboardContent() {
   const [showReferralModal, setShowReferralModal] = useState(false);
-
-  // Add body class for page-specific header styling
-  useEffect(() => {
-    document.body.classList.add('listing-dashboard-page');
-    return () => {
-      document.body.classList.remove('listing-dashboard-page');
-    };
-  }, []);
-
   const {
     activeTab,
     listing,
@@ -51,11 +43,6 @@ export default function ListingDashboardPage() {
     handleTabChange,
     handleCardClick,
     handleBackClick,
-    handleDescriptionChange,
-    handleCancellationPolicyChange,
-    handleCancellationRestrictionsChange,
-    handleCopyLink,
-    handleAIAssistant,
     handleScheduleCohost,
     handleCloseScheduleCohost,
     handleCohostRequestSubmitted,
@@ -63,7 +50,6 @@ export default function ListingDashboardPage() {
     handleCloseImportReviews,
     handleSubmitImportReviews,
     isImportingReviews,
-    // AI Import Assistant
     showAIImportAssistant,
     handleCloseAIImportAssistant,
     handleAIImportComplete,
@@ -73,17 +59,13 @@ export default function ListingDashboardPage() {
     isAIComplete,
     aiGeneratedData,
     highlightedFields,
-    handleSetCoverPhoto,
-    handleDeletePhoto,
-    handleReorderPhotos,
     handleEditSection,
     handleCloseEdit,
     handleSaveEdit,
     updateListing,
     editFocusField,
-    handleBlockedDatesChange,
-    handleAvailabilityChange,
-  } = useListingDashboardPageLogic();
+    handleAIAssistant,
+  } = useListingDashboard();
 
   // Loading state
   if (isLoading) {
@@ -151,36 +133,21 @@ export default function ListingDashboardPage() {
           <div className="listing-dashboard__card">
             {/* Navigation Header */}
             <NavigationHeader
-              activeTab={activeTab}
-              onTabChange={handleTabChange}
-              counts={counts}
-              onBackClick={handleBackClick}
               onInviteClick={() => setShowReferralModal(true)}
-              listingId={listing.id}
             />
 
             {/* Alert Banner - Schedule Cohost CTA */}
-            <AlertBanner
-              onScheduleCohost={handleScheduleCohost}
-              existingRequest={existingCohostRequest}
-            />
+            <AlertBanner />
 
             {/* Action Cards Grid */}
-            <ActionCardGrid counts={counts} onCardClick={handleCardClick} />
+            <ActionCardGrid />
 
             {/* Secondary Actions */}
-            <SecondaryActions
-              onAIAssistant={handleAIAssistant}
-            />
+            <SecondaryActions />
 
             {/* Property Info Section */}
             <div className={highlightedFields?.has('name') ? 'listing-dashboard-section--ai-highlighted' : ''}>
-              <PropertyInfoSection
-                listing={listing}
-                onImportReviews={handleImportReviews}
-                onEdit={() => handleEditSection('name')}
-                reviewCount={counts.reviews}
-              />
+              <PropertyInfoSection />
             </div>
 
             {/* Description Section */}
@@ -189,33 +156,19 @@ export default function ListingDashboardPage() {
                 ? 'listing-dashboard-section--ai-highlighted'
                 : ''
             }>
-              <DescriptionSection
-                listing={listing}
-                onEditLodging={() => handleEditSection('description')}
-                onEditNeighborhood={() => handleEditSection('neighborhood')}
-              />
+              <DescriptionSection />
             </div>
 
             {/* Amenities Section */}
             <div className={highlightedFields?.has('amenities') ? 'listing-dashboard-section--ai-highlighted' : ''}>
-              <AmenitiesSection
-                listing={listing}
-                onEditInUnit={() => handleEditSection('amenities')}
-                onEditBuilding={() => handleEditSection('amenities', 'building')}
-              />
+              <AmenitiesSection />
             </div>
 
             {/* Details Section */}
-            <DetailsSection
-              listing={listing}
-              onEdit={() => handleEditSection('details')}
-            />
+            <DetailsSection />
 
             {/* Pricing & Lease Style Section */}
-            <PricingSection
-              listing={listing}
-              onEdit={() => handleEditSection('pricing')}
-            />
+            <PricingSection />
 
             {/* Rules Section */}
             <div className={
@@ -223,35 +176,17 @@ export default function ListingDashboardPage() {
                 ? 'listing-dashboard-section--ai-highlighted'
                 : ''
             }>
-              <RulesSection
-                listing={listing}
-                onEdit={() => handleEditSection('rules')}
-              />
+              <RulesSection />
             </div>
 
             {/* Availability Section */}
-            <AvailabilitySection
-              listing={listing}
-              onEdit={() => handleEditSection('availability')}
-              onBlockedDatesChange={handleBlockedDatesChange}
-              onAvailabilityChange={handleAvailabilityChange}
-            />
+            <AvailabilitySection />
 
             {/* Photos Section */}
-            <PhotosSection
-              listing={listing}
-              onAddPhotos={() => handleEditSection('photos')}
-              onDeletePhoto={handleDeletePhoto}
-              onSetCover={handleSetCoverPhoto}
-              onReorderPhotos={handleReorderPhotos}
-            />
+            <PhotosSection />
 
             {/* Cancellation Policy Section */}
-            <CancellationPolicySection
-              listing={listing}
-              onPolicyChange={handleCancellationPolicyChange}
-              onRestrictionsChange={handleCancellationRestrictionsChange}
-            />
+            <CancellationPolicySection />
           </div>
         </div>
       </div>
@@ -356,5 +291,22 @@ export default function ListingDashboardPage() {
         referrerName={currentUser?.['Name - First'] || currentUser?.firstName || currentUser?.name || ''}
       />
     </>
+  );
+}
+
+// Main component with Provider
+export default function ListingDashboardPage() {
+  // Add body class for page-specific header styling
+  useEffect(() => {
+    document.body.classList.add('listing-dashboard-page');
+    return () => {
+      document.body.classList.remove('listing-dashboard-page');
+    };
+  }, []);
+
+  return (
+    <ListingDashboardProvider>
+      <ListingDashboardContent />
+    </ListingDashboardProvider>
   );
 }

@@ -22,7 +22,10 @@
       "Bash(cat:*)",
       "Bash(bun install)",
       "Bash(start http://localhost:8000/guest-proposals)",
-      "Bash(start \"\" \"C:\\\\Users\\\\Split Lease\\\\splitleaseteam\\\\_Agent Context and Tools\\\\SL22\\\\Design\\\\2026\\\\Ongoing Projects\\\\guest-proposal \\(color scheme \\)\\\\index-page-color-scheme.html\")"
+      "Bash(start \"\" \"C:\\\\Users\\\\Split Lease\\\\splitleaseteam\\\\_Agent Context and Tools\\\\SL22\\\\Design\\\\2026\\\\Ongoing Projects\\\\guest-proposal \\(color scheme \\)\\\\index-page-color-scheme.html\")",
+      "Bash(timeout /t 5 /nobreak)",
+      "Bash(curl:*)",
+      "Bash(python:*)"
     ],
     "deny": [],
     "ask": []

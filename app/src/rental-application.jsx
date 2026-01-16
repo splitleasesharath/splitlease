@@ -1,5 +1,7 @@
+import React from 'react';
 import { createRoot } from 'react-dom/client';
 import RentalApplicationPage from './islands/pages/RentalApplicationPage.jsx';
+import { ErrorBoundary } from './islands/shared/ErrorBoundary';
 import { checkAuthStatus } from './lib/auth.js';
 
 // Import CSS for the rental application page
@@ -18,7 +20,11 @@ import './styles/components/rental-application.css';
   }
 
   // Always render the page - Header will show auth modal if not logged in
-  createRoot(document.getElementById('rental-application-page')).render(
-    <RentalApplicationPage requireAuth={true} isAuthenticated={isLoggedIn} />
+  createRoot(document.getElementById('root')).render(
+    <React.StrictMode>
+      <ErrorBoundary>
+        <RentalApplicationPage requireAuth={true} isAuthenticated={isLoggedIn} />
+      </ErrorBoundary>
+    </React.StrictMode>
   );
 })();

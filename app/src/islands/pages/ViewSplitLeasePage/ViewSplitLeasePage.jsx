@@ -35,6 +35,7 @@ import { DAY_ABBREVIATIONS, DEFAULTS, COLORS, SCHEDULE_PATTERNS } from '../../li
 import { createDay } from '../../lib/scheduleSelector/dayHelpers.js';
 import { supabase } from '../../lib/supabase.js';
 import { fetchInformationalTexts } from '../../lib/informationalTextsFetcher.js';
+import { logger } from '../../lib/logger.js';
 // NOTE: adaptDaysToBubble removed - database now uses 0-indexed days natively
 import '../../styles/listing-schedule-selector.css';
 import '../../styles/components/toast.css';
@@ -61,7 +62,7 @@ function getInitialScheduleFromUrl() {
   const daysParam = urlParams.get('days-selected');
 
   if (!daysParam) {
-    console.log('📅 ViewSplitLeasePage: No days-selected URL param, using empty initial selection');
+    logger.debug('ViewSplitLeasePage: No days-selected URL param, using empty initial selection');
     return [];
   }
 
@@ -73,10 +74,9 @@ function getInitialScheduleFromUrl() {
     if (validDays.length > 0) {
       // Convert to Day objects using createDay
       const dayObjects = validDays.map(dayIndex => createDay(dayIndex, true));
-      console.log('📅 ViewSplitLeasePage: Loaded schedule from URL:', {
+      logger.debug('ViewSplitLeasePage: Loaded schedule from URL:', {
         urlParam: daysParam,
-        dayIndices: validDays,
-        dayObjects: dayObjects.map(d => d.name)
+        dayIndices: validDays
       });
       return dayObjects;
     }
@@ -100,7 +100,7 @@ function getInitialReservationSpanFromUrl() {
 
   const parsed = parseInt(spanParam, 10);
   if (!isNaN(parsed) && parsed > 0) {
-    console.log('📅 ViewSplitLeasePage: Loaded reservation span from URL:', parsed);
+    logger.debug('ViewSplitLeasePage: Loaded reservation span from URL:', parsed);
     return parsed;
   }
 
@@ -120,7 +120,7 @@ function getInitialMoveInFromUrl() {
 
   // Basic validation: YYYY-MM-DD format
   if (/^\d{4}-\d{2}-\d{2}$/.test(moveInParam)) {
-    console.log('📅 ViewSplitLeasePage: Loaded move-in date from URL:', moveInParam);
+    logger.debug('ViewSplitLeasePage: Loaded move-in date from URL:', moveInParam);
     return moveInParam;
   }
 
@@ -224,14 +224,14 @@ export default function ViewSplitLeasePage() {
           const dayNumbers = selectedDayObjects.map(day => day.dayOfWeek);
           const smartDate = calculateSmartMoveInDate(dayNumbers);
           setMoveInDate(smartDate);
-          console.log('📅 ViewSplitLeasePage: URL move-in date was before minimum, using smart date:', smartDate);
+          logger.debug('ViewSplitLeasePage: URL move-in date was before minimum, using smart date:', smartDate);
         }
       } else {
         // No URL date provided, calculate smart default
         const dayNumbers = selectedDayObjects.map(day => day.dayOfWeek);
         const smartDate = calculateSmartMoveInDate(dayNumbers);
         setMoveInDate(smartDate);
-        console.log('📅 ViewSplitLeasePage: Set initial move-in date from URL selection:', smartDate);
+        logger.debug('ViewSplitLeasePage: Set initial move-in date from URL selection:', smartDate);
       }
     }
   }, []); // Run only once on mount - empty deps to prevent recalculation on state changes
@@ -252,28 +252,6 @@ export default function ViewSplitLeasePage() {
   const moveInInfoRef = useRef(null);
   const reservationSpanInfoRef = useRef(null);
   const flexibilityInfoRef = useRef(null);
-
-  // Debug: Log when activeInfoTooltip changes
-  useEffect(() => {
-    console.log('🎯 activeInfoTooltip changed to:', activeInfoTooltip);
-    console.log('🔗 Refs status:', {
-      moveInInfoRef: !!moveInInfoRef.current,
-      reservationSpanInfoRef: !!reservationSpanInfoRef.current,
-      flexibilityInfoRef: !!flexibilityInfoRef.current
-    });
-  }, [activeInfoTooltip]);
-
-  // Debug: Log when informationalTexts are loaded
-  useEffect(() => {
-    if (Object.keys(informationalTexts).length > 0) {
-      console.log('📚 informationalTexts loaded with', Object.keys(informationalTexts).length, 'entries');
-      console.log('🎯 Specific tags:', {
-        'aligned schedule with move-in': informationalTexts['aligned schedule with move-in'],
-        'move-in flexibility': informationalTexts['move-in flexibility'],
-        'Reservation Span': informationalTexts['Reservation Span']
-      });
-    }
-  }, [informationalTexts]);
 
   // Responsive state
   const [isMobile, setIsMobile] = useState(false);
@@ -304,7 +282,7 @@ export default function ViewSplitLeasePage() {
           const userData = await validateTokenAndFetchUser();
           if (userData) {
             setLoggedInUserData(userData);
-            console.log('👤 ViewSplitLeasePage: User data loaded:', userData.firstName);
+            logger.debug('ViewSplitLeasePage: User data loaded:', userData.firstName);
           }
         }
 
@@ -324,18 +302,9 @@ export default function ViewSplitLeasePage() {
 
         // Fetch complete listing data
         const listingData = await fetchListingComplete(listingId);
-        console.log('📋 ViewSplitLeasePage: Listing data fetched:', {
+        logger.debug('ViewSplitLeasePage: Listing data fetched:', {
           id: listingData._id,
-          name: listingData.Name,
-          amenitiesInUnit: listingData.amenitiesInUnit,
-          safetyFeatures: listingData.safetyFeatures,
-          houseRules: listingData.houseRules,
-          coordinates: listingData.coordinates,
-          slightlyDifferentAddress: listingData['Location - slightly different address'],
-          hasAmenitiesInUnit: listingData.amenitiesInUnit?.length > 0,
-          hasSafetyFeatures: listingData.safetyFeatures?.length > 0,
-          hasHouseRules: listingData.houseRules?.length > 0,
-          hasCoordinates: !!(listingData.coordinates?.lat && listingData.coordinates?.lng)
+          name: listingData.Name
         });
         setListing(listingData);
         setLoading(false);
@@ -398,13 +367,13 @@ export default function ViewSplitLeasePage() {
     // Automatically center and zoom the map when it loads for the first time
     // This replicates the behavior of clicking "Located in" link, but without scrolling
     if (shouldLoadMap && mapRef.current && listing && !hasAutoZoomedRef.current) {
-      console.log('🗺️ ViewSplitLeasePage: Auto-zooming map on initial load');
+      logger.debug('ViewSplitLeasePage: Auto-zooming map on initial load');
 
       // Wait for map to fully initialize before calling zoomToListing
       // Same 600ms timeout as handleLocationClick
       setTimeout(() => {
         if (mapRef.current && listing) {
-          console.log('🗺️ ViewSplitLeasePage: Calling zoomToListing for initial auto-zoom');
+          logger.debug('ViewSplitLeasePage: Calling zoomToListing for initial auto-zoom');
           mapRef.current.zoomToListing(listing._id);
           hasAutoZoomedRef.current = true;
         }
@@ -436,7 +405,7 @@ export default function ViewSplitLeasePage() {
       }
 
       try {
-        console.log('🔍 ViewSplitLeasePage: Checking for existing proposals for listing:', listing._id);
+        logger.debug('ViewSplitLeasePage: Checking for existing proposals for listing:', listing._id);
 
         const { data: existingProposals, error } = await supabase
           .from('proposal')
@@ -455,10 +424,10 @@ export default function ViewSplitLeasePage() {
         }
 
         if (existingProposals && existingProposals.length > 0) {
-          console.log('📋 ViewSplitLeasePage: User already has a proposal for this listing:', existingProposals[0]);
+          logger.debug('ViewSplitLeasePage: User already has a proposal for this listing:', existingProposals[0]);
           setExistingProposalForListing(existingProposals[0]);
         } else {
-          console.log('✅ ViewSplitLeasePage: No existing proposal found for this listing');
+          logger.debug('ViewSplitLeasePage: No existing proposal found for this listing');
           setExistingProposalForListing(null);
         }
       } catch (err) {
@@ -637,9 +606,7 @@ export default function ViewSplitLeasePage() {
         throw new Error('User ID not found. Please log in again.');
       }
 
-      console.log('📤 Submitting proposal to Edge Function...');
-      console.log('   Guest ID:', guestId);
-      console.log('   Listing ID:', proposalData.listingId);
+      logger.debug('Submitting proposal to Edge Function', { guestId, listingId: proposalData.listingId });
 
       // Days are already in JS format (0-6) - database now uses 0-indexed natively
       // proposalData.daysSelectedObjects contains Day objects with dayOfWeek property
@@ -730,20 +697,11 @@ export default function ViewSplitLeasePage() {
         customScheduleDescription: customScheduleDescription || ''
       };
 
-      console.log('📋 Edge Function payload:', edgeFunctionPayload);
-      console.log('📋 Payload field types:', {
-        guestId: typeof edgeFunctionPayload.guestId,
-        listingId: typeof edgeFunctionPayload.listingId,
-        moveInStartRange: typeof edgeFunctionPayload.moveInStartRange,
-        moveInEndRange: typeof edgeFunctionPayload.moveInEndRange,
-        daysSelected: { type: typeof edgeFunctionPayload.daysSelected, isArray: Array.isArray(edgeFunctionPayload.daysSelected), value: edgeFunctionPayload.daysSelected },
-        nightsSelected: { type: typeof edgeFunctionPayload.nightsSelected, isArray: Array.isArray(edgeFunctionPayload.nightsSelected), value: edgeFunctionPayload.nightsSelected },
-        reservationSpan: typeof edgeFunctionPayload.reservationSpan,
-        reservationSpanWeeks: typeof edgeFunctionPayload.reservationSpanWeeks,
-        checkIn: typeof edgeFunctionPayload.checkIn,
-        checkOut: typeof edgeFunctionPayload.checkOut,
-        proposalPrice: typeof edgeFunctionPayload.proposalPrice,
-        estimatedBookingTotal: typeof edgeFunctionPayload.estimatedBookingTotal,
+      logger.debug('Edge Function payload:', {
+        guestId: edgeFunctionPayload.guestId,
+        listingId: edgeFunctionPayload.listingId,
+        daysSelected: edgeFunctionPayload.daysSelected,
+        nightsSelected: edgeFunctionPayload.nightsSelected
       });
 
       // Call the proposal Edge Function (Supabase-native)
@@ -793,8 +751,7 @@ export default function ViewSplitLeasePage() {
         throw new Error(data?.error || 'Failed to submit proposal');
       }
 
-      console.log('✅ Proposal submitted successfully:', data);
-      console.log('   Proposal ID:', data.data?.proposalId);
+      logger.debug('Proposal submitted successfully', { proposalId: data.data?.proposalId });
 
       // Clear the localStorage draft on successful submission
       clearProposalDraft(proposalData.listingId);
@@ -825,13 +782,13 @@ export default function ViewSplitLeasePage() {
 
   // Handle proposal submission - checks auth first
   const handleProposalSubmit = async (proposalData) => {
-    console.log('📋 Proposal submission initiated:', proposalData);
+    logger.debug('Proposal submission initiated');
 
     // Check if user is logged in
     const isLoggedIn = await checkAuthStatus();
 
     if (!isLoggedIn) {
-      console.log('🔐 User not logged in, showing auth modal');
+      logger.debug('User not logged in, showing auth modal');
       // Store the proposal data for later submission
       setPendingProposalData(proposalData);
       // Close the proposal modal
@@ -842,13 +799,13 @@ export default function ViewSplitLeasePage() {
     }
 
     // User is logged in, proceed with submission
-    console.log('✅ User is logged in, submitting proposal');
+    logger.debug('User is logged in, submitting proposal');
     await submitProposal(proposalData);
   };
 
   // Handle successful authentication
   const handleAuthSuccess = async (authResult) => {
-    console.log('🎉 Auth success:', authResult);
+    logger.debug('Auth success');
 
     // Close the auth modal
     setShowAuthModal(false);
@@ -858,7 +815,7 @@ export default function ViewSplitLeasePage() {
       const userData = await validateTokenAndFetchUser();
       if (userData) {
         setLoggedInUserData(userData);
-        console.log('👤 User data updated after auth:', userData.firstName);
+        logger.debug('User data updated after auth:', userData.firstName);
       }
     } catch (err) {
       console.error('❌ Error fetching user data after auth:', err);
@@ -866,7 +823,7 @@ export default function ViewSplitLeasePage() {
 
     // If there's a pending proposal, submit it now
     if (pendingProposalData) {
-      console.log('📤 Submitting pending proposal after auth');
+      logger.debug('Submitting pending proposal after auth');
       // Small delay to ensure auth state is fully updated
       setTimeout(async () => {
         await submitProposal(pendingProposalData);
@@ -1981,7 +1938,6 @@ export default function ViewSplitLeasePage() {
               <span
                 onClick={(e) => {
                   e.stopPropagation();
-                  console.log('Reservation span text clicked, current state:', activeInfoTooltip);
                   setActiveInfoTooltip(activeInfoTooltip === 'reservationSpan' ? null : 'reservationSpan');
                 }}
                 style={{ cursor: 'pointer' }}
@@ -1992,7 +1948,6 @@ export default function ViewSplitLeasePage() {
                 ref={reservationSpanInfoRef}
                 onClick={(e) => {
                   e.stopPropagation();
-                  console.log('Reservation span info icon clicked, current state:', activeInfoTooltip);
                   setActiveInfoTooltip(activeInfoTooltip === 'reservationSpan' ? null : 'reservationSpan');
                 }}
                 style={{ width: '16px', height: '16px', color: '#9CA3AF', cursor: 'pointer' }}
@@ -2075,7 +2030,6 @@ export default function ViewSplitLeasePage() {
             borderRadius: '10px',
             border: '1px solid #E5E7EB'
           }}>
-            {console.log('Rendering prices - pricingBreakdown:', pricingBreakdown)}
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
@@ -2519,19 +2473,6 @@ export default function ViewSplitLeasePage() {
       )}
 
       {/* Informational Text Tooltips */}
-      {(() => {
-        console.log('📚 Rendering InformationalText components:', {
-          hasAlignedSchedule: !!informationalTexts['aligned schedule with move-in'],
-          hasMoveInFlexibility: !!informationalTexts['move-in flexibility'],
-          hasReservationSpan: !!informationalTexts['Reservation Span'],
-          activeTooltip: activeInfoTooltip,
-          alignedScheduleContent: informationalTexts['aligned schedule with move-in']?.desktop,
-          moveInFlexibilityContent: informationalTexts['move-in flexibility']?.desktop,
-          reservationSpanContent: informationalTexts['Reservation Span']?.desktop
-        });
-        return null;
-      })()}
-
       {informationalTexts['aligned schedule with move-in'] && (
         <InformationalText
           isOpen={activeInfoTooltip === 'moveIn'}

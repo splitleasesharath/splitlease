@@ -659,7 +659,29 @@ const FREEFORM_TOPICS = [
   },
 ];
 
-// TODO(human): Implement the topic detection logic
+// Implement topic detection from user query
+const detectTopicFromQuery = (query) => {
+  const lowerQuery = query.toLowerCase();
+
+  // Topic patterns
+  const topicPatterns = {
+    pricing: /price|cost|rent|budget|afford|cheap|expensive/i,
+    neighborhood: /neighborhood|area|location|where|live/i,
+    amenities: /amenity|feature|gym|pool|parking|laundry/i,
+    commute: /commute|transit|subway|bus|train|walk/i,
+    safety: /safe|crime|security|family/i,
+    comparison: /compare|vs|versus|better|difference/i
+  };
+
+  for (const [topic, pattern] of Object.entries(topicPatterns)) {
+    if (pattern.test(lowerQuery)) {
+      return topic;
+    }
+  }
+
+  return 'general';
+};
+
 function detectTopics(text) {
   if (!text || text.trim().length === 0) {
     return [];
