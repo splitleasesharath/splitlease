@@ -21,6 +21,31 @@ import WhyThisProposal from './components/WhyThisProposal.jsx';
 import './SuggestedProposalPopup.css';
 
 /**
+ * Borough FK ID to display name mapping
+ * 'Location - Borough' stores FK IDs to reference_table.zat_geo_borough_toplevel
+ */
+const BOROUGH_ID_TO_LABEL = {
+  '1607041299637x913970439175620100': 'Brooklyn',
+  '1607041299687x679479834266385900': 'Manhattan',
+  '1607041299715x741251947580746200': 'Bronx',
+  '1607041299828x406969561802059650': 'Queens',
+  '1686599616073x348655546878883200': 'Weehawken, NJ',
+  '1686674905048x436838997624262400': 'Newark, NJ',
+  '1607041299795x174606299553766500': 'Staten Island',
+};
+
+/**
+ * Check if a value looks like a Bubble FK ID (not a display name)
+ * @param {string} value - The value to check
+ * @returns {boolean} True if it looks like an ID
+ */
+const isBubbleFkId = (value) => {
+  if (!value || typeof value !== 'string') return false;
+  // Bubble IDs are long numeric strings with 'x' separator
+  return value.includes('x') && value.length > 20;
+};
+
+/**
  * @param {Object} props
  * @param {Object} props.proposal - Enriched proposal object with _listing, _host, etc.
  * @param {number} props.currentIndex - Current proposal index (0-based)
@@ -79,8 +104,13 @@ export default function SuggestedProposalPopup({
     : listing['Location - Coordinates'] || null;
 
   // Get neighborhood/borough for location display (more useful than full address)
-  const borough = listing['Location - Borough'] || '';
-  const neighborhood = listing['Location - Hood'] || listing['neighborhood (manual input by user)'] || '';
+  // Resolve borough FK ID to display label
+  const rawBorough = listing['Location - Borough'] || '';
+  const borough = BOROUGH_ID_TO_LABEL[rawBorough] || (isBubbleFkId(rawBorough) ? '' : rawBorough);
+
+  // For neighborhood, skip if it's an unresolved FK ID (no static mapping available)
+  const rawNeighborhood = listing['Location - Hood'] || listing['neighborhood (manual input by user)'] || '';
+  const neighborhood = isBubbleFkId(rawNeighborhood) ? '' : rawNeighborhood;
 
   // Negotiation summary (AI explanation)
   const summaries = proposal._negotiationSummaries || [];
