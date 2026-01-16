@@ -697,12 +697,8 @@ export default function HomePage() {
     }
   }, []);
 
-  // If we need to render the recovery page instead of home
-  if (RecoveryComponent) {
-    return <RecoveryComponent />;
-  }
-
   // Check authentication status on mount
+  // NOTE: Must be BEFORE early return to comply with Rules of Hooks
   useEffect(() => {
     const checkAuth = async () => {
       const loggedIn = await checkAuthStatus();
@@ -712,7 +708,11 @@ export default function HomePage() {
   }, []);
 
   // Mount SearchScheduleSelector component in hero section
+  // NOTE: Must be BEFORE early return to comply with Rules of Hooks
   useEffect(() => {
+    // Skip if RecoveryComponent is being shown (we're rendering something else)
+    if (RecoveryComponent) return;
+
     const mountPoint = document.getElementById('hero-schedule-selector');
     if (!mountPoint) return;
 
@@ -730,7 +730,12 @@ export default function HomePage() {
     return () => {
       root.unmount();
     };
-  }, []);
+  }, [RecoveryComponent]);
+
+  // If we need to render the recovery page instead of home
+  if (RecoveryComponent) {
+    return <RecoveryComponent />;
+  }
 
   const handleExploreRentals = () => {
     // Navigate to search page with current day selection

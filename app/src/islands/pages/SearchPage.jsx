@@ -15,7 +15,7 @@ import { supabase } from '../../lib/supabase.js';
 import { logger } from '../../lib/logger.js';
 import { fetchProposalsByGuest, fetchLastProposalDefaults } from '../../lib/proposalDataFetcher.js';
 import { fetchZatPriceConfiguration } from '../../lib/listingDataFetcher.js';
-import { checkAuthStatus, getUserId, getSessionId, logoutUser, getFirstName, getAvatarUrl } from '../../lib/auth.js';
+import { checkAuthStatus, getUserId, getSessionId, logoutUser, getFirstName, getAvatarUrl, validateTokenAndFetchUser } from '../../lib/auth.js';
 import { getUserType as getStoredUserType, getAuthState } from '../../lib/secureStorage.js';
 import { useAuthenticatedUser } from '../../hooks/useAuthenticatedUser.js';
 import { PRICE_TIERS, SORT_OPTIONS, WEEK_PATTERNS, LISTING_CONFIG, VIEW_LISTING_URL, SEARCH_URL } from '../../lib/constants.js';
@@ -1737,7 +1737,7 @@ export default function SearchPage() {
     logger.debug('[scrollToListingCard] Looking for listing:', listingId);
 
     // First check if the listing card already exists in the DOM
-    let listingCard = document.querySelector(`[data-listing-id="${listingId}"]`);
+    const listingCard = document.querySelector(`[data-listing-id="${listingId}"]`);
     logger.debug('[scrollToListingCard] Initial card search result:', listingCard);
 
     if (listingCard) {
@@ -2955,7 +2955,7 @@ export default function SearchPage() {
               onMarkerClick={(listing) => {
                 logger.debug('Marker clicked:', listing.title);
                 // Close mobile map and scroll to listing
-                setIsMobileMapVisible(false);
+                setMobileMapVisible(false);
                 setTimeout(() => scrollToListingCard(listing), 300);
               }}
               onMessageClick={(listing) => {

@@ -17,7 +17,7 @@
 
 import { useState, useMemo } from 'react';
 import { formatPrice, formatDate } from '../../../lib/proposals/dataTransformers.js';
-import { getStatusConfig, getActionsForStatus, isTerminalStatus, isCompletedStatus, isSuggestedProposal, shouldShowStatusBanner, getUsualOrder, PROPOSAL_STATUSES } from '../../../logic/constants/proposalStatuses.js';
+import { getStatusConfig, isTerminalStatus, isCompletedStatus, shouldShowStatusBanner, getUsualOrder } from '../../../logic/constants/proposalStatuses.js';
 import { shouldHideVirtualMeetingButton } from '../../../lib/proposals/statusButtonConfig.js';
 import { navigateToMessaging } from '../../../logic/workflows/proposals/navigationWorkflow.js';
 import { executeDeleteProposal } from '../../../logic/workflows/proposals/cancelProposalWorkflow.js';
@@ -29,7 +29,7 @@ import VirtualMeetingManager from '../../shared/VirtualMeetingManager/VirtualMee
 import FullscreenProposalMapModal from '../../modals/FullscreenProposalMapModal.jsx';
 import { showToast } from '../../shared/Toast.jsx';
 import { supabase } from '../../../lib/supabase.js';
-import { canConfirmSuggestedProposal, getNextStatusAfterConfirmation, needsRentalApplicationSubmission } from '../../../logic/rules/proposals/proposalRules.js';
+import { canConfirmSuggestedProposal, getNextStatusAfterConfirmation } from '../../../logic/rules/proposals/proposalRules.js';
 
 // Day abbreviations for schedule display (single letter like Bubble)
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -47,7 +47,7 @@ const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frid
  * @param {string|number} dayValue - The day value to convert
  * @returns {string} The day name or empty string if invalid
  */
-function convertDayValueToName(dayValue) {
+function _convertDayValueToName(dayValue) {
   if (dayValue === null || dayValue === undefined) return '';
 
   // If it's a number, convert from 0-indexed to day name
@@ -439,7 +439,7 @@ function StatusBanner({ status, cancelReason, isCounteroffer }) {
 
   if (!config) return null;
 
-  let displayText = config.text;
+  const displayText = config.text;
   let strongText = '';
   let detailText = '';
 
@@ -701,7 +701,7 @@ function InlineProgressTracker({ status, usualOrder = 0, isTerminal = false, sta
         const isCancelled = stageColor === PROGRESS_COLORS.cancelled;
 
         // Connector color: completed (primary purple) ONLY if previous dot is completed
-        const connectorColor = prevStageColor === PROGRESS_COLORS.completed
+        const _connectorColor = prevStageColor === PROGRESS_COLORS.completed
           ? PROGRESS_COLORS.completed
           : prevStageColor === PROGRESS_COLORS.cancelled
             ? PROGRESS_COLORS.cancelled
@@ -745,7 +745,122 @@ function InlineProgressTracker({ status, usualOrder = 0, isTerminal = false, sta
 // MAIN COMPONENT
 // ============================================================================
 
-export default function ProposalCard({ proposal, transformedProposal, statusConfig, buttonConfig, allProposals = [], onProposalSelect, onProposalDeleted }) {
+export default function ProposalCard({ proposal, statusConfig, buttonConfig, allProposals = [], onProposalSelect, onProposalDeleted }) {
+  // ============================================================================
+  // ALL HOOKS MUST BE DECLARED FIRST (React Rules of Hooks)
+  // ============================================================================
+
+  // House rules toggle state
+  const [showHouseRules, setShowHouseRules] = useState(false);
+  // Host profile modal state
+  const [showHostProfileModal, setShowHostProfileModal] = useState(false);
+  // Proposal details modal state (GuestEditingProposalModal)
+  const [showProposalDetailsModal, setShowProposalDetailsModal] = useState(false);
+  // Initial view for the proposal details modal ('pristine' | 'editing' | 'general' | 'cancel')
+  const [proposalDetailsModalInitialView, setProposalDetailsModalInitialView] = useState('pristine');
+  // Virtual Meeting Manager modal state
+  const [showVMModal, setShowVMModal] = useState(false);
+  const [vmInitialView, setVmInitialView] = useState('');
+  // Map modal state
+  const [showMapModal, setShowMapModal] = useState(false);
+  // Cancel proposal modal state
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  // Delete proposal loading state
+  const [isDeleting, setIsDeleting] = useState(false);
+  // Confirm proposal loading state (for SL-suggested proposals)
+  const [isConfirming, setIsConfirming] = useState(false);
+
+  // VM button configuration - memoized based on virtualMeeting state
+  const virtualMeeting = proposal?.virtualMeeting;
+  const currentUserId = proposal?.Guest;
+  const status = proposal?.Status;
+
+  const vmConfig = useMemo(() => {
+    // Conditional 7-8: Check status-based hiding first
+    if (!status || shouldHideVirtualMeetingButton(status)) {
+      return { visible: false };
+    }
+
+    // No VM exists - request new meeting
+    if (!virtualMeeting) {
+      return {
+        visible: true,
+        view: 'request',
+        disabled: false,
+        label: 'Request Virtual Meeting',
+        className: 'btn-vm-request'
+      };
+    }
+
+    // Conditional 6: VM declined - can request alternative times
+    if (virtualMeeting['meeting declined'] === true) {
+      return {
+        visible: true,
+        view: 'request',
+        disabled: false,
+        label: 'Virtual Meeting Declined',
+        className: 'btn-vm-declined',
+        style: { color: '#DB2E2E', fontWeight: 'bold' }
+      };
+    }
+
+    // Conditional 5: Meeting confirmed by Split Lease - show details
+    if (virtualMeeting['booked date'] && virtualMeeting['confirmedBySplitLease'] === true) {
+      return {
+        visible: true,
+        view: 'details',
+        disabled: false,
+        label: 'Meeting confirmed',
+        className: 'btn-vm-confirmed'
+      };
+    }
+
+    // Conditional 4: Meeting accepted but awaiting SL confirmation
+    if (virtualMeeting['booked date'] && !virtualMeeting['confirmedBySplitLease']) {
+      return {
+        visible: true,
+        view: 'details',
+        disabled: true,
+        label: 'Virtual Meeting Accepted',
+        className: 'btn-vm-accepted'
+      };
+    }
+
+    // Conditional 2: Current user requested - waiting for response
+    if (virtualMeeting['requested by'] === currentUserId) {
+      return {
+        visible: true,
+        view: null,
+        disabled: true,
+        label: 'Virtual Meeting Requested',
+        className: 'btn-vm-requested'
+      };
+    }
+
+    // Conditional 1: Other party requested - respond
+    if (virtualMeeting['requested by'] && virtualMeeting['requested by'] !== currentUserId) {
+      return {
+        visible: true,
+        view: 'respond',
+        disabled: false,
+        label: 'Respond to Virtual Meeting Request',
+        className: 'btn-vm-respond'
+      };
+    }
+
+    // Default fallback - can request new meeting
+    return {
+      visible: true,
+      view: 'request',
+      disabled: false,
+      label: 'Request Virtual Meeting',
+      className: 'btn-vm-request'
+    };
+  }, [virtualMeeting, currentUserId, status]);
+
+  // ============================================================================
+  // EARLY RETURN (after all hooks)
+  // ============================================================================
   if (!proposal) {
     return null;
   }
@@ -781,7 +896,7 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
     return locationData?.address || null;
   };
 
-  const mapAddress = getListingAddress();
+  const _mapAddress = getListingAddress();
 
   // Extract data
   const listingName = listing?.Name || 'Listing';
@@ -794,7 +909,7 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
     null;
 
   const hostName = host?.['Name - First'] || host?.['Name - Full'] || 'Host';
-  const hostPhoto = host?.['Profile Photo'];
+  const _hostPhoto = host?.['Profile Photo'];
 
   // Schedule info
   // Handle double-encoded JSONB: "Days Selected" may come as a JSON string that needs parsing
@@ -825,13 +940,13 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
     ? proposal['Total Price for Reservation (guest)']
     : null;
   const cleaningFee = proposal['cleaning fee'] || 0;
-  const damageDeposit = proposal['damage deposit'] || 0;
+  const _damageDeposit = proposal['damage deposit'] || 0;
 
   // Move-in/move-out dates
   const moveInStart = proposal['Move in range start'];
   const moveInEnd = proposal['Move in range end'];
   const anticipatedMoveIn = formatDate(moveInStart);
-  const anticipatedMoveOut = formatDate(moveInEnd);
+  const _anticipatedMoveOut = formatDate(moveInEnd);
 
   // Check-in/out times
   const checkInTime = listing?.['Check in time'] || '2:00 pm';
@@ -841,38 +956,10 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
   const houseRules = proposal.houseRules || [];
   const hasHouseRules = Array.isArray(houseRules) && houseRules.length > 0;
 
-  // House rules toggle state
-  const [showHouseRules, setShowHouseRules] = useState(false);
-
-  // Host profile modal state
-  const [showHostProfileModal, setShowHostProfileModal] = useState(false);
-
-  // Proposal details modal state (GuestEditingProposalModal)
-  const [showProposalDetailsModal, setShowProposalDetailsModal] = useState(false);
-  // Initial view for the proposal details modal ('pristine' | 'editing' | 'general' | 'cancel')
-  const [proposalDetailsModalInitialView, setProposalDetailsModalInitialView] = useState('pristine');
-
-  // Virtual Meeting Manager modal state
-  const [showVMModal, setShowVMModal] = useState(false);
-  const [vmInitialView, setVmInitialView] = useState('');
-
-  // Map modal state
-  const [showMapModal, setShowMapModal] = useState(false);
-
-  // Cancel proposal modal state
-  const [showCancelModal, setShowCancelModal] = useState(false);
-
-  // Delete proposal loading state
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  // Confirm proposal loading state (for SL-suggested proposals)
-  const [isConfirming, setIsConfirming] = useState(false);
-
   // Status and progress - derive dynamically from statusConfig
-  const status = proposal.Status;
   const currentStatusConfig = statusConfig || getStatusConfig(status);
-  const currentStageIndex = (currentStatusConfig?.stage || 1) - 1; // Convert 1-indexed to 0-indexed
-  const statusColor = currentStatusConfig?.color || 'blue';
+  const _currentStageIndex = (currentStatusConfig?.stage || 1) - 1; // Convert 1-indexed to 0-indexed
+  const _statusColor = currentStatusConfig?.color || 'blue';
   const isTerminal = isTerminalStatus(status);
   const isCompleted = isCompletedStatus(status);
   const stageLabels = getStageLabels(status, proposal);
@@ -883,129 +970,19 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
   // Cancel reason (for cancelled proposals)
   const cancelReason = proposal['Cancelled Reason'] || proposal['reason for cancellation'];
 
-  // Virtual meeting status - use virtualMeeting object from the fetched data
-  const virtualMeeting = proposal.virtualMeeting;
-  const vmBookedDate = virtualMeeting?.['booked date'];
-  const vmConfirmedBySL = virtualMeeting?.['confirmedBySplitLease'];
-  const vmDeclined = virtualMeeting?.['meeting declined'];
-  const vmRequestedBy = virtualMeeting?.['requested by'];
-
-  // Current user ID (for comparing who requested the VM)
-  const currentUserId = proposal.Guest;
-
-  // Get available actions for this status
-  const availableActions = getActionsForStatus(status);
-
   // Construct current user object for VirtualMeetingManager
   const currentUser = {
     _id: currentUserId,
     typeUserSignup: 'guest'
   };
 
-  // ============================================================================
-  // VM BUTTON CONFIGURATION (implements 8 Bubble conditionals)
-  // ============================================================================
-  /**
-   * Determine VM button state based on the full virtual meeting lifecycle
-   * Maps Bubble's 8 conditionals to React state:
-   * 1. Other party requested -> "Respond to Virtual Meeting Request" (view: respond)
-   * 2. Current user requested -> "Virtual Meeting Requested" (disabled)
-   * 3. Button pressed -> visual feedback (handled by CSS)
-   * 4. Booked but not confirmed -> "Virtual Meeting Accepted" (disabled)
-   * 5. Booked and confirmed -> "Meeting confirmed" (view: details)
-   * 6. Meeting declined -> "Virtual Meeting Declined" (view: request, red style)
-   * 7-8. Hidden for rejected/cancelled/activated/SL-suggested statuses
-   */
-  const vmConfig = useMemo(() => {
-    // Conditional 7-8: Check status-based hiding first
-    if (shouldHideVirtualMeetingButton(status)) {
-      return { visible: false };
-    }
-
-    // No VM exists - request new meeting
-    if (!virtualMeeting) {
-      return {
-        visible: true,
-        view: 'request',
-        disabled: false,
-        label: 'Request Virtual Meeting',
-        className: 'btn-vm-request'
-      };
-    }
-
-    // Conditional 6: VM declined - can request alternative times
-    if (virtualMeeting['meeting declined'] === true) {
-      return {
-        visible: true,
-        view: 'request', // Opens request view in "suggesting alternatives" mode
-        disabled: false,
-        label: 'Virtual Meeting Declined',
-        className: 'btn-vm-declined',
-        style: { color: '#DB2E2E', fontWeight: 'bold' }
-      };
-    }
-
-    // Conditional 5: Meeting confirmed by Split Lease - show details
-    if (virtualMeeting['booked date'] && virtualMeeting['confirmedBySplitLease'] === true) {
-      return {
-        visible: true,
-        view: 'details',
-        disabled: false,
-        label: 'Meeting confirmed',
-        className: 'btn-vm-confirmed'
-      };
-    }
-
-    // Conditional 4: Meeting accepted but awaiting SL confirmation
-    if (virtualMeeting['booked date'] && !virtualMeeting['confirmedBySplitLease']) {
-      return {
-        visible: true,
-        view: 'details', // Can view details but meeting not yet confirmed
-        disabled: true,
-        label: 'Virtual Meeting Accepted',
-        className: 'btn-vm-accepted'
-      };
-    }
-
-    // Conditional 2: Current user requested - waiting for response
-    if (virtualMeeting['requested by'] === currentUserId) {
-      return {
-        visible: true,
-        view: null, // No action available
-        disabled: true,
-        label: 'Virtual Meeting Requested',
-        className: 'btn-vm-requested'
-      };
-    }
-
-    // Conditional 1: Other party requested - respond
-    if (virtualMeeting['requested by'] && virtualMeeting['requested by'] !== currentUserId) {
-      return {
-        visible: true,
-        view: 'respond',
-        disabled: false,
-        label: 'Respond to Virtual Meeting Request',
-        className: 'btn-vm-respond'
-      };
-    }
-
-    // Default fallback - can request new meeting
-    return {
-      visible: true,
-      view: 'request',
-      disabled: false,
-      label: 'Request Virtual Meeting',
-      className: 'btn-vm-request'
-    };
-  }, [virtualMeeting, currentUserId, status]);
-
   // Handler for opening proposal details modal
-  const openProposalModal = () => {
+  const _openProposalModal = () => {
     setShowProposalDetailsModal(true);
   };
 
   // Handler for closing proposal details modal
-  const closeProposalModal = () => {
+  const _closeProposalModal = () => {
     setShowProposalDetailsModal(false);
   };
 
