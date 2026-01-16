@@ -5,7 +5,7 @@ Audit Type: general
 
 ~~~~~
 
-## PAGE GROUP: /search (Chunks: 1, 2, 3, 4, 5)
+## PAGE GROUP: /search (Chunks: 1, 2, 3, 4, 5, 17)
 
 ### CHUNK 1: SearchPage violates Hollow Component pattern - has 56 useState calls
 **File:** `app/src/islands/pages/SearchPage.jsx`
@@ -764,6 +764,9 @@ app/src/islands/pages/
 
 ### Priority Order for Implementation:
 
+**CRITICAL (Fix Immediately)**
+0. **Chunk 17** - Fix pulseTimeoutRef scope bug (RUNTIME ERROR affecting /search)
+
 **High Priority (Immediate)**
 1. **Chunk 11, 12, 15** - Delete backup files (quick wins, reduces confusion)
 2. **Chunk 6, 8** - Remove duplicate logic hook files
@@ -794,8 +797,108 @@ app/src/islands/pages/
 - `app/src/islands/pages/SearchPage/` directory structure
 - `app/src/islands/pages/SearchPage/components/` directory with extracted components
 
+~~~~~
+
+### CHUNK 17: CRITICAL BUG - pulseTimeoutRef scope error in ListingsGrid
+**File:** `app/src/islands/pages/SearchPage.jsx`
+**Line:** 595-602
+**Issue:** **RUNTIME BUG** - `pulseTimeoutRef` is defined in the parent SearchPage component (line 728) but is referenced inside the ListingsGrid component's `onCardLeave` callback (lines 595-602). Since ListingsGrid is a separate function component, `pulseTimeoutRef` is NOT in scope and will cause a `ReferenceError` when users hover over listing cards.
+**Affected Pages:** /search
+
+**Current Code:**
+```javascript
+// Line 544 - ListingsGrid is a separate component
+function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, ... }) {
+  // ...
+
+  // Lines 593-604 - pulseTimeoutRef is NOT in scope here!
+  onCardLeave={() => {
+    // Delay stopPulse to allow hovering to map without losing pulse
+    if (pulseTimeoutRef.current) {        // ❌ ReferenceError!
+      clearTimeout(pulseTimeoutRef.current);
+    }
+    pulseTimeoutRef.current = setTimeout(() => {  // ❌ ReferenceError!
+      if (mapRef.current) {
+        mapRef.current.stopPulse();
+      }
+      pulseTimeoutRef.current = null;
+    }, 150);
+  }}
+}
+
+// Line 728 - pulseTimeoutRef defined in SearchPage, not ListingsGrid
+export default function SearchPage() {
+  const pulseTimeoutRef = useRef(null);
+  // ...
+}
+```
+
+**Refactored Code:**
+```javascript
+// Option 1: Pass pulseTimeoutRef as a prop to ListingsGrid
+function ListingsGrid({
+  listings,
+  onLoadMore,
+  hasMore,
+  isLoading,
+  pulseTimeoutRef,  // ✅ Add as prop
+  mapRef,           // ✅ Also pass mapRef
+  ...rest
+}) {
+  // Now pulseTimeoutRef is in scope
+  onCardLeave={() => {
+    if (pulseTimeoutRef.current) {
+      clearTimeout(pulseTimeoutRef.current);
+    }
+    pulseTimeoutRef.current = setTimeout(() => {
+      if (mapRef.current) {
+        mapRef.current.stopPulse();
+      }
+      pulseTimeoutRef.current = null;
+    }, 150);
+  }}
+}
+
+// In SearchPage, pass the ref:
+<ListingsGrid
+  listings={displayedListings}
+  pulseTimeoutRef={pulseTimeoutRef}
+  mapRef={mapRef}
+  // ... other props
+/>
+
+// Option 2 (Better): Move the callback logic to SearchPage and pass a handler
+function ListingsGrid({ onCardLeave, ... }) {
+  // Just call the handler
+  onCardLeave={() => onCardLeave()}
+}
+
+// In SearchPage:
+const handleCardLeave = useCallback(() => {
+  if (pulseTimeoutRef.current) {
+    clearTimeout(pulseTimeoutRef.current);
+  }
+  pulseTimeoutRef.current = setTimeout(() => {
+    if (mapRef.current) {
+      mapRef.current.stopPulse();
+    }
+    pulseTimeoutRef.current = null;
+  }, 150);
+}, []);
+
+<ListingsGrid onCardLeave={handleCardLeave} ... />
+```
+
+**Testing:**
+- [ ] Verify no ReferenceError when hovering over listing cards
+- [ ] Test pulse animation stops correctly when leaving card
+- [ ] Test pulse persists when transitioning to map
+- [ ] Console should be free of errors during card interactions
+
+~~~~~
+
 ### Key Metrics:
-- **Total chunks:** 16
+- **Total chunks:** 17
 - **Files affected:** ~15+ files
 - **Lines of duplicated code to remove:** ~500+
 - **Estimated complexity reduction:** SearchPage from 3,322 lines to ~300 lines (render only)
