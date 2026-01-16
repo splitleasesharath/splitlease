@@ -57,7 +57,7 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 16px;
+  padding: 80px 16px 16px 16px; /* Extra top padding to clear the header */
   overflow-y: auto;
   animation: fadeIn 0.2s ease-in-out;
 }
@@ -75,7 +75,7 @@
   width: 100%;
   max-width: 480px;
   min-height: 100px;
-  max-height: calc(100vh - 32px);
+  max-height: calc(100vh - 96px); /* Account for 80px top + 16px bottom padding */
   background-color: var(--gep-bg-primary);
   border-radius: var(--gep-roundness-large);
   box-sizing: border-box;
