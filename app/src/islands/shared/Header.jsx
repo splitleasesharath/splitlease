@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { redirectToLogin, loginUser, signupUser, logoutUser, validateTokenAndFetchUser, isProtectedPage, getAuthToken, getFirstName, getAvatarUrl, checkUrlForAuthError } from '../../lib/auth.js';
+import { redirectToLogin, loginUser, signupUser, logoutUser, validateTokenAndFetchUser, isProtectedPage, getAuthToken, getFirstName, getAvatarUrl, checkUrlForAuthError, getUserId } from '../../lib/auth.js';
 import { SIGNUP_LOGIN_URL, SEARCH_URL, HOST_OVERVIEW_URL } from '../../lib/constants.js';
 import { getUserType as getStoredUserType, getAuthState } from '../../lib/secureStorage.js';
 import { supabase } from '../../lib/supabase.js';
@@ -8,6 +8,9 @@ import LoggedInAvatar from './LoggedInAvatar/LoggedInAvatar.jsx';
 import SignUpLoginModal from './SignUpLoginModal.jsx';
 import { useHostMenuData, getHostMenuConfig } from './Header/useHostMenuData.js';
 import { useGuestMenuData, getGuestMenuConfig } from './Header/useGuestMenuData.js';
+import SuggestedProposalPopup from './SuggestedProposals/SuggestedProposalPopup.jsx';
+import HeaderSuggestedProposalTrigger from './SuggestedProposals/HeaderSuggestedProposalTrigger.jsx';
+import { fetchPendingConfirmationCount, fetchPendingConfirmationProposals, markProposalInterested, dismissProposal } from './SuggestedProposals/suggestedProposalService.js';
 
 export default function Header({ autoShowLogin = false }) {
   const [mobileMenuActive, setMobileMenuActive] = useState(false);
@@ -45,6 +48,13 @@ export default function Header({ autoShowLogin = false }) {
 
   // CreateDuplicateListingModal State
   const [showListPropertyModal, setShowListPropertyModal] = useState(false);
+
+  // Suggested Proposal Popup State
+  const [pendingProposalCount, setPendingProposalCount] = useState(0);
+  const [showSuggestedPopup, setShowSuggestedPopup] = useState(false);
+  const [pendingProposals, setPendingProposals] = useState([]);
+  const [currentProposalIndex, setCurrentProposalIndex] = useState(0);
+  const [isProcessingProposal, setIsProcessingProposal] = useState(false);
 
   // Dynamic menu data hooks for Host and Guest dropdowns
   const userId = currentUser?.userId || currentUser?.id || '';
