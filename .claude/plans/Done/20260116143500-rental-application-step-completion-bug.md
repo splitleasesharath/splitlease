@@ -4,6 +4,22 @@
 **Reported By**: User (terrencegrey@test.com)
 **Component**: `RentalApplicationWizardModal`
 **Severity**: Medium (UI display issue, functionality works)
+**Status**: ✅ FIXED
+
+---
+
+## Regression Source
+
+**Commit**: `76e9bd27` (Jan 15, 2026)
+**Author**: splitleasesharath
+**Message**: "docs(audit): Add comprehensive code refactoring plan for app/"
+
+This commit was labeled as a documentation change but **accidentally deleted ~200 lines of working code** from `rentalApplicationFieldMapper.ts`, including:
+- `completedSteps` and `lastStep` return values
+- `calculateCompletedSteps()`, `isStepComplete()`, `findLastCompletedStep()` functions
+- `normalizeEmploymentStatus()`, `normalizeDOB()`, `extractAddressRobust()`, `normalizeLengthResided()` functions
+
+The code was previously fixed in commits `e4f8c9ca` and `1e86cec3` just one week before being accidentally removed.
 
 ---
 

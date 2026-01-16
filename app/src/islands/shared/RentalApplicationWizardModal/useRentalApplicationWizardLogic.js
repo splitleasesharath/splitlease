@@ -523,6 +523,13 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
   // ============================================================================
   // Pure function to check step completion - considers visited state for optional steps
   const checkStepComplete = useCallback((stepNumber, visitedStepsArray) => {
+    // For submitted applications, ALL steps are complete by definition
+    // This was previously handled in mapDatabaseToFormData but was accidentally
+    // removed in commit 76e9bd27. This is the simplest fix that avoids race conditions.
+    if (applicationStatus === 'submitted') {
+      return true;
+    }
+
     let stepFields = [...STEP_FIELDS[stepNumber]];
 
     // Add conditional employment fields for step 4
@@ -543,7 +550,7 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
       const value = formData[field];
       return value !== undefined && value !== null && value !== '';
     });
-  }, [formData]);
+  }, [formData, applicationStatus]);
 
   // Update completed steps when form data or visited steps change
   useEffect(() => {
