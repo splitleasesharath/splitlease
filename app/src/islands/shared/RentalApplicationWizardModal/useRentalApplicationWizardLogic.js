@@ -74,6 +74,9 @@ const EMPLOYMENT_STATUS_OPTIONS = [
 const MAX_OCCUPANTS = 6;
 const TOTAL_STEPS = 7;
 
+// Stable reference for all steps complete (avoids infinite loops in useEffect)
+const ALL_STEPS_COMPLETE = Object.freeze([1, 2, 3, 4, 5, 6, 7]);
+
 // File upload config
 const FILE_TYPE_MAP = {
   employmentProof: { urlField: 'proofOfEmploymentUrl', backendType: 'employmentProof' },
@@ -549,10 +552,16 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
   useEffect(() => {
     // For submitted applications, ALL steps are complete by definition
     // This was previously handled in mapDatabaseToFormData but was accidentally
-    // removed in commit 76e9bd27. Checking here avoids infinite loop from
-    // adding applicationStatus to checkStepComplete's dependency array.
+    // removed in commit 76e9bd27. Using a stable constant reference (ALL_STEPS_COMPLETE)
+    // and functional update to avoid infinite loops.
     if (applicationStatus === 'submitted') {
-      setCompletedSteps([1, 2, 3, 4, 5, 6, 7]);
+      setCompletedSteps(prev => {
+        // Already has all steps? Return same reference to avoid re-render
+        if (prev.length === 7 && prev.every((v, i) => v === ALL_STEPS_COMPLETE[i])) {
+          return prev;
+        }
+        return ALL_STEPS_COMPLETE;
+      });
       return;
     }
 
