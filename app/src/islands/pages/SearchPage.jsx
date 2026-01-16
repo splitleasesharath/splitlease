@@ -1434,14 +1434,16 @@ export default function SearchPage() {
           // CRITICAL: Use clearOnFailure: false to preserve session if Edge Function fails
           const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
           let userId = null;
+          let userType = 'GUEST'; // Track userType for later use (proposals check)
 
           if (userData) {
             userId = getUserId();
+            userType = userData.userType || 'GUEST';
             setCurrentUser({
               id: userId,
               name: userData.fullName || userData.firstName || '',
               email: userData.email || '',
-              userType: userData.userType || 'GUEST',
+              userType: userType,
               avatarUrl: userData.profilePhoto || null,
               proposalCount: userData.proposalCount ?? 0
             });
@@ -1453,15 +1455,16 @@ export default function SearchPage() {
             if (session?.user) {
               userId = session.user.user_metadata?.user_id || session.user.id;
               const storedUserType = localStorage.getItem('sl_user_type');
+              userType = session.user.user_metadata?.user_type || storedUserType || 'GUEST';
               setCurrentUser({
                 id: userId,
                 name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || '',
                 email: session.user.email || '',
-                userType: session.user.user_metadata?.user_type || storedUserType || 'GUEST',
+                userType: userType,
                 avatarUrl: session.user.user_metadata?.avatar_url || null,
                 proposalCount: 0
               });
-              console.log('[SearchPage] Using Supabase session fallback, userType:', session.user.user_metadata?.user_type || storedUserType);
+              console.log('[SearchPage] Using Supabase session fallback, userType:', userType);
             }
           }
 
@@ -1530,7 +1533,8 @@ export default function SearchPage() {
                 }
 
                 // Fetch user's proposals to check if any exist for specific listings
-                const userIsGuest = isGuest({ userType: userData.userType });
+                // Use local userType variable (works for both Edge Function and Supabase fallback)
+                const userIsGuest = isGuest({ userType });
                 if (userIsGuest && userId && proposalCount > 0) {
                   try {
                     const proposals = await fetchProposalsByGuest(userId);
