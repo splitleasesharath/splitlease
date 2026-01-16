@@ -26,3 +26,4 @@ export { default as PriceDisplay } from './components/PriceDisplay.jsx';
 export { default as ActionButtons } from './components/ActionButtons.jsx';
 export { default as MapSection } from './components/MapSection.jsx';
 export { default as WhyThisProposal } from './components/WhyThisProposal.jsx';
+export { default as NotInterestedModal } from './components/NotInterestedModal.jsx';
