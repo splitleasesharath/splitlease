@@ -57,6 +57,11 @@ from adw_modules.concurrent_parity import (
     DEV_BASE_URL,
 )
 from adw_modules.chunk_parser import extract_page_groups, ChunkData
+from adw_modules.lsp_validator import (
+    validate_refactored_code,
+    validate_file_after_write,
+    LSPValidationResult,
+)
 from adw_code_audit import run_code_audit_and_plan
 
 
@@ -128,16 +133,56 @@ def _cleanup_browser_processes(logger: RunLogger, silent: bool = False) -> None:
             logger.step(f"Browser cleanup warning: {e}", notify=False)
 
 
-def implement_chunks_with_validation(chunks: List[ChunkData], working_dir: Path, logger: RunLogger) -> bool:
-    """Implement chunks with syntax validation and incremental build checks.
+def implement_chunks_with_validation(
+    chunks: List[ChunkData],
+    working_dir: Path,
+    logger: RunLogger,
+    skip_lsp: bool = False,
+    lsp_only: bool = False,
+    strict: bool = False
+) -> bool:
+    """Implement chunks with LSP + syntax validation and incremental build checks.
 
-    Three-layer validation strategy:
-    1. Prompt instructs Claude to validate syntax before writing
-    2. Claude's built-in awareness catches obvious errors
-    3. Incremental build check after each chunk catches compilation errors early
+    Five-layer validation strategy:
+    1. NEW: Pre-implementation LSP validation (imports, module resolution)
+    2. Prompt instructs Claude to validate syntax before writing
+    3. Claude's built-in awareness catches obvious errors
+    4. NEW: Post-implementation LSP diagnostics (fast type/symbol check)
+    5. Incremental build check after each chunk catches compilation errors early
+
+    Args:
+        chunks: List of chunks to implement
+        working_dir: Project working directory
+        logger: RunLogger instance
+        skip_lsp: If True, skip all LSP validation (faster, less safe)
+        lsp_only: If True, only run LSP validation, skip full build check
+        strict: If True, treat LSP warnings as errors
     """
     for chunk in chunks:
         logger.step(f"Implementing chunk {chunk.number}: {chunk.title}")
+
+        # ============================================
+        # LAYER 1: PRE-IMPLEMENTATION LSP VALIDATION
+        # ============================================
+        if not skip_lsp:
+            logger.log(f"    Pre-validating imports in refactored code...")
+
+            pre_validation = validate_refactored_code(
+                refactored_code=chunk.refactored_code,
+                target_file=working_dir / chunk.file_path,
+                working_dir=working_dir
+            )
+
+            if not pre_validation.valid:
+                logger.log(f"    [FAIL] Pre-validation failed:")
+                for diag in pre_validation.diagnostics:
+                    logger.log(f"      - {diag.message}")
+                if pre_validation.import_validation:
+                    for missing in pre_validation.import_validation.unresolved_modules:
+                        logger.log(f"      - Unresolved module: {missing}")
+                return False
+
+            logger.log(f"    [OK] Pre-validation passed")
 
         prompt = f"""Implement ONLY chunk {chunk.number} from the refactoring plan.
 
@@ -192,7 +237,37 @@ def implement_chunks_with_validation(chunks: List[ChunkData], working_dir: Path,
             logger.log(f"    [FAIL] Chunk {chunk.number} implementation failed: {response.output[:100]}")
             return False
 
-        # Incremental build check - catch compilation errors immediately after each chunk
+        # ============================================
+        # LAYER 4: POST-IMPLEMENTATION LSP DIAGNOSTICS
+        # ============================================
+        if not skip_lsp:
+            logger.log(f"    Running LSP diagnostics on {chunk.file_path}...")
+
+            post_validation = validate_file_after_write(
+                file_path=working_dir / chunk.file_path,
+                working_dir=working_dir
+            )
+
+            # Check for errors (and warnings if strict mode)
+            has_errors = post_validation.error_count > 0
+            has_warnings = post_validation.warning_count > 0 and strict
+
+            if has_errors or has_warnings:
+                logger.log(f"    [FAIL] LSP found {post_validation.error_count} errors, {post_validation.warning_count} warnings:")
+                for diag in post_validation.diagnostics[:5]:  # Show first 5
+                    logger.log(f"      - [{diag.severity}] {diag.message} ({diag.file}:{diag.line})")
+                return False
+
+            logger.log(f"    [OK] LSP diagnostics passed ({post_validation.warning_count} warnings)")
+
+            # If lsp_only mode, skip the full build check
+            if lsp_only:
+                logger.log(f"    [SKIP] Full build check (--lsp-only mode)")
+                continue
+
+        # ============================================
+        # LAYER 5: INCREMENTAL BUILD CHECK
+        # ============================================
         logger.log(f"    Verifying build after chunk {chunk.number}...")
         try:
             build_result = subprocess.run(
@@ -240,6 +315,14 @@ def main():
     parser.add_argument("--limit", type=int, help="Limit number of page groups to process")
     parser.add_argument("--audit-type", default="general", help="Type of audit (default: general)")
 
+    # LSP validation control flags
+    parser.add_argument("--skip-lsp", action="store_true",
+                        help="Skip LSP pre/post validation (faster, less safe)")
+    parser.add_argument("--lsp-only", action="store_true",
+                        help="Only run LSP validation, skip full build check")
+    parser.add_argument("--strict", action="store_true",
+                        help="Treat LSP warnings as errors")
+
     args = parser.parse_args()
 
     # CRITICAL: working_dir must be the PROJECT ROOT (Split Lease - Dev), not adws/
@@ -258,6 +341,18 @@ def main():
     _cleanup_browser_processes(logger)
 
     try:
+        # Log validation mode configuration
+        validation_mode = []
+        if args.skip_lsp:
+            validation_mode.append("skip-lsp")
+        elif args.lsp_only:
+            validation_mode.append("lsp-only")
+        else:
+            validation_mode.append("full")
+        if args.strict:
+            validation_mode.append("strict")
+        logger.log(f"LSP Validation: {', '.join(validation_mode)}")
+
         # PHASE 1: AUDIT (Claude Opus)
         logger.phase_start("PHASE 1: CODE AUDIT (Claude Opus)")
         logger.step(f"Target: {args.target_path}")
@@ -322,7 +417,12 @@ def main():
             is_testable_page = page_path.startswith("/")
 
             # 4a. Implement chunks with validation (syntax check + incremental build)
-            success = implement_chunks_with_validation(chunks, working_dir, logger)
+            success = implement_chunks_with_validation(
+                chunks, working_dir, logger,
+                skip_lsp=args.skip_lsp,
+                lsp_only=args.lsp_only,
+                strict=args.strict
+            )
             if not success:
                 logger.log(f"  [FAIL] Implementation failed, resetting...")
                 subprocess.run(["git", "reset", "--hard", "HEAD"], cwd=working_dir, check=False)

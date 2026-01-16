@@ -55,6 +55,39 @@ Audit Type: {audit_type}
 ## PAGE GROUP: /view-split-lease (Chunks: 2)
 ...
 
+## CRITICAL: Cascading Dependency Analysis
+
+Before generating chunks, you MUST identify cascading dependencies:
+
+1. **For any function/constant you plan to RENAME or MOVE:**
+   - Search for ALL files that import it
+   - List them in "Cascading Changes Required" section
+   - Include ALL dependent files in the SAME page group
+
+2. **For any function signature you plan to CHANGE:**
+   - Identify all call sites
+   - Ensure parameter changes are reflected everywhere
+
+3. **Use this pattern to find dependencies:**
+   ```
+   grep -rn "import.*{.*SYMBOL_NAME.*}" app/src/
+   ```
+
+## Chunk Grouping Rules
+
+- Group by PRIMARY affected page
+- If a change affects SHARED code (lib/, logic/), include ALL pages that use it
+- Mark cross-cutting changes as "GLOBAL" group
+- Never split a rename/move across multiple groups
+
+## Required Metadata Per Chunk
+
+Each chunk MUST include:
+- **File:** exact path
+- **Line:** line number
+- **Affected Pages:** list of pages
+- **Cascading Changes:** files that import modified symbols (if any)
+
 **CRITICAL FORMATTING RULES:**
 1. **Group by PAGE GROUP** header.
 2. **One chunk = one atomic fix**.
@@ -62,3 +95,4 @@ Audit Type: {audit_type}
 4. **MANDATORY: Each chunk MUST have TWO complete code blocks (Current vs Refactored)**.
 5. **Line numbers must be accurate**.
 6. **Include affected pages in EACH chunk metadata**.
+7. **Include cascading changes list for any renamed/moved symbols**.
