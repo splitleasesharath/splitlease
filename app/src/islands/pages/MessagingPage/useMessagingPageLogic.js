@@ -458,7 +458,28 @@ export function useMessagingPageLogic() {
       }
     }
 
-    // Step 5: Transform threads to UI format
+    // Step 5: Fetch unread message counts per thread
+    // The "Unread Users" column is a JSONB array of user IDs who haven't read the message
+    const threadIds = threads.map(t => t._id);
+    let unreadCountMap = {};
+    if (threadIds.length > 0) {
+      const { data: unreadData, error: unreadError } = await supabase
+        .from('_message')
+        .select('"Associated Thread/Conversation"')
+        .in('"Associated Thread/Conversation"', threadIds)
+        .contains('"Unread Users"', JSON.stringify([bubbleId]));
+
+      if (!unreadError && unreadData) {
+        // Count messages per thread
+        unreadCountMap = unreadData.reduce((acc, msg) => {
+          const threadId = msg['Associated Thread/Conversation'];
+          acc[threadId] = (acc[threadId] || 0) + 1;
+          return acc;
+        }, {});
+      }
+    }
+
+    // Step 6: Transform threads to UI format
     const transformedThreads = threads.map(thread => {
       const hostId = thread['-Host User'];
       const guestId = thread['-Guest User'];
@@ -491,7 +512,7 @@ export function useMessagingPageLogic() {
         property_name: thread['Listing'] ? listingMap[thread['Listing']] : undefined,
         last_message_preview: thread['~Last Message'] || 'No messages yet',
         last_message_time: lastMessageTime,
-        unread_count: 0, // TODO: Implement unread count if needed
+        unread_count: unreadCountMap[thread._id] || 0,
         is_with_splitbot: false,
       };
     });

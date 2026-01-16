@@ -43,7 +43,7 @@
   --warning-orange: #F5A623;
 
   /* Layout Dimensions */
-  --header-height: 56px;
+  --header-height: 70px;
   --sidebar-width: 340px;
   --panel-width: 340px;
 
@@ -1354,7 +1354,7 @@ main.main-content:has(.messaging-page) {
   /* Mobile: Full-screen views instead of split */
   .messaging-layout--mobile {
     flex-direction: column;
-    height: calc(100vh - var(--header-height, 56px));
+    height: calc(100vh - var(--header-height, 70px));
   }
 
   /* Thread Sidebar - Full screen list view */
@@ -1377,11 +1377,11 @@ main.main-content:has(.messaging-page) {
   /* Message Content - Full screen conversation view */
   .messaging-layout--mobile .message-content {
     position: absolute;
-    top: var(--header-height, 56px);
+    top: var(--header-height, 70px);
     left: 0;
     right: 0;
     bottom: 0;
-    height: calc(100vh - var(--header-height, 56px));
+    height: calc(100vh - var(--header-height, 70px));
     display: flex;
     flex-direction: column;
   }
