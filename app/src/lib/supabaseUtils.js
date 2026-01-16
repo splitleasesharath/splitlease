@@ -12,6 +12,9 @@ import { DATABASE } from './constants.js';
 import { logger } from './logger.js';
 import { parseJsonArrayFieldOptional } from '../logic/processors/listing/parseJsonArrayField.js';
 
+// Internal alias for use within this module
+const parseJsonArray = parseJsonArrayFieldOptional;
+
 /**
  * Parse a value that may be a native array or stringified JSON array
  * Re-exported from logic layer to maintain backward compatibility.
@@ -20,9 +23,6 @@ import { parseJsonArrayFieldOptional } from '../logic/processors/listing/parseJs
  * @see app/src/logic/processors/listing/parseJsonArrayField.js
  */
 export { parseJsonArrayFieldOptional as parseJsonArray };
-
-// Internal alias for use within this module
-const parseJsonArray = parseJsonArrayFieldOptional;
 
 /**
  * Fetch photo URLs in batch from database

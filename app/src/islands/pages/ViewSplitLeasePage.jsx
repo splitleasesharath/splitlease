@@ -358,12 +358,12 @@ function PhotoGallery({ photos, listingName, onPhotoClick, isMobile }) {
   // On mobile: always show single image with "Show all" button
   if (isMobile) {
     return (
-      <div className={styles.photoGalleryMobileWrapper}>
-        <div onClick={() => onPhotoClick(0)} className={styles.photoGalleryMobileMain}>
+      <div className={styles.photoGalleryMobileContainer}>
+        <div onClick={() => onPhotoClick(0)} className={styles.photoGalleryMobileImage}>
           <img
             src={photos[0].Photo}
             alt={`${listingName} - main`}
-            className={styles.photoGalleryImage}
+            className={styles.photoGalleryMobileImg}
           />
         </div>
         {photoCount > 1 && (
@@ -383,18 +383,19 @@ function PhotoGallery({ photos, listingName, onPhotoClick, isMobile }) {
 
   // Desktop: Determine grid class based on photo count
   const getGridClass = () => {
-    if (photoCount === 1) return styles.photoGalleryGrid1;
-    if (photoCount === 2) return styles.photoGalleryGrid2;
-    if (photoCount === 3) return styles.photoGalleryGrid3;
-    if (photoCount === 4) return styles.photoGalleryGrid4;
-    return styles.photoGalleryGrid5;
+    const baseClass = styles.photoGalleryDesktopGrid;
+    if (photoCount === 1) return `${baseClass} ${styles.photoGalleryDesktopGrid1}`;
+    if (photoCount === 2) return `${baseClass} ${styles.photoGalleryDesktopGrid2}`;
+    if (photoCount === 3) return `${baseClass} ${styles.photoGalleryDesktopGrid3}`;
+    if (photoCount === 4) return `${baseClass} ${styles.photoGalleryDesktopGrid4}`;
+    return `${baseClass} ${styles.photoGalleryDesktopGrid5Plus}`;
   };
 
   // Render based on photo count
   if (photoCount === 1) {
     return (
       <div className={getGridClass()}>
-        <div onClick={() => onPhotoClick(0)} className={styles.photoGalleryItem}>
+        <div onClick={() => onPhotoClick(0)} className={styles.photoGalleryImageWrapper}>
           <img
             src={photos[0].Photo}
             alt={`${listingName} - main`}
@@ -409,7 +410,7 @@ function PhotoGallery({ photos, listingName, onPhotoClick, isMobile }) {
     return (
       <div className={getGridClass()}>
         {photos.map((photo, idx) => (
-          <div key={photo._id} onClick={() => onPhotoClick(idx)} className={styles.photoGalleryItem}>
+          <div key={photo._id} onClick={() => onPhotoClick(idx)} className={styles.photoGalleryImageWrapper}>
             <img
               src={photo.Photo}
               alt={`${listingName} - ${idx + 1}`}
@@ -424,7 +425,7 @@ function PhotoGallery({ photos, listingName, onPhotoClick, isMobile }) {
   if (photoCount === 3) {
     return (
       <div className={getGridClass()}>
-        <div onClick={() => onPhotoClick(0)} className={`${styles.photoGalleryItem} ${styles.photoGalleryMainItem}`}>
+        <div onClick={() => onPhotoClick(0)} className={`${styles.photoGalleryImageWrapper} ${styles.photoGalleryImageWrapperSpan2}`}>
           <img
             src={photos[0].Photo}
             alt={`${listingName} - main`}
@@ -432,7 +433,7 @@ function PhotoGallery({ photos, listingName, onPhotoClick, isMobile }) {
           />
         </div>
         {photos.slice(1, 3).map((photo, idx) => (
-          <div key={photo._id} onClick={() => onPhotoClick(idx + 1)} className={styles.photoGalleryItem}>
+          <div key={photo._id} onClick={() => onPhotoClick(idx + 1)} className={styles.photoGalleryImageWrapper}>
             <img
               src={photo['Photo (thumbnail)'] || photo.Photo}
               alt={`${listingName} - ${idx + 2}`}
@@ -447,7 +448,7 @@ function PhotoGallery({ photos, listingName, onPhotoClick, isMobile }) {
   if (photoCount === 4) {
     return (
       <div className={getGridClass()}>
-        <div onClick={() => onPhotoClick(0)} className={`${styles.photoGalleryItem} ${styles.photoGalleryMainItem4}`}>
+        <div onClick={() => onPhotoClick(0)} className={`${styles.photoGalleryImageWrapper} ${styles.photoGalleryImageWrapperSpan3}`}>
           <img
             src={photos[0].Photo}
             alt={`${listingName} - main`}
@@ -455,7 +456,7 @@ function PhotoGallery({ photos, listingName, onPhotoClick, isMobile }) {
           />
         </div>
         {photos.slice(1, 4).map((photo, idx) => (
-          <div key={photo._id} onClick={() => onPhotoClick(idx + 1)} className={styles.photoGalleryItem}>
+          <div key={photo._id} onClick={() => onPhotoClick(idx + 1)} className={styles.photoGalleryImageWrapper}>
             <img
               src={photo['Photo (thumbnail)'] || photo.Photo}
               alt={`${listingName} - ${idx + 2}`}
@@ -472,7 +473,7 @@ function PhotoGallery({ photos, listingName, onPhotoClick, isMobile }) {
 
   return (
     <div className={getGridClass()}>
-      <div onClick={() => onPhotoClick(0)} className={`${styles.photoGalleryItem} ${styles.photoGalleryMainItem}`}>
+      <div onClick={() => onPhotoClick(0)} className={`${styles.photoGalleryImageWrapper} ${styles.photoGalleryImageWrapperSpan2}`}>
         <img
           src={photos[0].Photo}
           alt={`${listingName} - main`}
@@ -480,7 +481,7 @@ function PhotoGallery({ photos, listingName, onPhotoClick, isMobile }) {
         />
       </div>
       {photosToShow.map((photo, idx) => (
-        <div key={photo._id} onClick={() => onPhotoClick(idx + 1)} className={styles.photoGalleryItem}>
+        <div key={photo._id} onClick={() => onPhotoClick(idx + 1)} className={styles.photoGalleryImageWrapper}>
           <img
             src={photo['Photo (thumbnail)'] || photo.Photo}
             alt={`${listingName} - ${idx + 2}`}
@@ -492,7 +493,7 @@ function PhotoGallery({ photos, listingName, onPhotoClick, isMobile }) {
                 e.stopPropagation();
                 onPhotoClick(0);
               }}
-              className={styles.photoGalleryShowAllButton}
+              className={styles.photoGalleryDesktopShowAll}
             >
               <svg
                 width="16"
@@ -1449,32 +1450,32 @@ export default function ViewSplitLeasePage() {
           <section className={styles.featuresGrid}>
             {listing['Kitchen Type'] && (
               <div className={styles.featureCard}>
-                <div className={styles.featureIcon}>
-                  <img src="/assets/images/fridge.svg" alt="Kitchen" className={styles.featureImage} />
+                <div className={styles.featureIconWrapper}>
+                  <img src="/assets/images/fridge.svg" alt="Kitchen" className={styles.featureIcon} />
                 </div>
                 <div className={styles.featureText}>{listing['Kitchen Type']}</div>
               </div>
             )}
             {listing['Features - Qty Bathrooms'] !== null && (
               <div className={styles.featureCard}>
-                <div className={styles.featureIcon}>
-                  <img src="/assets/images/bath.svg" alt="Bathroom" className={styles.featureImage} />
+                <div className={styles.featureIconWrapper}>
+                  <img src="/assets/images/bath.svg" alt="Bathroom" className={styles.featureIcon} />
                 </div>
                 <div className={styles.featureText}>{listing['Features - Qty Bathrooms']} Bathroom(s)</div>
               </div>
             )}
             {listing['Features - Qty Bedrooms'] !== null && (
               <div className={styles.featureCard}>
-                <div className={styles.featureIcon}>
-                  <img src="/assets/images/sleeping.svg" alt="Bedroom" className={styles.featureImage} />
+                <div className={styles.featureIconWrapper}>
+                  <img src="/assets/images/sleeping.svg" alt="Bedroom" className={styles.featureIcon} />
                 </div>
                 <div className={styles.featureText}>{listing['Features - Qty Bedrooms'] === 0 ? 'Studio' : `${listing['Features - Qty Bedrooms']} Bedroom${listing['Features - Qty Bedrooms'] === 1 ? '' : 's'}`}</div>
               </div>
             )}
             {listing['Features - Qty Beds'] !== null && (
               <div className={styles.featureCard}>
-                <div className={styles.featureIcon}>
-                  <img src="/assets/images/bed.svg" alt="Bed" className={styles.featureImage} />
+                <div className={styles.featureIconWrapper}>
+                  <img src="/assets/images/bed.svg" alt="Bed" className={styles.featureIcon} />
                 </div>
                 <div className={styles.featureText}>{listing['Features - Qty Beds']} Bed(s)</div>
               </div>
@@ -1944,7 +1945,7 @@ export default function ViewSplitLeasePage() {
                   e.stopPropagation();
                   setActiveInfoTooltip(activeInfoTooltip === 'flexibility' ? null : 'flexibility');
                 }}
-                className={styles.bookingInfoIconSmall}
+                className={styles.bookingInfoIcon}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"

@@ -15,7 +15,8 @@ import { supabase } from '../../lib/supabase.js';
 import { logger } from '../../lib/logger.js';
 import { fetchProposalsByGuest, fetchLastProposalDefaults } from '../../lib/proposalDataFetcher.js';
 import { fetchZatPriceConfiguration } from '../../lib/listingDataFetcher.js';
-import { checkAuthStatus, getUserId, getSessionId, logoutUser } from '../../lib/auth.js';
+import { checkAuthStatus, getUserId, getSessionId, logoutUser, getFirstName, getAvatarUrl } from '../../lib/auth.js';
+import { getUserType as getStoredUserType, getAuthState } from '../../lib/secureStorage.js';
 import { useAuthenticatedUser } from '../../hooks/useAuthenticatedUser.js';
 import { PRICE_TIERS, SORT_OPTIONS, WEEK_PATTERNS, LISTING_CONFIG, VIEW_LISTING_URL, SEARCH_URL } from '../../lib/constants.js';
 import { initializeLookups, getNeighborhoodName, getBoroughName, getPropertyTypeLabel, isInitialized } from '../../lib/dataLookups.js';
@@ -325,6 +326,7 @@ export default function SearchPage() {
   const [fallbackDisplayedListings, setFallbackDisplayedListings] = useState([]); // Lazy-loaded subset for fallback
   const [fallbackLoadedCount, setFallbackLoadedCount] = useState(0);
   const [isFallbackLoading, setIsFallbackLoading] = useState(false);
+  const [fallbackFetchFailed, setFallbackFetchFailed] = useState(false); // Track if fallback fetch failed to prevent infinite retry loop
 
   // Modal state management
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
@@ -1448,6 +1450,8 @@ export default function SearchPage() {
       logger.error('Failed to fetch fallback listings:', err);
       // Don't set error state - this is a fallback, so we just show nothing
       setFallbackListings([]);
+      // Mark that fetch failed to prevent infinite retry loop
+      setFallbackFetchFailed(true);
     } finally {
       setIsFallbackLoading(false);
     }
@@ -1632,10 +1636,11 @@ export default function SearchPage() {
 
   // Fetch fallback listings when filtered results are empty
   useEffect(() => {
-    if (!isLoading && allListings.length === 0 && fallbackListings.length === 0 && !isFallbackLoading) {
+    // Don't retry if fetch already failed (prevents infinite loop)
+    if (!isLoading && allListings.length === 0 && fallbackListings.length === 0 && !isFallbackLoading && !fallbackFetchFailed) {
       fetchAllListings();
     }
-  }, [isLoading, allListings.length, fallbackListings.length, isFallbackLoading, fetchAllListings]);
+  }, [isLoading, allListings.length, fallbackListings.length, isFallbackLoading, fallbackFetchFailed, fetchAllListings]);
 
   // Clear fallback listings when filtered results are found
   useEffect(() => {

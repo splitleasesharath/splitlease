@@ -430,6 +430,12 @@
   }
 }
 
+.featureImage {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .featureText {
   font-size: 0.8125rem;
 }
