@@ -78,12 +78,14 @@ def extract_page_groups(plan_file: Path) -> Dict[str, List[ChunkData]]:
 def parse_chunks(content: str) -> List[ChunkData]:
     """
     Parse chunks from a block of markdown.
-    
+
+    Chunks marked with "⚠️ SKIPPED" or "> **SKIPPED**" blockquotes are excluded.
+
     Args:
         content: Markdown content containing chunks
-        
+
     Returns:
-        List of ChunkData objects
+        List of ChunkData objects (excluding skipped chunks)
     """
     # Split on ~~~~~ delimiter
     sections = re.split(r'\n~{5,}\n', content)
@@ -100,6 +102,12 @@ def parse_chunks(content: str) -> List[ChunkData]:
 
         chunk_number = int(header_match.group(1))
         chunk_title = header_match.group(2).strip()
+
+        # Skip chunks marked with SKIPPED blockquote pattern
+        # Matches: > **⚠️ SKIPPED** or > **SKIPPED** (case-insensitive)
+        if re.search(r'>\s*\*\*(?:⚠️\s*)?SKIPPED\*\*', section, re.IGNORECASE):
+            print(f"  [SKIP] Chunk {chunk_number}: {chunk_title} (marked as skipped)")
+            continue
 
         file_match = re.search(r'\*\*File:\*\*\s+(.+)', section)
         line_match = re.search(r'\*\*Lines?:\*\*\s+(.+)', section)

@@ -1157,6 +1157,10 @@ createRoot(document.getElementById('root')).render(
 
 ### CHUNK 23: Replace Hardcoded FK Mappings with Database Lookups
 
+> **⚠️ SKIPPED** - This chunk requires `./dataLookups.js` which doesn't exist.
+> The refactored code imports `getAllCancellationPolicies` from a non-existent module.
+> Revisit after creating the dataLookups.js infrastructure.
+
 **File:** `app/src/lib/listingService.js`
 **Line:** 490-603
 **Issue:** FK ID mappings for cancellation policies, parking types, space types, and storage options are hardcoded. Database changes require code updates.

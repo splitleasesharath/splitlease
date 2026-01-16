@@ -142,24 +142,29 @@ def get_file_diagnostics(
     """
     Get LSP diagnostics for a file using TypeScript compiler.
 
-    Uses `tsc --noEmit` on a single file for fast feedback.
-    This is faster than a full build and catches most type/import errors.
+    Uses project-wide `bun run tsc --noEmit` for accurate checking.
+    Single-file tsc checks don't use tsconfig.json settings, causing
+    false positives for Vite projects (import.meta.env, etc.).
+
+    Note: This runs the full project type check, which is slower but accurate.
+    The build check (Layer 5) provides similar validation, so this is
+    optional when --lsp-only mode is disabled.
 
     Args:
-        file_path: Path to the file to check
+        file_path: Path to the file to check (used for filtering output)
         working_dir: Project working directory
         timeout: Timeout in seconds
 
     Returns:
-        List of diagnostics (errors and warnings)
+        List of diagnostics (errors and warnings) for the specified file
     """
     diagnostics = []
 
     try:
-        # Use tsc with specific file for faster checking
-        # --pretty false gives machine-parseable output
+        # Run project-wide tsc to use tsconfig.json settings
+        # This avoids false positives from import.meta.env, custom globals, etc.
         result = subprocess.run(
-            ["npx", "tsc", "--noEmit", "--pretty", "false", str(file_path)],
+            ["bun", "run", "tsc", "--noEmit", "--pretty", "false"],
             cwd=working_dir / "app",
             capture_output=True,
             text=True,
@@ -168,17 +173,27 @@ def get_file_diagnostics(
 
         # Parse tsc output: file(line,col): error TS1234: message
         error_pattern = r"([^(]+)\((\d+),(\d+)\):\s+(error|warning)\s+(TS\d+):\s+(.+)"
+
+        # Normalize the target file path for comparison
+        target_file_str = str(file_path).replace('\\', '/')
+        target_file_name = Path(file_path).name
+
         for line in result.stdout.split('\n') + result.stderr.split('\n'):
             match = re.match(error_pattern, line.strip())
             if match:
-                diagnostics.append(LSPDiagnostic(
-                    file=match.group(1),
-                    line=int(match.group(2)),
-                    column=int(match.group(3)),
-                    severity=match.group(4),
-                    code=match.group(5),
-                    message=match.group(6)
-                ))
+                error_file = match.group(1).replace('\\', '/')
+
+                # Filter to only errors in the target file
+                # Match by filename or full path
+                if target_file_name in error_file or target_file_str in error_file:
+                    diagnostics.append(LSPDiagnostic(
+                        file=match.group(1),
+                        line=int(match.group(2)),
+                        column=int(match.group(3)),
+                        severity=match.group(4),
+                        code=match.group(5),
+                        message=match.group(6)
+                    ))
 
     except subprocess.TimeoutExpired:
         diagnostics.append(LSPDiagnostic(
@@ -194,7 +209,7 @@ def get_file_diagnostics(
             line=0,
             column=0,
             severity="error",
-            message="npx/tsc not found - ensure Node.js is installed"
+            message="bun not found - ensure Bun is installed (https://bun.sh)"
         ))
     except Exception as e:
         diagnostics.append(LSPDiagnostic(
@@ -449,8 +464,9 @@ def run_eslint_on_file(
     diagnostics = []
 
     try:
+        # Use bun to run eslint for better PATH compatibility on Windows
         result = subprocess.run(
-            ["npx", "eslint", "--format", "compact", str(file_path)],
+            ["bun", "run", "eslint", "--format", "compact", str(file_path)],
             cwd=working_dir / "app",
             capture_output=True,
             text=True,
