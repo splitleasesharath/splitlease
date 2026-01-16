@@ -8,7 +8,7 @@
 /**
  * @param {Object} props
  * @param {Object} props.geoPoint - { lat, lng } coordinates
- * @param {string} props.address - Address string for display
+ * @param {string} props.address - Address string for display (already extracted, not raw JSONB)
  * @param {string} [props.googleMapsApiKey] - Google Maps API key
  */
 export default function MapSection({
@@ -19,7 +19,7 @@ export default function MapSection({
   // Check if we have valid coordinates
   const hasCoordinates = geoPoint && typeof geoPoint.lat === 'number' && typeof geoPoint.lng === 'number';
 
-  // Generate static map URL
+  // Generate static map URL using Google Maps Static API
   const getMapUrl = () => {
     if (!hasCoordinates || !googleMapsApiKey) return null;
 
@@ -37,7 +37,16 @@ export default function MapSection({
     return `https://maps.googleapis.com/maps/api/staticmap?${params.toString()}`;
   };
 
+  // Generate OpenStreetMap embed URL as fallback (no API key needed)
+  const getOsmEmbedUrl = () => {
+    if (!hasCoordinates) return null;
+    const { lat, lng } = geoPoint;
+    // Use OpenStreetMap embed with marker
+    return `https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.01},${lat - 0.01},${lng + 0.01},${lat + 0.01}&layer=mapnik&marker=${lat},${lng}`;
+  };
+
   const mapUrl = getMapUrl();
+  const osmUrl = getOsmEmbedUrl();
 
   return (
     <div className="sp-map-section">
@@ -49,6 +58,14 @@ export default function MapSection({
             src={mapUrl}
             alt={`Map showing ${address}`}
             className="sp-map-image"
+          />
+        ) : hasCoordinates ? (
+          // Fallback to OpenStreetMap iframe when no Google API key
+          <iframe
+            title="Property location map"
+            src={osmUrl}
+            className="sp-map-iframe"
+            style={{ border: 0, width: '100%', height: '200px', borderRadius: '8px' }}
           />
         ) : (
           <div className="sp-map-placeholder">

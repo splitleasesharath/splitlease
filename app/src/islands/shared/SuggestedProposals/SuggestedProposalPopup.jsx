@@ -61,12 +61,26 @@ export default function SuggestedProposalPopup({
   const listing = proposal._listing || {};
   const photos = listing['Features - Photos'] || [];
   const listingName = listing['Name'] || 'Unnamed Listing';
-  // Location - Address is a JSONB object with shape: { address: string, city: string, ... }
-  const addressData = listing['Location - Address'];
-  const address = typeof addressData === 'object' && addressData !== null
-    ? (addressData.address || '')
-    : (addressData || '');
-  const geoPoint = listing['Location - Coordinates'] || null;
+
+  // Location - Address is JSONB: { address: string, lat: number, lng: number }
+  // May also be stored as a string that needs parsing
+  const rawAddressData = listing['Location - Address'];
+  const addressData = typeof rawAddressData === 'string'
+    ? (() => { try { return JSON.parse(rawAddressData); } catch { return null; } })()
+    : rawAddressData;
+
+  // Extract display address (just the street address, not the full JSONB)
+  const address = addressData?.address || '';
+
+  // Extract coordinates from Location - Address (they're embedded in the JSONB)
+  // Fall back to Location - Coordinates if available
+  const geoPoint = (addressData?.lat && addressData?.lng)
+    ? { lat: addressData.lat, lng: addressData.lng }
+    : listing['Location - Coordinates'] || null;
+
+  // Get neighborhood/borough for location display (more useful than full address)
+  const borough = listing['Location - Borough'] || '';
+  const neighborhood = listing['Location - Hood'] || listing['neighborhood (manual input by user)'] || '';
 
   // Negotiation summary (AI explanation)
   const summaries = proposal._negotiationSummaries || [];
@@ -160,7 +174,10 @@ export default function SuggestedProposalPopup({
                 {listingName}
               </h2>
 
-              <p className="sp-popup-address">{address}</p>
+              <p className="sp-popup-address">
+                {neighborhood && borough ? `${neighborhood}, ${borough}` :
+                 neighborhood || borough || address || 'Location not available'}
+              </p>
 
               <div className="sp-popup-dates">
                 <span className="sp-popup-date-label">Move-in:</span>
