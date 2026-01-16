@@ -555,7 +555,7 @@
 }
 
 .listing-meta .meta-item:not(:last-child)::after {
-    content: '·';
+    content: '\00B7';
     margin-left: 6px;
     color: #999;
 }
@@ -1446,7 +1446,7 @@
     }
 
     .listing-meta .meta-item::after {
-        content: ' · ';
+        content: ' \00B7  ';
         color: #999;
     }
 

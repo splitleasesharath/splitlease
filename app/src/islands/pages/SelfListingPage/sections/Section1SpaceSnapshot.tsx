@@ -14,12 +14,7 @@ interface Section1Props {
   isLoadingInitialData?: boolean;
 }
 
-// Extend window interface for Google Maps
-declare global {
-  interface Window {
-    google: any;
-  }
-}
+// Note: google maps types from @types/google.maps provide window.google typing
 
 export const Section1SpaceSnapshot: React.FC<Section1Props> = ({
   data,

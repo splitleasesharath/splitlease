@@ -1216,7 +1216,7 @@ export function SelfListingPageV2() {
               const infoRef = style === 'nightly' ? leaseStyleNightlyInfoRef
                 : style === 'weekly' ? leaseStyleWeeklyInfoRef
                 : leaseStyleMonthlyInfoRef;
-              const tooltipId = `leaseStyle${style.charAt(0).toUpperCase() + style.slice(1)}` as keyof typeof infoContent;
+              const tooltipId = `leaseStyle${style.charAt(0).toUpperCase() + style.slice(1)}` as keyof typeof infoContentConfig;
 
               return (
                 <div
@@ -1764,7 +1764,7 @@ export function SelfListingPageV2() {
     const files = e.target.files;
     if (!files) return;
 
-    const newPhotos = Array.from(files).map((file, index) => ({
+    const newPhotos = Array.from(files).map((file: File, index: number) => ({
       id: `photo_${Date.now()}_${index}_${Math.random().toString(36).substr(2, 9)}`,
       url: URL.createObjectURL(file),
       file,
@@ -2237,7 +2237,7 @@ export function SelfListingPageV2() {
 
   return (
     <div className="self-listing-v2-page">
-      <Header key={headerKey} />
+      <Header key={headerKey} autoShowLogin={false} />
 
       <main className="self-listing-v2-main">
         <div className="container">

@@ -100,12 +100,12 @@ export const Section6Photos: React.FC<Section6Props> = ({
     if (!files || files.length === 0) return;
 
     // Filter valid image files
-    const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+    const imageFiles = Array.from(files).filter((file: File) => file.type.startsWith('image/'));
     if (imageFiles.length === 0) return;
 
     // Check file size (5MB limit)
     const MAX_SIZE = 5 * 1024 * 1024; // 5MB
-    const oversizedFiles = imageFiles.filter(file => file.size > MAX_SIZE);
+    const oversizedFiles = imageFiles.filter((file: File) => file.size > MAX_SIZE);
     if (oversizedFiles.length > 0) {
       setErrors({
         photos: `${oversizedFiles.length} file(s) exceed the 5MB size limit. Please resize and try again.`
@@ -122,7 +122,7 @@ export const Section6Photos: React.FC<Section6Props> = ({
       const uploadedPhotos: PhotoData[] = [];
 
       // Upload files in parallel
-      const uploadPromises = imageFiles.map(async (file, idx) => {
+      const uploadPromises = imageFiles.map(async (file: File, idx: number) => {
         const index = startIndex + idx;
         try {
           const { url, storagePath } = await uploadPhotoToStorage(file, draftId, index);

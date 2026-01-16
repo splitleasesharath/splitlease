@@ -190,14 +190,11 @@ export function ToastProvider({ children }) {
 export function useToast() {
   const context = useContext(ToastContext);
 
-  if (context) {
-    return context;
-  }
+  // Fallback hooks - always called to satisfy React's Rules of Hooks
+  // These are only used when ToastProvider is not present
+  const [fallbackToasts, setFallbackToasts] = useState([]);
 
-  // Fallback for components not wrapped in ToastProvider
-  const [toasts, setToasts] = useState([]);
-
-  const showToast = useCallback((options, type, duration) => {
+  const fallbackShowToast = useCallback((options, type, duration) => {
     let toastConfig;
 
     if (typeof options === 'string') {
@@ -220,7 +217,7 @@ export function useToast() {
       };
     }
 
-    setToasts(prev => {
+    setFallbackToasts(prev => {
       const updated = [...prev, toastConfig];
       if (updated.length > 5) {
         return updated.slice(-5);
@@ -231,11 +228,16 @@ export function useToast() {
     return toastConfig.id;
   }, []);
 
-  const removeToast = useCallback((id) => {
-    setToasts(prev => prev.filter(toast => toast.id !== id));
+  const fallbackRemoveToast = useCallback((id) => {
+    setFallbackToasts(prev => prev.filter(toast => toast.id !== id));
   }, []);
 
-  return { toasts, showToast, removeToast };
+  // Return context if available, otherwise use fallback
+  if (context) {
+    return context;
+  }
+
+  return { toasts: fallbackToasts, showToast: fallbackShowToast, removeToast: fallbackRemoveToast };
 }
 
 /**

@@ -184,7 +184,7 @@ export default function PropertyInfoSection() {
         <div className="listing-dashboard-property__reviews">
           <button
             className="listing-dashboard-property__reviews-btn"
-            onClick={onImportReviews}
+            onClick={handleImportReviews}
           >
             <StarIcon />
             <span>Show my reviews ({counts.reviews})</span>

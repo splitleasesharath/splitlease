@@ -246,7 +246,7 @@ class RentalApplicationLocalStore {
    * Update a single form field
    */
   updateField(fieldName: keyof RentalApplicationFormData, value: string | boolean): void {
-    (this.state.formData as Record<string, string | boolean>)[fieldName] = value;
+    (this.state.formData as unknown as Record<string, string | boolean>)[fieldName] = value;
     this.state.isDirty = true;
     this.scheduleAutoSave();
     this.notifyListeners();

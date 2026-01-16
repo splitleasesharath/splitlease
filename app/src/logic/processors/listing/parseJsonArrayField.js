@@ -108,8 +108,8 @@ export function parseJsonArrayField({ field, fieldName }) {
  * // => []
  */
 export function parseJsonArrayFieldOptional({ field, fieldName }) {
-  // Optional: Allow null/undefined with explicit empty array fallback
-  if (field === null || field === undefined) {
+  // Optional: Allow null/undefined/empty string with explicit empty array fallback
+  if (field === null || field === undefined || field === '') {
     return []
   }
 

@@ -670,7 +670,7 @@ export const SelfListingPage: React.FC = () => {
 
       {/* Shared Header Island - key forces re-render after auth change */}
       {console.log('🎨 Rendering Header component')}
-      <Header key={headerKey} />
+      <Header key={headerKey} autoShowLogin={false} />
 
       <div className="self-listing-page">
         {/* Page Header */}
@@ -835,7 +835,6 @@ export const SelfListingPage: React.FC = () => {
         }}
         initialView="signup"
         defaultUserType="host"
-        showUserTypeSelector={false}
         skipReload={true}
         onAuthSuccess={handleAuthSuccess}
       />
