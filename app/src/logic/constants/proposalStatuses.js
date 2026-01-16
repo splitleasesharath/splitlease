@@ -370,3 +370,14 @@ export function getStatusesByColor(color) {
 export function getStatusesByStage(stageNumber) {
   return Object.values(PROPOSAL_STATUSES).filter(s => s.stage === stageNumber);
 }
+
+/**
+ * Check if a status is a suggested proposal pending guest confirmation
+ * (Guest hasn't confirmed the Split Lease suggestion yet)
+ * @param {string} statusKey - The status string from the database
+ * @returns {boolean} True if pending confirmation
+ */
+export function isPendingConfirmationProposal(statusKey) {
+  const config = getStatusConfig(statusKey);
+  return config.isSuggestedBySL === true && config.guestConfirmed === false;
+}

@@ -325,6 +325,22 @@
   background: var(--gp-success-bg);
 }
 
+.proposal-status.action-required {
+  color: #92400E;
+  background: #FEF3C7;
+  font-weight: 600;
+  animation: pulse-attention 2s ease-in-out infinite;
+}
+
+@keyframes pulse-attention {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(217, 119, 6, 0);
+  }
+}
+
 /* ============================================================================
    PROPOSAL CARD WRAPPER - Contains banner and card (V3)
    ============================================================================ */

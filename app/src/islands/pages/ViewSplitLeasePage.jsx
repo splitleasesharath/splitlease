@@ -17,7 +17,7 @@ import InformationalText from '../shared/InformationalText.jsx';
 import SignUpLoginModal from '../shared/SignUpLoginModal.jsx';
 import ProposalSuccessModal from '../modals/ProposalSuccessModal.jsx';
 import { initializeLookups } from '../../lib/dataLookups.js';
-import { checkAuthStatus, validateTokenAndFetchUser, getSessionId } from '../../lib/auth.js';
+import { checkAuthStatus, validateTokenAndFetchUser, getSessionId, getUserId, getUserType } from '../../lib/auth.js';
 import { fetchListingComplete, getListingIdFromUrl, fetchZatPriceConfiguration } from '../../lib/listingDataFetcher.js';
 import {
   calculatePricingBreakdown,
@@ -2074,48 +2074,51 @@ export default function ViewSplitLeasePage() {
                   <div style={{ color: COLORS.TEXT_LIGHT, fontSize: isMobile ? '0.75rem' : '0.8125rem' }}>Host</div>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button
-                    onClick={() => setShowContactHostModal(true)}
-                    style={{
-                      padding: isMobile ? '0.375rem 0.75rem' : '0.5rem 1rem',
-                      background: COLORS.PRIMARY,
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '6px',
-                      fontSize: isMobile ? '0.8125rem' : '0.875rem',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.375rem',
-                      boxShadow: '0 2px 6px rgba(49, 19, 93, 0.2)'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.background = COLORS.PRIMARY_HOVER;
-                      e.target.style.transform = 'translateY(-1px)';
-                      e.target.style.boxShadow = '0 3px 8px rgba(49, 19, 93, 0.25)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.background = COLORS.PRIMARY;
-                      e.target.style.transform = '';
-                      e.target.style.boxShadow = '0 2px 6px rgba(49, 19, 93, 0.2)';
-                    }}
-                  >
-                    <svg
-                      width={isMobile ? '14' : '16'}
-                      height={isMobile ? '14' : '16'}
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
+                  {/* Hide Message button for Host users - only Guests can message */}
+                  {(loggedInUserData?.userType || getUserType()) !== 'Host' && (
+                    <button
+                      onClick={() => setShowContactHostModal(true)}
+                      style={{
+                        padding: isMobile ? '0.375rem 0.75rem' : '0.5rem 1rem',
+                        background: COLORS.PRIMARY,
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        fontSize: isMobile ? '0.8125rem' : '0.875rem',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.375rem',
+                        boxShadow: '0 2px 6px rgba(49, 19, 93, 0.2)'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.background = COLORS.PRIMARY_HOVER;
+                        e.target.style.transform = 'translateY(-1px)';
+                        e.target.style.boxShadow = '0 3px 8px rgba(49, 19, 93, 0.25)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.background = COLORS.PRIMARY;
+                        e.target.style.transform = '';
+                        e.target.style.boxShadow = '0 2px 6px rgba(49, 19, 93, 0.2)';
+                      }}
                     >
-                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                    </svg>
-                    <span>Message</span>
-                  </button>
+                      <svg
+                        width={isMobile ? '14' : '16'}
+                        height={isMobile ? '14' : '16'}
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                      </svg>
+                      <span>Message</span>
+                    </button>
+                  )}
                   {listing.host?.userId && (
                     <button
                       onClick={() => window.location.href = '/account-profile'}

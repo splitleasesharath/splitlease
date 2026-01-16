@@ -199,6 +199,7 @@ export interface ListingData {
   "💰Nightly Host Rate for 3 nights": number;
   "💰Nightly Host Rate for 4 nights": number;
   "💰Nightly Host Rate for 5 nights": number;
+  "💰Nightly Host Rate for 6 nights": number;
   "💰Nightly Host Rate for 7 nights": number;
   "💰Monthly Host Rate": number;
 }

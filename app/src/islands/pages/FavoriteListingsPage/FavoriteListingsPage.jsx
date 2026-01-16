@@ -4,7 +4,7 @@
  * Includes Google Map with pins and AuthAwareSearchScheduleSelector
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
 import GoogleMap from '../../shared/GoogleMap.jsx';
 import AuthAwareSearchScheduleSelector from '../../shared/AuthAwareSearchScheduleSelector.jsx';
@@ -27,6 +27,7 @@ import { fetchPhotoUrls, extractPhotos, fetchHostData, parseAmenities } from '..
 import { createDay } from '../../../lib/scheduleSelector/dayHelpers.js';
 import { calculateNextAvailableCheckIn } from '../../../logic/calculators/scheduling/calculateNextAvailableCheckIn.js';
 import { shiftMoveInDateIfPast } from '../../../logic/calculators/scheduling/shiftMoveInDateIfPast.js';
+import { isHost } from '../../../logic/rules/users/isHost.js';
 import './FavoriteListingsPage.css';
 import '../../../styles/create-proposal-flow-v2.css';
 
@@ -1260,6 +1261,14 @@ const FavoriteListingsPage = () => {
     };
   }, []);
 
+  // Determine if "Message" button should be visible on listing cards
+  // Hidden for logged-in host users (hosts shouldn't message other hosts)
+  const showMessageButton = useMemo(() => {
+    if (!isLoggedIn || !currentUser) return true; // Show for guests (not logged in)
+    const userIsHost = isHost({ userType: currentUser.userType });
+    return !userIsHost;
+  }, [isLoggedIn, currentUser]);
+
   // Render
   return (
     <div className="favorites-page">
@@ -1501,6 +1510,7 @@ const FavoriteListingsPage = () => {
             isLoggedIn={isLoggedIn}
             favoritedListingIds={favoritedListingIds}
             onToggleFavorite={handleToggleFavorite}
+            showMessageButton={showMessageButton}
           />
         </section>
       </main>
@@ -1555,6 +1565,7 @@ const FavoriteListingsPage = () => {
               isLoggedIn={isLoggedIn}
               favoritedListingIds={favoritedListingIds}
               onToggleFavorite={handleToggleFavorite}
+              showMessageButton={showMessageButton}
             />
           </div>
         </div>

@@ -7,7 +7,7 @@
 
 import { supabase } from '../../../lib/supabase.js';
 import { loadProposalDetails } from '../../../lib/proposalDataFetcher.js';
-import { isSuggestedProposal } from '../../../logic/constants/proposalStatuses.js';
+import { isSuggestedProposal, isPendingConfirmationProposal } from '../../../logic/constants/proposalStatuses.js';
 
 /**
  * Fetch all suggested proposals for a user
@@ -173,6 +173,144 @@ export async function dismissProposal(proposalId) {
   } catch (err) {
     console.error('Exception dismissing proposal:', err);
     return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Fetch count of pending confirmation proposals for a user
+ * Lightweight function for header badge display - no enrichment needed
+ *
+ * @param {string} userId - The user's _id
+ * @returns {Promise<number>} Count of pending confirmation proposals
+ */
+export async function fetchPendingConfirmationCount(userId) {
+  if (!userId) return 0;
+
+  try {
+    // Step 1: Fetch user's proposals list
+    const { data: userData, error: userError } = await supabase
+      .from('user')
+      .select('"Proposals List"')
+      .eq('_id', userId)
+      .single();
+
+    if (userError || !userData?.['Proposals List']) {
+      return 0;
+    }
+
+    const proposalIds = userData['Proposals List'];
+    if (!Array.isArray(proposalIds) || proposalIds.length === 0) {
+      return 0;
+    }
+
+    // Step 2: Count proposals with pending confirmation status
+    const { data: proposalsData, error: proposalsError } = await supabase
+      .from('proposal')
+      .select('_id, Status')
+      .in('_id', proposalIds)
+      .or('Deleted.is.null,Deleted.eq.false');
+
+    if (proposalsError || !proposalsData) {
+      return 0;
+    }
+
+    // Step 3: Filter to only pending confirmation proposals
+    const pendingCount = proposalsData.filter(
+      p => isPendingConfirmationProposal(p.Status)
+    ).length;
+
+    return pendingCount;
+  } catch (err) {
+    console.error('Exception in fetchPendingConfirmationCount:', err);
+    return 0;
+  }
+}
+
+/**
+ * Fetch pending confirmation proposals for a user (with full enrichment)
+ *
+ * @param {string} userId - The user's _id
+ * @returns {Promise<Array>} Array of enriched proposal objects
+ */
+export async function fetchPendingConfirmationProposals(userId) {
+  if (!userId) {
+    console.warn('fetchPendingConfirmationProposals: No userId provided');
+    return [];
+  }
+
+  try {
+    // Step 1: Fetch user's proposals list
+    const { data: userData, error: userError } = await supabase
+      .from('user')
+      .select('"Proposals List"')
+      .eq('_id', userId)
+      .single();
+
+    if (userError) {
+      console.error('Error fetching user proposals list:', userError);
+      return [];
+    }
+
+    const proposalIds = userData?.['Proposals List'];
+    if (!proposalIds || !Array.isArray(proposalIds) || proposalIds.length === 0) {
+      return [];
+    }
+
+    // Step 2: Fetch all proposals
+    const { data: proposalsData, error: proposalsError } = await supabase
+      .from('proposal')
+      .select('*')
+      .in('_id', proposalIds)
+      .or('Deleted.is.null,Deleted.eq.false')
+      .order('Created Date', { ascending: false });
+
+    if (proposalsError) {
+      console.error('Error fetching proposals:', proposalsError);
+      return [];
+    }
+
+    // Step 3: Filter to only pending confirmation proposals
+    const pendingProposals = (proposalsData || []).filter(
+      p => isPendingConfirmationProposal(p.Status)
+    );
+
+    if (pendingProposals.length === 0) {
+      return [];
+    }
+
+    // Step 4: Enrich each proposal with listing, guest, host data
+    const enrichedProposals = await Promise.all(
+      pendingProposals.map(proposal => loadProposalDetails(proposal))
+    );
+
+    // Step 5: Fetch negotiation summaries if available
+    const proposalIdsForSummaries = enrichedProposals.map(p => p._id);
+    const { data: summariesData } = await supabase
+      .from('negotiationsummary')
+      .select('*')
+      .in('proposal_associated', proposalIdsForSummaries)
+      .order('Created Date', { ascending: false });
+
+    // Attach summaries to proposals
+    if (summariesData && summariesData.length > 0) {
+      const summaryMap = {};
+      summariesData.forEach(summary => {
+        const proposalId = summary.proposal_associated;
+        if (!summaryMap[proposalId]) {
+          summaryMap[proposalId] = [];
+        }
+        summaryMap[proposalId].push(summary);
+      });
+
+      enrichedProposals.forEach(proposal => {
+        proposal._negotiationSummaries = summaryMap[proposal._id] || [];
+      });
+    }
+
+    return enrichedProposals;
+  } catch (err) {
+    console.error('Exception in fetchPendingConfirmationProposals:', err);
+    return [];
   }
 }
 

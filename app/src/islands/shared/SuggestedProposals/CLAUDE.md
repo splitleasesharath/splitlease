@@ -34,8 +34,8 @@ This component uses **native Supabase field names** (no mapping layer). Key fiel
 ### Proposal Fields (from `proposal` table)
 - `_id` - Unique identifier
 - `Status` - Proposal status string
-- `'Nightly Price'` - Per-night cost
-- `'Total Price'` - Total reservation cost
+- `'proposal nightly price'` - Per-night cost (numeric)
+- `'Total Price for Reservation (guest)'` - Total reservation cost (numeric)
 - `'Move in range start'` - Start date (ISO string)
 - `'Reservation Span (Weeks)'` - Duration in weeks
 - `'Check In Day'` - Day name (e.g., "Monday")
@@ -48,18 +48,35 @@ This component uses **native Supabase field names** (no mapping layer). Key fiel
 - `_listing` - Full listing object
 - `_guest` - Guest user object
 - `_host` - Host user object
-- `_negotiationSummary` - AI-generated summary (if available)
+- `_negotiationSummaries` - Array of AI-generated summaries (if available)
 
 ### Listing Fields (from `_listing`)
-- `'Listing Name'` - Property name
-- `'Photos - Features'` - Array of photo URLs
-- `'Address - Full'` - Street address
-- `geo_point` - `{ lat, lng }` coordinates
-- `'Qty Bedrooms'` - Number of bedrooms
-- `'Qty Bathrooms'` - Number of bathrooms
-- `'Qty Beds'` - Number of beds
-- `'Qty Guests'` - Max guests
-- `'Type of Space'` - "Entire Place", "Private Room", etc.
+- `'Name'` - Property name
+- `'Features - Photos'` - Array of photo URLs (may contain IDs that need resolution)
+- `'Location - Address'` - JSONB object `{ address: string, lat: number, lng: number }` - **Note**: Contains embedded coordinates
+- `'Location - Coordinates'` - `{ lat, lng }` coordinates (fallback if not in Location - Address)
+- `'Location - Borough'` - Borough name (e.g., "Manhattan")
+- `'Location - Hood'` - Neighborhood name (e.g., "Financial District")
+- `'Features - Qty Bedrooms'` - Number of bedrooms (integer)
+- `'Features - Qty Bathrooms'` - Number of bathrooms (numeric)
+- `'Features - Qty Beds'` - Number of beds (integer)
+- `'Features - Qty Guests'` - Max guests (integer)
+- `'Features - Type of Space'` - **FK ID** to `reference_table.zat_features_listingtype` - Must be resolved to display label
+
+### Data Transformation Notes
+
+**Location - Address**: May be stored as stringified JSON. Always parse before accessing:
+```javascript
+const rawAddressData = listing['Location - Address'];
+const addressData = typeof rawAddressData === 'string'
+  ? JSON.parse(rawAddressData)
+  : rawAddressData;
+const address = addressData?.address || '';
+const geoPoint = { lat: addressData?.lat, lng: addressData?.lng };
+```
+
+**Features - Type of Space**: Contains Bubble-format FK IDs like `1569530331984x152755544104023800`.
+Use `SPACE_TYPE_ID_TO_LABEL` mapping in AmenityIcons.jsx to resolve to human-readable labels.
 
 ## Status Filtering
 

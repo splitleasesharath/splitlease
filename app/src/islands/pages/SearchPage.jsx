@@ -10,10 +10,12 @@ import LoggedInAvatar from '../shared/LoggedInAvatar/LoggedInAvatar.jsx';
 import FavoriteButton from '../shared/FavoriteButton';
 import CreateProposalFlowV2, { clearProposalDraft } from '../shared/CreateProposalFlowV2.jsx';
 import { isGuest } from '../../logic/rules/users/isGuest.js';
+import { isHost } from '../../logic/rules/users/isHost.js';
 import { supabase } from '../../lib/supabase.js';
 import { fetchProposalsByGuest, fetchLastProposalDefaults } from '../../lib/proposalDataFetcher.js';
 import { fetchZatPriceConfiguration } from '../../lib/listingDataFetcher.js';
-import { checkAuthStatus, validateTokenAndFetchUser, getUserId, getSessionId, logoutUser } from '../../lib/auth.js';
+import { checkAuthStatus, validateTokenAndFetchUser, getUserId, getSessionId, logoutUser, getFirstName, getAvatarUrl } from '../../lib/auth.js';
+import { getUserType as getStoredUserType, getAuthState } from '../../lib/secureStorage.js';
 import { PRICE_TIERS, SORT_OPTIONS, WEEK_PATTERNS, LISTING_CONFIG, VIEW_LISTING_URL, SEARCH_URL } from '../../lib/constants.js';
 import { initializeLookups, getNeighborhoodName, getBoroughName, getPropertyTypeLabel, isInitialized } from '../../lib/dataLookups.js';
 import { parseUrlToFilters, updateUrlParams, watchUrlChanges, hasUrlFilters } from '../../lib/urlParams.js';
@@ -508,7 +510,7 @@ function FilterPanel({
 /**
  * PropertyCard - Individual listing card
  */
-function PropertyCard({ listing, onLocationClick, onCardHover, onCardLeave, onOpenContactModal, onOpenInfoModal, isLoggedIn, isFavorited, userId, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalForListing, selectedNightsCount }) {
+function PropertyCard({ listing, onLocationClick, onCardHover, onCardLeave, onOpenContactModal, onOpenInfoModal, isLoggedIn, isFavorited, userId, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalForListing, selectedNightsCount, showMessageButton = true }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const priceInfoTriggerRef = useRef(null);
   const mobilePriceInfoTriggerRef = useRef(null);
@@ -791,19 +793,21 @@ function PropertyCard({ listing, onLocationClick, onCardHover, onCardLeave, onOp
             </div>
             {/* Action Buttons */}
             <div className="action-buttons">
-              <button
-                className="action-button secondary"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onOpenContactModal(listing);
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-                </svg>
-                Message
-              </button>
+              {showMessageButton && (
+                <button
+                  className="action-button secondary"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onOpenContactModal(listing);
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                  </svg>
+                  Message
+                </button>
+              )}
               {/* Proposal CTAs - Show Create or View based on existing proposal */}
               {showCreateProposalButton && (
                 proposalForListing ? (
@@ -885,7 +889,7 @@ function PropertyCard({ listing, onLocationClick, onCardHover, onCardLeave, onOp
 /**
  * ListingsGrid - Grid of property cards with lazy loading
  */
-function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef, isLoggedIn, userId, favoritedListingIds, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalsByListingId, selectedNightsCount }) {
+function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef, isLoggedIn, userId, favoritedListingIds, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalsByListingId, selectedNightsCount, showMessageButton = true }) {
 
   const sentinelRef = useRef(null);
 
@@ -957,6 +961,7 @@ function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactM
             onOpenCreateProposalModal={onOpenCreateProposalModal}
             proposalForListing={proposalForListing}
             selectedNightsCount={selectedNightsCount}
+            showMessageButton={showMessageButton}
           />
         );
       })}
@@ -1097,9 +1102,27 @@ export default function SearchPage() {
   const [mobileHeaderHidden, setMobileHeaderHidden] = useState(false);
   const [desktopHeaderCollapsed, setDesktopHeaderCollapsed] = useState(false);
 
-  // Auth state
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
+  // Auth state - Initialize with cached data for optimistic UI (prevents flash of logged-out state)
+  const cachedFirstName = getFirstName();
+  const cachedAvatarUrl = getAvatarUrl();
+  const cachedUserType = getStoredUserType();
+  const hasCachedAuth = !!(cachedFirstName && getAuthState());
+
+  const [isLoggedIn, setIsLoggedIn] = useState(hasCachedAuth);
+  const [currentUser, setCurrentUser] = useState(() => {
+    if (hasCachedAuth) {
+      return {
+        id: getUserId(),
+        name: cachedFirstName,
+        email: '',
+        userType: cachedUserType || 'GUEST',
+        avatarUrl: cachedAvatarUrl || null,
+        proposalCount: 0,
+        _isOptimistic: true // Flag to indicate this is optimistic data
+      };
+    }
+    return null;
+  });
   const [favoritesCount, setFavoritesCount] = useState(0);
   const [favoritedListingIds, setFavoritedListingIds] = useState(new Set());
 
@@ -1410,20 +1433,44 @@ export default function SearchPage() {
           // Validate token and get user data
           // CRITICAL: Use clearOnFailure: false to preserve session if Edge Function fails
           const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
+          let userId = null;
+          let userType = 'GUEST'; // Track userType for later use (proposals check)
+
           if (userData) {
-            const userId = getUserId();
+            userId = getUserId();
+            userType = userData.userType || 'GUEST';
             setCurrentUser({
               id: userId,
               name: userData.fullName || userData.firstName || '',
               email: userData.email || '',
-              userType: userData.userType || 'GUEST',
+              userType: userType,
               avatarUrl: userData.profilePhoto || null,
               proposalCount: userData.proposalCount ?? 0
             });
+          } else {
+            // Edge Function failed but we have a valid Supabase session
+            // Fall back to Supabase session data + localStorage for basic user info
+            console.log('[SearchPage] validateTokenAndFetchUser failed, falling back to Supabase session');
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+              userId = session.user.user_metadata?.user_id || session.user.id;
+              const storedUserType = localStorage.getItem('sl_user_type');
+              userType = session.user.user_metadata?.user_type || storedUserType || 'GUEST';
+              setCurrentUser({
+                id: userId,
+                name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || '',
+                email: session.user.email || '',
+                userType: userType,
+                avatarUrl: session.user.user_metadata?.avatar_url || null,
+                proposalCount: 0
+              });
+              console.log('[SearchPage] Using Supabase session fallback, userType:', userType);
+            }
+          }
 
-            // Fetch favorites, proposals count, and profile data from Supabase
-            // Uses junction table RPCs for favorites/proposals (Phase 5b migration)
-            if (userId) {
+          // Fetch favorites, proposals count, and profile data from Supabase
+          // Uses junction table RPCs for favorites/proposals (Phase 5b migration)
+          if (userId) {
               // Parallel fetch: profile data + junction counts + favorites list
               const [userResult, countsResult] = await Promise.all([
                 // Profile data + favorites for proposal form prefilling and heart icons
@@ -1486,7 +1533,8 @@ export default function SearchPage() {
                 }
 
                 // Fetch user's proposals to check if any exist for specific listings
-                const userIsGuest = isGuest({ userType: userData.userType });
+                // Use local userType variable (works for both Edge Function and Supabase fallback)
+                const userIsGuest = isGuest({ userType });
                 if (userIsGuest && userId && proposalCount > 0) {
                   try {
                     const proposals = await fetchProposalsByGuest(userId);
@@ -1515,7 +1563,6 @@ export default function SearchPage() {
               }
             }
           }
-        }
       } catch (error) {
         console.error('[SearchPage] Auth check error:', error);
         setIsLoggedIn(false);
@@ -2931,6 +2978,14 @@ export default function SearchPage() {
     return userIsGuest && hasExistingProposals;
   }, [isLoggedIn, currentUser]);
 
+  // Determine if "Message" button should be visible on listing cards
+  // Hidden for logged-in host users (hosts shouldn't message other hosts)
+  const showMessageButton = useMemo(() => {
+    if (!isLoggedIn || !currentUser) return true; // Show for guests (not logged in)
+    const userIsHost = isHost({ userType: currentUser.userType });
+    return !userIsHost;
+  }, [isLoggedIn, currentUser]);
+
   // Render
   return (
     <div className="search-page">
@@ -3402,6 +3457,7 @@ export default function SearchPage() {
                       onOpenCreateProposalModal={handleOpenCreateProposalModal}
                       proposalsByListingId={proposalsByListingId}
                       selectedNightsCount={selectedNightsCount}
+                      showMessageButton={showMessageButton}
                     />
                   </div>
                 )}
@@ -3429,6 +3485,7 @@ export default function SearchPage() {
                 onOpenCreateProposalModal={handleOpenCreateProposalModal}
                 proposalsByListingId={proposalsByListingId}
                 selectedNightsCount={selectedNightsCount}
+                showMessageButton={showMessageButton}
               />
             )}
           </div>
@@ -3560,6 +3617,7 @@ export default function SearchPage() {
               setAuthModalView('signup');
               setIsAuthModalOpen(true);
             }}
+            showMessageButton={showMessageButton}
           />
         </section>
       </main>
@@ -3689,6 +3747,7 @@ export default function SearchPage() {
                 setAuthModalView('signup');
                 setIsAuthModalOpen(true);
               }}
+              showMessageButton={showMessageButton}
             />
           </div>
         </div>

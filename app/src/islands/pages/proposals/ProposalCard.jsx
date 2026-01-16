@@ -271,17 +271,17 @@ const STATUS_BANNERS = {
   // Suggested proposals by Split Lease agent
   'Proposal Submitted for guest by Split Lease - Awaiting Rental Application': {
     type: 'suggested',
-    text: '💡 Suggested Proposal\nThis proposal was suggested by a Split Lease Agent on your behalf.',
+    text: '💡 Suggested Proposal — Complete Your Application\nYou confirmed this suggestion. Please submit your rental application to proceed.',
     bgColor: '#F3E8FF',
     borderColor: '#4B0082',
     textColor: '#4B0082'
   },
   'Proposal Submitted for guest by Split Lease - Pending Confirmation': {
     type: 'suggested',
-    text: '💡 Suggested Proposal\nThis proposal was suggested by a Split Lease Agent on your behalf.',
-    bgColor: '#F3E8FF',
-    borderColor: '#4B0082',
-    textColor: '#4B0082'
+    text: '⚡ Pending Your Acceptance\nA Split Lease Agent suggested this listing for you. Review and confirm to proceed.',
+    bgColor: '#FEF3C7',
+    borderColor: '#D97706',
+    textColor: '#92400E'
   },
   'Rental Application Submitted': {
     text: 'Application Submitted!\nAwaiting host review.',
@@ -1316,7 +1316,7 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
           {/* VM action button (only when actionable, not disabled) */}
           {vmConfig.visible && !vmConfig.disabled && (
             <button
-              className={`btn btn-outline ${highlightVMButton && vmConfig.view === 'request' ? 'vm-button-pulse' : ''}`}
+              className="btn btn-outline"
               onClick={handleVMButtonClick}
             >
               {vmConfig.view === 'request' ? 'Schedule Meeting' : vmConfig.label}

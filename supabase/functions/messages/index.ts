@@ -86,9 +86,16 @@ const authenticateUser = async (
     return ok(null);
   }
 
+  // DEBUG: Log all headers to diagnose auth issues
+  console.log('[messages] DEBUG: Checking Authorization header...');
+  const authHeader = headers.get('Authorization');
+  console.log('[messages] DEBUG: Authorization header present:', !!authHeader);
+  console.log('[messages] DEBUG: Authorization header length:', authHeader?.length ?? 0);
+
   // Extract auth token
   const tokenResult = extractAuthToken(headers);
   if (!tokenResult.ok) {
+    console.log('[messages] DEBUG: Token extraction failed:', tokenResult.error.message);
     return tokenResult;
   }
 

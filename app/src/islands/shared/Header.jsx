@@ -6,6 +6,9 @@ import { supabase } from '../../lib/supabase.js';
 import CreateDuplicateListingModal from './CreateDuplicateListingModal/CreateDuplicateListingModal.jsx';
 import LoggedInAvatar from './LoggedInAvatar/LoggedInAvatar.jsx';
 import SignUpLoginModal from './SignUpLoginModal.jsx';
+import HeaderSuggestedProposalTrigger from './SuggestedProposals/HeaderSuggestedProposalTrigger.jsx';
+import SuggestedProposalPopup from './SuggestedProposals/SuggestedProposalPopup.jsx';
+import { fetchPendingConfirmationCount, fetchPendingConfirmationProposals, markProposalInterested, dismissProposal } from './SuggestedProposals/suggestedProposalService.js';
 
 export default function Header({ autoShowLogin = false }) {
   const [mobileMenuActive, setMobileMenuActive] = useState(false);
@@ -43,6 +46,13 @@ export default function Header({ autoShowLogin = false }) {
 
   // CreateDuplicateListingModal State
   const [showListPropertyModal, setShowListPropertyModal] = useState(false);
+
+  // Suggested Proposals State (for pending confirmation proposals)
+  const [pendingProposalCount, setPendingProposalCount] = useState(0);
+  const [pendingProposals, setPendingProposals] = useState([]);
+  const [showSuggestedPopup, setShowSuggestedPopup] = useState(false);
+  const [currentProposalIndex, setCurrentProposalIndex] = useState(0);
+  const [isProcessingProposal, setIsProcessingProposal] = useState(false);
 
   // Background validation: Validate cached auth state and update with real data
   // The optimistic UI is already set synchronously in useState initializer above
@@ -111,10 +121,13 @@ export default function Header({ autoShowLogin = false }) {
             console.log('[Header] Supabase session exists - preserving auth state');
             // Set basic user info from session if available
             // CRITICAL: Include userId and userType so useHostMenuData and LoggedInAvatar can function
+            // Use Bubble-format user_id from metadata (or localStorage) for downstream queries
+            // Fallback to Supabase UUID only if neither is available
             if (session?.user) {
+              const bubbleUserId = session.user.user_metadata?.user_id || getUserId() || session.user.id;
               setCurrentUser({
-                userId: session.user.id,
-                id: session.user.id,
+                userId: bubbleUserId,
+                id: bubbleUserId,
                 firstName: session.user.user_metadata?.first_name || session.user.email?.split('@')[0] || 'User',
                 email: session.user.email,
                 userType: session.user.user_metadata?.user_type || null,
@@ -331,6 +344,23 @@ export default function Header({ autoShowLogin = false }) {
     return userType.includes('Guest') || userType === 'Split Lease';
   };
 
+  // Fetch pending confirmation proposals for guest users
+  useEffect(() => {
+    const fetchPendingProposals = async () => {
+      // Only fetch for logged-in guest users
+      if (!currentUser?.userId && !currentUser?.id) return;
+      if (!isGuest()) return;
+
+      const userId = currentUser.userId || currentUser.id;
+      const count = await fetchPendingConfirmationCount(userId);
+      setPendingProposalCount(count);
+    };
+
+    if (currentUser && authChecked) {
+      fetchPendingProposals();
+    }
+  }, [currentUser, authChecked, userType]);
+
   // Handle scroll behavior - hide header on scroll down, show on scroll up
   useEffect(() => {
     const handleScroll = () => {
@@ -432,6 +462,83 @@ export default function Header({ autoShowLogin = false }) {
       }
     } else {
       console.error('❌ Logout failed:', result.error);
+    }
+  };
+
+  // Handle suggested proposal trigger click - load full proposals and show popup
+  const handleSuggestedTriggerClick = async () => {
+    if (showSuggestedPopup) {
+      // Already open, just close
+      setShowSuggestedPopup(false);
+      return;
+    }
+
+    const userId = currentUser?.userId || currentUser?.id;
+    if (!userId) return;
+
+    // Fetch full proposal details when opening popup
+    const proposals = await fetchPendingConfirmationProposals(userId);
+    setPendingProposals(proposals);
+    setCurrentProposalIndex(0);
+    setShowSuggestedPopup(true);
+  };
+
+  // Handle "Interested" action on suggested proposal
+  const handleProposalInterested = async () => {
+    const proposal = pendingProposals[currentProposalIndex];
+    if (!proposal) return;
+
+    setIsProcessingProposal(true);
+    const result = await markProposalInterested(proposal._id);
+    setIsProcessingProposal(false);
+
+    if (result.success) {
+      // Remove from list and update count
+      const newProposals = pendingProposals.filter((_, i) => i !== currentProposalIndex);
+      setPendingProposals(newProposals);
+      setPendingProposalCount(prev => Math.max(0, prev - 1));
+
+      if (newProposals.length === 0) {
+        setShowSuggestedPopup(false);
+      } else if (currentProposalIndex >= newProposals.length) {
+        setCurrentProposalIndex(newProposals.length - 1);
+      }
+    }
+  };
+
+  // Handle "Remove" action on suggested proposal
+  const handleProposalRemove = async () => {
+    const proposal = pendingProposals[currentProposalIndex];
+    if (!proposal) return;
+
+    setIsProcessingProposal(true);
+    const result = await dismissProposal(proposal._id);
+    setIsProcessingProposal(false);
+
+    if (result.success) {
+      // Remove from list and update count
+      const newProposals = pendingProposals.filter((_, i) => i !== currentProposalIndex);
+      setPendingProposals(newProposals);
+      setPendingProposalCount(prev => Math.max(0, prev - 1));
+
+      if (newProposals.length === 0) {
+        setShowSuggestedPopup(false);
+      } else if (currentProposalIndex >= newProposals.length) {
+        setCurrentProposalIndex(newProposals.length - 1);
+      }
+    }
+  };
+
+  // Navigate between proposals in popup
+  const handleNextProposal = () => {
+    if (currentProposalIndex < pendingProposals.length - 1) {
+      setCurrentProposalIndex(prev => prev + 1);
+    }
+  };
+
+  const handlePreviousProposal = () => {
+    if (currentProposalIndex > 0) {
+      setCurrentProposalIndex(prev => prev - 1);
     }
   };
 
@@ -651,6 +758,15 @@ export default function Header({ autoShowLogin = false }) {
 
         {/* Right Navigation - Auth Buttons */}
         <div className={`nav-right ${mobileMenuActive ? 'mobile-active' : ''}`}>
+          {/* Suggested Proposal Trigger - shows for guest users with pending proposals */}
+          {currentUser && isGuest() && pendingProposalCount > 0 && (
+            <HeaderSuggestedProposalTrigger
+              onClick={handleSuggestedTriggerClick}
+              isActive={showSuggestedPopup}
+              proposalCount={pendingProposalCount}
+            />
+          )}
+
           {currentUser && isHost() ? (
             <a href={HOST_OVERVIEW_URL} className="explore-rentals-btn">
               Host Overview
@@ -745,6 +861,20 @@ export default function Header({ autoShowLogin = false }) {
           currentUser={currentUser}
         />
       )}
+
+      {/* Suggested Proposal Popup */}
+      <SuggestedProposalPopup
+        proposal={pendingProposals[currentProposalIndex]}
+        currentIndex={currentProposalIndex}
+        totalCount={pendingProposals.length}
+        onInterested={handleProposalInterested}
+        onRemove={handleProposalRemove}
+        onNext={handleNextProposal}
+        onPrevious={handlePreviousProposal}
+        onClose={() => setShowSuggestedPopup(false)}
+        isVisible={showSuggestedPopup}
+        isProcessing={isProcessingProposal}
+      />
     </header>
   );
 }

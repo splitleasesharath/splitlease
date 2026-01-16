@@ -21,6 +21,31 @@ import WhyThisProposal from './components/WhyThisProposal.jsx';
 import './SuggestedProposalPopup.css';
 
 /**
+ * Borough FK ID to display name mapping
+ * 'Location - Borough' stores FK IDs to reference_table.zat_geo_borough_toplevel
+ */
+const BOROUGH_ID_TO_LABEL = {
+  '1607041299637x913970439175620100': 'Brooklyn',
+  '1607041299687x679479834266385900': 'Manhattan',
+  '1607041299715x741251947580746200': 'Bronx',
+  '1607041299828x406969561802059650': 'Queens',
+  '1686599616073x348655546878883200': 'Weehawken, NJ',
+  '1686674905048x436838997624262400': 'Newark, NJ',
+  '1607041299795x174606299553766500': 'Staten Island',
+};
+
+/**
+ * Check if a value looks like a Bubble FK ID (not a display name)
+ * @param {string} value - The value to check
+ * @returns {boolean} True if it looks like an ID
+ */
+const isBubbleFkId = (value) => {
+  if (!value || typeof value !== 'string') return false;
+  // Bubble IDs are long numeric strings with 'x' separator
+  return value.includes('x') && value.length > 20;
+};
+
+/**
  * @param {Object} props
  * @param {Object} props.proposal - Enriched proposal object with _listing, _host, etc.
  * @param {number} props.currentIndex - Current proposal index (0-based)
@@ -59,10 +84,33 @@ export default function SuggestedProposalPopup({
 
   // Extract data using native Supabase field names
   const listing = proposal._listing || {};
-  const photos = listing['Photos - Features'] || [];
-  const listingName = listing['Listing Name'] || 'Unnamed Listing';
-  const address = listing['Address - Full'] || '';
-  const geoPoint = listing.geo_point || null;
+  const photos = listing['Features - Photos'] || [];
+  const listingName = listing['Name'] || 'Unnamed Listing';
+
+  // Location - Address is JSONB: { address: string, lat: number, lng: number }
+  // May also be stored as a string that needs parsing
+  const rawAddressData = listing['Location - Address'];
+  const addressData = typeof rawAddressData === 'string'
+    ? (() => { try { return JSON.parse(rawAddressData); } catch { return null; } })()
+    : rawAddressData;
+
+  // Extract display address (just the street address, not the full JSONB)
+  const address = addressData?.address || '';
+
+  // Extract coordinates from Location - Address (they're embedded in the JSONB)
+  // Fall back to Location - Coordinates if available
+  const geoPoint = (addressData?.lat && addressData?.lng)
+    ? { lat: addressData.lat, lng: addressData.lng }
+    : listing['Location - Coordinates'] || null;
+
+  // Get neighborhood/borough for location display (more useful than full address)
+  // Resolve borough FK ID to display label
+  const rawBorough = listing['Location - Borough'] || '';
+  const borough = BOROUGH_ID_TO_LABEL[rawBorough] || (isBubbleFkId(rawBorough) ? '' : rawBorough);
+
+  // For neighborhood, skip if it's an unresolved FK ID (no static mapping available)
+  const rawNeighborhood = listing['Location - Hood'] || listing['neighborhood (manual input by user)'] || '';
+  const neighborhood = isBubbleFkId(rawNeighborhood) ? '' : rawNeighborhood;
 
   // Negotiation summary (AI explanation)
   const summaries = proposal._negotiationSummaries || [];
@@ -156,7 +204,10 @@ export default function SuggestedProposalPopup({
                 {listingName}
               </h2>
 
-              <p className="sp-popup-address">{address}</p>
+              <p className="sp-popup-address">
+                {neighborhood && borough ? `${neighborhood}, ${borough}` :
+                 neighborhood || borough || address || 'Location not available'}
+              </p>
 
               <div className="sp-popup-dates">
                 <span className="sp-popup-date-label">Move-in:</span>
@@ -171,8 +222,8 @@ export default function SuggestedProposalPopup({
               <AmenityIcons listing={listing} />
 
               <PriceDisplay
-                nightlyPrice={proposal['Nightly Price']}
-                totalPrice={proposal['Total Price']}
+                nightlyPrice={proposal['proposal nightly price']}
+                totalPrice={proposal['Total Price for Reservation (guest)']}
               />
 
               <ActionButtons
