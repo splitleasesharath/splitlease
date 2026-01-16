@@ -3,6 +3,7 @@
  *
  * Inline button styled to match the header's design language.
  * Positioned inline within nav-right, between nav links.
+ * Features a glowing pulse animation to draw attention.
  */
 
 .header-sp-trigger {
@@ -10,20 +11,35 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
-  background: transparent;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.2) 0%, rgba(255, 152, 0, 0.15) 100%);
+  border: 2px solid rgba(255, 193, 7, 0.6);
   cursor: pointer;
   transition: all 0.2s ease;
-  margin-right: 8px;
+  margin-right: 12px;
+  animation: header-sp-glow 2s ease-in-out infinite;
+}
+
+/* Glowing pulse animation on the button */
+@keyframes header-sp-glow {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(255, 193, 7, 0.4), 0 0 16px rgba(255, 193, 7, 0.2);
+    border-color: rgba(255, 193, 7, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(255, 193, 7, 0.6), 0 0 32px rgba(255, 193, 7, 0.4);
+    border-color: rgba(255, 193, 7, 0.9);
+  }
 }
 
 .header-sp-trigger:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.5);
-  transform: scale(1.05);
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.35) 0%, rgba(255, 152, 0, 0.25) 100%);
+  border-color: rgba(255, 193, 7, 1);
+  transform: scale(1.1);
+  animation: none;
+  box-shadow: 0 0 20px rgba(255, 193, 7, 0.7), 0 0 40px rgba(255, 193, 7, 0.4);
 }
 
 .header-sp-trigger:active {
@@ -31,69 +47,70 @@
 }
 
 .header-sp-trigger--active {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.6);
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.4) 0%, rgba(255, 152, 0, 0.3) 100%);
+  border-color: rgba(255, 193, 7, 1);
+  animation: none;
+  box-shadow: 0 0 16px rgba(255, 193, 7, 0.6);
 }
 
-/* Lightbulb icon */
+/* Lightbulb icon - golden/yellow color */
 .header-sp-trigger__icon {
-  width: 20px;
-  height: 20px;
-  color: #FFFFFF;
+  width: 22px;
+  height: 22px;
+  color: #FFC107;
+  filter: drop-shadow(0 0 2px rgba(255, 193, 7, 0.5));
 }
 
 /* Count badge */
 .header-sp-trigger__badge {
   position: absolute;
-  top: -4px;
-  right: -4px;
-  min-width: 18px;
-  height: 18px;
-  background: #EF4444;
+  top: -6px;
+  right: -6px;
+  min-width: 20px;
+  height: 20px;
+  background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
   color: #FFFFFF;
   font-family: 'Inter', sans-serif;
   font-size: 11px;
-  font-weight: 600;
-  border-radius: 9px;
+  font-weight: 700;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  padding: 0 5px;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.5);
+  border: 2px solid #250856;
+  animation: header-sp-badge-pulse 1.5s ease-in-out infinite;
 }
 
-/* Subtle pulse animation to draw attention */
-@keyframes header-sp-pulse {
+/* Badge pulse animation */
+@keyframes header-sp-badge-pulse {
   0%, 100% {
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+    transform: scale(1);
   }
   50% {
-    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+    transform: scale(1.1);
   }
-}
-
-.header-sp-trigger__badge {
-  animation: header-sp-pulse 2s ease-in-out infinite;
 }
 
 /* Mobile adjustments */
 @media (max-width: 768px) {
   .header-sp-trigger {
-    width: 36px;
-    height: 36px;
-    margin-right: 4px;
+    width: 38px;
+    height: 38px;
+    margin-right: 8px;
   }
 
   .header-sp-trigger__icon {
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
   }
 
   .header-sp-trigger__badge {
-    min-width: 16px;
-    height: 16px;
+    min-width: 18px;
+    height: 18px;
     font-size: 10px;
-    top: -3px;
-    right: -3px;
+    top: -5px;
+    right: -5px;
   }
 }

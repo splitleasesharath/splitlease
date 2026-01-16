@@ -30,19 +30,15 @@ export default function HeaderSuggestedProposalTrigger({
       type="button"
       title="You have suggested listings waiting for your review"
     >
-      {/* Lightbulb Icon */}
+      {/* Lightbulb Icon - Filled version for better visibility */}
       <svg
         className="header-sp-trigger__icon"
         viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        fill="currentColor"
+        xmlns="http://www.w3.org/2000/svg"
       >
-        <path d="M9 18h6" />
-        <path d="M10 22h4" />
-        <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14" />
+        <path d="M12 2C8.13 2 5 5.13 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.87-3.13-7-7-7zm2 15H10v-1h4v1zm0-2H10v-1h4v1zm1.31-3.26L15 12v2H9v-2l-.31-.26C7.34 11.03 6 10.05 6 9c0-3.31 2.69-6 6-6s6 2.69 6 6c0 1.05-1.34 2.03-2.69 2.74z"/>
+        <path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1z"/>
       </svg>
 
       {/* Count badge */}
