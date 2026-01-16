@@ -37,13 +37,28 @@ import ProposalListSection from './ProposalListSection.jsx';
 // ============================================================================
 const DEMO_MODE = true;
 
+// Mock listings that mirror what a real host would see
+// Uses real listing ID from database with enhanced demo visuals
 const MOCK_LISTINGS = [
   {
     _id: '1766003594466x67309961278997728',
-    title: 'Cozy Brooklyn Apartment',
+    title: '1 Bedroom Entire Place in Brooklyn',
     thumbnail: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=200&h=200&fit=crop',
     neighborhood: 'Downtown Brooklyn',
-    address: '285 Jay St, Brooklyn, NY 11201'
+    address: '285 Jay St, Brooklyn, NY 11201',
+    bedrooms: 1,
+    bathrooms: 1,
+    monthly_rate: 3500
+  },
+  {
+    _id: 'demo-listing-2',
+    title: 'Sunny Studio in Williamsburg',
+    thumbnail: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=200&h=200&fit=crop',
+    neighborhood: 'Williamsburg',
+    address: '123 Bedford Ave, Brooklyn, NY 11249',
+    bedrooms: 0,
+    bathrooms: 1,
+    monthly_rate: 2200
   }
 ];
 
