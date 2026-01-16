@@ -1995,20 +1995,24 @@ export function SelfListingPageV2() {
             <div className="review-listing-price-row">
               <span className="review-price-amount">{priceDisplay}</span>
               <span className="review-price-period">/ {freq.toLowerCase()}</span>
-              <button
-                type="button"
-                ref={scheduleInfoRef}
-                className="review-price-from review-price-info-trigger"
-                onClick={handleInfoClick('schedule')}
-                aria-label="Schedule information"
-              >
-                {schedule}
-                <svg className="review-price-info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-                  <line x1="12" y1="17" x2="12.01" y2="17" />
-                </svg>
-              </button>
+              {formData.leaseStyle === 'nightly' ? (
+                <button
+                  type="button"
+                  ref={scheduleInfoRef}
+                  className="review-price-from review-price-info-trigger"
+                  onClick={handleInfoClick('schedule')}
+                  aria-label="Schedule information"
+                >
+                  {schedule}
+                  <svg className="review-price-info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
+                </button>
+              ) : (
+                <span className="review-price-from">{schedule}</span>
+              )}
             </div>
 
             {/* Host Name */}
