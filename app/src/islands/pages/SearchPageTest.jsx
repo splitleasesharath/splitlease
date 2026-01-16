@@ -12,6 +12,7 @@ import { parseUrlToFilters, updateUrlParams, watchUrlChanges, hasUrlFilters } fr
 import { fetchPhotoUrls, fetchHostData, extractPhotos, parseAmenities, parseJsonArray } from '../../lib/supabaseUtils.js';
 import { sanitizeNeighborhoodSearch, sanitizeSearchQuery } from '../../lib/sanitize.js';
 import { logger } from '../../lib/logger.js';
+import { formatHostName } from '../../logic/processors/display/formatHostName.js';
 
 // ============================================================================
 // Internal Components
@@ -375,19 +376,6 @@ function PropertyCard({ listing, selectedDaysCount, onLocationClick, onOpenConta
   const hasImages = listing.images && listing.images.length > 0;
   const hasMultipleImages = listing.images && listing.images.length > 1;
 
-  // Format host name to show "FirstName L."
-  const formatHostName = (fullName) => {
-    if (!fullName || fullName === 'Host') return 'Host';
-
-    const nameParts = fullName.trim().split(/\s+/);
-    if (nameParts.length === 1) return nameParts[0];
-
-    const firstName = nameParts[0];
-    const lastInitial = nameParts[nameParts.length - 1].charAt(0).toUpperCase();
-
-    return `${firstName} ${lastInitial}.`;
-  };
-
   const handlePrevImage = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -577,7 +565,7 @@ function PropertyCard({ listing, selectedDaysCount, onLocationClick, onOpenConta
             )}
             <div className="host-details">
               <span className="host-name">
-                {formatHostName(listing.host?.name)}
+                {formatHostName({ fullName: listing.host?.name || 'Host' })}
                 {listing.host.verified && <span className="verified-badge" title="Verified">✓</span>}
               </span>
               <button

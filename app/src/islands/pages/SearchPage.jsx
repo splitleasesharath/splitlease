@@ -24,6 +24,7 @@ import { createDay } from '../../lib/scheduleSelector/dayHelpers.js';
 import { calculateNextAvailableCheckIn } from '../../logic/calculators/scheduling/calculateNextAvailableCheckIn.js';
 import { shiftMoveInDateIfPast } from '../../logic/calculators/scheduling/shiftMoveInDateIfPast.js';
 import { calculateCheckInOutFromDays } from '../../logic/calculators/scheduling/calculateCheckInOutFromDays.js';
+import { formatHostName } from '../../logic/processors/display/formatHostName.js';
 // NOTE: adaptDaysToBubble removed - database now uses 0-indexed days natively
 import { countSelectedNights } from '../../lib/scheduleSelector/nightCalculations.js';
 import { calculatePrice } from '../../lib/scheduleSelector/priceCalculations.js';
@@ -171,19 +172,6 @@ function PropertyCard({ listing, onLocationClick, onCardHover, onCardLeave, onOp
 
   const hasImages = listing.images && listing.images.length > 0;
   const hasMultipleImages = listing.images && listing.images.length > 1;
-
-  // Format host name to show "FirstName L."
-  const formatHostName = (fullName) => {
-    if (!fullName || fullName === 'Host') return 'Host';
-
-    const nameParts = fullName.trim().split(/\s+/);
-    if (nameParts.length === 1) return nameParts[0];
-
-    const firstName = nameParts[0];
-    const lastInitial = nameParts[nameParts.length - 1].charAt(0).toUpperCase();
-
-    return `${firstName} ${lastInitial}.`;
-  };
 
   const handlePrevImage = (e) => {
     e.preventDefault();
@@ -506,7 +494,7 @@ function PropertyCard({ listing, onLocationClick, onCardHover, onCardLeave, onOp
                 <div className="host-avatar-placeholder">?</div>
               )}
               <span className="host-name">
-                Hosted by {formatHostName(listing.host?.name)}
+                Hosted by {formatHostName({ fullName: listing.host?.name || 'Host' })}
                 {listing.host?.verified && <span className="verified-badge" title="Verified">✓</span>}
               </span>
             </div>

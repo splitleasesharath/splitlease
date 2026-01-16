@@ -13,16 +13,7 @@
 import { useState, useEffect } from 'react';
 import { MessageSquare } from 'lucide-react';
 import { supabase } from '../../lib/supabase.js';
-
-// Format host name: "John Smith" -> "John S."
-function formatHostName(fullName) {
-  if (!fullName) return 'Host';
-  const parts = fullName.trim().split(/\s+/);
-  if (parts.length === 1) return parts[0];
-  const firstName = parts[0];
-  const lastInitial = parts[parts.length - 1].charAt(0).toUpperCase();
-  return `${firstName} ${lastInitial}.`;
-}
+import { formatHostName } from '../../logic/processors/display/formatHostName.js';
 
 export default function ContactHostMessaging({ isOpen, onClose, listing, onLoginRequired }) {
   const [formData, setFormData] = useState({
@@ -290,7 +281,7 @@ export default function ContactHostMessaging({ isOpen, onClose, listing, onLogin
               color: '#1a202c',
               margin: 0
             }}>
-              Message {formatHostName(listing.host?.name)}
+              Message {formatHostName({ fullName: listing.host?.name || 'Host' })}
             </h3>
           </div>
           <button

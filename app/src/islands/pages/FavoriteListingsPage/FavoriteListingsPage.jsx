@@ -27,6 +27,7 @@ import { fetchPhotoUrls, extractPhotos, fetchHostData, parseAmenities } from '..
 import { createDay } from '../../../lib/scheduleSelector/dayHelpers.js';
 import { calculateNextAvailableCheckIn } from '../../../logic/calculators/scheduling/calculateNextAvailableCheckIn.js';
 import { shiftMoveInDateIfPast } from '../../../logic/calculators/scheduling/shiftMoveInDateIfPast.js';
+import { formatHostName } from '../../../logic/processors/display/formatHostName.js';
 import './FavoriteListingsPage.css';
 import '../../../styles/create-proposal-flow-v2.css';
 
@@ -72,19 +73,6 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
 
   // Get listing ID for FavoriteButton
   const favoriteListingId = listing.id || listing._id;
-
-  // Format host name to show "FirstName L."
-  const formatHostName = (fullName) => {
-    if (!fullName || fullName === 'Host') return 'Host';
-
-    const nameParts = fullName.trim().split(/\s+/);
-    if (nameParts.length === 1) return nameParts[0];
-
-    const firstName = nameParts[0];
-    const lastInitial = nameParts[nameParts.length - 1].charAt(0).toUpperCase();
-
-    return `${firstName} ${lastInitial}.`;
-  };
 
   const handlePrevImage = (e) => {
     e.preventDefault();
@@ -287,7 +275,7 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
                 <div className="host-avatar-placeholder">?</div>
               )}
               <span className="host-name">
-                {formatHostName(listing.host?.name)}
+                {formatHostName({ fullName: listing.host?.name || 'Host' })}
                 {listing.host?.verified && <span className="verified-badge" title="Verified">✓</span>}
               </span>
             </div>
