@@ -319,6 +319,7 @@
   border-radius: 16px;
   min-width: 0;
   max-width: 100%;
+  width: fit-content;
   overflow-wrap: anywhere;
   word-break: break-word;
 }
@@ -346,6 +347,7 @@
   margin: 0;
   font-size: 14px;
   line-height: 1.5;
+  white-space: normal;
   word-wrap: break-word;
   word-break: break-word;
   overflow-wrap: anywhere;
