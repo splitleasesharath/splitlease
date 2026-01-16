@@ -240,7 +240,15 @@ export default function BookTimeSlot({
 
       {/* Time Slot Selection Section */}
       <div className="vm-select-time-section">
-        <h3 className="vm-select-time-title">Select {maxSelections} Time Slots (EST)</h3>
+        {/* Dynamic header: shows selection count when slots selected, instruction when empty */}
+        <h3 className="vm-select-time-title">
+          {state.timesSelected.length === 0
+            ? `Select ${maxSelections} Time Slots (EST)`
+            : state.timesSelected.length < maxSelections
+              ? `Select ${maxSelections - state.timesSelected.length} more time slot${maxSelections - state.timesSelected.length !== 1 ? 's' : ''} (EST)`
+              : `${maxSelections} time slots selected (EST)`
+          }
+        </h3>
 
         {/* Selected slots display */}
         <div className="vm-selected-slots">
@@ -272,63 +280,90 @@ export default function BookTimeSlot({
         >
           Clear Time Slots
         </button>
-
-        {/* Current date info - only show when remaining > 0 */}
-        {maxSelections - state.timesSelected.length > 0 && (
-          <div className="vm-current-date-info">
-            Select {maxSelections - state.timesSelected.length} more time slot
-            {maxSelections - state.timesSelected.length !== 1 ? 's' : ''} (EST)
-          </div>
-        )}
       </div>
 
-      {/* Inline Time Slots Section - with collapse support */}
+      {/* Inline Time Slots Section - only show when selecting (not at max) OR when collapsed toggle needed */}
       {showTimePicker && selectedDate && (
-        <div className={`vm-inline-time-slots ${isGridCollapsed ? 'vm-inline-time-slots--collapsed' : ''}`}>
-          <div className="vm-time-picker-header-container">
-            <h3 className="vm-time-picker-header">
-              {isGridCollapsed
-                ? `${state.timesSelected.length} time slot${state.timesSelected.length !== 1 ? 's' : ''} selected`
-                : `Select Time for ${selectedDate.toLocaleDateString('en-US', {
-                    month: 'long',
-                    day: 'numeric',
-                    year: 'numeric'
-                  })}`
-              }
-            </h3>
-            <button
-              className="vm-grid-toggle-btn"
-              onClick={toggleGridCollapse}
-              aria-label={isGridCollapsed ? 'Expand time slots' : 'Collapse time slots'}
-              aria-expanded={!isGridCollapsed}
-              type="button"
-            >
-              <span className="vm-grid-toggle-arrow">{isGridCollapsed ? '\u25BC' : '\u25B2'}</span>
-            </button>
-          </div>
-          {!isGridCollapsed && (
-            <div className="vm-time-slots-list">
-              {availableTimeSlots.map((timeSlot, index) => {
-                const isSelected = state.timesSelected.some((slot) =>
-                  isSameDateTime(slot, timeSlot)
-                );
-                const isDisabled = isPastDate(timeSlot);
-                const isAtLimit = !isSelected && state.timesSelected.length >= maxSelections;
+        <>
+          {/* When max selections reached: show collapsible toggle */}
+          {state.timesSelected.length >= maxSelections ? (
+            <div className="vm-inline-time-slots vm-inline-time-slots--collapsed">
+              <div className="vm-time-picker-header-container">
+                <h3 className="vm-time-picker-header">
+                  {isGridCollapsed
+                    ? 'Modify time slots'
+                    : `Select Time for ${selectedDate.toLocaleDateString('en-US', {
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric'
+                      })}`
+                  }
+                </h3>
+                <button
+                  className="vm-grid-toggle-btn"
+                  onClick={toggleGridCollapse}
+                  aria-label={isGridCollapsed ? 'Expand time slots' : 'Collapse time slots'}
+                  aria-expanded={!isGridCollapsed}
+                  type="button"
+                >
+                  <span className="vm-grid-toggle-arrow">{isGridCollapsed ? '\u25BC' : '\u25B2'}</span>
+                </button>
+              </div>
+              {!isGridCollapsed && (
+                <div className="vm-time-slots-list">
+                  {availableTimeSlots.map((timeSlot, index) => {
+                    const isSelected = state.timesSelected.some((slot) =>
+                      isSameDateTime(slot, timeSlot)
+                    );
+                    const isDisabled = isPastDate(timeSlot);
 
-                return (
-                  <button
-                    key={index}
-                    onClick={() => handleTimeSlotSelect(timeSlot)}
-                    disabled={isDisabled || isAtLimit}
-                    className={`vm-time-slot-button ${isSelected ? 'vm-time-slot-selected' : ''}`}
-                  >
-                    {formatTimeEST(timeSlot, 'h:mm a')}
-                  </button>
-                );
-              })}
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => handleTimeSlotSelect(timeSlot)}
+                        disabled={isDisabled || !isSelected}
+                        className={`vm-time-slot-button ${isSelected ? 'vm-time-slot-selected' : ''}`}
+                      >
+                        {formatTimeEST(timeSlot, 'h:mm a')}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          ) : (
+            /* When still selecting: show grid normally without toggle */
+            <div className="vm-inline-time-slots">
+              <h3 className="vm-time-picker-header">
+                Select Time for {selectedDate.toLocaleDateString('en-US', {
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric'
+                })}
+              </h3>
+              <div className="vm-time-slots-list">
+                {availableTimeSlots.map((timeSlot, index) => {
+                  const isSelected = state.timesSelected.some((slot) =>
+                    isSameDateTime(slot, timeSlot)
+                  );
+                  const isDisabled = isPastDate(timeSlot);
+                  const isAtLimit = !isSelected && state.timesSelected.length >= maxSelections;
+
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => handleTimeSlotSelect(timeSlot)}
+                      disabled={isDisabled || isAtLimit}
+                      className={`vm-time-slot-button ${isSelected ? 'vm-time-slot-selected' : ''}`}
+                    >
+                      {formatTimeEST(timeSlot, 'h:mm a')}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
-        </div>
+        </>
       )}
     </div>
   );
