@@ -70,7 +70,7 @@ Before generating chunks, you MUST identify cascading dependencies:
 
 3. **Use this pattern to find dependencies:**
    ```
-   grep -rn "import.*{.*SYMBOL_NAME.*}" app/src/
+   grep -rn "import.*{{.*SYMBOL_NAME.*}}" app/src/
    ```
 
 ## Chunk Grouping Rules
