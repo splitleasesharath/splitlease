@@ -111,14 +111,75 @@ With supporting CSS:
 
 ## Root Cause Analysis
 
-The exact root cause was never definitively identified. Possible factors:
+**FOUND!** The root cause was in the **original commit** (`10b70883`) from January 7, 2026.
 
-1. **CSS Specificity Conflict**: Another stylesheet may have set `stroke: none` or `fill: none` with higher specificity
-2. **Build Process Issue**: Vite or a plugin may have transformed the SVG in unexpected ways
-3. **Font/Rendering Context**: The SVG may have required a specific viewBox or coordinate system that wasn't being honored
-4. **Shadow DOM or Isolation**: The popup's CSS isolation may have blocked SVG paint
+### The Bug Was There From Day One
 
-Without spending hours in Chrome DevTools' computed styles panel, the pragmatic solution was to use a proven alternative.
+The original implementation used this pattern:
+
+**JSX (correct):**
+```jsx
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+  <path d="M15 18l-6-6 6-6" />
+</svg>
+```
+
+**CSS (incorrect):**
+```css
+.sp-popup-nav-btn svg {
+  width: 18px;
+  height: 18px;
+  color: var(--sp-text-dark);  /* ← THIS IS THE BUG */
+}
+```
+
+### Why This Failed
+
+The SVG uses `stroke="currentColor"`, which means "use the CSS `color` property value for the stroke."
+
+**But SVG elements don't inherit `color` the same way HTML elements do.**
+
+The CSS set `color: var(--sp-text-dark)` on the `<svg>` element, expecting `currentColor` to resolve to `#424242`. However:
+
+1. `currentColor` in SVG context doesn't reliably inherit from the `color` property set on the SVG element itself
+2. The `color` property needs to be on the **parent element** (the button), not the SVG
+3. Or you need to set `stroke` directly instead of relying on `currentColor`
+
+### Contrast with the Close Button (which worked!)
+
+The close button used the **same SVG pattern** but had similar CSS:
+```css
+.sp-popup-close-btn svg {
+  width: 20px;
+  height: 20px;
+  color: var(--sp-text-muted);
+}
+```
+
+If the close button's X icon was visible, then the issue might be even more subtle - perhaps related to the specific path geometry or how the browser's SVG renderer handled these particular chevron paths.
+
+### The Real Fix Should Have Been
+
+```css
+.sp-popup-nav-btn svg {
+  width: 18px;
+  height: 18px;
+  stroke: var(--sp-text-dark);  /* Use stroke, not color */
+}
+```
+
+Or ensure the parent button has the color:
+```css
+.sp-popup-nav-btn {
+  color: var(--sp-text-dark);  /* Then currentColor will inherit */
+}
+```
+
+### Why We Missed This
+
+1. The component was adapted from an external repo where it likely worked in a different CSS context
+2. No one tested the navigation arrows when there was only 1 proposal (arrows hidden when `totalCount <= 1`)
+3. The close button may have worked due to subtle DOM/CSS differences, masking the pattern issue
 
 ---
 
