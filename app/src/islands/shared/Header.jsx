@@ -29,12 +29,14 @@ export default function Header({ autoShowLogin = false }) {
   const cachedFirstName = getFirstName();
   const cachedAvatarUrl = getAvatarUrl();
   const cachedUserType = getStoredUserType();
+  const cachedUserId = getUserId(); // Get cached userId for suggested proposals check
   const hasCachedAuth = !!(cachedFirstName && getAuthState());
 
   const [currentUser, setCurrentUser] = useState(() => {
     // Return optimistic user data if we have cached auth
     if (hasCachedAuth) {
       return {
+        userId: cachedUserId, // Include userId for pending proposals check
         firstName: cachedFirstName,
         profilePhoto: cachedAvatarUrl,
         userType: cachedUserType,
@@ -131,6 +133,7 @@ export default function Header({ autoShowLogin = false }) {
             if (session?.user) {
               const bubbleUserId = session.user.user_metadata?.user_id || getUserId() || session.user.id;
               setCurrentUser({
+                userId: bubbleUserId, // Include userId for pending proposals check
                 firstName: session.user.user_metadata?.first_name || session.user.email?.split('@')[0] || 'User',
                 email: session.user.email,
                 _isFromSession: true
