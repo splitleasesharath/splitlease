@@ -10,6 +10,7 @@
 import { supabase } from './supabase.js';
 import { DATABASE } from './constants.js';
 import { logger } from './logger.js';
+import { parseJsonArrayFieldOptional } from '../logic/processors/listing/parseJsonArrayField.js';
 
 /**
  * Parse a value that may be a native array or stringified JSON array
@@ -18,7 +19,10 @@ import { logger } from './logger.js';
  * @deprecated Prefer importing parseJsonArrayFieldOptional directly from logic layer
  * @see app/src/logic/processors/listing/parseJsonArrayField.js
  */
-export { parseJsonArrayFieldOptional as parseJsonArray } from '../logic/processors/listing/parseJsonArrayField.js';
+export { parseJsonArrayFieldOptional as parseJsonArray };
+
+// Internal alias for use within this module
+const parseJsonArray = parseJsonArrayFieldOptional;
 
 /**
  * Fetch photo URLs in batch from database
