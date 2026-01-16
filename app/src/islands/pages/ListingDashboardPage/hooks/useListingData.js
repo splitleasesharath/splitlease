@@ -276,6 +276,13 @@ function transformListingData(dbListing, photos = [], lookups = {}) {
     maxGuests: dbListing['Features - Qty Guests'] || 2,
 
     // Pricing and Lease Style
+    // DEBUG: Log rental type value
+    ...((() => {
+      console.log('🔍 DEBUG rental type raw value:', dbListing['rental type']);
+      console.log('🔍 DEBUG rental type typeof:', typeof dbListing['rental type']);
+      console.log('🔍 DEBUG all keys with rental:', Object.keys(dbListing).filter(k => k.toLowerCase().includes('rental')));
+      return {};
+    })()),
     leaseStyle: dbListing['rental type'] || 'Nightly',
     nightsPerWeekMin: dbListing['Minimum Nights'] || 2,
     nightsPerWeekMax: dbListing['Maximum Nights'] || 7,

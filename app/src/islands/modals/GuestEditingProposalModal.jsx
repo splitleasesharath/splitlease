@@ -1123,80 +1123,67 @@ export default function GuestEditingProposalModal({
               </div>
             )}
 
-            {/* Buttons section - conditionally visible */}
-            {showButtons && (
-              <div className={`gep-buttons ${view === 'pristine' ? 'gep-buttons--vertical' : ''}`}>
-                {view === 'pristine' ? (
-                  /* Pristine state: User just opened modal, hasn't edited anything */
-                  /* Edit Proposal on top, Close on bottom - stacked vertically */
-                  <>
-                    <button
-                      type="button"
-                      className="gep-button gep-button--primary"
-                      onClick={handleStartEditing}
-                    >
-                      Edit Proposal
-                    </button>
-                    <button
-                      type="button"
-                      className="gep-button gep-button--secondary"
-                      onClick={handleClose}
-                    >
-                      Close
-                    </button>
-                  </>
-                ) : view === 'editing' ? (
-                  /* Editing state: User is actively changing fields */
-                  <>
-                    <button
-                      type="button"
-                      className="gep-button gep-button--secondary"
-                      onClick={handleCancelEdits}
-                    >
-                      Cancel edits
-                    </button>
-                    <button
-                      type="button"
-                      className="gep-button gep-button--primary"
-                      onClick={handleDisplayNewTerms}
-                    >
-                      Display New Terms
-                    </button>
-                  </>
-                ) : (
-                  /* General state: User has reviewed new terms, ready to submit */
-                  <>
-                    <button
-                      type="button"
-                      className="gep-button gep-button--secondary"
-                      onClick={handleClose}
-                    >
-                      Close
-                    </button>
-                    <button
-                      type="button"
-                      className="gep-button gep-button--primary"
-                      onClick={handleSubmitProposalEdits}
-                    >
-                      Submit Proposal Edits
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
+          </div>
+        )}
 
-            {/* Cancel Proposal Button - HIDDEN: cancellation now handled by separate CancelProposalModal shared island */}
-            {/* Keeping code for reference while CancelProposalModal issues are resolved */}
-            {false && view === 'general' && (
-              <div className="gep-cancel-section">
+        {/* Buttons section - OUTSIDE gep-main-view so they stay pinned at bottom */}
+        {showMainView && showButtons && (
+          <div className={`gep-buttons ${view === 'pristine' ? 'gep-buttons--vertical' : ''}`}>
+            {view === 'pristine' ? (
+              /* Pristine state: User just opened modal, hasn't edited anything */
+              /* Edit Proposal on top, Close on bottom - stacked vertically */
+              <>
                 <button
                   type="button"
-                  className="gep-button gep-button--destructive-outline"
-                  onClick={handleInitiateCancelProposal}
+                  className="gep-button gep-button--primary"
+                  onClick={handleStartEditing}
                 >
-                  Cancel Proposal
+                  Edit Proposal
                 </button>
-              </div>
+                <button
+                  type="button"
+                  className="gep-button gep-button--secondary"
+                  onClick={handleClose}
+                >
+                  Close
+                </button>
+              </>
+            ) : view === 'editing' ? (
+              /* Editing state: User is actively changing fields */
+              <>
+                <button
+                  type="button"
+                  className="gep-button gep-button--secondary"
+                  onClick={handleCancelEdits}
+                >
+                  Cancel edits
+                </button>
+                <button
+                  type="button"
+                  className="gep-button gep-button--primary"
+                  onClick={handleDisplayNewTerms}
+                >
+                  Display New Terms
+                </button>
+              </>
+            ) : (
+              /* General state: User has reviewed new terms, ready to submit */
+              <>
+                <button
+                  type="button"
+                  className="gep-button gep-button--secondary"
+                  onClick={handleClose}
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  className="gep-button gep-button--primary"
+                  onClick={handleSubmitProposalEdits}
+                >
+                  Submit Proposal Edits
+                </button>
+              </>
             )}
           </div>
         )}
