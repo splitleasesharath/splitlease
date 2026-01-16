@@ -8,7 +8,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../../../lib/supabase.js';
-import { checkAuthStatus, getSessionId, getAuthToken } from '../../../lib/auth.js';
+import { getSessionId } from '../../../lib/auth.js';
 import { PROPOSAL_STATUSES } from '../../../logic/constants/proposalStatuses.js';
 import { useRentalApplicationStore } from '../../pages/RentalApplicationPage/store/index.ts';
 import { mapDatabaseToFormData } from '../../pages/RentalApplicationPage/utils/rentalApplicationFieldMapper.ts';
@@ -288,12 +288,15 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
       setLoadError(null);
 
       try {
-        const token = getAuthToken();
         const userId = getSessionId();
 
         if (!userId) {
           throw new Error('User not logged in');
         }
+
+        // Get Supabase session for proper JWT token
+        const { data: { session } } = await supabase.auth.getSession();
+        const accessToken = session?.access_token;
 
         const response = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rental-application`,
@@ -301,7 +304,7 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+              ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
             },
             body: JSON.stringify({
               action: 'get',
@@ -767,9 +770,12 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
       });
 
       // Upload via Edge Function
-      const token = getAuthToken();
       const userId = getSessionId();
       const mapping = FILE_TYPE_MAP[uploadKey];
+
+      // Get Supabase session for proper JWT token
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
 
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rental-application`,
@@ -777,7 +783,7 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
           },
           body: JSON.stringify({
             action: 'upload',
@@ -851,12 +857,15 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
     setSubmitError(null);
 
     try {
-      const token = getAuthToken();
       const userId = getSessionId();
 
       if (!userId) {
         throw new Error('You must be logged in to submit.');
       }
+
+      // Get Supabase session for proper JWT token
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
 
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rental-application`,
@@ -864,7 +873,7 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
           },
           body: JSON.stringify({
             action: 'submit',
