@@ -35,7 +35,7 @@ import ProposalListSection from './ProposalListSection.jsx';
 // ============================================================================
 // DEMO MODE - Set to true to show mock data for design preview
 // ============================================================================
-const DEMO_MODE = true;
+const DEMO_MODE = false;
 
 // Mock listings that mirror what a real host would see
 // Uses real listing ID from database with enhanced demo visuals
