@@ -1,5 +1,6 @@
 import { HostScheduleSelector } from '../../../shared/HostScheduleSelector';
 import NightlyPricingLegend from './NightlyPricingLegend';
+import { useListingDashboard } from '../context/ListingDashboardContext';
 
 // Weekly pattern labels for display
 const WEEKLY_PATTERN_LABELS = {
@@ -9,7 +10,9 @@ const WEEKLY_PATTERN_LABELS = {
   'custom': 'Custom pattern',
 };
 
-export default function PricingSection({ listing, onEdit }) {
+export default function PricingSection() {
+  const { listing, handleEditSection } = useListingDashboard();
+  const onEdit = () => handleEditSection('pricing');
   const weeklyComp = listing?.weeklyCompensation || {};
   const nightsAvailable = listing?.nightsAvailable || [];
   const isNightly = (listing?.leaseStyle || 'Nightly').toLowerCase() === 'nightly';
