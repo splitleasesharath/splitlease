@@ -23,6 +23,7 @@
  */
 
 import { useState, useMemo, useCallback } from 'react';
+import { Inbox } from 'lucide-react';
 import Header from '../../shared/Header.jsx';
 import Footer from '../../shared/Footer.jsx';
 import { useHostProposalsPageLogic } from './useHostProposalsPageLogic.js';
@@ -146,7 +147,9 @@ function ErrorState({ error, onRetry }) {
 function EmptyStateV7({ listingName }) {
   return (
     <div className="hp7-empty-state">
-      <div className="hp7-empty-state-icon">📭</div>
+      <div className="hp7-empty-state-icon">
+        <Inbox size={48} strokeWidth={1.5} />
+      </div>
       <h2 className="hp7-empty-state-title">No proposals yet</h2>
       <p className="hp7-empty-state-text">
         {listingName
