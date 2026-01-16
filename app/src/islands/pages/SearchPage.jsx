@@ -541,7 +541,7 @@ function PropertyCard({ listing, onLocationClick, onCardHover, onCardLeave, onOp
 /**
  * ListingsGrid - Grid of property cards with lazy loading
  */
-function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef, isLoggedIn, userId, favoritedListingIds, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalsByListingId, selectedNightsCount }) {
+function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef, pulseTimeoutRef, isLoggedIn, userId, favoritedListingIds, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalsByListingId, selectedNightsCount }) {
 
   const sentinelRef = useRef(null);
 
@@ -3014,6 +3014,7 @@ export default function SearchPage() {
                       onOpenContactModal={handleOpenContactModal}
                       onOpenInfoModal={handleOpenInfoModal}
                       mapRef={mapRef}
+                      pulseTimeoutRef={pulseTimeoutRef}
                       isLoggedIn={isLoggedIn}
                       userId={currentUser?.id}
                       favoritedListingIds={favoritedListingIds}
@@ -3041,6 +3042,7 @@ export default function SearchPage() {
                 onOpenContactModal={handleOpenContactModal}
                 onOpenInfoModal={handleOpenInfoModal}
                 mapRef={mapRef}
+                pulseTimeoutRef={pulseTimeoutRef}
                 isLoggedIn={isLoggedIn}
                 userId={currentUser?.id}
                 favoritedListingIds={favoritedListingIds}
