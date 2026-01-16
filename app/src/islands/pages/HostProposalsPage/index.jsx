@@ -39,132 +39,53 @@ const DEMO_MODE = true;
 
 const MOCK_LISTINGS = [
   {
-    _id: 'listing-1',
-    title: 'Sunny Studio in Williamsburg',
+    _id: '1766003594466x67309961278997728',
+    title: 'Cozy Brooklyn Apartment',
     thumbnail: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=200&h=200&fit=crop',
-    neighborhood: 'Williamsburg'
-  },
-  {
-    _id: 'listing-2',
-    title: 'Modern 1BR in East Village',
-    thumbnail: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=200&h=200&fit=crop',
-    neighborhood: 'East Village'
+    neighborhood: 'Downtown Brooklyn',
+    address: '285 Jay St, Brooklyn, NY 11201'
   }
 ];
 
+// Leo DiCaprio (Mockup) - The official demo proposal for hosts
+const LEO_DICAPRIO_GUEST = {
+  _id: '1697550315775x613621430341750000',
+  name: 'Leo (Mockup) Di Caprio',
+  full_name: 'Leo Di Caprio',
+  first_name: 'Leo(Mockup)',
+  bio: "Hello, esteemed hosts! My name's Leo—no, not the Teenage Mutant Ninja Turtle—and I'm not just your average Joe with a beach house. I'm the King of the World... of the split lease universe, that is. When I'm not busy avoiding Oscars or fighting off icebergs, I love sharing my eco-friendly, ultra-luxe cabins (complete with a bear-proof security system, thanks to a memorable method-acting experience).",
+  profilePhoto: 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1709562069663x256748772822352760/leo%20dicaprio%20image.jpg',
+  id_verified: true,
+  work_verified: true,
+  review_count: 0,
+  created_at: '2023-10-17T13:45:15.088+00:00',
+  need_for_space: 'Going to the office while doing Hybrid working',
+  special_needs: 'Need parking and sometimes i travel with my pets'
+};
+
 const MOCK_PROPOSALS = [
   {
-    _id: 'proposal-1',
-    status: 'proposal_submitted',
-    created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
-    guest: {
-      name: 'Sarah Johnson',
-      bio: 'Digital nomad and remote worker. Love exploring new neighborhoods!',
-      profilePhoto: 'https://randomuser.me/api/portraits/women/44.jpg',
-      id_verified: true,
-      work_verified: true,
-      review_count: 5,
-      created_at: '2023-06-15'
-    },
-    listing: MOCK_LISTINGS[0],
-    start_date: '2026-02-01',
-    end_date: '2026-05-31',
-    days_per_week: [1, 2, 3, 4, 5], // Mon-Fri
-    monthly_rate: 1800,
-    service_fee: 180,
-    total_monthly: 1980,
-    ai_summary: 'Sarah is a verified professional with excellent reviews. She works remotely and prefers weeknight stays. Her profile indicates reliability and good communication.'
-  },
-  {
-    _id: 'proposal-2',
+    _id: '1766003595869x69815320637958696',
     status: 'host_review',
-    has_guest_counteroffer: true,
-    last_modified_by: 'guest',
-    created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
-    guest: {
-      name: 'Michael Chen',
-      bio: 'Finance professional commuting from Connecticut. Clean and quiet tenant.',
-      profilePhoto: 'https://randomuser.me/api/portraits/men/32.jpg',
-      id_verified: true,
-      work_verified: false,
-      review_count: 0,
-      created_at: '2025-11-20'
-    },
+    created_at: '2025-12-17T20:33:15.878+00:00',
+    guest: LEO_DICAPRIO_GUEST,
     listing: MOCK_LISTINGS[0],
-    start_date: '2026-02-15',
-    end_date: '2026-08-15',
-    days_per_week: [1, 2, 3], // Mon-Wed
-    monthly_rate: 1500,
-    service_fee: 150,
-    total_monthly: 1650,
-    guest_counteroffer: {
-      monthly_rate: 1400,
-      days_per_week: [1, 2, 3, 4]
-    }
-  },
-  {
-    _id: 'proposal-3',
-    status: 'host_counteroffer',
-    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
-    guest: {
-      name: 'Emily Rodriguez',
-      bio: 'Graduate student at NYU. Looking for a quiet place to study.',
-      profilePhoto: 'https://randomuser.me/api/portraits/women/68.jpg',
-      id_verified: true,
-      work_verified: false,
-      review_count: 2,
-      created_at: '2024-09-01'
-    },
-    listing: MOCK_LISTINGS[0],
-    start_date: '2026-03-01',
-    end_date: '2026-06-30',
-    days_per_week: [0, 5, 6], // Fri-Sun
-    monthly_rate: 1200,
-    service_fee: 120,
-    total_monthly: 1320
-  },
-  {
-    _id: 'proposal-4',
-    status: 'accepted',
-    created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week ago
-    guest: {
-      name: 'David Park',
-      bio: 'Software engineer at a startup. Early riser, respectful of shared spaces.',
-      profilePhoto: 'https://randomuser.me/api/portraits/men/75.jpg',
-      id_verified: true,
-      work_verified: true,
-      review_count: 8,
-      created_at: '2022-03-10'
-    },
-    listing: MOCK_LISTINGS[0],
-    start_date: '2026-01-15',
-    end_date: '2026-04-15',
-    days_per_week: [1, 2, 3, 4], // Mon-Thu
-    monthly_rate: 1600,
-    service_fee: 160,
-    total_monthly: 1760
-  },
-  {
-    _id: 'proposal-5',
-    status: 'rejected_by_host',
-    decline_reason: 'Schedule conflict with existing tenant',
-    created_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(), // 2 weeks ago
-    guest: {
-      name: 'Jessica Williams',
-      bio: 'Marketing consultant traveling for work.',
-      profilePhoto: 'https://randomuser.me/api/portraits/women/90.jpg',
-      id_verified: false,
-      work_verified: false,
-      review_count: 1,
-      created_at: '2025-08-22'
-    },
-    listing: MOCK_LISTINGS[0],
-    start_date: '2026-02-01',
-    end_date: '2026-03-31',
-    days_per_week: [1, 2, 3, 4, 5],
-    monthly_rate: 1900,
-    service_fee: 190,
-    total_monthly: 2090
+    start_date: '2026-01-05',
+    end_date: '2026-04-03',
+    move_in_range_start: '2026-01-05',
+    move_in_range_end: '2026-01-11',
+    days_per_week: [2, 3, 4, 5, 6], // Tuesday - Saturday
+    nights_per_week: [2, 3, 4, 5], // 4 nights
+    check_in_day: 2, // Tuesday
+    check_out_day: 6, // Saturday
+    duration_weeks: 13,
+    duration_months: 3,
+    host_compensation: 3500,
+    total_compensation: 11375,
+    cleaning_fee: 150,
+    damage_deposit: 1000,
+    comment: 'This is a demonstration proposal to show you how the proposal review process works. When real guests apply, their information will appear here. You can approve, negotiate, or decline proposals.',
+    ai_summary: 'Leo is a verified professional with a complete profile. He works in a hybrid arrangement and needs weekday accommodations (Tue-Sat). He has parking and pet needs. His humorous bio suggests a friendly personality and good communication style.'
   }
 ];
 
