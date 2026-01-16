@@ -243,7 +243,7 @@ function ListingDashboardContent() {
           editSection={editSection}
           onClose={handleCloseEdit}
           onSave={handleSaveEdit}
-          updateListing={updateListing}
+          updateListing={(id, updates) => updateListing(updates)}
         />
       )}
 
