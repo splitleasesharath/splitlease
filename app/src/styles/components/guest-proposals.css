@@ -2313,3 +2313,808 @@
     padding: 16px 20px;
   }
 }
+
+/* ============================================================================
+   V7 GUEST PROPOSALS - EXPANDABLE PROPOSAL CARDS
+   ============================================================================ */
+
+/* ============================================================================
+   SECTION HEADERS
+   ============================================================================ */
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 0 4px;
+}
+
+.section-header__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.section-header--suggested .section-header__icon {
+  background: var(--gp-purple-bg);
+  color: var(--gp-purple-primary);
+}
+
+.section-header--user .section-header__icon {
+  background: var(--gp-border-light);
+  color: var(--gp-text-secondary);
+}
+
+.section-header__title {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--gp-font-size-lg);
+  font-weight: 700;
+  color: var(--gp-purple-dark);
+  margin: 0;
+}
+
+.section-header__count {
+  font-weight: 400;
+  color: var(--gp-text-secondary);
+  margin-left: 4px;
+}
+
+/* ============================================================================
+   MATCH REASON CARD (for SL-suggested proposals)
+   ============================================================================ */
+
+.match-reason-card {
+  background: var(--gp-purple-bg);
+  border: 1px solid rgba(109, 49, 194, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.match-reason-card__header {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.match-reason-card__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--gp-purple-primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.match-reason-card__content {
+  flex: 1;
+}
+
+.match-reason-card__title {
+  font-size: var(--gp-font-size-sm);
+  font-weight: 600;
+  color: var(--gp-purple-dark);
+  margin: 0 0 4px 0;
+}
+
+.match-reason-card__text {
+  font-size: var(--gp-font-size-sm);
+  color: var(--gp-text-secondary);
+  margin: 0;
+  line-height: var(--gp-line-height-normal);
+}
+
+.match-reason-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(109, 49, 194, 0.15);
+}
+
+.match-tag {
+  background: white;
+  color: var(--gp-purple-primary);
+  font-size: var(--gp-font-size-label);
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(109, 49, 194, 0.2);
+}
+
+/* ============================================================================
+   EXPANDABLE PROPOSAL CARD (EPC) - Main Component
+   ============================================================================ */
+
+.epc-card {
+  background: var(--gp-white);
+  border: 1px solid var(--gp-border);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.2s ease-out;
+  margin-bottom: 12px;
+}
+
+.epc-card:hover {
+  border-color: var(--gp-purple-light);
+}
+
+.epc-card.expanded {
+  border-color: var(--gp-purple-primary);
+  box-shadow: 0 4px 20px rgba(109, 49, 194, 0.1);
+}
+
+.epc-card.suggested {
+  border-color: rgba(109, 49, 194, 0.3);
+}
+
+.epc-card.suggested.expanded {
+  border-color: var(--gp-purple-primary);
+}
+
+/* ============================================================================
+   EPC HEADER (Collapsed Row)
+   ============================================================================ */
+
+.epc-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.epc-header:hover {
+  background: var(--gp-purple-bg);
+}
+
+.epc-thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.epc-thumb--placeholder {
+  background-color: var(--gp-border-light);
+}
+
+.epc-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.epc-name {
+  font-weight: 600;
+  font-size: var(--gp-font-size-base);
+  color: var(--gp-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.epc-meta {
+  font-size: var(--gp-font-size-sm);
+  color: var(--gp-text-secondary);
+  margin-top: 2px;
+}
+
+.epc-status {
+  font-size: var(--gp-font-size-sm);
+  font-weight: 500;
+  color: var(--gp-text-muted);
+  padding: 5px 12px;
+  background: var(--gp-border-light);
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.epc-status.attention {
+  color: var(--gp-purple-primary);
+  background: var(--gp-purple-bg);
+}
+
+.epc-status.success {
+  color: var(--gp-success);
+  background: var(--gp-success-bg);
+}
+
+.epc-status.action-required {
+  color: #92400E;
+  background: #FEF3C7;
+  font-weight: 600;
+  animation: pulse-attention 2s ease-in-out infinite;
+}
+
+/* Chevron icon */
+.expand-chevron {
+  color: var(--gp-text-muted);
+  transition: transform 0.3s ease-out;
+  flex-shrink: 0;
+}
+
+.expand-chevron.expanded {
+  transform: rotate(180deg);
+}
+
+/* ============================================================================
+   EPC CONTENT WRAPPER (Accordion Animation)
+   ============================================================================ */
+
+.epc-content-wrapper {
+  overflow: hidden;
+  transition: height 0.3s ease-out;
+}
+
+.epc-content {
+  padding: 0 20px 20px;
+  border-top: 1px solid var(--gp-border-light);
+}
+
+/* ============================================================================
+   EPC STATUS BANNER
+   ============================================================================ */
+
+.epc-status-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--gp-purple-bg);
+  border-radius: 10px;
+  margin: 16px 0;
+  font-size: var(--gp-font-size-sm);
+}
+
+.epc-status-banner.success {
+  background: var(--gp-success-bg);
+}
+
+.epc-status-banner.attention {
+  background: #fef3c7;
+}
+
+.epc-status-banner.cancelled {
+  background: var(--gp-danger-bg);
+}
+
+.epc-status-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--gp-purple-primary);
+  color: white;
+  flex-shrink: 0;
+}
+
+.epc-status-banner.success .epc-status-icon {
+  background: var(--gp-success);
+}
+
+.epc-status-banner.attention .epc-status-icon {
+  background: #f59e0b;
+}
+
+.epc-status-banner.cancelled .epc-status-icon {
+  background: var(--gp-danger);
+}
+
+.epc-status-text {
+  flex: 1;
+  color: var(--gp-text);
+}
+
+.epc-status-text strong {
+  font-weight: 600;
+}
+
+/* ============================================================================
+   EPC DETAIL HEADER
+   ============================================================================ */
+
+.epc-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--gp-border-light);
+}
+
+.epc-detail-title-area {
+  flex: 1;
+}
+
+.epc-detail-title {
+  font-size: var(--gp-font-size-md);
+  font-weight: 600;
+  color: var(--gp-purple-dark);
+  margin-bottom: 2px;
+}
+
+.epc-detail-location {
+  font-size: var(--gp-font-size-sm);
+  color: var(--gp-text-secondary);
+}
+
+.epc-detail-host {
+  text-align: right;
+}
+
+.epc-host-name {
+  font-weight: 600;
+  font-size: var(--gp-font-size-sm);
+  color: var(--gp-text);
+}
+
+.epc-host-label {
+  color: var(--gp-text-muted);
+  font-size: var(--gp-font-size-label);
+}
+
+/* ============================================================================
+   EPC QUICK LINKS
+   ============================================================================ */
+
+.epc-links-row {
+  display: flex;
+  gap: 8px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--gp-border-light);
+  flex-wrap: wrap;
+}
+
+.epc-link-item {
+  font-size: var(--gp-font-size-sm);
+  font-weight: 500;
+  color: var(--gp-purple-primary);
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 16px;
+  transition: all 0.15s;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+}
+
+.epc-link-item:hover {
+  background: var(--gp-purple-bg);
+}
+
+/* ============================================================================
+   EPC HOUSE RULES GRID
+   ============================================================================ */
+
+.epc-house-rules-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--gp-border-light);
+}
+
+.epc-house-rule-badge {
+  background-color: var(--gp-border-light);
+  border-radius: 5px;
+  padding: 6px 8px;
+  font-size: var(--gp-font-size-label);
+  font-weight: 600;
+  color: var(--gp-text-secondary);
+  text-align: center;
+}
+
+/* ============================================================================
+   EPC INFO GRID
+   ============================================================================ */
+
+.epc-info-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--gp-border-light);
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 12px 0;
+}
+
+.epc-info-item {
+  padding: 14px 16px;
+  background: var(--gp-white);
+}
+
+.epc-info-label {
+  font-size: var(--gp-font-size-label);
+  font-weight: 500;
+  color: var(--gp-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.epc-info-value {
+  font-size: var(--gp-font-size-sm);
+  font-weight: 600;
+  color: var(--gp-text);
+}
+
+/* ============================================================================
+   EPC DAYS ROW
+   ============================================================================ */
+
+.epc-days-row {
+  display: flex;
+  align-items: center;
+  padding: 14px 0;
+  gap: 12px;
+  border-bottom: 1px solid var(--gp-border-light);
+}
+
+.epc-days-label {
+  font-size: var(--gp-font-size-label);
+  font-weight: 500;
+  color: var(--gp-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.epc-days-pills {
+  display: flex;
+  gap: 6px;
+}
+
+.epc-day-pill {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--gp-font-size-sm);
+  font-weight: 600;
+  background: var(--gp-bg);
+  color: var(--gp-text-muted);
+  border: 1px solid var(--gp-border);
+}
+
+.epc-day-pill.selected {
+  background: var(--gp-purple-dark);
+  border-color: var(--gp-purple-dark);
+  color: white;
+}
+
+.epc-days-info {
+  margin-left: auto;
+  text-align: right;
+}
+
+.epc-days-count {
+  font-size: var(--gp-font-size-sm);
+  font-weight: 600;
+  color: var(--gp-text);
+}
+
+.epc-nights-warning {
+  color: var(--gp-danger);
+  margin-left: 6px;
+}
+
+.epc-days-range {
+  font-size: var(--gp-font-size-label);
+  color: var(--gp-text-secondary);
+  margin-top: 2px;
+}
+
+/* ============================================================================
+   EPC PRICING ROW
+   ============================================================================ */
+
+.epc-pricing-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--gp-border-light);
+}
+
+.epc-pricing-breakdown {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--gp-font-size-sm);
+  color: var(--gp-text-secondary);
+  flex-wrap: wrap;
+}
+
+.epc-pricing-total-area {
+  text-align: right;
+}
+
+.epc-pricing-total-label {
+  font-size: var(--gp-font-size-label);
+  color: var(--gp-text-secondary);
+}
+
+.epc-pricing-original {
+  margin-left: 6px;
+  color: var(--gp-text-muted);
+  text-decoration: line-through;
+}
+
+.epc-pricing-total {
+  font-size: var(--gp-font-size-xl);
+  font-weight: 700;
+  color: var(--gp-purple-primary);
+}
+
+/* ============================================================================
+   EPC PROGRESS ROW
+   ============================================================================ */
+
+.epc-progress-row {
+  display: flex;
+  align-items: center;
+  padding: 16px 0;
+  gap: 4px;
+}
+
+.epc-progress-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+
+.epc-progress-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.epc-progress-label {
+  font-size: var(--gp-font-size-label);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.epc-progress-line {
+  flex: 1;
+  height: 2px;
+  border-radius: 1px;
+  min-width: 10px;
+}
+
+/* ============================================================================
+   EPC ACTIONS ROW
+   ============================================================================ */
+
+.epc-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 16px;
+  align-items: center;
+}
+
+.epc-btn {
+  padding: 10px 18px;
+  font-size: var(--gp-font-size-sm);
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.epc-btn--primary {
+  background: var(--gp-purple-primary);
+  color: white;
+}
+
+.epc-btn--primary:hover {
+  background: var(--gp-purple-dark);
+}
+
+.epc-btn--outline {
+  background: transparent;
+  color: var(--gp-purple-primary);
+  border: 1px solid var(--gp-purple-primary);
+}
+
+.epc-btn--outline:hover {
+  background: var(--gp-purple-bg);
+}
+
+.epc-btn--ghost {
+  background: transparent;
+  color: var(--gp-text-secondary);
+  border: 1px solid var(--gp-border);
+}
+
+.epc-btn--ghost:hover {
+  border-color: var(--gp-text-secondary);
+  color: var(--gp-text);
+}
+
+.epc-btn--danger {
+  background: transparent;
+  color: var(--gp-danger);
+  border: 1px solid var(--gp-danger);
+}
+
+.epc-btn--danger:hover {
+  background: var(--gp-danger-bg);
+}
+
+.epc-btn--not-interested {
+  background: var(--gp-border-light);
+  color: var(--gp-danger);
+  border: 1px solid var(--gp-danger);
+}
+
+.epc-btn--not-interested:hover {
+  background: var(--gp-danger-bg);
+}
+
+.epc-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* VM text states */
+.epc-vm-text {
+  font-size: var(--gp-font-size-sm);
+  font-weight: 600;
+  color: var(--gp-danger);
+  padding: 10px 0;
+}
+
+.epc-vm-text.waiting {
+  color: var(--gp-text-muted);
+}
+
+/* ============================================================================
+   V7 PROPOSALS PAGE SECTIONS
+   ============================================================================ */
+
+.proposals-section {
+  margin-bottom: 32px;
+}
+
+.proposals-section:last-child {
+  margin-bottom: 0;
+}
+
+.proposals-section--suggested {
+  background: linear-gradient(135deg, rgba(109, 49, 194, 0.03) 0%, rgba(109, 49, 194, 0.08) 100%);
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 32px;
+}
+
+/* ============================================================================
+   EPC RESPONSIVE STYLES
+   ============================================================================ */
+
+@media (max-width: 900px) {
+  .epc-info-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .epc-days-row {
+    flex-wrap: wrap;
+  }
+
+  .epc-days-info {
+    width: 100%;
+    margin-left: 0;
+    margin-top: 10px;
+    text-align: left;
+  }
+
+  .epc-progress-label {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .epc-house-rules-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .epc-detail-header {
+    flex-wrap: wrap;
+  }
+
+  .epc-detail-host {
+    width: 100%;
+    text-align: left;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--gp-border-light);
+  }
+
+  .epc-pricing-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .epc-pricing-total-area {
+    text-align: left;
+  }
+
+  .section-header__title {
+    font-size: var(--gp-font-size-base);
+  }
+}
+
+@media (max-width: 480px) {
+  .epc-header {
+    padding: 14px 16px;
+    gap: 12px;
+  }
+
+  .epc-thumb {
+    width: 48px;
+    height: 48px;
+  }
+
+  .epc-content {
+    padding: 0 16px 16px;
+  }
+
+  .epc-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .epc-house-rules-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .epc-day-pill {
+    width: 32px;
+    height: 32px;
+    font-size: var(--gp-font-size-label);
+  }
+
+  .epc-days-pills {
+    gap: 4px;
+  }
+
+  .epc-actions-row {
+    flex-direction: column;
+  }
+
+  .epc-btn {
+    width: 100%;
+  }
+
+  .proposals-section--suggested {
+    padding: 16px;
+  }
+}

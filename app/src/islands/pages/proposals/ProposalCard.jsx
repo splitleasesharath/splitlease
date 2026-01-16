@@ -25,11 +25,13 @@ import { goToRentalApplication, getListingUrlWithProposalContext } from '../../.
 import HostProfileModal from '../../modals/HostProfileModal.jsx';
 import GuestEditingProposalModal from '../../modals/GuestEditingProposalModal.jsx';
 import CancelProposalModal from '../../modals/CancelProposalModal.jsx';
+import NotInterestedModal from '../../shared/SuggestedProposals/components/NotInterestedModal.jsx';
 import VirtualMeetingManager from '../../shared/VirtualMeetingManager/VirtualMeetingManager.jsx';
 import FullscreenProposalMapModal from '../../modals/FullscreenProposalMapModal.jsx';
 import { showToast } from '../../shared/Toast.jsx';
 import { supabase } from '../../../lib/supabase.js';
 import { canConfirmSuggestedProposal, getNextStatusAfterConfirmation } from '../../../logic/rules/proposals/proposalRules.js';
+import { dismissProposal } from '../../shared/SuggestedProposals/suggestedProposalService.js';
 
 // Day abbreviations for schedule display (single letter like Bubble)
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -765,6 +767,9 @@ export default function ProposalCard({ proposal, statusConfig, buttonConfig, all
   const [showMapModal, setShowMapModal] = useState(false);
   // Cancel proposal modal state
   const [showCancelModal, setShowCancelModal] = useState(false);
+  // Not Interested modal state (for SL-suggested proposals)
+  const [showNotInterestedModal, setShowNotInterestedModal] = useState(false);
+  const [isNotInterestedProcessing, setIsNotInterestedProcessing] = useState(false);
   // Delete proposal loading state
   const [isDeleting, setIsDeleting] = useState(false);
   // Confirm proposal loading state (for SL-suggested proposals)
@@ -1001,6 +1006,43 @@ export default function ProposalCard({ proposal, statusConfig, buttonConfig, all
     console.log('[ProposalCard] Cancel confirmed with reason:', reason);
     // TODO: Implement actual cancel API call here
     closeCancelModal();
+  };
+
+  // Handler for opening Not Interested modal
+  const openNotInterestedModal = () => {
+    setShowNotInterestedModal(true);
+  };
+
+  // Handler for closing Not Interested modal
+  const closeNotInterestedModal = () => {
+    if (!isNotInterestedProcessing) {
+      setShowNotInterestedModal(false);
+    }
+  };
+
+  // Handler for confirming Not Interested (marks proposal as deleted with optional feedback)
+  const handleNotInterestedConfirm = async (feedback) => {
+    if (!proposal?._id || isNotInterestedProcessing) return;
+
+    setIsNotInterestedProcessing(true);
+    try {
+      await dismissProposal(proposal._id, feedback);
+      console.log('[ProposalCard] Proposal marked as not interested');
+      showToast({ title: 'Proposal dismissed', type: 'info' });
+
+      // Close modal first
+      setShowNotInterestedModal(false);
+
+      // Update UI state without page reload
+      if (onProposalDeleted) {
+        onProposalDeleted(proposal._id);
+      }
+    } catch (error) {
+      console.error('[ProposalCard] Error dismissing proposal:', error);
+      showToast({ title: 'Failed to dismiss proposal', content: error.message, type: 'error' });
+    } finally {
+      setIsNotInterestedProcessing(false);
+    }
   };
 
   // Handler for confirm proposal (SL-suggested proposals)
@@ -1303,13 +1345,15 @@ export default function ProposalCard({ proposal, statusConfig, buttonConfig, all
           {/* Guest Action 2 (secondary action) */}
           {buttonConfig?.guestAction2?.visible && (
             <button
-              className="btn btn-outline"
+              className={`btn ${buttonConfig.guestAction2.action === 'reject_suggestion' ? 'btn-not-interested' : 'btn-outline'}`}
               onClick={() => {
                 if (buttonConfig.guestAction2.action === 'see_details') {
                   setProposalDetailsModalInitialView('pristine');
                   setShowProposalDetailsModal(true);
                 } else if (buttonConfig.guestAction2.action === 'submit_rental_app') {
                   goToRentalApplication(proposal._id);
+                } else if (buttonConfig.guestAction2.action === 'reject_suggestion') {
+                  openNotInterestedModal();
                 }
               }}
             >
@@ -1405,6 +1449,15 @@ export default function ProposalCard({ proposal, statusConfig, buttonConfig, all
         buttonText="Cancel Proposal"
         onClose={closeCancelModal}
         onConfirm={handleCancelConfirm}
+      />
+
+      {/* Not Interested Modal (for SL-suggested proposals) */}
+      <NotInterestedModal
+        isOpen={showNotInterestedModal}
+        proposal={proposal}
+        onClose={closeNotInterestedModal}
+        onConfirm={handleNotInterestedConfirm}
+        isProcessing={isNotInterestedProcessing}
       />
 
       {/* Virtual Meeting Manager Modal */}

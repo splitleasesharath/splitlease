@@ -1,14 +1,14 @@
 /**
  * ThreadSidebar Component
  *
- * Left sidebar containing the list of message threads.
- * Desktop: 30% width sidebar
- * Mobile: Full-screen list view (hidden when conversation is open)
+ * Left sidebar containing the list of message threads (Upwork style).
+ * - Fixed 340px width on desktop
+ * - Full-screen list view on mobile (hidden when conversation is open)
  *
  * Features:
- * - Header with title, new conversation (+) and more options (...) buttons
- * - Search bar with filter icon
- * - Thread list with avatars, badges, and unread indicators
+ * - Header with title
+ * - Rounded search box with filter icon
+ * - Thread list with avatars, badges, and purple pill selection
  */
 
 import { useState } from 'react';
@@ -18,7 +18,6 @@ export default function ThreadSidebar({
   threads,
   selectedThreadId,
   onThreadSelect,
-  onNewConversation,
   className = ''
 }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -39,36 +38,10 @@ export default function ThreadSidebar({
     <aside className={`thread-sidebar ${className}`.trim()}>
       {/* Header */}
       <div className="sidebar-header">
-        <h2 className="sidebar-title">Messages</h2>
-        <div className="sidebar-header__actions">
-          {/* New Conversation Button */}
-          <button
-            className="sidebar-header__btn"
-            onClick={onNewConversation}
-            aria-label="New conversation"
-            title="New conversation"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-          </button>
-          {/* More Options Button */}
-          <button
-            className="sidebar-header__btn"
-            aria-label="More options"
-            title="More options"
-          >
-            <svg viewBox="0 0 24 24" fill="currentColor">
-              <circle cx="12" cy="5" r="1.5" />
-              <circle cx="12" cy="12" r="1.5" />
-              <circle cx="12" cy="19" r="1.5" />
-            </svg>
-          </button>
-        </div>
+        <h2 className="sidebar-header__title">Messages</h2>
       </div>
 
-      {/* Search Bar */}
+      {/* Search Bar - Upwork style with rounded input */}
       <div className="sidebar-search">
         <div className="sidebar-search__input-wrapper">
           <svg className="sidebar-search__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -78,7 +51,7 @@ export default function ThreadSidebar({
           <input
             type="text"
             className="sidebar-search__input"
-            placeholder="Search conversations..."
+            placeholder="Search messages..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -98,19 +71,41 @@ export default function ThreadSidebar({
       {/* Thread List */}
       <div className="thread-list">
         {filteredThreads.length === 0 ? (
-          <div className="thread-list__empty">
+          <div className="sidebar-empty-state">
             {searchQuery ? (
               <>
-                <p>No conversations match "{searchQuery}"</p>
+                <div className="sidebar-empty-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="M21 21l-4.35-4.35" />
+                  </svg>
+                </div>
+                <h3 className="sidebar-empty-title">No results</h3>
+                <p className="sidebar-empty-desc">No conversations match "{searchQuery}"</p>
                 <button
-                  className="thread-list__clear-search"
+                  className="sidebar-empty-btn"
                   onClick={() => setSearchQuery('')}
                 >
                   Clear search
                 </button>
               </>
             ) : (
-              <p>No conversations yet</p>
+              <>
+                <div className="sidebar-empty-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  </svg>
+                </div>
+                <h3 className="sidebar-empty-title">No messages yet</h3>
+                <p className="sidebar-empty-desc">Start a conversation by browsing listings</p>
+                <a href="/search" className="sidebar-empty-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="M21 21l-4.35-4.35" />
+                  </svg>
+                  Browse listings
+                </a>
+              </>
             )}
           </div>
         ) : (

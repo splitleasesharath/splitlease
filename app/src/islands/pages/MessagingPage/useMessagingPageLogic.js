@@ -458,7 +458,28 @@ export function useMessagingPageLogic() {
       }
     }
 
-    // Step 5: Transform threads to UI format
+    // Step 5: Fetch unread message counts per thread
+    // The "Unread Users" column is a JSONB array of user IDs who haven't read the message
+    const threadIds = threads.map(t => t._id);
+    let unreadCountMap = {};
+    if (threadIds.length > 0) {
+      const { data: unreadData, error: unreadError } = await supabase
+        .from('_message')
+        .select('"Associated Thread/Conversation"')
+        .in('"Associated Thread/Conversation"', threadIds)
+        .contains('"Unread Users"', JSON.stringify([bubbleId]));
+
+      if (!unreadError && unreadData) {
+        // Count messages per thread
+        unreadCountMap = unreadData.reduce((acc, msg) => {
+          const threadId = msg['Associated Thread/Conversation'];
+          acc[threadId] = (acc[threadId] || 0) + 1;
+          return acc;
+        }, {});
+      }
+    }
+
+    // Step 6: Transform threads to UI format
     const transformedThreads = threads.map(thread => {
       const hostId = thread['-Host User'];
       const guestId = thread['-Guest User'];
@@ -491,7 +512,7 @@ export function useMessagingPageLogic() {
         property_name: thread['Listing'] ? listingMap[thread['Listing']] : undefined,
         last_message_preview: thread['~Last Message'] || 'No messages yet',
         last_message_time: lastMessageTime,
-        unread_count: 0, // TODO: Implement unread count if needed
+        unread_count: unreadCountMap[thread._id] || 0,
         is_with_splitbot: false,
       };
     });
@@ -531,22 +552,36 @@ export function useMessagingPageLogic() {
       const { data: currentSession } = await supabase.auth.getSession();
       const accessToken = currentSession?.session?.access_token;
       console.log('[fetchMessages] Making function call with token:', !!accessToken);
+      console.log('[fetchMessages] Token preview:', accessToken ? `${accessToken.substring(0, 20)}...` : 'none');
 
-      // Use supabase.functions.invoke() with explicit Authorization header
-      // This works around potential SDK issues where the token isn't auto-included
-      const { data, error } = await supabase.functions.invoke('messages', {
-        body: {
+      if (!accessToken) {
+        throw new Error('No access token available. Please log in again.');
+      }
+
+      // Use direct fetch to ensure headers are sent correctly
+      // The SDK's functions.invoke() can sometimes have header merging issues
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const response = await fetch(`${supabaseUrl}/functions/v1/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
           action: 'get_messages',
           payload: { thread_id: threadId }
-        },
-        headers: accessToken ? {
-          Authorization: `Bearer ${accessToken}`
-        } : undefined
+        }),
       });
 
-      if (error) {
-        throw new Error(error.message || 'Failed to fetch messages');
+      console.log('[fetchMessages] Response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[fetchMessages] Error response:', errorText);
+        throw new Error(`Failed to fetch messages: ${response.status}`);
       }
+
+      const data = await response.json();
 
       if (data?.success) {
         setMessages(data.data.messages || []);
@@ -583,24 +618,34 @@ export function useMessagingPageLogic() {
       const { data: currentSession } = await supabase.auth.getSession();
       const accessToken = currentSession?.session?.access_token;
 
-      // Use supabase.functions.invoke() with explicit Authorization header
-      // This works around potential SDK issues where the token isn't auto-included
-      const { data, error } = await supabase.functions.invoke('messages', {
-        body: {
+      if (!accessToken) {
+        throw new Error('No access token available. Please log in again.');
+      }
+
+      // Use direct fetch to ensure headers are sent correctly
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const response = await fetch(`${supabaseUrl}/functions/v1/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
           action: 'send_message',
           payload: {
             thread_id: selectedThread._id,
             message_body: messageInput.trim(),
           },
-        },
-        headers: accessToken ? {
-          Authorization: `Bearer ${accessToken}`
-        } : undefined
+        }),
       });
 
-      if (error) {
-        throw new Error(error.message || 'Failed to send message');
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[sendMessage] Error response:', errorText);
+        throw new Error(`Failed to send message: ${response.status}`);
       }
+
+      const data = await response.json();
 
       if (data?.success) {
         // Clear input immediately

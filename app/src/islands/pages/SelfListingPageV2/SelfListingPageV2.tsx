@@ -209,6 +209,7 @@ export function SelfListingPageV2() {
   const desiredRentInfoRef = useRef<HTMLButtonElement>(null);
   const securityDepositInfoRef = useRef<HTMLButtonElement>(null);
   const utilitiesInfoRef = useRef<HTMLButtonElement>(null);
+  const scheduleInfoRef = useRef<HTMLButtonElement>(null);
 
   // Mapping of tooltip IDs to database tag titles with fallback content
   const infoContentConfig: Record<string, { title: string; dbTag: string; fallbackContent: string; fallbackExpanded: string }> = {
@@ -271,6 +272,12 @@ export function SelfListingPageV2() {
       dbTag: 'Utilities',
       fallbackContent: 'Specify whether utilities are included in the rent or charged separately.',
       fallbackExpanded: 'If utilities are not included, specify the estimated monthly cost so guests know what to expect. Common utilities include electricity, gas, water, internet, and trash removal.',
+    },
+    schedule: {
+      title: 'Schedule Information',
+      dbTag: 'Schedule Information',
+      fallbackContent: 'This shows how many nights per week you\'ve selected to make available for guests.',
+      fallbackExpanded: 'With Split Lease, you can select specific nights of the week to share your space. You keep access to your home on the nights you don\'t select. The more nights you offer, the more you can earn.',
     },
   };
 
@@ -1988,25 +1995,25 @@ export function SelfListingPageV2() {
             <div className="review-listing-price-row">
               <span className="review-price-amount">{priceDisplay}</span>
               <span className="review-price-period">/ {freq.toLowerCase()}</span>
-              <span className="review-price-from">
-                {schedule}
-                <button type="button" className="review-price-info-btn" aria-label="Price info">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              {formData.leaseStyle === 'nightly' ? (
+                <button
+                  type="button"
+                  ref={scheduleInfoRef}
+                  className="review-price-from review-price-info-trigger"
+                  onClick={handleInfoClick('schedule')}
+                  aria-label="Schedule information"
+                >
+                  {schedule}
+                  <svg className="review-price-info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <circle cx="12" cy="12" r="10" />
                     <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
                     <line x1="12" y1="17" x2="12.01" y2="17" />
                   </svg>
                 </button>
-              </span>
+              ) : (
+                <span className="review-price-from">{schedule}</span>
+              )}
             </div>
-
-            {/* Message Button */}
-            <button type="button" className="review-message-btn">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-              </svg>
-              Message
-            </button>
 
             {/* Host Name */}
             <div className="review-listing-host">
@@ -2379,6 +2386,16 @@ export function SelfListingPageV2() {
         content={getInfoContent('utilities').content}
         expandedContent={getInfoContent('utilities').expandedContent}
         showMoreAvailable={getInfoContent('utilities').showMore}
+      />
+
+      <InformationalText
+        isOpen={activeInfoTooltip === 'schedule'}
+        onClose={() => setActiveInfoTooltip(null)}
+        triggerRef={scheduleInfoRef}
+        title={getInfoContent('schedule').title}
+        content={getInfoContent('schedule').content}
+        expandedContent={getInfoContent('schedule').expandedContent}
+        showMoreAvailable={getInfoContent('schedule').showMore}
       />
     </div>
   );

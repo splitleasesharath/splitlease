@@ -1,44 +1,76 @@
 /**
  * Messaging Page Styles
- * Split Lease - Messaging App Feature
+ * Split Lease - Upwork-Style Messaging Redesign
  *
- * Color Scheme:
- * - Incoming messages: Light purple (#E8D5F7)
- * - Outgoing messages: Dark purple (#2D1B3D)
- * - Primary accent: Purple (#6B4FA1)
- * - Background: White (#FFFFFF)
- * - Text: Dark gray (#1A1A1A)
- * - Secondary text: Medium gray (#999999)
- * - Borders: Light gray (#CCCCCC)
- * - Hover: Light purple (#F0E6FF)
- * - Alert/Unread: Red (#E53E3E)
+ * Design System:
+ * - Primary Purple: #31135D (dark), #6D31C2 (secondary), #8C68EE (accent)
+ * - Selected state: Purple pill background (not left border)
+ * - Neutrals: Upwork-style grays (FAFAFA, F2F2F2, E0E0E0)
+ * - Text: Dark (#001E00), Secondary (#5E6D55), Muted (#9AAA97)
+ * - Layout: 340px sidebars, fluid center, 56px header offset
  */
 
 /* ==========================================================================
-   CSS Custom Properties
+   CSS Custom Properties - Upwork-Style Design System
    ========================================================================== */
 
 :root {
-  --color-message-incoming-bg: #E8D5F7;
-  --color-message-outgoing-bg: #2D1B3D;
-  --color-message-incoming-text: #1A1A1A;
+  /* Split Lease Brand Colors */
+  --primary-purple: #31135D;
+  --secondary-purple: #6D31C2;
+  --accent-purple: #8C68EE;
+
+  /* Upwork-style light purple for hover/selected backgrounds */
+  --upwork-green-light: #F3EFFA;
+
+  /* Neutral Palette (Upwork-style) */
+  --bg-white: #FFFFFF;
+  --bg-gray-50: #FAFAFA;
+  --bg-gray-100: #F2F2F2;
+  --border-color: #E0E0E0;
+  --border-light: #EBEBEB;
+
+  /* Text Colors */
+  --text-primary: #001E00;
+  --text-secondary: #5E6D55;
+  --text-muted: #9AAA97;
+
+  /* Status Colors */
+  --online-green: #14A800;
+  --unread-badge: #6D31C2;
+  --alert-red: #D93025;
+  --success-green: #14A800;
+  --warning-orange: #F5A623;
+
+  /* Layout Dimensions */
+  --header-height: 70px;
+  --sidebar-width: 340px;
+  --panel-width: 340px;
+
+  /* Font */
+  --font-main: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Legacy variable mappings (for backwards compatibility during transition) */
+  --color-message-incoming-bg: var(--bg-white);
+  --color-message-outgoing-bg: var(--primary-purple);
+  --color-message-incoming-text: var(--text-primary);
   --color-message-outgoing-text: #FFFFFF;
-  --color-primary-purple: #6B4FA1;
-  --color-primary-light: #7C5AC2;
-  --color-hover-bg: #F0E6FF;
-  --color-alert: #E53E3E;
-  --color-border: #CCCCCC;
-  --color-text-secondary: #999999;
-  --color-background: #FFFFFF;
-  --color-sidebar-bg: #F8F7F6;
-  --color-splitbot-bg: #F0F0F0;
-  --messaging-sidebar-width: 30%;
+  --color-primary-purple: var(--secondary-purple);
+  --color-primary-light: var(--accent-purple);
+  --color-hover-bg: var(--upwork-green-light);
+  --color-alert: var(--alert-red);
+  --color-border: var(--border-color);
+  --color-text-secondary: var(--text-muted);
+  --color-background: var(--bg-white);
+  --color-sidebar-bg: var(--bg-gray-50);
+  --color-splitbot-bg: var(--bg-gray-100);
+  --messaging-sidebar-width: var(--sidebar-width);
   --messaging-content-width: 70%;
-  --messaging-right-panel-width: 340px;
+  --messaging-right-panel-width: var(--panel-width);
 }
 
 /* ==========================================================================
-   Page Layout
+   Page Layout - Upwork-Style Three Panel Design
    ========================================================================== */
 
 /* Override main element defaults for messaging page - full width edge to edge */
@@ -50,33 +82,34 @@ main.main-content:has(.messaging-page) {
 }
 
 .messaging-page {
-  height: calc(100vh - 80px);
-  max-height: calc(100vh - 80px);
-  margin-top: 80px;
-  background-color: var(--color-background);
+  height: calc(100vh - var(--header-height));
+  max-height: calc(100vh - var(--header-height));
+  margin-top: var(--header-height);
+  background-color: var(--bg-white);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   width: 100%;
+  font-family: var(--font-main);
 }
 
 .messaging-layout {
   display: flex;
   flex: 1;
-  height: calc(100vh - 80px);
+  height: calc(100vh - var(--header-height));
   overflow: hidden;
 }
 
 /* ==========================================================================
-   Thread Sidebar (Left Panel)
+   Thread Sidebar (Left Panel) - Upwork Style
    ========================================================================== */
 
 .thread-sidebar {
-  width: var(--messaging-sidebar-width);
-  min-width: 280px;
-  max-width: 400px;
-  background-color: var(--color-background);
-  border-right: 1px solid #E0E0E0;
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-width);
+  max-width: var(--sidebar-width);
+  background-color: var(--bg-white);
+  border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -91,16 +124,16 @@ main.main-content:has(.messaging-page) {
 }
 
 .sidebar-title {
-  font-size: 1.375rem;
-  font-weight: 700;
-  color: #1A1A1A;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .sidebar-header__actions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
 }
 
 .sidebar-header__btn {
@@ -109,30 +142,30 @@ main.main-content:has(.messaging-page) {
   justify-content: center;
   width: 36px;
   height: 36px;
-  border: 1px solid #E0E0E0;
+  border: 1px solid var(--border-color);
   border-radius: 50%;
-  background: transparent;
+  background: var(--bg-white);
   cursor: pointer;
   transition: all 0.15s ease;
   padding: 0;
 }
 
 .sidebar-header__btn:hover {
-  background: #F5F5F5;
-  border-color: var(--color-primary-purple);
+  background: var(--bg-gray-100);
+  border-color: var(--text-muted);
 }
 
 .sidebar-header__btn svg {
   width: 18px;
   height: 18px;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .sidebar-header__btn:hover svg {
-  color: var(--color-primary-purple);
+  color: var(--text-primary);
 }
 
-/* Sidebar Search Bar */
+/* Sidebar Search Bar - Upwork Style */
 .sidebar-search {
   display: flex;
   align-items: center;
@@ -142,40 +175,40 @@ main.main-content:has(.messaging-page) {
 
 .sidebar-search__input-wrapper {
   flex: 1;
-  position: relative;
   display: flex;
   align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--bg-white);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  transition: all 0.15s;
+}
+
+.sidebar-search__input-wrapper:focus-within {
+  border-color: var(--secondary-purple);
+  box-shadow: 0 0 0 2px rgba(109, 49, 194, 0.1);
 }
 
 .sidebar-search__icon {
-  position: absolute;
-  left: 12px;
-  width: 18px;
-  height: 18px;
-  color: #999;
-  pointer-events: none;
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
+  flex-shrink: 0;
 }
 
 .sidebar-search__input {
-  width: 100%;
-  height: 40px;
-  padding: 0 12px 0 40px;
-  border: 1px solid #E0E0E0;
-  border-radius: 8px;
+  flex: 1;
+  border: none;
+  outline: none;
   font-size: 14px;
-  color: #1A1A1A;
-  background: var(--color-background);
-  transition: border-color 0.15s, box-shadow 0.15s;
+  font-family: inherit;
+  background: transparent;
+  color: var(--text-primary);
 }
 
 .sidebar-search__input::placeholder {
-  color: #999;
-}
-
-.sidebar-search__input:focus {
-  outline: none;
-  border-color: var(--color-primary-purple);
-  box-shadow: 0 0 0 3px rgba(107, 79, 161, 0.1);
+  color: var(--text-muted);
 }
 
 .sidebar-search__filter-btn {
@@ -184,34 +217,32 @@ main.main-content:has(.messaging-page) {
   justify-content: center;
   width: 40px;
   height: 40px;
-  border: 1px solid #E0E0E0;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
-  background: transparent;
+  background: var(--bg-white);
   cursor: pointer;
   transition: all 0.15s ease;
   flex-shrink: 0;
 }
 
 .sidebar-search__filter-btn:hover {
-  background: #F5F5F5;
-  border-color: var(--color-primary-purple);
+  background: var(--bg-gray-100);
 }
 
 .sidebar-search__filter-btn svg {
-  width: 20px;
-  height: 20px;
-  color: #666;
+  width: 18px;
+  height: 18px;
 }
 
-.sidebar-search__filter-btn:hover svg {
-  color: var(--color-primary-purple);
+.sidebar-search__filter-btn svg path {
+  stroke: var(--text-secondary);
 }
 
 /* Thread List */
 .thread-list {
   flex: 1;
   overflow-y: auto;
-  padding: 0;
+  padding: 4px 8px;
 }
 
 .thread-list__empty {
@@ -221,7 +252,7 @@ main.main-content:has(.messaging-page) {
   justify-content: center;
   padding: 40px 20px;
   text-align: center;
-  color: var(--color-text-secondary);
+  color: var(--text-muted);
 }
 
 .thread-list__empty p {
@@ -233,57 +264,78 @@ main.main-content:has(.messaging-page) {
   padding: 8px 16px;
   font-size: 13px;
   font-weight: 500;
-  color: var(--color-primary-purple);
+  color: var(--secondary-purple);
   background: transparent;
-  border: 1px solid var(--color-primary-purple);
+  border: 1px solid var(--secondary-purple);
   border-radius: 6px;
   cursor: pointer;
   transition: background 0.15s;
 }
 
 .thread-list__clear-search:hover {
-  background: var(--color-hover-bg);
+  background: var(--upwork-green-light);
 }
 
 /* ==========================================================================
-   Thread Card - Modern Messaging Design
-   Purple left border selected state, clean layout
+   Thread Card - Upwork Style with Purple Pill Selection
    ========================================================================== */
 
 .thread-card {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  padding: 14px 16px;
+  padding: 12px;
+  margin-bottom: 2px;
   cursor: pointer;
   transition: background 0.15s ease;
   position: relative;
-  border-left: 3px solid transparent;
+  border-radius: 12px;
 }
 
 .thread-card:hover {
-  background-color: #F8F8F8;
+  background-color: var(--bg-gray-100);
 }
 
 .thread-card:focus {
   outline: none;
-  background-color: #F5F5F5;
+  background-color: var(--bg-gray-100);
 }
 
-/* SELECTED STATE - Purple left border with subtle background */
+/* SELECTED STATE - Upwork Purple Pill */
 .thread-card--selected {
-  background-color: rgba(107, 79, 161, 0.08);
-  border-left-color: var(--color-primary-purple);
+  background-color: var(--secondary-purple);
 }
 
 .thread-card--selected:hover {
-  background-color: rgba(107, 79, 161, 0.12);
+  background-color: var(--secondary-purple);
+}
+
+/* Selected state text colors - all white */
+.thread-card--selected .thread-card__name,
+.thread-card--selected .thread-card__property,
+.thread-card--selected .thread-card__preview,
+.thread-card--selected .thread-card__time,
+.thread-card--selected .thread-card__role-badge {
+  color: white !important;
+}
+
+.thread-card--selected .thread-card__role-badge {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.thread-card--selected .thread-card__online-dot {
+  border-color: var(--secondary-purple);
+}
+
+.thread-card--selected .thread-card__unread {
+  background: white;
+  color: var(--secondary-purple);
 }
 
 /* Avatar Container */
 .thread-card__avatar-container {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   flex-shrink: 0;
   position: relative;
@@ -306,24 +358,24 @@ main.main-content:has(.messaging-page) {
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  font-size: 15px;
-  color: var(--color-primary-purple);
+  font-size: 16px;
+  color: var(--primary-purple);
 }
 
-/* Selected state avatar - purple background */
+/* Selected state avatar - transparent white */
 .thread-card--selected .thread-card__avatar-placeholder {
-  background: var(--color-primary-purple);
+  background: rgba(255, 255, 255, 0.2);
   color: white;
 }
 
 .thread-card__online-dot {
   position: absolute;
-  bottom: 0;
-  left: 0;
+  bottom: 2px;
+  right: 2px;
   width: 12px;
   height: 12px;
-  background: #22C55E;
-  border: 2px solid white;
+  background: var(--online-green);
+  border: 2px solid var(--bg-white);
   border-radius: 50%;
 }
 
@@ -344,9 +396,9 @@ main.main-content:has(.messaging-page) {
 }
 
 .thread-card__name {
-  font-size: 0.9375rem;
-  font-weight: 600;
-  color: #1A1A1A;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -354,48 +406,58 @@ main.main-content:has(.messaging-page) {
 
 .thread-card__role-badge {
   display: inline-flex;
-  padding: 2px 8px;
-  font-size: 0.625rem;
+  padding: 2px 6px;
+  font-size: 10px;
   font-weight: 600;
   border-radius: 4px;
   text-transform: uppercase;
   flex-shrink: 0;
-  letter-spacing: 0.3px;
+  background: var(--bg-gray-100);
+  color: var(--text-secondary);
 }
 
 .thread-card__role-badge--host {
-  background: #E3F2FD;
-  color: #1565C0;
-}
-
-.thread-card__role-badge--guest {
   background: #E8F5E9;
   color: #2E7D32;
 }
 
+.thread-card__role-badge--guest {
+  background: #E3F2FD;
+  color: #1565C0;
+}
+
 .thread-card__property {
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: #333;
+  font-size: 13px;
+  color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.4;
+  margin-bottom: 4px;
 }
 
 .thread-card__preview {
-  font-size: 0.8125rem;
-  color: #888;
+  font-size: 13px;
+  color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   margin: 0;
-  line-height: 1.4;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.thread-card__preview-prefix {
+  color: var(--text-secondary);
+}
+
+.thread-card--selected .thread-card__preview-prefix {
+  color: rgba(255, 255, 255, 0.8) !important;
 }
 
 /* Unread state - bolder preview */
 .thread-card--unread .thread-card__preview {
-  color: #555;
+  color: var(--text-secondary);
 }
 
 /* Meta (time and unread) */
@@ -409,27 +471,28 @@ main.main-content:has(.messaging-page) {
 }
 
 .thread-card__time {
-  font-size: 0.75rem;
-  color: #888;
+  font-size: 12px;
+  color: var(--text-muted);
   white-space: nowrap;
+  margin-left: 8px;
 }
 
 .thread-card__unread {
-  min-width: 22px;
-  height: 22px;
-  padding: 0 7px;
-  background: var(--color-primary-purple);
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background: var(--unread-badge);
   color: white;
-  font-size: 0.6875rem;
+  font-size: 11px;
   font-weight: 600;
-  border-radius: 11px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 /* ==========================================================================
-   Message Content Area (Right Panel)
+   Message Content Area (Center Panel) - Upwork Style
    ========================================================================== */
 
 .message-content {
@@ -437,19 +500,21 @@ main.main-content:has(.messaging-page) {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  background-color: var(--color-background);
+  background-color: var(--bg-white);
+  border-right: 1px solid var(--border-color);
 }
 
 /* ==========================================================================
-   Thread Header
+   Thread Header - Upwork Style
    ========================================================================== */
 
 .thread-header {
   display: flex;
   align-items: center;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid var(--color-border);
-  background-color: var(--color-background);
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-white);
 }
 
 /* Back Button - Base styles (hidden by default, shown on mobile) */
@@ -465,7 +530,7 @@ main.main-content:has(.messaging-page) {
   background: transparent;
   cursor: pointer;
   border-radius: 50%;
-  margin-right: 0.5rem;
+  margin-right: 8px;
   flex-shrink: 0;
   transition: background-color 0.2s ease;
   padding: 0;
@@ -481,7 +546,7 @@ main.main-content:has(.messaging-page) {
 }
 
 .thread-header__back svg path {
-  stroke: #6B4FA1;
+  stroke: var(--secondary-purple);
   stroke-width: 2.5;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -489,31 +554,43 @@ main.main-content:has(.messaging-page) {
 }
 
 .thread-header__back:hover {
-  background-color: var(--color-hover-bg);
+  background-color: var(--upwork-green-light);
 }
 
 .thread-header__back:active {
-  background-color: var(--color-message-incoming-bg);
+  background-color: var(--bg-gray-100);
+}
+
+/* Header Left Section */
+.thread-header__left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .thread-header__avatar {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   object-fit: cover;
-  background-color: var(--color-primary-purple);
+  background: linear-gradient(135deg, var(--secondary-purple), var(--accent-purple));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
 }
 
 .thread-header__info {
-  flex: 1;
-  margin-left: 1rem;
-  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .thread-header__name {
-  font-size: 1.125rem;
+  font-size: 15px;
   font-weight: 600;
-  color: var(--color-message-incoming-text);
+  color: var(--text-primary);
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -522,18 +599,18 @@ main.main-content:has(.messaging-page) {
 
 .thread-header__property {
   display: block;
-  font-size: 0.875rem;
-  color: var(--color-text-secondary);
-  margin-top: 0.125rem;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 2px;
 }
 
 .thread-header__status {
-  font-size: 0.75rem;
+  font-size: 12px;
   font-weight: 500;
-  padding: 0.375rem 0.75rem;
+  padding: 6px 12px;
   border-radius: 100px;
-  background-color: #EEEEEE;
-  color: var(--color-message-incoming-text);
+  background-color: var(--bg-gray-100);
+  color: var(--text-primary);
 }
 
 .thread-header__status--declined {
@@ -560,12 +637,11 @@ main.main-content:has(.messaging-page) {
 
 .thread-header__badge {
   display: inline-block;
-  padding: 2px 8px;
-  font-size: 0.625rem;
+  padding: 2px 6px;
+  font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
   border-radius: 4px;
-  letter-spacing: 0.5px;
 }
 
 .thread-header__badge--guest {
@@ -582,68 +658,65 @@ main.main-content:has(.messaging-page) {
 .thread-header__status-text {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.8125rem;
-  color: var(--color-text-secondary);
-  margin-top: 2px;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
 }
 
 .thread-header__online-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #22C55E;
+  background: var(--online-green);
 }
 
 /* Thread Header Action Buttons */
 .thread-header__actions {
   display: flex;
   align-items: center;
-  gap: 4px;
-  margin-left: auto;
+  gap: 8px;
 }
 
 .thread-header__action-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border: 1px solid #E0E0E0;
-  border-radius: 8px;
-  background: transparent;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  background: var(--bg-white);
   cursor: pointer;
   transition: all 0.15s ease;
   padding: 0;
 }
 
 .thread-header__action-btn:hover {
-  background: var(--color-hover-bg);
-  border-color: var(--color-primary-purple);
+  background: var(--bg-gray-100);
 }
 
 .thread-header__action-btn--active {
-  background: var(--color-hover-bg);
-  border-color: var(--color-primary-purple);
+  background: var(--upwork-green-light);
+  border-color: var(--secondary-purple);
 }
 
 .thread-header__action-btn svg {
-  width: 20px;
-  height: 20px;
-  color: var(--color-text-secondary);
+  width: 18px;
+  height: 18px;
+  color: var(--text-secondary);
   transition: color 0.15s ease;
 }
 
 .thread-header__action-btn:hover svg {
-  color: var(--color-primary-purple);
+  color: var(--text-primary);
 }
 
 .thread-header__action-btn--active svg {
-  color: var(--color-primary-purple);
+  color: var(--secondary-purple);
 }
 
 /* ==========================================================================
-   Message Thread
+   Message Thread - Upwork Style
    ========================================================================== */
 
 .message-thread {
@@ -656,10 +729,11 @@ main.main-content:has(.messaging-page) {
 .message-thread__messages {
   flex: 1;
   overflow-y: auto;
-  padding: 1.5rem;
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 16px;
+  background: var(--bg-gray-50);
 }
 
 .message-thread__loading,
@@ -668,14 +742,120 @@ main.main-content:has(.messaging-page) {
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: var(--color-text-secondary);
-  font-size: 0.9375rem;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+/* Date Separator */
+.date-separator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
 }
 
 /* ==========================================================================
-   Message Bubble
+   Message Bubble - Upwork Style with Avatar
    ========================================================================== */
 
+/* Message Row Container */
+.message-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.message-row.outgoing {
+  flex-direction: row-reverse;
+}
+
+/* Message Avatar */
+.msg-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.msg-avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #E8D4F8, #D4B8F0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--primary-purple);
+}
+
+.msg-avatar-placeholder.me {
+  background: linear-gradient(135deg, var(--secondary-purple), var(--accent-purple));
+  color: white;
+}
+
+/* Message Content */
+.msg-content {
+  flex: 1;
+  max-width: 65%;
+}
+
+.message-row.outgoing .msg-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.msg-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.message-row.outgoing .msg-header {
+  flex-direction: row-reverse;
+}
+
+.msg-sender {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.msg-time {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.msg-bubble {
+  padding: 12px 16px;
+  border-radius: 16px;
+  max-width: 100%;
+}
+
+.message-row:not(.outgoing) .msg-bubble {
+  background: var(--bg-white);
+  border: 1px solid var(--border-color);
+  border-bottom-left-radius: 4px;
+}
+
+.message-row.outgoing .msg-bubble {
+  background: var(--primary-purple);
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.msg-text {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Legacy Message Bubble Support */
 .message-bubble {
   max-width: 70%;
   display: flex;
@@ -696,138 +876,220 @@ main.main-content:has(.messaging-page) {
 }
 
 .message-bubble__sender {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--color-primary-purple);
-  margin-bottom: 0.25rem;
-  padding-left: 0.25rem;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  padding-left: 4px;
 }
 
 .message-bubble__content {
-  padding: 0.875rem 1rem;
-  border-radius: 1rem;
+  padding: 12px 16px;
+  border-radius: 16px;
 }
 
 .message-bubble--incoming .message-bubble__content {
-  background-color: var(--color-message-incoming-bg);
-  color: var(--color-message-incoming-text);
-  border-bottom-left-radius: 0.25rem;
+  background-color: var(--bg-white);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-bottom-left-radius: 4px;
 }
 
 .message-bubble--outgoing .message-bubble__content {
-  background-color: var(--color-message-outgoing-bg);
-  color: var(--color-message-outgoing-text);
-  border-bottom-right-radius: 0.25rem;
+  background-color: var(--primary-purple);
+  color: white;
+  border-bottom-right-radius: 4px;
 }
 
 .message-bubble--splitbot .message-bubble__content {
-  background-color: var(--color-splitbot-bg);
-  color: var(--color-message-incoming-text);
-  border-radius: 0.75rem;
-  border: 1px solid var(--color-border);
+  background-color: var(--bg-white);
+  color: var(--text-primary);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
 }
 
 .message-bubble__text {
   margin: 0;
-  font-size: 0.9375rem;
+  font-size: 14px;
   line-height: 1.5;
   word-wrap: break-word;
 }
 
 .message-bubble__cta {
   display: inline-block;
-  margin-top: 0.75rem;
-  padding: 0.5rem 1rem;
-  background-color: var(--color-primary-purple);
+  margin-top: 12px;
+  padding: 8px 16px;
+  background-color: var(--secondary-purple);
   color: white;
-  font-size: 0.875rem;
+  font-size: 13px;
   font-weight: 500;
   border: none;
-  border-radius: 0.5rem;
+  border-radius: 20px;
   cursor: pointer;
   transition: background-color 0.2s ease;
 }
 
 .message-bubble__cta:hover {
-  background-color: var(--color-primary-light);
+  background-color: var(--primary-purple);
 }
 
 .message-bubble__warning {
   display: block;
-  margin-top: 0.5rem;
-  font-size: 0.8125rem;
-  color: var(--color-alert);
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--alert-red);
   font-style: italic;
 }
 
 .message-bubble__timestamp {
-  font-size: 0.6875rem;
-  color: var(--color-text-secondary);
-  margin-top: 0.375rem;
-  padding: 0 0.25rem;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 6px;
+  padding: 0 4px;
 }
 
 .message-bubble--outgoing .message-bubble__timestamp {
   text-align: right;
 }
 
+/* System Message - Upwork Style */
+.system-message {
+  background: var(--bg-white);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin: 16px auto;
+  max-width: 85%;
+  text-align: center;
+}
+
+.system-message-icon {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 12px;
+  background: var(--upwork-green-light);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.system-message-icon svg {
+  width: 20px;
+  height: 20px;
+  color: var(--secondary-purple);
+}
+
+.system-message-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.system-message-text strong {
+  color: var(--text-primary);
+}
+
+.system-message-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.sys-btn {
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  border: none;
+}
+
+.sys-btn-primary {
+  background: var(--secondary-purple);
+  color: white;
+}
+
+.sys-btn-primary:hover {
+  background: var(--primary-purple);
+}
+
+.sys-btn-secondary {
+  background: var(--bg-gray-100);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.sys-btn-secondary:hover {
+  background: var(--upwork-green-light);
+  border-color: var(--secondary-purple);
+}
+
 /* ==========================================================================
-   Message Input
+   Message Input - Upwork Style with Toolbar
    ========================================================================== */
 
 .message-input {
-  display: flex;
-  align-items: flex-end;
-  padding: 1rem 1.5rem;
-  border-top: 1px solid var(--color-border);
-  background-color: var(--color-background);
-  gap: 0.75rem;
+  padding: 16px 20px;
+  background: var(--bg-white);
+  border-top: 1px solid var(--border-color);
 }
 
+/* Main wrapper for input box + send button */
+.message-input__wrapper {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+/* Container for textarea + toolbar (the bordered box) */
 .message-input__container {
   flex: 1;
-  position: relative;
   display: flex;
-  align-items: flex-end;
+  flex-direction: column;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: border-color 0.15s;
 }
 
+.message-input__container:focus-within {
+  border-color: var(--secondary-purple);
+}
+
+/* The textarea field */
 .message-input__field {
-  flex: 1;
-  padding: 10px 1rem; /* Centered: (44px - 22.5px line) / 2 ≈ 10px */
-  font-size: 0.9375rem;
-  font-family: inherit;
-  line-height: 1.5;
-  border: 1px solid var(--color-border);
-  border-radius: 1.25rem;
+  padding: 12px 16px;
+  border: none;
   outline: none;
+  font-size: 14px;
+  font-family: inherit;
   resize: none;
-  overflow: hidden; /* Hide scrollbar by default */
   min-height: 44px;
-  max-height: 91.5px; /* Approximately 3 lines + padding */
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  box-sizing: border-box;
-}
-
-.message-input__field:focus {
-  border-color: var(--color-primary-purple);
-  box-shadow: 0 0 0 3px rgba(107, 79, 161, 0.1);
-}
-
-.message-input__field:disabled {
-  background-color: #F5F5F5;
-  cursor: not-allowed;
+  max-height: 120px;
+  line-height: 1.5;
+  background: var(--bg-white);
 }
 
 .message-input__field::placeholder {
-  color: var(--color-text-secondary);
+  color: var(--text-muted);
 }
 
+.message-input__field:disabled {
+  background-color: var(--bg-gray-50);
+  cursor: not-allowed;
+}
+
+/* Character count (optional) */
 .message-input__count {
   position: absolute;
-  right: 0.75rem;
-  bottom: 0.5rem;
-  font-size: 0.6875rem;
-  color: var(--color-text-secondary);
+  right: 12px;
+  bottom: 50px;
+  font-size: 11px;
+  color: var(--text-muted);
 }
 
 .message-input__count--limit {
@@ -835,25 +1097,68 @@ main.main-content:has(.messaging-page) {
   font-weight: 600;
 }
 
-.message-input__send {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
+/* Toolbar with formatting buttons */
+.message-input__toolbar {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--bg-gray-50);
+  border-top: 1px solid var(--border-light, #F0F0F0);
+}
+
+.message-input__toolbar-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
   border: none;
-  background-color: var(--color-primary-purple);
-  color: white;
-  cursor: pointer;
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s ease, transform 0.1s ease;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.message-input__toolbar-btn:hover {
+  background: var(--bg-gray-100);
+}
+
+.message-input__toolbar-btn svg {
+  width: 18px;
+  height: 18px;
+  color: var(--text-secondary);
+}
+
+.message-input__toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--border-color);
+  margin: 0 4px;
+}
+
+.message-input__toolbar-spacer {
+  flex: 1;
+}
+
+/* Send button */
+.message-input__send {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--secondary-purple);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
   flex-shrink: 0;
-  overflow: visible;
   padding: 0;
 }
 
 .message-input__send:hover:not(:disabled) {
-  background-color: var(--color-primary-light);
+  background: var(--primary-purple);
 }
 
 .message-input__send:active:not(:disabled) {
@@ -861,14 +1166,13 @@ main.main-content:has(.messaging-page) {
 }
 
 .message-input__send:disabled {
-  background-color: #E5E5E5;
-  color: #999999;
+  background: var(--border-color);
   cursor: not-allowed;
 }
 
 .message-input__send svg {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   display: block;
   pointer-events: none;
 }
@@ -878,17 +1182,33 @@ main.main-content:has(.messaging-page) {
 }
 
 .message-input__send:disabled svg path {
-  fill: #888888;
+  fill: var(--text-muted);
 }
 
 /* Sending spinner animation */
 .message-input__sending-spinner {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-top-color: white;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
+}
+
+/* Legacy support: Old flat layout without toolbar */
+.message-input--legacy {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.message-input--legacy .message-input__container {
+  flex-direction: row;
+  border-radius: 20px;
+}
+
+.message-input--legacy .message-input__field {
+  border-radius: 20px;
 }
 
 /* ==========================================================================
@@ -1037,7 +1357,7 @@ main.main-content:has(.messaging-page) {
   /* Mobile: Full-screen views instead of split */
   .messaging-layout--mobile {
     flex-direction: column;
-    height: calc(100vh - 80px);
+    height: calc(100vh - var(--header-height, 70px));
   }
 
   /* Thread Sidebar - Full screen list view */
@@ -1060,11 +1380,11 @@ main.main-content:has(.messaging-page) {
   /* Message Content - Full screen conversation view */
   .messaging-layout--mobile .message-content {
     position: absolute;
-    top: 80px;
+    top: var(--header-height, 70px);
     left: 0;
     right: 0;
     bottom: 0;
-    height: calc(100vh - 80px);
+    height: calc(100vh - var(--header-height, 70px));
     display: flex;
     flex-direction: column;
   }
@@ -1079,7 +1399,9 @@ main.main-content:has(.messaging-page) {
     display: flex !important;
   }
 
-  .message-bubble {
+  /* Message bubbles wider on mobile */
+  .message-bubble,
+  .msg-content {
     max-width: 85%;
   }
 
@@ -1087,54 +1409,89 @@ main.main-content:has(.messaging-page) {
     max-width: 95%;
   }
 
+  /* Slightly smaller avatars on mobile */
+  .thread-card__avatar {
+    width: 44px;
+    height: 44px;
+  }
+
+  .thread-header__avatar {
+    width: 36px;
+    height: 36px;
+  }
+
+  /* Hide right panel on mobile (via CSS class toggle) */
+  .right-panel {
+    display: none;
+  }
+
+  /* Hide toolbar on mobile for cleaner input */
+  .message-input__toolbar {
+    display: none;
+  }
+
+  /* Simpler input on mobile */
+  .message-input__container {
+    border-radius: 20px;
+  }
+
+  .message-input__field {
+    padding: 10px 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar-header__title {
+    font-size: 18px;
+  }
+
+  .thread-card {
+    padding: 12px 16px;
+  }
+
+  .thread-card__name {
+    font-size: 14px;
+  }
+
+  .thread-header {
+    padding: 12px 16px;
+  }
+
+  .message-thread__messages,
+  .messages-scroll {
+    padding: 16px;
+  }
+
+  .message-input {
+    padding: 12px 16px;
+  }
+
+  .message-input__field {
+    padding: 10px 14px;
+    font-size: 14px;
+    min-height: 40px;
+    max-height: 80px;
+  }
+
+  .message-input__send {
+    width: 36px;
+    height: 36px;
+  }
+
+  /* Smaller thread card avatars on small screens */
   .thread-card__avatar {
     width: 40px;
     height: 40px;
   }
 
-  .thread-header__avatar {
-    width: 40px;
-    height: 40px;
+  /* Message row adjustments */
+  .message-row {
+    gap: 8px;
   }
 
-}
-
-@media (max-width: 480px) {
-  .sidebar-title {
-    font-size: 1.25rem;
-    padding: 1rem;
-  }
-
-  .thread-card {
-    padding: 0.875rem 1rem;
-  }
-
-  .thread-card__name {
-    font-size: 0.875rem;
-  }
-
-  .thread-header {
-    padding: 0.875rem 1rem;
-  }
-
-  .message-thread__messages {
-    padding: 1rem;
-  }
-
-  .message-input {
-    padding: 0.75rem 1rem;
-  }
-
-  .message-input__field {
-    padding: 0.625rem 0.875rem;
-    font-size: 0.875rem;
-    min-height: 40px;
-    max-height: 80px; /* Approximately 3 lines on mobile */
-  }
-
-  .message-input__send {
-    width: 40px;
-    height: 40px;
+  .msg-avatar {
+    width: 32px;
+    height: 32px;
   }
 }
 
@@ -1145,10 +1502,11 @@ main.main-content:has(.messaging-page) {
 .typing-indicator {
   display: flex;
   align-items: center;
-  padding: 0.5rem 1.5rem;
-  color: var(--color-text-secondary);
-  font-size: 0.8125rem;
+  padding: 8px 20px;
+  color: var(--text-muted);
+  font-size: 13px;
   min-height: 32px;
+  background: var(--bg-gray-50);
 }
 
 .typing-dots {
@@ -1161,7 +1519,7 @@ main.main-content:has(.messaging-page) {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background-color: var(--color-primary-purple);
+  background-color: var(--secondary-purple);
   animation: typingBounce 1.4s infinite ease-in-out both;
 }
 
@@ -1190,6 +1548,7 @@ main.main-content:has(.messaging-page) {
 
 .typing-text {
   font-style: italic;
+  color: var(--text-secondary);
 }
 
 /* ==========================================================================

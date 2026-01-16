@@ -99,15 +99,21 @@ const authenticateUser = async (
     return tokenResult;
   }
 
+  // Extract the actual token (remove "Bearer " prefix if present)
+  const rawToken = tokenResult.value;
+  const token = rawToken.startsWith('Bearer ') ? rawToken.slice(7) : rawToken;
+  console.log('[messages] DEBUG: Token extracted, length:', token.length);
+
   // Validate token with Supabase Auth
+  // IMPORTANT: Pass token explicitly to getUser() - don't rely on client header config
   const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-    global: { headers: { Authorization: tokenResult.value } },
     auth: { persistSession: false },
   });
 
-  const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+  const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token);
 
   if (authError || !authUser) {
+    console.log('[messages] DEBUG: Auth error:', authError?.message);
     return err(new AuthenticationError("Invalid or expired authentication token"));
   }
 

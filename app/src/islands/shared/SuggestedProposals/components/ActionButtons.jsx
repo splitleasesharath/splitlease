@@ -3,13 +3,13 @@
  *
  * Primary actions for suggested proposals:
  * - "I'm Interested" - Accept the suggestion
- * - "Remove" - Dismiss the suggestion
+ * - "Not Interested" - Dismiss the suggestion (opens feedback modal)
  */
 
 /**
  * @param {Object} props
  * @param {function} props.onInterested - Handler for interested action
- * @param {function} props.onRemove - Handler for remove action
+ * @param {function} props.onRemove - Handler for not interested action (opens modal)
  * @param {boolean} props.isProcessing - Whether an action is in progress
  */
 export default function ActionButtons({
@@ -58,7 +58,7 @@ export default function ActionButtons({
         >
           <path d="M18 6L6 18M6 6l12 12" />
         </svg>
-        Remove
+        Not Interested
       </button>
     </div>
   );

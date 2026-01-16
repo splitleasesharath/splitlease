@@ -411,9 +411,12 @@ export function getButtonConfigForProposal(proposal) {
     }
 
     // Cancel button for SL-suggested: "Reject Proposal"
-    cancelButton.visible = true;
-    cancelButton.label = 'Reject Proposal';
-    cancelButton.action = 'reject_proposal';
+    // Only show if guestAction2 isn't already showing "Not Interested" (avoids redundant negative actions)
+    if (guestAction2.action !== 'reject_suggestion') {
+      cancelButton.visible = true;
+      cancelButton.label = 'Reject Proposal';
+      cancelButton.action = 'reject_proposal';
+    }
   } else if (sortOrder > 5) {
     // After lease docs stage (no house manual): Show cancel with visibility based on sort_order
     cancelButton.visible = true;

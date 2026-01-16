@@ -1331,48 +1331,28 @@
   font-style: italic;
 }
 
-.review-price-info-btn {
+/* Clickable schedule info trigger - text + icon both clickable */
+.review-price-info-trigger {
   background: none;
   border: none;
-  padding: 0;
+  padding: 2px 4px;
+  margin-left: 4px;
   cursor: pointer;
-  display: flex;
-  align-items: center;
+  border-radius: 4px;
+  transition: background-color 0.15s ease;
 }
 
-.review-price-info-btn svg {
+.review-price-info-trigger:hover {
+  background-color: rgba(124, 58, 237, 0.08);
+}
+
+.review-price-info-icon {
   stroke: #9ca3af;
+  flex-shrink: 0;
+  transition: stroke 0.15s ease;
 }
 
-.review-price-info-btn:hover svg {
-  stroke: var(--v2-primary);
-}
-
-/* Message Button - Full width outline style */
-.review-message-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: white;
-  color: var(--v2-primary);
-  border: 2px solid #e5e7eb;
-  padding: 12px 20px;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  width: 100%;
-  margin-top: 4px;
-}
-
-.review-message-btn:hover {
-  border-color: var(--v2-primary);
-  background: #F5F0FF;
-}
-
-.review-message-btn svg {
+.review-price-info-trigger:hover .review-price-info-icon {
   stroke: var(--v2-primary);
 }
 
@@ -1464,16 +1444,8 @@
     width: 100%;  /* Forces onto its own line */
   }
 
-  .review-price-info-btn {
-    flex-shrink: 0;  /* Prevent icon from shrinking */
-  }
-
-  /* GROUP 4: Message + Host (action/contact) */
-  .review-message-btn {
-    padding: 10px 16px;
-    font-size: 13px;
-    margin-top: 0;
-    margin-bottom: 12px;  /* Space before host */
+  .review-price-info-trigger {
+    flex-shrink: 0;  /* Prevent trigger from shrinking */
   }
 
   .review-listing-host {

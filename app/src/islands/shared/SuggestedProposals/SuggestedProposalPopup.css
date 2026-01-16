@@ -129,7 +129,10 @@
 .sp-popup-nav-btn svg {
   width: 18px;
   height: 18px;
-  color: var(--sp-text-dark);
+}
+
+.sp-popup-nav-btn svg path {
+  stroke: #424242;
 }
 
 .sp-popup-close-btn {

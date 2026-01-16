@@ -29,12 +29,14 @@ export default function Header({ autoShowLogin = false }) {
   const cachedFirstName = getFirstName();
   const cachedAvatarUrl = getAvatarUrl();
   const cachedUserType = getStoredUserType();
+  const cachedUserId = getUserId(); // Get cached userId for suggested proposals check
   const hasCachedAuth = !!(cachedFirstName && getAuthState());
 
   const [currentUser, setCurrentUser] = useState(() => {
     // Return optimistic user data if we have cached auth
     if (hasCachedAuth) {
       return {
+        userId: cachedUserId, // Include userId for pending proposals check
         firstName: cachedFirstName,
         profilePhoto: cachedAvatarUrl,
         userType: cachedUserType,
@@ -55,6 +57,7 @@ export default function Header({ autoShowLogin = false }) {
   const [pendingProposals, setPendingProposals] = useState([]);
   const [currentProposalIndex, setCurrentProposalIndex] = useState(0);
   const [isProcessingProposal, setIsProcessingProposal] = useState(false);
+  const [isNotInterestedModalOpen, setIsNotInterestedModalOpen] = useState(false);
 
   // Dynamic menu data hooks for Host and Guest dropdowns
   const userId = currentUser?.userId || currentUser?.id || '';
@@ -131,6 +134,7 @@ export default function Header({ autoShowLogin = false }) {
             if (session?.user) {
               const bubbleUserId = session.user.user_metadata?.user_id || getUserId() || session.user.id;
               setCurrentUser({
+                userId: bubbleUserId, // Include userId for pending proposals check
                 firstName: session.user.user_metadata?.first_name || session.user.email?.split('@')[0] || 'User',
                 email: session.user.email,
                 _isFromSession: true
@@ -493,16 +497,31 @@ export default function Header({ autoShowLogin = false }) {
     }
   };
 
-  // Handle "Remove" action on suggested proposal
-  const handleProposalRemove = async () => {
+  // Handle "Not Interested" action - opens the feedback modal
+  const handleProposalRemove = () => {
+    const proposal = pendingProposals[currentProposalIndex];
+    if (!proposal) return;
+    setIsNotInterestedModalOpen(true);
+  };
+
+  // Close Not Interested modal
+  const handleCloseNotInterestedModal = () => {
+    setIsNotInterestedModalOpen(false);
+  };
+
+  // Confirm Not Interested with optional feedback
+  const handleConfirmNotInterested = async (feedback = null) => {
     const proposal = pendingProposals[currentProposalIndex];
     if (!proposal) return;
 
     setIsProcessingProposal(true);
-    const result = await dismissProposal(proposal._id);
+    const result = await dismissProposal(proposal._id, feedback);
     setIsProcessingProposal(false);
 
     if (result.success) {
+      // Close the modal
+      setIsNotInterestedModalOpen(false);
+
       // Remove from list and update count
       const newProposals = pendingProposals.filter((_, i) => i !== currentProposalIndex);
       setPendingProposals(newProposals);
@@ -849,7 +868,8 @@ export default function Header({ autoShowLogin = false }) {
         {/* Right Navigation - Auth Buttons */}
         <div className={`nav-right ${mobileMenuActive ? 'mobile-active' : ''}`}>
           {/* Suggested Proposal Trigger - shows for guest users with pending proposals */}
-          {currentUser && isGuest() && pendingProposalCount > 0 && (
+          {/* Hidden on /guest-proposals page since suggestions are already shown in the list */}
+          {currentUser && isGuest() && pendingProposalCount > 0 && window.location.pathname !== '/guest-proposals' && (
             <HeaderSuggestedProposalTrigger
               onClick={handleSuggestedTriggerClick}
               isActive={showSuggestedPopup}
@@ -964,6 +984,9 @@ export default function Header({ autoShowLogin = false }) {
         onClose={() => setShowSuggestedPopup(false)}
         isVisible={showSuggestedPopup}
         isProcessing={isProcessingProposal}
+        isNotInterestedModalOpen={isNotInterestedModalOpen}
+        onCloseNotInterestedModal={handleCloseNotInterestedModal}
+        onConfirmNotInterested={handleConfirmNotInterested}
       />
     </header>
   );

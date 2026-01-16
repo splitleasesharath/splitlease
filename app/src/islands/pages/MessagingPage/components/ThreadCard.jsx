@@ -1,15 +1,15 @@
 /**
  * ThreadCard Component
  *
- * Individual thread card in the sidebar.
+ * Individual thread card in the sidebar (Upwork style).
  * Shows contact avatar with online indicator, name with role badge,
  * property name, last message preview, timestamp, and unread count.
  *
- * Design matches mockup:
- * - Left: Avatar (with initials fallback, online dot at bottom-right)
+ * Design:
+ * - Left: Avatar (with initials fallback, online dot)
  * - Middle: Name + Badge, Property name, Message preview
  * - Right: Timestamp, Unread badge
- * - Selected state: Purple left border and subtle background tint
+ * - Selected state: Full purple pill background (not left border)
  */
 
 /**

@@ -2,15 +2,52 @@
  * MessageThread Component
  *
  * Message display area with thread header and messages list.
- * Auto-scrolls to bottom when new messages arrive.
- * On mobile, shows a back button to return to thread list.
- * Shows typing indicator when another user is composing.
+ * - Auto-scrolls to bottom when new messages arrive
+ * - On mobile, shows a back button to return to thread list
+ * - Shows typing indicator when another user is composing
+ * - Upwork-style design with gray background and date separators
  */
 
 import { useEffect, useRef } from 'react';
 import MessageBubble from './MessageBubble.jsx';
 import ThreadHeader from './ThreadHeader.jsx';
 import TypingIndicator from './TypingIndicator.jsx';
+
+/**
+ * Format date for separator display
+ */
+function formatDateSeparator(dateString) {
+  if (!dateString) return '';
+  try {
+    const date = new Date(dateString);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (date.toDateString() === today.toDateString()) {
+      return 'Today';
+    }
+    if (date.toDateString() === yesterday.toDateString()) {
+      return 'Yesterday';
+    }
+    return date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Get date key for grouping messages
+ */
+function getDateKey(dateString) {
+  if (!dateString) return '';
+  try {
+    const date = new Date(dateString);
+    return date.toDateString();
+  } catch {
+    return '';
+  }
+}
 
 /**
  * @param {object} props
@@ -63,6 +100,9 @@ export default function MessageThread({
     }
   }, [messages, isOtherUserTyping]);
 
+  // Group messages by date for date separators
+  let lastDateKey = '';
+
   return (
     <div className="message-thread">
       {/* Thread Header */}
@@ -78,8 +118,8 @@ export default function MessageThread({
         />
       )}
 
-      {/* Messages Container */}
-      <div className="message-thread__messages">
+      {/* Messages Container - Upwork style with gray background */}
+      <div className="messages-scroll">
         {isLoading ? (
           <div className="message-thread__loading">
             <div className="message-thread__loading-spinner"></div>
@@ -112,35 +152,50 @@ export default function MessageThread({
                 type="button"
                 onClick={() => onSuggestionClick?.('Hi! I wanted to reach out about the listing.')}
               >
-                👋 Say hello
+                Say hello
               </button>
               <button
                 className="suggestion-chip"
                 type="button"
                 onClick={() => onSuggestionClick?.('Hi! I wanted to check on availability for the dates I\'m interested in.')}
               >
-                📅 Ask about availability
+                Ask about availability
               </button>
               <button
                 className="suggestion-chip"
                 type="button"
                 onClick={() => onSuggestionClick?.('Hi! I have a quick question about the listing.')}
               >
-                ❓ Ask a question
+                Ask a question
               </button>
             </div>
           </div>
         ) : (
           <>
-            {messages.map((message, index) => (
-              <MessageBubble
-                key={message._id || index}
-                message={message}
-                onCTAClick={onCTAClick}
-                getCTAButtonConfig={getCTAButtonConfig}
-                messageContext={messageContext}
-              />
-            ))}
+            {messages.map((message, index) => {
+              const dateKey = getDateKey(message.created_at || message.timestamp);
+              const showDateSeparator = dateKey && dateKey !== lastDateKey;
+              if (showDateSeparator) {
+                lastDateKey = dateKey;
+              }
+
+              return (
+                <div key={message._id || index}>
+                  {/* Date Separator */}
+                  {showDateSeparator && (
+                    <div className="date-separator">
+                      {formatDateSeparator(message.created_at || message.timestamp)}
+                    </div>
+                  )}
+                  <MessageBubble
+                    message={message}
+                    onCTAClick={onCTAClick}
+                    getCTAButtonConfig={getCTAButtonConfig}
+                    messageContext={messageContext}
+                  />
+                </div>
+              );
+            })}
             {/* Typing Indicator */}
             {isOtherUserTyping && <TypingIndicator userName={typingUserName} />}
             {/* Scroll anchor */}
