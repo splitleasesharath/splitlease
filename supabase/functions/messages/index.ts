@@ -7,9 +7,10 @@
  * Supported Actions:
  * - send_message: Send a message in a thread (requires auth)
  * - get_messages: Get messages for a specific thread (requires auth)
+ * - get_threads: Get all threads for authenticated user (requires auth)
  * - send_guest_inquiry: Contact host without auth (name/email required)
  *
- * NOTE: get_threads was removed - frontend now queries Supabase directly
+ * NOTE: get_threads uses service role to bypass RLS (supports legacy auth)
  *
  * FP ARCHITECTURE:
  * - Pure functions for validation, routing, and response formatting
@@ -43,6 +44,7 @@ import { reportErrorLog } from "../_shared/slack.ts";
 // Import handlers
 import { handleSendMessage } from './handlers/sendMessage.ts';
 import { handleGetMessages } from './handlers/getMessages.ts';
+import { handleGetThreads } from './handlers/getThreads.ts';
 import { handleSendGuestInquiry } from './handlers/sendGuestInquiry.ts';
 import { handleCreateProposalThread } from './handlers/createProposalThread.ts';
 
@@ -50,7 +52,7 @@ import { handleCreateProposalThread } from './handlers/createProposalThread.ts';
 // Configuration (Immutable)
 // ─────────────────────────────────────────────────────────────
 
-const ALLOWED_ACTIONS = ['send_message', 'get_messages', 'send_guest_inquiry', 'create_proposal_thread'] as const;
+const ALLOWED_ACTIONS = ['send_message', 'get_messages', 'get_threads', 'send_guest_inquiry', 'create_proposal_thread'] as const;
 
 // Actions that don't require authentication
 // - send_guest_inquiry: Public form submission
@@ -63,6 +65,7 @@ type Action = typeof ALLOWED_ACTIONS[number];
 const handlers: Readonly<Record<Action, Function>> = {
   send_message: handleSendMessage,
   get_messages: handleGetMessages,
+  get_threads: handleGetThreads,
   send_guest_inquiry: handleSendGuestInquiry,
   create_proposal_thread: handleCreateProposalThread,
 };
@@ -264,6 +267,10 @@ async function executeHandler(
       return handler(supabaseAdmin, payload, user!);
 
     case 'get_messages':
+      // User is guaranteed non-null for auth-required actions
+      return handler(supabaseAdmin, payload, user!);
+
+    case 'get_threads':
       // User is guaranteed non-null for auth-required actions
       return handler(supabaseAdmin, payload, user!);
 
