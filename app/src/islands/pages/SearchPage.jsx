@@ -1433,8 +1433,10 @@ export default function SearchPage() {
           // Validate token and get user data
           // CRITICAL: Use clearOnFailure: false to preserve session if Edge Function fails
           const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
+          let userId = null;
+
           if (userData) {
-            const userId = getUserId();
+            userId = getUserId();
             setCurrentUser({
               id: userId,
               name: userData.fullName || userData.firstName || '',
@@ -1443,10 +1445,29 @@ export default function SearchPage() {
               avatarUrl: userData.profilePhoto || null,
               proposalCount: userData.proposalCount ?? 0
             });
+          } else {
+            // Edge Function failed but we have a valid Supabase session
+            // Fall back to Supabase session data + localStorage for basic user info
+            console.log('[SearchPage] validateTokenAndFetchUser failed, falling back to Supabase session');
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+              userId = session.user.user_metadata?.user_id || session.user.id;
+              const storedUserType = localStorage.getItem('sl_user_type');
+              setCurrentUser({
+                id: userId,
+                name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || '',
+                email: session.user.email || '',
+                userType: session.user.user_metadata?.user_type || storedUserType || 'GUEST',
+                avatarUrl: session.user.user_metadata?.avatar_url || null,
+                proposalCount: 0
+              });
+              console.log('[SearchPage] Using Supabase session fallback, userType:', session.user.user_metadata?.user_type || storedUserType);
+            }
+          }
 
-            // Fetch favorites, proposals count, and profile data from Supabase
-            // Uses junction table RPCs for favorites/proposals (Phase 5b migration)
-            if (userId) {
+          // Fetch favorites, proposals count, and profile data from Supabase
+          // Uses junction table RPCs for favorites/proposals (Phase 5b migration)
+          if (userId) {
               // Parallel fetch: profile data + junction counts + favorites list
               const [userResult, countsResult] = await Promise.all([
                 // Profile data + favorites for proposal form prefilling and heart icons
@@ -1538,7 +1559,6 @@ export default function SearchPage() {
               }
             }
           }
-        }
       } catch (error) {
         console.error('[SearchPage] Auth check error:', error);
         setIsLoggedIn(false);
