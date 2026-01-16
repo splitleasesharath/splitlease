@@ -819,6 +819,12 @@
   color: var(--sl-text-main);
 }
 
+.verification-value {
+  font-size: 13px;
+  color: var(--sl-text-secondary);
+  word-break: break-all;
+}
+
 .verification-status {
   font-size: 13px;
   font-weight: 500;
