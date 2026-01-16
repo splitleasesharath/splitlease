@@ -522,7 +522,7 @@ export default function Header({ autoShowLogin = false }) {
                     <div className="mega-menu-columns">
                       {/* Column 1: First half of items */}
                       <div className="menu-column">
-                        <div className="menu-column-title">Navigate</div>
+                        <div className="menu-column-title">Learn</div>
                         {hostMenuConfig.items.slice(0, Math.ceil(hostMenuConfig.items.length / 2)).map((item) => (
                           <a
                             key={item.id}
@@ -546,7 +546,7 @@ export default function Header({ autoShowLogin = false }) {
 
                       {/* Column 2: Second half of items + CTA */}
                       <div className="menu-column">
-                        <div className="menu-column-title">Resources</div>
+                        <div className="menu-column-title">Get Started</div>
                         {hostMenuConfig.items.slice(Math.ceil(hostMenuConfig.items.length / 2)).map((item) => (
                           <a
                             key={item.id}
@@ -668,7 +668,7 @@ export default function Header({ autoShowLogin = false }) {
                     <div className="mega-menu-columns">
                       {/* Column 1: First half of items */}
                       <div className="menu-column">
-                        <div className="menu-column-title">Explore</div>
+                        <div className="menu-column-title">Discover</div>
                         {guestMenuConfig.items.slice(0, Math.ceil(guestMenuConfig.items.length / 2)).map((item) => (
                           <a
                             key={item.id}
@@ -692,7 +692,7 @@ export default function Header({ autoShowLogin = false }) {
 
                       {/* Column 2: Second half of items + CTA */}
                       <div className="menu-column">
-                        <div className="menu-column-title">Resources</div>
+                        <div className="menu-column-title">Get Started</div>
                         {guestMenuConfig.items.slice(Math.ceil(guestMenuConfig.items.length / 2)).map((item) => (
                           <a
                             key={item.id}
