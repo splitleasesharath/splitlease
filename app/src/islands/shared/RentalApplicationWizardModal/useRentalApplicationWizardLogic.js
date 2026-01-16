@@ -523,13 +523,6 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
   // ============================================================================
   // Pure function to check step completion - considers visited state for optional steps
   const checkStepComplete = useCallback((stepNumber, visitedStepsArray) => {
-    // For submitted applications, ALL steps are complete by definition
-    // This was previously handled in mapDatabaseToFormData but was accidentally
-    // removed in commit 76e9bd27. This is the simplest fix that avoids race conditions.
-    if (applicationStatus === 'submitted') {
-      return true;
-    }
-
     let stepFields = [...STEP_FIELDS[stepNumber]];
 
     // Add conditional employment fields for step 4
@@ -550,10 +543,19 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
       const value = formData[field];
       return value !== undefined && value !== null && value !== '';
     });
-  }, [formData, applicationStatus]);
+  }, [formData]);
 
   // Update completed steps when form data or visited steps change
   useEffect(() => {
+    // For submitted applications, ALL steps are complete by definition
+    // This was previously handled in mapDatabaseToFormData but was accidentally
+    // removed in commit 76e9bd27. Checking here avoids infinite loop from
+    // adding applicationStatus to checkStepComplete's dependency array.
+    if (applicationStatus === 'submitted') {
+      setCompletedSteps([1, 2, 3, 4, 5, 6, 7]);
+      return;
+    }
+
     const newCompleted = [];
     for (let step = 1; step <= TOTAL_STEPS; step++) {
       if (checkStepComplete(step, visitedSteps)) {
@@ -566,7 +568,7 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
         prev.every((v, i) => v === newCompleted[i]);
       return isSame ? prev : newCompleted;
     });
-  }, [formData, visitedSteps, checkStepComplete]);
+  }, [formData, visitedSteps, checkStepComplete, applicationStatus]);
 
   // Public API for checking step completion (can use completedSteps cache)
   const isStepComplete = useCallback((stepNumber) => {
