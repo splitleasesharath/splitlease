@@ -327,7 +327,50 @@ def main():
                 count += 1
                 continue
 
-            # 4b. Start dev server (only for testable pages)
+            # 4b. Build check gate - verify code compiles before starting dev server
+            logger.step("Running build check...")
+            try:
+                build_result = subprocess.run(
+                    ["bun", "run", "build"],
+                    cwd=working_dir / "app",
+                    capture_output=True,
+                    text=True,
+                    timeout=120
+                )
+                if build_result.returncode != 0:
+                    # Extract error message from build output
+                    error_output = build_result.stderr or build_result.stdout
+                    error_lines = [l for l in error_output.split('\n') if l.strip()]
+                    error_snippet = error_lines[-3:] if error_lines else ['Unknown build error']
+
+                    logger.log(f"  [FAIL] Build check failed:")
+                    for line in error_snippet:
+                        logger.log(f"    {line[:100]}")
+
+                    subprocess.run(["git", "reset", "--hard", "HEAD"], cwd=working_dir, check=False)
+                    stats["failed"] += 1
+                    count += 1
+                    logger.phase_complete(f"Page {page_path}", success=False, error="Build check failed")
+                    continue
+
+                logger.log(f"  [OK] Build check passed")
+
+            except subprocess.TimeoutExpired:
+                logger.log(f"  [FAIL] Build check timed out (120s)")
+                subprocess.run(["git", "reset", "--hard", "HEAD"], cwd=working_dir, check=False)
+                stats["failed"] += 1
+                count += 1
+                logger.phase_complete(f"Page {page_path}", success=False, error="Build timeout")
+                continue
+            except Exception as e:
+                logger.log(f"  [FAIL] Build check error: {e}")
+                subprocess.run(["git", "reset", "--hard", "HEAD"], cwd=working_dir, check=False)
+                stats["failed"] += 1
+                count += 1
+                logger.phase_complete(f"Page {page_path}", success=False, error=str(e)[:50])
+                continue
+
+            # 4c. Start dev server (only if build passed)
             logger.step("Starting dev server...")
             try:
                 port, base_url = dev_server.start()
@@ -343,7 +386,7 @@ def main():
                 # Clean up any zombie browser processes before visual check
                 _cleanup_browser_processes(logger, silent=True)
 
-                # 4c. Visual regression check (concurrent LIVE vs DEV)
+                # 4d. Visual regression check (concurrent LIVE vs DEV)
                 mcp_live, mcp_dev = get_concurrent_mcp_sessions(page_path)
                 page_info = get_page_info(page_path)
                 auth_type = page_info.auth_type if page_info else "public"
@@ -361,7 +404,7 @@ def main():
                     concurrent=True  # Enable concurrent capture
                 )
 
-                # 4d. Commit or reset
+                # 4e. Commit or reset
                 if visual_result.get("visualParity") == "PASS":
                     logger.log(f"  [PASS] Visual parity OK")
                     commit_msg = f"refactor({page_path}): Implement chunks {chunk_ids}\n\n{visual_result.get('explanation', '')}"
