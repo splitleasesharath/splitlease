@@ -1,5 +1,5 @@
 /**
- * Guest Proposals Page Logic Hook
+ * Guest Proposals Page Logic Hook (V7)
  *
  * Follows the Hollow Component Pattern:
  * - This hook contains ALL business logic
@@ -10,13 +10,18 @@
  * - Uses queries from lib/proposals/
  * - Uses processors from lib/proposals/dataTransformers.js
  *
+ * V7 Changes:
+ * - Added expandedProposalId for accordion pattern
+ * - Added proposal categorization (suggested vs user-created)
+ * - Removed single selectedProposal in favor of all-visible cards
+ *
  * Authentication:
  * - Page requires authenticated Guest user
  * - User ID comes from session, NOT URL
  * - Redirects to home if not authenticated or not a Guest
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { fetchUserProposalsFromUrl } from '../../../lib/proposals/userProposalQueries.js';
 import { updateUrlWithProposal, cleanLegacyUserIdFromUrl } from '../../../lib/proposals/urlParser.js';
 import { transformProposalData, getProposalDisplayText } from '../../../lib/proposals/dataTransformers.js';
@@ -26,6 +31,7 @@ import { fetchStatusConfigurations, getButtonConfigForProposal, isStatusConfigCa
 import { checkAuthStatus, validateTokenAndFetchUser, getFirstName, getUserType } from '../../../lib/auth.js';
 import { getUserId } from '../../../lib/secureStorage.js';
 import { supabase } from '../../../lib/supabase.js';
+import { isSLSuggested, isPendingConfirmation, isTerminalStatus } from './displayUtils.js';
 
 /**
  * Main logic hook for Guest Proposals Page
@@ -48,8 +54,11 @@ export function useGuestProposalsPageLogic() {
   // Data state
   const [user, setUser] = useState(null);
   const [proposals, setProposals] = useState([]);
-  const [selectedProposal, setSelectedProposal] = useState(null);
+  const [selectedProposal, setSelectedProposal] = useState(null); // Legacy: kept for backward compatibility
   const [statusConfigReady, setStatusConfigReady] = useState(false);
+
+  // V7 UI state: Accordion pattern - only one card expanded at a time
+  const [expandedProposalId, setExpandedProposalId] = useState(null);
 
   // UI state
   const [isLoading, setIsLoading] = useState(true);
@@ -225,7 +234,7 @@ export function useGuestProposalsPageLogic() {
   // ============================================================================
 
   /**
-   * Handle proposal selection change (from dropdown)
+   * Handle proposal selection change (from dropdown) - Legacy support
    * @param {string} proposalId - The ID of the selected proposal
    */
   const handleProposalSelect = useCallback((proposalId) => {
@@ -237,6 +246,22 @@ export function useGuestProposalsPageLogic() {
       updateUrlWithProposal(proposalId);
     }
   }, [proposals]);
+
+  /**
+   * V7: Toggle accordion card expansion
+   * Only one card can be expanded at a time (accordion pattern)
+   * @param {string} proposalId - The ID of the proposal to toggle
+   */
+  const handleToggleExpand = useCallback((proposalId) => {
+    setExpandedProposalId(prevId => {
+      const newId = prevId === proposalId ? null : proposalId;
+      // Also update URL when expanding a card
+      if (newId) {
+        updateUrlWithProposal(newId);
+      }
+      return newId;
+    });
+  }, []);
 
   /**
    * Retry loading after error
@@ -261,6 +286,14 @@ export function useGuestProposalsPageLogic() {
           return remaining.length > 0 ? remaining[0] : null;
         }
         return prev;
+      });
+
+      // V7: If the deleted proposal was expanded, collapse
+      setExpandedProposalId(prevExpanded => {
+        if (prevExpanded === proposalId) {
+          return null;
+        }
+        return prevExpanded;
       });
 
       return remaining;
@@ -316,6 +349,59 @@ export function useGuestProposalsPageLogic() {
     : null;
 
   // ============================================================================
+  // V7: CATEGORIZED PROPOSALS
+  // ============================================================================
+
+  /**
+   * Categorize proposals into "Suggested for You" and "Your Proposals"
+   * - Suggested: SL-created proposals pending guest confirmation
+   * - User: All other proposals (guest-submitted, confirmed, etc.)
+   *
+   * Sort order within each category:
+   * - Non-terminal proposals first (active/pending)
+   * - Then by creation date (newest first)
+   */
+  const categorizedProposals = useMemo(() => {
+    const suggested = [];
+    const userCreated = [];
+
+    proposals.forEach(proposal => {
+      const status = proposal.Status || '';
+
+      // SL-suggested = has "Split Lease" in status AND pending confirmation
+      // Once confirmed, it moves to "Your Proposals"
+      const isSuggested = isSLSuggested(status) && isPendingConfirmation(status);
+
+      if (isSuggested) {
+        suggested.push(proposal);
+      } else {
+        userCreated.push(proposal);
+      }
+    });
+
+    // Sort function: non-terminal first, then by date descending
+    const sortProposals = (a, b) => {
+      const aTerminal = isTerminalStatus(a.Status);
+      const bTerminal = isTerminalStatus(b.Status);
+
+      // Non-terminal comes first
+      if (aTerminal !== bTerminal) {
+        return aTerminal ? 1 : -1;
+      }
+
+      // Then by creation date (newest first)
+      const aDate = new Date(a['Created Date'] || a.createdAt || 0);
+      const bDate = new Date(b['Created Date'] || b.createdAt || 0);
+      return bDate - aDate;
+    };
+
+    return {
+      suggested: suggested.sort(sortProposals),
+      userCreated: userCreated.sort(sortProposals)
+    };
+  }, [proposals]);
+
+  // ============================================================================
   // COMPUTED LOADING STATE
   // ============================================================================
 
@@ -335,7 +421,13 @@ export function useGuestProposalsPageLogic() {
     proposals,
     selectedProposal,
 
-    // Transformed/derived data
+    // V7: Categorized proposals for section rendering
+    categorizedProposals,
+
+    // V7: Accordion state
+    expandedProposalId,
+
+    // Transformed/derived data (legacy support)
     transformedProposal,
     statusConfig,
     currentStage,
@@ -349,6 +441,7 @@ export function useGuestProposalsPageLogic() {
 
     // Handlers
     handleProposalSelect,
+    handleToggleExpand, // V7: Accordion toggle
     handleRetry,
     handleProposalDeleted
   };

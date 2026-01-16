@@ -1,5 +1,5 @@
 /**
- * Guest Proposals Page
+ * Guest Proposals Page (V7)
  *
  * Follows the Hollow Component Pattern:
  * - This component contains ONLY JSX rendering
@@ -10,6 +10,12 @@
  * - Uses shared Header/Footer components
  * - Four-Layer Logic Architecture via hook
  *
+ * V7 Changes:
+ * - Replaced ProposalSelector + ProposalCard with ExpandableProposalCard
+ * - Added "Suggested for You" and "Your Proposals" sections
+ * - All proposals visible as accordion cards
+ * - Match reason cards for SL-suggested proposals
+ *
  * Authentication:
  * - Page requires authenticated Guest user
  * - User ID comes from session, NOT URL
@@ -19,10 +25,12 @@
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import { useGuestProposalsPageLogic } from './proposals/useGuestProposalsPageLogic.js';
-import ProposalSelector from './proposals/ProposalSelector.jsx';
-import ProposalCard from './proposals/ProposalCard.jsx';
+import SectionHeader from './proposals/SectionHeader.jsx';
+import ExpandableProposalCard from './proposals/ExpandableProposalCard.jsx';
 import VirtualMeetingsSection from './proposals/VirtualMeetingsSection.jsx';
-// ProgressTracker is now integrated inside ProposalCard
+// Legacy imports kept for potential fallback
+// import ProposalSelector from './proposals/ProposalSelector.jsx';
+// import ProposalCard from './proposals/ProposalCard.jsx';
 
 // ============================================================================
 // LOADING STATE COMPONENT
@@ -86,15 +94,12 @@ export default function GuestProposalsPage() {
     // Raw data
     user,
     proposals,
-    selectedProposal,
 
-    // Transformed/derived data
-    transformedProposal,
-    statusConfig,
-    currentStage,
-    formattedStages,
-    proposalOptions,
-    buttonConfig,
+    // V7: Categorized proposals
+    categorizedProposals,
+
+    // V7: Accordion state
+    expandedProposalId,
 
     // UI state
     isLoading,
@@ -102,6 +107,7 @@ export default function GuestProposalsPage() {
 
     // Handlers
     handleProposalSelect,
+    handleToggleExpand,
     handleRetry,
     handleProposalDeleted
   } = useGuestProposalsPageLogic();
@@ -125,12 +131,14 @@ export default function GuestProposalsPage() {
   // RENDER
   // ============================================================================
 
+  const { suggested, userCreated } = categorizedProposals || { suggested: [], userCreated: [] };
+
   return (
     <>
       <Header />
 
       <main className="main-content">
-        <div className="proposals-page">
+        <div className="proposals-page proposals-page--v7">
           {/* Loading State */}
           {isLoading && <LoadingState />}
 
@@ -144,29 +152,47 @@ export default function GuestProposalsPage() {
             <EmptyState />
           )}
 
-          {/* Content */}
+          {/* V7 Content: Two-section layout with accordion cards */}
           {!isLoading && !error && proposals.length > 0 && (
-            <>
-              {/* Proposal Selector */}
-              <ProposalSelector
-                proposals={proposalOptions}
-                selectedId={selectedProposal?._id}
-                onSelect={handleProposalSelect}
-                count={proposals.length}
-                fullProposals={proposals}
-              />
+            <div className="proposals-sections">
+              {/* Section 1: Suggested for You (SL-suggested proposals pending confirmation) */}
+              {suggested.length > 0 && (
+                <section className="proposals-section proposals-section--suggested">
+                  <SectionHeader type="suggested" count={suggested.length} />
+                  <div className="proposals-section__cards">
+                    {suggested.map(proposal => (
+                      <ExpandableProposalCard
+                        key={proposal._id}
+                        proposal={proposal}
+                        isExpanded={expandedProposalId === proposal._id}
+                        onToggle={() => handleToggleExpand(proposal._id)}
+                        allProposals={proposals}
+                        onProposalSelect={handleProposalSelect}
+                        onProposalDeleted={handleProposalDeleted}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
 
-              {/* Proposal Card (includes integrated Progress Tracker) */}
-              {selectedProposal && (
-                <ProposalCard
-                  proposal={selectedProposal}
-                  transformedProposal={transformedProposal}
-                  statusConfig={statusConfig}
-                  buttonConfig={buttonConfig}
-                  allProposals={proposals}
-                  onProposalSelect={handleProposalSelect}
-                  onProposalDeleted={handleProposalDeleted}
-                />
+              {/* Section 2: Your Proposals (user-submitted and confirmed proposals) */}
+              {userCreated.length > 0 && (
+                <section className="proposals-section proposals-section--user">
+                  <SectionHeader type="user" count={userCreated.length} />
+                  <div className="proposals-section__cards">
+                    {userCreated.map(proposal => (
+                      <ExpandableProposalCard
+                        key={proposal._id}
+                        proposal={proposal}
+                        isExpanded={expandedProposalId === proposal._id}
+                        onToggle={() => handleToggleExpand(proposal._id)}
+                        allProposals={proposals}
+                        onProposalSelect={handleProposalSelect}
+                        onProposalDeleted={handleProposalDeleted}
+                      />
+                    ))}
+                  </div>
+                </section>
               )}
 
               {/* Virtual Meetings Section - shows proposals with active VMs */}
@@ -174,7 +200,7 @@ export default function GuestProposalsPage() {
                 proposals={proposals}
                 currentUserId={user?._id}
               />
-            </>
+            </div>
           )}
         </div>
       </main>
