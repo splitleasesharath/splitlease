@@ -130,6 +130,7 @@
   width: 18px;
   height: 18px;
   color: var(--sp-text-dark);
+  stroke: var(--sp-text-dark);
 }
 
 .sp-popup-close-btn {
