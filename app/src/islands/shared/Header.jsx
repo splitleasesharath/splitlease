@@ -852,7 +852,8 @@ export default function Header({ autoShowLogin = false }) {
         {/* Right Navigation - Auth Buttons */}
         <div className={`nav-right ${mobileMenuActive ? 'mobile-active' : ''}`}>
           {/* Suggested Proposal Trigger - shows for guest users with pending proposals */}
-          {currentUser && isGuest() && pendingProposalCount > 0 && (
+          {/* Hidden on /guest-proposals page since suggestions are already shown in the list */}
+          {currentUser && isGuest() && pendingProposalCount > 0 && window.location.pathname !== '/guest-proposals' && (
             <HeaderSuggestedProposalTrigger
               onClick={handleSuggestedTriggerClick}
               isActive={showSuggestedPopup}
