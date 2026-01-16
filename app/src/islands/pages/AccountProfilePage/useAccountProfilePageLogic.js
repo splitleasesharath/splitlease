@@ -142,13 +142,21 @@ function generateNextActions(profileData, verifications) {
 
 /**
  * Convert day names array to day indices (0-6)
- * @param {string[]} dayNames - Array of day names ['Monday', 'Tuesday', ...]
- * @returns {number[]} Array of day indices [1, 2, ...]
+ * Handles both string day names ['Monday', 'Tuesday', ...] and numeric indices [0, 1, 2, ...]
+ * @param {(string|number)[]} dayValues - Array of day names or indices
+ * @returns {number[]} Array of day indices [0, 1, 2, ...]
  */
-function dayNamesToIndices(dayNames) {
-  if (!Array.isArray(dayNames)) return [];
-  return dayNames
-    .map(name => DAY_NAMES.indexOf(name))
+function dayNamesToIndices(dayValues) {
+  if (!Array.isArray(dayValues)) return [];
+  return dayValues
+    .map(value => {
+      // If it's already a valid numeric index (0-6), use it directly
+      if (typeof value === 'number' && value >= 0 && value <= 6) {
+        return value;
+      }
+      // Otherwise, treat as day name string and look up the index
+      return DAY_NAMES.indexOf(value);
+    })
     .filter(idx => idx !== -1);
 }
 
