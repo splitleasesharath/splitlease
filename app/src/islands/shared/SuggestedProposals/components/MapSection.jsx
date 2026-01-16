@@ -1,11 +1,11 @@
-import { useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 /**
  * MapSection
  *
- * Displays property location using Google Maps Static API.
- * Automatically retrieves API key from window.ENV (set by config.js).
- * Falls back to styled Carto tile if Google Maps fails or no API key available.
+ * Displays property location using an interactive Google Map.
+ * Features zoom controls, pan, and a purple marker at the property location.
+ * Waits for Google Maps JavaScript API to load via the global event system.
  */
 
 /**
@@ -17,87 +17,116 @@ export default function MapSection({
   geoPoint,
   address
 }) {
-  // Track if Google Maps image failed to load
-  const [googleMapFailed, setGoogleMapFailed] = useState(false);
-
-  // Get Google Maps API key from window.ENV (set by config.js)
-  const googleMapsApiKey = typeof window !== 'undefined'
-    ? window.ENV?.GOOGLE_MAPS_API_KEY
-    : null;
+  const mapContainerRef = useRef(null);
+  const mapInstanceRef = useRef(null);
+  const markerRef = useRef(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const [mapError, setMapError] = useState(false);
 
   // Check if we have valid coordinates
   const hasCoordinates = geoPoint && typeof geoPoint.lat === 'number' && typeof geoPoint.lng === 'number';
 
-  // Generate static map URL using Google Maps Static API
-  const getMapUrl = () => {
-    if (!hasCoordinates || !googleMapsApiKey || googleMapFailed) return null;
+  // Initialize interactive Google Map
+  useEffect(() => {
+    if (!hasCoordinates || !mapContainerRef.current) return;
 
-    const { lat, lng } = geoPoint;
-    const params = new URLSearchParams({
-      center: `${lat},${lng}`,
-      zoom: '15',
-      size: '400x200',
-      scale: '2',
-      maptype: 'roadmap',
-      markers: `color:purple|${lat},${lng}`,
-      key: googleMapsApiKey
-    });
+    const initMap = () => {
+      // Don't reinitialize if map already exists
+      if (mapInstanceRef.current) return;
 
-    return `https://maps.googleapis.com/maps/api/staticmap?${params.toString()}`;
-  };
+      try {
+        const { lat, lng } = geoPoint;
 
-  // Generate Carto Positron tile URL as fallback (no API key needed, modern styled tiles)
-  const getCartoTileUrl = () => {
-    if (!hasCoordinates) return null;
-    const { lat, lng } = geoPoint;
-    const zoom = 15;
-    // Calculate tile coordinates from lat/lng at zoom level 15
-    const n = Math.pow(2, zoom);
-    const x = Math.floor((lng + 180) / 360 * n);
-    const latRad = lat * Math.PI / 180;
-    const y = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * n);
-    // Carto Positron - clean, modern light tiles (similar to Mapbox light style)
-    return `https://a.basemaps.cartocdn.com/light_all/${zoom}/${x}/${y}@2x.png`;
-  };
+        // Create the map instance
+        const map = new window.google.maps.Map(mapContainerRef.current, {
+          center: { lat, lng },
+          zoom: 15,
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: false,
+          zoomControl: true,
+          zoomControlOptions: {
+            position: window.google.maps.ControlPosition.RIGHT_CENTER
+          },
+          gestureHandling: 'cooperative', // Prevents accidental zooms, requires Ctrl+scroll
+          styles: [
+            {
+              featureType: 'poi',
+              elementType: 'labels',
+              stylers: [{ visibility: 'off' }]
+            }
+          ]
+        });
 
-  // Handle Google Maps image load error - fall back to Carto
-  const handleGoogleMapError = useCallback(() => {
-    console.warn('MapSection: Google Maps Static API failed, falling back to Carto tiles');
-    setGoogleMapFailed(true);
+        // Create purple marker at property location
+        const marker = new window.google.maps.Marker({
+          position: { lat, lng },
+          map: map,
+          icon: {
+            path: window.google.maps.SymbolPath.CIRCLE,
+            fillColor: '#5B21B6',
+            fillOpacity: 1,
+            strokeColor: '#FFFFFF',
+            strokeWeight: 3,
+            scale: 10
+          },
+          title: address || 'Property Location'
+        });
+
+        mapInstanceRef.current = map;
+        markerRef.current = marker;
+        setMapLoaded(true);
+      } catch (error) {
+        console.error('MapSection: Failed to initialize Google Map:', error);
+        setMapError(true);
+      }
+    };
+
+    // Check if Google Maps API is already loaded
+    if (window.google && window.google.maps && window.google.maps.ControlPosition) {
+      initMap();
+    } else {
+      // Wait for the google-maps-loaded event
+      const handleMapsLoaded = () => {
+        initMap();
+      };
+      window.addEventListener('google-maps-loaded', handleMapsLoaded);
+
+      return () => {
+        window.removeEventListener('google-maps-loaded', handleMapsLoaded);
+      };
+    }
+  }, [hasCoordinates, geoPoint, address]);
+
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      if (markerRef.current) {
+        markerRef.current.setMap(null);
+        markerRef.current = null;
+      }
+      mapInstanceRef.current = null;
+    };
   }, []);
-
-  const mapUrl = getMapUrl();
-  const cartoTileUrl = getCartoTileUrl();
 
   return (
     <div className="sp-map-section">
       <h3 className="sp-map-title">Location</h3>
 
       <div className="sp-map-container">
-        {mapUrl ? (
-          <img
-            src={mapUrl}
-            alt={`Map showing ${address}`}
-            className="sp-map-image"
-            onError={handleGoogleMapError}
-          />
-        ) : hasCoordinates ? (
-          // Fallback to Carto Positron tiles when no Google API key or when it fails
-          // These are modern, clean styled tiles similar to Mapbox light
-          <div className="sp-map-carto-wrapper">
-            <img
-              src={cartoTileUrl}
-              alt={`Map showing ${address}`}
-              className="sp-map-image"
+        {hasCoordinates && !mapError ? (
+          <>
+            <div
+              ref={mapContainerRef}
+              className="sp-map-interactive"
+              style={{ width: '100%', height: '100%' }}
             />
-            {/* Marker overlay */}
-            <div className="sp-map-marker">
-              <svg width="24" height="36" viewBox="0 0 24 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 0C5.373 0 0 5.373 0 12c0 9 12 24 12 24s12-15 12-24c0-6.627-5.373-12-12-12z" fill="#5B21B6"/>
-                <circle cx="12" cy="12" r="5" fill="white"/>
-              </svg>
-            </div>
-          </div>
+            {!mapLoaded && (
+              <div className="sp-map-loading">
+                <div className="sp-map-spinner"></div>
+              </div>
+            )}
+          </>
         ) : (
           <div className="sp-map-placeholder">
             <span className="sp-map-placeholder-icon">📍</span>
