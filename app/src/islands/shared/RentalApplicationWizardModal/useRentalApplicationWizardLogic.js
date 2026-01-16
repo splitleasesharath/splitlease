@@ -167,10 +167,17 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
   // WIZARD-SPECIFIC STATE
   // ============================================================================
   const [currentStep, setCurrentStep] = useState(1);
-  const [completedSteps, setCompletedSteps] = useState([]);
+  // For submitted applications, initialize with all steps complete to avoid infinite loops
+  const [completedSteps, setCompletedSteps] = useState(() =>
+    applicationStatus === 'submitted' ? ALL_STEPS_COMPLETE : []
+  );
   // Track which steps the user has actually visited (for optional steps)
   // Step 1 is always visited on initial load
-  const [visitedSteps, setVisitedSteps] = useState([1]);
+  const [visitedSteps, setVisitedSteps] = useState(() =>
+    applicationStatus === 'submitted' ? ALL_STEPS_COMPLETE : [1]
+  );
+  // Ref to track if we've already initialized for submitted app (prevents re-running effects)
+  const hasInitializedSubmittedSteps = useRef(applicationStatus === 'submitted');
 
   // ============================================================================
   // LOCAL STATE (non-persistent)
@@ -550,18 +557,10 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
 
   // Update completed steps when form data or visited steps change
   useEffect(() => {
-    // For submitted applications, ALL steps are complete by definition
-    // This was previously handled in mapDatabaseToFormData but was accidentally
-    // removed in commit 76e9bd27. Using a stable constant reference (ALL_STEPS_COMPLETE)
-    // and functional update to avoid infinite loops.
-    if (applicationStatus === 'submitted') {
-      setCompletedSteps(prev => {
-        // Already has all steps? Return same reference to avoid re-render
-        if (prev.length === 7 && prev.every((v, i) => v === ALL_STEPS_COMPLETE[i])) {
-          return prev;
-        }
-        return ALL_STEPS_COMPLETE;
-      });
+    // For submitted applications, ALL steps are complete by definition.
+    // Skip this effect entirely - state was already initialized with ALL_STEPS_COMPLETE.
+    // This prevents infinite loops caused by formData reference changes from the store.
+    if (applicationStatus === 'submitted' || hasInitializedSubmittedSteps.current) {
       return;
     }
 
