@@ -20,16 +20,18 @@ import { getVMStateInfo, VM_STATES } from '../../../logic/rules/proposals/virtua
 
 /**
  * Hook for Host Proposals Page business logic
+ * @param {Object} options - Hook options
+ * @param {boolean} options.skipAuth - Skip authentication check (for demo mode)
  */
-export function useHostProposalsPageLogic() {
+export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
   // ============================================================================
   // AUTH STATE
   // ============================================================================
   const [authState, setAuthState] = useState({
-    isChecking: true,
-    isAuthenticated: false,
+    isChecking: !skipAuth,
+    isAuthenticated: skipAuth,
     shouldRedirect: false,
-    userType: null
+    userType: skipAuth ? 'host' : null
   });
 
   // ============================================================================
@@ -66,6 +68,12 @@ export function useHostProposalsPageLogic() {
   // AUTH CHECK
   // ============================================================================
   useEffect(() => {
+    // Skip auth check in demo mode
+    if (skipAuth) {
+      setIsLoading(false);
+      return;
+    }
+
     async function checkAuth() {
       try {
         const isLoggedIn = await checkAuthStatus();
