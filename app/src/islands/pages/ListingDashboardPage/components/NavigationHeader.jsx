@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useListingDashboard } from '../context/ListingDashboardContext';
 
 // Icon components (inline SVGs to avoid external dependency)
 const ArrowLeftIcon = () => (
@@ -116,16 +117,18 @@ const GiftIcon = () => (
   </svg>
 );
 
-export default function NavigationHeader({ activeTab, onTabChange, counts, onBackClick, onInviteClick, listingId }) {
+export default function NavigationHeader({ onInviteClick }) {
+  const { activeTab, counts, listing, handleTabChange } = useListingDashboard();
+
   // Handle tab click - some tabs navigate to different pages
   const handleTabClick = (tabId) => {
     if (tabId === 'all-listings') {
       window.location.href = '/host-overview';
     } else if (tabId === 'proposals') {
       // Navigate to host proposals page filtered to this listing
-      window.location.href = `/host-proposals?listingId=${listingId}`;
+      window.location.href = `/host-proposals?listingId=${listing.id}`;
     } else {
-      onTabChange(tabId);
+      handleTabChange(tabId);
     }
   };
 
