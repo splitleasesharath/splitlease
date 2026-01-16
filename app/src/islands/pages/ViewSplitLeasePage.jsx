@@ -1450,32 +1450,32 @@ export default function ViewSplitLeasePage() {
           <section className={styles.featuresGrid}>
             {listing['Kitchen Type'] && (
               <div className={styles.featureCard}>
-                <div className={styles.featureIcon}>
-                  <img src="/assets/images/fridge.svg" alt="Kitchen" className={styles.featureImage} />
+                <div className={styles.featureIconWrapper}>
+                  <img src="/assets/images/fridge.svg" alt="Kitchen" className={styles.featureIcon} />
                 </div>
                 <div className={styles.featureText}>{listing['Kitchen Type']}</div>
               </div>
             )}
             {listing['Features - Qty Bathrooms'] !== null && (
               <div className={styles.featureCard}>
-                <div className={styles.featureIcon}>
-                  <img src="/assets/images/bath.svg" alt="Bathroom" className={styles.featureImage} />
+                <div className={styles.featureIconWrapper}>
+                  <img src="/assets/images/bath.svg" alt="Bathroom" className={styles.featureIcon} />
                 </div>
                 <div className={styles.featureText}>{listing['Features - Qty Bathrooms']} Bathroom(s)</div>
               </div>
             )}
             {listing['Features - Qty Bedrooms'] !== null && (
               <div className={styles.featureCard}>
-                <div className={styles.featureIcon}>
-                  <img src="/assets/images/sleeping.svg" alt="Bedroom" className={styles.featureImage} />
+                <div className={styles.featureIconWrapper}>
+                  <img src="/assets/images/sleeping.svg" alt="Bedroom" className={styles.featureIcon} />
                 </div>
                 <div className={styles.featureText}>{listing['Features - Qty Bedrooms'] === 0 ? 'Studio' : `${listing['Features - Qty Bedrooms']} Bedroom${listing['Features - Qty Bedrooms'] === 1 ? '' : 's'}`}</div>
               </div>
             )}
             {listing['Features - Qty Beds'] !== null && (
               <div className={styles.featureCard}>
-                <div className={styles.featureIcon}>
-                  <img src="/assets/images/bed.svg" alt="Bed" className={styles.featureImage} />
+                <div className={styles.featureIconWrapper}>
+                  <img src="/assets/images/bed.svg" alt="Bed" className={styles.featureIcon} />
                 </div>
                 <div className={styles.featureText}>{listing['Features - Qty Beds']} Bed(s)</div>
               </div>
@@ -1945,7 +1945,7 @@ export default function ViewSplitLeasePage() {
                   e.stopPropagation();
                   setActiveInfoTooltip(activeInfoTooltip === 'flexibility' ? null : 'flexibility');
                 }}
-                className={styles.bookingInfoIconSmall}
+                className={styles.bookingInfoIcon}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
