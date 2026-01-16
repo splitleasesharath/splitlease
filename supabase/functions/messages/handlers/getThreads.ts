@@ -36,30 +36,44 @@ interface GetThreadsResult {
 export async function handleGetThreads(
   supabaseAdmin: SupabaseClient,
   payload: Record<string, unknown>,
-  user: User
+  user: { id: string; email: string }
 ): Promise<GetThreadsResult> {
   console.log('[getThreads] ========== GET THREADS ==========');
-  console.log('[getThreads] User:', user.email);
+  console.log('[getThreads] User ID:', user.id, 'Email:', user.email);
 
-  // Get user's Bubble ID from public.user table by email
-  if (!user.email) {
-    console.error('[getThreads] No email in auth token');
-    throw new ValidationError('Could not find user profile. Please try logging in again.');
+  // Determine user's Bubble ID:
+  // - For legacy auth: user.id IS the Bubble ID (passed directly)
+  // - For JWT auth: user.id is Supabase UUID, need to look up by email
+  let userBubbleId: string;
+
+  // Check if user.id looks like a Bubble ID (they typically start with numbers and contain 'x')
+  const isBubbleId = /^\d+x\d+$/.test(user.id);
+
+  if (isBubbleId) {
+    // Legacy auth - user.id is already the Bubble ID
+    userBubbleId = user.id;
+    console.log('[getThreads] Using direct Bubble ID from legacy auth:', userBubbleId);
+  } else {
+    // JWT auth - need to look up Bubble ID by email
+    if (!user.email) {
+      console.error('[getThreads] No email in auth token');
+      throw new ValidationError('Could not find user profile. Please try logging in again.');
+    }
+
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from('user')
+      .select('_id, "Type - User Current"')
+      .ilike('email', user.email)
+      .single();
+
+    if (userError || !userData?._id) {
+      console.error('[getThreads] User lookup failed:', userError?.message);
+      throw new ValidationError('Could not find user profile. Please try logging in again.');
+    }
+
+    userBubbleId = userData._id;
+    console.log('[getThreads] Looked up Bubble ID from email:', userBubbleId);
   }
-
-  const { data: userData, error: userError } = await supabaseAdmin
-    .from('user')
-    .select('_id, "Type - User Current"')
-    .ilike('email', user.email)
-    .single();
-
-  if (userError || !userData?._id) {
-    console.error('[getThreads] User lookup failed:', userError?.message);
-    throw new ValidationError('Could not find user profile. Please try logging in again.');
-  }
-
-  const userBubbleId = userData._id;
-  console.log('[getThreads] User Bubble ID:', userBubbleId);
 
   // Step 1: Query threads where user is host or guest
   const { data: threads, error: threadsError } = await supabaseAdmin

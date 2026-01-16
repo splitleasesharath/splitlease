@@ -349,7 +349,7 @@ export function useMessagingPageLogic() {
 
   /**
    * Fetch all threads for the authenticated user
-   * Uses Edge Function to bypass RLS (supports legacy auth users without Supabase session)
+   * Supports both modern Supabase auth (JWT) and legacy auth (user_id in payload)
    */
   async function fetchThreads() {
     console.log('[fetchThreads] Starting thread fetch via Edge Function...');
@@ -357,23 +357,62 @@ export function useMessagingPageLogic() {
       setIsLoading(true);
       setError(null);
 
-      // Call the messages Edge Function with get_threads action
-      const { data, error: invokeError } = await supabase.functions.invoke('messages', {
-        body: {
-          action: 'get_threads',
-          payload: {}
-        }
+      // Check for Supabase session (modern auth)
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+
+      console.log('[fetchThreads] Auth state:', {
+        hasSupabaseSession: !!accessToken,
+        hasLegacyUserId: !!getUserId(),
       });
+
+      // Build request headers - include Authorization only if we have a token
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
+
+      // Build payload - include user_id for legacy auth fallback
+      const payload = {};
+      if (!accessToken) {
+        // No Supabase session - use legacy auth via user_id
+        const legacyUserId = getUserId();
+        if (legacyUserId) {
+          payload.user_id = legacyUserId;
+          console.log('[fetchThreads] Using legacy auth with user_id:', legacyUserId);
+        } else {
+          throw new Error('Not authenticated. Please log in again.');
+        }
+      }
+
+      // Make the API call
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const response = await fetch(`${supabaseUrl}/functions/v1/messages`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          action: 'get_threads',
+          payload
+        }),
+      });
+
+      console.log('[fetchThreads] Response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[fetchThreads] Error response:', errorText);
+        throw new Error(`Failed to fetch threads: ${response.status}`);
+      }
+
+      const data = await response.json();
 
       console.log('[fetchThreads] Edge Function response:', {
         success: data?.success,
         threadCount: data?.data?.threads?.length || 0,
-        error: invokeError?.message || data?.error
+        error: data?.error
       });
-
-      if (invokeError) {
-        throw new Error(invokeError.message || 'Failed to fetch threads');
-      }
 
       if (!data?.success) {
         throw new Error(data?.error || 'Failed to fetch threads');
@@ -393,76 +432,50 @@ export function useMessagingPageLogic() {
 
   /**
    * Fetch messages for a specific thread
-   * Uses supabase.functions.invoke() for automatic token refresh
+   * Supports both modern Supabase auth (JWT) and legacy auth (user_id in payload)
    */
   async function fetchMessages(threadId) {
     try {
       setIsLoadingMessages(true);
 
-      // Get fresh session and ensure token is valid
+      // Check for Supabase session (modern auth)
       const { data: sessionData } = await supabase.auth.getSession();
-      console.log('[fetchMessages] Session state:', {
-        hasSession: !!sessionData?.session,
-        hasAccessToken: !!sessionData?.session?.access_token,
-        tokenLength: sessionData?.session?.access_token?.length,
-        userId: sessionData?.session?.user?.id,
+      const accessToken = sessionData?.session?.access_token;
+
+      console.log('[fetchMessages] Auth state:', {
+        hasSupabaseSession: !!accessToken,
+        hasLegacyUserId: !!getUserId(),
       });
 
-      // Check if the token is a valid Supabase JWT (HS256)
-      // Supabase tokens start with eyJhbGciOiJIUzI1NiIs (HS256)
-      // If we see ES256 or other algorithms, the session is corrupted
-      const tokenPreview = sessionData?.session?.access_token?.substring(0, 20);
-      if (tokenPreview && !tokenPreview.startsWith('eyJhbGciOiJIUzI1NiIs')) {
-        console.warn('[fetchMessages] ⚠️ Invalid token algorithm detected!');
-        console.warn('[fetchMessages] Expected: HS256 (eyJhbGciOiJIUzI1NiIs)');
-        console.warn('[fetchMessages] Got:', tokenPreview);
-        console.log('[fetchMessages] Clearing corrupted session and attempting refresh...');
-
-        // Force sign out to clear corrupted session
-        await supabase.auth.signOut();
-
-        // Try to refresh - this may re-authenticate if refresh token is valid
-        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-        if (refreshError || !refreshData?.session) {
-          console.error('[fetchMessages] Session recovery failed. User must log in again.');
-          throw new Error('Session corrupted. Please log in again.');
-        }
-        console.log('[fetchMessages] Session recovered after clearing corrupted data');
+      // Build request headers - include Authorization only if we have a token
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
       }
 
-      // If no session, try to refresh
-      if (!sessionData?.session?.access_token) {
-        console.log('[fetchMessages] No session, attempting refresh...');
-        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-        if (refreshError || !refreshData?.session) {
-          console.error('[fetchMessages] Session refresh failed:', refreshError);
+      // Build payload - include user_id for legacy auth fallback
+      const payload = { thread_id: threadId };
+      if (!accessToken) {
+        // No Supabase session - use legacy auth via user_id
+        const legacyUserId = getUserId();
+        if (legacyUserId) {
+          payload.user_id = legacyUserId;
+          console.log('[fetchMessages] Using legacy auth with user_id:', legacyUserId);
+        } else {
           throw new Error('Not authenticated. Please log in again.');
         }
-        console.log('[fetchMessages] Session refreshed successfully');
       }
 
-      // Get the current access token for explicit header passing
-      const { data: currentSession } = await supabase.auth.getSession();
-      const accessToken = currentSession?.session?.access_token;
-      console.log('[fetchMessages] Making function call with token:', !!accessToken);
-      console.log('[fetchMessages] Token preview:', accessToken ? `${accessToken.substring(0, 20)}...` : 'none');
-
-      if (!accessToken) {
-        throw new Error('No access token available. Please log in again.');
-      }
-
-      // Use direct fetch to ensure headers are sent correctly
-      // The SDK's functions.invoke() can sometimes have header merging issues
+      // Make the API call
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const response = await fetch(`${supabaseUrl}/functions/v1/messages`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-        },
+        headers,
         body: JSON.stringify({
           action: 'get_messages',
-          payload: { thread_id: threadId }
+          payload
         }),
       });
 
@@ -493,7 +506,7 @@ export function useMessagingPageLogic() {
   /**
    * Send a new message
    * After sending, Realtime will deliver the message to all subscribers
-   * Uses supabase.functions.invoke() for automatic token refresh
+   * Supports both modern Supabase auth (JWT) and legacy auth (user_id in payload)
    */
   async function sendMessage() {
     if (!messageInput.trim() || !selectedThread || isSending) return;
@@ -507,28 +520,42 @@ export function useMessagingPageLogic() {
         clearTimeout(typingTimeoutRef.current);
       }
 
-      // Get the current access token for explicit header passing
-      const { data: currentSession } = await supabase.auth.getSession();
-      const accessToken = currentSession?.session?.access_token;
+      // Check for Supabase session (modern auth)
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
 
-      if (!accessToken) {
-        throw new Error('No access token available. Please log in again.');
+      // Build request headers - include Authorization only if we have a token
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
       }
 
-      // Use direct fetch to ensure headers are sent correctly
+      // Build payload - include user_id for legacy auth fallback
+      const payload = {
+        thread_id: selectedThread._id,
+        message_body: messageInput.trim(),
+      };
+      if (!accessToken) {
+        // No Supabase session - use legacy auth via user_id
+        const legacyUserId = getUserId();
+        if (legacyUserId) {
+          payload.user_id = legacyUserId;
+          console.log('[sendMessage] Using legacy auth with user_id:', legacyUserId);
+        } else {
+          throw new Error('No access token available. Please log in again.');
+        }
+      }
+
+      // Make the API call
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const response = await fetch(`${supabaseUrl}/functions/v1/messages`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-        },
+        headers,
         body: JSON.stringify({
           action: 'send_message',
-          payload: {
-            thread_id: selectedThread._id,
-            message_body: messageInput.trim(),
-          },
+          payload,
         }),
       });
 

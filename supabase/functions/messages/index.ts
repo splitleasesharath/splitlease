@@ -75,14 +75,21 @@ const handlers: Readonly<Record<Action, Function>> = {
 // ─────────────────────────────────────────────────────────────
 
 /**
- * Authenticate user from request headers
+ * Authenticate user from request headers OR payload (legacy auth fallback)
+ *
+ * Supports two authentication methods:
+ * 1. Supabase JWT token in Authorization header (modern auth)
+ * 2. user_id in payload (legacy auth for users who logged in before Supabase migration)
+ *
  * Returns Result with user or error
  */
 const authenticateUser = async (
   headers: Headers,
   supabaseUrl: string,
   supabaseAnonKey: string,
-  requireAuth: boolean
+  supabaseServiceKey: string,
+  requireAuth: boolean,
+  payload: Record<string, unknown>
 ): Promise<Result<AuthenticatedUser | null, AuthenticationError>> => {
   // Public actions don't require auth
   if (!requireAuth) {
@@ -95,32 +102,61 @@ const authenticateUser = async (
   console.log('[messages] DEBUG: Authorization header present:', !!authHeader);
   console.log('[messages] DEBUG: Authorization header length:', authHeader?.length ?? 0);
 
-  // Extract auth token
+  // Try Method 1: JWT token in Authorization header (modern auth)
   const tokenResult = extractAuthToken(headers);
-  if (!tokenResult.ok) {
-    console.log('[messages] DEBUG: Token extraction failed:', tokenResult.error.message);
-    return tokenResult;
+  if (tokenResult.ok) {
+    // Extract the actual token (remove "Bearer " prefix if present)
+    const rawToken = tokenResult.value;
+    const token = rawToken.startsWith('Bearer ') ? rawToken.slice(7) : rawToken;
+    console.log('[messages] DEBUG: Token extracted, length:', token.length);
+
+    // Validate token with Supabase Auth
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: { persistSession: false },
+    });
+
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token);
+
+    if (!authError && authUser) {
+      console.log('[messages] ✅ Authenticated via Supabase JWT');
+      return ok({ id: authUser.id, email: authUser.email ?? "" });
+    }
+
+    console.log('[messages] DEBUG: JWT auth failed:', authError?.message);
+  } else {
+    console.log('[messages] DEBUG: No Authorization header, checking for legacy auth...');
   }
 
-  // Extract the actual token (remove "Bearer " prefix if present)
-  const rawToken = tokenResult.value;
-  const token = rawToken.startsWith('Bearer ') ? rawToken.slice(7) : rawToken;
-  console.log('[messages] DEBUG: Token extracted, length:', token.length);
+  // Try Method 2: user_id in payload (legacy auth)
+  const userId = payload.user_id as string | undefined;
+  if (userId) {
+    console.log('[messages] DEBUG: Found user_id in payload, trying legacy auth lookup...');
 
-  // Validate token with Supabase Auth
-  // IMPORTANT: Pass token explicitly to getUser() - don't rely on client header config
-  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-    auth: { persistSession: false },
-  });
+    // Use service role to bypass RLS for user lookup
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { persistSession: false },
+    });
 
-  const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token);
+    // Verify user exists in database by _id (Bubble ID)
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from('user')
+      .select('_id, email')
+      .eq('_id', userId)
+      .maybeSingle();
 
-  if (authError || !authUser) {
-    console.log('[messages] DEBUG: Auth error:', authError?.message);
-    return err(new AuthenticationError("Invalid or expired authentication token"));
+    if (userData && !userError) {
+      console.log('[messages] ✅ Authenticated via legacy auth (user_id lookup)');
+      return ok({
+        id: userData._id,
+        email: userData.email ?? ""
+      });
+    }
+
+    console.log('[messages] DEBUG: Legacy auth lookup failed:', userError?.message || 'User not found');
   }
 
-  return ok({ id: authUser.id, email: authUser.email ?? "" });
+  // Both methods failed
+  return err(new AuthenticationError("Invalid or expired authentication token. Please log in again."));
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -182,6 +218,7 @@ Deno.serve(async (req) => {
 
     // ─────────────────────────────────────────────────────────
     // Step 4: Authenticate user (side effect boundary)
+    // Supports both JWT auth (modern) and user_id in payload (legacy)
     // ─────────────────────────────────────────────────────────
 
     const requireAuth = !isPublicAction(PUBLIC_ACTIONS, action);
@@ -189,7 +226,9 @@ Deno.serve(async (req) => {
       headers,
       config.supabaseUrl,
       config.supabaseAnonKey,
-      requireAuth
+      config.supabaseServiceKey,
+      requireAuth,
+      payload
     );
 
     if (!authResult.ok) {
