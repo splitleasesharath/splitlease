@@ -25,7 +25,6 @@
     "commit-commands@claude-plugins-official": true,
     "feature-dev@claude-plugins-official": true,
     "security-guidance@claude-plugins-official": false,
-    "greptile@claude-plugins-official": true,
     "ralph-loop@claude-plugins-official": true,
     "hookify@claude-plugins-official": false,
     "typescript-lsp@claude-plugins-official": true
