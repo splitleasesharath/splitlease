@@ -171,8 +171,8 @@ export default function SuggestedProposalPopup({
                     aria-label="Previous proposal"
                     type="button"
                   >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                      <path d="M15 18l-6-6 6-6" stroke="#424242" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <polyline points="15,18 9,12 15,6" style={{ stroke: '#424242', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', fill: 'none' }} />
                     </svg>
                   </button>
                   <button
@@ -181,8 +181,8 @@ export default function SuggestedProposalPopup({
                     aria-label="Next proposal"
                     type="button"
                   >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                      <path d="M9 18l6-6-6-6" stroke="#424242" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <polyline points="9,6 15,12 9,18" style={{ stroke: '#424242', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', fill: 'none' }} />
                     </svg>
                   </button>
                 </div>
