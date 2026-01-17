@@ -535,10 +535,18 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
         const guestIds = [...new Set(proposals.map(p => p.Guest).filter(Boolean))];
 
         if (guestIds.length > 0) {
-          const { data: guests } = await supabase
+          console.log('[useHostProposalsPageLogic] Fetching guest data for IDs:', guestIds);
+
+          const { data: guests, error: guestError } = await supabase
             .from('user')
-            .select('_id, "Name - Full", "Name - First", "Name - Last", email, "Profile Photo", "About Me / Bio", "user verified?", "Verify - Linked In ID", "Verify - Phone", "Selfie with ID", "Review Count", "Created Date"')
+            .select('_id, "Name - Full", "Name - First", "Name - Last", email, "Profile Photo", "About Me / Bio", "user verified?", "Verify - Linked In ID", "Verify - Phone", "Selfie with ID", "Created Date"')
             .in('_id', guestIds);
+
+          if (guestError) {
+            console.error('[useHostProposalsPageLogic] Error fetching guests:', guestError);
+          }
+
+          console.log('[useHostProposalsPageLogic] Raw guest data:', guests);
 
           const guestMap = {};
           guests?.forEach(g => { guestMap[g._id] = g; });
@@ -546,7 +554,14 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
           // Attach normalized guest data to each proposal
           proposals.forEach(p => {
             if (p.Guest && guestMap[p.Guest]) {
-              p.guest = normalizeGuest(guestMap[p.Guest]);
+              const normalized = normalizeGuest(guestMap[p.Guest]);
+              console.log('[useHostProposalsPageLogic] Normalized guest:', {
+                name: normalized.name,
+                bio: normalized.bio ? normalized.bio.substring(0, 30) + '...' : 'NO BIO',
+                id_verified: normalized.id_verified,
+                work_verified: normalized.work_verified
+              });
+              p.guest = normalized;
             }
           });
         }
