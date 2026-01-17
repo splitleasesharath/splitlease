@@ -36,7 +36,6 @@ import {
   formatCorsResponse,
   CorsPreflightSignal,
   AuthenticatedUser,
-  extractAuthToken,
 } from "../_shared/fp/orchestration.ts";
 import { createErrorLog, addError, setUserId, setAction, ErrorLog } from "../_shared/fp/errorLog.ts";
 import { reportErrorLog } from "../_shared/slack.ts";
@@ -96,26 +95,21 @@ const authenticateUser = async (
     return ok(null);
   }
 
-  // DEBUG: Log all headers to diagnose auth issues
-  console.log('[messages] DEBUG: Checking Authorization header...');
-  const authHeader = headers.get('Authorization');
-  console.log('[messages] DEBUG: Authorization header present:', !!authHeader);
-  console.log('[messages] DEBUG: Authorization header length:', authHeader?.length ?? 0);
-
   // Try Method 1: JWT token in Authorization header (modern auth)
-  const tokenResult = extractAuthToken(headers);
-  if (tokenResult.ok) {
-    // Extract the actual token (remove "Bearer " prefix if present)
-    const rawToken = tokenResult.value;
-    const token = rawToken.startsWith('Bearer ') ? rawToken.slice(7) : rawToken;
-    console.log('[messages] DEBUG: Token extracted, length:', token.length);
+  // Pattern: Create Supabase client with Authorization header, then call getUser()
+  // This is the proven pattern used by proposal and other functions
+  const authHeader = headers.get('Authorization');
+  console.log('[messages] DEBUG: Authorization header present:', !!authHeader, 'length:', authHeader?.length ?? 0);
 
-    // Validate token with Supabase Auth
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      auth: { persistSession: false },
+  if (authHeader) {
+
+    // Create auth client with the Authorization header embedded
+    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
     });
 
-    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token);
+    // getUser() without token parameter - uses the embedded Authorization header
+    const { data: { user: authUser }, error: authError } = await authClient.auth.getUser();
 
     if (!authError && authUser) {
       console.log('[messages] ✅ Authenticated via Supabase JWT');
