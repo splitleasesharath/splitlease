@@ -226,11 +226,11 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
 
         // 11. Count message threads where user is a participant (host or guest)
         //     Note: Column names have leading hyphens: "-Host User", "-Guest User"
-        //     PostgREST filter syntax: no quotes around column names in .or() string
+        //     PostgREST requires double quotes around column names with special chars in .or() string
         supabase
           .from('thread')
           .select('_id', { count: 'exact', head: true })
-          .or(`-Host User.eq.${userId},-Guest User.eq.${userId}`)
+          .or(`"-Host User".eq.${userId},"-Guest User".eq.${userId}`)
       ]);
 
       // Process user data
