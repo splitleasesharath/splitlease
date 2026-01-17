@@ -177,6 +177,21 @@
   opacity: 1;
 }
 
+/* Clickable state - entire header expands filters */
+.desktop-compact-indicator--clickable {
+  cursor: pointer;
+  transition: transform 0.3s ease, opacity 0.3s ease, background-color 0.2s ease;
+}
+
+.desktop-compact-indicator--clickable:hover {
+  background-color: #f9fafb;
+}
+
+.desktop-compact-indicator--clickable:focus {
+  outline: 2px solid #6366f1;
+  outline-offset: -2px;
+}
+
 /* Desktop compact dots - day indicators */
 .desktop-compact-dots {
   display: flex;
@@ -260,40 +275,33 @@
   height: 14px;
 }
 
-/* Desktop compact expand button - reopens filter section */
+/* Desktop compact expand icon - visual indicator that header is clickable */
 .desktop-compact-expand {
   margin-left: auto;
+  display: flex;
+  align-items: center;
 }
 
-.desktop-compact-expand-btn {
+.desktop-compact-expand-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  padding: 0;
+  width: 28px;
+  height: 28px;
   background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
+  border-radius: 6px;
   color: white;
   transition: all 0.2s ease;
 }
 
-.desktop-compact-expand-btn:hover {
+.desktop-compact-indicator--clickable:hover .desktop-compact-expand-icon {
   background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+  transform: translateY(1px);
 }
 
-.desktop-compact-expand-btn:focus {
-  outline: 2px solid #6366f1;
-  outline-offset: 2px;
-}
-
-.desktop-compact-expand-btn svg {
-  width: 16px;
-  height: 16px;
+.desktop-compact-expand-icon svg {
+  width: 14px;
+  height: 14px;
 }
 
 /* Filter section collapsed state */

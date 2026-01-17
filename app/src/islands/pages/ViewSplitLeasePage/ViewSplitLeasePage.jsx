@@ -1713,16 +1713,15 @@ export default function ViewSplitLeasePage() {
                 WebkitTextFillColor: '#6B7280'
               }}>/night</span>
             </div>
-            <div style={{ position: 'relative', width: '40px', height: '40px', flexShrink: 0 }}>
-              <FavoriteButton
-                listingId={listing?._id}
-                userId={loggedInUserData?.userId}
-                initialFavorited={isFavorited}
-                onToggle={(newState) => setIsFavorited(newState)}
-                onRequireAuth={() => setShowAuthModal(true)}
-                size="large"
-              />
-            </div>
+            <FavoriteButton
+              listingId={listing?._id}
+              userId={loggedInUserData?.userId}
+              initialFavorited={isFavorited}
+              onToggle={(newState) => setIsFavorited(newState)}
+              onRequireAuth={() => setShowAuthModal(true)}
+              size="large"
+              variant="inline"
+            />
           </div>
 
           {/* Move-in Date */}
@@ -2719,16 +2718,15 @@ export default function ViewSplitLeasePage() {
                       : 'Select Days'}
                     <span style={{ fontSize: '14px', color: '#6B7280', fontWeight: '500' }}>/night</span>
                   </div>
-                  <div style={{ position: 'relative', width: '32px', height: '32px', flexShrink: 0 }}>
-                    <FavoriteButton
-                      listingId={listing?._id}
-                      userId={loggedInUserData?.userId}
-                      initialFavorited={isFavorited}
-                      onToggle={(newState) => setIsFavorited(newState)}
-                      onRequireAuth={() => setShowAuthModal(true)}
-                      size="medium"
-                    />
-                  </div>
+                  <FavoriteButton
+                    listingId={listing?._id}
+                    userId={loggedInUserData?.userId}
+                    initialFavorited={isFavorited}
+                    onToggle={(newState) => setIsFavorited(newState)}
+                    onRequireAuth={() => setShowAuthModal(true)}
+                    size="medium"
+                    variant="inline"
+                  />
                 </div>
 
                 {/* Move-in Date */}

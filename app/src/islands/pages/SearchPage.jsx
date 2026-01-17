@@ -2267,7 +2267,15 @@ export default function SearchPage() {
           <CompactScheduleIndicator isVisible={mobileHeaderHidden} />
 
           {/* Desktop Compact Schedule Indicator - Shows when filter section is collapsed */}
-          <div className={`desktop-compact-indicator ${desktopHeaderCollapsed ? 'desktop-compact-indicator--visible' : ''}`}>
+          <div
+            className={`desktop-compact-indicator desktop-compact-indicator--clickable ${desktopHeaderCollapsed ? 'desktop-compact-indicator--visible' : ''}`}
+            onClick={() => setDesktopHeaderCollapsed(false)}
+            role="button"
+            tabIndex={desktopHeaderCollapsed ? 0 : -1}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setDesktopHeaderCollapsed(false); }}
+            aria-label="Click to expand filter section"
+            title="Click anywhere to show filters"
+          >
             <div className="desktop-compact-dots">
               {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((dayLetter, index) => (
                 <div
@@ -2292,7 +2300,7 @@ export default function SearchPage() {
             </div>
             {activeFilterTags.length > 0 && (
               <div className="desktop-compact-filters">
-                <button className="desktop-compact-filter-btn" onClick={toggleFilterPopup}>
+                <button className="desktop-compact-filter-btn" onClick={(e) => { e.stopPropagation(); toggleFilterPopup(); }}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
                   </svg>
@@ -2300,18 +2308,13 @@ export default function SearchPage() {
                 </button>
               </div>
             )}
-            {/* Expand Button - Always visible in compact mode */}
+            {/* Expand Icon - Visual indicator that header is clickable */}
             <div className="desktop-compact-expand">
-              <button
-                className="desktop-compact-expand-btn"
-                onClick={() => setDesktopHeaderCollapsed(false)}
-                aria-label="Expand filter section"
-                title="Show filters"
-              >
+              <div className="desktop-compact-expand-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <polyline points="6 9 12 15 18 9"></polyline>
                 </svg>
-              </button>
+              </div>
             </div>
           </div>
 
