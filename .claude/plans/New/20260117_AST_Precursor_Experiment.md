@@ -26,6 +26,41 @@ The current audit step (`adw_code_audit.py`) asks Claude to:
 
 ---
 
+## 1.5 Refactoring Definition (CRITICAL)
+
+**Reference**: See [adws/CLAUDE.MD](../../adws/CLAUDE.MD) for the complete refactoring rules.
+
+ADW refactoring is **behavior-preserving**. The goal is to make code more pure/functional without changing what it does.
+
+### What "Refactor" Means
+
+| ✅ This IS Refactoring | ❌ This is NOT Refactoring |
+|------------------------|---------------------------|
+| `arr.push(x)` → `[...arr, x]` | Adding validation that wasn't there |
+| `for` loop → `.map()` | Fixing an off-by-one error |
+| Extract pure function | Adding a new parameter |
+| `let` → `const` | Changing error messages |
+| Remove dead code | Adding logging |
+
+### Hard Requirements
+
+1. **All exported signatures must remain identical**
+2. **All behavior must be unchanged** (same inputs → same outputs)
+3. **All changes must pass**: `tsc --noEmit`, `bun run build`, existing tests
+4. **Changes must be small and reversible**
+
+### Violation Protocol
+
+```
+If any rule is violated: STOP. ROLLBACK. REPORT.
+```
+
+A change that alters behavior is **NOT** a refactor—it is a bug introduction.
+
+**Bugs that exist in the codebase MUST remain as bugs.** We are not fixing anything. We are only restructuring code to be more functional while preserving exact behavior.
+
+---
+
 ## 2. Experiment Design
 
 ### 2.1 Control vs Treatment
@@ -394,6 +429,7 @@ If the experiment doesn't improve outcomes:
 
 | File | Relevance |
 |------|-----------|
+| [adws/CLAUDE.MD](adws/CLAUDE.MD) | **Strict refactoring rules** - must be followed |
 | [adw_code_audit.py](adws/adw_code_audit.py) | Audit entry point - injection site |
 | [code_audit_opus.txt](adws/prompts/code_audit_opus.txt) | Prompt template - context section |
 | [chunk_parser.py](adws/adw_modules/chunk_parser.py) | Reference for expected output format |
@@ -408,6 +444,7 @@ If the experiment doesn't improve outcomes:
 - [ ] Approve minimal change scope (2 new files, ~25 lines modified)
 - [ ] Set comparison test target directory (`app/src/logic` recommended)
 - [ ] Confirm success metrics (chunk accuracy, validation rate)
+- [ ] Review refactoring rules in `adws/CLAUDE.MD`
 
 ---
 
