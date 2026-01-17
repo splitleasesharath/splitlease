@@ -35,12 +35,14 @@ This plan addresses the fundamental tension in the current ADW (AI Developer Wor
 3. [Phase 1: AST Semantic Analyzer (FULLY DETAILED)](#3-phase-1-ast-semantic-analyzer)
 4. [Phase 1.5: Dynamic FP Zone Classification (NEW)](#4-phase-15-dynamic-fp-zone-classification)
 5. [Phase 1.6: Idempotency & Construct Tracking (NEW)](#5-phase-16-idempotency--construct-tracking)
-6. [Phase 2: Dependency-Aware Chunk Generation](#6-phase-2-dependency-aware-chunk-generation)
-7. [Phase 3: Intelligent Validation Pipeline](#7-phase-3-intelligent-validation-pipeline)
-8. [Phase 4: Failure Recovery & Re-planning](#8-phase-4-failure-recovery--re-planning)
-9. [Phase 5: Integration & Testing](#9-phase-5-integration--testing)
-10. [File References](#10-file-references)
-11. [Risk Assessment](#11-risk-assessment)
+6. [Phase 1.7: Modular LLM Provider System (NEW)](#6-phase-17-modular-llm-provider-system)
+7. [Phase 1.8: ADW Ecosystem Restructure (NEW)](#7-phase-18-adw-ecosystem-restructure)
+8. [Phase 2: Dependency-Aware Chunk Generation](#8-phase-2-dependency-aware-chunk-generation)
+9. [Phase 3: Intelligent Validation Pipeline](#9-phase-3-intelligent-validation-pipeline)
+10. [Phase 4: Failure Recovery & Re-planning](#10-phase-4-failure-recovery--re-planning)
+11. [Phase 5: Integration & Testing](#11-phase-5-integration--testing)
+12. [File References](#12-file-references)
+13. [Risk Assessment](#13-risk-assessment)
 
 ---
 
@@ -2087,18 +2089,699 @@ class PatternDetector:
 
 ---
 
-## 6. Phase 2: Dependency-Aware Chunk Generation
+## 6. Phase 1.7: Modular LLM Provider System (NEW)
 
-> **Status**: OUTLINED - Details to be expanded after Phase 1.6 completion
+> **Status**: NEW - Per-script model configuration for flexible provider switching
+> **Priority**: HIGH - Enables cost optimization and model-specific task routing
 
-### 6.1 Overview
+### 6.1 Problem Statement
+
+The current ADW system has a dual-provider architecture with limitations:
+
+| Current State | Problem |
+|---------------|---------|
+| Global `ADW_PROVIDER` env var | Cannot mix providers within single workflow |
+| `SLASH_COMMAND_MODEL_MAP` hardcoded | Adding new scripts requires code changes |
+| Fallback from Gemini → Claude | Hides provider failures instead of surfacing |
+| Model selection at command level | Cannot tune per-script (audit vs implement vs review) |
+
+**User Requirement**: Per-script model configuration allowing:
+- Audit phase: Use Opus (high reasoning for understanding code)
+- Implementation phase: Use Sonnet (balanced speed/quality)
+- Review phase: Use different model (cost/quality tradeoff)
+- Each script independently configurable via environment variables
+
+### 6.2 Existing Implementation Analysis
+
+**Current provider abstraction** (from `adws/adw_modules/agent.py`):
+
+```python
+# Current model mapping - command-level, not script-level
+SLASH_COMMAND_MODEL_MAP: Dict[SlashCommand, Dict[ModelSet, str]] = {
+    "/implement": {"base": "sonnet", "heavy": "opus"},
+    "/test": {"base": "sonnet", "heavy": "sonnet"},
+    "/review": {"base": "sonnet", "heavy": "sonnet"},
+    # ... 18 total commands mapped
+}
+
+# Provider selection (global)
+provider = os.environ.get("ADW_PROVIDER", "gemini")
+
+# Gemini model translation
+GEMINI_MODEL_MAP = {
+    "sonnet": os.environ.get("GEMINI_BASE_MODEL", "gemini-2.0-flash"),
+    "opus": os.environ.get("GEMINI_HEAVY_MODEL", "gemini-2.0-flash-exp")
+}
+```
+
+### 6.3 Target Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    MODULAR LLM PROVIDER SYSTEM                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  adws/.env (ADW-specific environment)                                       │
+│  ├── ADW_DEFAULT_PROVIDER=gemini                                            │
+│  ├── ADW_AUDIT_MODEL=claude-opus                                            │
+│  ├── ADW_IMPLEMENT_MODEL=gemini-flash                                       │
+│  ├── ADW_REVIEW_MODEL=claude-sonnet                                         │
+│  ├── ADW_CHUNK_MODEL=gemini-flash                                           │
+│  └── ADW_VALIDATE_MODEL=gemini-flash                                        │
+│                                                                             │
+│  llm_provider.py (New unified provider interface)                           │
+│  ├── LLMProvider (base class)                                               │
+│  ├── ClaudeProvider (implements claude-opus, claude-sonnet)                 │
+│  ├── GeminiProvider (implements gemini-flash, gemini-pro)                   │
+│  └── get_provider_for_script(script_name) → LLMProvider                     │
+│                                                                             │
+│  Model Resolution Order:                                                    │
+│  1. Script-specific env var (ADW_AUDIT_MODEL)                               │
+│  2. Provider default (ADW_DEFAULT_PROVIDER)                                 │
+│  3. Hardcoded fallback (gemini-flash)                                       │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 6.4 Data Types
+
+```python
+from enum import Enum
+from dataclasses import dataclass
+from typing import Optional, Callable, Any
+from abc import ABC, abstractmethod
+
+class ModelId(str, Enum):
+    """Supported model identifiers."""
+    CLAUDE_OPUS = "claude-opus"
+    CLAUDE_SONNET = "claude-sonnet"
+    GEMINI_FLASH = "gemini-flash"
+    GEMINI_PRO = "gemini-pro"
+
+class ProviderType(str, Enum):
+    """LLM provider types."""
+    CLAUDE = "claude"
+    GEMINI = "gemini"
+
+@dataclass(frozen=True)
+class ModelConfig:
+    """Configuration for a specific model."""
+    model_id: ModelId
+    provider: ProviderType
+    api_model_name: str  # Actual API model identifier
+    max_tokens: int = 8192
+    temperature: float = 0.7
+
+@dataclass(frozen=True)
+class ScriptModelMapping:
+    """Maps ADW scripts to their configured models."""
+    audit: ModelId
+    implement: ModelId
+    review: ModelId
+    chunk: ModelId
+    validate: ModelId
+    fp_classify: ModelId
+    pattern_detect: ModelId
+
+# Model registry with API names
+MODEL_REGISTRY: dict[ModelId, ModelConfig] = {
+    ModelId.CLAUDE_OPUS: ModelConfig(
+        model_id=ModelId.CLAUDE_OPUS,
+        provider=ProviderType.CLAUDE,
+        api_model_name="claude-opus-4-5-20251101",
+        max_tokens=8192
+    ),
+    ModelId.CLAUDE_SONNET: ModelConfig(
+        model_id=ModelId.CLAUDE_SONNET,
+        provider=ProviderType.CLAUDE,
+        api_model_name="claude-sonnet-4-20250514",
+        max_tokens=8192
+    ),
+    ModelId.GEMINI_FLASH: ModelConfig(
+        model_id=ModelId.GEMINI_FLASH,
+        provider=ProviderType.GEMINI,
+        api_model_name="gemini-2.0-flash",
+        max_tokens=8192
+    ),
+    ModelId.GEMINI_PRO: ModelConfig(
+        model_id=ModelId.GEMINI_PRO,
+        provider=ProviderType.GEMINI,
+        api_model_name="gemini-1.5-pro",
+        max_tokens=8192
+    ),
+}
+```
+
+### 6.5 LLM Provider Interface
+
+```python
+class LLMProvider(ABC):
+    """Abstract base class for LLM providers."""
+
+    def __init__(self, config: ModelConfig):
+        self.config = config
+
+    @abstractmethod
+    async def generate(
+        self,
+        prompt: str,
+        system_prompt: Optional[str] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None
+    ) -> str:
+        """Generate a response from the LLM."""
+        pass
+
+    @abstractmethod
+    async def generate_with_tools(
+        self,
+        prompt: str,
+        tools: list[dict],
+        system_prompt: Optional[str] = None
+    ) -> dict:
+        """Generate response with tool calling capability."""
+        pass
+
+    @property
+    def model_name(self) -> str:
+        return self.config.api_model_name
+
+
+class ClaudeProvider(LLMProvider):
+    """Claude-specific provider using Claude Code CLI."""
+
+    async def generate(
+        self,
+        prompt: str,
+        system_prompt: Optional[str] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None
+    ) -> str:
+        # Use Claude Code CLI (cc) for invocation
+        # This preserves existing Claude Code integration
+        cmd = ["cc", "--model", self.config.api_model_name]
+        if system_prompt:
+            cmd.extend(["--system", system_prompt])
+        # ... implementation using subprocess
+        pass
+
+
+class GeminiProvider(LLMProvider):
+    """Gemini-specific provider using direct API."""
+
+    def __init__(self, config: ModelConfig):
+        super().__init__(config)
+        import google.generativeai as genai
+        genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
+        self.model = genai.GenerativeModel(self.config.api_model_name)
+
+    async def generate(
+        self,
+        prompt: str,
+        system_prompt: Optional[str] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None
+    ) -> str:
+        generation_config = {
+            "temperature": temperature or self.config.temperature,
+            "max_output_tokens": max_tokens or self.config.max_tokens,
+        }
+        full_prompt = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
+        response = await self.model.generate_content_async(
+            full_prompt,
+            generation_config=generation_config
+        )
+        return response.text
+```
+
+### 6.6 Script-to-Model Resolution
+
+```python
+import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+class ADWModelResolver:
+    """Resolves which model to use for each ADW script."""
+
+    # Environment variable names for each script
+    SCRIPT_ENV_VARS = {
+        "audit": "ADW_AUDIT_MODEL",
+        "implement": "ADW_IMPLEMENT_MODEL",
+        "review": "ADW_REVIEW_MODEL",
+        "chunk": "ADW_CHUNK_MODEL",
+        "validate": "ADW_VALIDATE_MODEL",
+        "fp_classify": "ADW_FP_CLASSIFY_MODEL",
+        "pattern_detect": "ADW_PATTERN_DETECT_MODEL",
+    }
+
+    def __init__(self, adws_root: Path):
+        self.adws_root = adws_root
+        self._load_adw_env()
+
+    def _load_adw_env(self):
+        """Load ADW-specific .env file."""
+        env_file = self.adws_root / ".env"
+        if env_file.exists():
+            load_dotenv(env_file, override=True)
+
+    def get_model_for_script(self, script_name: str) -> ModelConfig:
+        """
+        Get the configured model for a specific script.
+
+        Resolution order:
+        1. Script-specific env var (e.g., ADW_AUDIT_MODEL)
+        2. Default provider env var (ADW_DEFAULT_MODEL)
+        3. Hardcoded fallback (gemini-flash)
+        """
+        # Try script-specific env var
+        env_var = self.SCRIPT_ENV_VARS.get(script_name)
+        if env_var:
+            model_str = os.environ.get(env_var)
+            if model_str:
+                try:
+                    model_id = ModelId(model_str)
+                    return MODEL_REGISTRY[model_id]
+                except (ValueError, KeyError):
+                    pass  # Invalid model, fall through
+
+        # Try default model
+        default_model = os.environ.get("ADW_DEFAULT_MODEL")
+        if default_model:
+            try:
+                model_id = ModelId(default_model)
+                return MODEL_REGISTRY[model_id]
+            except (ValueError, KeyError):
+                pass
+
+        # Hardcoded fallback
+        return MODEL_REGISTRY[ModelId.GEMINI_FLASH]
+
+    def get_provider_for_script(self, script_name: str) -> LLMProvider:
+        """Get initialized provider for a script."""
+        config = self.get_model_for_script(script_name)
+
+        if config.provider == ProviderType.CLAUDE:
+            return ClaudeProvider(config)
+        elif config.provider == ProviderType.GEMINI:
+            return GeminiProvider(config)
+        else:
+            raise ValueError(f"Unknown provider: {config.provider}")
+```
+
+### 6.7 ADW Environment File Structure
+
+**File: `adws/.env`** (ADW-specific, gitignored)
+
+```bash
+# ============================================
+# ADW Modular LLM Provider Configuration
+# ============================================
+
+# Default provider when script-specific not set
+ADW_DEFAULT_MODEL=gemini-flash
+
+# Per-script model configuration
+# Options: claude-opus, claude-sonnet, gemini-flash, gemini-pro
+ADW_AUDIT_MODEL=claude-opus
+ADW_IMPLEMENT_MODEL=gemini-flash
+ADW_REVIEW_MODEL=claude-sonnet
+ADW_CHUNK_MODEL=gemini-flash
+ADW_VALIDATE_MODEL=gemini-flash
+ADW_FP_CLASSIFY_MODEL=gemini-flash
+ADW_PATTERN_DETECT_MODEL=gemini-flash
+
+# API Keys (if not set globally)
+# GEMINI_API_KEY=your-key-here
+# ANTHROPIC_API_KEY=your-key-here
+```
+
+**File: `adws/.env.example`** (committed to repo)
+
+```bash
+# ADW Environment Configuration Template
+# Copy to .env and customize
+
+ADW_DEFAULT_MODEL=gemini-flash
+
+# Per-script models (options: claude-opus, claude-sonnet, gemini-flash, gemini-pro)
+ADW_AUDIT_MODEL=claude-opus
+ADW_IMPLEMENT_MODEL=gemini-flash
+ADW_REVIEW_MODEL=claude-sonnet
+ADW_CHUNK_MODEL=gemini-flash
+ADW_VALIDATE_MODEL=gemini-flash
+ADW_FP_CLASSIFY_MODEL=gemini-flash
+ADW_PATTERN_DETECT_MODEL=gemini-flash
+```
+
+### 6.8 Integration with Existing Code
+
+**Migration path from current `agent.py`**:
+
+```python
+# BEFORE (agent.py current)
+SLASH_COMMAND_MODEL_MAP: Dict[SlashCommand, Dict[ModelSet, str]] = {
+    "/implement": {"base": "sonnet", "heavy": "opus"},
+    # ...
+}
+
+# AFTER (using new system)
+from adws.adw_modules.llm_provider import ADWModelResolver
+
+resolver = ADWModelResolver(Path("adws"))
+
+# In orchestrator
+async def run_audit():
+    provider = resolver.get_provider_for_script("audit")
+    result = await provider.generate(audit_prompt, system_prompt=FP_AUDIT_SYSTEM)
+    return result
+
+async def run_implementation(chunk: ChunkData):
+    provider = resolver.get_provider_for_script("implement")
+    result = await provider.generate(implement_prompt)
+    return result
+```
+
+### 6.9 Phase 1.7 Deliverables
+
+| Item | Path | Status |
+|------|------|--------|
+| LLM Provider module | `adws/adw_modules/llm_provider.py` | TO CREATE |
+| Model registry | `adws/adw_modules/model_registry.py` | TO CREATE |
+| ADW environment file | `adws/.env.example` | TO CREATE |
+| Provider unit tests | `adws/adw_tests/test_llm_provider.py` | TO CREATE |
+| Migration of agent.py | `adws/adw_modules/agent.py` | TO MODIFY |
+
+### 6.10 Phase 1.7 Success Criteria
+
+- [ ] Each script can be configured to use a different model via env var
+- [ ] ADW-specific `.env` file is loaded and respected
+- [ ] Provider switching is transparent to calling code
+- [ ] Existing Claude Code integration preserved for Claude models
+- [ ] Gemini direct API integration working
+- [ ] Invalid model configurations fail fast with clear error
+- [ ] Model resolution order documented and tested
+
+---
+
+## 7. Phase 1.8: ADW Ecosystem Restructure (NEW)
+
+> **Status**: NEW - Move FP skill into ADW system for self-contained ecosystem
+> **Priority**: MEDIUM - Enables ADW-specific tooling without polluting global .claude
+
+### 7.1 Problem Statement
+
+Current state:
+- FP audit tooling lives in `.claude/skills/functional-code/`
+- ADW scripts reference global `.claude` directory
+- No clear separation between "Claude Code skills" and "ADW-specific tooling"
+- ADW system not self-contained - has external dependencies
+
+**Goal**: Make `adws/` directory a self-contained ecosystem that:
+1. Contains all ADW-specific tooling (including FP analysis)
+2. Has its own documentation separate from project docs
+3. Can reference parent project context when needed
+4. Maintains clear boundaries with global Claude Code configuration
+
+### 7.2 Current FP Skill Structure
+
+**Files to migrate from `.claude/skills/functional-code/`**:
+
+| File | Lines | Purpose | Migration Target |
+|------|-------|---------|------------------|
+| `scripts/fp_audit.py` | 378 | FP violation detection | `adws/adw_modules/fp/fp_audit.py` |
+| `SKILL.md` | 416 | FP principles guide | `adws/docs/FP_GUIDE.md` |
+
+**Key components in `fp_audit.py`**:
+- `JavaScriptFPAuditor` class - regex-based pattern detection
+- `FPViolation` dataclass - violation representation
+- `ViolationType` and `Severity` enums
+- `generate_markdown_report()` - report generation
+
+### 7.3 Target Directory Structure
+
+```
+adws/
+├── .env                              # ADW-specific environment (gitignored)
+├── .env.example                      # Environment template (committed)
+├── README.md                         # ADW ecosystem overview
+│
+├── docs/                             # ADW-specific documentation
+│   ├── FP_GUIDE.md                   # Functional programming principles (from SKILL.md)
+│   ├── ADW_ARCHITECTURE.md           # How ADW orchestration works
+│   ├── MODEL_CONFIGURATION.md        # LLM provider setup guide
+│   └── PYTHON_CONVENTIONS.md         # Python-specific coding standards
+│
+├── adw_modules/                      # Core ADW modules
+│   ├── __init__.py
+│   ├── agent.py                      # Claude Code agent interface
+│   ├── gemini_agent.py               # Gemini direct API
+│   ├── llm_provider.py               # NEW: Unified provider system
+│   ├── model_registry.py             # NEW: Model configurations
+│   ├── chunk_parser.py               # Chunk extraction
+│   ├── lsp_validator.py              # LSP validation
+│   ├── data_types.py                 # Shared data types
+│   │
+│   ├── ast/                          # NEW: AST analysis modules
+│   │   ├── __init__.py
+│   │   ├── analyzer.py               # Main AST analyzer (Phase 1)
+│   │   ├── symbol_table.py           # Symbol extraction
+│   │   └── dependency_graph.py       # Import/export graph
+│   │
+│   ├── fp/                           # NEW: FP analysis modules
+│   │   ├── __init__.py
+│   │   ├── fp_audit.py               # Migrated from .claude/skills
+│   │   ├── fp_classifier.py          # Dynamic FP zone classification
+│   │   └── pattern_detector.py       # AST-based pattern detection
+│   │
+│   └── registry/                     # NEW: Idempotency tracking
+│       ├── __init__.py
+│       └── refactor_registry.py      # Construct tracking
+│
+├── adw_tests/                        # ADW test suite
+│   ├── __init__.py
+│   ├── test_llm_provider.py
+│   ├── test_fp_audit.py
+│   └── test_ast_analyzer.py
+│
+├── templates/                        # Prompt templates
+│   ├── fp_audit_prompt.md
+│   ├── implementation_prompt.md
+│   └── review_prompt.md
+│
+└── state/                            # Runtime state (gitignored)
+    ├── .gitkeep
+    ├── refactor_registry.json
+    └── construct_hashes/
+```
+
+### 7.4 Documentation Hierarchy
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        DOCUMENTATION HIERARCHY                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  PROJECT LEVEL (.claude/)                                                   │
+│  └── CLAUDE.md                 → Project context, architecture, rules       │
+│  └── Documentation/            → Project-wide documentation                 │
+│      ├── miniCLAUDE.md         → Quick reference                           │
+│      └── largeCLAUDE.md        → Full context                              │
+│                                                                             │
+│  ADW LEVEL (adws/docs/)                                                     │
+│  └── README.md                 → ADW ecosystem overview                     │
+│  └── FP_GUIDE.md               → Functional programming principles          │
+│  └── ADW_ARCHITECTURE.md       → Orchestration pipeline details             │
+│  └── MODEL_CONFIGURATION.md    → LLM provider setup                         │
+│  └── PYTHON_CONVENTIONS.md     → Python coding standards for ADW           │
+│                                                                             │
+│  REFERENCE (parent → child)                                                 │
+│  ADW docs can reference project docs via relative paths:                    │
+│  "See ../../.claude/Documentation/miniCLAUDE.md for project context"       │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 7.5 FP Audit Migration
+
+**Before** (`.claude/skills/functional-code/scripts/fp_audit.py`):
+```python
+class JavaScriptFPAuditor:
+    MUTATION_PATTERNS = [r'\.push\(', r'\.pop\(', ...]
+    IO_PATTERNS = [r'console\.', r'fetch\(', ...]
+```
+
+**After** (`adws/adw_modules/fp/fp_audit.py`):
+```python
+"""
+FP Audit Module - Functional Programming Violation Detection
+
+This module scans JavaScript/TypeScript codebases for FP violations.
+Part of the ADW (AI Developer Workflow) ecosystem.
+
+For FP principles and guidelines, see: adws/docs/FP_GUIDE.md
+For project context, see: .claude/CLAUDE.md
+"""
+
+from dataclasses import dataclass
+from enum import Enum
+from pathlib import Path
+from typing import List, Optional
+
+# Import shared types from ADW modules
+from adws.adw_modules.data_types import FileAnalysis
+
+
+class Severity(Enum):
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+
+class ViolationType(Enum):
+    # ... same as before
+    pass
+
+
+@dataclass
+class FPViolation:
+    """Represents a single FP principle violation."""
+    file_path: str
+    line_number: int
+    violation_type: ViolationType
+    severity: Severity
+    principle: str
+    description: str
+    current_code: str
+    suggested_fix: str
+    rationale: str
+
+
+class FPAuditor:
+    """
+    Audits JavaScript/TypeScript files for FP violations.
+
+    This is the regex-based auditor. For AST-based detection,
+    see PatternDetector in adws/adw_modules/fp/pattern_detector.py
+    """
+
+    def __init__(self, root_path: Path, config: Optional[dict] = None):
+        self.root_path = root_path
+        self.config = config or {}
+        self.violations: List[FPViolation] = []
+
+    def audit(self) -> List[FPViolation]:
+        """Run full audit on codebase."""
+        # ... implementation
+        pass
+```
+
+### 7.6 ADW README.md
+
+```markdown
+# ADW - AI Developer Workflow
+
+> Modular AST-enhanced code refactoring orchestration system
+
+## Overview
+
+ADW is a self-contained ecosystem for automated code refactoring with:
+
+- **AST-based code analysis** - Semantic understanding of JavaScript/TypeScript
+- **Functional programming enforcement** - Automated FP violation detection
+- **Modular LLM providers** - Switch between Claude and Gemini per-task
+- **Idempotent operations** - Track and skip already-processed code
+
+## Quick Start
+
+```bash
+# 1. Configure environment
+cp .env.example .env
+# Edit .env with your model preferences
+
+# 2. Run FP audit
+python -m adws.adw_modules.fp.fp_audit app/src
+
+# 3. Run full orchestration
+python adws/unified_fp_orchestrator.py
+```
+
+## Documentation
+
+| Document | Purpose |
+|----------|---------|
+| [FP_GUIDE.md](docs/FP_GUIDE.md) | Functional programming principles |
+| [ADW_ARCHITECTURE.md](docs/ADW_ARCHITECTURE.md) | Pipeline architecture |
+| [MODEL_CONFIGURATION.md](docs/MODEL_CONFIGURATION.md) | LLM provider setup |
+| [PYTHON_CONVENTIONS.md](docs/PYTHON_CONVENTIONS.md) | Python coding standards |
+
+## Project Context
+
+For broader project documentation:
+- [Project CLAUDE.md](../.claude/CLAUDE.md) - Main project context
+- [miniCLAUDE.md](../.claude/Documentation/miniCLAUDE.md) - Quick reference
+```
+
+### 7.7 Cleanup of .claude/skills/
+
+After migration, the FP skill in `.claude/skills/functional-code/` should be:
+
+**Option A**: Delete entirely (ADW owns FP tooling)
+```
+.claude/skills/functional-code/ → DELETE
+```
+
+**Option B**: Replace with redirect notice
+```markdown
+# .claude/skills/functional-code/SKILL.md
+
+> ⚠️ **MOVED**: This skill has been migrated to the ADW ecosystem.
+>
+> New location: `adws/docs/FP_GUIDE.md`
+> Audit script: `adws/adw_modules/fp/fp_audit.py`
+>
+> Run: `python -m adws.adw_modules.fp.fp_audit <path>`
+```
+
+**Recommendation**: Option B - maintains discoverability while redirecting.
+
+### 7.8 Phase 1.8 Deliverables
+
+| Item | Path | Status |
+|------|------|--------|
+| ADW README | `adws/README.md` | TO CREATE |
+| FP Guide | `adws/docs/FP_GUIDE.md` | TO CREATE (from SKILL.md) |
+| ADW Architecture doc | `adws/docs/ADW_ARCHITECTURE.md` | TO CREATE |
+| Model Configuration doc | `adws/docs/MODEL_CONFIGURATION.md` | TO CREATE |
+| Python Conventions doc | `adws/docs/PYTHON_CONVENTIONS.md` | TO CREATE |
+| FP Audit module | `adws/adw_modules/fp/fp_audit.py` | TO CREATE (from scripts/) |
+| FP Classifier module | `adws/adw_modules/fp/fp_classifier.py` | TO CREATE |
+| Pattern Detector module | `adws/adw_modules/fp/pattern_detector.py` | TO CREATE |
+| Redirect notice | `.claude/skills/functional-code/SKILL.md` | TO MODIFY |
+
+### 7.9 Phase 1.8 Success Criteria
+
+- [ ] `adws/` directory is self-contained with own docs and tooling
+- [ ] FP audit can be run from `adws/adw_modules/fp/fp_audit.py`
+- [ ] ADW docs reference project docs via relative paths
+- [ ] `.claude/skills/functional-code/` contains redirect notice
+- [ ] All ADW Python code follows `PYTHON_CONVENTIONS.md`
+- [ ] ADW environment variables isolated to `adws/.env`
+
+---
+
+## 8. Phase 2: Dependency-Aware Chunk Generation
+
+> **Status**: OUTLINED - Details to be expanded after Phase 1.8 completion
+
+### 8.1 Overview
 
 Modify the chunk parser and orchestrator to:
 1. Parse new chunk metadata (category, depends_on, creates_exports)
 2. Build execution order using topological sort
 3. Validate chunk dependencies before execution
 
-### 6.2 Key Changes
+### 8.2 Key Changes
 
 **chunk_parser.py modifications**:
 - Extract `Category`, `Depends On`, `Creates Exports`, `Requires Imports` fields
@@ -2123,7 +2806,7 @@ def build_execution_order(chunks: List[ChunkData]) -> List[ChunkData]:
     return scaffold_ordered + migrate_ordered + cleanup_ordered
 ```
 
-### 6.3 References for Phase 2
+### 8.3 References for Phase 2
 
 - [chunk_parser.py](adws/adw_modules/chunk_parser.py) - Current parser implementation
 - [Research Document: Dependency ordering problem](#the-dependency-ordering-problem-requires-explicit-graph-construction) - From attached research
@@ -2131,11 +2814,11 @@ def build_execution_order(chunks: List[ChunkData]) -> List[ChunkData]:
 
 ---
 
-## 7. Phase 3: Intelligent Validation Pipeline
+## 9. Phase 3: Intelligent Validation Pipeline
 
 > **Status**: OUTLINED - Details to be expanded after Phase 2 completion
 
-### 7.1 Overview
+### 9.1 Overview
 
 Replace the current 5-layer redundant validation with a tiered fail-fast pipeline:
 
@@ -2147,7 +2830,7 @@ Replace the current 5-layer redundant validation with a tiered fail-fast pipelin
 | 4 | Full build (once per page group) | 10-30s | Immediate fail |
 | 5 | Visual regression | 30-60s | Commit or reset |
 
-### 7.2 Key Changes
+### 9.2 Key Changes
 
 **Remove**:
 - Redundant pre-LSP validation (replaced by AST context)
@@ -2159,25 +2842,25 @@ Replace the current 5-layer redundant validation with a tiered fail-fast pipelin
 - Affected-only type checking (using `tsc --incremental`)
 - Tier tracking for debugging
 
-### 7.3 References for Phase 3
+### 9.3 References for Phase 3
 
 - [lsp_validator.py](adws/adw_modules/lsp_validator.py) - Current validation
 - [Research Document: Optimal validation pipeline](#the-optimal-validation-pipeline-uses-tiered-fail-fast-ordering) - From attached research
 
 ---
 
-## 8. Phase 4: Failure Recovery & Re-planning
+## 10. Phase 4: Failure Recovery & Re-planning
 
 > **Status**: OUTLINED - Details to be expanded after Phase 3 completion
 
-### 8.1 Overview
+### 10.1 Overview
 
 Implement intelligent failure recovery:
 1. Per-chunk atomic commits (not per-group)
 2. Quarantine failed chunks, continue with independent chunks
 3. Incremental re-audit after N failures or N chunks
 
-### 8.2 Key Changes
+### 10.2 Key Changes
 
 **Commit granularity**:
 - Each successful chunk gets its own commit
@@ -2189,18 +2872,18 @@ Implement intelligent failure recovery:
 - After 2 failures (plan may be stale)
 - After any SCAFFOLD chunk (file structure changed)
 
-### 8.3 References for Phase 4
+### 10.3 References for Phase 4
 
 - [Research Document: Atomic per-chunk commits](#atomic-per-chunk-commits-eliminate-cascading-resets) - From attached research
 - [Research Document: Incremental re-auditing](#incremental-re-auditing-solves-plan-staleness) - From attached research
 
 ---
 
-## 9. Phase 5: Integration & Testing
+## 11. Phase 5: Integration & Testing
 
 > **Status**: OUTLINED - Details to be expanded after Phase 4 completion
 
-### 9.1 Overview
+### 11.1 Overview
 
 Full integration testing and performance benchmarking:
 1. Run on real refactoring tasks
@@ -2208,7 +2891,7 @@ Full integration testing and performance benchmarking:
 3. Benchmark execution time
 4. Document edge cases
 
-### 9.2 Success Metrics
+### 11.2 Success Metrics
 
 | Metric | Target | Current Baseline |
 |--------|--------|------------------|
@@ -2217,13 +2900,13 @@ Full integration testing and performance benchmarking:
 | False positive rate | <5% | ~20% (estimated) |
 | Cascading failure rate | <2% | ~30% (estimated) |
 
-### 9.3 References for Phase 5
+### 11.3 References for Phase 5
 
 - [Research Document: Expected improvements](#expected-improvements-with-recommended-architecture) - From attached research
 
 ---
 
-## 10. File References
+## 12. File References
 
 ### Core Files to Modify
 
@@ -2244,14 +2927,27 @@ Full integration testing and performance benchmarking:
 | `adw_modules/fp_config.py` | 1.5 | Load .fp-zones.yaml configuration |
 | `adw_modules/refactor_registry.py` | 1.6 | Construct-level state tracking |
 | `adw_modules/pattern_detector.py` | 1.6 | Anti-pattern detection in AST |
+| `adw_modules/llm_provider.py` | 1.7 | Unified LLM provider interface |
+| `adw_modules/model_registry.py` | 1.7 | Model configurations and registry |
+| `adws/.env.example` | 1.7 | ADW environment template |
+| `adws/docs/FP_GUIDE.md` | 1.8 | FP principles guide (migrated) |
+| `adws/docs/ADW_ARCHITECTURE.md` | 1.8 | ADW pipeline architecture |
+| `adws/docs/MODEL_CONFIGURATION.md` | 1.8 | LLM provider setup guide |
+| `adws/docs/PYTHON_CONVENTIONS.md` | 1.8 | Python coding standards |
+| `adws/README.md` | 1.8 | ADW ecosystem overview |
+| `adw_modules/fp/fp_audit.py` | 1.8 | FP audit (migrated from .claude/skills) |
+| `adw_modules/fp/fp_classifier.py` | 1.8 | FP zone classifier (moved) |
+| `adw_modules/fp/pattern_detector.py` | 1.8 | AST-based pattern detection |
 | `adw_modules/dependency_graph.py` | 2 | Topological sorting, cycle detection |
 | `adw_modules/tiered_validator.py` | 3 | Fail-fast validation pipeline |
 | `.fp-zones.yaml` | 1.5 | FP zone configuration (project root) |
 | `.claude/adw-state/` | 1.6 | Refactoring state directory |
+| `adws/state/` | 1.8 | ADW runtime state directory |
 | `adw_tests/test_ast_analyzer.py` | 1 | Unit tests for AST analyzer |
 | `adw_tests/test_fp_classifier.py` | 1.5 | Unit tests for FP classifier |
 | `adw_tests/test_refactor_registry.py` | 1.6 | Unit tests for registry |
 | `adw_tests/test_pattern_detector.py` | 1.6 | Unit tests for pattern detection |
+| `adw_tests/test_llm_provider.py` | 1.7 | Unit tests for LLM provider |
 | `adw_tests/test_dependency_graph.py` | 2 | Unit tests for dependency ordering |
 
 ### Reference Documentation
@@ -2265,7 +2961,7 @@ Full integration testing and performance benchmarking:
 
 ---
 
-## 11. Risk Assessment
+## 13. Risk Assessment
 
 ### High Risk
 
@@ -2285,6 +2981,9 @@ Full integration testing and performance benchmarking:
 | FP classifier misclassifying files | Heuristics override directory hints; explicit markers as escape hatch |
 | Registry state corruption | JSON schema validation; backup before writes |
 | Config file drift from codebase | Periodic audit via CI; config validation |
+| Provider API rate limits | Exponential backoff; model-specific rate limiting |
+| Model config env var typos | Validation on load; fail-fast with clear errors |
+| FP skill migration breaks existing workflows | Redirect notice in old location; transition period |
 
 ### Low Risk
 
@@ -2316,14 +3015,29 @@ Before proceeding to implementation:
 - [ ] Approve state file structure (`.claude/adw-state/`)
 - [ ] Validate anti-pattern detection strategy
 
+**Phase 1.7: Modular LLM Provider System**
+- [ ] Review per-script model configuration approach
+- [ ] Confirm model identifier naming (claude-opus, claude-sonnet, gemini-flash, gemini-pro)
+- [ ] Approve ADW-specific `.env` file structure
+- [ ] Validate model resolution order (script-specific → default → fallback)
+- [ ] Confirm Claude Code CLI integration for Claude models
+- [ ] Confirm Gemini direct API integration
+
+**Phase 1.8: ADW Ecosystem Restructure**
+- [ ] Review target directory structure for `adws/`
+- [ ] Approve FP skill migration path from `.claude/skills/`
+- [ ] Confirm documentation hierarchy (project-level vs ADW-level)
+- [ ] Approve redirect notice strategy for deprecated skill location
+- [ ] Validate Python conventions document scope
+
 **General**
 - [ ] Approve testing strategy across all phases
 - [ ] Set timeline expectations
-- [ ] Confirm phased rollout approach (1 → 1.5 → 1.6 → 2 → ...)
+- [ ] Confirm phased rollout approach (1 → 1.5 → 1.6 → 1.7 → 1.8 → 2 → ...)
 
 ---
 
-**Document Version**: 2.0
+**Document Version**: 3.0
 **Created**: 2026-01-16
 **Updated**: 2026-01-17
 **Author**: Claude Opus (via orchestration analysis)
@@ -2337,3 +3051,4 @@ Before proceeding to implementation:
 |---------|------|---------|
 | 1.0 | 2026-01-16 | Initial plan with AST analyzer and dependency ordering |
 | 2.0 | 2026-01-17 | Added Phase 1.5 (Dynamic FP Zone Classification) and Phase 1.6 (Idempotency & Construct Tracking) |
+| 3.0 | 2026-01-17 | Added Phase 1.7 (Modular LLM Provider System) and Phase 1.8 (ADW Ecosystem Restructure); renumbered subsequent phases |
