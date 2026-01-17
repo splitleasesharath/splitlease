@@ -2300,6 +2300,19 @@ export default function SearchPage() {
                 </button>
               </div>
             )}
+            {/* Expand Button - Always visible in compact mode */}
+            <div className="desktop-compact-expand">
+              <button
+                className="desktop-compact-expand-btn"
+                onClick={() => setDesktopHeaderCollapsed(false)}
+                aria-label="Expand filter section"
+                title="Show filters"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+            </div>
           </div>
 
           {/* NEW FILTER SECTION - Desktop Only */}

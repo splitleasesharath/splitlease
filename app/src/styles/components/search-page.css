@@ -232,7 +232,7 @@
 
 /* Desktop compact filter button */
 .desktop-compact-filters {
-  margin-left: auto;
+  /* No margin-left: auto - let expand button handle right alignment */
 }
 
 .desktop-compact-filter-btn {
@@ -258,6 +258,42 @@
 .desktop-compact-filter-btn svg {
   width: 14px;
   height: 14px;
+}
+
+/* Desktop compact expand button - reopens filter section */
+.desktop-compact-expand {
+  margin-left: auto;
+}
+
+.desktop-compact-expand-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  color: white;
+  transition: all 0.2s ease;
+}
+
+.desktop-compact-expand-btn:hover {
+  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+}
+
+.desktop-compact-expand-btn:focus {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+
+.desktop-compact-expand-btn svg {
+  width: 16px;
+  height: 16px;
 }
 
 /* Filter section collapsed state */
