@@ -294,14 +294,20 @@ async function sendWelcomeEmail(data) {
           from_name: 'Split Lease Signup',
           subject: 'New Split Lease Account!',
           variables: {
-            // Placeholders expected by the Basic template ($$variable$$ format)
+            // All 13 placeholders expected by the Basic template ($$variable$$ format)
             'to': data.email,
             'from email': 'tech@leasesplit.com',
-            'from name': 'Split Lease Signup',
+            'from name': ', "name": "Split Lease Signup"',
             'subject': 'New Split Lease Account!',
             'header': 'Welcome to Split Lease!',
             'body text': emailBodyHtml,
             'button': buttonHtml,
+            'year': new Date().getFullYear().toString(),
+            'logo url': 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1599068082301x985428647498498600/SL%20Logo.png',
+            'cc': '',
+            'bcc': '',
+            'reply_to': '',
+            'attachment': '',
           },
           bcc_emails: [
             'splitleaseteam@gmail.com'
@@ -376,13 +382,20 @@ free form text inputted: ${data.freeformText}`;
           from_name: 'Guest AI Signup',
           subject: `${data.name || 'New User'}, ${data.email}, SIGNED UP thru AI signup feature`,
           variables: {
-            // Placeholders expected by the Basic template
+            // All 13 placeholders expected by the Basic template
             'to': 'acquisition-aaaachs52tzodgc5t3o2oeipli@splitlease.slack.com',
             'from email': 'noreply@splitlease.com',
-            'from name': 'Guest AI Signup',
+            'from name': ', "name": "Guest AI Signup"',
             'subject': `${data.name || 'New User'}, ${data.email}, SIGNED UP thru AI signup feature`,
             'header': 'New AI Signup',
             'body text': emailBodyHtml,
+            'button': '', // No button for internal notification
+            'year': new Date().getFullYear().toString(),
+            'logo url': 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1599068082301x985428647498498600/SL%20Logo.png',
+            'cc': '',
+            'bcc': '',
+            'reply_to': '',
+            'attachment': '',
           },
         }
       }),
