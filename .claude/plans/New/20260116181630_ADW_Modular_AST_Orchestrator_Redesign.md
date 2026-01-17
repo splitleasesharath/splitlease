@@ -3,6 +3,7 @@
 > **Comprehensive Implementation Plan for Semantic Code Understanding in Refactoring Workflows**
 >
 > **Created**: 2026-01-16
+> **Updated**: 2026-01-17
 > **Status**: PLANNING (Awaiting Approval)
 > **Complexity**: HIGH - Multi-phase, architectural redesign
 
@@ -32,12 +33,14 @@ This plan addresses the fundamental tension in the current ADW (AI Developer Wor
 1. [Current State Analysis](#1-current-state-analysis)
 2. [Target Architecture](#2-target-architecture)
 3. [Phase 1: AST Semantic Analyzer (FULLY DETAILED)](#3-phase-1-ast-semantic-analyzer)
-4. [Phase 2: Dependency-Aware Chunk Generation](#4-phase-2-dependency-aware-chunk-generation)
-5. [Phase 3: Intelligent Validation Pipeline](#5-phase-3-intelligent-validation-pipeline)
-6. [Phase 4: Failure Recovery & Re-planning](#6-phase-4-failure-recovery--re-planning)
-7. [Phase 5: Integration & Testing](#7-phase-5-integration--testing)
-8. [File References](#8-file-references)
-9. [Risk Assessment](#9-risk-assessment)
+4. [Phase 1.5: Dynamic FP Zone Classification (NEW)](#4-phase-15-dynamic-fp-zone-classification)
+5. [Phase 1.6: Idempotency & Construct Tracking (NEW)](#5-phase-16-idempotency--construct-tracking)
+6. [Phase 2: Dependency-Aware Chunk Generation](#6-phase-2-dependency-aware-chunk-generation)
+7. [Phase 3: Intelligent Validation Pipeline](#7-phase-3-intelligent-validation-pipeline)
+8. [Phase 4: Failure Recovery & Re-planning](#8-phase-4-failure-recovery--re-planning)
+9. [Phase 5: Integration & Testing](#9-phase-5-integration--testing)
+10. [File References](#10-file-references)
+11. [Risk Assessment](#11-risk-assessment)
 
 ---
 
@@ -153,14 +156,14 @@ If processed in order: Chunk 3 tries to import before Chunk 1 creates the file
 │                                    ▼                                        │
 │  PHASE 1: INFORMED AUDIT (Opus + Semantic Context)                          │
 │     ┌─────────────────────────────────────────────────────────────────┐     │
-│     │  Claude receives:                                                │     │
+│     │  Claude receives:                                               │     │
 │     │  - Target files + semantic_context.json                         │     │
-│     │  - Dependency graph showing import relationships                 │     │
-│     │  - Symbol table showing what each file exports                   │     │
-│     │                                                                  │     │
-│     │  Claude outputs:                                                 │     │
+│     │  - Dependency graph showing import relationships                │     │
+│     │  - Symbol table showing what each file exports                  │     │
+│     │                                                                 │     │
+│     │  Claude outputs:                                                │     │
 │     │  - Chunks with explicit `depends_on: [chunk_ids]`               │     │
-│     │  - Chunks categorized: SCAFFOLD → MIGRATE → CLEANUP              │     │
+│     │  - Chunks categorized: SCAFFOLD → MIGRATE → CLEANUP             │     │
 │     │  - Cascading changes included in same chunk group               │     │
 │     └─────────────────────────────────────────────────────────────────┘     │
 │                                    │                                        │
@@ -1007,18 +1010,1095 @@ def test_full_analysis_on_real_codebase():
 
 ---
 
-## 4. Phase 2: Dependency-Aware Chunk Generation
+## 4. Phase 1.5: Dynamic FP Zone Classification (NEW)
 
-> **Status**: OUTLINED - Details to be expanded after Phase 1 completion
+> **Status**: FULLY DETAILED
+> **Added**: 2026-01-17
+> **Purpose**: Classify code by purity requirements WITHOUT hardcoding file paths
 
-### 4.1 Overview
+### 4.1 Problem Statement
+
+Hardcoded rules like `if path.includes('logic/calculators')` are brittle:
+- Adding `logic/validators/` breaks the rules
+- Renaming `lib/` to `services/` breaks the rules
+- Files in "pure" directories might contain I/O (misplaced code)
+- Files in "impure" directories might be pure (opportunity for extraction)
+
+**Solution**: Classify based on **code characteristics**, not file paths. The code itself tells you whether it should be pure.
+
+### 4.2 FP Zone Definitions
+
+| Zone | Description | Target Purity | Refactoring Strategy |
+|------|-------------|---------------|---------------------|
+| `pure-core` | Pure functions with zero side effects | 100% | Aggressive FP enforcement |
+| `orchestration` | Pure coordination of other functions | 95% | Composition patterns |
+| `effect-boundary` | React hooks, effect containers | 50% | Extract pure parts to pure-core |
+| `io-shell` | I/O operations - side effects expected | 20% | Leave impure, isolate I/O |
+
+### 4.3 Heuristic-Based Classification
+
+Analyze AST to **infer** zone membership regardless of file location:
+
+```python
+# adws/adw_modules/fp_classifier.py
+
+from dataclasses import dataclass, field
+from typing import List, Dict, Optional
+from enum import Enum
+
+class FPZone(str, Enum):
+    PURE_CORE = "pure-core"
+    ORCHESTRATION = "orchestration"
+    EFFECT_BOUNDARY = "effect-boundary"
+    IO_SHELL = "io-shell"
+
+@dataclass
+class ClassificationSignal:
+    type: str  # 'positive' or 'negative'
+    signal: str
+    weight: float
+    details: Optional[str] = None
+
+@dataclass
+class FPClassification:
+    zone: FPZone
+    confidence: float  # 0.0 - 1.0
+    signals: List[ClassificationSignal] = field(default_factory=list)
+    recommended_purity: int = 0  # 0-100
+    warnings: List[str] = field(default_factory=list)
+    should_refactor: bool = True
+
+class FPClassifier:
+    """
+    Classify files by FP zone using code heuristics, not file paths.
+    """
+
+    # Positive signals (indicate purity)
+    PURE_SIGNALS = {
+        'no_io_imports': 0.8,
+        'only_logic_imports': 0.6,
+        'calculator_naming': 0.4,  # calculate*, compute*, get*, derive*
+        'predicate_naming': 0.4,   # is*, can*, should*, has*, does*
+        'processor_naming': 0.3,   # process*, adapt*, format*, transform*
+        'boolean_return': 0.5,
+        'no_mutations': 0.6,
+        'const_only': 0.4,
+        'no_this_keyword': 0.3,
+        'pure_jsdoc_marker': 1.0,  # @pure annotation
+    }
+
+    # Negative signals (indicate impurity)
+    IMPURE_SIGNALS = {
+        'io_imports': 0.8,         # supabase, fetch, localStorage
+        'react_hooks': 0.9,        # useState, useEffect
+        'io_naming': 0.5,          # fetch*, save*, update*, delete*, post*, send*
+        'contains_mutations': 0.6, # .push(), .pop(), .splice()
+        'async_with_io': 0.7,      # await fetch, await supabase
+        'browser_apis': 0.8,       # document, window, localStorage
+        'io_jsdoc_marker': 1.0,    # @io annotation
+    }
+
+    # Import patterns that indicate I/O
+    IO_IMPORT_PATTERNS = [
+        'supabase', '@supabase',
+        'fetch', 'axios',
+        'localStorage', 'sessionStorage',
+        'fs', 'path',  # Node.js
+        'Deno',        # Deno runtime
+    ]
+
+    # Function naming patterns
+    PURE_NAME_PATTERNS = {
+        'calculator': r'^(calculate|compute|get|derive|sum|total)',
+        'predicate': r'^(is|can|should|has|does|was|will|check)',
+        'processor': r'^(process|adapt|format|transform|parse|map|filter|reduce)',
+    }
+
+    IO_NAME_PATTERNS = {
+        'fetcher': r'^(fetch|load|get(?!ter)|retrieve)',
+        'mutator': r'^(save|update|delete|remove|create|insert|post|send|push)',
+        'handler': r'^(handle|on[A-Z])',
+    }
+
+    def classify_file(self, file_analysis: 'FileAnalysis') -> FPClassification:
+        """Classify a single file based on its AST analysis."""
+        signals: List[ClassificationSignal] = []
+
+        # Check for explicit JSDoc markers first (highest priority)
+        marker_result = self._check_jsdoc_markers(file_analysis)
+        if marker_result:
+            return marker_result
+
+        # Analyze imports
+        signals.extend(self._analyze_imports(file_analysis))
+
+        # Analyze function signatures
+        signals.extend(self._analyze_functions(file_analysis))
+
+        # Analyze code patterns (mutations, async, etc.)
+        signals.extend(self._analyze_patterns(file_analysis))
+
+        # Calculate zone from signals
+        return self._calculate_zone(signals, file_analysis)
+
+    def _check_jsdoc_markers(self, file_analysis) -> Optional[FPClassification]:
+        """Check for explicit @pure or @io markers."""
+        # Implementation reads JSDoc comments from AST
+        # If @pure found: return pure-core with 100% confidence
+        # If @io found: return io-shell with 100% confidence
+        # If @fp-ignore found: return classification with should_refactor=False
+        pass
+
+    def _analyze_imports(self, file_analysis) -> List[ClassificationSignal]:
+        """Analyze imports to detect I/O dependencies."""
+        signals = []
+
+        has_io_imports = False
+        only_logic_imports = True
+
+        for imp in file_analysis.imports:
+            # Check for I/O imports
+            if any(pattern in imp.source_module for pattern in self.IO_IMPORT_PATTERNS):
+                has_io_imports = True
+                signals.append(ClassificationSignal(
+                    type='negative',
+                    signal='io_imports',
+                    weight=self.IMPURE_SIGNALS['io_imports'],
+                    details=f"Imports from {imp.source_module}"
+                ))
+
+            # Check if imports are only from logic/ layer
+            if not imp.source_module.startswith('./logic') and \
+               not imp.source_module.startswith('../logic'):
+                if not imp.source_module.startswith('.'):  # External package
+                    only_logic_imports = False
+
+        if not has_io_imports:
+            signals.append(ClassificationSignal(
+                type='positive',
+                signal='no_io_imports',
+                weight=self.PURE_SIGNALS['no_io_imports'],
+                details="No I/O-related imports detected"
+            ))
+
+        if only_logic_imports and file_analysis.imports:
+            signals.append(ClassificationSignal(
+                type='positive',
+                signal='only_logic_imports',
+                weight=self.PURE_SIGNALS['only_logic_imports'],
+                details="All imports from logic layer"
+            ))
+
+        return signals
+
+    def _analyze_functions(self, file_analysis) -> List[ClassificationSignal]:
+        """Analyze function signatures for naming patterns."""
+        signals = []
+
+        for fn in file_analysis.functions:
+            # Check pure naming patterns
+            for pattern_name, regex in self.PURE_NAME_PATTERNS.items():
+                import re
+                if re.match(regex, fn.name, re.IGNORECASE):
+                    signals.append(ClassificationSignal(
+                        type='positive',
+                        signal=f'{pattern_name}_naming',
+                        weight=self.PURE_SIGNALS.get(f'{pattern_name}_naming', 0.3),
+                        details=f"Function '{fn.name}' matches {pattern_name} pattern"
+                    ))
+                    break
+
+            # Check I/O naming patterns
+            for pattern_name, regex in self.IO_NAME_PATTERNS.items():
+                import re
+                if re.match(regex, fn.name, re.IGNORECASE):
+                    signals.append(ClassificationSignal(
+                        type='negative',
+                        signal='io_naming',
+                        weight=self.IMPURE_SIGNALS['io_naming'],
+                        details=f"Function '{fn.name}' matches {pattern_name} pattern"
+                    ))
+                    break
+
+        return signals
+
+    def _analyze_patterns(self, file_analysis) -> List[ClassificationSignal]:
+        """Analyze code patterns like mutations, async, React hooks."""
+        signals = []
+
+        # Check for React hooks (from imports)
+        react_hooks = ['useState', 'useEffect', 'useCallback', 'useMemo', 'useRef']
+        for imp in file_analysis.imports:
+            if imp.name in react_hooks:
+                signals.append(ClassificationSignal(
+                    type='negative',
+                    signal='react_hooks',
+                    weight=self.IMPURE_SIGNALS['react_hooks'],
+                    details=f"Uses React hook: {imp.name}"
+                ))
+
+        # Additional pattern detection would analyze the AST body
+        # for mutations (.push, .pop, etc.), this reference, etc.
+
+        return signals
+
+    def _calculate_zone(self, signals: List[ClassificationSignal],
+                        file_analysis) -> FPClassification:
+        """Calculate final zone from weighted signals."""
+        positive_score = sum(s.weight for s in signals if s.type == 'positive')
+        negative_score = sum(s.weight for s in signals if s.type == 'negative')
+
+        total = positive_score + negative_score
+        if total == 0:
+            # No strong signals - default to orchestration
+            return FPClassification(
+                zone=FPZone.ORCHESTRATION,
+                confidence=0.5,
+                signals=signals,
+                recommended_purity=70,
+                warnings=["No strong classification signals detected"]
+            )
+
+        purity_ratio = positive_score / total
+
+        # Determine zone based on ratio
+        if purity_ratio >= 0.8:
+            zone = FPZone.PURE_CORE
+            recommended_purity = 100
+        elif purity_ratio >= 0.6:
+            zone = FPZone.ORCHESTRATION
+            recommended_purity = 95
+        elif purity_ratio >= 0.4:
+            zone = FPZone.EFFECT_BOUNDARY
+            recommended_purity = 50
+        else:
+            zone = FPZone.IO_SHELL
+            recommended_purity = 20
+
+        # Generate warnings for mismatches
+        warnings = []
+        if zone == FPZone.PURE_CORE and negative_score > 0:
+            warnings.append(f"Pure-core file has impure signals: {[s.signal for s in signals if s.type == 'negative']}")
+
+        return FPClassification(
+            zone=zone,
+            confidence=abs(purity_ratio - 0.5) * 2,  # 0.5 = low confidence, 0/1 = high
+            signals=signals,
+            recommended_purity=recommended_purity,
+            warnings=warnings,
+            should_refactor=(zone in [FPZone.PURE_CORE, FPZone.ORCHESTRATION, FPZone.EFFECT_BOUNDARY])
+        )
+```
+
+### 4.4 Configuration File: `.fp-zones.yaml`
+
+Instead of hardcoding, use a versioned config file that evolves with the codebase:
+
+```yaml
+# .fp-zones.yaml - FP Zone Configuration
+# This file guides the ADW orchestrator on purity expectations
+# Update this as the codebase architecture evolves
+
+version: "1.0"
+
+# Zone definitions with refactoring targets
+zones:
+  pure-core:
+    description: "Pure functions with zero side effects"
+    target_purity: 100
+    refactoring_strategy: "aggressive"
+    allowed_patterns:
+      - "map, filter, reduce, flatMap"
+      - "const declarations only"
+      - "pure function composition"
+      - "Result/Either types for errors"
+    forbidden_patterns:
+      - "fetch, await (external)"
+      - "console.*, localStorage, document"
+      - "mutations (push, pop, splice)"
+      - "let/var reassignment"
+      - "this keyword"
+
+  orchestration:
+    description: "Pure coordination of other functions"
+    target_purity: 95
+    refactoring_strategy: "moderate"
+    allowed_patterns:
+      - "calling other pure functions"
+      - "async/await for coordination (not I/O)"
+      - "Result/Either composition"
+    forbidden_patterns:
+      - "direct I/O calls"
+      - "state mutations"
+
+  effect-boundary:
+    description: "React hooks and similar effect containers"
+    target_purity: 50
+    refactoring_strategy: "extract"
+    guidance: "Extract pure logic to pure-core layer"
+    allowed_patterns:
+      - "useState, useEffect, useCallback"
+      - "calling io-shell functions"
+    refactoring_actions:
+      - "Extract calculations to logic/calculators/"
+      - "Extract validations to logic/rules/"
+      - "Extract transformations to logic/processors/"
+
+  io-shell:
+    description: "I/O operations - side effects expected here"
+    target_purity: 20
+    refactoring_strategy: "leave"
+    guidance: "Keep I/O isolated, return data to pure layers"
+    allowed_patterns:
+      - "fetch, supabase calls"
+      - "localStorage, cookies"
+      - "external API calls"
+      - "browser APIs"
+    note: "Do NOT try to make this pure - I/O is the point"
+
+# Classification rules (evaluated in order)
+classification:
+  # Explicit markers always win
+  - type: marker
+    markers: ["@pure", "@io", "@orchestration", "@effect-boundary", "@fp-ignore"]
+    priority: 100
+
+  # Heuristic rules (code analysis)
+  - type: heuristic
+    name: "io-imports"
+    condition: "imports supabase, fetch, or browser APIs"
+    zone: io-shell
+    confidence: 0.8
+
+  - type: heuristic
+    name: "react-hooks"
+    condition: "contains useState or useEffect"
+    zone: effect-boundary
+    confidence: 0.9
+
+  - type: heuristic
+    name: "pure-naming"
+    condition: "all exports match /^(calculate|is|can|should|has|get|process)/"
+    zone: pure-core
+    confidence: 0.7
+
+  - type: heuristic
+    name: "no-external-deps"
+    condition: "only imports from logic/ or no imports"
+    zone: pure-core
+    confidence: 0.6
+
+  # Directory hints (lowest priority - soft guidance only)
+  - type: directory-hint
+    note: "These are HINTS, not rules. Code analysis overrides."
+    patterns:
+      - match: "**/logic/calculators/**"
+        zone: pure-core
+        confidence: 0.5
+      - match: "**/logic/rules/**"
+        zone: pure-core
+        confidence: 0.5
+      - match: "**/logic/processors/**"
+        zone: pure-core
+        confidence: 0.5
+      - match: "**/logic/workflows/**"
+        zone: orchestration
+        confidence: 0.4
+      - match: "**/lib/**Service.js"
+        zone: io-shell
+        confidence: 0.6
+      - match: "**/use*Logic.js"
+        zone: effect-boundary
+        confidence: 0.4
+
+# Conflict resolution
+conflicts:
+  # When heuristics contradict directory hints: trust code analysis
+  heuristic_vs_directory: "trust-heuristic"
+
+  # When multiple heuristics conflict: highest confidence wins
+  heuristic_vs_heuristic: "highest-confidence-wins"
+
+  # Flag these for human review
+  flag_for_review:
+    - "pure-core zone file contains I/O imports"
+    - "io-shell zone file has no I/O (maybe misplaced?)"
+    - "effect-boundary file with 0 React hooks"
+
+# Refactoring priorities by zone
+refactoring_priorities:
+  # What to fix in pure-core zone
+  pure-core:
+    high:
+      - "imperative loops → map/filter/reduce"
+      - "mutations → immutable operations"
+      - "let/var → const"
+    medium:
+      - "try/catch → Result types"
+      - "nested conditionals → early returns"
+    low:
+      - "implicit returns → explicit"
+
+  # What to fix in effect-boundary zone
+  effect-boundary:
+    high:
+      - "extract calculations to logic/calculators/"
+      - "extract validations to logic/rules/"
+    medium:
+      - "extract transformations to logic/processors/"
+    skip:
+      - "React hook patterns (these are correct here)"
+      - "State management (this is the shell)"
+
+  # What to leave alone in io-shell zone
+  io-shell:
+    skip:
+      - "async/await patterns"
+      - "error handling around I/O"
+      - "retry logic"
+    flag_only:
+      - "business logic mixed with I/O (should extract)"
+```
+
+### 4.5 Classification Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    DYNAMIC FP CLASSIFICATION FLOW                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  Step 1: CHECK EXPLICIT MARKERS (Priority 100)                              │
+│     └─ Scan JSDoc for @pure, @io, @orchestration, @fp-ignore               │
+│     └─ If found → DONE (100% confidence, no further analysis)              │
+│                                                                             │
+│  Step 2: ANALYZE CODE HEURISTICS (Priority 80)                              │
+│     ├─ Import analysis                                                      │
+│     │   └─ supabase, fetch, browser APIs → io-shell signal                 │
+│     │   └─ only logic/ imports → pure-core signal                          │
+│     ├─ Function naming                                                      │
+│     │   └─ calculate*, is*, can* → pure-core signal                        │
+│     │   └─ fetch*, save*, update* → io-shell signal                        │
+│     ├─ Body analysis                                                        │
+│     │   └─ mutations detected → impure signal                              │
+│     │   └─ this keyword → impure signal                                    │
+│     └─ React patterns                                                       │
+│         └─ useState/useEffect → effect-boundary signal                     │
+│                                                                             │
+│  Step 3: APPLY DIRECTORY HINTS (Priority 50, soft guidance)                 │
+│     └─ If path matches hint pattern, blend with heuristic score            │
+│     └─ Heuristics ALWAYS override directory hints on conflict              │
+│                                                                             │
+│  Step 4: RESOLVE & WARN                                                     │
+│     └─ Calculate final zone from weighted signals                          │
+│     └─ Generate warnings for mismatches:                                   │
+│         • "File in logic/calculators/ imports supabase"                    │
+│         • "File in lib/ has no I/O (consider moving)"                      │
+│                                                                             │
+│  Step 5: OUTPUT CLASSIFICATION                                              │
+│     └─ { zone, confidence, signals, recommended_purity, should_refactor }  │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 4.6 Integration with AST Analyzer
+
+Extend the `SemanticContext` from Phase 1:
+
+```python
+@dataclass
+class SemanticContext:
+    """Complete semantic analysis of a directory - EXTENDED."""
+    root_dir: str
+    files: Dict[str, FileAnalysis]
+    dependency_graph: Dict[str, List[str]]
+    reverse_graph: Dict[str, List[str]]
+    symbol_index: Dict[str, str]
+
+    # NEW: FP Classification per file
+    fp_classifications: Dict[str, FPClassification]
+
+    # NEW: Aggregated stats
+    zone_distribution: Dict[FPZone, int]  # Count of files per zone
+    files_needing_refactor: List[str]     # Files where should_refactor=True
+    files_to_skip: List[str]              # Files where should_refactor=False
+
+    # Existing fields...
+    analysis_timestamp: str
+    total_files: int
+    total_exports: int
+    total_imports: int
+    parse_error_count: int
+```
+
+### 4.7 Phase 1.5 Deliverables
+
+| Item | Path | Status |
+|------|------|--------|
+| FP Classifier module | `adws/adw_modules/fp_classifier.py` | TO CREATE |
+| Zone config file | `.fp-zones.yaml` | TO CREATE |
+| Config loader | `adws/adw_modules/fp_config.py` | TO CREATE |
+| Unit tests | `adws/adw_tests/test_fp_classifier.py` | TO CREATE |
+
+### 4.8 Phase 1.5 Success Criteria
+
+- [ ] Classifier correctly identifies zone for 90%+ of `app/src/logic/` files
+- [ ] Classifier detects misplaced code (I/O in pure zones)
+- [ ] Config file is human-readable and version-controlled
+- [ ] Explicit markers (@pure, @io) override all heuristics
+- [ ] Classification runs in <5 seconds for full codebase
+
+---
+
+## 5. Phase 1.6: Idempotency & Construct Tracking (NEW)
+
+> **Status**: FULLY DETAILED
+> **Added**: 2026-01-17
+> **Purpose**: Prevent re-refactoring already-processed code
+
+### 5.1 Problem Statement
+
+When running the orchestrator multiple times:
+- Already-refactored code gets re-processed (wasted compute)
+- Each transformation has non-zero risk of subtle behavior changes
+- Developers lose confidence that "run again" won't undo manual improvements
+
+**Solution**: Track refactoring state at the **construct level** (functions, hooks, components), not file level.
+
+### 5.2 Why Construct-Level, Not File-Level?
+
+With AST + semantic search, the unit of work isn't a file—it's a code construct:
+
+```
+File-Level Tracking:               Construct-Level Tracking:
+┌─────────────────────┐            ┌─────────────────────────────────────┐
+│  useListingLogic.js │  ────→     │  useListingLogic (hook)             │
+│  (one entry)        │            │  calculateDisplayPrice (function)   │
+│                     │            │  validateFormData (function)        │
+│                     │            │  handleSubmit (handler)             │
+└─────────────────────┘            └─────────────────────────────────────┘
+                                          ▲
+                                          │ Each tracked independently!
+```
+
+**Benefits**:
+- Partial file processing (fix one function, leave others)
+- Independent tracking of co-located constructs
+- Precise audit trail of what was changed and why
+
+### 5.3 Data Structures
+
+```python
+# adws/adw_modules/refactor_registry.py
+
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional, Set
+from datetime import datetime
+from enum import Enum
+
+class ConstructType(str, Enum):
+    FUNCTION = "function"
+    HOOK = "hook"
+    COMPONENT = "component"
+    CLASS = "class"
+    CONSTANT = "constant"
+    MODULE = "module"
+
+class RefactorStatus(str, Enum):
+    PENDING = "pending"           # Detected, not yet processed
+    TRANSFORMED = "transformed"   # Successfully refactored
+    SKIPPED_CLEAN = "skipped-clean"  # No anti-patterns found
+    SKIPPED_IO = "skipped-io"     # In io-shell zone, intentionally skipped
+    MANUALLY_FIXED = "manually-fixed"  # Code changed, patterns gone
+    NEEDS_REVIEW = "needs-review"  # Transformation may have regressed
+
+@dataclass
+class ConstructIdentity:
+    """Stable identifier for a code construct."""
+    file_path: str
+    construct_type: ConstructType
+    construct_name: str
+    ast_path: str  # e.g., "Program > ExportNamedDeclaration > FunctionDeclaration"
+
+    @property
+    def id(self) -> str:
+        return f"{self.file_path}::{self.construct_name}"
+
+@dataclass
+class ConstructState:
+    """Tracking state for a single construct."""
+    identity: ConstructIdentity
+    content_hash: str           # Hash of construct's source code
+    fp_zone: str                # Zone at time of classification
+    status: RefactorStatus
+    last_processed: Optional[str] = None  # ISO timestamp
+    transforms_applied: List[str] = field(default_factory=list)
+    anti_patterns_found: List[str] = field(default_factory=list)
+    anti_patterns_remaining: List[str] = field(default_factory=list)
+
+@dataclass
+class TransformationReceipt:
+    """Audit record of a transformation."""
+    receipt_id: str             # UUID
+    timestamp: str              # ISO timestamp
+    construct_id: str           # ConstructIdentity.id
+    transform_type: str         # e.g., "imperative-to-functional"
+    before_hash: str
+    after_hash: str
+    before_snippet: str         # First 200 chars
+    after_snippet: str
+    patterns_fixed: List[str]
+    verified: bool = False
+    verification_timestamp: Optional[str] = None
+
+@dataclass
+class RefactorRegistry:
+    """Complete state of refactoring progress."""
+    version: str = "1.0"
+    last_run: Optional[str] = None
+    constructs: Dict[str, ConstructState] = field(default_factory=dict)
+    receipts: List[TransformationReceipt] = field(default_factory=list)
+
+    # Aggregated stats
+    total_constructs: int = 0
+    transformed_count: int = 0
+    skipped_clean_count: int = 0
+    skipped_io_count: int = 0
+    pending_count: int = 0
+```
+
+### 5.4 Idempotency Decision Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    IDEMPOTENCY DECISION FLOW                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  For each construct discovered by AST + Semantic Search:                    │
+│                                                                             │
+│  Step 1: ZONE CHECK                                                         │
+│     └─ Is construct in io-shell zone?                                      │
+│         └─ YES → SKIP (status: skipped-io, reason: "I/O zone")             │
+│         └─ NO  → Continue to Step 2                                        │
+│                                                                             │
+│  Step 2: PATTERN DETECTION (Primary Gate)                                   │
+│     └─ Scan construct AST for anti-patterns                                │
+│     └─ No anti-patterns found?                                             │
+│         └─ YES → SKIP (status: skipped-clean, reason: "already clean")     │
+│         └─ NO  → Continue to Step 3 (has patterns to fix)                  │
+│                                                                             │
+│  Step 3: REGISTRY CHECK (Secondary Gate)                                    │
+│     └─ Construct ID exists in registry?                                    │
+│         └─ NO  → PROCESS (new construct, never seen)                       │
+│         └─ YES → Compare content hash                                      │
+│               ├─ SAME hash → SKIP (unchanged since last run)               │
+│               └─ DIFF hash → Continue to Step 4 (code changed)             │
+│                                                                             │
+│  Step 4: REGRESSION CHECK                                                   │
+│     └─ Code changed since last transformation                              │
+│     └─ Re-run pattern detection                                            │
+│         ├─ Patterns present → REPROCESS (regression detected)              │
+│         └─ Patterns absent → UPDATE registry (manual fix applied)          │
+│             └─ status: manually-fixed                                      │
+│                                                                             │
+│  Step 5: PROCESS CONSTRUCT                                                  │
+│     └─ Apply transformations                                               │
+│     └─ Generate receipt                                                    │
+│     └─ Update registry (status: transformed, new hash)                     │
+│                                                                             │
+│  Step 6: VERIFICATION                                                       │
+│     └─ Re-parse transformed code                                           │
+│     └─ Confirm anti-patterns eliminated                                    │
+│     └─ Mark receipt as verified                                            │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 5.5 Implementation
+
+```python
+# adws/adw_modules/refactor_registry.py (continued)
+
+import json
+import hashlib
+from pathlib import Path
+from typing import Tuple
+
+class RefactorRegistryManager:
+    """Manages refactoring state and idempotency checks."""
+
+    STATE_DIR = Path(".claude/adw-state")
+    REGISTRY_FILE = "refactor-registry.json"
+    RECEIPTS_DIR = "receipts"
+
+    def __init__(self, working_dir: Path):
+        self.working_dir = working_dir
+        self.state_dir = working_dir / self.STATE_DIR
+        self.registry_path = self.state_dir / self.REGISTRY_FILE
+        self.receipts_path = self.state_dir / self.RECEIPTS_DIR
+
+        self._ensure_state_dir()
+        self.registry = self._load_registry()
+
+    def _ensure_state_dir(self):
+        self.state_dir.mkdir(parents=True, exist_ok=True)
+        self.receipts_path.mkdir(exist_ok=True)
+
+    def _load_registry(self) -> RefactorRegistry:
+        if self.registry_path.exists():
+            data = json.loads(self.registry_path.read_text())
+            return self._deserialize_registry(data)
+        return RefactorRegistry()
+
+    def save_registry(self):
+        data = self._serialize_registry(self.registry)
+        self.registry_path.write_text(json.dumps(data, indent=2))
+
+    def should_process(
+        self,
+        construct: ConstructIdentity,
+        content_hash: str,
+        fp_zone: str,
+        anti_patterns: List[str]
+    ) -> Tuple[bool, str]:
+        """
+        Determine if a construct should be processed.
+
+        Returns: (should_process: bool, reason: str)
+        """
+        construct_id = construct.id
+
+        # Step 1: Zone check
+        if fp_zone == "io-shell":
+            self._update_construct(construct, content_hash, fp_zone,
+                                   RefactorStatus.SKIPPED_IO, [])
+            return False, "io-shell zone - I/O is intentional"
+
+        # Step 2: Pattern detection (already done by caller)
+        if not anti_patterns:
+            self._update_construct(construct, content_hash, fp_zone,
+                                   RefactorStatus.SKIPPED_CLEAN, [])
+            return False, "no anti-patterns detected - already clean"
+
+        # Step 3: Registry check
+        existing = self.registry.constructs.get(construct_id)
+
+        if not existing:
+            # New construct, never seen
+            self._update_construct(construct, content_hash, fp_zone,
+                                   RefactorStatus.PENDING, anti_patterns)
+            return True, "new construct - first analysis"
+
+        if existing.content_hash == content_hash:
+            # Unchanged since last run
+            if existing.status == RefactorStatus.TRANSFORMED:
+                return False, "unchanged since transformation"
+            elif existing.status == RefactorStatus.SKIPPED_CLEAN:
+                return False, "unchanged and clean"
+
+        # Step 4: Code changed - check for regression
+        if existing.status == RefactorStatus.TRANSFORMED:
+            # Was transformed, but code changed - possible regression
+            if anti_patterns:
+                self._update_construct(construct, content_hash, fp_zone,
+                                       RefactorStatus.NEEDS_REVIEW, anti_patterns)
+                return True, "regression detected - patterns reappeared after transformation"
+            else:
+                # Code changed but patterns still gone - manual improvement
+                self._update_construct(construct, content_hash, fp_zone,
+                                       RefactorStatus.MANUALLY_FIXED, [])
+                return False, "manually improved - patterns absent"
+
+        # Default: process
+        self._update_construct(construct, content_hash, fp_zone,
+                               RefactorStatus.PENDING, anti_patterns)
+        return True, "patterns detected - needs refactoring"
+
+    def _update_construct(
+        self,
+        construct: ConstructIdentity,
+        content_hash: str,
+        fp_zone: str,
+        status: RefactorStatus,
+        anti_patterns: List[str]
+    ):
+        """Update or create construct state in registry."""
+        self.registry.constructs[construct.id] = ConstructState(
+            identity=construct,
+            content_hash=content_hash,
+            fp_zone=fp_zone,
+            status=status,
+            last_processed=datetime.now().isoformat(),
+            anti_patterns_found=anti_patterns if status == RefactorStatus.PENDING else [],
+            anti_patterns_remaining=anti_patterns
+        )
+
+    def record_transformation(
+        self,
+        construct: ConstructIdentity,
+        transform_type: str,
+        before_hash: str,
+        after_hash: str,
+        before_snippet: str,
+        after_snippet: str,
+        patterns_fixed: List[str]
+    ) -> TransformationReceipt:
+        """Record a successful transformation."""
+        import uuid
+
+        receipt = TransformationReceipt(
+            receipt_id=str(uuid.uuid4()),
+            timestamp=datetime.now().isoformat(),
+            construct_id=construct.id,
+            transform_type=transform_type,
+            before_hash=before_hash,
+            after_hash=after_hash,
+            before_snippet=before_snippet[:200],
+            after_snippet=after_snippet[:200],
+            patterns_fixed=patterns_fixed
+        )
+
+        # Save receipt to file
+        receipt_file = self.receipts_path / f"{receipt.receipt_id}.json"
+        receipt_file.write_text(json.dumps(self._serialize_receipt(receipt), indent=2))
+
+        # Update registry
+        state = self.registry.constructs.get(construct.id)
+        if state:
+            state.status = RefactorStatus.TRANSFORMED
+            state.content_hash = after_hash
+            state.transforms_applied.append(transform_type)
+            state.anti_patterns_remaining = [
+                p for p in state.anti_patterns_found if p not in patterns_fixed
+            ]
+
+        self.registry.receipts.append(receipt)
+        return receipt
+
+    def get_processing_summary(self) -> Dict:
+        """Get summary of what will be processed vs skipped."""
+        summary = {
+            'total': len(self.registry.constructs),
+            'to_process': 0,
+            'skip_io_shell': 0,
+            'skip_clean': 0,
+            'skip_unchanged': 0,
+            'needs_review': 0,
+            'by_zone': {}
+        }
+
+        for state in self.registry.constructs.values():
+            zone = state.fp_zone
+            summary['by_zone'][zone] = summary['by_zone'].get(zone, 0) + 1
+
+            if state.status == RefactorStatus.PENDING:
+                summary['to_process'] += 1
+            elif state.status == RefactorStatus.SKIPPED_IO:
+                summary['skip_io_shell'] += 1
+            elif state.status == RefactorStatus.SKIPPED_CLEAN:
+                summary['skip_clean'] += 1
+            elif state.status == RefactorStatus.TRANSFORMED:
+                summary['skip_unchanged'] += 1
+            elif state.status == RefactorStatus.NEEDS_REVIEW:
+                summary['needs_review'] += 1
+
+        return summary
+```
+
+### 5.6 State File Structure
+
+```
+.claude/adw-state/
+├── refactor-registry.json     # Main construct tracking
+├── receipts/
+│   ├── 2026-01-17/
+│   │   ├── abc123-def456.json  # Individual transformation receipts
+│   │   └── ghi789-jkl012.json
+│   └── index.json              # Quick lookup by file/construct
+└── fp-analysis-cache.json     # Cached FP classifications
+```
+
+**refactor-registry.json example**:
+```json
+{
+  "version": "1.0",
+  "last_run": "2026-01-17T14:30:00Z",
+  "constructs": {
+    "app/src/logic/calculators/pricing/calculateFourWeekRent.js::calculateFourWeekRent": {
+      "identity": {
+        "file_path": "app/src/logic/calculators/pricing/calculateFourWeekRent.js",
+        "construct_type": "function",
+        "construct_name": "calculateFourWeekRent",
+        "ast_path": "Program > ExportNamedDeclaration > FunctionDeclaration"
+      },
+      "content_hash": "a1b2c3d4e5f6",
+      "fp_zone": "pure-core",
+      "status": "skipped-clean",
+      "last_processed": "2026-01-17T14:30:00Z",
+      "transforms_applied": [],
+      "anti_patterns_found": [],
+      "anti_patterns_remaining": []
+    },
+    "app/src/islands/pages/ListingPage/useListingPageLogic.js::calculateDisplayPrice": {
+      "identity": {
+        "file_path": "app/src/islands/pages/ListingPage/useListingPageLogic.js",
+        "construct_type": "function",
+        "construct_name": "calculateDisplayPrice",
+        "ast_path": "Program > VariableDeclaration > ArrowFunction"
+      },
+      "content_hash": "f6e5d4c3b2a1",
+      "fp_zone": "effect-boundary",
+      "status": "transformed",
+      "last_processed": "2026-01-17T14:35:00Z",
+      "transforms_applied": ["imperative-to-functional", "extract-to-calculator"],
+      "anti_patterns_found": ["imperative-loop", "mutation"],
+      "anti_patterns_remaining": []
+    }
+  },
+  "total_constructs": 156,
+  "transformed_count": 23,
+  "skipped_clean_count": 98,
+  "skipped_io_count": 35,
+  "pending_count": 0
+}
+```
+
+### 5.7 Anti-Pattern Detection
+
+```python
+# adws/adw_modules/pattern_detector.py
+
+from dataclasses import dataclass
+from typing import List
+from enum import Enum
+
+class AntiPattern(str, Enum):
+    IMPERATIVE_LOOP = "imperative-loop"       # for, while, do-while
+    MUTATION = "mutation"                      # .push, .pop, .splice, etc.
+    REASSIGNMENT = "reassignment"              # let x = 1; x = 2;
+    MIXED_CONCERNS = "mixed-concerns"          # I/O mixed with calculation
+    MISSING_ERROR_BOUNDARY = "missing-error-boundary"
+    THIS_USAGE = "this-usage"                  # this keyword in non-class
+    NESTED_CONDITIONALS = "nested-conditionals"  # Deep if/else nesting
+    IMPLICIT_ANY = "implicit-any"              # TypeScript any inference
+
+@dataclass
+class PatternMatch:
+    pattern: AntiPattern
+    location: str  # AST path
+    line: int
+    snippet: str   # Code snippet showing the pattern
+    severity: str  # "high", "medium", "low"
+    suggested_fix: str
+
+class PatternDetector:
+    """Detect FP anti-patterns in AST nodes."""
+
+    def detect_patterns(self, ast_node, fp_zone: str) -> List[PatternMatch]:
+        """
+        Detect anti-patterns in a construct.
+        Zone-aware: some patterns are OK in io-shell.
+        """
+        patterns = []
+
+        # Skip all detection for io-shell zone
+        if fp_zone == "io-shell":
+            return []
+
+        # Detect imperative loops
+        patterns.extend(self._detect_imperative_loops(ast_node))
+
+        # Detect mutations
+        patterns.extend(self._detect_mutations(ast_node))
+
+        # Detect reassignments
+        patterns.extend(self._detect_reassignments(ast_node))
+
+        # Detect this usage (only flag in pure-core)
+        if fp_zone == "pure-core":
+            patterns.extend(self._detect_this_usage(ast_node))
+
+        return patterns
+
+    def _detect_imperative_loops(self, node) -> List[PatternMatch]:
+        """Find for, while, do-while loops."""
+        matches = []
+
+        def visit(n):
+            if n.type in ('for_statement', 'while_statement', 'do_statement'):
+                matches.append(PatternMatch(
+                    pattern=AntiPattern.IMPERATIVE_LOOP,
+                    location=self._get_ast_path(n),
+                    line=n.start_point[0] + 1,
+                    snippet=self._get_snippet(n),
+                    severity="high",
+                    suggested_fix="Replace with map/filter/reduce"
+                ))
+            for child in n.children:
+                visit(child)
+
+        visit(node)
+        return matches
+
+    def _detect_mutations(self, node) -> List[PatternMatch]:
+        """Find array/object mutations."""
+        MUTATION_METHODS = ['push', 'pop', 'shift', 'unshift', 'splice', 'sort', 'reverse']
+        matches = []
+
+        def visit(n):
+            if n.type == 'call_expression':
+                callee = n.child_by_field_name('function')
+                if callee and callee.type == 'member_expression':
+                    prop = callee.child_by_field_name('property')
+                    if prop and prop.text.decode('utf-8') in MUTATION_METHODS:
+                        matches.append(PatternMatch(
+                            pattern=AntiPattern.MUTATION,
+                            location=self._get_ast_path(n),
+                            line=n.start_point[0] + 1,
+                            snippet=self._get_snippet(n),
+                            severity="high",
+                            suggested_fix=f"Replace .{prop.text.decode('utf-8')}() with immutable operation"
+                        ))
+            for child in n.children:
+                visit(child)
+
+        visit(node)
+        return matches
+```
+
+### 5.8 Phase 1.6 Deliverables
+
+| Item | Path | Status |
+|------|------|--------|
+| Refactor Registry module | `adws/adw_modules/refactor_registry.py` | TO CREATE |
+| Pattern Detector module | `adws/adw_modules/pattern_detector.py` | TO CREATE |
+| State directory structure | `.claude/adw-state/` | TO CREATE |
+| Unit tests | `adws/adw_tests/test_refactor_registry.py` | TO CREATE |
+| Unit tests | `adws/adw_tests/test_pattern_detector.py` | TO CREATE |
+
+### 5.9 Phase 1.6 Success Criteria
+
+- [ ] Registry correctly tracks construct state across multiple runs
+- [ ] Already-transformed constructs are skipped (no re-processing)
+- [ ] Manual fixes are detected (code changed, patterns gone)
+- [ ] Regressions are flagged (code changed, patterns returned)
+- [ ] io-shell constructs are always skipped
+- [ ] Transformation receipts provide full audit trail
+- [ ] State persists across orchestrator invocations
+
+---
+
+## 6. Phase 2: Dependency-Aware Chunk Generation
+
+> **Status**: OUTLINED - Details to be expanded after Phase 1.6 completion
+
+### 6.1 Overview
 
 Modify the chunk parser and orchestrator to:
 1. Parse new chunk metadata (category, depends_on, creates_exports)
 2. Build execution order using topological sort
 3. Validate chunk dependencies before execution
 
-### 4.2 Key Changes
+### 6.2 Key Changes
 
 **chunk_parser.py modifications**:
 - Extract `Category`, `Depends On`, `Creates Exports`, `Requires Imports` fields
@@ -1043,7 +2123,7 @@ def build_execution_order(chunks: List[ChunkData]) -> List[ChunkData]:
     return scaffold_ordered + migrate_ordered + cleanup_ordered
 ```
 
-### 4.3 References for Phase 2
+### 6.3 References for Phase 2
 
 - [chunk_parser.py](adws/adw_modules/chunk_parser.py) - Current parser implementation
 - [Research Document: Dependency ordering problem](#the-dependency-ordering-problem-requires-explicit-graph-construction) - From attached research
@@ -1051,11 +2131,11 @@ def build_execution_order(chunks: List[ChunkData]) -> List[ChunkData]:
 
 ---
 
-## 5. Phase 3: Intelligent Validation Pipeline
+## 7. Phase 3: Intelligent Validation Pipeline
 
 > **Status**: OUTLINED - Details to be expanded after Phase 2 completion
 
-### 5.1 Overview
+### 7.1 Overview
 
 Replace the current 5-layer redundant validation with a tiered fail-fast pipeline:
 
@@ -1067,7 +2147,7 @@ Replace the current 5-layer redundant validation with a tiered fail-fast pipelin
 | 4 | Full build (once per page group) | 10-30s | Immediate fail |
 | 5 | Visual regression | 30-60s | Commit or reset |
 
-### 5.2 Key Changes
+### 7.2 Key Changes
 
 **Remove**:
 - Redundant pre-LSP validation (replaced by AST context)
@@ -1079,25 +2159,25 @@ Replace the current 5-layer redundant validation with a tiered fail-fast pipelin
 - Affected-only type checking (using `tsc --incremental`)
 - Tier tracking for debugging
 
-### 5.3 References for Phase 3
+### 7.3 References for Phase 3
 
 - [lsp_validator.py](adws/adw_modules/lsp_validator.py) - Current validation
 - [Research Document: Optimal validation pipeline](#the-optimal-validation-pipeline-uses-tiered-fail-fast-ordering) - From attached research
 
 ---
 
-## 6. Phase 4: Failure Recovery & Re-planning
+## 8. Phase 4: Failure Recovery & Re-planning
 
 > **Status**: OUTLINED - Details to be expanded after Phase 3 completion
 
-### 6.1 Overview
+### 8.1 Overview
 
 Implement intelligent failure recovery:
 1. Per-chunk atomic commits (not per-group)
 2. Quarantine failed chunks, continue with independent chunks
 3. Incremental re-audit after N failures or N chunks
 
-### 6.2 Key Changes
+### 8.2 Key Changes
 
 **Commit granularity**:
 - Each successful chunk gets its own commit
@@ -1109,18 +2189,18 @@ Implement intelligent failure recovery:
 - After 2 failures (plan may be stale)
 - After any SCAFFOLD chunk (file structure changed)
 
-### 6.3 References for Phase 4
+### 8.3 References for Phase 4
 
 - [Research Document: Atomic per-chunk commits](#atomic-per-chunk-commits-eliminate-cascading-resets) - From attached research
 - [Research Document: Incremental re-auditing](#incremental-re-auditing-solves-plan-staleness) - From attached research
 
 ---
 
-## 7. Phase 5: Integration & Testing
+## 9. Phase 5: Integration & Testing
 
 > **Status**: OUTLINED - Details to be expanded after Phase 4 completion
 
-### 7.1 Overview
+### 9.1 Overview
 
 Full integration testing and performance benchmarking:
 1. Run on real refactoring tasks
@@ -1128,7 +2208,7 @@ Full integration testing and performance benchmarking:
 3. Benchmark execution time
 4. Document edge cases
 
-### 7.2 Success Metrics
+### 9.2 Success Metrics
 
 | Metric | Target | Current Baseline |
 |--------|--------|------------------|
@@ -1137,13 +2217,13 @@ Full integration testing and performance benchmarking:
 | False positive rate | <5% | ~20% (estimated) |
 | Cascading failure rate | <2% | ~30% (estimated) |
 
-### 7.3 References for Phase 5
+### 9.3 References for Phase 5
 
 - [Research Document: Expected improvements](#expected-improvements-with-recommended-architecture) - From attached research
 
 ---
 
-## 8. File References
+## 10. File References
 
 ### Core Files to Modify
 
@@ -1160,9 +2240,18 @@ Full integration testing and performance benchmarking:
 | File | Phase | Purpose |
 |------|-------|---------|
 | `adw_modules/ast_analyzer.py` | 1 | Tree-sitter based AST analyzer |
+| `adw_modules/fp_classifier.py` | 1.5 | Dynamic FP zone classification |
+| `adw_modules/fp_config.py` | 1.5 | Load .fp-zones.yaml configuration |
+| `adw_modules/refactor_registry.py` | 1.6 | Construct-level state tracking |
+| `adw_modules/pattern_detector.py` | 1.6 | Anti-pattern detection in AST |
 | `adw_modules/dependency_graph.py` | 2 | Topological sorting, cycle detection |
 | `adw_modules/tiered_validator.py` | 3 | Fail-fast validation pipeline |
+| `.fp-zones.yaml` | 1.5 | FP zone configuration (project root) |
+| `.claude/adw-state/` | 1.6 | Refactoring state directory |
 | `adw_tests/test_ast_analyzer.py` | 1 | Unit tests for AST analyzer |
+| `adw_tests/test_fp_classifier.py` | 1.5 | Unit tests for FP classifier |
+| `adw_tests/test_refactor_registry.py` | 1.6 | Unit tests for registry |
+| `adw_tests/test_pattern_detector.py` | 1.6 | Unit tests for pattern detection |
 | `adw_tests/test_dependency_graph.py` | 2 | Unit tests for dependency ordering |
 
 ### Reference Documentation
@@ -1176,7 +2265,7 @@ Full integration testing and performance benchmarking:
 
 ---
 
-## 9. Risk Assessment
+## 11. Risk Assessment
 
 ### High Risk
 
@@ -1193,6 +2282,9 @@ Full integration testing and performance benchmarking:
 | Dependency cycles in chunk graph | Detect and report; break with heuristics |
 | Claude misinterpreting semantic context | Iterate on prompt; provide examples |
 | Per-chunk commits creating many commits | Squash option at end of run |
+| FP classifier misclassifying files | Heuristics override directory hints; explicit markers as escape hatch |
+| Registry state corruption | JSON schema validation; backup before writes |
+| Config file drift from codebase | Periodic audit via CI; config validation |
 
 ### Low Risk
 
@@ -1207,15 +2299,41 @@ Full integration testing and performance benchmarking:
 
 Before proceeding to implementation:
 
+**Phase 1: AST Semantic Analyzer**
 - [ ] Review Phase 1 specification in detail
 - [ ] Confirm tree-sitter as appropriate parser choice
 - [ ] Validate data structures meet Claude's needs
-- [ ] Approve testing strategy
+
+**Phase 1.5: Dynamic FP Zone Classification**
+- [ ] Review zone definitions (pure-core, orchestration, effect-boundary, io-shell)
+- [ ] Confirm heuristic weights and thresholds
+- [ ] Approve `.fp-zones.yaml` configuration structure
+- [ ] Validate JSDoc marker strategy (@pure, @io, @fp-ignore)
+
+**Phase 1.6: Idempotency & Construct Tracking**
+- [ ] Review construct-level tracking approach
+- [ ] Confirm idempotency decision flow
+- [ ] Approve state file structure (`.claude/adw-state/`)
+- [ ] Validate anti-pattern detection strategy
+
+**General**
+- [ ] Approve testing strategy across all phases
 - [ ] Set timeline expectations
+- [ ] Confirm phased rollout approach (1 → 1.5 → 1.6 → 2 → ...)
 
 ---
 
-**Document Version**: 1.0
+**Document Version**: 2.0
 **Created**: 2026-01-16
+**Updated**: 2026-01-17
 **Author**: Claude Opus (via orchestration analysis)
 **Status**: AWAITING APPROVAL
+
+---
+
+## Changelog
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0 | 2026-01-16 | Initial plan with AST analyzer and dependency ordering |
+| 2.0 | 2026-01-17 | Added Phase 1.5 (Dynamic FP Zone Classification) and Phase 1.6 (Idempotency & Construct Tracking) |
