@@ -198,6 +198,321 @@ function autoCorrectEmail(email) {
   return `${localPart}@${correctedDomain}`;
 }
 
+// ============ COMMUNICATION FUNCTIONS ============
+
+/**
+ * Generate a magic login link via Supabase Auth
+ * This creates a one-time login URL that allows passwordless authentication
+ *
+ * @param {string} email - User's email address
+ * @returns {Promise<{success: boolean, action_link?: string, error?: string}>}
+ */
+async function generateMagicLink(email) {
+  console.log('[AiSignupMarketReport] Generating magic login link for:', email);
+
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://qcfifybkaddcoimjroca.supabase.co';
+  const edgeFunctionUrl = `${supabaseUrl}/functions/v1/auth-user`;
+
+  try {
+    const response = await fetch(edgeFunctionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'generate_magic_link',
+        payload: {
+          email: email,
+          redirectTo: 'https://splitlease.com/search' // Redirect to search after login
+        }
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[AiSignupMarketReport] Magic link generation failed:', errorText);
+      return { success: false, error: errorText };
+    }
+
+    const result = await response.json();
+
+    if (result.success && result.data?.action_link) {
+      console.log('[AiSignupMarketReport] ✅ Magic link generated successfully');
+      return { success: true, action_link: result.data.action_link };
+    }
+
+    return { success: false, error: 'No action_link in response' };
+  } catch (error) {
+    console.error('[AiSignupMarketReport] Magic link error:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Send welcome email to new user (Step 7 from Bubble workflow)
+ * Uses the send-email Edge Function with template placeholders
+ *
+ * Email contains:
+ * - Welcome message
+ * - Login credentials (email + temporary password)
+ * - Magic link button for one-click login
+ *
+ * @param {Object} data - Email data
+ * @param {string} data.email - User's email
+ * @param {string} data.password - Generated password (SL{Name}77)
+ * @param {string} data.magicLink - Magic login link URL
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+async function sendWelcomeEmail(data) {
+  console.log('[AiSignupMarketReport] Sending welcome email to:', data.email);
+
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://qcfifybkaddcoimjroca.supabase.co';
+  const edgeFunctionUrl = `${supabaseUrl}/functions/v1/send-email`;
+
+  // Build the email body HTML (matches Bubble's CORE-Send Basic Email format)
+  const emailBodyHtml = `Hey <br> <br> You have a new split lease account<br> <br> Sign in using your: <br> email: ${data.email}<br> temporary password: ${data.password} <br> <br> We recommend you change your password to something private. <br> <br> You can reach out to Robert if you have any questions at robert@leasesplit.com or via text at 9376737470.`;
+
+  try {
+    // Fire-and-forget: don't await full response
+    fetch(edgeFunctionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'send',
+        payload: {
+          template_id: 'welcome_ai_signup', // Template for AI signup welcome
+          to_email: data.email,
+          from_email: 'tech@leasesplit.com',
+          from_name: 'Split Lease Signup',
+          subject: 'New Split Lease Account!',
+          variables: {
+            body_text: emailBodyHtml,
+            button_text: 'Go to your Account',
+            button_url: data.magicLink || 'https://splitlease.com/login',
+            button_color: '#291D54',
+          },
+          bcc_emails: [
+            'splitleaseteam@gmail.com'
+          ]
+        }
+      }),
+    })
+      .then(response => {
+        if (response.ok) {
+          console.log('[AiSignupMarketReport] ✅ Welcome email sent successfully');
+        } else {
+          console.error('[AiSignupMarketReport] ⚠️ Welcome email send failed:', response.status);
+        }
+      })
+      .catch(error => {
+        console.error('[AiSignupMarketReport] ⚠️ Welcome email error:', error.message);
+      });
+
+    return { success: true };
+  } catch (error) {
+    console.error('[AiSignupMarketReport] Welcome email exception:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Send internal notification email to customer-acquisition team (Step 5 from Bubble)
+ * Alerts the team about new AI signups with user details
+ *
+ * @param {Object} data - Notification data
+ * @param {string} data.email - User's email
+ * @param {string} data.phone - User's phone (if provided)
+ * @param {string} data.name - Extracted name
+ * @param {string} data.password - Generated password
+ * @param {string} data.freeformText - Original freeform input
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+async function sendInternalNotificationEmail(data) {
+  console.log('[AiSignupMarketReport] Sending internal notification email');
+
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://qcfifybkaddcoimjroca.supabase.co';
+  const edgeFunctionUrl = `${supabaseUrl}/functions/v1/send-email`;
+
+  const emailBody = `Name: ${data.name || 'Not extracted'}
+Email: ${data.email}
+Phone number: ${data.phone || 'Not provided'}
+Their temporary password is: ${data.password}
+
+----
+free form text inputted: ${data.freeformText}`;
+
+  try {
+    // Fire-and-forget
+    fetch(edgeFunctionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'send',
+        payload: {
+          template_id: 'internal_notification', // Simple text template
+          to_email: 'customer-acquisition@splitlease.com',
+          from_email: 'noreply@splitlease.com',
+          from_name: 'Guest AI Signup',
+          subject: `${data.name || 'New User'}, ${data.email}, SIGNED UP thru AI signup feature`,
+          variables: {
+            body_text: emailBody,
+          },
+          cc_emails: ['ai-codex@splitlease.com']
+        }
+      }),
+    })
+      .then(response => {
+        if (response.ok) {
+          console.log('[AiSignupMarketReport] ✅ Internal notification sent');
+        } else {
+          console.error('[AiSignupMarketReport] ⚠️ Internal notification failed:', response.status);
+        }
+      })
+      .catch(error => {
+        console.error('[AiSignupMarketReport] ⚠️ Internal notification error:', error.message);
+      });
+
+    return { success: true };
+  } catch (error) {
+    console.error('[AiSignupMarketReport] Internal notification exception:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Send welcome SMS to new user (Steps 8/9 from Bubble workflow)
+ * Contains login credentials and magic link
+ *
+ * Uses the public Split Lease SMS number which doesn't require auth
+ *
+ * @param {Object} data - SMS data
+ * @param {string} data.phone - User's phone number
+ * @param {string} data.email - User's email
+ * @param {string} data.password - Generated password
+ * @param {string} data.magicLink - Magic login link URL
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+async function sendWelcomeSms(data) {
+  if (!data.phone) {
+    console.log('[AiSignupMarketReport] No phone number provided, skipping SMS');
+    return { success: true, skipped: true };
+  }
+
+  console.log('[AiSignupMarketReport] Sending welcome SMS to:', data.phone);
+
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://qcfifybkaddcoimjroca.supabase.co';
+  const edgeFunctionUrl = `${supabaseUrl}/functions/v1/send-sms`;
+
+  // Format phone to E.164 (add +1 if needed)
+  let formattedPhone = data.phone.replace(/\D/g, ''); // Remove non-digits
+  if (formattedPhone.length === 10) {
+    formattedPhone = `+1${formattedPhone}`;
+  } else if (formattedPhone.length === 11 && formattedPhone.startsWith('1')) {
+    formattedPhone = `+${formattedPhone}`;
+  } else if (!formattedPhone.startsWith('+')) {
+    formattedPhone = `+${formattedPhone}`;
+  }
+
+  const smsBody = `You have a new split lease account. Sign in with your email: ${data.email}. Your temporary password: ${data.password}. Click this link to proceed: ${data.magicLink || 'https://splitlease.com/login'}`;
+
+  try {
+    // Fire-and-forget
+    fetch(edgeFunctionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'send',
+        payload: {
+          to: formattedPhone,
+          from: '+14155692985', // Public Split Lease SMS number (no auth required)
+          body: smsBody
+        }
+      }),
+    })
+      .then(response => {
+        if (response.ok) {
+          console.log('[AiSignupMarketReport] ✅ Welcome SMS sent successfully');
+        } else {
+          console.error('[AiSignupMarketReport] ⚠️ Welcome SMS send failed:', response.status);
+        }
+      })
+      .catch(error => {
+        console.error('[AiSignupMarketReport] ⚠️ Welcome SMS error:', error.message);
+      });
+
+    return { success: true };
+  } catch (error) {
+    console.error('[AiSignupMarketReport] Welcome SMS exception:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Send all welcome communications after successful signup
+ * This orchestrates: magic link generation → email → SMS → internal notification
+ * All communications are fire-and-forget (non-blocking)
+ *
+ * @param {Object} data - Communication data
+ * @param {string} data.email - User's email
+ * @param {string} data.phone - User's phone (optional)
+ * @param {string} data.name - Extracted name
+ * @param {string} data.password - Generated password (SL{Name}77)
+ * @param {string} data.freeformText - Original freeform text
+ */
+async function sendWelcomeCommunications(data) {
+  console.log('[AiSignupMarketReport] ========== SENDING WELCOME COMMUNICATIONS ==========');
+  console.log('[AiSignupMarketReport] Email:', data.email);
+  console.log('[AiSignupMarketReport] Phone:', data.phone || 'Not provided');
+  console.log('[AiSignupMarketReport] Name:', data.name || 'Not extracted');
+
+  // Step 1: Generate magic link (this one we wait for since others depend on it)
+  const magicLinkResult = await generateMagicLink(data.email);
+  const magicLink = magicLinkResult.success ? magicLinkResult.action_link : null;
+
+  if (!magicLink) {
+    console.warn('[AiSignupMarketReport] ⚠️ Magic link generation failed, using fallback URL');
+  }
+
+  // Step 2: Send all communications in parallel (fire-and-forget)
+  // These don't block the user experience
+
+  // Welcome email to user (Step 7)
+  sendWelcomeEmail({
+    email: data.email,
+    password: data.password,
+    magicLink: magicLink || 'https://splitlease.com/login'
+  });
+
+  // Welcome SMS to user (Steps 8/9) - only if phone provided
+  if (data.phone) {
+    sendWelcomeSms({
+      phone: data.phone,
+      email: data.email,
+      password: data.password,
+      magicLink: magicLink || 'https://splitlease.com/login'
+    });
+  }
+
+  // Internal notification to team (Step 5)
+  sendInternalNotificationEmail({
+    email: data.email,
+    phone: data.phone,
+    name: data.name,
+    password: data.password,
+    freeformText: data.freeformText
+  });
+
+  console.log('[AiSignupMarketReport] ✅ All welcome communications initiated');
+}
+
+// ============ PROFILE PARSING FUNCTIONS ============
+
 /**
  * Queue AI profile parsing via Supabase Edge Function
  * This is non-blocking - user doesn't wait for GPT-4 to finish
@@ -421,6 +736,23 @@ async function submitSignup(data) {
     } else {
       console.warn('[AiSignupMarketReport] ⚠️ No user ID for queuing profile parsing');
     }
+
+    // ========== STEP 4: Send Welcome Communications (ASYNC - Non-blocking) ==========
+    // User doesn't wait for emails/SMS - they happen in background
+    console.log('[AiSignupMarketReport] Step 4: Sending welcome communications (async)...');
+
+    // Fire-and-forget: send welcome email, SMS, and internal notification
+    sendWelcomeCommunications({
+      email: data.email,
+      phone: data.phone,
+      name: extractedName,
+      password: generatedPassword,
+      freeformText: data.marketResearchText,
+    }).then(() => {
+      console.log('[AiSignupMarketReport] ✅ Welcome communications initiated successfully');
+    }).catch(err => {
+      console.warn('[AiSignupMarketReport] ⚠️ Welcome communications error (non-fatal):', err.message);
+    });
 
     return {
       success: true,
