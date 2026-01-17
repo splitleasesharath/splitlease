@@ -395,10 +395,17 @@ export function useHeaderMessagingPanelLogic({
     try {
       setIsLoadingMessages(true);
 
+      // Include user_id in payload for legacy auth support
+      // Edge Function accepts user_id when no JWT Authorization header is present
+      const bubbleId = userBubbleId || getUserId();
+
       const { data, error } = await supabase.functions.invoke('messages', {
         body: {
           action: 'get_messages',
-          payload: { thread_id: threadId },
+          payload: {
+            thread_id: threadId,
+            user_id: bubbleId,  // Legacy auth: pass user_id inside payload
+          },
         },
       });
 
@@ -434,12 +441,16 @@ export function useHeaderMessagingPanelLogic({
         clearTimeout(typingTimeoutRef.current);
       }
 
+      // Include user_id in payload for legacy auth support
+      const bubbleId = userBubbleId || getUserId();
+
       const { data, error } = await supabase.functions.invoke('messages', {
         body: {
           action: 'send_message',
           payload: {
             thread_id: selectedThread._id,
             message_body: messageInput.trim(),
+            user_id: bubbleId,  // Legacy auth: pass user_id inside payload
           },
         },
       });
