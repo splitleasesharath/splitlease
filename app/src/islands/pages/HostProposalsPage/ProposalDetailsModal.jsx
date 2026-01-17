@@ -146,6 +146,9 @@ export default function ProposalDetailsModal({
   const counterOfferHappened = proposal.counterOfferHappened || proposal['Counter Offer Happened'] || false;
   const reasonForCancellation = proposal.reasonForCancellation || proposal['Reason For Cancellation'] || '';
 
+  // Get rental type for dynamic compensation label (nightly/weekly/monthly)
+  const rentalType = (proposal.rentalType || proposal['rental type'] || proposal['Rental Type'] || 'nightly').toLowerCase();
+
   // Custom schedule description - guest's free-form text describing preferred schedule
   const customScheduleDescription = proposal.custom_schedule_description || proposal.customScheduleDescription || '';
 
@@ -382,12 +385,14 @@ export default function ProposalDetailsModal({
               <span className="detail-value">{checkInTime} / {checkOutTime}</span>
             </div>
             <div className="detail-row">
-              <span className="detail-label">Compensation per Night</span>
+              <span className="detail-label">
+                Compensation per {rentalType === 'monthly' ? 'Month' : rentalType === 'weekly' ? 'Week' : 'Night'}
+              </span>
               <span className="detail-value">
                 {counterOfferHappened && (
                   <span className="original-value">${hostCompensation}</span>
                 )}
-                ${formatCurrency(compensationPerNight)}/night
+                ${formatCurrency(compensationPerNight)}/{rentalType === 'monthly' ? 'month' : rentalType === 'weekly' ? 'week' : 'night'}
               </span>
             </div>
             <div className="detail-row">
