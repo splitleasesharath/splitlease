@@ -377,7 +377,8 @@ export function useHostProposalsPageLogic() {
           "Comment",
           "Created Date",
           "Modified Date",
-          "virtual meeting"
+          "virtual meeting",
+          custom_schedule_description
         `)
         .eq('Listing', listingId)
         .neq('Deleted', true)
