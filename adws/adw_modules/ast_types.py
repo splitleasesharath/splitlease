@@ -11,6 +11,10 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set
 from enum import Enum
 from datetime import datetime
+from pathlib import Path
+import hashlib
+import json
+import glob
 
 
 # Supported file extensions for JS/TS analysis
@@ -123,6 +127,7 @@ class DependencyContext:
         total_imports: Total number of import statements
         analysis_timestamp: When the analysis was performed
         parse_error_count: Number of files with parse errors
+        content_hash: SHA256 hash of all analyzed file contents (for cache validation)
     """
     root_dir: str
     symbol_table: Dict[str, List[ExportedSymbol]] = field(default_factory=dict)
@@ -133,6 +138,7 @@ class DependencyContext:
     total_imports: int = 0
     analysis_timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
     parse_error_count: int = 0
+    content_hash: str = ""  # SHA256 of all file contents for cache invalidation
 
     def get_dependents(self, file_path: str) -> List[str]:
         """Get list of files that depend on (import from) the given file.
@@ -268,6 +274,7 @@ class DependencyContext:
         return {
             "generated_at": self.analysis_timestamp,
             "root_dir": self.root_dir,
+            "content_hash": self.content_hash,
             "total_files": self.total_files,
             "total_exports": self.total_exports,
             "total_imports": self.total_imports,
@@ -301,6 +308,131 @@ class DependencyContext:
             },
             "reverse_dependencies": dict(self.reverse_dependencies)
         }
+
+    def save(self, cache_path: Path) -> None:
+        """Save analysis results to a JSON cache file.
+
+        Args:
+            cache_path: Path where the cache file should be saved
+        """
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        cache_path.write_text(
+            json.dumps(self.to_json_dict(), indent=2),
+            encoding='utf-8'
+        )
+
+    @classmethod
+    def load(cls, cache_path: Path) -> Optional["DependencyContext"]:
+        """Load analysis results from a JSON cache file.
+
+        Args:
+            cache_path: Path to the cache file
+
+        Returns:
+            DependencyContext if cache exists and is valid, None otherwise
+        """
+        if not cache_path.exists():
+            return None
+
+        try:
+            data = json.loads(cache_path.read_text(encoding='utf-8'))
+            return cls.from_json_dict(data)
+        except (json.JSONDecodeError, KeyError, ValueError):
+            return None
+
+    @classmethod
+    def from_json_dict(cls, data: dict) -> "DependencyContext":
+        """Reconstruct DependencyContext from JSON dictionary.
+
+        Args:
+            data: Dictionary from to_json_dict()
+
+        Returns:
+            Reconstructed DependencyContext object
+        """
+        # Reconstruct symbol_table
+        symbol_table: Dict[str, List[ExportedSymbol]] = {}
+        for path, exports_data in data.get("symbol_table", {}).items():
+            symbol_table[path] = [
+                ExportedSymbol(
+                    name=exp["name"],
+                    export_type=ExportType(exp["type"]),
+                    line=exp["line"],
+                    source_file=exp.get("source_file"),
+                    original_name=exp.get("original_name")
+                )
+                for exp in exports_data
+            ]
+
+        # Reconstruct dependency_graph
+        dependency_graph: Dict[str, List[ImportedSymbol]] = {}
+        for path, imports_data in data.get("dependency_graph", {}).items():
+            dependency_graph[path] = [
+                ImportedSymbol(
+                    name=imp["name"],
+                    import_type=ImportType(imp["type"]),
+                    source=imp["source"],
+                    resolved_path=imp.get("resolved_path"),
+                    line=imp.get("line", 0),
+                    alias=imp.get("alias")
+                )
+                for imp in imports_data
+            ]
+
+        return cls(
+            root_dir=data["root_dir"],
+            symbol_table=symbol_table,
+            dependency_graph=dependency_graph,
+            reverse_dependencies=data.get("reverse_dependencies", {}),
+            total_files=data.get("total_files", 0),
+            total_exports=data.get("total_exports", 0),
+            total_imports=data.get("total_imports", 0),
+            analysis_timestamp=data.get("generated_at", datetime.now().isoformat()),
+            parse_error_count=data.get("parse_error_count", 0),
+            content_hash=data.get("content_hash", "")
+        )
+
+    @staticmethod
+    def compute_content_hash(root_dir: str) -> str:
+        """Compute a SHA256 hash of all JS/TS file contents in a directory.
+
+        The hash includes file paths and contents, sorted for determinism.
+        This is used to detect when files have changed and cache is stale.
+
+        Args:
+            root_dir: Directory to compute hash for
+
+        Returns:
+            SHA256 hex digest string
+        """
+        root_path = Path(root_dir).resolve()
+        hasher = hashlib.sha256()
+
+        # Discover all JS/TS files
+        all_files: List[Path] = []
+        for ext in SUPPORTED_EXTENSIONS:
+            pattern = str(root_path / '**' / f'*{ext}')
+            all_files.extend(Path(p) for p in glob.glob(pattern, recursive=True))
+
+        # Skip node_modules
+        all_files = [f for f in all_files if 'node_modules' not in str(f)]
+
+        # Sort for deterministic ordering
+        all_files.sort()
+
+        # Hash each file's path and content
+        for file_path in all_files:
+            try:
+                relative = str(file_path.relative_to(root_path))
+                content = file_path.read_bytes()
+                hasher.update(relative.encode('utf-8'))
+                hasher.update(b'\x00')  # Separator
+                hasher.update(content)
+                hasher.update(b'\x00')  # Separator
+            except (IOError, ValueError):
+                continue
+
+        return hasher.hexdigest()
 
 
 def is_refactorable_file(file_path: str) -> bool:

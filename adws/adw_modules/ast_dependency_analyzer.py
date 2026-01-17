@@ -17,6 +17,7 @@ Usage:
 
 import os
 import glob
+import hashlib
 from pathlib import Path
 from typing import Optional, List, Tuple
 from collections import defaultdict
@@ -630,13 +631,22 @@ class ASTDependencyAnalyzer:
         return dict(reverse_deps)
 
 
-def analyze_dependencies(target_path: str) -> DependencyContext:
+def analyze_dependencies(
+    target_path: str,
+    cache_dir: Optional[str] = None,
+    force_refresh: bool = False
+) -> DependencyContext:
     """Analyze target directory and return dependency context.
 
     This is the main entry point for the AST analyzer.
+    Supports caching: if cache_dir is provided and files haven't changed,
+    returns cached results instead of re-analyzing.
 
     Args:
         target_path: Directory to analyze (e.g., "app/src/logic")
+        cache_dir: Optional directory to store/load cached results
+                   If None, defaults to adws/ast_cache/
+        force_refresh: If True, bypass cache and re-analyze
 
     Returns:
         DependencyContext with symbol_table, dependency_graph, reverse_deps
@@ -646,8 +656,47 @@ def analyze_dependencies(target_path: str) -> DependencyContext:
         print(context.to_prompt_context())  # Markdown for prompt
         print(context.to_json_dict())  # JSON for storage
     """
+    # Resolve paths
+    target_resolved = Path(target_path).resolve()
+
+    # Determine cache location
+    if cache_dir is None:
+        # Default: adws/ast_cache/ relative to this module
+        cache_dir_path = Path(__file__).parent.parent / "ast_cache"
+    else:
+        cache_dir_path = Path(cache_dir)
+
+    # Create cache filename from target path hash
+    target_hash = hashlib.sha256(str(target_resolved).encode()).hexdigest()[:16]
+    cache_file = cache_dir_path / f"{target_hash}_dependency_context.json"
+
+    # Compute current content hash for comparison
+    current_hash = DependencyContext.compute_content_hash(str(target_resolved))
+
+    # Try to load from cache if not forcing refresh
+    if not force_refresh and cache_file.exists():
+        cached = DependencyContext.load(cache_file)
+        if cached and cached.content_hash == current_hash:
+            print(f"  [AST Cache] HIT - Using cached analysis ({cached.total_files} files)")
+            return cached
+        elif cached:
+            print(f"  [AST Cache] STALE - Files changed, re-analyzing...")
+        else:
+            print(f"  [AST Cache] CORRUPT - Re-analyzing...")
+
+    # Analyze fresh
+    print(f"  [AST Cache] MISS - Analyzing {target_path}...")
     analyzer = ASTDependencyAnalyzer(target_path)
-    return analyzer.analyze_directory()
+    context = analyzer.analyze_directory()
+
+    # Set the content hash
+    context.content_hash = current_hash
+
+    # Save to cache
+    context.save(cache_file)
+    print(f"  [AST Cache] Saved to {cache_file}")
+
+    return context
 
 
 # CLI support for testing
