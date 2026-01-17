@@ -80,6 +80,7 @@ export default function ProposalDetailsModal({
   const [guestDetailsExpanded, setGuestDetailsExpanded] = useState(true);
   const [statusExpanded, setStatusExpanded] = useState(true);
   const [virtualMeetingsExpanded, setVirtualMeetingsExpanded] = useState(false);
+  const [customScheduleExpanded, setCustomScheduleExpanded] = useState(true);
 
   if (!proposal || !isOpen) return null;
 
@@ -144,6 +145,9 @@ export default function ProposalDetailsModal({
   const damageDeposit = proposal.damageDeposit || proposal['damage deposit'] || proposal['Damage Deposit'] || 0;
   const counterOfferHappened = proposal.counterOfferHappened || proposal['Counter Offer Happened'] || false;
   const reasonForCancellation = proposal.reasonForCancellation || proposal['Reason For Cancellation'] || '';
+
+  // Custom schedule description - guest's free-form text describing preferred schedule
+  const customScheduleDescription = proposal.custom_schedule_description || proposal.customScheduleDescription || '';
 
   // Virtual meeting
   const virtualMeeting = proposal.virtualMeeting || proposal['Virtual Meeting'];
@@ -550,6 +554,32 @@ export default function ProposalDetailsModal({
               </div>
             )}
           </div>
+
+          {/* Custom Schedule Request Section - only show if guest provided one */}
+          {customScheduleDescription && (
+            <div className="collapsible-section">
+              <button
+                className="section-header"
+                onClick={() => setCustomScheduleExpanded(!customScheduleExpanded)}
+              >
+                <span>Schedule Preferences</span>
+                <svg
+                  className={`chevron ${customScheduleExpanded ? 'open' : ''}`}
+                  width="20"
+                  height="20"
+                  viewBox="0 0 20 20"
+                >
+                  <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                </svg>
+              </button>
+              {customScheduleExpanded && (
+                <div className="section-content custom-schedule-content">
+                  <p className="custom-schedule-label">Guest's schedule request:</p>
+                  <p className="custom-schedule-text">{customScheduleDescription}</p>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Proposal Status Section */}
           <div className="collapsible-section">
