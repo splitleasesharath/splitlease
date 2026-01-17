@@ -97,13 +97,11 @@ const calculateCheckInCheckOutFromNumbers = (dayNumbers) => {
 };
 
 export default function DaysSelectionSection({ data, updateData, listing, zatConfig, errors = {} }) {
-  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
   // Convert day names to day objects for ListingScheduleSelector
   const dayNamesToObjects = (dayNames) => {
     if (!dayNames || !Array.isArray(dayNames)) return [];
     return dayNames.map(name => {
-      const dayOfWeek = days.indexOf(name);
+      const dayOfWeek = DAY_NAMES.indexOf(name);
       return {
         id: `day-${dayOfWeek}`,
         dayOfWeek,
@@ -117,7 +115,7 @@ export default function DaysSelectionSection({ data, updateData, listing, zatCon
   // Convert day objects to day names
   const dayObjectsToNames = (dayObjects) => {
     if (!dayObjects || !Array.isArray(dayObjects)) return [];
-    return dayObjects.map(dayObj => days[dayObj.dayOfWeek]);
+    return dayObjects.map(dayObj => DAY_NAMES[dayObj.dayOfWeek]);
   };
 
   // Convert day names to numbers for listing availability
