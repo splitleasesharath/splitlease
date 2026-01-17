@@ -1,0 +1,991 @@
+[
+  {
+    "type": "system",
+    "subtype": "init",
+    "cwd": "C:\\Users\\Split Lease\\Documents\\Split Lease - Dev",
+    "session_id": "0ddede6f-e901-48ef-b2c4-ae11d534bc50",
+    "tools": [
+      "Task",
+      "TaskOutput",
+      "Bash",
+      "Glob",
+      "Grep",
+      "ExitPlanMode",
+      "Read",
+      "Edit",
+      "Write",
+      "NotebookEdit",
+      "WebFetch",
+      "TodoWrite",
+      "WebSearch",
+      "KillShell",
+      "AskUserQuestion",
+      "Skill",
+      "EnterPlanMode",
+      "MCPSearch",
+      "mcp__plugin_greptile_greptile__list_custom_context",
+      "mcp__plugin_greptile_greptile__get_custom_context",
+      "mcp__plugin_greptile_greptile__search_custom_context",
+      "mcp__plugin_greptile_greptile__list_merge_requests",
+      "mcp__plugin_greptile_greptile__list_pull_requests",
+      "mcp__plugin_greptile_greptile__get_merge_request",
+      "mcp__plugin_greptile_greptile__list_merge_request_comments",
+      "mcp__plugin_greptile_greptile__list_code_reviews",
+      "mcp__plugin_greptile_greptile__get_code_review",
+      "mcp__plugin_greptile_greptile__trigger_code_review",
+      "mcp__plugin_greptile_greptile__search_greptile_comments",
+      "mcp__plugin_greptile_greptile__create_custom_context",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__query-docs",
+      "mcp__playwright-host-live__browser_close",
+      "mcp__playwright-host-live__browser_resize",
+      "mcp__playwright-host-live__browser_console_messages",
+      "mcp__playwright-host-live__browser_handle_dialog",
+      "mcp__playwright-host-live__browser_evaluate",
+      "mcp__playwright-host-live__browser_file_upload",
+      "mcp__playwright-host-live__browser_fill_form",
+      "mcp__playwright-host-live__browser_install",
+      "mcp__playwright-host-live__browser_press_key",
+      "mcp__playwright-host-live__browser_type",
+      "mcp__playwright-host-live__browser_navigate",
+      "mcp__playwright-host-live__browser_navigate_back",
+      "mcp__playwright-host-live__browser_network_requests",
+      "mcp__playwright-host-live__browser_run_code",
+      "mcp__playwright-host-live__browser_take_screenshot",
+      "mcp__playwright-host-live__browser_snapshot",
+      "mcp__playwright-host-live__browser_click",
+      "mcp__playwright-host-live__browser_drag",
+      "mcp__playwright-host-live__browser_hover",
+      "mcp__playwright-host-live__browser_select_option",
+      "mcp__playwright-host-live__browser_tabs",
+      "mcp__playwright-host-live__browser_wait_for",
+      "mcp__shadcn__get_project_registries",
+      "mcp__shadcn__list_items_in_registries",
+      "mcp__shadcn__search_items_in_registries",
+      "mcp__shadcn__view_items_in_registries",
+      "mcp__shadcn__get_item_examples_from_registries",
+      "mcp__shadcn__get_add_command_for_items",
+      "mcp__shadcn__get_audit_checklist",
+      "ListMcpResourcesTool",
+      "ReadMcpResourceTool",
+      "mcp__playwright-guest-dev__browser_close",
+      "mcp__playwright-guest-dev__browser_resize",
+      "mcp__playwright-guest-dev__browser_console_messages",
+      "mcp__playwright-guest-dev__browser_handle_dialog",
+      "mcp__playwright-guest-dev__browser_evaluate",
+      "mcp__playwright-guest-dev__browser_file_upload",
+      "mcp__playwright-guest-dev__browser_fill_form",
+      "mcp__playwright-guest-dev__browser_install",
+      "mcp__playwright-guest-dev__browser_press_key",
+      "mcp__playwright-guest-dev__browser_type",
+      "mcp__playwright-guest-dev__browser_navigate",
+      "mcp__playwright-guest-dev__browser_navigate_back",
+      "mcp__playwright-guest-dev__browser_network_requests",
+      "mcp__playwright-guest-dev__browser_run_code",
+      "mcp__playwright-guest-dev__browser_take_screenshot",
+      "mcp__playwright-guest-dev__browser_snapshot",
+      "mcp__playwright-guest-dev__browser_click",
+      "mcp__playwright-guest-dev__browser_drag",
+      "mcp__playwright-guest-dev__browser_hover",
+      "mcp__playwright-guest-dev__browser_select_option",
+      "mcp__playwright-guest-dev__browser_tabs",
+      "mcp__playwright-guest-dev__browser_wait_for",
+      "mcp__playwright-guest-live__browser_close",
+      "mcp__playwright-guest-live__browser_resize",
+      "mcp__playwright-guest-live__browser_console_messages",
+      "mcp__playwright-guest-live__browser_handle_dialog",
+      "mcp__playwright-guest-live__browser_evaluate",
+      "mcp__playwright-guest-live__browser_file_upload",
+      "mcp__playwright-guest-live__browser_fill_form",
+      "mcp__playwright-guest-live__browser_install",
+      "mcp__playwright-guest-live__browser_press_key",
+      "mcp__playwright-guest-live__browser_type",
+      "mcp__playwright-guest-live__browser_navigate",
+      "mcp__playwright-guest-live__browser_navigate_back",
+      "mcp__playwright-guest-live__browser_network_requests",
+      "mcp__playwright-guest-live__browser_run_code",
+      "mcp__playwright-guest-live__browser_take_screenshot",
+      "mcp__playwright-guest-live__browser_snapshot",
+      "mcp__playwright-guest-live__browser_click",
+      "mcp__playwright-guest-live__browser_drag",
+      "mcp__playwright-guest-live__browser_hover",
+      "mcp__playwright-guest-live__browser_select_option",
+      "mcp__playwright-guest-live__browser_tabs",
+      "mcp__playwright-guest-live__browser_wait_for",
+      "mcp__playwright-host-dev__browser_close",
+      "mcp__playwright-host-dev__browser_resize",
+      "mcp__playwright-host-dev__browser_console_messages",
+      "mcp__playwright-host-dev__browser_handle_dialog",
+      "mcp__playwright-host-dev__browser_evaluate",
+      "mcp__playwright-host-dev__browser_file_upload",
+      "mcp__playwright-host-dev__browser_fill_form",
+      "mcp__playwright-host-dev__browser_install",
+      "mcp__playwright-host-dev__browser_press_key",
+      "mcp__playwright-host-dev__browser_type",
+      "mcp__playwright-host-dev__browser_navigate",
+      "mcp__playwright-host-dev__browser_navigate_back",
+      "mcp__playwright-host-dev__browser_network_requests",
+      "mcp__playwright-host-dev__browser_run_code",
+      "mcp__playwright-host-dev__browser_take_screenshot",
+      "mcp__playwright-host-dev__browser_snapshot",
+      "mcp__playwright-host-dev__browser_click",
+      "mcp__playwright-host-dev__browser_drag",
+      "mcp__playwright-host-dev__browser_hover",
+      "mcp__playwright-host-dev__browser_select_option",
+      "mcp__playwright-host-dev__browser_tabs",
+      "mcp__playwright-host-dev__browser_wait_for"
+    ],
+    "mcp_servers": [
+      {
+        "name": "playwright",
+        "status": "disabled"
+      },
+      {
+        "name": "plugin:greptile:greptile",
+        "status": "connected"
+      },
+      {
+        "name": "context7",
+        "status": "connected"
+      },
+      {
+        "name": "plugin:supabase:supabase",
+        "status": "needs-auth"
+      },
+      {
+        "name": "supabase",
+        "status": "needs-auth"
+      },
+      {
+        "name": "supabase-dev",
+        "status": "needs-auth"
+      },
+      {
+        "name": "supabase-live",
+        "status": "needs-auth"
+      },
+      {
+        "name": "playwright-host-live",
+        "status": "connected"
+      },
+      {
+        "name": "shadcn",
+        "status": "connected"
+      },
+      {
+        "name": "playwright-guest-dev",
+        "status": "connected"
+      },
+      {
+        "name": "playwright-guest-live",
+        "status": "connected"
+      },
+      {
+        "name": "playwright-host-dev",
+        "status": "connected"
+      }
+    ],
+    "model": "claude-sonnet-4-5-20250929",
+    "permissionMode": "bypassPermissions",
+    "slash_commands": [
+      "context-router",
+      "design-reverse-engineer",
+      "doc-maintainer",
+      "fp-rater",
+      "functional-code",
+      "goodbye-automated",
+      "playwrightTestGuideLoginInstructions",
+      "skill-creator",
+      "slack-webhook",
+      "atomic-builder",
+      "build",
+      "clean_worktree",
+      "get_notion_tasks",
+      "goodbye",
+      "hi",
+      "init_worktree",
+      "make_worktree_name",
+      "meeting",
+      "plan",
+      "plan_bun_scripts",
+      "plan_uv_mcp",
+      "plan_uv_script",
+      "plan_vite_vue",
+      "prime",
+      "primeGit",
+      "splitlease",
+      "update_notion_task",
+      "update_notion_task_with_file",
+      "bug",
+      "chore",
+      "classify_adw",
+      "classify_issue",
+      "claude_browser",
+      "cleanup_worktrees",
+      "commit",
+      "conditional_docs",
+      "deploy",
+      "dev",
+      "document",
+      "feature",
+      "functions-dev",
+      "functions",
+      "generate_branch_name",
+      "generate_claude",
+      "goodbye",
+      "health_check",
+      "implement",
+      "install",
+      "install_worktree",
+      "invoke-claude-chrome",
+      "in_loop_review",
+      "patch",
+      "prepare_app",
+      "preview",
+      "prime",
+      "pull_request",
+      "resolve_failed_e2e_test",
+      "resolve_failed_test",
+      "review",
+      "ship",
+      "splitlease",
+      "stage",
+      "start",
+      "supabase",
+      "test",
+      "test_e2e",
+      "tools",
+      "track_agentic_kpis",
+      "commit-commands:clean_gone",
+      "commit-commands:commit-push-pr",
+      "commit-commands:commit",
+      "feature-dev:feature-dev",
+      "ralph-loop:cancel-ralph",
+      "ralph-loop:help",
+      "ralph-loop:ralph-loop",
+      "compact",
+      "context",
+      "cost",
+      "init",
+      "pr-comments",
+      "release-notes",
+      "review",
+      "security-review"
+    ],
+    "apiKeySource": "none",
+    "claude_code_version": "2.1.7",
+    "output_style": "Learning",
+    "agents": [
+      "Bash",
+      "general-purpose",
+      "statusline-setup",
+      "Explore",
+      "Plan",
+      "feature-dev:code-architect",
+      "feature-dev:code-explorer",
+      "feature-dev:code-reviewer",
+      "bubble-workflow-screenshotter",
+      "mcp-tool-specialist",
+      "systems-architect",
+      "cleanup-planner",
+      "context-lookup",
+      "debug-analyst",
+      "design-planner",
+      "implementation-planner",
+      "input-reviewer",
+      "plan-executor",
+      "task-classifier"
+    ],
+    "skills": [
+      "context-router",
+      "design-reverse-engineer",
+      "doc-maintainer",
+      "fp-rater",
+      "functional-code",
+      "skill-creator",
+      "slack-webhook"
+    ],
+    "plugins": [
+      {
+        "name": "commit-commands",
+        "path": "C:\\Users\\Split Lease\\.claude\\plugins\\cache\\claude-plugins-official\\commit-commands\\96276205880a"
+      },
+      {
+        "name": "feature-dev",
+        "path": "C:\\Users\\Split Lease\\.claude\\plugins\\cache\\claude-plugins-official\\feature-dev\\96276205880a"
+      },
+      {
+        "name": "greptile",
+        "path": "C:\\Users\\Split Lease\\.claude\\plugins\\cache\\claude-plugins-official\\greptile\\96276205880a"
+      },
+      {
+        "name": "ralph-loop",
+        "path": "C:\\Users\\Split Lease\\.claude\\plugins\\cache\\claude-plugins-official\\ralph-loop\\96276205880a"
+      },
+      {
+        "name": "typescript-lsp",
+        "path": "C:\\Users\\Split Lease\\.claude\\plugins\\cache\\claude-plugins-official\\typescript-lsp\\1.0.0"
+      },
+      {
+        "name": "supabase",
+        "path": "C:\\Users\\Split Lease\\.claude\\plugins\\cache\\claude-plugins-official\\supabase\\96276205880a"
+      }
+    ],
+    "uuid": "7489c1bb-0609-4c9a-869d-6e473c4371a8"
+  },
+  {
+    "type": "assistant",
+    "message": {
+      "model": "claude-sonnet-4-5-20250929",
+      "id": "msg_01YHk4GZNGwyj7EzEE5aT4sV",
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "I'll compare the live production version against the local dev version of the view-split-lease page using Playwright MCP through the mcp-tool-specialist subagent."
+        }
+      ],
+      "stop_reason": null,
+      "stop_sequence": null,
+      "usage": {
+        "input_tokens": 2,
+        "cache_creation_input_tokens": 32933,
+        "cache_read_input_tokens": 19246,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 32933,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 1,
+        "service_tier": "standard"
+      },
+      "context_management": null
+    },
+    "parent_tool_use_id": null,
+    "session_id": "0ddede6f-e901-48ef-b2c4-ae11d534bc50",
+    "uuid": "3be302cd-f0fc-4856-b82b-dc6642807c6a"
+  },
+  {
+    "type": "assistant",
+    "message": {
+      "model": "claude-sonnet-4-5-20250929",
+      "id": "msg_01YHk4GZNGwyj7EzEE5aT4sV",
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_01TH5EJ1gCETVpufZ4QP4iNx",
+          "name": "Task",
+          "input": {
+            "subagent_type": "mcp-tool-specialist",
+            "description": "Compare live vs dev view-split-lease",
+            "prompt": "Compare the live production version of /view-split-lease against the local dev version.\n\nUse the playwright-guest-live MCP server (since this is a public page requiring no auth).\n\nSteps:\n1. Navigate to LIVE: https://split.lease/view-split-lease\n2. Wait for load: browser_wait_for with time=2\n3. Take LIVE screenshot: browser_take_screenshot with fullPage=true, filename=\"live-view-split-lease.png\"\n4. Navigate to DEV: http://localhost:8010/view-split-lease\n5. Wait for load: browser_wait_for with time=2\n6. Take DEV screenshot: browser_take_screenshot with fullPage=true, filename=\"dev-view-split-lease.png\"\n7. Check console errors on both pages using browser_console_messages with level=\"error\"\n8. Compare visually for layout structure, interactive elements, and content rendering\n\nIgnore:\n- Pixel-perfect differences (small margins, etc.)\n- Different data values (user names, timestamps) if the layout is identical\n\nReturn ONLY a JSON object with this structure:\n{\n  \"visualParity\": \"PASS\" | \"FAIL\",\n  \"issues\": [\"list of strings\"],\n  \"consoleErrors\": [\"list of strings\"],\n  \"explanation\": \"Brief reasoning\"\n}"
+          }
+        }
+      ],
+      "stop_reason": null,
+      "stop_sequence": null,
+      "usage": {
+        "input_tokens": 2,
+        "cache_creation_input_tokens": 32933,
+        "cache_read_input_tokens": 19246,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 32933,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 445,
+        "service_tier": "standard"
+      },
+      "context_management": null
+    },
+    "parent_tool_use_id": null,
+    "session_id": "0ddede6f-e901-48ef-b2c4-ae11d534bc50",
+    "uuid": "ede1ff5a-932d-4693-a858-2613512855de"
+  },
+  {
+    "type": "user",
+    "message": {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "Compare the live production version of /view-split-lease against the local dev version.\n\nUse the playwright-guest-live MCP server (since this is a public page requiring no auth).\n\nSteps:\n1. Navigate to LIVE: https://split.lease/view-split-lease\n2. Wait for load: browser_wait_for with time=2\n3. Take LIVE screenshot: browser_take_screenshot with fullPage=true, filename=\"live-view-split-lease.png\"\n4. Navigate to DEV: http://localhost:8010/view-split-lease\n5. Wait for load: browser_wait_for with time=2\n6. Take DEV screenshot: browser_take_screenshot with fullPage=true, filename=\"dev-view-split-lease.png\"\n7. Check console errors on both pages using browser_console_messages with level=\"error\"\n8. Compare visually for layout structure, interactive elements, and content rendering\n\nIgnore:\n- Pixel-perfect differences (small margins, etc.)\n- Different data values (user names, timestamps) if the layout is identical\n\nReturn ONLY a JSON object with this structure:\n{\n  \"visualParity\": \"PASS\" | \"FAIL\",\n  \"issues\": [\"list of strings\"],\n  \"consoleErrors\": [\"list of strings\"],\n  \"explanation\": \"Brief reasoning\"\n}"
+        }
+      ]
+    },
+    "parent_tool_use_id": "toolu_01TH5EJ1gCETVpufZ4QP4iNx",
+    "session_id": "0ddede6f-e901-48ef-b2c4-ae11d534bc50",
+    "uuid": "b92cfdce-3e78-4436-ace3-a0bfce3e2560"
+  },
+  {
+    "type": "assistant",
+    "message": {
+      "model": "claude-opus-4-5-20251101",
+      "id": "msg_01Rc8eh91YVU5DpSTB2QxuW3",
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_01RTNoPuQg5yntamWECmh9Gz",
+          "name": "mcp__playwright-guest-live__browser_navigate",
+          "input": {
+            "url": "https://split.lease/view-split-lease"
+          }
+        }
+      ],
+      "stop_reason": null,
+      "stop_sequence": null,
+      "usage": {
+        "input_tokens": 3,
+        "cache_creation_input_tokens": 40243,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 40243,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 1,
+        "service_tier": "standard"
+      },
+      "context_management": null
+    },
+    "parent_tool_use_id": "toolu_01TH5EJ1gCETVpufZ4QP4iNx",
+    "session_id": "0ddede6f-e901-48ef-b2c4-ae11d534bc50",
+    "uuid": "62d31675-91e6-4c20-a965-b3ae7aacf54d"
+  },
+  {
+    "type": "user",
+    "message": {
+      "role": "user",
+      "content": [
+        {
+          "tool_use_id": "toolu_01RTNoPuQg5yntamWECmh9Gz",
+          "type": "tool_result",
+          "content": [
+            {
+              "type": "text",
+              "text": "### Ran Playwright code\nawait page.goto('https://split.lease/view-split-lease');\n\n### New console messages\n- [LOG] \u2705 Environment configuration loaded @ https://split.lease/assets/config-QPKPRtag.js:0\n- [LOG]   Environment: production @ https://split.lease/assets/config-QPKPRtag.js:0\n- [LOG]   Google Maps API Key: AIzaSyCFcO3jCTvR69iA... @ https://split.lease/assets/config-QPKPRtag.js...\n- [LOG]   Supabase URL: https://qcfifybkaddcoimjroca.supabase.co @ https://split.lease/assets/config-Q...\n- [LOG] \ud83d\uddfa\ufe0f Loading Google Maps API... @ https://split.lease/view-split-lease:40\n- [ERROR] ReferenceError: pendingProposalCount is not defined\n    at be (https://split.lease/assets/He...\n- [ERROR] React Error Boundary caught error: ReferenceError: pendingProposalCount is not defined\n    a...\n- [LOG] Google Maps API loaded successfully @ https://split.lease/view-split-lease:27\n\n### Page state\n- Page URL: https://split.lease/view-split-lease\n- Page Title: Property Details - Split Lease\n- Page Snapshot:\n```yaml\n- generic [ref=e3]:\n  - heading \"Something went wrong\" [level=1] [ref=e4]\n  - paragraph [ref=e5]: We couldn't load this page. Please refresh or contact support.\n  - group [ref=e6]:\n    - generic \"Error Details\" [ref=e7]\n```\n"
+            }
+          ]
+        }
+      ]
+    },
+    "parent_tool_use_id": "toolu_01TH5EJ1gCETVpufZ4QP4iNx",
+    "session_id": "0ddede6f-e901-48ef-b2c4-ae11d534bc50",
+    "uuid": "a3570b0c-40fa-42ea-9a1f-18803bdef319",
+    "tool_use_result": [
+      {
+        "type": "text",
+        "text": "### Ran Playwright code\nawait page.goto('https://split.lease/view-split-lease');\n\n### New console messages\n- [LOG] \u2705 Environment configuration loaded @ https://split.lease/assets/config-QPKPRtag.js:0\n- [LOG]   Environment: production @ https://split.lease/assets/config-QPKPRtag.js:0\n- [LOG]   Google Maps API Key: AIzaSyCFcO3jCTvR69iA... @ https://split.lease/assets/config-QPKPRtag.js...\n- [LOG]   Supabase URL: https://qcfifybkaddcoimjroca.supabase.co @ https://split.lease/assets/config-Q...\n- [LOG] \ud83d\uddfa\ufe0f Loading Google Maps API... @ https://split.lease/view-split-lease:40\n- [ERROR] ReferenceError: pendingProposalCount is not defined\n    at be (https://split.lease/assets/He...\n- [ERROR] React Error Boundary caught error: ReferenceError: pendingProposalCount is not defined\n    a...\n- [LOG] Google Maps API loaded successfully @ https://split.lease/view-split-lease:27\n\n### Page state\n- Page URL: https://split.lease/view-split-lease\n- Page Title: Property Details - Split Lease\n- Page Snapshot:\n```yaml\n- generic [ref=e3]:\n  - heading \"Something went wrong\" [level=1] [ref=e4]\n  - paragraph [ref=e5]: We couldn't load this page. Please refresh or contact support.\n  - group [ref=e6]:\n    - generic \"Error Details\" [ref=e7]\n```\n"
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "message": {
+      "model": "claude-opus-4-5-20251101",
+      "id": "msg_01NZSqjWwd6nUCJ7Lb4UzoAZ",
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_01ForH7keJrFkBmdQTLN3wgU",
+          "name": "mcp__playwright-guest-live__browser_wait_for",
+          "input": {
+            "time": 2
+          }
+        }
+      ],
+      "stop_reason": null,
+      "stop_sequence": null,
+      "usage": {
+        "input_tokens": 1,
+        "cache_creation_input_tokens": 535,
+        "cache_read_input_tokens": 40243,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 535,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 86,
+        "service_tier": "standard"
+      },
+      "context_management": null
+    },
+    "parent_tool_use_id": "toolu_01TH5EJ1gCETVpufZ4QP4iNx",
+    "session_id": "0ddede6f-e901-48ef-b2c4-ae11d534bc50",
+    "uuid": "1db0e365-0e3d-499f-bcfa-97715446076e"
+  },
+  {
+    "type": "user",
+    "message": {
+      "role": "user",
+      "content": [
+        {
+          "tool_use_id": "toolu_01ForH7keJrFkBmdQTLN3wgU",
+          "type": "tool_result",
+          "content": [
+            {
+              "type": "text",
+              "text": "### Result\nWaited for 2\n\n### Ran Playwright code\nawait new Promise(f => setTimeout(f, 2 * 1000));\n"
+            }
+          ]
+        }
+      ]
+    },
+    "parent_tool_use_id": "toolu_01TH5EJ1gCETVpufZ4QP4iNx",
+    "session_id": "0ddede6f-e901-48ef-b2c4-ae11d534bc50",
+    "uuid": "ef19cdfe-4625-42a2-82dc-765b45f89cf3",
+    "tool_use_result": [
+      {
+        "type": "text",
+        "text": "### Result\nWaited for 2\n\n### Ran Playwright code\nawait new Promise(f => setTimeout(f, 2 * 1000));\n"
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "message": {
+      "model": "claude-opus-4-5-20251101",
+      "id": "msg_01MsR7oH6p1UCZus8rLEqUDB",
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_01RYzcQU2fSCdRCg77FZqUsK",
+          "name": "mcp__playwright-guest-live__browser_take_screenshot",
+          "input": {
+            "fullPage": true,
+            "filename": "live-view-split-lease.png"
+          }
+        }
+      ],
+      "stop_reason": null,
+      "stop_sequence": null,
+      "usage": {
+        "input_tokens": 1,
+        "cache_creation_input_tokens": 133,
+        "cache_read_input_tokens": 40778,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 133,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 32,
+        "service_tier": "standard"
+      },
+      "context_management": null
+    },
+    "parent_tool_use_id": "toolu_01TH5EJ1gCETVpufZ4QP4iNx",
+    "session_id": "0ddede6f-e901-48ef-b2c4-ae11d534bc50",
+    "uuid": "1a085ff1-f4f7-4450-a125-08292e0e2f2f"
+  },
+  {
+    "type": "user",
+    "message": {
+      "role": "user",
+      "content": [
+        {
+          "tool_use_id": "toolu_01RYzcQU2fSCdRCg77FZqUsK",
+          "type": "tool_result",
+          "content": [
+            {
+              "type": "text",
+              "text": "### Ran Playwright code\n// Screenshot full page and save it as C:\\Users\\Split Lease\\Documents\\Split Lease - Dev\\.playwright-mcp\\live-view-split-lease.png\nawait page.screenshot({\nfullPage: true,\n  scale: 'css',\n  type: 'png'\n});\n\n### Files\n- [Screenshot of full page](C:\\Users\\Split Lease\\Documents\\Split Lease - Dev\\.playwright-mcp\\live-view-split-lease.png)\n"
+            },
+            {
+              "type": "image",
+              "source": {
+                "data": "iVBORw0KGgoAAAANSUhEUgAAA6EAAAOVCAIAAAAX0nHGAAAQAElEQVR4nOzdD5jU9X3o+98y7AK6CllrXEtVckUtoBXUuKHH1RBIqTwnwTZXc43cxpgaPSfV+C9NQpKnnqeKWo1J9eRWQ0tsC/VGTxJp7oESQdLAOQYfFRIFjnG9Ij4kSwwrygr7b3bPzOzu7MzszLLA4p8Pr9djn+4OszO/+c13M+/9zvf3m9HtHZ0JAAAEMjoBAIBYNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMC7xntL63ct3xzz7hTqj8+v3ZiTQIAFVS1d3QmwNDSHR2vbm5/paV7y8bufUlSd9roD9SnzphWU1/rz8Rh6Whtb+0o+L4mVXfAu67t3xa23rOh75tU3ehvPDrhzAQAyvICDUPpatm4d/EDHU80JenCi1f2fre39uTUJdeO+1TDWFOKQ3vmvj1fX1Pw/eyxqxfWJgdkS9sDGwa+S7d0/bc1nWfOrk4AoAyNC5W0vvXQV/Yt3TLkVbanly5sfWRq2zfumDDlAJstirZfruv8dcH3J0475vS65G3Q2tGd8G7xjg0DgAo0LpTV2nrvZ9pWtAzruh1bum64bvdd90+YfiRmbtcPb21/vOD7jy465ksNycibOuZTk7u+09T/bV3qE41jEt4t3q5hADBcoxJgkI4n7hlu4PZKb+9a9EDrvoTDZ9xl99d+/dJRk+qrpsyu+dZ3j515hE6cAzAc5nFhsC17H1hXfElN1ceuH/ep2WOOr0kl2UPQ2l5as+9v7ktvKziOqmVl+/cuqb1ycsLhUjP2omsz/yUAsD/mcWGQX/4sXTyHW/XZByd84eKjegM3I1Uz9vSL3/fgg9WnF12t58mNZnIB4N3APC6Uam/a0lN0QWP1JSenBl8vdfL4/zz/tzcsH7jkpRfTSQUdLXufXNOx9qfpppaktbknVV81rqZqauPo//OSo06vq/B72NK6dEnnb/Lfnlh95RW1dZlZ5Na9jy9t+29rul/NlHht1ekN1ddcf/SZtQVb2NH21PJ9//xY96vNPa1JMr6+6vxLxiwYxgllMxv5xGPta9d17+hIWlqSurpk7ImjLmisnn3xuJNqSvfASytfX7458/97So7K2/Lo6/f2zYKn5t9y7KlD32Nz62NLO368see3LT3j6qqOPnHUH1067pKy56ko2RtJ1QVXTTg/f1RT05v3Plaw86eNuenio5L+XfH9Fd3bW3r21VTV1ladM6/mk/vdFR1tv1zT9i8r0k3NPS0dVXW1yVkDO3Dvinva/1elzSirec93lna1Flzw+5e8b17pfH/JzZbZdS0bdj+0rnBkjrro2vHnli7Y6Gpp2vuvj3St39zT1trTkmQ3fuK01AUXj5kzY9y4pJwKw6z3bMT/nNkJ2/tuZ/Ls6v/7sqNPrS0aCYc8DLqeX77nxy8WXDCwARUf+/sbj1rQULIau2QHJqkZY74wOzcGSsZG3+137djw1tKlXU81ZQfG9KuOXjR/bMmGtTTtW726a9267tc7el5rrTq+99dh9piPzz6qrsL46d8bffJP9AGM80IjOw7hiKNxoVR3657hXnXKtcc+sqAgO2rKpHDSsfdHi/b93bqewvPDJs09byQ9zcs6nljWcXxD9VcX1p5ZO+hnO9LrVqZfyn87edQnr0haN+6+7pauV/MXtvZsXdNxw7qu//Tg+E/kQjxzhRsWdhUuonijuefxB9oeX9LxuQePvezkCr/zrW89sqjtHzb0FEZ6c3Pm/9LbNqaX3tc+89qxt1x69PiCf/3NxvSKNWVuacfG9I7+r2feklSOm46tS1pvXtad39JM+r/WnP7OxtaHyp6nomRvJFW/tyA5P//drvSKlQXb3tF908VJ65bdX7u56/mBXdHT2tKz4oG2FUs6Fnyj9sqpZQMj/caGPTffWrgDe5pbk+aBHdj93Mr045U2o6z6UR3r0isKInfLifvmTS4OzqaOf1mZbh74vvvEy5JTTy6+yrquFSsLb7bqPxbvotYtb9z1V51PFr0Hkdv45q5n1nT917q2z/6Xoz4xdUzpOCs3zNItb951TccTLcW3s6xj/bLOjyw8+kuzx+Zv5JCHwejfrelZsbLoFBnnX5FcUHSdzk0ru1YULh/q6Li8ofiBNHf+fyvTvyy44IIZ/eeVKxkb2QfY8eQ9e25d2T/aO3p2dRT9Wdux/c1FX+lY31x4WU//r8PepffsG/zr0Ktkb3Q2JvMmH+A473MYxiEccaxVgFI1v3tK8QXrOh/bXn6CNlVTU1c3ZuC/QZ9rkGmFv75i79+WBG6x1zZ03nDpG9/fnk6G1tzzevMbf1kYuHkd3X/3lT2ZF/j0lt1X3VIUuIXX+c5n9jzRWuZf0tvfXPiZfd8pDtxiPU8+sO/y6954NRkpPa8+uueGghf+QtnzVNx8aPf1SvrV7W/85XWFgVt4B91Lr9vzSJkdnn515RtXL6y8A6/bs77cDtyfsecWn2Fg28bOkgMamzemi4Iq6Xlmc3vxVfY+t7Ho+9qGwqUymS1vueq6ksAtkm5JZ7b/5kf37WecNXVvb229pyhwizbsiUVv3bOhIxk5dTNSxQWc3lR6wr72TSXr4zektxZfsG9z9y+LLhh1/oyK505+c81bA4FbKv3amtcXfKYkcEsM99fh/9++76DG+WEah3Ck0bhQKnXGtJJfjJ5/+Mzury9pfbVjfxlaItcK/z6c8zNkIvXmN58c+nWrteeHD3T+stK/Nnd9b03rQ7d3DXlv6fuWtKYHb+TNHU8NYyM7tnTevKh1ZF5bf935tw8MkdRJuqnztkcPZXFzz/L7Ku+r3BW+c/dbr5Xc6fbWO+7pHmpPtKbvuafoLLDDkzp/dqpo0nFjuqnoCp1bNveU/MxzGzuL9k9L19bi6poz5+iB7drw5s1Db3m/5x/Yu99CfWZJ++ND3VbP44v2bkpGTn3N7OKVG1s2txV939T1bMmPtKa3FO+NlzYXj6YZoz9U6Y37ju4fPpKuNPYye/Lzi9LD+pUdzq/Dr9v3O86/sbyt9MLDNQ7hSGOtAgxy/OzRF9zXsb7osp4nl7Vl/qs9edT5jaPnXFgz9eSxtftZTNf55H1tJa1Qc3LqyqvGXDht1JsvdqxZ2vn9woW/Lelb73nz+7ceW/mMWOl/z85mVU2/ePTchqrXN3T9cGV3YaWtv6ctydXL8TNScxtHT+zoWv1Y+pniFGhd3vnU9cnMoTayauYVYz57Sc3v1lXta+588pF99y0fmIRuWdP27dljvtSQnSGbfNmYrzdmt+qHt3Y9X/DzZ1465k+m9X6ZqniSiS3d2UiqqTq3cdQJNdk3i3+eWwRc6KXH2n956bjTk4PS1PWj3P+fOCN1dn32i50bS3dFsqXzvzclBefBaFs1OItrqj56VfWH6quy602Xdz62sad1Xfr55IClZqRmJumCEdX9XFNy/sBdD5qnzOzWzV0vJcnpA9+mi7Myde7U/i87Wr9dnGWputTlt4z5+LSa8TXdr21v+97tHT/anv/HTKG+deGjNTMrjt70j3JLzGsnpy48LfvFmy+mnyz5nL/Wrh+t65zeeMjDoM+46Q17k6aB34Vfbu7Yd+nY/GKOQZPc2UexZXNnUp+fqd1XMsl9akN1xbWp29NP9H95fH1V798eE3r3xqA9mTEpuwp5zFm13U0bOv55adfWgn/O/Drc01Bz6+yKu3Lb8q7sfhtynD//SNtL88cWzGQfxnEIRxiNC4PVHnvLote3LCwzndO6vfuJ3CLazJeZ3p172dhPVjoApemtB4rXKdbNHrN44TG9a/jqG8ae3tAxfdGer68ZeGlPr+t8aEv6L6aWW9Tbt2Gpry879qLelbuNyScue+O6zwy8HKZzr52nX3v0/ZeO672Jj17avn5R661rCucIu19tTmbW93/XvPehoo2s+ux3x1/ev2a3pr76j68fM+3E3X9eMBf1+NJ9VzVUH5/pg8nHXJSNl9afJUVxc+KMYy4axsn/U5OrH7x//KT8rmttveszxbXdnH6uOTm9Pjk46eLHkumLJ4v3diYXntrYduXk/iONmtq+V9xJSV3qr7/7vvxZeC9qTP/HR4t2xQGoGXP+jI71A7ffs/XF9mRy/1FTg+cpk+zD31Tw8LduLLrbVOPo6f1f71je/njBdGLJjq2fXPOF7+478Zq3Bj4+ozX9vZVtM0sPsRqQ2XUfvbX2lsb8gtf0q4Me+PoN7UmucQ9xGPQ6/UOp2mUFh+Vt7M70/Zl935SZ5M54ckN7enZ13xa2dD6zvfAfq2bOGJcM6aSLx9x2/TElhx6+tLRoTybF++H8+UedP7t0lK5/YO/zs2vOrHAv6eGN88wTfWp+nB/WcQhHFmsVoJzahvctuX/0mUPO1GZ69/v37L3s4l1ff/StNwb960s/HTjmJid17fXHFB+kUjNz4ZiPFU3b9qxe3ZZUduZV4y4qODQtdXLt5+YXX6N+9M39gZsz5oKrRhcvdux5+ZWCjVzRVXAUV1I7f8ygg9JSJ1069hOFobmlc+1QSxWHadRf3FHwwp+979pbFo4unsPuaXolOWhnXn/05UWPZfDeTl56pSv/deExUjlVl/yXko+ZyOyKo/9ianJQxnywseh/bTdtHFj40vJid36P1g7cY26qss++LZuLbm5mY36ac+/jjxUl4LxrayeVjttxn/jC6MLn8PkV7TuSijLDoCBwk7IPPP1iegRGQd7U0bMKd3Vr+rmBZu3Ykm++2iR/rd557vzGPFd4a/WpPxxy6rh29pj7bzlm0Lk19q4r+hMo84dE9ecbi49sGzxKW7p+MtTHfQ9rnL9SMM4P8ziEI4rGhQpqp0741vLaRdemTt/P52n1HoCye2vRDFDbpg3Fr5ezqy8qczu1F8+vKvy+dcMQq0irzppWMveWOv7Eoh9Ppo0uPYC9PvV/JJWUbuScObXl5pCP/sOiCbmephcPeQppcuqDg95LzryhP3IHhlc1NgyepxxXcuxXeuBd4/TLLxZPFtan/qjMhPrYOZdUnmUf0vENxUdWDRw11blpQ/6sAlUfmz+wcvfJjf2HnXV0bilawFtwQFVz51OFsVk7evaMcue5m1r9ocLh19T9clLRhQ2Dh8HY6R+qKrloROcRx51fPMYGDrlr6vxZ/jdrxuhL8vGam+bv9dLm7sKNKT4ab7Cqj112TJnfxZI9mSQfufjowVdLzaj5WPF7Cz/72d6kkuGN886BLw/7OIQjt8otWgAAEABJREFUibUKMISasedfmvmvq3V729rVnevXdT+3vWeIQ6T//sHxJ/Vd0PVK8VFFZ82oLvuidHr2+LaCF+jmnt8UrMIsccwIf3pt6Uau/qtdPys3dZ0uPrLmlebMPtjPe8H7cUqq3BqEqpF73R71u2XuIFX59jt+VTxnnJoxuuyzMG7aqFOTwlOYDVt99fn1nS/lK6o1/UJzcmZ2IwvmKZNRZ1ySOmtZ39Lb9Ob0q5l31ZNskhYtxp06eqCcXuku2pjWrtuv2FX2YRYfHtX9q8yWlF8HUvV7p5S5dNT+Tq58aFLTG1LJmoFfhOcyc9gXZ9dyFE5yTzptzHl1XUv7Bm3PC5m/tepTg09oPatx7JD3NWpq2Vnekj2ZjDrrtLI78qip0/YmBTXc3Jw9gq380DrgcX74xyEcQczjwv6Nrj259mNXve+u7x63Ys3473937BeuKDO5m27q/NuVAysNOov/9fi6MeVv+8RRk4q+z8XH26VkI1tbepqby/z3WnHj7vx1dxLdpFMqdMhQ8+JDO6qheKryud6lCNu7Ng3MU6am1o2eks+i7enncgs3d2wu+ivj1Auz66HzSuZTX2su/yQWP4c9vxnOuQPeRuNmpKYXfJve2JV7QyO9ZePAYJs+Y9yp0wael6c29v66dRYfcJY6f8ZB/q1UvCer3lfhsLXfO6V4SvuV7sP3K3sYxiEcOTQuHJjq8bne/X+Wj3/w+lElL4KbHms/4Fe7muQ996Zja2tPwoE7c07RQsxNm7NvCbRsTm/rv6R+6ui65KizZuSv0v1cdllI5wtFB11VnT/j0CbRc94a9gedvE3qxnxkRsG3zd1N2Qpv27Qhf1EqM/+amb/Mz2u2bu7KLl1t6ipajNtY1MqHw2Ge0gZGirUKUCzd0fFGa9FHlw3+ZIec6lPnj79t1+7/vKzgyrlljvXlb7bC+5mvdG8rvuAdTN7TG1OTh7McYlr8P44rzlU3pw/+QLipo2cmXfnPpsolWnp7wTzlOdOynz17VmYasv9zuZ7b3J409GwpnKesTzUOcUBVbdVFjaOOTvbv949L3mXGnN3QmmzM/zZl+37eKV3P5eefJ4/KfjJdffW59Z2/7P1Tsqn7hY5k3ItF06gXNI4bgb8AciotON7xSunfeIfvd/awjEM4UmhcKNa8fM+nHyh4DZtcvfTB8RVOYJUqXU07YNTvZH6m4LV3y4vtSeNRg6/X0lJyDqBRJx3s2bIOXMlGVp274H2f3d+5TIMa/TsnZppp4PveOcKJg66XLl21eUDGfLCx7fH8qXCzidb+8sAJE1LTcxOZuXft+5bkNm/pamnu2VKwzqD0gKrjqoqew9rUJ2+ZcJAnFX6nTZyRqk+68o8l0/f7Wgf2dn1Dde4346iGhr0PL++9LL2lKandXFiBQ3282X6U7Mmk+4Wm5IIyvw7tvy1+syZ1WmrkfmXfnnEIRwhrFaDYxJOLfyuaun5aef3Ba82V3rUfM3Va0ffNazrKvSZ1PLWueJ5mRuptjMzqD5xW+G3Pc5vbkiNU9e+dXLzIsqnrf5R53jvXr0wfwvkEqmc2Fk75pbesK/j0ssZU3+cy1FUPfDzExvSWF4s+pXZmyfkiTh5VNGCau194ly20PQCTa2YV1GKm758c+PSyqlkX9v2JOKVh4NjBTRv3bHux8BZSZ9clB3vvo88q+r7npz8td8KE1vb1xeevPWvawVZ1GW/POIQjhMaFEqeVrOfr+Ye/KjkvWJ/09jf+6r7iQp086uS+r1LTG4uP4m/u+t660lMypLfsXbKh6JIzG2sO+jX6wJUkV/L80rZyH57U+eR9uxZc9/q9S9789w17m1s7Q764Zj+GoOiCzPP+xraiZyz9xrrWb69LDkXJkVXb1gysJZ3eMKb/TfZx0xvyodO9YmXhGEtd2FD8xnjNuAsbC7/v/uelb5V5gjpa//Yzu6679fWHlu95qqntjY5353NYfFjei12r85PctamG/pbPfWhcn22bOzcVzHqeOqdmYnLQxnyoaE9mP1xjfekvfvr5JZ1PFV0y6qKGCoeTHpS3ZxzCkUHjQom6cR8rfqlLN3Vdd+muW5e8uWl7e0tL9r/mpj2PLNr1ic+Unst2YkN1/iV2XGPNx4pz9Ylb9/zXDe39cZF+Y8vum2/uKpp0y7zRfPHQpz0aYeNmVxd9LEJL119et/v51sIA6tq2fM83l/c0b0mvWNbx1wv3Lpi/Z0XRRucWPBR4cs2e3k/ESHd0vZdqeOqYTxVPoaebOq+5ouXvslG4d9O6Nx9ZtPvyW9OHOklaOEebmYbckD+xa9X5MwZSqSB0ep4qPIdxmQOqqi+aX3QoW8vyfTcvKf5Qko69P7q1/Ufbe7auSy+9r33hNa2fuPmt15KRNTLDoHCONmntfqq/X1MNo6fkL89+aFz/1xu6C4rzEI/Gq77gstFFv7Kt6b++bvdTA78O7c8veeMvlxe9dVM7u2bOyP5V+vaMQzgiWI8LpaovuKr69HXF/drRs35Zx/plHUP9XF3q8wsKV9wefeUtHT8t+kDgnscW7vlRbevxmSRp7WkeNDc8/dpxM9/uQ7ZrP3t954pFA+97Zk/0O//146emPnhK9lE/t6H71eLtrLu45EU9t+Ch4O3U1jXtn1iTO4F/7ehvLZ9wZvJeMe4TX2z/79d0FX7KVLql+/v3tX+/4JK6qaPGbenekRy0cf9hzt7vNA1a4lKfml7YiMVHp+UVzPUOSM046vrGNxcVTOw9v2zfZcvbTp8x6gO1SVtz91MbS04cVjVvwbjjk5E1MsMg1VD9kSQ9+IHPbCj8vLGSo9P6Fcz1HpzU1KNunF388drbuxbOf722rqq2JtnX0vNG6f8AjPrctbUjdYhbv7dnHMKRwDwuDJI6efzfLEod4OxM1YI7as8vLtTahmO/cW3p+d7TrbnzlQ4K3LrZY299eydxe9XOPvrWi0s38rXMrO3K9Io1pYGbqkvdWPqiXj1zdoXPVmjt3v6emm5KTT7mtltGDfW816Vu+UbNIX6Kau7IqlKDPppr3IWzB//oqI+Uf1u85iO3jJ1XvN2ZYZaZtc08iU+UBm5y/MVjPtcwgktIe43UMBjzwcbBF5YeSTaxcdDn+WVHcvUh/0FVM3PhUZ8bFMq9540eFLhVH11UO+8wLC16e8YhHAE0LpRT2/C+JfdXzxzeC1im/L7w3fFXTh7cDamTLi1zGt3Bzrxi3JKFtSP8KWbDVTPzlmO+dcX+T/pZM3X0t777vpmDtnJc49G3zq4q9xPd/+vF5D0lddLF4xdXeN4zz/LCB489/9An2icXf6xuzqCP5sp97lfpD1Y+oKq29qbvjlswjOrJjLTFtxyWkTZCw6B6esOgl6XCz3Xrlf3QuNJrzWwYkT8Rx112/1FfaKjaz7VqRi24/5gvNRymt13elnEI8VmrABXUTh3/14+2v7Ry33ce6dq0vfwZwsZPTX1ywdiPNQxxSs7Rk+bXLW1sXfVA+z+s6Rl86NpJM0ZfeUvtRfXv7K9izZSr6h6b1/rYkvZ/KbeRtSenLrl23KcaxlZ4Yc3Mfh1z/7S37l+S/mXxD/+quS1J3oHJ6UOQGp993jtfa2pbu7qrqal7S/uoc06pOm32mDkzRurEq2MvmL3vseVFdzr4o7kKzyDWq3C1dxm1R195/5iPbnhr6ZLOJ5rKDNeTGkf/p2trzz+MI21khkFdw+gzk47CYx9LPtctp/AMYr1SHzrYjzcrVXPUxxbV/IeNexc/0DF4T6Zqq6ZfXHP9VcdMPMwfbnz4xyGEV9Xe0ZkA+9P5Rkt654udv+59v7ImdcZpo8fX1Rzgi03mRjpf3pzOHYtTdcq0mhMO+BbeBoUbmYw/peYD9aPH1wyzHtL7Wrv29b+lW1M7pjbgbNOeRbPbnxj4tupzy4677O07pfGwZD/HpLnjub6PKnj7R1qcYVC0J2tTZ51WPb62+t3xwYTvgXEI7zSNC1Cio+21jurja8vFTNPuBdd0FRxblbp1zfsuSOAwMA7hkFirAJDV1bq97ckNnatXpDdtz66affD+8ZNKJyA71j/SVXRK/hkph/4wooxDGCnmcQGyWv92ftuPChaSpupGXXLV2D9pzEykVadb21ua2793e8ePthf9zEW3jv9644ifo4AjmXEII0XjAuS8trJlwT3dw//AgtSMmqX3HDvSJ5rlSGccwghx7jCAnOMvPvbBa0cN8/iomqnVDy4SFow84xBGiHlcgAHpN7a89cDdHY9vr3iNVG3VvGvHffbio96h8xlzJDAO4dBpXIBS6X0t7c+t61j/Ys/Ozd07cqfBmjht1KTTUjMbxk49ucYJ+HlbGIdwKDQuAADROHcYAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIJpRCXBgdqy4+/bbVu0YuODny2768u2Lfz5wwc5V377p7lU7k7fH04uL732Y25C9wj8+XfhFiWf/8faylx+Q8jeS2WP921bpXkbk3g+b7BjIPOmF/+WHxNv77A9fdpxkN/UQtu3d+tAqjuH9yeyTb694Fz6egl8Q4KCZx4UDNfHcP5iwuvnXmS96v9/ZvLvuuAlbNz2dnH1e7yU7mncn7z/uhISDd86nv3pO8q425fKvXn12/rtMLT10W3Ll1+ZOTN6dfv7C1uPO+9IX5xqWwBFC48IBO6F+QrL2hWeT83IRtuOZXyTn/FnDjm/mL3n6ma2ZAOrt3Uz6rNra+2NT5t776fMG31pmCuqutbtzX06Yc+Pn5/U2SGYi5+FtJRdmpjaXJv03snPVbd9sOid//T75u5swZUrhhRsmzpqwem3vDU5acOcV55Te+6qb7t41RAAVbGTBj2e34emWvqsUbPzA5ZMKNqNf30PbdteXf5u5qdxFL+T3Uj4cBx5swb3UzSoTkZlrrqife84vVq3eVWkzkvL79rjz5rz/6dX5XTqwz0v6dTjO+/isDXcV/OVT/GBLbjMzDfxQbmuLHlT5kVB45bKRmnmY/5Sck3kgW/vH2KA77b/lzD5/esrlc5OHX5g4a/fqzCV9N1h2lFYaur/917tv37qraMsHbdHg0ZK5tZI7LXv9/f8KrKg/74S1T28t8+j6x/D+h2Xvlv+69wFu/ebtO0qf7jKPPXsvv5jcv+XZKyT5e29uWJCsWrp1YJOSIYZl4RM6peDXOf8kTqxLdrTkf0He5X/pwbuZxoUDd/YZUx7e0Jx5KzHzorXz+WeTyVefcGJy3Kpnfp6ck3l527lrZzJpXvZ1ru+F8N7s19kXtttWnVjaBD9fdtfaCQvu/Pw5ua9v+uay+tvkMYsAABAASURBVMyrWvbVffecG7+afVHMXvjtpLRly8re3c5ZV96buYvcy3lyXP6fdq/OvDzfecUJuc1Y+o9Pn/Pp8zKlXpeceMLcz38pyb5Il+3vXrmG6NvI7NdfXpZkNjJ3Fydc/tWv9T+61f+06tz+wui7PPtAMi/kJXvvinuTZTf9+Hd6c+HZzCVbd0+88atXn5C78YeXPXt24ev604sH7iU7V7q4vkx9tqxdtaN3P+d3V1J58x7e1hcihZuX+3rBnbnJ4+xD+PaK+uHs8yGVv83cxrx/7r1f7C+ntY+tmP75ec3lRkJuy5/9g9xzmsumu/7xuDLP1K6ns9f59MSKdzr38/fW5/f504sf3ra6ee69dw607KBRmqy4u38slQzdXduS/K5+OLflxXup/GjJ/kvhnRbtpQP6FWhZm/nTrni0FI7hSsOy7EC6M8n++Vf6y7Wj4mOvZOuqFbNy+z9777cvTvqGaJlhWfTsZ7++6R+Tvie05Ens/wUBDpr1uHAQzjt3yu5nN+XWXzb/tiW7LCG7gCG7XKH3kuN+Z2L2BX7D1ilz+4Ns4rw/Oy9Z+5Nni25nx4ofb6ub9eG+pMvEX2/WZC+8pO919+wrFkzZvfrfhrHWMPNmdKate1+MT5h79awJhf845Y96Xy+z25n8ZtfO3C0P7431p/917e4pl/d15wlzL5lz3LYVq3ZkvvranfnczN1szs5NTS3Hnffxs/MbP4x7mNLQ+2BPmD65LtndXHEd4nlX31lhejW/n8/+8Jzjck/NEJtXdOXei7P7PP8Yc3svGdY+z9u5anFmL00vDLhKtzlx3he/mu/U3EMepG8kZJ7Tn6zOPOr+p+mcT8+dsnVDufWjE86ZPnHIOy2V39RhjNLsBg8MlYEn94wpye4dzSU3XGG0FN9pgQP/FRh6tFR63jMPM7/lQwykUsWPvZLj+p+jE+bOm5L0/e9AUm5YZp7QXZMW9D372b1dN/CE5p9EYGSYx4WDMbF+QkvujelnN22bMj37hnv2Ffefsu24Y9O2uj/4cHaGsnl3ZoLnpswk2YBJxTfz6x27khPqJw59Yea+kuZkv3Zm7u64yfkfyy6o+EUyArLT0hPOqS/YnPcX/nPBu7q5XixZizzMja8stwbg4dtzE65zK00219WfWLh5LQNrBspsXsmVc7L7fGvvveTtr85Lrp95+7s4m/Zzm9nFGH1bluuwTAb9+KGlX759acH73dnndFd2gUHBTUwYsoMO+IHsKD9KJ877o0mrH37oprUVFkhUsp/RUn6DR+pXoMB+huWQDvyxlwz4X+zqrdbBw3JnUvRLmpyQ+cGmBDg8NC4cjP6iffqZrZPO/XTvRWeekzz2zM4zk99k/rX/Vaxylr339WVEXe5d3dxqxeRwOCHzPvvc3nfGsylWaQ3ooW/ega7BHc71y16nr24z/XRn79KO3srJThnO6/3XbKRmV3CemxxgYla+0yF/oNwozUypnt23hjUb2e+ZkTwSw/K9+tiBItYqwEHJFm3TM6te2JpblpCTmarZvWPT88/umnTu2b3f968KqOjEicdl5up2DH1hdgpqOFuUubtdv83/2M7h/dQwbjcz1VT4lvSO5t/k/n/vcfp3lr6TW/Kod4zUZmTfxf7ql2ZNaPnF84N3aW7idmDzsvNnlTev5Mo5ZZ+IQ1TpNjN/F2X69av3VijXcz791XvvvLL3re2S5/QQ7rSi/YzS3Fv/914+Kdn6wrPDublKo6WikfwVyBresByW4T/2kgHfP607eFiWPqE7D3CTgAOhceHgZIv22V/srvuDM/Olcs70SVvXPt0y5Yz+xYgNU3Y9vXio06Zm3xVtyS9/zMwbZc/W2XvhY32r9H6+bGkmif74vKT3dbr/5fbZf8sfOd4vu+avf+1jbnloMjLO+/isCVsfXvZs3zY+tnpX/6rf/Kt19rChvrvrfdT/+vP8xieHpvDsvzueKd7hA/KLGnPrHYfavMwE/NZVfTeYvXLvxcX7fPApkA/GELeZr8DsgVAt/Rt505eX9Y+EzF9KudWZued0af7Mr4XXOeA7La/CKC36wWc3bUv6R/X+VB4tQ23wcH8FhmW/w3I/u6X8Y8/ladMzO3s3c0PRuM7f8s5VKwo3dfCwLHpCd6z4p8z/XDQc6qGNQAXWKsBByhTt0od3zyk8TCR7voVtOwcW4Z139Y27bvtmbmFfUuFN57Ov+FLzt+/KrcJMcu8yZ1/wTsideeCbt6/OXjZw1qHsETy/yC/ZzB5+VHxbmTe75+74cu/dTZoza8Lq4b1Lm82+b6666csvVDpRUd+5F/o2sv9sUGdfsWDT7b0bk31olyd3PZwpgLnzTuh91LklocedN2fKttWDbzG7o1bd9eWmzEOr38/WnXf15S/clF9gmnnXuGwwTZmwI3OP2a+yu2vIzZv7tct/23eDuc17tvf56n0i+vZ58fm8Bs4YdYDK3+bEgkeU2dq5yTdXZaZs580t2OD8SOh7TvPrZSft/2RSFR5IZeVH6bw/O+/ZoguHm5jlR8t+N3h4vwIV77RgDO9/WCb5gTTx3Cmrln7z9meL9tLE8o+9d0TlNqlu1tw5xxU08nGTkh/33XL/E9d7L4OGZfYJvTK5+6G+J7TSKoiCX5BzNx3CCIQjW1V7R2cC8J5VdNrgA//ZFfXv4g9u4F2v0l9BhzIsgRFhrQJwBClaMZJ7Z9kJmwBCslYBOIL0rvfoPxvX/t8EB+A9yloFAACiMY8LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACCaUck7pKur60CuvvaGSad8oPS/2Yu3JSNt8B0N514yP7Wfq7364OwPzF38asEXAAAcJu/YPO5FFzbecOONl1562bB/YvLCn6y5elJy+BXf0errP/Dh2ckh3/VJ16x5+ZrsF+oWAOBwe8fmcX/1q1/95Re/+KlPXf7UU08lh2btTafc8ODij/bOuf6PxR+du3jxTbkp2JvWZv85E6mDZmSLfmTbkLc+576ffiVZdE1+5vXVxXP7p3j7pmMzk7hXLk+aFn34lBtW9934wDRw7zaUn74tmDPuvxoAAIfuHWvcXk/+z//5ycsuXfiVr/zmN79JDsHyO55buO2Vl7etuXpikrxw2yNnrH858+29s7KB++ebF/7kley3fz9t0YcHinbgRybt58ZPmvt/TX7huabsl5nAveCRP83d+LZXlky77cJsm8761raH5mdnf1/51pxs4F61+Ws/3dZ7j/OTH1zZG76DZG7qys1f6b2p9Qs3X/nRB83wAgCMjHe4cXs9/PC/XHRh44MPPjDktbITpUUrZQunRf/0T2YNXHPyZXNPyn3x6uK7l0/+ykN9FTvnviV/2rTovrXlfmRIkyZPSzY3bctMCd+9KPnakmt6bzyZde9D839wW8k08Kx7X3l51dV915jzJ/OHdQcnXb3qlcf7bxYAgEP0bjmvQltb25133PFSU9Pf3H1PhascxHrcps0vJNNOHWjHyWdMTl5IDtqrL21OXlh+4aTbCi7L5G+5az44+8I7mnq/rpC5J139xfmL/vyCD9yRJGd87af5LAYA4JC9Wxr3gx88/4Ybb/zDP/zD5F1oW9PmZNr8Sbmv99ej/XU7f8m2NbNyS3UrXnXOfS9vuy/ZtvijH74t281/+lB2cQUAAIfsnV+r8P73v3/RHXc88uijhyFwJ087I9n80sCKhqYXmpID9+qq/7fpjLMmZ6ZeT52W9C3MrXjdf/tB0/y/fyUTr8NeCHH1430rd3/ouDMAgBHxDjfuNddc8+8/XXf55Z9KDovseoCmO67sWzK7+vqrfjB54fUHOFe6+voL70gWPpibu53zxYVnLL8qfw6E7Bkbrh8cpv1VnT2qbHnF282enyF/nNnaFcsPYH0wAABDesfWKsyd+8c33Hjj7//+7w/7J7LHnC0qvmjyV9bv51CtOfe9/PfXf6DvB4e5orfkjnpXHfQ66epVD22edOUHfpD/p9752lnz//TKqz58yiOZ7Xnwa498OLfKNvPPf79+4d0XLFqx9ltzBufrSVcXXDO3BELiAgCMjKr2js4EAAACebcccwYAACNF4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgDOuqzfAAALbElEQVQQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgmv8NAAD//8KARt8AAAAGSURBVAMAuMXZuoKOfXQAAAAASUVORK5CYII=",
+                "media_type": "image/png",
+                "type": "base64"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "parent_tool_use_id": "toolu_01TH5EJ1gCETVpufZ4QP4iNx",
+    "session_id": "0ddede6f-e901-48ef-b2c4-ae11d534bc50",
+    "uuid": "bf47c3d5-8739-4e54-98b2-e268110dd13b",
+    "tool_use_result": [
+      {
+        "type": "text",
+        "text": "### Ran Playwright code\n// Screenshot full page and save it as C:\\Users\\Split Lease\\Documents\\Split Lease - Dev\\.playwright-mcp\\live-view-split-lease.png\nawait page.screenshot({\nfullPage: true,\n  scale: 'css',\n  type: 'png'\n});\n\n### Files\n- [Screenshot of full page](C:\\Users\\Split Lease\\Documents\\Split Lease - Dev\\.playwright-mcp\\live-view-split-lease.png)\n"
+      },
+      {
+        "type": "image",
+        "source": {
+          "data": "iVBORw0KGgoAAAANSUhEUgAAA6EAAAOVCAIAAAAX0nHGAAAQAElEQVR4nOzdD5jU9X3o+98y7AK6CllrXEtVckUtoBXUuKHH1RBIqTwnwTZXc43cxpgaPSfV+C9NQpKnnqeKWo1J9eRWQ0tsC/VGTxJp7oESQdLAOQYfFRIFjnG9Ij4kSwwrygr7b3bPzOzu7MzszLLA4p8Pr9djn+4OszO/+c13M+/9zvf3m9HtHZ0JAAAEMjoBAIBYNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMC7xntL63ct3xzz7hTqj8+v3ZiTQIAFVS1d3QmwNDSHR2vbm5/paV7y8bufUlSd9roD9SnzphWU1/rz8Rh6Whtb+0o+L4mVXfAu67t3xa23rOh75tU3ehvPDrhzAQAyvICDUPpatm4d/EDHU80JenCi1f2fre39uTUJdeO+1TDWFOKQ3vmvj1fX1Pw/eyxqxfWJgdkS9sDGwa+S7d0/bc1nWfOrk4AoAyNC5W0vvXQV/Yt3TLkVbanly5sfWRq2zfumDDlAJstirZfruv8dcH3J0475vS65G3Q2tGd8G7xjg0DgAo0LpTV2nrvZ9pWtAzruh1bum64bvdd90+YfiRmbtcPb21/vOD7jy465ksNycibOuZTk7u+09T/bV3qE41jEt4t3q5hADBcoxJgkI4n7hlu4PZKb+9a9EDrvoTDZ9xl99d+/dJRk+qrpsyu+dZ3j515hE6cAzAc5nFhsC17H1hXfElN1ceuH/ep2WOOr0kl2UPQ2l5as+9v7ktvKziOqmVl+/cuqb1ycsLhUjP2omsz/yUAsD/mcWGQX/4sXTyHW/XZByd84eKjegM3I1Uz9vSL3/fgg9WnF12t58mNZnIB4N3APC6Uam/a0lN0QWP1JSenBl8vdfL4/zz/tzcsH7jkpRfTSQUdLXufXNOx9qfpppaktbknVV81rqZqauPo//OSo06vq/B72NK6dEnnb/Lfnlh95RW1dZlZ5Na9jy9t+29rul/NlHht1ekN1ddcf/SZtQVb2NH21PJ9//xY96vNPa1JMr6+6vxLxiwYxgllMxv5xGPta9d17+hIWlqSurpk7ImjLmisnn3xuJNqSvfASytfX7458/97So7K2/Lo6/f2zYKn5t9y7KlD32Nz62NLO368see3LT3j6qqOPnHUH1067pKy56ko2RtJ1QVXTTg/f1RT05v3Plaw86eNuenio5L+XfH9Fd3bW3r21VTV1ladM6/mk/vdFR1tv1zT9i8r0k3NPS0dVXW1yVkDO3Dvinva/1elzSirec93lna1Flzw+5e8b17pfH/JzZbZdS0bdj+0rnBkjrro2vHnli7Y6Gpp2vuvj3St39zT1trTkmQ3fuK01AUXj5kzY9y4pJwKw6z3bMT/nNkJ2/tuZ/Ls6v/7sqNPrS0aCYc8DLqeX77nxy8WXDCwARUf+/sbj1rQULIau2QHJqkZY74wOzcGSsZG3+137djw1tKlXU81ZQfG9KuOXjR/bMmGtTTtW726a9267tc7el5rrTq+99dh9piPzz6qrsL46d8bffJP9AGM80IjOw7hiKNxoVR3657hXnXKtcc+sqAgO2rKpHDSsfdHi/b93bqewvPDJs09byQ9zcs6nljWcXxD9VcX1p5ZO+hnO9LrVqZfyn87edQnr0haN+6+7pauV/MXtvZsXdNxw7qu//Tg+E/kQjxzhRsWdhUuonijuefxB9oeX9LxuQePvezkCr/zrW89sqjtHzb0FEZ6c3Pm/9LbNqaX3tc+89qxt1x69PiCf/3NxvSKNWVuacfG9I7+r2feklSOm46tS1pvXtad39JM+r/WnP7OxtaHyp6nomRvJFW/tyA5P//drvSKlQXb3tF908VJ65bdX7u56/mBXdHT2tKz4oG2FUs6Fnyj9sqpZQMj/caGPTffWrgDe5pbk+aBHdj93Mr045U2o6z6UR3r0isKInfLifvmTS4OzqaOf1mZbh74vvvEy5JTTy6+yrquFSsLb7bqPxbvotYtb9z1V51PFr0Hkdv45q5n1nT917q2z/6Xoz4xdUzpOCs3zNItb951TccTLcW3s6xj/bLOjyw8+kuzx+Zv5JCHwejfrelZsbLoFBnnX5FcUHSdzk0ru1YULh/q6Li8ofiBNHf+fyvTvyy44IIZ/eeVKxkb2QfY8eQ9e25d2T/aO3p2dRT9Wdux/c1FX+lY31x4WU//r8PepffsG/zr0Ktkb3Q2JvMmH+A473MYxiEccaxVgFI1v3tK8QXrOh/bXn6CNlVTU1c3ZuC/QZ9rkGmFv75i79+WBG6x1zZ03nDpG9/fnk6G1tzzevMbf1kYuHkd3X/3lT2ZF/j0lt1X3VIUuIXX+c5n9jzRWuZf0tvfXPiZfd8pDtxiPU8+sO/y6954NRkpPa8+uueGghf+QtnzVNx8aPf1SvrV7W/85XWFgVt4B91Lr9vzSJkdnn515RtXL6y8A6/bs77cDtyfsecWn2Fg28bOkgMamzemi4Iq6Xlmc3vxVfY+t7Ho+9qGwqUymS1vueq6ksAtkm5JZ7b/5kf37WecNXVvb229pyhwizbsiUVv3bOhIxk5dTNSxQWc3lR6wr72TSXr4zektxZfsG9z9y+LLhh1/oyK505+c81bA4FbKv3amtcXfKYkcEsM99fh/9++76DG+WEah3Ck0bhQKnXGtJJfjJ5/+Mzury9pfbVjfxlaItcK/z6c8zNkIvXmN58c+nWrteeHD3T+stK/Nnd9b03rQ7d3DXlv6fuWtKYHb+TNHU8NYyM7tnTevKh1ZF5bf935tw8MkdRJuqnztkcPZXFzz/L7Ku+r3BW+c/dbr5Xc6fbWO+7pHmpPtKbvuafoLLDDkzp/dqpo0nFjuqnoCp1bNveU/MxzGzuL9k9L19bi6poz5+iB7drw5s1Db3m/5x/Yu99CfWZJ++ND3VbP44v2bkpGTn3N7OKVG1s2txV939T1bMmPtKa3FO+NlzYXj6YZoz9U6Y37ju4fPpKuNPYye/Lzi9LD+pUdzq/Dr9v3O86/sbyt9MLDNQ7hSGOtAgxy/OzRF9zXsb7osp4nl7Vl/qs9edT5jaPnXFgz9eSxtftZTNf55H1tJa1Qc3LqyqvGXDht1JsvdqxZ2vn9woW/Lelb73nz+7ceW/mMWOl/z85mVU2/ePTchqrXN3T9cGV3YaWtv6ctydXL8TNScxtHT+zoWv1Y+pniFGhd3vnU9cnMoTayauYVYz57Sc3v1lXta+588pF99y0fmIRuWdP27dljvtSQnSGbfNmYrzdmt+qHt3Y9X/DzZ1465k+m9X6ZqniSiS3d2UiqqTq3cdQJNdk3i3+eWwRc6KXH2n956bjTk4PS1PWj3P+fOCN1dn32i50bS3dFsqXzvzclBefBaFs1OItrqj56VfWH6quy602Xdz62sad1Xfr55IClZqRmJumCEdX9XFNy/sBdD5qnzOzWzV0vJcnpA9+mi7Myde7U/i87Wr9dnGWputTlt4z5+LSa8TXdr21v+97tHT/anv/HTKG+deGjNTMrjt70j3JLzGsnpy48LfvFmy+mnyz5nL/Wrh+t65zeeMjDoM+46Q17k6aB34Vfbu7Yd+nY/GKOQZPc2UexZXNnUp+fqd1XMsl9akN1xbWp29NP9H95fH1V798eE3r3xqA9mTEpuwp5zFm13U0bOv55adfWgn/O/Drc01Bz6+yKu3Lb8q7sfhtynD//SNtL88cWzGQfxnEIRxiNC4PVHnvLote3LCwzndO6vfuJ3CLazJeZ3p172dhPVjoApemtB4rXKdbNHrN44TG9a/jqG8ae3tAxfdGer68ZeGlPr+t8aEv6L6aWW9Tbt2Gpry879qLelbuNyScue+O6zwy8HKZzr52nX3v0/ZeO672Jj17avn5R661rCucIu19tTmbW93/XvPehoo2s+ux3x1/ev2a3pr76j68fM+3E3X9eMBf1+NJ9VzVUH5/pg8nHXJSNl9afJUVxc+KMYy4axsn/U5OrH7x//KT8rmttveszxbXdnH6uOTm9Pjk46eLHkumLJ4v3diYXntrYduXk/iONmtq+V9xJSV3qr7/7vvxZeC9qTP/HR4t2xQGoGXP+jI71A7ffs/XF9mRy/1FTg+cpk+zD31Tw8LduLLrbVOPo6f1f71je/njBdGLJjq2fXPOF7+478Zq3Bj4+ozX9vZVtM0sPsRqQ2XUfvbX2lsb8gtf0q4Me+PoN7UmucQ9xGPQ6/UOp2mUFh+Vt7M70/Zl935SZ5M54ckN7enZ13xa2dD6zvfAfq2bOGJcM6aSLx9x2/TElhx6+tLRoTybF++H8+UedP7t0lK5/YO/zs2vOrHAv6eGN88wTfWp+nB/WcQhHFmsVoJzahvctuX/0mUPO1GZ69/v37L3s4l1ff/StNwb960s/HTjmJid17fXHFB+kUjNz4ZiPFU3b9qxe3ZZUduZV4y4qODQtdXLt5+YXX6N+9M39gZsz5oKrRhcvdux5+ZWCjVzRVXAUV1I7f8ygg9JSJ1069hOFobmlc+1QSxWHadRf3FHwwp+979pbFo4unsPuaXolOWhnXn/05UWPZfDeTl56pSv/deExUjlVl/yXko+ZyOyKo/9ianJQxnywseh/bTdtHFj40vJid36P1g7cY26qss++LZuLbm5mY36ac+/jjxUl4LxrayeVjttxn/jC6MLn8PkV7TuSijLDoCBwk7IPPP1iegRGQd7U0bMKd3Vr+rmBZu3Ykm++2iR/rd557vzGPFd4a/WpPxxy6rh29pj7bzlm0Lk19q4r+hMo84dE9ecbi49sGzxKW7p+MtTHfQ9rnL9SMM4P8ziEI4rGhQpqp0741vLaRdemTt/P52n1HoCye2vRDFDbpg3Fr5ezqy8qczu1F8+vKvy+dcMQq0irzppWMveWOv7Eoh9Ppo0uPYC9PvV/JJWUbuScObXl5pCP/sOiCbmephcPeQppcuqDg95LzryhP3IHhlc1NgyepxxXcuxXeuBd4/TLLxZPFtan/qjMhPrYOZdUnmUf0vENxUdWDRw11blpQ/6sAlUfmz+wcvfJjf2HnXV0bilawFtwQFVz51OFsVk7evaMcue5m1r9ocLh19T9clLRhQ2Dh8HY6R+qKrloROcRx51fPMYGDrlr6vxZ/jdrxuhL8vGam+bv9dLm7sKNKT4ab7Cqj112TJnfxZI9mSQfufjowVdLzaj5WPF7Cz/72d6kkuGN886BLw/7OIQjt8otWgAAEABJREFUibUKMISasedfmvmvq3V729rVnevXdT+3vWeIQ6T//sHxJ/Vd0PVK8VFFZ82oLvuidHr2+LaCF+jmnt8UrMIsccwIf3pt6Uau/qtdPys3dZ0uPrLmlebMPtjPe8H7cUqq3BqEqpF73R71u2XuIFX59jt+VTxnnJoxuuyzMG7aqFOTwlOYDVt99fn1nS/lK6o1/UJzcmZ2IwvmKZNRZ1ySOmtZ39Lb9Ob0q5l31ZNskhYtxp06eqCcXuku2pjWrtuv2FX2YRYfHtX9q8yWlF8HUvV7p5S5dNT+Tq58aFLTG1LJmoFfhOcyc9gXZ9dyFE5yTzptzHl1XUv7Bm3PC5m/tepTg09oPatx7JD3NWpq2Vnekj2ZjDrrtLI78qip0/YmBTXc3Jw9gq380DrgcX74xyEcQczjwv6Nrj259mNXve+u7x63Ys3473937BeuKDO5m27q/NuVAysNOov/9fi6MeVv+8RRk4q+z8XH26VkI1tbepqby/z3WnHj7vx1dxLdpFMqdMhQ8+JDO6qheKryud6lCNu7Ng3MU6am1o2eks+i7enncgs3d2wu+ivj1Auz66HzSuZTX2su/yQWP4c9vxnOuQPeRuNmpKYXfJve2JV7QyO9ZePAYJs+Y9yp0wael6c29v66dRYfcJY6f8ZB/q1UvCer3lfhsLXfO6V4SvuV7sP3K3sYxiEcOTQuHJjq8bne/X+Wj3/w+lElL4KbHms/4Fe7muQ996Zja2tPwoE7c07RQsxNm7NvCbRsTm/rv6R+6ui65KizZuSv0v1cdllI5wtFB11VnT/j0CbRc94a9gedvE3qxnxkRsG3zd1N2Qpv27Qhf1EqM/+amb/Mz2u2bu7KLl1t6ipajNtY1MqHw2Ge0gZGirUKUCzd0fFGa9FHlw3+ZIec6lPnj79t1+7/vKzgyrlljvXlb7bC+5mvdG8rvuAdTN7TG1OTh7McYlr8P44rzlU3pw/+QLipo2cmXfnPpsolWnp7wTzlOdOynz17VmYasv9zuZ7b3J409GwpnKesTzUOcUBVbdVFjaOOTvbv949L3mXGnN3QmmzM/zZl+37eKV3P5eefJ4/KfjJdffW59Z2/7P1Tsqn7hY5k3ItF06gXNI4bgb8AciotON7xSunfeIfvd/awjEM4UmhcKNa8fM+nHyh4DZtcvfTB8RVOYJUqXU07YNTvZH6m4LV3y4vtSeNRg6/X0lJyDqBRJx3s2bIOXMlGVp274H2f3d+5TIMa/TsnZppp4PveOcKJg66XLl21eUDGfLCx7fH8qXCzidb+8sAJE1LTcxOZuXft+5bkNm/pamnu2VKwzqD0gKrjqoqew9rUJ2+ZcJAnFX6nTZyRqk+68o8l0/f7Wgf2dn1Dde4346iGhr0PL++9LL2lKandXFiBQ3282X6U7Mmk+4Wm5IIyvw7tvy1+syZ1WmrkfmXfnnEIRwhrFaDYxJOLfyuaun5aef3Ba82V3rUfM3Va0ffNazrKvSZ1PLWueJ5mRuptjMzqD5xW+G3Pc5vbkiNU9e+dXLzIsqnrf5R53jvXr0wfwvkEqmc2Fk75pbesK/j0ssZU3+cy1FUPfDzExvSWF4s+pXZmyfkiTh5VNGCau194ly20PQCTa2YV1GKm758c+PSyqlkX9v2JOKVh4NjBTRv3bHux8BZSZ9clB3vvo88q+r7npz8td8KE1vb1xeevPWvawVZ1GW/POIQjhMaFEqeVrOfr+Ye/KjkvWJ/09jf+6r7iQp086uS+r1LTG4uP4m/u+t660lMypLfsXbKh6JIzG2sO+jX6wJUkV/L80rZyH57U+eR9uxZc9/q9S9789w17m1s7Q764Zj+GoOiCzPP+xraiZyz9xrrWb69LDkXJkVXb1gysJZ3eMKb/TfZx0xvyodO9YmXhGEtd2FD8xnjNuAsbC7/v/uelb5V5gjpa//Yzu6679fWHlu95qqntjY5353NYfFjei12r85PctamG/pbPfWhcn22bOzcVzHqeOqdmYnLQxnyoaE9mP1xjfekvfvr5JZ1PFV0y6qKGCoeTHpS3ZxzCkUHjQom6cR8rfqlLN3Vdd+muW5e8uWl7e0tL9r/mpj2PLNr1ic+Unst2YkN1/iV2XGPNx4pz9Ylb9/zXDe39cZF+Y8vum2/uKpp0y7zRfPHQpz0aYeNmVxd9LEJL119et/v51sIA6tq2fM83l/c0b0mvWNbx1wv3Lpi/Z0XRRucWPBR4cs2e3k/ESHd0vZdqeOqYTxVPoaebOq+5ouXvslG4d9O6Nx9ZtPvyW9OHOklaOEebmYbckD+xa9X5MwZSqSB0ep4qPIdxmQOqqi+aX3QoW8vyfTcvKf5Qko69P7q1/Ufbe7auSy+9r33hNa2fuPmt15KRNTLDoHCONmntfqq/X1MNo6fkL89+aFz/1xu6C4rzEI/Gq77gstFFv7Kt6b++bvdTA78O7c8veeMvlxe9dVM7u2bOyP5V+vaMQzgiWI8LpaovuKr69HXF/drRs35Zx/plHUP9XF3q8wsKV9wefeUtHT8t+kDgnscW7vlRbevxmSRp7WkeNDc8/dpxM9/uQ7ZrP3t954pFA+97Zk/0O//146emPnhK9lE/t6H71eLtrLu45EU9t+Ch4O3U1jXtn1iTO4F/7ehvLZ9wZvJeMe4TX2z/79d0FX7KVLql+/v3tX+/4JK6qaPGbenekRy0cf9hzt7vNA1a4lKfml7YiMVHp+UVzPUOSM046vrGNxcVTOw9v2zfZcvbTp8x6gO1SVtz91MbS04cVjVvwbjjk5E1MsMg1VD9kSQ9+IHPbCj8vLGSo9P6Fcz1HpzU1KNunF388drbuxbOf722rqq2JtnX0vNG6f8AjPrctbUjdYhbv7dnHMKRwDwuDJI6efzfLEod4OxM1YI7as8vLtTahmO/cW3p+d7TrbnzlQ4K3LrZY299eydxe9XOPvrWi0s38rXMrO3K9Io1pYGbqkvdWPqiXj1zdoXPVmjt3v6emm5KTT7mtltGDfW816Vu+UbNIX6Kau7IqlKDPppr3IWzB//oqI+Uf1u85iO3jJ1XvN2ZYZaZtc08iU+UBm5y/MVjPtcwgktIe43UMBjzwcbBF5YeSTaxcdDn+WVHcvUh/0FVM3PhUZ8bFMq9540eFLhVH11UO+8wLC16e8YhHAE0LpRT2/C+JfdXzxzeC1im/L7w3fFXTh7cDamTLi1zGt3Bzrxi3JKFtSP8KWbDVTPzlmO+dcX+T/pZM3X0t777vpmDtnJc49G3zq4q9xPd/+vF5D0lddLF4xdXeN4zz/LCB489/9An2icXf6xuzqCP5sp97lfpD1Y+oKq29qbvjlswjOrJjLTFtxyWkTZCw6B6esOgl6XCz3Xrlf3QuNJrzWwYkT8Rx112/1FfaKjaz7VqRi24/5gvNRymt13elnEI8VmrABXUTh3/14+2v7Ry33ce6dq0vfwZwsZPTX1ywdiPNQxxSs7Rk+bXLW1sXfVA+z+s6Rl86NpJM0ZfeUvtRfXv7K9izZSr6h6b1/rYkvZ/KbeRtSenLrl23KcaxlZ4Yc3Mfh1z/7S37l+S/mXxD/+quS1J3oHJ6UOQGp993jtfa2pbu7qrqal7S/uoc06pOm32mDkzRurEq2MvmL3vseVFdzr4o7kKzyDWq3C1dxm1R195/5iPbnhr6ZLOJ5rKDNeTGkf/p2trzz+MI21khkFdw+gzk47CYx9LPtctp/AMYr1SHzrYjzcrVXPUxxbV/IeNexc/0DF4T6Zqq6ZfXHP9VcdMPMwfbnz4xyGEV9Xe0ZkA+9P5Rkt654udv+59v7ImdcZpo8fX1Rzgi03mRjpf3pzOHYtTdcq0mhMO+BbeBoUbmYw/peYD9aPH1wyzHtL7Wrv29b+lW1M7pjbgbNOeRbPbnxj4tupzy4677O07pfGwZD/HpLnjub6PKnj7R1qcYVC0J2tTZ51WPb62+t3xwYTvgXEI7zSNC1Cio+21jurja8vFTNPuBdd0FRxblbp1zfsuSOAwMA7hkFirAJDV1bq97ckNnatXpDdtz66affD+8ZNKJyA71j/SVXRK/hkph/4wooxDGCnmcQGyWv92ftuPChaSpupGXXLV2D9pzEykVadb21ua2793e8ePthf9zEW3jv9644ifo4AjmXEII0XjAuS8trJlwT3dw//AgtSMmqX3HDvSJ5rlSGccwghx7jCAnOMvPvbBa0cN8/iomqnVDy4SFow84xBGiHlcgAHpN7a89cDdHY9vr3iNVG3VvGvHffbio96h8xlzJDAO4dBpXIBS6X0t7c+t61j/Ys/Ozd07cqfBmjht1KTTUjMbxk49ucYJ+HlbGIdwKDQuAADROHcYAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIJpRCXBgdqy4+/bbVu0YuODny2768u2Lfz5wwc5V377p7lU7k7fH04uL732Y25C9wj8+XfhFiWf/8faylx+Q8jeS2WP921bpXkbk3g+b7BjIPOmF/+WHxNv77A9fdpxkN/UQtu3d+tAqjuH9yeyTb694Fz6egl8Q4KCZx4UDNfHcP5iwuvnXmS96v9/ZvLvuuAlbNz2dnH1e7yU7mncn7z/uhISDd86nv3pO8q425fKvXn12/rtMLT10W3Ll1+ZOTN6dfv7C1uPO+9IX5xqWwBFC48IBO6F+QrL2hWeT83IRtuOZXyTn/FnDjm/mL3n6ma2ZAOrt3Uz6rNra+2NT5t776fMG31pmCuqutbtzX06Yc+Pn5/U2SGYi5+FtJRdmpjaXJv03snPVbd9sOid//T75u5swZUrhhRsmzpqwem3vDU5acOcV55Te+6qb7t41RAAVbGTBj2e34emWvqsUbPzA5ZMKNqNf30PbdteXf5u5qdxFL+T3Uj4cBx5swb3UzSoTkZlrrqife84vVq3eVWkzkvL79rjz5rz/6dX5XTqwz0v6dTjO+/isDXcV/OVT/GBLbjMzDfxQbmuLHlT5kVB45bKRmnmY/5Sck3kgW/vH2KA77b/lzD5/esrlc5OHX5g4a/fqzCV9N1h2lFYaur/917tv37qraMsHbdHg0ZK5tZI7LXv9/f8KrKg/74S1T28t8+j6x/D+h2Xvlv+69wFu/ebtO0qf7jKPPXsvv5jcv+XZKyT5e29uWJCsWrp1YJOSIYZl4RM6peDXOf8kTqxLdrTkf0He5X/pwbuZxoUDd/YZUx7e0Jx5KzHzorXz+WeTyVefcGJy3Kpnfp6ck3l527lrZzJpXvZ1ru+F8N7s19kXtttWnVjaBD9fdtfaCQvu/Pw5ua9v+uay+tvkMYsAABAASURBVMyrWvbVffecG7+afVHMXvjtpLRly8re3c5ZV96buYvcy3lyXP6fdq/OvDzfecUJuc1Y+o9Pn/Pp8zKlXpeceMLcz38pyb5Il+3vXrmG6NvI7NdfXpZkNjJ3Fydc/tWv9T+61f+06tz+wui7PPtAMi/kJXvvinuTZTf9+Hd6c+HZzCVbd0+88atXn5C78YeXPXt24ev604sH7iU7V7q4vkx9tqxdtaN3P+d3V1J58x7e1hcihZuX+3rBnbnJ4+xD+PaK+uHs8yGVv83cxrx/7r1f7C+ntY+tmP75ec3lRkJuy5/9g9xzmsumu/7xuDLP1K6ns9f59MSKdzr38/fW5/f504sf3ra6ee69dw607KBRmqy4u38slQzdXduS/K5+OLflxXup/GjJ/kvhnRbtpQP6FWhZm/nTrni0FI7hSsOy7EC6M8n++Vf6y7Wj4mOvZOuqFbNy+z9777cvTvqGaJlhWfTsZ7++6R+Tvie05Ens/wUBDpr1uHAQzjt3yu5nN+XWXzb/tiW7LCG7gCG7XKH3kuN+Z2L2BX7D1ilz+4Ns4rw/Oy9Z+5Nni25nx4ofb6ub9eG+pMvEX2/WZC+8pO919+wrFkzZvfrfhrHWMPNmdKate1+MT5h79awJhf845Y96Xy+z25n8ZtfO3C0P7431p/917e4pl/d15wlzL5lz3LYVq3ZkvvranfnczN1szs5NTS3Hnffxs/MbP4x7mNLQ+2BPmD65LtndXHEd4nlX31lhejW/n8/+8Jzjck/NEJtXdOXei7P7PP8Yc3svGdY+z9u5anFmL00vDLhKtzlx3he/mu/U3EMepG8kZJ7Tn6zOPOr+p+mcT8+dsnVDufWjE86ZPnHIOy2V39RhjNLsBg8MlYEn94wpye4dzSU3XGG0FN9pgQP/FRh6tFR63jMPM7/lQwykUsWPvZLj+p+jE+bOm5L0/e9AUm5YZp7QXZMW9D372b1dN/CE5p9EYGSYx4WDMbF+QkvujelnN22bMj37hnv2Ffefsu24Y9O2uj/4cHaGsnl3ZoLnpswk2YBJxTfz6x27khPqJw59Yea+kuZkv3Zm7u64yfkfyy6o+EUyArLT0hPOqS/YnPcX/nPBu7q5XixZizzMja8stwbg4dtzE65zK00219WfWLh5LQNrBspsXsmVc7L7fGvvveTtr85Lrp95+7s4m/Zzm9nFGH1bluuwTAb9+KGlX759acH73dnndFd2gUHBTUwYsoMO+IHsKD9KJ877o0mrH37oprUVFkhUsp/RUn6DR+pXoMB+huWQDvyxlwz4X+zqrdbBw3JnUvRLmpyQ+cGmBDg8NC4cjP6iffqZrZPO/XTvRWeekzz2zM4zk99k/rX/Vaxylr339WVEXe5d3dxqxeRwOCHzPvvc3nfGsylWaQ3ooW/ega7BHc71y16nr24z/XRn79KO3srJThnO6/3XbKRmV3CemxxgYla+0yF/oNwozUypnt23hjUb2e+ZkTwSw/K9+tiBItYqwEHJFm3TM6te2JpblpCTmarZvWPT88/umnTu2b3f968KqOjEicdl5up2DH1hdgpqOFuUubtdv83/2M7h/dQwbjcz1VT4lvSO5t/k/n/vcfp3lr6TW/Kod4zUZmTfxf7ql2ZNaPnF84N3aW7idmDzsvNnlTev5Mo5ZZ+IQ1TpNjN/F2X69av3VijXcz791XvvvLL3re2S5/QQ7rSi/YzS3Fv/914+Kdn6wrPDublKo6WikfwVyBresByW4T/2kgHfP607eFiWPqE7D3CTgAOhceHgZIv22V/srvuDM/Olcs70SVvXPt0y5Yz+xYgNU3Y9vXio06Zm3xVtyS9/zMwbZc/W2XvhY32r9H6+bGkmif74vKT3dbr/5fbZf8sfOd4vu+avf+1jbnloMjLO+/isCVsfXvZs3zY+tnpX/6rf/Kt19rChvrvrfdT/+vP8xieHpvDsvzueKd7hA/KLGnPrHYfavMwE/NZVfTeYvXLvxcX7fPApkA/GELeZr8DsgVAt/Rt505eX9Y+EzF9KudWZued0af7Mr4XXOeA7La/CKC36wWc3bUv6R/X+VB4tQ23wcH8FhmW/w3I/u6X8Y8/ladMzO3s3c0PRuM7f8s5VKwo3dfCwLHpCd6z4p8z/XDQc6qGNQAXWKsBByhTt0od3zyk8TCR7voVtOwcW4Z139Y27bvtmbmFfUuFN57Ov+FLzt+/KrcJMcu8yZ1/wTsideeCbt6/OXjZw1qHsETy/yC/ZzB5+VHxbmTe75+74cu/dTZoza8Lq4b1Lm82+b6666csvVDpRUd+5F/o2sv9sUGdfsWDT7b0bk31olyd3PZwpgLnzTuh91LklocedN2fKttWDbzG7o1bd9eWmzEOr38/WnXf15S/clF9gmnnXuGwwTZmwI3OP2a+yu2vIzZv7tct/23eDuc17tvf56n0i+vZ58fm8Bs4YdYDK3+bEgkeU2dq5yTdXZaZs580t2OD8SOh7TvPrZSft/2RSFR5IZeVH6bw/O+/ZoguHm5jlR8t+N3h4vwIV77RgDO9/WCb5gTTx3Cmrln7z9meL9tLE8o+9d0TlNqlu1tw5xxU08nGTkh/33XL/E9d7L4OGZfYJvTK5+6G+J7TSKoiCX5BzNx3CCIQjW1V7R2cC8J5VdNrgA//ZFfXv4g9u4F2v0l9BhzIsgRFhrQJwBClaMZJ7Z9kJmwBCslYBOIL0rvfoPxvX/t8EB+A9yloFAACiMY8LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACCaUck7pKur60CuvvaGSad8oPS/2Yu3JSNt8B0N514yP7Wfq7364OwPzF38asEXAAAcJu/YPO5FFzbecOONl1562bB/YvLCn6y5elJy+BXf0errP/Dh2ckh3/VJ16x5+ZrsF+oWAOBwe8fmcX/1q1/95Re/+KlPXf7UU08lh2btTafc8ODij/bOuf6PxR+du3jxTbkp2JvWZv85E6mDZmSLfmTbkLc+576ffiVZdE1+5vXVxXP7p3j7pmMzk7hXLk+aFn34lBtW9934wDRw7zaUn74tmDPuvxoAAIfuHWvcXk/+z//5ycsuXfiVr/zmN79JDsHyO55buO2Vl7etuXpikrxw2yNnrH858+29s7KB++ebF/7kley3fz9t0YcHinbgRybt58ZPmvt/TX7huabsl5nAveCRP83d+LZXlky77cJsm8761raH5mdnf1/51pxs4F61+Ws/3dZ7j/OTH1zZG76DZG7qys1f6b2p9Qs3X/nRB83wAgCMjHe4cXs9/PC/XHRh44MPPjDktbITpUUrZQunRf/0T2YNXHPyZXNPyn3x6uK7l0/+ykN9FTvnviV/2rTovrXlfmRIkyZPSzY3bctMCd+9KPnakmt6bzyZde9D839wW8k08Kx7X3l51dV915jzJ/OHdQcnXb3qlcf7bxYAgEP0bjmvQltb25133PFSU9Pf3H1PhascxHrcps0vJNNOHWjHyWdMTl5IDtqrL21OXlh+4aTbCi7L5G+5az44+8I7mnq/rpC5J139xfmL/vyCD9yRJGd87af5LAYA4JC9Wxr3gx88/4Ybb/zDP/zD5F1oW9PmZNr8Sbmv99ej/XU7f8m2NbNyS3UrXnXOfS9vuy/ZtvijH74t281/+lB2cQUAAIfsnV+r8P73v3/RHXc88uijhyFwJ087I9n80sCKhqYXmpID9+qq/7fpjLMmZ6ZeT52W9C3MrXjdf/tB0/y/fyUTr8NeCHH1430rd3/ouDMAgBHxDjfuNddc8+8/XXf55Z9KDovseoCmO67sWzK7+vqrfjB54fUHOFe6+voL70gWPpibu53zxYVnLL8qfw6E7Bkbrh8cpv1VnT2qbHnF282enyF/nNnaFcsPYH0wAABDesfWKsyd+8c33Hjj7//+7w/7J7LHnC0qvmjyV9bv51CtOfe9/PfXf6DvB4e5orfkjnpXHfQ66epVD22edOUHfpD/p9752lnz//TKqz58yiOZ7Xnwa498OLfKNvPPf79+4d0XLFqx9ltzBufrSVcXXDO3BELiAgCMjKr2js4EAAACebcccwYAACNF4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgDOuqzfAAALbElEQVQQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgGo0LAEA0GhcAgGg0LgAA0WhcAACi0bgAAESjcQEAiEbjAgAQjcYFACAajQsAQDQaFwCAaDQuAADRaFwAAKLRuAAARKNxAQCIRuMCABCNxgUAIBqNCwBANBoXAIBoNC4AANFoXAAAotG4AABEo3EBAIhG4wIAEI3GBQAgmv8NAAD//8KARt8AAAAGSURBVAMAuMXZuoKOfXQAAAAASUVORK5CYII=",
+          "media_type": "image/png",
+          "type": "base64"
+        }
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "message": {
+      "model": "claude-opus-4-5-20251101",
+      "id": "msg_01SUHvDfxiTpRLGx7nzXGyqZ",
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_01EEkDN17bjqdEPug7arYgLh",
+          "name": "mcp__playwright-guest-live__browser_console_messages",
+          "input": {
+            "level": "error"
+          }
+        }
+      ],
+      "stop_reason": null,
+      "stop_sequence": null,
+      "usage": {
+        "input_tokens": 1,
+        "cache_creation_input_tokens": 1363,
+        "cache_read_input_tokens": 40911,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 1363,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 64,
+        "service_tier": "standard"
+      },
+      "context_management": null
+    },
+    "parent_tool_use_id": "toolu_01TH5EJ1gCETVpufZ4QP4iNx",
+    "session_id": "0ddede6f-e901-48ef-b2c4-ae11d534bc50",
+    "uuid": "17cbfd09-aeaa-497d-af25-5f4bc0df2455"
+  },
+  {
+    "type": "user",
+    "message": {
+      "role": "user",
+      "content": [
+        {
+          "tool_use_id": "toolu_01EEkDN17bjqdEPug7arYgLh",
+          "type": "tool_result",
+          "content": [
+            {
+              "type": "text",
+              "text": "### Result\n[ERROR] ReferenceError: pendingProposalCount is not defined\n    at be (https://split.lease/assets/Header-CLW1D29z.js:1:26439)\n    at nu (https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:38:16996)\n    at Of (https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:40:43918)\n    at Cf (https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:40:39699)\n    at dy (https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:40:39627)\n    at no (https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:40:39481)\n    at ul (https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:40:35863)\n    at xf (https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:40:34814)\n    at x (https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:25:1556)\n    at MessagePort.ie (https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:25:1920) @ https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:39\n[ERROR] React Error Boundary caught error: ReferenceError: pendingProposalCount is not defined\n    at be (https://split.lease/assets/Header-CLW1D29z.js:1:26439)\n    at nu (https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:38:16996)\n    at Of (https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:40:43918)\n    at Cf (https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:40:39699)\n    at dy (https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:40:39627)\n    at no (https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:40:39481)\n    at ul (https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:40:35863)\n    at xf (https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:40:34814)\n    at x (https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:25:1556)\n    at MessagePort.ie (https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:25:1920) {componentStack: \n    at be (https://split.lease/assets/Header-CLW1\u2026.lease/assets/ErrorBoundary-DLdG7s1N.js:96:19123)} @ https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:95\n"
+            }
+          ]
+        }
+      ]
+    },
+    "parent_tool_use_id": "toolu_01TH5EJ1gCETVpufZ4QP4iNx",
+    "session_id": "0ddede6f-e901-48ef-b2c4-ae11d534bc50",
+    "uuid": "6fb25b35-f77d-46de-9b3e-29d1e138ca86",
+    "tool_use_result": [
+      {
+        "type": "text",
+        "text": "### Result\n[ERROR] ReferenceError: pendingProposalCount is not defined\n    at be (https://split.lease/assets/Header-CLW1D29z.js:1:26439)\n    at nu (https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:38:16996)\n    at Of (https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:40:43918)\n    at Cf (https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:40:39699)\n    at dy (https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:40:39627)\n    at no (https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:40:39481)\n    at ul (https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:40:35863)\n    at xf (https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:40:34814)\n    at x (https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:25:1556)\n    at MessagePort.ie (https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:25:1920) @ https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:39\n[ERROR] React Error Boundary caught error: ReferenceError: pendingProposalCount is not defined\n    at be (https://split.lease/assets/Header-CLW1D29z.js:1:26439)\n    at nu (https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:38:16996)\n    at Of (https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:40:43918)\n    at Cf (https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:40:39699)\n    at dy (https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:40:39627)\n    at no (https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:40:39481)\n    at ul (https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:40:35863)\n    at xf (https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:40:34814)\n    at x (https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:25:1556)\n    at MessagePort.ie (https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:25:1920) {componentStack: \n    at be (https://split.lease/assets/Header-CLW1\u2026.lease/assets/ErrorBoundary-DLdG7s1N.js:96:19123)} @ https://split.lease/assets/ErrorBoundary-DLdG7s1N.js:95\n"
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "message": {
+      "model": "claude-opus-4-5-20251101",
+      "id": "msg_01LpCUMyUWvmSa6gVygWds6p",
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_01Wyz8JzH6Wn4XRbYLqBqagy",
+          "name": "mcp__playwright-guest-live__browser_navigate",
+          "input": {
+            "url": "http://localhost:8010/view-split-lease"
+          }
+        }
+      ],
+      "stop_reason": null,
+      "stop_sequence": null,
+      "usage": {
+        "input_tokens": 1,
+        "cache_creation_input_tokens": 903,
+        "cache_read_input_tokens": 42274,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 903,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 84,
+        "service_tier": "standard"
+      },
+      "context_management": null
+    },
+    "parent_tool_use_id": "toolu_01TH5EJ1gCETVpufZ4QP4iNx",
+    "session_id": "0ddede6f-e901-48ef-b2c4-ae11d534bc50",
+    "uuid": "c1738acd-c4a6-4ac7-bd04-b829b43a2fc2"
+  },
+  {
+    "type": "user",
+    "message": {
+      "role": "user",
+      "content": [
+        {
+          "type": "tool_result",
+          "content": "### Result\nError: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8010/view-split-lease\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8010/view-split-lease\", waiting until \"domcontentloaded\"\u001b[22m",
+          "is_error": true,
+          "tool_use_id": "toolu_01Wyz8JzH6Wn4XRbYLqBqagy"
+        }
+      ]
+    },
+    "parent_tool_use_id": "toolu_01TH5EJ1gCETVpufZ4QP4iNx",
+    "session_id": "0ddede6f-e901-48ef-b2c4-ae11d534bc50",
+    "uuid": "5260e8cf-7825-42b1-b918-b8c17b377077",
+    "tool_use_result": "Error: ### Result\nError: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8010/view-split-lease\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8010/view-split-lease\", waiting until \"domcontentloaded\"\u001b[22m"
+  },
+  {
+    "type": "assistant",
+    "message": {
+      "model": "claude-opus-4-5-20251101",
+      "id": "msg_016JBPSUVKzE7VNBqZPNEt1x",
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_01UfBfdye9userstMKuKECXm",
+          "name": "mcp__playwright-guest-live__browser_navigate",
+          "input": {
+            "url": "http://localhost:8000/view-split-lease"
+          }
+        }
+      ],
+      "stop_reason": null,
+      "stop_sequence": null,
+      "usage": {
+        "input_tokens": 1,
+        "cache_creation_input_tokens": 174,
+        "cache_read_input_tokens": 43177,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 174,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 98,
+        "service_tier": "standard"
+      },
+      "context_management": null
+    },
+    "parent_tool_use_id": "toolu_01TH5EJ1gCETVpufZ4QP4iNx",
+    "session_id": "0ddede6f-e901-48ef-b2c4-ae11d534bc50",
+    "uuid": "510e2274-562d-40c1-9196-8ec997b6143d"
+  },
+  {
+    "type": "user",
+    "message": {
+      "role": "user",
+      "content": [
+        {
+          "type": "tool_result",
+          "content": "### Result\nError: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8000/view-split-lease\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8000/view-split-lease\", waiting until \"domcontentloaded\"\u001b[22m",
+          "is_error": true,
+          "tool_use_id": "toolu_01UfBfdye9userstMKuKECXm"
+        }
+      ]
+    },
+    "parent_tool_use_id": "toolu_01TH5EJ1gCETVpufZ4QP4iNx",
+    "session_id": "0ddede6f-e901-48ef-b2c4-ae11d534bc50",
+    "uuid": "1cce278a-450f-42ec-bbaa-66777dfc2884",
+    "tool_use_result": "Error: ### Result\nError: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8000/view-split-lease\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8000/view-split-lease\", waiting until \"domcontentloaded\"\u001b[22m"
+  },
+  {
+    "type": "assistant",
+    "message": {
+      "model": "claude-opus-4-5-20251101",
+      "id": "msg_01KgYFKRrN7MWDkeBNLWkEMs",
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_019pvinU5SbpEixsgs6SBVfy",
+          "name": "mcp__playwright-guest-live__browser_close",
+          "input": {}
+        }
+      ],
+      "stop_reason": null,
+      "stop_sequence": null,
+      "usage": {
+        "input_tokens": 1,
+        "cache_creation_input_tokens": 291,
+        "cache_read_input_tokens": 43351,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 291,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 68,
+        "service_tier": "standard"
+      },
+      "context_management": null
+    },
+    "parent_tool_use_id": "toolu_01TH5EJ1gCETVpufZ4QP4iNx",
+    "session_id": "0ddede6f-e901-48ef-b2c4-ae11d534bc50",
+    "uuid": "6113b5aa-1444-4d54-b00a-070a45672540"
+  },
+  {
+    "type": "user",
+    "message": {
+      "role": "user",
+      "content": [
+        {
+          "tool_use_id": "toolu_019pvinU5SbpEixsgs6SBVfy",
+          "type": "tool_result",
+          "content": [
+            {
+              "type": "text",
+              "text": "### Ran Playwright code\nawait page.close()\n\n### Open tabs\nNo open tabs. Use the \"browser_navigate\" tool to navigate to a page first.\n"
+            }
+          ]
+        }
+      ]
+    },
+    "parent_tool_use_id": "toolu_01TH5EJ1gCETVpufZ4QP4iNx",
+    "session_id": "0ddede6f-e901-48ef-b2c4-ae11d534bc50",
+    "uuid": "45170571-ec9e-48e6-bd79-ec0d932c6ed9",
+    "tool_use_result": [
+      {
+        "type": "text",
+        "text": "### Ran Playwright code\nawait page.close()\n\n### Open tabs\nNo open tabs. Use the \"browser_navigate\" tool to navigate to a page first.\n"
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "message": {
+      "role": "user",
+      "content": [
+        {
+          "tool_use_id": "toolu_01TH5EJ1gCETVpufZ4QP4iNx",
+          "type": "tool_result",
+          "content": [
+            {
+              "type": "text",
+              "text": "```json\n{\n  \"visualParity\": \"FAIL\",\n  \"issues\": [\n    \"LIVE production page crashes with JavaScript error: 'ReferenceError: pendingProposalCount is not defined' in Header-CLW1D29z.js\",\n    \"LIVE page displays error boundary fallback UI instead of actual content\",\n    \"DEV server not running (localhost:8000 and localhost:8010 both refused connection) - unable to compare\",\n    \"Error originates from Header component referencing undefined variable 'pendingProposalCount'\"\n  ],\n  \"consoleErrors\": [\n    \"ReferenceError: pendingProposalCount is not defined at be (Header-CLW1D29z.js:1:26439)\",\n    \"React Error Boundary caught error: ReferenceError: pendingProposalCount is not defined\"\n  ],\n  \"explanation\": \"CRITICAL: Production /view-split-lease is completely broken. The Header component references 'pendingProposalCount' which is undefined, causing the entire page to crash and display an error boundary fallback. This is a production outage that needs immediate attention. The DEV comparison could not be completed because no local dev server is running on ports 8000 or 8010.\"\n}\n```"
+            },
+            {
+              "type": "text",
+              "text": "agentId: abdd00e (for resuming to continue this agent's work if needed)"
+            }
+          ]
+        }
+      ]
+    },
+    "parent_tool_use_id": null,
+    "session_id": "0ddede6f-e901-48ef-b2c4-ae11d534bc50",
+    "uuid": "755b72ae-8b6b-4deb-8fbe-768755ce69be",
+    "tool_use_result": {
+      "status": "completed",
+      "prompt": "Compare the live production version of /view-split-lease against the local dev version.\n\nUse the playwright-guest-live MCP server (since this is a public page requiring no auth).\n\nSteps:\n1. Navigate to LIVE: https://split.lease/view-split-lease\n2. Wait for load: browser_wait_for with time=2\n3. Take LIVE screenshot: browser_take_screenshot with fullPage=true, filename=\"live-view-split-lease.png\"\n4. Navigate to DEV: http://localhost:8010/view-split-lease\n5. Wait for load: browser_wait_for with time=2\n6. Take DEV screenshot: browser_take_screenshot with fullPage=true, filename=\"dev-view-split-lease.png\"\n7. Check console errors on both pages using browser_console_messages with level=\"error\"\n8. Compare visually for layout structure, interactive elements, and content rendering\n\nIgnore:\n- Pixel-perfect differences (small margins, etc.)\n- Different data values (user names, timestamps) if the layout is identical\n\nReturn ONLY a JSON object with this structure:\n{\n  \"visualParity\": \"PASS\" | \"FAIL\",\n  \"issues\": [\"list of strings\"],\n  \"consoleErrors\": [\"list of strings\"],\n  \"explanation\": \"Brief reasoning\"\n}",
+      "agentId": "abdd00e",
+      "content": [
+        {
+          "type": "text",
+          "text": "```json\n{\n  \"visualParity\": \"FAIL\",\n  \"issues\": [\n    \"LIVE production page crashes with JavaScript error: 'ReferenceError: pendingProposalCount is not defined' in Header-CLW1D29z.js\",\n    \"LIVE page displays error boundary fallback UI instead of actual content\",\n    \"DEV server not running (localhost:8000 and localhost:8010 both refused connection) - unable to compare\",\n    \"Error originates from Header component referencing undefined variable 'pendingProposalCount'\"\n  ],\n  \"consoleErrors\": [\n    \"ReferenceError: pendingProposalCount is not defined at be (Header-CLW1D29z.js:1:26439)\",\n    \"React Error Boundary caught error: ReferenceError: pendingProposalCount is not defined\"\n  ],\n  \"explanation\": \"CRITICAL: Production /view-split-lease is completely broken. The Header component references 'pendingProposalCount' which is undefined, causing the entire page to crash and display an error boundary fallback. This is a production outage that needs immediate attention. The DEV comparison could not be completed because no local dev server is running on ports 8000 or 8010.\"\n}\n```"
+        }
+      ],
+      "totalDurationMs": 44830,
+      "totalTokens": 44060,
+      "totalToolUseCount": 7,
+      "usage": {
+        "input_tokens": 1,
+        "cache_creation_input_tokens": 117,
+        "cache_read_input_tokens": 43642,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 117,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 300,
+        "service_tier": "standard"
+      }
+    }
+  },
+  {
+    "type": "assistant",
+    "message": {
+      "model": "claude-sonnet-4-5-20250929",
+      "id": "msg_012LMV9nSuoMziwzvAPdSznA",
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "```json\n{\n  \"visualParity\": \"FAIL\",\n  \"issues\": [\n    \"LIVE production page crashes with JavaScript error: 'ReferenceError: pendingProposalCount is not defined' in Header-CLW1D29z.js\",\n    \"LIVE page displays error boundary fallback UI instead of actual content\",\n    \"DEV server not running (localhost:8000 and localhost:8010 both refused connection) - unable to compare\",\n    \"Error originates from Header component referencing undefined variable 'pendingProposalCount'\"\n  ],\n  \"consoleErrors\": [\n    \"ReferenceError: pendingProposalCount is not defined at be (Header-CLW1D29z.js:1:26439)\",\n    \"React Error Boundary caught error: ReferenceError: pendingProposalCount is not defined\"\n  ],\n  \"explanation\": \"CRITICAL: Production /view-split-lease is completely broken. The Header component references 'pendingProposalCount' which is undefined, causing the entire page to crash and display an error boundary fallback. This is a production outage that needs immediate attention. The DEV comparison could not be completed because no local dev server is running on ports 8000 or 8010.\"\n}\n```\n\n**\u26a0\ufe0f PRODUCTION EMERGENCY**: The live site is completely down for /view-split-lease due to a Header component error referencing an undefined variable."
+        }
+      ],
+      "stop_reason": null,
+      "stop_sequence": null,
+      "usage": {
+        "input_tokens": 2,
+        "cache_creation_input_tokens": 807,
+        "cache_read_input_tokens": 52179,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 807,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 337,
+        "service_tier": "standard"
+      },
+      "context_management": null
+    },
+    "parent_tool_use_id": null,
+    "session_id": "0ddede6f-e901-48ef-b2c4-ae11d534bc50",
+    "uuid": "09b81714-21b0-4032-8cd6-46e897367f91"
+  },
+  {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 76503,
+    "duration_api_ms": 66360,
+    "num_turns": 2,
+    "result": "```json\n{\n  \"visualParity\": \"FAIL\",\n  \"issues\": [\n    \"LIVE production page crashes with JavaScript error: 'ReferenceError: pendingProposalCount is not defined' in Header-CLW1D29z.js\",\n    \"LIVE page displays error boundary fallback UI instead of actual content\",\n    \"DEV server not running (localhost:8000 and localhost:8010 both refused connection) - unable to compare\",\n    \"Error originates from Header component referencing undefined variable 'pendingProposalCount'\"\n  ],\n  \"consoleErrors\": [\n    \"ReferenceError: pendingProposalCount is not defined at be (Header-CLW1D29z.js:1:26439)\",\n    \"React Error Boundary caught error: ReferenceError: pendingProposalCount is not defined\"\n  ],\n  \"explanation\": \"CRITICAL: Production /view-split-lease is completely broken. The Header component references 'pendingProposalCount' which is undefined, causing the entire page to crash and display an error boundary fallback. This is a production outage that needs immediate attention. The DEV comparison could not be completed because no local dev server is running on ports 8000 or 8010.\"\n}\n```\n\n**\u26a0\ufe0f PRODUCTION EMERGENCY**: The live site is completely down for /view-split-lease due to a Header component error referencing an undefined variable.",
+    "session_id": "0ddede6f-e901-48ef-b2c4-ae11d534bc50",
+    "total_cost_usd": 0.60265125,
+    "usage": {
+      "input_tokens": 4,
+      "cache_creation_input_tokens": 33740,
+      "cache_read_input_tokens": 71425,
+      "output_tokens": 782,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 33740
+      }
+    },
+    "modelUsage": {
+      "claude-sonnet-4-5-20250929": {
+        "inputTokens": 4,
+        "outputTokens": 782,
+        "cacheReadInputTokens": 71425,
+        "cacheCreationInputTokens": 33740,
+        "webSearchRequests": 0,
+        "costUSD": 0.1596945,
+        "contextWindow": 200000,
+        "maxOutputTokens": 64000
+      },
+      "claude-opus-4-5-20251101": {
+        "inputTokens": 10,
+        "outputTokens": 889,
+        "cacheReadInputTokens": 294376,
+        "cacheCreationInputTokens": 43759,
+        "webSearchRequests": 0,
+        "costUSD": 0.44295675,
+        "contextWindow": 200000,
+        "maxOutputTokens": 64000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "4088eeae-4bff-4975-b527-a59dd75ac261"
+  }
+]
