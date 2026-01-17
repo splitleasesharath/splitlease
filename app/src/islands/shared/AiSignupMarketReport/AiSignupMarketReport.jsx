@@ -310,7 +310,8 @@ async function sendWelcomeEmail(data) {
             'attachment': '',
           },
           bcc_emails: [
-            'splitleaseteam@gmail.com'
+            'splitleaseteam@gmail.com',
+            'acquisition-aaaachs52tzodgc5t3o2oeipli@splitlease.slack.com'
           ]
         }
       }),
