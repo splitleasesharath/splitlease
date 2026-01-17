@@ -90,7 +90,9 @@ function getAllDaysWithSelection(daysSelected) {
 }
 
 /**
- * Get check-in/out day range string
+ * Get check-in to checkout day range string
+ * Days Selected represents the NIGHTS stayed. Check-in is the first night's day,
+ * and checkout is the day AFTER the last night (i.e., next day after last selected).
  */
 function getCheckInOutRange(proposal) {
   let daysSelected = proposal['Days Selected'] || proposal.hcDaysSelected || [];
@@ -121,10 +123,37 @@ function getCheckInOutRange(proposal) {
   if (dayIndices.length === 0) return null;
 
   const sorted = [...dayIndices].sort((a, b) => a - b);
-  const firstDayIndex = sorted[0];
-  const lastDayIndex = sorted[sorted.length - 1];
 
-  return `${DAY_NAMES[firstDayIndex]} to ${DAY_NAMES[lastDayIndex]}`;
+  // Handle wrap-around case (e.g., Fri, Sat, Sun, Mon = [0, 1, 5, 6])
+  const hasLowNumbers = sorted.some(d => d <= 2); // Sun, Mon, Tue
+  const hasHighNumbers = sorted.some(d => d >= 4); // Thu, Fri, Sat
+
+  if (hasLowNumbers && hasHighNumbers && sorted.length < 7) {
+    // Find gap to determine actual start/end
+    let gapIndex = -1;
+    for (let i = 1; i < sorted.length; i++) {
+      if (sorted[i] - sorted[i - 1] > 1) {
+        gapIndex = i;
+        break;
+      }
+    }
+
+    if (gapIndex !== -1) {
+      // Wrapped selection: check-in is after the gap, checkout is day after the day before gap
+      const checkInDayIndex = sorted[gapIndex];
+      const lastNightDayIndex = sorted[gapIndex - 1];
+      const checkOutDayIndex = (lastNightDayIndex + 1) % 7;
+
+      return `${DAY_NAMES[checkInDayIndex]} to ${DAY_NAMES[checkOutDayIndex]}`;
+    }
+  }
+
+  // Standard case (no wrap-around): check-in is first day, checkout is day after last day
+  const checkInDayIndex = sorted[0];
+  const lastNightDayIndex = sorted[sorted.length - 1];
+  const checkOutDayIndex = (lastNightDayIndex + 1) % 7;
+
+  return `${DAY_NAMES[checkInDayIndex]} to ${DAY_NAMES[checkOutDayIndex]}`;
 }
 
 /**
