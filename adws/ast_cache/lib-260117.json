@@ -1,12 +1,70 @@
 {
-  "generated_at": "2026-01-17T16:37:21.523018",
+  "generated_at": "2026-01-17T16:40:33.239641",
   "root_dir": "C:\\Users\\Split Lease\\Documents\\Split Lease - Dev\\app\\src\\lib",
-  "content_hash": "3d10c8cad1742df85bc68935031e8391fcbfb7c466ef43f89302c288ddc3cb3b",
+  "content_hash": "5e0d178af85f1aff39aa9a042ae19511ab06be54b15b0ccdf9624d646cd6dd1b",
   "total_files": 50,
   "total_exports": 416,
   "total_imports": 144,
   "parse_error_count": 0,
   "symbol_table": {
+    "nycZipCodes.ts": [
+      {
+        "name": "NYC_ZIP_CODES",
+        "type": "declaration",
+        "line": 11,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "ALL_NYC_ZIP_CODES",
+        "type": "declaration",
+        "line": 78,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isNYCZipCode",
+        "type": "declaration",
+        "line": 90,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getBoroughForZipCode",
+        "type": "declaration",
+        "line": 97,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "NYC_BOUNDS",
+        "type": "declaration",
+        "line": 111,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "HUDSON_COUNTY_NAMES",
+        "type": "declaration",
+        "line": 121,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isHudsonCountyNJ",
+        "type": "declaration",
+        "line": 130,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isValidServiceArea",
+        "type": "declaration",
+        "line": 142,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
     "aiService.js": [
       {
         "name": "generateListingDescription",
@@ -2953,64 +3011,6 @@
         "name": "validateSchedule",
         "type": "declaration",
         "line": 127,
-        "source_file": null,
-        "original_name": null
-      }
-    ],
-    "nycZipCodes.ts": [
-      {
-        "name": "NYC_ZIP_CODES",
-        "type": "declaration",
-        "line": 11,
-        "source_file": null,
-        "original_name": null
-      },
-      {
-        "name": "ALL_NYC_ZIP_CODES",
-        "type": "declaration",
-        "line": 78,
-        "source_file": null,
-        "original_name": null
-      },
-      {
-        "name": "isNYCZipCode",
-        "type": "declaration",
-        "line": 90,
-        "source_file": null,
-        "original_name": null
-      },
-      {
-        "name": "getBoroughForZipCode",
-        "type": "declaration",
-        "line": 97,
-        "source_file": null,
-        "original_name": null
-      },
-      {
-        "name": "NYC_BOUNDS",
-        "type": "declaration",
-        "line": 111,
-        "source_file": null,
-        "original_name": null
-      },
-      {
-        "name": "HUDSON_COUNTY_NAMES",
-        "type": "declaration",
-        "line": 121,
-        "source_file": null,
-        "original_name": null
-      },
-      {
-        "name": "isHudsonCountyNJ",
-        "type": "declaration",
-        "line": 130,
-        "source_file": null,
-        "original_name": null
-      },
-      {
-        "name": "isValidServiceArea",
-        "type": "declaration",
-        "line": 142,
         "source_file": null,
         "original_name": null
       }

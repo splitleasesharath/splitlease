@@ -634,19 +634,23 @@ class ASTDependencyAnalyzer:
 def analyze_dependencies(
     target_path: str,
     cache_dir: Optional[str] = None,
-    force_refresh: bool = False
+    force_refresh: bool = False,
+    max_age_hours: int = 24
 ) -> DependencyContext:
     """Analyze target directory and return dependency context.
 
     This is the main entry point for the AST analyzer.
-    Supports caching: if cache_dir is provided and files haven't changed,
-    returns cached results instead of re-analyzing.
+    Supports caching: reuses cached results if:
+    1. Cache file exists for same directory and date
+    2. Cache is less than max_age_hours old
+    3. File contents haven't changed (content hash match)
 
     Args:
         target_path: Directory to analyze (e.g., "app/src/logic")
         cache_dir: Optional directory to store/load cached results
                    If None, defaults to adws/ast_cache/
         force_refresh: If True, bypass cache and re-analyze
+        max_age_hours: Maximum cache age in hours (default: 24)
 
     Returns:
         DependencyContext with symbol_table, dependency_graph, reverse_deps
@@ -656,6 +660,8 @@ def analyze_dependencies(
         print(context.to_prompt_context())  # Markdown for prompt
         print(context.to_json_dict())  # JSON for storage
     """
+    from datetime import datetime, timedelta
+
     # Resolve paths
     target_resolved = Path(target_path).resolve()
 
@@ -666,23 +672,36 @@ def analyze_dependencies(
     else:
         cache_dir_path = Path(cache_dir)
 
-    # Create cache filename from target path hash
-    target_hash = hashlib.sha256(str(target_resolved).encode()).hexdigest()[:16]
-    cache_file = cache_dir_path / f"{target_hash}_dependency_context.json"
+    # Create cache filename: <directory_name>-<YYMMDD>.json
+    dir_name = target_resolved.name  # Last part of path (e.g., "logic" from "app/src/logic")
+    today_str = datetime.now().strftime("%y%m%d")
+    cache_file = cache_dir_path / f"{dir_name}-{today_str}.json"
 
     # Compute current content hash for comparison
     current_hash = DependencyContext.compute_content_hash(str(target_resolved))
 
     # Try to load from cache if not forcing refresh
-    if not force_refresh and cache_file.exists():
-        cached = DependencyContext.load(cache_file)
-        if cached and cached.content_hash == current_hash:
-            print(f"  [AST Cache] HIT - Using cached analysis ({cached.total_files} files)")
-            return cached
-        elif cached:
-            print(f"  [AST Cache] STALE - Files changed, re-analyzing...")
+    if not force_refresh:
+        # Check for today's cache file first
+        if cache_file.exists():
+            cached = DependencyContext.load(cache_file)
+            if cached and cached.content_hash == current_hash:
+                print(f"  [AST Cache] HIT - Using cached analysis ({cached.total_files} files)")
+                return cached
+            elif cached:
+                print(f"  [AST Cache] STALE - Files changed, re-analyzing...")
+            else:
+                print(f"  [AST Cache] CORRUPT - Re-analyzing...")
         else:
-            print(f"  [AST Cache] CORRUPT - Re-analyzing...")
+            # Check for recent cache files (within max_age_hours)
+            recent_cache = _find_recent_cache(cache_dir_path, dir_name, max_age_hours)
+            if recent_cache:
+                cached = DependencyContext.load(recent_cache)
+                if cached and cached.content_hash == current_hash:
+                    print(f"  [AST Cache] HIT - Using recent cache from {recent_cache.name} ({cached.total_files} files)")
+                    return cached
+                elif cached:
+                    print(f"  [AST Cache] STALE - Files changed since {recent_cache.name}, re-analyzing...")
 
     # Analyze fresh
     print(f"  [AST Cache] MISS - Analyzing {target_path}...")
@@ -692,11 +711,82 @@ def analyze_dependencies(
     # Set the content hash
     context.content_hash = current_hash
 
-    # Save to cache
+    # Save to cache with today's date
     context.save(cache_file)
-    print(f"  [AST Cache] Saved to {cache_file}")
+    print(f"  [AST Cache] Saved to {cache_file.name}")
+
+    # Clean up old cache files for this directory (keep last 3)
+    _cleanup_old_caches(cache_dir_path, dir_name, keep_count=3)
 
     return context
+
+
+def _find_recent_cache(cache_dir: Path, dir_name: str, max_age_hours: int) -> Optional[Path]:
+    """Find a recent cache file within the max age window.
+
+    Args:
+        cache_dir: Directory containing cache files
+        dir_name: Directory name prefix to match
+        max_age_hours: Maximum age in hours
+
+    Returns:
+        Path to most recent valid cache file, or None
+    """
+    from datetime import datetime, timedelta
+
+    if not cache_dir.exists():
+        return None
+
+    cutoff = datetime.now() - timedelta(hours=max_age_hours)
+    candidates = []
+
+    for cache_file in cache_dir.glob(f"{dir_name}-*.json"):
+        # Extract date from filename: <dir_name>-<YYMMDD>.json
+        try:
+            date_part = cache_file.stem.split('-')[-1]  # Get YYMMDD part
+            file_date = datetime.strptime(date_part, "%y%m%d")
+            # Assume end of day for comparison
+            file_datetime = file_date.replace(hour=23, minute=59, second=59)
+            if file_datetime >= cutoff:
+                candidates.append((file_datetime, cache_file))
+        except (ValueError, IndexError):
+            continue
+
+    if candidates:
+        # Return most recent
+        candidates.sort(reverse=True)
+        return candidates[0][1]
+
+    return None
+
+
+def _cleanup_old_caches(cache_dir: Path, dir_name: str, keep_count: int = 3) -> None:
+    """Remove old cache files, keeping only the most recent ones.
+
+    Args:
+        cache_dir: Directory containing cache files
+        dir_name: Directory name prefix to match
+        keep_count: Number of recent cache files to keep
+    """
+    if not cache_dir.exists():
+        return
+
+    # Find all cache files for this directory
+    cache_files = list(cache_dir.glob(f"{dir_name}-*.json"))
+
+    if len(cache_files) <= keep_count:
+        return
+
+    # Sort by filename (date is embedded, so alphabetical = chronological)
+    cache_files.sort(reverse=True)
+
+    # Remove old files
+    for old_file in cache_files[keep_count:]:
+        try:
+            old_file.unlink()
+            print(f"  [AST Cache] Cleaned up old cache: {old_file.name}")
+        except OSError:
+            pass
 
 
 # CLI support for testing
