@@ -643,6 +643,11 @@ export default function ViewSplitLeasePage() {
 
   // Submit proposal to backend (after auth is confirmed)
   const submitProposal = async (proposalData) => {
+    // Guard against double submission
+    if (isSubmittingProposal) {
+      logger.debug('Proposal submission already in progress, skipping duplicate call');
+      return;
+    }
     setIsSubmittingProposal(true);
 
     try {
@@ -871,9 +876,12 @@ export default function ViewSplitLeasePage() {
     // If there's a pending proposal, submit it now
     if (pendingProposalData) {
       logger.debug('Submitting pending proposal after auth');
+      // Capture and clear pending data immediately to prevent double submission
+      const dataToSubmit = pendingProposalData;
+      setPendingProposalData(null);
       // Small delay to ensure auth state is fully updated
       setTimeout(async () => {
-        await submitProposal(pendingProposalData);
+        await submitProposal(dataToSubmit);
       }, 500);
     }
   };
