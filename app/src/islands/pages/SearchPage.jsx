@@ -2213,25 +2213,54 @@ export default function SearchPage() {
     <div className="search-page">
       {/* Toast Notification */}
       {toast.show && (
-        <div className={`toast toast-${toast.type} show`}>
-          <span className="toast-icon">
+        <div className="toast-container">
+          <div className={`toast toast-${toast.type} show`}>
+            {/* Icon */}
             {toast.type === 'success' && (
-              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+              <svg className="toast-icon" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" strokeLinecap="round" strokeLinejoin="round"/>
+                <polyline points="22 4 12 14.01 9 11.01" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             )}
             {toast.type === 'info' && (
-              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+              <svg className="toast-icon" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12" strokeLinecap="round"/>
+                <line x1="12" y1="8" x2="12.01" y2="8" strokeLinecap="round"/>
               </svg>
             )}
             {toast.type === 'error' && (
-              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+              <svg className="toast-icon" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="15" y1="9" x2="9" y2="15" strokeLinecap="round"/>
+                <line x1="9" y1="9" x2="15" y2="15" strokeLinecap="round"/>
               </svg>
             )}
-          </span>
-          <span className="toast-message">{toast.message}</span>
+            {toast.type === 'warning' && (
+              <svg className="toast-icon" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13" strokeLinecap="round"/>
+                <line x1="12" y1="17" x2="12.01" y2="17" strokeLinecap="round"/>
+              </svg>
+            )}
+
+            {/* Content */}
+            <div className="toast-content">
+              <h4 className="toast-title">{toast.message}</h4>
+            </div>
+
+            {/* Close Button */}
+            <button
+              className="toast-close"
+              onClick={() => setToast({ show: false, message: '', type: 'success' })}
+              aria-label="Close notification"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="18" y1="6" x2="6" y2="18" strokeLinecap="round"/>
+                <line x1="6" y1="6" x2="18" y2="18" strokeLinecap="round"/>
+              </svg>
+            </button>
+          </div>
         </div>
       )}
 
