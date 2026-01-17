@@ -24,7 +24,7 @@ import { checkAuthStatus, validateTokenAndFetchUser } from '../../../lib/auth.js
 import { createListing, saveDraft, getListingById } from '../../../lib/listingService.js';
 import { isGuest } from '../../../logic/rules/users/isGuest.js';
 import { supabase } from '../../../lib/supabase.js';
-import { NYC_BOUNDS, isValidServiceArea, getBoroughForZipCode } from '../../../lib/nycZipCodes';
+import { NYC_BOUNDS, isValidServiceArea, getBoroughForZipCode, getBoroughFromCounty } from '../../../lib/nycZipCodes';
 import { fetchInformationalTexts } from '../../../lib/informationalTextsFetcher.js';
 import './styles/SelfListingPageV2.css';
 import '../../../styles/components/toast.css';
@@ -629,10 +629,26 @@ export function SelfListingPageV2() {
 
         // Validate service area
         if (!isValidServiceArea(zip, state, county)) {
-          const borough = zip ? getBoroughForZipCode(zip) : null;
-          const errorMsg = borough
-            ? `This address appears to be outside our service area.`
-            : `This address is outside our NYC / Hudson County service area.`;
+          // Try to identify the borough for a more helpful error message
+          const boroughFromZip = zip ? getBoroughForZipCode(zip) : null;
+          const boroughFromCounty = county ? getBoroughFromCounty(county) : null;
+
+          let errorMsg: string;
+          if (boroughFromZip) {
+            // Has a zip but it's not in our service area
+            errorMsg = `This address (zip: ${zip}) is outside our service area. We only accept listings in NYC and Hudson County, NJ.`;
+          } else if (state === 'NJ' && county) {
+            // New Jersey but not Hudson County
+            errorMsg = `This address is outside our service area. We only accept listings in Hudson County, NJ, not ${county}.`;
+          } else if (boroughFromCounty) {
+            // Found a borough from county name but still failed - shouldn't happen now
+            errorMsg = `This address in ${boroughFromCounty} couldn't be validated. Please try selecting a more specific address.`;
+          } else {
+            // Generic fallback
+            errorMsg = `This address is outside our NYC / Hudson County service area.`;
+          }
+
+          console.warn('Address validation failed:', { zip, state, county, boroughFromZip, boroughFromCounty });
           setAddressError(errorMsg);
           setIsAddressValid(false);
           return;
