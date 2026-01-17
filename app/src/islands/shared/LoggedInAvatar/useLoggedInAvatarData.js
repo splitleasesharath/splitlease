@@ -226,10 +226,11 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
 
         // 11. Count message threads where user is a participant (host or guest)
         //     Note: Column names have leading hyphens: "-Host User", "-Guest User"
+        //     PostgREST filter syntax: no quotes around column names in .or() string
         supabase
           .from('thread')
           .select('_id', { count: 'exact', head: true })
-          .or(`"-Host User".eq.${userId},"-Guest User".eq.${userId}`)
+          .or(`-Host User.eq.${userId},-Guest User.eq.${userId}`)
       ]);
 
       // Process user data
@@ -332,6 +333,16 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
         error: messagesResult.error,
         userId: userId
       });
+
+      // DEBUG: Log threads result to diagnose messaging icon visibility
+      console.log('[useLoggedInAvatarData] Threads result:', {
+        count: threadsResult.count,
+        error: threadsResult.error,
+        userId: userId
+      });
+      if (threadsResult.error) {
+        console.error('[useLoggedInAvatarData] Error fetching threads:', threadsResult.error);
+      }
 
       const newData = {
         userType: normalizedType,
