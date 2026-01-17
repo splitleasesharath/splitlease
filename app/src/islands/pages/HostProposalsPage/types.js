@@ -6,6 +6,7 @@
  */
 
 import { getStatusConfig, isTerminalStatus } from '../../../logic/constants/proposalStatuses.js';
+import { DAY_NAMES } from '../../../lib/dayUtils.js';
 
 /**
  * Proposal status types
@@ -240,9 +241,8 @@ export const DAYS = [
  * @returns {DayOfWeek[]} Array of active days
  */
 export function getActiveDays(checkInDay, checkOutDay) {
-  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const checkInIndex = dayNames.indexOf(checkInDay);
-  const checkOutIndex = dayNames.indexOf(checkOutDay);
+  const checkInIndex = DAY_NAMES.indexOf(checkInDay);
+  const checkOutIndex = DAY_NAMES.indexOf(checkOutDay);
 
   if (checkInIndex === -1 || checkOutIndex === -1) return [];
 
@@ -251,7 +251,7 @@ export function getActiveDays(checkInDay, checkOutDay) {
 
   // Handle wrapping around the week
   while (current !== checkOutIndex) {
-    activeDays.push(dayNames[current]);
+    activeDays.push(DAY_NAMES[current]);
     current = (current + 1) % 7;
   }
 
@@ -266,7 +266,6 @@ export function getActiveDays(checkInDay, checkOutDay) {
  * @returns {DayOfWeek[]} Array of day names ['Thursday', 'Friday', 'Saturday']
  */
 export function getNightsAsDayNames(nightsSelected) {
-  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
   if (!nightsSelected) return [];
 
@@ -286,7 +285,7 @@ export function getNightsAsDayNames(nightsSelected) {
   return nights
     .map(index => {
       const idx = typeof index === 'string' ? parseInt(index, 10) : index;
-      return dayNames[idx] || '';
+      return DAY_NAMES[idx] || '';
     })
     .filter(Boolean);
 }
@@ -305,7 +304,6 @@ export function getNightsAsDayNames(nightsSelected) {
  * @returns {{ checkInDay: string, checkOutDay: string }} Check-in and check-out day names
  */
 export function getCheckInOutFromDays(daysSelected) {
-  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
   if (!daysSelected) return { checkInDay: '', checkOutDay: '' };
 
@@ -361,8 +359,8 @@ export function getCheckInOutFromDays(daysSelected) {
       const lastDayIndex = sorted[gapIndex - 1]; // Last day before gap (e.g., Monday = 1)
 
       return {
-        checkInDay: dayNames[firstDayIndex] || '',
-        checkOutDay: dayNames[lastDayIndex] || ''
+        checkInDay: DAY_NAMES[firstDayIndex] || '',
+        checkOutDay: DAY_NAMES[lastDayIndex] || ''
       };
     }
   }
@@ -372,8 +370,8 @@ export function getCheckInOutFromDays(daysSelected) {
   const lastDayIndex = sorted[sorted.length - 1];
 
   return {
-    checkInDay: dayNames[firstDayIndex] || '',
-    checkOutDay: dayNames[lastDayIndex] || ''
+    checkInDay: DAY_NAMES[firstDayIndex] || '',
+    checkOutDay: DAY_NAMES[lastDayIndex] || ''
   };
 }
 
@@ -388,7 +386,6 @@ export function getCheckInOutFromDays(daysSelected) {
  * @returns {{ checkInDay: string, checkOutDay: string }} Check-in and check-out day names
  */
 export function getCheckInOutFromNights(nightsSelected) {
-  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
   if (!nightsSelected) return { checkInDay: '', checkOutDay: '' };
 
@@ -434,8 +431,8 @@ export function getCheckInOutFromNights(nightsSelected) {
       const checkOutIndex = (lastNight + 1) % 7; // Day after last night
 
       return {
-        checkInDay: dayNames[firstNight] || '',
-        checkOutDay: dayNames[checkOutIndex] || ''
+        checkInDay: DAY_NAMES[firstNight] || '',
+        checkOutDay: DAY_NAMES[checkOutIndex] || ''
       };
     }
   }
@@ -448,7 +445,7 @@ export function getCheckInOutFromNights(nightsSelected) {
   const checkOutIndex = (lastNight + 1) % 7;
 
   return {
-    checkInDay: dayNames[firstNight] || '',
-    checkOutDay: dayNames[checkOutIndex] || ''
+    checkInDay: DAY_NAMES[firstNight] || '',
+    checkOutDay: DAY_NAMES[checkOutIndex] || ''
   };
 }

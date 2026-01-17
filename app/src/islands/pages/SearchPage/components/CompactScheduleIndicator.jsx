@@ -1,4 +1,5 @@
 import { calculateCheckInOutFromDays } from '../../../../logic/calculators/scheduling/calculateCheckInOutFromDays.js';
+import { DAY_NAMES } from '../../../../lib/dayUtils.js';
 
 /**
  * CompactScheduleIndicator - Minimal dot-based schedule display
@@ -14,13 +15,10 @@ export default function CompactScheduleIndicator({ isVisible }) {
     ? daysSelected.split(',').map(d => parseInt(d, 10)).filter(d => !isNaN(d))
     : [];
 
-  // Day names for display
-  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
   // Calculate check-in and check-out days
   const checkInOut = calculateCheckInOutFromDays(selectedDaysArray);
-  const checkInText = checkInOut ? dayNames[checkInOut.checkIn] : '';
-  const checkOutText = checkInOut ? dayNames[checkInOut.checkOut] : '';
+  const checkInText = checkInOut ? DAY_NAMES[checkInOut.checkIn] : '';
+  const checkOutText = checkInOut ? DAY_NAMES[checkInOut.checkOut] : '';
 
   return (
     <div className={`compact-schedule-indicator ${isVisible ? 'compact-schedule-indicator--visible' : ''}`}>
@@ -38,7 +36,7 @@ export default function CompactScheduleIndicator({ isVisible }) {
           <div
             key={dayIndex}
             className={`compact-day-dot ${selectedDaysArray.includes(dayIndex) ? 'selected' : ''}`}
-            title={dayNames[dayIndex]}
+            title={DAY_NAMES[dayIndex]}
           />
         ))}
       </div>

@@ -15,12 +15,11 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../../../lib/supabase.js';
 import { getSessionId, checkAuthStatus, validateTokenAndFetchUser, checkUrlForAuthError, clearAuthErrorFromUrl } from '../../../lib/auth.js';
 import { isHost } from '../../../logic/rules/users/isHost.js';
+import { DAY_NAMES } from '../../../lib/dayUtils.js';
 
 // ============================================================================
 // CONSTANTS
 // ============================================================================
-
-const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 /**
  * Profile strength calculation weights

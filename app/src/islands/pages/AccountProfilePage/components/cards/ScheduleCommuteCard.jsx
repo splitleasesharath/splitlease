@@ -11,9 +11,7 @@ import React from 'react';
 import { Car, Train, Bike, Footprints, Compass } from 'lucide-react';
 import ProfileCard from '../shared/ProfileCard.jsx';
 import DaySelectorPills from '../shared/DaySelectorPills.jsx';
-
-const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-const DAY_ABBREV = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+import { DAY_NAMES, DAY_ABBREV } from '../../../../../../lib/dayUtils.js';
 
 // Icon mapping for transportation types
 const TRANSPORT_ICONS = {

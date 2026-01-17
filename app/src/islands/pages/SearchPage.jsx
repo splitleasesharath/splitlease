@@ -27,6 +27,7 @@ import { calculateNextAvailableCheckIn } from '../../logic/calculators/schedulin
 import { shiftMoveInDateIfPast } from '../../logic/calculators/scheduling/shiftMoveInDateIfPast.js';
 import { calculateCheckInOutFromDays } from '../../logic/calculators/scheduling/calculateCheckInOutFromDays.js';
 import { formatHostName } from '../../logic/processors/display/formatHostName.js';
+import { DAY_NAMES } from '../../lib/dayUtils.js';
 // NOTE: adaptDaysToBubble removed - database now uses 0-indexed days natively
 import { countSelectedNights } from '../../lib/scheduleSelector/nightCalculations.js';
 import { calculatePrice } from '../../lib/scheduleSelector/priceCalculations.js';
@@ -449,12 +450,11 @@ export default function SearchPage() {
 
   // Calculate check-in and check-out day names
   const checkInOutDays = useMemo(() => {
-    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const result = calculateCheckInOutFromDays(selectedDaysForDisplay);
     if (!result) return { checkIn: '', checkOut: '' };
     return {
-      checkIn: dayNames[result.checkIn],
-      checkOut: dayNames[result.checkOut]
+      checkIn: DAY_NAMES[result.checkIn],
+      checkOut: DAY_NAMES[result.checkOut]
     };
   }, [selectedDaysForDisplay]);
 
@@ -1732,7 +1732,7 @@ export default function SearchPage() {
     logger.debug('[scrollToListingCard] Looking for listing:', listingId);
 
     // First check if the listing card already exists in the DOM
-    let listingCard = document.querySelector(`[data-listing-id="${listingId}"]`);
+    const listingCard = document.querySelector(`[data-listing-id="${listingId}"]`);
     logger.debug('[scrollToListingCard] Initial card search result:', listingCard);
 
     if (listingCard) {

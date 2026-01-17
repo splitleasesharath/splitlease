@@ -15,10 +15,8 @@ import DaysSelectionSection from './CreateProposalFlowV2Components/DaysSelection
 import { calculatePrice } from '../../lib/scheduleSelector/priceCalculations.js';
 import { calculateNightsFromDays } from '../../lib/scheduleSelector/nightCalculations.js';
 import Toast, { useToast } from './Toast.jsx';
+import { DAY_NAMES } from '../../lib/dayUtils.js';
 import '../../styles/create-proposal-flow-v2.css';
-
-// Day name constants for check-in/check-out calculation
-const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 // Flow order constants for step navigation
 // Section IDs: 1 = Review, 2 = User Details, 3 = Move-in, 4 = Days Selection

@@ -1,4 +1,5 @@
-import { isScheduleContiguous } from '../../rules/scheduling/isScheduleContiguous.js'
+import { isScheduleContiguous } from '../../rules/scheduling/isScheduleContiguous.js';
+import { DAY_NAMES } from '../../../lib/dayUtils.js';
 
 /**
  * Validate a schedule selection against listing requirements.
@@ -96,8 +97,6 @@ export function validateScheduleWorkflow({ selectedDayIndices, listing = {} }) {
 
   // Check against Days Not Available (if specified)
   if (listing.daysNotAvailable && Array.isArray(listing.daysNotAvailable)) {
-    const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-
     const unavailableSelected = selectedDayIndices.filter(dayIndex => {
       const dayName = DAY_NAMES[dayIndex]
       return listing.daysNotAvailable.includes(dayName)

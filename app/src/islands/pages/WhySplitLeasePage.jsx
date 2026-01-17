@@ -7,6 +7,7 @@ import { supabase } from '../../lib/supabase.js';
 import { fetchPhotoUrls, parseJsonArray } from '../../lib/supabaseUtils.js';
 import { getNeighborhoodName, getBoroughName, initializeLookups } from '../../lib/dataLookups.js';
 import { toast } from '../../lib/toastService.js';
+import { DAY_NAMES } from '../../lib/dayUtils.js';
 
 export default function WhySplitLeasePage() {
   // Dynamic text rotation state
@@ -503,9 +504,8 @@ export default function WhySplitLeasePage() {
                         {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((_, idx) => {
                           // Check if this day index is in available days
                           // Note: availableDays might be day names or indices
-                          const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
                           const isAvailable = listing.availableDays.some(d =>
-                            d === dayNames[idx] || d === idx || d === String(idx)
+                            d === DAY_NAMES[idx] || d === idx || d === String(idx)
                           );
                           return (
                             <div

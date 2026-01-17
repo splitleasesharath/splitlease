@@ -30,10 +30,7 @@ import FullscreenProposalMapModal from '../../modals/FullscreenProposalMapModal.
 import { showToast } from '../../shared/Toast.jsx';
 import { supabase } from '../../../lib/supabase.js';
 import { canConfirmSuggestedProposal, getNextStatusAfterConfirmation, needsRentalApplicationSubmission } from '../../../logic/rules/proposals/proposalRules.js';
-
-// Day abbreviations for schedule display (single letter like Bubble)
-const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+import { DAY_NAMES, DAY_LETTERS } from '../../../lib/dayUtils.js';
 
 /**
  * Convert a day value to a day name
@@ -439,7 +436,7 @@ function StatusBanner({ status, cancelReason, isCounteroffer }) {
 
   if (!config) return null;
 
-  let displayText = config.text;
+  const displayText = config.text;
   let strongText = '';
   let detailText = '';
 

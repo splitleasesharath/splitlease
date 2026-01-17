@@ -16,8 +16,7 @@ import TransportCard from './cards/TransportCard.jsx';
 import ReasonsCard from './cards/ReasonsCard.jsx';
 import StorageItemsCard from './cards/StorageItemsCard.jsx';
 import ListingsCard from './cards/ListingsCard.jsx';
-
-const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+import { DAY_NAMES } from '../../../../lib/dayUtils.js';
 
 /**
  * Convert day names to indices (0-6)

@@ -1,6 +1,7 @@
-import { isDateInRange } from '../../rules/scheduling/isDateInRange.js'
-import { isDateBlocked } from '../../rules/scheduling/isDateBlocked.js'
-import { calculateCheckInOutDays } from '../../calculators/scheduling/calculateCheckInOutDays.js'
+import { isDateInRange } from '../../rules/scheduling/isDateInRange.js';
+import { isDateBlocked } from '../../rules/scheduling/isDateBlocked.js';
+import { calculateCheckInOutDays } from '../../calculators/scheduling/calculateCheckInOutDays.js';
+import { DAY_NAMES } from '../../../lib/dayUtils.js';
 
 /**
  * Validate a proposed move-in date against listing availability and schedule.
@@ -102,8 +103,6 @@ export function validateMoveInDateWorkflow({ moveInDate, listing, selectedDayInd
     const moveInDayOfWeek = moveInDate.getDay()
 
     if (checkInDay !== moveInDayOfWeek) {
-      const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-
       return {
         valid: false,
         errorCode: 'MOVE_IN_DAY_MISMATCH',

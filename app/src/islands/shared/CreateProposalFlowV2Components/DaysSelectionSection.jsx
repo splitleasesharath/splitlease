@@ -5,9 +5,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import ListingScheduleSelector from '../ListingScheduleSelector.jsx';
-
-// Day name constants for check-in/check-out calculation
-const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+import { DAY_NAMES } from '../../../lib/dayUtils.js';
 
 /**
  * Get human-readable description of the weeks offered pattern
