@@ -289,6 +289,7 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
 
       try {
         const userId = getSessionId();
+        console.log('[RentalAppWizard] fetchFromDatabase - userId from getSessionId:', userId);
 
         if (!userId) {
           throw new Error('User not logged in');
@@ -297,6 +298,14 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
         // Get Supabase session for proper JWT token
         const { data: { session } } = await supabase.auth.getSession();
         const accessToken = session?.access_token;
+        console.log('[RentalAppWizard] fetchFromDatabase - has accessToken:', !!accessToken);
+        console.log('[RentalAppWizard] fetchFromDatabase - accessToken length:', accessToken?.length);
+
+        const requestBody = {
+          action: 'get',
+          payload: { user_id: userId },
+        };
+        console.log('[RentalAppWizard] fetchFromDatabase - request body:', JSON.stringify(requestBody));
 
         const response = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rental-application`,
@@ -306,14 +315,13 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
               'Content-Type': 'application/json',
               ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
             },
-            body: JSON.stringify({
-              action: 'get',
-              payload: { user_id: userId },
-            }),
+            body: JSON.stringify(requestBody),
           }
         );
 
+        console.log('[RentalAppWizard] fetchFromDatabase - response status:', response.status);
         const result = await response.json();
+        console.log('[RentalAppWizard] fetchFromDatabase - response body:', JSON.stringify(result));
 
         if (!response.ok || !result.success) {
           throw new Error(result.error || 'Failed to load application');
