@@ -307,6 +307,26 @@
   background: white;
   border-radius: 6px;
   border: 1px solid #e5e7eb;
+  transition: padding 0.2s ease;
+}
+
+.vm-inline-time-slots--collapsed {
+  padding: 8px 12px;
+}
+
+.vm-inline-time-slots--collapsed .vm-time-picker-header-container {
+  margin-bottom: 0;
+}
+
+.vm-time-picker-header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.vm-time-picker-header-container .vm-time-picker-header {
+  margin-bottom: 0;
 }
 
 .vm-time-picker-header {
@@ -318,11 +338,53 @@
   text-align: left;
 }
 
+/* Toggle button styles */
+.vm-grid-toggle-btn {
+  background: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  color: #6b7280;
+}
+
+.vm-grid-toggle-btn:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+  color: #374151;
+}
+
+.vm-grid-toggle-btn:focus {
+  outline: 2px solid rgb(92, 32, 182);
+  outline-offset: 2px;
+}
+
+.vm-grid-toggle-arrow {
+  font-size: 10px;
+  line-height: 1;
+}
+
 .vm-time-slots-list {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 6px;
   padding: 2px;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .vm-time-slot-button {
@@ -405,5 +467,13 @@
     padding: 6px 4px;
     font-size: 11px;
     white-space: nowrap;
+  }
+
+  .vm-grid-toggle-btn {
+    padding: 3px 6px;
+  }
+
+  .vm-grid-toggle-arrow {
+    font-size: 9px;
   }
 }

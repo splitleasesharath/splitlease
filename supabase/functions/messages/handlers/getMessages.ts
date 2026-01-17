@@ -59,10 +59,10 @@ interface GetMessagesResult {
 export async function handleGetMessages(
   supabaseAdmin: SupabaseClient,
   payload: Record<string, unknown>,
-  user: User
+  user: { id: string; email: string }
 ): Promise<GetMessagesResult> {
   console.log('[getMessages] ========== GET MESSAGES ==========');
-  console.log('[getMessages] User:', user.email);
+  console.log('[getMessages] User ID:', user.id, 'Email:', user.email);
   console.log('[getMessages] Payload:', JSON.stringify(payload, null, 2));
 
   // Validate required fields
@@ -71,27 +71,50 @@ export async function handleGetMessages(
 
   const { thread_id, limit = 50, offset = 0 } = typedPayload;
 
-  // Get user's Bubble ID from public.user table by email
-  // Email is the common identifier between auth.users and public.user
-  if (!user.email) {
-    console.error('[getMessages] No email in auth token');
-    throw new ValidationError('Could not find user profile. Please try logging in again.');
+  // Determine user's Bubble ID:
+  // - For legacy auth: user.id IS the Bubble ID (passed directly)
+  // - For JWT auth: user.id is Supabase UUID, need to look up by email
+  let userBubbleId: string;
+  let userType: string = '';
+
+  // Check if user.id looks like a Bubble ID (they typically start with numbers and contain 'x')
+  const isBubbleId = /^\d+x\d+$/.test(user.id);
+
+  if (isBubbleId) {
+    // Legacy auth - user.id is already the Bubble ID, but we still need user type
+    userBubbleId = user.id;
+    console.log('[getMessages] Using direct Bubble ID from legacy auth:', userBubbleId);
+
+    // Fetch user type
+    const { data: userData } = await supabaseAdmin
+      .from('user')
+      .select('"Type - User Current"')
+      .eq('_id', userBubbleId)
+      .maybeSingle();
+    userType = userData?.['Type - User Current'] || '';
+  } else {
+    // JWT auth - need to look up Bubble ID by email
+    if (!user.email) {
+      console.error('[getMessages] No email in auth token');
+      throw new ValidationError('Could not find user profile. Please try logging in again.');
+    }
+
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from('user')
+      .select('_id, "Type - User Current"')
+      .ilike('email', user.email)
+      .single();
+
+    if (userError || !userData?._id) {
+      console.error('[getMessages] User lookup failed:', userError?.message);
+      throw new ValidationError('Could not find user profile. Please try logging in again.');
+    }
+
+    userBubbleId = userData._id;
+    userType = userData['Type - User Current'] || '';
+    console.log('[getMessages] Looked up Bubble ID from email:', userBubbleId);
   }
 
-  const { data: userData, error: userError } = await supabaseAdmin
-    .from('user')
-    .select('_id, "Type - User Current"')
-    .ilike('email', user.email)
-    .single();
-
-  if (userError || !userData?._id) {
-    console.error('[getMessages] User lookup failed:', userError?.message);
-    throw new ValidationError('Could not find user profile. Please try logging in again.');
-  }
-  console.log('[getMessages] Found user by email');
-
-  const userBubbleId = userData._id;
-  const userType = userData['Type - User Current'] || '';
   const isHost = userType.includes('Host');
   console.log('[getMessages] User Bubble ID:', userBubbleId);
   console.log('[getMessages] Is Host:', isHost);

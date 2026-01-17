@@ -75,3 +75,11 @@ export { isHost } from './users/isHost.js'
 export { isGuest } from './users/isGuest.js'
 export { hasProfilePhoto } from './users/hasProfilePhoto.js'
 export { shouldShowFullName } from './users/shouldShowFullName.js'
+
+// Review Rules
+export {
+  isReviewComplete,
+  isValidRating,
+  canSubmitReview,
+  hasExistingReview
+} from './reviews/reviewValidation.js'

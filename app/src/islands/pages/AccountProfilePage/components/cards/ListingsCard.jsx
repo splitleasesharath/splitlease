@@ -10,14 +10,74 @@ import React from 'react';
 import ProfileCard from '../shared/ProfileCard.jsx';
 
 /**
+ * Extract a valid photo URL from listing photos.
+ * Photos can be in different formats:
+ * - JSONB array of objects with url/Photo properties
+ * - Array of URL strings
+ * Filters out blob URLs which are temporary and don't persist.
+ */
+function getValidPhotoUrl(photos) {
+  if (!Array.isArray(photos) || photos.length === 0) return null;
+
+  // Sort by SortOrder/displayOrder/Order to get primary photo first
+  const sortedPhotos = [...photos].sort((a, b) => {
+    const orderA = a?.SortOrder ?? a?.displayOrder ?? a?.Order ?? 0;
+    const orderB = b?.SortOrder ?? b?.displayOrder ?? b?.Order ?? 0;
+    return orderA - orderB;
+  });
+
+  // Find first photo with a valid (non-blob) URL
+  for (const photo of sortedPhotos) {
+    // Handle string URLs directly
+    if (typeof photo === 'string') {
+      if (!photo.startsWith('blob:')) return photo;
+      continue;
+    }
+
+    // Handle object format - check url, Photo, or Photo (thumbnail) properties
+    const url = photo?.url || photo?.Photo || photo?.['Photo (thumbnail)'];
+    if (url && typeof url === 'string' && !url.startsWith('blob:')) {
+      return url;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Get price display based on rental type.
+ * Returns { amount, label } or null if no valid price.
+ */
+function getPriceDisplay(listing) {
+  const rentalType = (listing.rental_type || '').toLowerCase();
+
+  if (rentalType === 'monthly') {
+    const monthlyRate = listing.monthly_rate || listing['Monthly Host Rate'] || 0;
+    if (monthlyRate > 0) {
+      return { amount: monthlyRate, label: '/month' };
+    }
+  } else if (rentalType === 'weekly') {
+    const weeklyRate = listing.weekly_rate || listing['Weekly Host Rate'] || 0;
+    if (weeklyRate > 0) {
+      return { amount: weeklyRate, label: '/week' };
+    }
+  } else {
+    // Nightly or default
+    const nightlyRate = listing['Start Nightly Price'] || listing.min_nightly || 0;
+    if (nightlyRate > 0) {
+      return { amount: nightlyRate, label: '/night' };
+    }
+  }
+
+  return null;
+}
+
+/**
  * Individual listing item component
  */
 function ListingItem({ listing, onClick }) {
   const photos = listing.listing_photo || [];
-  // Sort photos by order and get the primary one
-  const sortedPhotos = [...photos].sort((a, b) => (a.Order || 0) - (b.Order || 0));
-  const primaryPhoto = sortedPhotos[0];
-  const photoUrl = primaryPhoto?.url || null;
+  const photoUrl = getValidPhotoUrl(photos);
 
   const handleClick = () => {
     onClick?.(listing._id);
@@ -41,8 +101,8 @@ function ListingItem({ listing, onClick }) {
   const bedsText = bedrooms === 1 ? '1 bed' : `${bedrooms} beds`;
   const bathsText = bathrooms === 1 ? '1 bath' : `${bathrooms} baths`;
 
-  // Format price
-  const nightlyPrice = listing['Start Nightly Price'] || 0;
+  // Get price display based on rental type
+  const priceDisplay = getPriceDisplay(listing);
 
   return (
     <div
@@ -71,8 +131,8 @@ function ListingItem({ listing, onClick }) {
         <p className="listing-item-location">{location}</p>
         <div className="listing-item-meta">
           <span>{bedsText}, {bathsText}</span>
-          {nightlyPrice > 0 && (
-            <span className="listing-item-price">${nightlyPrice}/night</span>
+          {priceDisplay && (
+            <span className="listing-item-price">${priceDisplay.amount}{priceDisplay.label}</span>
           )}
         </div>
       </div>

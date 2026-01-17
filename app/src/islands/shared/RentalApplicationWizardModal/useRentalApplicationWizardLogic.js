@@ -8,7 +8,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../../../lib/supabase.js';
-import { checkAuthStatus, getSessionId, getAuthToken } from '../../../lib/auth.js';
+import { getSessionId } from '../../../lib/auth.js';
 import { PROPOSAL_STATUSES } from '../../../logic/constants/proposalStatuses.js';
 import { useRentalApplicationStore } from '../../pages/RentalApplicationPage/store/index.ts';
 import { mapDatabaseToFormData } from '../../pages/RentalApplicationPage/utils/rentalApplicationFieldMapper.ts';
@@ -73,6 +73,9 @@ const EMPLOYMENT_STATUS_OPTIONS = [
 
 const MAX_OCCUPANTS = 6;
 const TOTAL_STEPS = 7;
+
+// Stable reference for all steps complete (avoids infinite loops in useEffect)
+const ALL_STEPS_COMPLETE = Object.freeze([1, 2, 3, 4, 5, 6, 7]);
 
 // File upload config
 const FILE_TYPE_MAP = {
@@ -164,10 +167,17 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
   // WIZARD-SPECIFIC STATE
   // ============================================================================
   const [currentStep, setCurrentStep] = useState(1);
-  const [completedSteps, setCompletedSteps] = useState([]);
+  // For submitted applications, initialize with all steps complete to avoid infinite loops
+  const [completedSteps, setCompletedSteps] = useState(() =>
+    applicationStatus === 'submitted' ? ALL_STEPS_COMPLETE : []
+  );
   // Track which steps the user has actually visited (for optional steps)
   // Step 1 is always visited on initial load
-  const [visitedSteps, setVisitedSteps] = useState([1]);
+  const [visitedSteps, setVisitedSteps] = useState(() =>
+    applicationStatus === 'submitted' ? ALL_STEPS_COMPLETE : [1]
+  );
+  // Ref to track if we've already initialized for submitted app (prevents re-running effects)
+  const hasInitializedSubmittedSteps = useRef(applicationStatus === 'submitted');
 
   // ============================================================================
   // LOCAL STATE (non-persistent)
@@ -278,12 +288,15 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
       setLoadError(null);
 
       try {
-        const token = getAuthToken();
         const userId = getSessionId();
 
         if (!userId) {
           throw new Error('User not logged in');
         }
+
+        // Get Supabase session for proper JWT token
+        const { data: { session } } = await supabase.auth.getSession();
+        const accessToken = session?.access_token;
 
         const response = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rental-application`,
@@ -291,7 +304,7 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+              ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
             },
             body: JSON.stringify({
               action: 'get',
@@ -321,12 +334,12 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
 
           // For submitted/existing applications being reviewed, mark ALL steps as visited
           // This ensures optional steps show as completed when editing a submitted application
-          setVisitedSteps([1, 2, 3, 4, 5, 6, 7]);
+          // Use the stable ALL_STEPS_COMPLETE reference to avoid infinite loops
+          setVisitedSteps(ALL_STEPS_COMPLETE);
 
-          // Initialize completed steps from database data
-          if (dbCompletedSteps && dbCompletedSteps.length > 0) {
-            setCompletedSteps(dbCompletedSteps);
-          }
+          // For submitted apps, all steps are complete - use stable reference
+          // (dbCompletedSteps is likely undefined now since it was removed from fieldMapper)
+          setCompletedSteps(ALL_STEPS_COMPLETE);
 
           // Navigate to the review step (7) for submitted applications
           // This shows the user their complete application
@@ -507,6 +520,11 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
   const previousStepRef = useRef(currentStep);
 
   useEffect(() => {
+    // Skip for submitted apps - all steps already visited
+    if (applicationStatus === 'submitted' || hasInitializedSubmittedSteps.current) {
+      return;
+    }
+
     const previousStep = previousStepRef.current;
 
     // When step changes, mark the PREVIOUS step as visited (confirmed)
@@ -516,7 +534,7 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
 
     // Update ref for next change
     previousStepRef.current = currentStep;
-  }, [currentStep, visitedSteps]);
+  }, [currentStep, visitedSteps, applicationStatus]);
 
   // ============================================================================
   // STEP COMPLETION TRACKING
@@ -547,6 +565,13 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
 
   // Update completed steps when form data or visited steps change
   useEffect(() => {
+    // For submitted applications, ALL steps are complete by definition.
+    // Skip this effect entirely - state was already initialized with ALL_STEPS_COMPLETE.
+    // This prevents infinite loops caused by formData reference changes from the store.
+    if (applicationStatus === 'submitted' || hasInitializedSubmittedSteps.current) {
+      return;
+    }
+
     const newCompleted = [];
     for (let step = 1; step <= TOTAL_STEPS; step++) {
       if (checkStepComplete(step, visitedSteps)) {
@@ -559,7 +584,7 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
         prev.every((v, i) => v === newCompleted[i]);
       return isSame ? prev : newCompleted;
     });
-  }, [formData, visitedSteps, checkStepComplete]);
+  }, [formData, visitedSteps, checkStepComplete, applicationStatus]);
 
   // Public API for checking step completion (can use completedSteps cache)
   const isStepComplete = useCallback((stepNumber) => {
@@ -745,9 +770,12 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
       });
 
       // Upload via Edge Function
-      const token = getAuthToken();
       const userId = getSessionId();
       const mapping = FILE_TYPE_MAP[uploadKey];
+
+      // Get Supabase session for proper JWT token
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
 
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rental-application`,
@@ -755,7 +783,7 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
           },
           body: JSON.stringify({
             action: 'upload',
@@ -829,12 +857,15 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
     setSubmitError(null);
 
     try {
-      const token = getAuthToken();
       const userId = getSessionId();
 
       if (!userId) {
         throw new Error('You must be logged in to submit.');
       }
+
+      // Get Supabase session for proper JWT token
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
 
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rental-application`,
@@ -842,7 +873,7 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
           },
           body: JSON.stringify({
             action: 'submit',

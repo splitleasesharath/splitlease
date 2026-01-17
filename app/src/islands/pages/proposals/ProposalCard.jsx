@@ -76,14 +76,16 @@ function _convertDayValueToName(dayValue) {
 }
 
 /**
- * Get the first and last selected day range from proposal
+ * Get the check-in to checkout day range from proposal
  * Derives directly from Days Selected to ensure consistency with displayed day badges
  * Uses wrap-around logic for schedules spanning Saturday-Sunday boundary
  *
  * Note: Database stores 0-indexed days (0=Sunday through 6=Saturday)
+ * Days Selected represents the NIGHTS stayed. Check-in is the first night's day,
+ * and checkout is the day AFTER the last night (i.e., next day after last selected).
  *
  * @param {Object} proposal - Proposal object
- * @returns {string|null} "Monday to Saturday" format or null if unavailable
+ * @returns {string|null} "Friday to Tuesday" format (check-in day to checkout day) or null if unavailable
  */
 function getCheckInOutRange(proposal) {
   // Always derive from Days Selected to match the displayed day badges
@@ -125,26 +127,28 @@ function getCheckInOutRange(proposal) {
   const sorted = [...dayIndices].sort((a, b) => a - b);
 
   // Handle wrap-around case (e.g., Fri, Sat, Sun, Mon = [0, 1, 5, 6])
-  const hasZero = sorted.includes(0);
-  const hasSix = sorted.includes(6);
+  // This happens when both low numbers (near 0) and high numbers (near 6) are selected
+  const hasLowNumbers = sorted.some(d => d <= 2); // Sun, Mon, Tue
+  const hasHighNumbers = sorted.some(d => d >= 4); // Thu, Fri, Sat
 
-  if (hasZero && hasSix) {
+  if (hasLowNumbers && hasHighNumbers && sorted.length < 7) {
     // Find gap to determine actual start/end
     let gapIndex = -1;
     for (let i = 1; i < sorted.length; i++) {
-      if (sorted[i] !== sorted[i - 1] + 1) {
+      if (sorted[i] - sorted[i - 1] > 1) {
         gapIndex = i;
         break;
       }
     }
 
     if (gapIndex !== -1) {
-      // Wrapped selection: first day is after the gap, last day is before the gap
-      const firstDayIndex = sorted[gapIndex]; // First day after gap (e.g., Friday = 5)
-      const lastDayIndex = sorted[gapIndex - 1]; // Last day before gap (e.g., Monday = 1)
+      // Wrapped selection: check-in is after the gap, checkout is day after the day before gap
+      const checkInDayIndex = sorted[gapIndex]; // First day after gap (e.g., Friday = 5)
+      const lastNightDayIndex = sorted[gapIndex - 1]; // Last night before gap (e.g., Monday = 1)
+      const checkOutDayIndex = (lastNightDayIndex + 1) % 7; // Next day (e.g., Tuesday = 2)
 
-      const checkInName = DAY_NAMES[firstDayIndex];
-      const checkOutName = DAY_NAMES[lastDayIndex];
+      const checkInName = DAY_NAMES[checkInDayIndex];
+      const checkOutName = DAY_NAMES[checkOutDayIndex];
 
       if (checkInName && checkOutName) {
         return `${checkInName} to ${checkOutName}`;
@@ -152,12 +156,13 @@ function getCheckInOutRange(proposal) {
     }
   }
 
-  // Standard case: first selected day to last selected day
-  const firstDayIndex = sorted[0];
-  const lastDayIndex = sorted[sorted.length - 1];
+  // Standard case (no wrap-around): check-in is first day, checkout is day after last day
+  const checkInDayIndex = sorted[0];
+  const lastNightDayIndex = sorted[sorted.length - 1];
+  const checkOutDayIndex = (lastNightDayIndex + 1) % 7; // Next day
 
-  const checkInName = DAY_NAMES[firstDayIndex];
-  const checkOutName = DAY_NAMES[lastDayIndex];
+  const checkInName = DAY_NAMES[checkInDayIndex];
+  const checkOutName = DAY_NAMES[checkOutDayIndex];
 
   if (checkInName && checkOutName) {
     return `${checkInName} to ${checkOutName}`;

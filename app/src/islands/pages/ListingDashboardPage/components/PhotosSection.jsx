@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useListingDashboard } from '../context/ListingDashboardContext';
 
 // Icons
 const StarIcon = ({ filled }) => (
@@ -72,7 +73,22 @@ const PHOTO_TYPES = [
   'Other',
 ];
 
-export default function PhotosSection({ listing, onAddPhotos, onDeletePhoto, onSetCover, onReorderPhotos }) {
+export default function PhotosSection() {
+  // Get data and handlers from context (migrated from props pattern)
+  const {
+    listing,
+    handleEditSection,
+    handleSetCoverPhoto,
+    handleDeletePhoto,
+    handleReorderPhotos,
+  } = useListingDashboard();
+
+  // Map context handlers to component's expected interface
+  const onAddPhotos = () => handleEditSection('photos');
+  const onDeletePhoto = handleDeletePhoto;
+  const onSetCover = handleSetCoverPhoto;
+  const onReorderPhotos = handleReorderPhotos;
+
   const photos = listing?.photos || [];
 
   // Drag and drop state

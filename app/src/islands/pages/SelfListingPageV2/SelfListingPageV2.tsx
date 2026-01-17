@@ -24,7 +24,7 @@ import { checkAuthStatus, validateTokenAndFetchUser } from '../../../lib/auth.js
 import { createListing, saveDraft, getListingById } from '../../../lib/listingService.js';
 import { isGuest } from '../../../logic/rules/users/isGuest.js';
 import { supabase } from '../../../lib/supabase.js';
-import { NYC_BOUNDS, isValidServiceArea, getBoroughForZipCode } from '../../../lib/nycZipCodes';
+import { NYC_BOUNDS, isValidServiceArea, getBoroughForZipCode, getBoroughFromCounty } from '../../../lib/nycZipCodes';
 import { fetchInformationalTexts } from '../../../lib/informationalTextsFetcher.js';
 import './styles/SelfListingPageV2.css';
 import '../../../styles/components/toast.css';
@@ -629,10 +629,26 @@ export function SelfListingPageV2() {
 
         // Validate service area
         if (!isValidServiceArea(zip, state, county)) {
-          const borough = zip ? getBoroughForZipCode(zip) : null;
-          const errorMsg = borough
-            ? `This address appears to be outside our service area.`
-            : `This address is outside our NYC / Hudson County service area.`;
+          // Try to identify the borough for a more helpful error message
+          const boroughFromZip = zip ? getBoroughForZipCode(zip) : null;
+          const boroughFromCounty = county ? getBoroughFromCounty(county) : null;
+
+          let errorMsg: string;
+          if (boroughFromZip) {
+            // Has a zip but it's not in our service area
+            errorMsg = `This address (zip: ${zip}) is outside our service area. We only accept listings in NYC and Hudson County, NJ.`;
+          } else if (state === 'NJ' && county) {
+            // New Jersey but not Hudson County
+            errorMsg = `This address is outside our service area. We only accept listings in Hudson County, NJ, not ${county}.`;
+          } else if (boroughFromCounty) {
+            // Found a borough from county name but still failed - shouldn't happen now
+            errorMsg = `This address in ${boroughFromCounty} couldn't be validated. Please try selecting a more specific address.`;
+          } else {
+            // Generic fallback
+            errorMsg = `This address is outside our NYC / Hudson County service area.`;
+          }
+
+          console.warn('Address validation failed:', { zip, state, county, boroughFromZip, boroughFromCounty });
           setAddressError(errorMsg);
           setIsAddressValid(false);
           return;
@@ -960,6 +976,9 @@ export function SelfListingPageV2() {
 
   // Submit handler
   const handleSubmit = async () => {
+    // IMMEDIATELY disable the button to prevent double-clicks
+    setIsSubmitting(true);
+
     // Try to get user data from Edge Function first
     // CRITICAL: Use clearOnFailure: false to preserve session if Edge Function fails
     const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
@@ -975,13 +994,14 @@ export function SelfListingPageV2() {
 
     if (!loggedIn) {
       console.log('[SelfListingPageV2] User not logged in, showing auth modal');
+      setIsSubmitting(false); // RE-ENABLE button so user can try again after login
       setShowAuthModal(true);
       setPendingSubmit(true);
       return;
     }
 
     console.log('[SelfListingPageV2] User is logged in, proceeding with submission');
-    setIsSubmitting(true);
+    // isSubmitting already true, no need to set again
 
     try {
       // Map form data to listingService format
@@ -995,12 +1015,13 @@ export function SelfListingPageV2() {
       localStorage.setItem(LAST_HOST_TYPE_KEY, formData.hostType);
       localStorage.setItem(LAST_MARKET_STRATEGY_KEY, formData.marketStrategy);
       localStorage.removeItem(STORAGE_KEY);
+      // NOTE: Do NOT reset isSubmitting on success - button stays disabled as success modal appears
     } catch (error) {
       console.error('[SelfListingPageV2] Submit error:', error);
       alert('Failed to create listing. Please try again.');
-    } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false); // Re-enable button on error for retry
     }
+    // Remove the finally block since we handle success/error separately
   };
 
   // Map form data to listingService format
@@ -1115,11 +1136,12 @@ export function SelfListingPageV2() {
         blockedDates: [],
       },
 
-      // Photos
+      // Photos - include file property for upload to Supabase Storage
       photos: {
         photos: data.photos.map((p, i) => ({
           id: p.id,
           url: p.url,
+          file: p.file, // Required for photoUpload.js to upload to storage
           caption: '',
           displayOrder: i,
         })),
@@ -2028,7 +2050,7 @@ export function SelfListingPageV2() {
             onClick={handleSubmit}
             disabled={isSubmitting}
           >
-            {isSubmitting ? 'Creating...' : 'Activate Listing'}
+            {isSubmitting ? 'Activating...' : 'Activate Listing'}
           </button>
           <button className="btn-back" onClick={prevStep} disabled={isSubmitting}>Back</button>
         </div>
