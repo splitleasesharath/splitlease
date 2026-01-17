@@ -1031,15 +1031,15 @@
 }
 
 /* Location Pill Button - Clickable to zoom map */
-.listing-location-pill {
+.listing-card .listing-location-pill {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 6px 12px 6px 10px;
+    padding: 6px 12px 6px 10px !important;
     margin-bottom: 6px;
-    background-color: #f3f0f7;
-    border: 1px solid #e0dbe6;
-    border-radius: 100px;
+    background: #f3f0f7 !important;
+    border: 1px solid #e0dbe6 !important;
+    border-radius: 100px !important;
     cursor: pointer;
     transition: all 0.2s ease;
     font-family: inherit;
@@ -1047,35 +1047,35 @@
     color: var(--primary-purple, #31135d);
     font-weight: 500;
     white-space: nowrap;
-    max-width: 100%;
+    max-width: fit-content;
 }
 
-.listing-location-pill:hover {
-    background-color: var(--primary-purple, #31135d);
-    border-color: var(--primary-purple, #31135d);
+.listing-card .listing-location-pill:hover {
+    background: var(--primary-purple, #31135d) !important;
+    border-color: var(--primary-purple, #31135d) !important;
     color: white;
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(49, 19, 93, 0.25);
 }
 
-.listing-location-pill:active {
+.listing-card .listing-location-pill:active {
     transform: translateY(0);
     box-shadow: 0 1px 4px rgba(49, 19, 93, 0.2);
 }
 
 /* Focus state for keyboard navigation */
-.listing-location-pill:focus {
+.listing-card .listing-location-pill:focus {
     outline: 2px solid var(--primary-purple, #31135d);
     outline-offset: 2px;
 }
 
 /* Remove focus outline for mouse users */
-.listing-location-pill:focus:not(:focus-visible) {
+.listing-card .listing-location-pill:focus:not(:focus-visible) {
     outline: none;
 }
 
 /* Location pin icon */
-.listing-location-pill .location-pin-icon {
+.listing-card .listing-location-pill .location-pin-icon {
     width: 14px;
     height: 14px;
     flex-shrink: 0;
@@ -1083,12 +1083,12 @@
     transition: color 0.2s ease;
 }
 
-.listing-location-pill:hover .location-pin-icon {
+.listing-card .listing-location-pill:hover .location-pin-icon {
     color: white;
 }
 
 /* Location text */
-.listing-location-pill .location-text {
+.listing-card .listing-location-pill .location-text {
     font-size: 12px;
     color: inherit;
     overflow: hidden;
@@ -1096,7 +1096,7 @@
 }
 
 /* Arrow icon */
-.listing-location-pill .location-arrow-icon {
+.listing-card .listing-location-pill .location-arrow-icon {
     width: 12px;
     height: 12px;
     flex-shrink: 0;
@@ -1105,7 +1105,7 @@
     stroke: currentColor;
 }
 
-.listing-location-pill:hover .location-arrow-icon {
+.listing-card .listing-location-pill:hover .location-arrow-icon {
     opacity: 1;
     transform: translateX(2px);
 }
@@ -1424,18 +1424,18 @@
     }
 
     /* Location pill on mobile */
-    .listing-location-pill {
-        padding: 5px 10px 5px 8px;
+    .listing-card .listing-location-pill {
+        padding: 5px 10px 5px 8px !important;
         margin-bottom: 4px;
         font-size: 11px;
     }
 
-    .listing-location-pill .location-pin-icon {
+    .listing-card .listing-location-pill .location-pin-icon {
         width: 12px;
         height: 12px;
     }
 
-    .listing-location-pill .location-arrow-icon {
+    .listing-card .listing-location-pill .location-arrow-icon {
         width: 10px;
         height: 10px;
     }
