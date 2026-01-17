@@ -26,6 +26,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from adw_modules.agent import prompt_claude_code
 from adw_modules.data_types import AgentPromptRequest
+from adw_modules.ast_dependency_analyzer import analyze_dependencies
 
 
 def run_code_audit_and_plan(target_path: str, audit_type: str, working_dir: Path) -> str:
@@ -39,6 +40,19 @@ def run_code_audit_and_plan(target_path: str, audit_type: str, working_dir: Path
     plan_file = f"adws/adw_plans/{timestamp}_code_refactor_plan.md"
     agent_dir = f"adws/agents/code_audit_{timestamp}"
 
+    # Generate dependency context using AST analysis
+    print(f"Generating dependency context via AST analysis...")
+    try:
+        full_target_path = working_dir / target_path
+        dependency_context = analyze_dependencies(str(full_target_path))
+        semantic_context = dependency_context.to_prompt_context()
+        print(f"  Analyzed {dependency_context.total_files} files, "
+              f"{dependency_context.total_exports} exports, "
+              f"{dependency_context.total_imports} imports")
+    except Exception as e:
+        print(f"  Warning: AST analysis failed: {e}")
+        semantic_context = ""  # Graceful fallback - audit continues without context
+
     # Load prompt from template
     prompt_template_path = Path(__file__).parent / "prompts" / "code_audit_opus.txt"
     if prompt_template_path.exists():
@@ -47,7 +61,8 @@ def run_code_audit_and_plan(target_path: str, audit_type: str, working_dir: Path
             target_path=target_path,
             audit_type=audit_type,
             timestamp=timestamp,
-            date=datetime.now().strftime('%Y-%m-%d')
+            date=datetime.now().strftime('%Y-%m-%d'),
+            semantic_context=semantic_context,  # NEW: AST-generated dependency context
         )
     else:
         # Fallback to hardcoded prompt if file not found
