@@ -18,6 +18,7 @@ from typing import Dict, Any, Optional
 from .agent import prompt_claude_code
 from .data_types import AgentPromptRequest
 from .mcp_config import get_session_config, get_url_for_session
+from .config import get_phase_model
 
 
 def verify_environment_accessibility(
@@ -145,17 +146,20 @@ def check_visual_parity(
     output_file = timestamp_dir / f"visual_check_{os.urandom(4).hex()}.jsonl"
 
     # Determine provider based on use_claude flag or environment
+    # Get configurable model for validation phase
+    validation_model = get_phase_model("validation")
+
     if use_claude:
         original_strict_gemini = os.environ.get("STRICT_GEMINI")
         original_adw_provider = os.environ.get("ADW_PROVIDER")
         os.environ["STRICT_GEMINI"] = "false"
         os.environ["ADW_PROVIDER"] = "claude"
-        model = "sonnet"
+        model = validation_model
         provider_name = "Claude"
     else:
         original_strict_gemini = None
         original_adw_provider = None
-        model = "sonnet"
+        model = validation_model
         provider_name = "Gemini"
 
     try:

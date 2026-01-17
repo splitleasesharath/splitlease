@@ -27,6 +27,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from adw_modules.agent import prompt_claude_code
 from adw_modules.data_types import AgentPromptRequest
 from adw_modules.ast_dependency_analyzer import analyze_dependencies
+from adw_modules.config import get_phase_model, print_model_config
 
 
 def run_code_audit_and_plan(target_path: str, audit_type: str, working_dir: Path) -> str:
@@ -89,11 +90,15 @@ Group chunks by affected page group.
         os.environ["STRICT_GEMINI"] = "false"
         os.environ["ADW_PROVIDER"] = "claude"
 
+        # Get configurable model for audit phase
+        audit_model = get_phase_model("audit")
+        print(f"Using model for audit: {audit_model}")
+
         request = AgentPromptRequest(
             prompt=prompt,
             adw_id=f"code_audit_{timestamp}",
             agent_name="opus_auditor",
-            model="opus",
+            model=audit_model,
             output_file=str(output_file),
             working_dir=str(working_dir),
             dangerously_skip_permissions=True

@@ -57,6 +57,7 @@ from adw_modules.concurrent_parity import (
     DEV_BASE_URL,
 )
 from adw_modules.chunk_parser import extract_page_groups, ChunkData
+from adw_modules.config import get_phase_model, print_model_config
 from adw_code_audit import run_code_audit_and_plan
 
 
@@ -177,11 +178,14 @@ def implement_chunks_with_validation(chunks: List[ChunkData], working_dir: Path,
         agent_dir.mkdir(parents=True, exist_ok=True)
         output_file = agent_dir / "raw_output.jsonl"
 
+        # Get configurable model for implementation phase
+        impl_model = get_phase_model("implementation")
+
         request = AgentPromptRequest(
             prompt=prompt,
             adw_id=f"refactor_chunk_{chunk.number}",
             agent_name="chunk_implementor",
-            model="sonnet",
+            model=impl_model,
             output_file=str(output_file),
             working_dir=str(working_dir),
             dangerously_skip_permissions=True

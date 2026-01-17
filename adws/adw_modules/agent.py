@@ -45,31 +45,33 @@ if STRICT_GEMINI:
 
 # Model selection mapping for slash commands
 # Maps each command to its model configuration for base and heavy model sets
+# DEFAULT: All commands use Claude Opus 4.5 for maximum quality
+# Override via environment: ADW_IMPLEMENTATION_MODEL, ADW_REVIEW_MODEL, etc.
 SLASH_COMMAND_MODEL_MAP: Final[Dict[SlashCommand, Dict[ModelSet, str]]] = {
-    "/classify_issue": {"base": "sonnet", "heavy": "sonnet"},
-    "/classify_adw": {"base": "sonnet", "heavy": "sonnet"},
-    "/generate_branch_name": {"base": "sonnet", "heavy": "sonnet"},
-    "/implement": {"base": "sonnet", "heavy": "opus"},
-    "/test": {"base": "sonnet", "heavy": "sonnet"},
-    "/resolve_failed_test": {"base": "sonnet", "heavy": "opus"},
-    "/test_e2e": {"base": "sonnet", "heavy": "sonnet"},
-    "/resolve_failed_e2e_test": {"base": "sonnet", "heavy": "opus"},
-    "/review": {"base": "sonnet", "heavy": "sonnet"},
-    "/document": {"base": "sonnet", "heavy": "opus"},
-    "/commit": {"base": "sonnet", "heavy": "sonnet"},
-    "/pull_request": {"base": "sonnet", "heavy": "sonnet"},
-    "/chore": {"base": "sonnet", "heavy": "opus"},
-    "/bug": {"base": "sonnet", "heavy": "opus"},
-    "/feature": {"base": "sonnet", "heavy": "opus"},
-    "/patch": {"base": "sonnet", "heavy": "opus"},
-    "/claude_browser": {"base": "sonnet", "heavy": "sonnet"},
-    "/install_worktree": {"base": "sonnet", "heavy": "sonnet"},
-    "/track_agentic_kpis": {"base": "sonnet", "heavy": "sonnet"},
+    "/classify_issue": {"base": "opus", "heavy": "opus"},
+    "/classify_adw": {"base": "opus", "heavy": "opus"},
+    "/generate_branch_name": {"base": "opus", "heavy": "opus"},
+    "/implement": {"base": "opus", "heavy": "opus"},
+    "/test": {"base": "opus", "heavy": "opus"},
+    "/resolve_failed_test": {"base": "opus", "heavy": "opus"},
+    "/test_e2e": {"base": "opus", "heavy": "opus"},
+    "/resolve_failed_e2e_test": {"base": "opus", "heavy": "opus"},
+    "/review": {"base": "opus", "heavy": "opus"},
+    "/document": {"base": "opus", "heavy": "opus"},
+    "/commit": {"base": "opus", "heavy": "opus"},
+    "/pull_request": {"base": "opus", "heavy": "opus"},
+    "/chore": {"base": "opus", "heavy": "opus"},
+    "/bug": {"base": "opus", "heavy": "opus"},
+    "/feature": {"base": "opus", "heavy": "opus"},
+    "/patch": {"base": "opus", "heavy": "opus"},
+    "/claude_browser": {"base": "opus", "heavy": "opus"},
+    "/install_worktree": {"base": "opus", "heavy": "opus"},
+    "/track_agentic_kpis": {"base": "opus", "heavy": "opus"},
 }
 
 
 def get_model_for_slash_command(
-    request: AgentTemplateRequest, default: str = "sonnet"
+    request: AgentTemplateRequest, default: str = "opus"
 ) -> str:
     """Get the appropriate model for a template request based on ADW state and slash command.
 
