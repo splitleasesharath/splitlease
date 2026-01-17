@@ -22,14 +22,18 @@ export function isValidDaysArray(days) {
  * Day names indexed by 0-based day number
  */
 export const DAY_NAMES = [
-  'Sunday',   // 0
-  'Monday',   // 1
-  'Tuesday',  // 2
-  'Wednesday',// 3
-  'Thursday', // 4
-  'Friday',   // 5
-  'Saturday'  // 6
+  'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'
 ];
+
+/**
+ * Single letter day abbreviations indexed by 0-based day number
+ */
+export const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+
+/**
+ * Three letter day abbreviations indexed by 0-based day number
+ */
+export const DAY_ABBREV = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 /**
  * Get day name from 0-based index

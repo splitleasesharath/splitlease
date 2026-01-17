@@ -5,14 +5,9 @@
  * 0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday
  */
 
-// Day names and letters
-export const DAY_NAMES = [
-  'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'
-];
-
-export const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-
-export const DAY_ABBREV = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+// Re-export day constants from canonical source (dayUtils.js)
+import { DAY_NAMES, DAY_LETTERS, DAY_ABBREV } from '../dayUtils.js';
+export { DAY_NAMES, DAY_LETTERS, DAY_ABBREV };
 
 /**
  * Create a Day object from day of week
