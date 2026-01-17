@@ -520,6 +520,16 @@ def prompt_claude_code(request: AgentPromptRequest) -> AgentPromptResponse:
         if os.path.exists(mcp_config_path):
             cmd.extend(["--mcp-config", mcp_config_path])
 
+    # TODO(human): Add ADW-specific CLAUDE.md context
+    # When the orchestrator runs from adws/, we want Claude to load
+    # the refactoring rules from adws/.claude/CLAUDE.MD in addition to
+    # the project root's CLAUDE.md (which is loaded automatically via cwd).
+    #
+    # Implementation needed here:
+    # 1. Detect if we're in an ADW context (check if adws/.claude/CLAUDE.MD exists)
+    # 2. Use --append-system-prompt to add the adws context file
+    # 3. Only apply for Claude (not Gemini)
+
     # Set up environment with only required variables
     env = get_claude_env()
 
