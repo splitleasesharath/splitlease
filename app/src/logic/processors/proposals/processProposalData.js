@@ -225,24 +225,8 @@ export function getProposalDisplayText(proposal) {
   return `${hostName} - ${listingName}`;
 }
 
-/**
- * Format price for display
- * @param {number} price - Price value
- * @param {boolean} includeCents - Whether to include cents
- * @returns {string} Formatted price string
- */
-export function formatPrice(price, includeCents = true) {
-  if (price === null || price === undefined) return null;
-
-  const formatter = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: includeCents ? 2 : 0,
-    maximumFractionDigits: includeCents ? 2 : 0
-  });
-
-  return formatter.format(price);
-}
+// Re-export canonical price formatter with cents by default
+export { formatPriceWithCents as formatPrice } from '../../../lib/formatters/priceFormatter.js';
 
 /**
  * Format date for display

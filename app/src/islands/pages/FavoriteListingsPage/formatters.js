@@ -85,22 +85,8 @@ export const formatBedroomBathroom = (bedrooms, bathrooms, kitchenType) => {
   return parts.length > 0 ? '• ' + parts.join(' • ') : '';
 };
 
-/**
- * Format price with currency symbol
- * @param {number} price - Price amount
- * @param {string} [currency='USD'] - Currency code
- * @returns {string} Formatted price string (e.g., "$1,029/night")
- */
-export const formatPrice = (price, currency = 'USD') => {
-  const formatter = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  });
-
-  return `${formatter.format(price)}/night`;
-};
+// Re-export canonical price formatter with /night suffix
+export { formatPricePerNight as formatPrice } from '../../../lib/formatters/priceFormatter.js';
 
 /**
  * Format location display

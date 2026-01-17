@@ -64,26 +64,8 @@ export function getNightlyPriceForNights(listing, nightsSelected) {
   return listing['💰Nightly Host Rate for 4 nights'] || null;
 }
 
-/**
- * Format price as currency string
- * @param {number} amount - Dollar amount
- * @param {boolean} showCents - Whether to show cents (default: false)
- * @returns {string} Formatted price (e.g., "$1,234" or "$1,234.56")
- */
-export function formatPrice(amount, showCents = false) {
-  if (amount === null || amount === undefined || isNaN(amount)) {
-    return '$0';
-  }
-
-  const formatted = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: showCents ? 2 : 0,
-    maximumFractionDigits: showCents ? 2 : 0
-  }).format(amount);
-
-  return formatted;
-}
+// Re-export canonical price formatter
+export { formatPriceOrZero as formatPrice } from './formatters/priceFormatter.js';
 
 /**
  * Calculate complete pricing breakdown
