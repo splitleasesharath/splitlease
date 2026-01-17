@@ -25,6 +25,7 @@ import {
   isTerminalStatus,
   getListingPhoto,
   getHostDisplayName,
+  getHostProfilePhoto,
   buildMetaText,
   getProgressStageLabels
 } from './displayUtils.js';
@@ -430,6 +431,7 @@ export default function ExpandableProposalCard({
   const listingName = listing?.Name || 'Listing';
   const location = [listing?.hoodName, listing?.boroughName].filter(Boolean).join(', ') || 'New York';
   const hostName = getHostDisplayName(host);
+  const hostPhoto = getHostProfilePhoto(host);
 
   // Schedule
   let daysSelected = proposal?.['Days Selected'] || proposal?.hcDaysSelected || [];
@@ -611,6 +613,13 @@ export default function ExpandableProposalCard({
               <div className="epc-detail-location">{location}</div>
             </div>
             <div className="epc-detail-host">
+              {hostPhoto ? (
+                <img src={hostPhoto} alt={hostName} className="epc-host-photo" />
+              ) : (
+                <div className="epc-host-photo-placeholder">
+                  {hostName.charAt(0).toUpperCase()}
+                </div>
+              )}
               <div className="epc-host-name">{hostName}</div>
               <div className="epc-host-label">Host</div>
             </div>

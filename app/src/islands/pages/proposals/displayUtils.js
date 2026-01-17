@@ -156,16 +156,29 @@ export function getListingPhoto(listing) {
 
 /**
  * Get host display name
- * @param {Object} host - Host object
+ * @param {Object} host - Host object (Bubble.io format)
  * @returns {string} Display name
  */
 export function getHostDisplayName(host) {
   if (!host) return 'Host';
 
-  return host.firstName ||
-    host['First Name'] ||
+  // Bubble.io uses 'Name - First' and 'Name - Full' field names
+  return host['Name - First'] ||
+    host['Name - Full'] ||
+    host.firstName ||
     host.name ||
     'Host';
+}
+
+/**
+ * Get host profile photo URL
+ * @param {Object} host - Host object (Bubble.io format)
+ * @returns {string|null} Photo URL or null
+ */
+export function getHostProfilePhoto(host) {
+  if (!host) return null;
+
+  return host['Profile Photo'] || null;
 }
 
 /**
