@@ -270,7 +270,11 @@ async function sendWelcomeEmail(data) {
   const edgeFunctionUrl = `${supabaseUrl}/functions/v1/send-email`;
 
   // Build the email body HTML (matches Bubble's CORE-Send Basic Email format)
+  // Uses <br> tags for line breaks as expected by the Basic template
   const emailBodyHtml = `Hey <br> <br> You have a new split lease account<br> <br> Sign in using your: <br> email: ${data.email}<br> temporary password: ${data.password} <br> <br> We recommend you change your password to something private. <br> <br> You can reach out to Robert if you have any questions at robert@leasesplit.com or via text at 9376737470.`;
+
+  // Build button HTML for the template
+  const buttonHtml = `<a href="${data.magicLink || 'https://splitlease.com/login'}" style="background-color: #291D54; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600;">Go to your Account</a>`;
 
   try {
     // Fire-and-forget: don't await full response
@@ -282,16 +286,22 @@ async function sendWelcomeEmail(data) {
       body: JSON.stringify({
         action: 'send',
         payload: {
-          template_id: 'welcome_ai_signup', // Template for AI signup welcome
+          // Basic template - flexible for welcome emails
+          // From: reference_table.zat_email_html_template_eg_sendbasicemailwf_
+          template_id: '1560447575939x331870423481483500',
           to_email: data.email,
           from_email: 'tech@leasesplit.com',
           from_name: 'Split Lease Signup',
           subject: 'New Split Lease Account!',
           variables: {
-            body_text: emailBodyHtml,
-            button_text: 'Go to your Account',
-            button_url: data.magicLink || 'https://splitlease.com/login',
-            button_color: '#291D54',
+            // Placeholders expected by the Basic template ($$variable$$ format)
+            'to': data.email,
+            'from email': 'tech@leasesplit.com',
+            'from name': 'Split Lease Signup',
+            'subject': 'New Split Lease Account!',
+            'header': 'Welcome to Split Lease!',
+            'body text': emailBodyHtml,
+            'button': buttonHtml,
           },
           bcc_emails: [
             'splitleaseteam@gmail.com'
@@ -335,6 +345,7 @@ async function sendInternalNotificationEmail(data) {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://qcfifybkaddcoimjroca.supabase.co';
   const edgeFunctionUrl = `${supabaseUrl}/functions/v1/send-email`;
 
+  // Build plain text body for internal notification
   const emailBody = `Name: ${data.name || 'Not extracted'}
 Email: ${data.email}
 Phone number: ${data.phone || 'Not provided'}
@@ -342,6 +353,9 @@ Their temporary password is: ${data.password}
 
 ----
 free form text inputted: ${data.freeformText}`;
+
+  // Convert to HTML with line breaks preserved
+  const emailBodyHtml = emailBody.replace(/\n/g, '<br>');
 
   try {
     // Fire-and-forget
@@ -353,15 +367,23 @@ free form text inputted: ${data.freeformText}`;
       body: JSON.stringify({
         action: 'send',
         payload: {
-          template_id: 'internal_notification', // Simple text template
-          to_email: 'customer-acquisition@splitlease.com',
+          // Basic template - flexible for internal notifications
+          // From: reference_table.zat_email_html_template_eg_sendbasicemailwf_
+          template_id: '1560447575939x331870423481483500',
+          // Slack channel email for #customer-acquisition
+          to_email: 'acquisition-aaaachs52tzodgc5t3o2oeipli@splitlease.slack.com',
           from_email: 'noreply@splitlease.com',
           from_name: 'Guest AI Signup',
           subject: `${data.name || 'New User'}, ${data.email}, SIGNED UP thru AI signup feature`,
           variables: {
-            body_text: emailBody,
+            // Placeholders expected by the Basic template
+            'to': 'acquisition-aaaachs52tzodgc5t3o2oeipli@splitlease.slack.com',
+            'from email': 'noreply@splitlease.com',
+            'from name': 'Guest AI Signup',
+            'subject': `${data.name || 'New User'}, ${data.email}, SIGNED UP thru AI signup feature`,
+            'header': 'New AI Signup',
+            'body text': emailBodyHtml,
           },
-          cc_emails: ['ai-codex@splitlease.com']
         }
       }),
     })
