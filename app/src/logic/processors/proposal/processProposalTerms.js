@@ -18,7 +18,7 @@
  * @throws {Error} If Listing or Guest reference is missing.
  *
  * @example
- * const proposal = processProposalData({
+ * const proposal = processProposalTerms({
  *   rawProposal: {
  *     _id: 'abc123',
  *     Listing: 'listing123',
@@ -33,27 +33,27 @@
  */
 import { PROPOSAL_STATUSES, getUsualOrder } from '../../constants/proposalStatuses.js'
 
-export function processProposalData({ rawProposal, listing = null, guest = null, host = null }) {
+export function processProposalTerms({ rawProposal, listing = null, guest = null, host = null }) {
   // No Fallback: Proposal data must exist
   if (!rawProposal) {
-    throw new Error('processProposalData: rawProposal cannot be null or undefined')
+    throw new Error('processProposalTerms: rawProposal cannot be null or undefined')
   }
 
   // Validate critical ID field
   if (!rawProposal._id) {
-    throw new Error('processProposalData: Proposal missing critical _id field')
+    throw new Error('processProposalTerms: Proposal missing critical _id field')
   }
 
   // Validate required foreign key references
   if (!rawProposal.Listing) {
     throw new Error(
-      `processProposalData: Proposal ${rawProposal._id} missing required Listing reference`
+      `processProposalTerms: Proposal ${rawProposal._id} missing required Listing reference`
     )
   }
 
   if (!rawProposal.Guest) {
     throw new Error(
-      `processProposalData: Proposal ${rawProposal._id} missing required Guest reference`
+      `processProposalTerms: Proposal ${rawProposal._id} missing required Guest reference`
     )
   }
 

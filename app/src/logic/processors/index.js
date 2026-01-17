@@ -22,7 +22,7 @@ export { processUserDisplayName } from './user/processUserDisplayName.js'
 export { processProfilePhotoUrl } from './user/processProfilePhotoUrl.js'
 
 // Proposal Processors
-export { processProposalData } from './proposal/processProposalData.js'
+export { processProposalTerms } from './proposal/processProposalTerms.js'
 
 // Proposal Processors - Extended (from new implementation)
 export {
