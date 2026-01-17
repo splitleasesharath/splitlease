@@ -257,13 +257,15 @@ async function generateMagicLink(email) {
  * - Login credentials (email + temporary password)
  * - Magic link button for one-click login
  *
+ * IMPORTANT: Uses navigator.sendBeacon() to survive page reload/navigation
+ *
  * @param {Object} data - Email data
  * @param {string} data.email - User's email
  * @param {string} data.password - Generated password (SL{Name}77)
  * @param {string} data.magicLink - Magic login link URL
- * @returns {Promise<{success: boolean, error?: string}>}
+ * @returns {{success: boolean, error?: string}}
  */
-async function sendWelcomeEmail(data) {
+function sendWelcomeEmail(data) {
   console.log('[AiSignupMarketReport] Sending welcome email to:', data.email);
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://qcfifybkaddcoimjroca.supabase.co';
@@ -276,67 +278,59 @@ async function sendWelcomeEmail(data) {
   // Build button HTML for the template
   const buttonHtml = `<a href="${data.magicLink || 'https://splitlease.com/login'}" style="background-color: #291D54; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600;">Go to your Account</a>`;
 
-  try {
-    // Fire-and-forget: don't await full response
-    fetch(edgeFunctionUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+  const payload = JSON.stringify({
+    action: 'send',
+    payload: {
+      // Basic template - flexible for welcome emails
+      // From: reference_table.zat_email_html_template_eg_sendbasicemailwf_
+      template_id: '1560447575939x331870423481483500',
+      to_email: data.email,
+      from_email: 'tech@leasesplit.com',
+      from_name: 'Split Lease Signup',
+      subject: 'New Split Lease Account!',
+      variables: {
+        // All 13 placeholders expected by the Basic template ($$variable$$ format)
+        'to': data.email,
+        'from email': 'tech@leasesplit.com',
+        'from name': ', "name": "Split Lease Signup"',
+        'subject': 'New Split Lease Account!',
+        'header': 'Welcome to Split Lease!',
+        'body text': emailBodyHtml,
+        'button': buttonHtml,
+        'year': new Date().getFullYear().toString(),
+        'logo url': 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1599068082301x985428647498498600/SL%20Logo.png',
+        'cc': '',
+        'bcc': '',
+        'reply_to': '',
+        'attachment': '',
       },
-      body: JSON.stringify({
-        action: 'send',
-        payload: {
-          // Basic template - flexible for welcome emails
-          // From: reference_table.zat_email_html_template_eg_sendbasicemailwf_
-          template_id: '1560447575939x331870423481483500',
-          to_email: data.email,
-          from_email: 'tech@leasesplit.com',
-          from_name: 'Split Lease Signup',
-          subject: 'New Split Lease Account!',
-          variables: {
-            // All 13 placeholders expected by the Basic template ($$variable$$ format)
-            'to': data.email,
-            'from email': 'tech@leasesplit.com',
-            'from name': ', "name": "Split Lease Signup"',
-            'subject': 'New Split Lease Account!',
-            'header': 'Welcome to Split Lease!',
-            'body text': emailBodyHtml,
-            'button': buttonHtml,
-            'year': new Date().getFullYear().toString(),
-            'logo url': 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1599068082301x985428647498498600/SL%20Logo.png',
-            'cc': '',
-            'bcc': '',
-            'reply_to': '',
-            'attachment': '',
-          },
-          bcc_emails: [
-            'splitleaseteam@gmail.com',
-            'acquisition-aaaachs52tzodgc5t3o2oeipli@splitlease.slack.com'
-          ]
-        }
-      }),
-    })
-      .then(response => {
-        if (response.ok) {
-          console.log('[AiSignupMarketReport] ✅ Welcome email sent successfully');
-        } else {
-          console.error('[AiSignupMarketReport] ⚠️ Welcome email send failed:', response.status);
-        }
-      })
-      .catch(error => {
-        console.error('[AiSignupMarketReport] ⚠️ Welcome email error:', error.message);
-      });
+      bcc_emails: [
+        'splitleaseteam@gmail.com',
+        'acquisition-aaaachs52tzodgc5t3o2oeipli@splitlease.slack.com'
+      ]
+    }
+  });
 
-    return { success: true };
-  } catch (error) {
-    console.error('[AiSignupMarketReport] Welcome email exception:', error.message);
-    return { success: false, error: error.message };
+  // Use sendBeacon for guaranteed delivery even during page unload/reload
+  // sendBeacon is designed specifically for this use case - it queues the request
+  // and the browser guarantees delivery even if the page navigates away
+  const blob = new Blob([payload], { type: 'application/json' });
+  const queued = navigator.sendBeacon(edgeFunctionUrl, blob);
+
+  if (queued) {
+    console.log('[AiSignupMarketReport] ✅ Welcome email queued via sendBeacon');
+  } else {
+    console.error('[AiSignupMarketReport] ⚠️ sendBeacon failed for welcome email');
   }
+
+  return { success: queued };
 }
 
 /**
  * Send internal notification email to customer-acquisition team (Step 5 from Bubble)
  * Alerts the team about new AI signups with user details
+ *
+ * IMPORTANT: Uses navigator.sendBeacon() to survive page reload/navigation
  *
  * @param {Object} data - Notification data
  * @param {string} data.email - User's email
@@ -344,9 +338,9 @@ async function sendWelcomeEmail(data) {
  * @param {string} data.name - Extracted name
  * @param {string} data.password - Generated password
  * @param {string} data.freeformText - Original freeform input
- * @returns {Promise<{success: boolean, error?: string}>}
+ * @returns {{success: boolean, error?: string}}
  */
-async function sendInternalNotificationEmail(data) {
+function sendInternalNotificationEmail(data) {
   console.log('[AiSignupMarketReport] Sending internal notification email');
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://qcfifybkaddcoimjroca.supabase.co';
@@ -364,59 +358,47 @@ free form text inputted: ${data.freeformText}`;
   // Convert to HTML with line breaks preserved
   const emailBodyHtml = emailBody.replace(/\n/g, '<br>');
 
-  try {
-    // Fire-and-forget
-    fetch(edgeFunctionUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+  const payload = JSON.stringify({
+    action: 'send',
+    payload: {
+      // Basic template - flexible for internal notifications
+      // From: reference_table.zat_email_html_template_eg_sendbasicemailwf_
+      template_id: '1560447575939x331870423481483500',
+      // Slack channel email for #customer-acquisition
+      to_email: 'acquisition-aaaachs52tzodgc5t3o2oeipli@splitlease.slack.com',
+      from_email: 'noreply@splitlease.com',
+      from_name: 'Guest AI Signup',
+      subject: `${data.name || 'New User'}, ${data.email}, SIGNED UP thru AI signup feature`,
+      variables: {
+        // All 13 placeholders expected by the Basic template
+        'to': 'acquisition-aaaachs52tzodgc5t3o2oeipli@splitlease.slack.com',
+        'from email': 'noreply@splitlease.com',
+        'from name': ', "name": "Guest AI Signup"',
+        'subject': `${data.name || 'New User'}, ${data.email}, SIGNED UP thru AI signup feature`,
+        'header': 'New AI Signup',
+        'body text': emailBodyHtml,
+        'button': '', // No button for internal notification
+        'year': new Date().getFullYear().toString(),
+        'logo url': 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1599068082301x985428647498498600/SL%20Logo.png',
+        'cc': '',
+        'bcc': '',
+        'reply_to': '',
+        'attachment': '',
       },
-      body: JSON.stringify({
-        action: 'send',
-        payload: {
-          // Basic template - flexible for internal notifications
-          // From: reference_table.zat_email_html_template_eg_sendbasicemailwf_
-          template_id: '1560447575939x331870423481483500',
-          // Slack channel email for #customer-acquisition
-          to_email: 'acquisition-aaaachs52tzodgc5t3o2oeipli@splitlease.slack.com',
-          from_email: 'noreply@splitlease.com',
-          from_name: 'Guest AI Signup',
-          subject: `${data.name || 'New User'}, ${data.email}, SIGNED UP thru AI signup feature`,
-          variables: {
-            // All 13 placeholders expected by the Basic template
-            'to': 'acquisition-aaaachs52tzodgc5t3o2oeipli@splitlease.slack.com',
-            'from email': 'noreply@splitlease.com',
-            'from name': ', "name": "Guest AI Signup"',
-            'subject': `${data.name || 'New User'}, ${data.email}, SIGNED UP thru AI signup feature`,
-            'header': 'New AI Signup',
-            'body text': emailBodyHtml,
-            'button': '', // No button for internal notification
-            'year': new Date().getFullYear().toString(),
-            'logo url': 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1599068082301x985428647498498600/SL%20Logo.png',
-            'cc': '',
-            'bcc': '',
-            'reply_to': '',
-            'attachment': '',
-          },
-        }
-      }),
-    })
-      .then(response => {
-        if (response.ok) {
-          console.log('[AiSignupMarketReport] ✅ Internal notification sent');
-        } else {
-          console.error('[AiSignupMarketReport] ⚠️ Internal notification failed:', response.status);
-        }
-      })
-      .catch(error => {
-        console.error('[AiSignupMarketReport] ⚠️ Internal notification error:', error.message);
-      });
+    }
+  });
 
-    return { success: true };
-  } catch (error) {
-    console.error('[AiSignupMarketReport] Internal notification exception:', error.message);
-    return { success: false, error: error.message };
+  // Use sendBeacon for guaranteed delivery even during page unload/reload
+  const blob = new Blob([payload], { type: 'application/json' });
+  const queued = navigator.sendBeacon(edgeFunctionUrl, blob);
+
+  if (queued) {
+    console.log('[AiSignupMarketReport] ✅ Internal notification queued via sendBeacon');
+  } else {
+    console.error('[AiSignupMarketReport] ⚠️ sendBeacon failed for internal notification');
   }
+
+  return { success: queued };
 }
 
 /**
@@ -424,15 +406,16 @@ free form text inputted: ${data.freeformText}`;
  * Contains login credentials and magic link
  *
  * Uses the public Split Lease SMS number which doesn't require auth
+ * IMPORTANT: Uses navigator.sendBeacon() to survive page reload/navigation
  *
  * @param {Object} data - SMS data
  * @param {string} data.phone - User's phone number
  * @param {string} data.email - User's email
  * @param {string} data.password - Generated password
  * @param {string} data.magicLink - Magic login link URL
- * @returns {Promise<{success: boolean, error?: string}>}
+ * @returns {{success: boolean, skipped?: boolean, error?: string}}
  */
-async function sendWelcomeSms(data) {
+function sendWelcomeSms(data) {
   if (!data.phone) {
     console.log('[AiSignupMarketReport] No phone number provided, skipping SMS');
     return { success: true, skipped: true };
@@ -455,44 +438,35 @@ async function sendWelcomeSms(data) {
 
   const smsBody = `You have a new split lease account. Sign in with your email: ${data.email}. Your temporary password: ${data.password}. Click this link to proceed: ${data.magicLink || 'https://splitlease.com/login'}`;
 
-  try {
-    // Fire-and-forget
-    fetch(edgeFunctionUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        action: 'send',
-        payload: {
-          to: formattedPhone,
-          from: '+14155692985', // Public Split Lease SMS number (no auth required)
-          body: smsBody
-        }
-      }),
-    })
-      .then(response => {
-        if (response.ok) {
-          console.log('[AiSignupMarketReport] ✅ Welcome SMS sent successfully');
-        } else {
-          console.error('[AiSignupMarketReport] ⚠️ Welcome SMS send failed:', response.status);
-        }
-      })
-      .catch(error => {
-        console.error('[AiSignupMarketReport] ⚠️ Welcome SMS error:', error.message);
-      });
+  const payload = JSON.stringify({
+    action: 'send',
+    payload: {
+      to: formattedPhone,
+      from: '+14155692985', // Public Split Lease SMS number (no auth required)
+      body: smsBody
+    }
+  });
 
-    return { success: true };
-  } catch (error) {
-    console.error('[AiSignupMarketReport] Welcome SMS exception:', error.message);
-    return { success: false, error: error.message };
+  // Use sendBeacon for guaranteed delivery even during page unload/reload
+  const blob = new Blob([payload], { type: 'application/json' });
+  const queued = navigator.sendBeacon(edgeFunctionUrl, blob);
+
+  if (queued) {
+    console.log('[AiSignupMarketReport] ✅ Welcome SMS queued via sendBeacon');
+  } else {
+    console.error('[AiSignupMarketReport] ⚠️ sendBeacon failed for welcome SMS');
   }
+
+  return { success: queued };
 }
 
 /**
  * Send all welcome communications after successful signup
  * This orchestrates: magic link generation → email → SMS → internal notification
- * All communications are fire-and-forget (non-blocking)
+ *
+ * IMPORTANT: Uses sendBeacon for email/SMS to survive page reload.
+ * Magic link generation is attempted first, but communications are sent
+ * regardless (with fallback login URL if magic link fails).
  *
  * @param {Object} data - Communication data
  * @param {string} data.email - User's email
@@ -507,22 +481,36 @@ async function sendWelcomeCommunications(data) {
   console.log('[AiSignupMarketReport] Phone:', data.phone || 'Not provided');
   console.log('[AiSignupMarketReport] Name:', data.name || 'Not extracted');
 
-  // Step 1: Generate magic link (this one we wait for since others depend on it)
-  const magicLinkResult = await generateMagicLink(data.email);
-  const magicLink = magicLinkResult.success ? magicLinkResult.action_link : null;
+  // Step 1: Generate magic link with a timeout to avoid blocking
+  // If it takes too long, we'll use the fallback URL
+  let magicLink = 'https://splitlease.com/login'; // Default fallback
 
-  if (!magicLink) {
-    console.warn('[AiSignupMarketReport] ⚠️ Magic link generation failed, using fallback URL');
+  try {
+    // Race between magic link generation and a 3-second timeout
+    const magicLinkPromise = generateMagicLink(data.email);
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Magic link timeout')), 3000)
+    );
+
+    const magicLinkResult = await Promise.race([magicLinkPromise, timeoutPromise]);
+    if (magicLinkResult.success && magicLinkResult.action_link) {
+      magicLink = magicLinkResult.action_link;
+      console.log('[AiSignupMarketReport] ✅ Magic link generated');
+    } else {
+      console.warn('[AiSignupMarketReport] ⚠️ Magic link generation failed, using fallback URL');
+    }
+  } catch (error) {
+    console.warn('[AiSignupMarketReport] ⚠️ Magic link error/timeout, using fallback URL:', error.message);
   }
 
-  // Step 2: Send all communications in parallel (fire-and-forget)
-  // These don't block the user experience
+  // Step 2: Send all communications using sendBeacon (survives page reload)
+  // These are queued immediately and guaranteed to be sent
 
   // Welcome email to user (Step 7)
   sendWelcomeEmail({
     email: data.email,
     password: data.password,
-    magicLink: magicLink || 'https://splitlease.com/login'
+    magicLink: magicLink
   });
 
   // Welcome SMS to user (Steps 8/9) - only if phone provided
@@ -531,7 +519,7 @@ async function sendWelcomeCommunications(data) {
       phone: data.phone,
       email: data.email,
       password: data.password,
-      magicLink: magicLink || 'https://splitlease.com/login'
+      magicLink: magicLink
     });
   }
 
@@ -544,7 +532,7 @@ async function sendWelcomeCommunications(data) {
     freeformText: data.freeformText
   });
 
-  console.log('[AiSignupMarketReport] ✅ All welcome communications initiated');
+  console.log('[AiSignupMarketReport] ✅ All welcome communications queued via sendBeacon');
 }
 
 // ============ PROFILE PARSING FUNCTIONS ============
