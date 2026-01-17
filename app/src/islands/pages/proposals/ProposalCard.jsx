@@ -31,6 +31,7 @@ import { showToast } from '../../shared/Toast.jsx';
 import { supabase } from '../../../lib/supabase.js';
 import { canConfirmSuggestedProposal, getNextStatusAfterConfirmation, needsRentalApplicationSubmission } from '../../../logic/rules/proposals/proposalRules.js';
 import { DAY_NAMES, DAY_LETTERS } from '../../../lib/dayUtils.js';
+import { logger } from '../../../lib/logger.js';
 
 /**
  * Convert a day value to a day name
@@ -1018,7 +1019,7 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
 
   // Handler for confirming proposal cancellation
   const handleCancelConfirm = async (reason) => {
-    console.log('[ProposalCard] Cancel confirmed with reason:', reason);
+    logger.debug('[ProposalCard] Cancel confirmed with reason:', reason);
     // TODO: Implement actual cancel API call here
     closeCancelModal();
   };
@@ -1049,7 +1050,7 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
         throw new Error(error.message || 'Failed to confirm proposal');
       }
 
-      console.log('[ProposalCard] Proposal confirmed, new status:', nextStatus);
+      logger.debug('[ProposalCard] Proposal confirmed, new status:', nextStatus);
       showToast({ title: 'Proposal confirmed!', type: 'success' });
 
       // Reload page to show updated status and CTAs
@@ -1068,7 +1069,7 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
     setIsDeleting(true);
     try {
       await executeDeleteProposal(proposal._id);
-      console.log('[ProposalCard] Proposal deleted successfully');
+      logger.debug('[ProposalCard] Proposal deleted successfully');
       // Show toast notification (info type for neutral confirmation)
       showToast({ title: 'Proposal deleted', type: 'info' });
 
@@ -1407,7 +1408,7 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
           }}
           onProposalCancel={(reason) => {
             // Handle cancellation - reload page to show updated status
-            console.log('Proposal cancelled with reason:', reason);
+            logger.debug('Proposal cancelled with reason:', reason);
             setShowProposalDetailsModal(false);
             setProposalDetailsModalInitialView('pristine');
             window.location.reload();
