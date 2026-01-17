@@ -15,3 +15,7 @@ export { calculateGuestFacingPrice } from './pricing/calculateGuestFacingPrice.j
 export { calculateCheckInOutDays } from './scheduling/calculateCheckInOutDays.js'
 export { calculateNightsFromDays } from './scheduling/calculateNightsFromDays.js'
 export { calculateNextAvailableCheckIn } from './scheduling/calculateNextAvailableCheckIn.js'
+
+// Review Calculators
+export { calculateReviewScore } from './reviews/calculateReviewScore.js'
+export { calculateFormCompletion } from './reviews/calculateFormCompletion.js'

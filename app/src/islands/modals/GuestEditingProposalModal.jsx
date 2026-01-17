@@ -529,20 +529,68 @@ export default function GuestEditingProposalModal({
   // Debug log to verify initial view state
   console.log('[GuestEditingProposalModal] initialView:', initialView, '| current view:', view)
 
+  // Helper to parse days selected from proposal
+  const parseDaysSelected = (proposal) => {
+    let days = proposal?.['Days Selected'] || proposal?.['hc days selected'] || []
+    if (typeof days === 'string') {
+      try { days = JSON.parse(days) } catch (e) { days = [] }
+    }
+    if (!Array.isArray(days) || days.length === 0) return [1, 2, 3, 4, 5] // Default Mon-Fri
+
+    // Convert to day indices (0=Sun, 1=Mon, etc.)
+    return days.map(d => {
+      if (typeof d === 'number') return d
+      if (typeof d === 'string') {
+        const trimmed = d.trim()
+        const numericValue = parseInt(trimmed, 10)
+        if (!isNaN(numericValue) && String(numericValue) === trimmed) return numericValue
+        // Map day names to indices
+        const dayNameMap = { 'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6 }
+        return dayNameMap[trimmed] ?? -1
+      }
+      return -1
+    }).filter(d => d >= 0 && d <= 6)
+  }
+
+  // Helper to parse check-in/check-out day from proposal (stored as day name string)
+  const parseDayFromProposal = (dayValue, fallbackIndex = 1) => {
+    if (!dayValue) {
+      const fallback = DAYS_OF_WEEK[fallbackIndex]
+      return { display: fallback.name, dayIndex: fallback.dayIndex, first3Letters: fallback.shortName }
+    }
+    // dayValue is stored as day name string (e.g., "Friday", "Tuesday")
+    const dayObj = DAYS_OF_WEEK.find(d => d.name === dayValue)
+    if (dayObj) {
+      return { display: dayObj.name, dayIndex: dayObj.dayIndex, first3Letters: dayObj.shortName }
+    }
+    // Fallback if not found
+    const fallback = DAYS_OF_WEEK[fallbackIndex]
+    return { display: fallback.name, dayIndex: fallback.dayIndex, first3Letters: fallback.shortName }
+  }
+
   // Form state for editing
-  const [formState, setFormState] = useState(() => ({
-    moveInDate: proposal?.hcMoveInDate ? new Date(proposal.hcMoveInDate) :
-                proposal?.['hc Move-in Date'] ? new Date(proposal['hc Move-in Date']) :
-                proposal?.['Move in range start'] ? new Date(proposal['Move in range start']) :
-                new Date(),
-    flexibleMoveInRange: proposal?.moveInRangeText || proposal?.['Move in range text'] || '',
-    reservationSpan: RESERVATION_SPAN_OPTIONS.find(s => s.weeks === (proposal?.reservationSpanWeeks || proposal?.['Reservation Span (Weeks)'])) || RESERVATION_SPAN_OPTIONS[1],
-    numberOfWeeks: proposal?.reservationSpanWeeks || proposal?.['Reservation Span (Weeks)'] || 4,
-    selectedDays: [1, 2, 3, 4, 5], // Default Monday-Friday
-    selectedNights: [1, 2, 3, 4], // Default 4 nights
-    checkInDay: { display: 'Monday', dayIndex: 1, first3Letters: 'Mon' },
-    checkOutDay: { display: 'Friday', dayIndex: 5, first3Letters: 'Fri' }
-  }))
+  const [formState, setFormState] = useState(() => {
+    const daysSelected = parseDaysSelected(proposal)
+    const nightsCount = proposal?.['nights per week (num)'] || daysSelected.length - 1 || 4
+
+    // Parse check-in and check-out days from proposal data
+    const checkInDayValue = proposal?.['check in day'] || proposal?.checkInDay
+    const checkOutDayValue = proposal?.['check out day'] || proposal?.checkOutDay
+
+    return {
+      moveInDate: proposal?.hcMoveInDate ? new Date(proposal.hcMoveInDate) :
+                  proposal?.['hc Move-in Date'] ? new Date(proposal['hc Move-in Date']) :
+                  proposal?.['Move in range start'] ? new Date(proposal['Move in range start']) :
+                  new Date(),
+      flexibleMoveInRange: proposal?.moveInRangeText || proposal?.['Move in range text'] || '',
+      reservationSpan: RESERVATION_SPAN_OPTIONS.find(s => s.weeks === (proposal?.reservationSpanWeeks || proposal?.['Reservation Span (Weeks)'])) || RESERVATION_SPAN_OPTIONS[1],
+      numberOfWeeks: proposal?.reservationSpanWeeks || proposal?.['Reservation Span (Weeks)'] || 4,
+      selectedDays: daysSelected,
+      selectedNights: daysSelected.slice(0, nightsCount), // Nights are a subset of selected days
+      checkInDay: parseDayFromProposal(checkInDayValue, 1),   // Default to Monday (index 1)
+      checkOutDay: parseDayFromProposal(checkOutDayValue, 5)  // Default to Friday (index 5)
+    }
+  })
 
   // Price breakdown visibility state
   const [isPriceBreakdownVisible, setIsPriceBreakdownVisible] = useState(true)
@@ -579,12 +627,22 @@ export default function GuestEditingProposalModal({
     if (proposal && openForFirstTime) {
       const moveInDateValue = proposal?.hcMoveInDate || proposal?.['hc Move-in Date'] || proposal?.['Move in range start']
       const weeksValue = proposal?.reservationSpanWeeks || proposal?.['Reservation Span (Weeks)'] || 4
+      const daysSelected = parseDaysSelected(proposal)
+      const nightsCount = proposal?.['nights per week (num)'] || daysSelected.length - 1 || 4
+
+      // Parse check-in and check-out days from proposal data
+      const checkInDayValue = proposal?.['check in day'] || proposal?.checkInDay
+      const checkOutDayValue = proposal?.['check out day'] || proposal?.checkOutDay
 
       setFormState(prev => ({
         ...prev,
         moveInDate: moveInDateValue ? new Date(moveInDateValue) : new Date(),
         numberOfWeeks: weeksValue,
-        reservationSpan: RESERVATION_SPAN_OPTIONS.find(s => s.weeks === weeksValue) || RESERVATION_SPAN_OPTIONS[1]
+        reservationSpan: RESERVATION_SPAN_OPTIONS.find(s => s.weeks === weeksValue) || RESERVATION_SPAN_OPTIONS[1],
+        selectedDays: daysSelected,
+        selectedNights: daysSelected.slice(0, nightsCount),
+        checkInDay: parseDayFromProposal(checkInDayValue, 1),
+        checkOutDay: parseDayFromProposal(checkOutDayValue, 5)
       }))
       setOpenForFirstTime(false)
     }

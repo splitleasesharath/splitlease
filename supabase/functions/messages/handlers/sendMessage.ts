@@ -119,10 +119,10 @@ async function sendInquiryWelcomeMessages(
 export async function handleSendMessage(
   supabaseAdmin: SupabaseClient,
   payload: Record<string, unknown>,
-  user: User
+  user: { id: string; email: string }
 ): Promise<SendMessageResult> {
   console.log('[sendMessage] ========== SEND MESSAGE (NATIVE) ===========');
-  console.log('[sendMessage] User:', user.email);
+  console.log('[sendMessage] User ID:', user.id, 'Email:', user.email);
 
   const typedPayload = payload as unknown as SendMessagePayload;
   validateRequiredFields(typedPayload, ['message_body']);
@@ -131,11 +131,27 @@ export async function handleSendMessage(
     throw new ValidationError('Message body cannot be empty');
   }
 
-  if (!user.email) {
-    throw new ValidationError('Could not find user profile. Please try logging in again.');
+  // Determine user's Bubble ID:
+  // - For legacy auth: user.id IS the Bubble ID (passed directly)
+  // - For JWT auth: user.id is Supabase UUID, need to look up by email
+  let senderBubbleId: string | null = null;
+
+  // Check if user.id looks like a Bubble ID (they typically start with numbers and contain 'x')
+  const isBubbleId = /^\d+x\d+$/.test(user.id);
+
+  if (isBubbleId) {
+    // Legacy auth - user.id is already the Bubble ID
+    senderBubbleId = user.id;
+    console.log('[sendMessage] Using direct Bubble ID from legacy auth:', senderBubbleId);
+  } else {
+    // JWT auth - need to look up Bubble ID by email
+    if (!user.email) {
+      throw new ValidationError('Could not find user profile. Please try logging in again.');
+    }
+    senderBubbleId = await getUserBubbleId(supabaseAdmin, user.email);
+    console.log('[sendMessage] Looked up Bubble ID from email:', senderBubbleId);
   }
 
-  const senderBubbleId = await getUserBubbleId(supabaseAdmin, user.email);
   if (!senderBubbleId) {
     throw new ValidationError('Could not find user profile. Please try logging in again.');
   }

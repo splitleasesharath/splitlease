@@ -96,6 +96,8 @@ export default function EditorView({
       {/* Trust & Verification - Always shown */}
       <TrustVerificationCard
         verifications={verifications}
+        emailAddress={profileData?.email || profileData?.['Email'] || ''}
+        phoneNumber={profileData?.['Phone Number (as text)'] || ''}
         onVerifyEmail={onVerifyEmail}
         onVerifyPhone={onVerifyPhone}
         onVerifyGovId={onVerifyGovId}

@@ -592,9 +592,10 @@
 
 /* Form group label with info */
 .form-group .label-with-info {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   margin-bottom: 10px;
+  width: fit-content;
 }
 
 .value-display {

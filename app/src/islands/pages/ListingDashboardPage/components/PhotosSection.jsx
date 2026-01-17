@@ -74,13 +74,21 @@ const PHOTO_TYPES = [
 ];
 
 export default function PhotosSection() {
+  // Get data and handlers from context (migrated from props pattern)
   const {
     listing,
     handleEditSection,
-    handleDeletePhoto,
     handleSetCoverPhoto,
-    handleReorderPhotos
+    handleDeletePhoto,
+    handleReorderPhotos,
   } = useListingDashboard();
+
+  // Map context handlers to component's expected interface
+  const onAddPhotos = () => handleEditSection('photos');
+  const onDeletePhoto = handleDeletePhoto;
+  const onSetCover = handleSetCoverPhoto;
+  const onReorderPhotos = handleReorderPhotos;
+
   const photos = listing?.photos || [];
 
   // Drag and drop state

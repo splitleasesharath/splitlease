@@ -37,3 +37,10 @@ export {
   formatDateTime,
   getEffectiveTerms
 } from './proposals/processProposalData.js'
+
+// Review Processors
+export {
+  createEmptyRatings,
+  adaptReviewForSubmission,
+  adaptReviewFromApi
+} from './reviews/reviewAdapter.js'
