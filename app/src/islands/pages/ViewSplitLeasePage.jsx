@@ -16,6 +16,7 @@ import ContactHostMessaging from '../shared/ContactHostMessaging.jsx';
 import InformationalText from '../shared/InformationalText.jsx';
 import SignUpLoginModal from '../shared/SignUpLoginModal.jsx';
 import ProposalSuccessModal from '../modals/ProposalSuccessModal.jsx';
+import FavoriteButton from '../shared/FavoriteButton';
 import { initializeLookups } from '../../lib/dataLookups.js';
 import { checkAuthStatus, validateTokenAndFetchUser, getSessionId, getUserId, getUserType } from '../../lib/auth.js';
 import { fetchListingComplete, getListingIdFromUrl, fetchZatPriceConfiguration } from '../../lib/listingDataFetcher.js';
@@ -553,6 +554,9 @@ export default function ViewSplitLeasePage() {
   // Toast notification state
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
+  // Favorite state
+  const [isFavorited, setIsFavorited] = useState(false);
+
   // Show toast notification helper
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
@@ -861,6 +865,32 @@ export default function ViewSplitLeasePage() {
     }
 
     checkExistingProposal();
+  }, [loggedInUserData?.userId, listing?._id]);
+
+  // Check if listing is favorited
+  useEffect(() => {
+    async function checkIfFavorited() {
+      if (!loggedInUserData?.userId || !listing?._id) {
+        setIsFavorited(false);
+        return;
+      }
+      try {
+        const { data: userData, error } = await supabase
+          .from('user')
+          .select('"Favorited Listings"')
+          .eq('_id', loggedInUserData.userId)
+          .single();
+        if (error) {
+          setIsFavorited(false);
+          return;
+        }
+        const favorites = userData?.['Favorited Listings'] || [];
+        setIsFavorited(favorites.includes(listing._id));
+      } catch {
+        setIsFavorited(false);
+      }
+    }
+    checkIfFavorited();
   }, [loggedInUserData?.userId, listing?._id]);
 
   // ============================================================================
@@ -1870,13 +1900,30 @@ export default function ViewSplitLeasePage() {
         {/* RIGHT COLUMN - BOOKING WIDGET (hidden on mobile) */}
         <div className={`${styles.bookingWidget} ${isMobile ? styles.hiddenMobile : ''}`}>
           {/* Price Display */}
-          <div className={styles.bookingPriceDisplay}>
+          <div className={styles.bookingPriceDisplay} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div className={styles.bookingPriceAmount}>
               {pricingBreakdown?.valid && pricingBreakdown?.pricePerNight
                 ? `$${Number.isInteger(pricingBreakdown.pricePerNight) ? pricingBreakdown.pricePerNight : pricingBreakdown.pricePerNight.toFixed(2)}`
                 : 'Select Days'}
               <span className={styles.bookingPriceUnit}>/night</span>
             </div>
+            <FavoriteButton
+              listingId={listing?._id}
+              userId={loggedInUserData?.userId}
+              initialFavorited={isFavorited}
+              onToggle={(newState) => {
+                setIsFavorited(newState);
+                const displayName = listing?.name || 'Listing';
+                if (newState) {
+                  showToast(`${displayName} added to favorites`, 'success');
+                } else {
+                  showToast(`${displayName} removed from favorites`, 'info');
+                }
+              }}
+              onRequireAuth={() => setShowAuthModal(true)}
+              size="large"
+              variant="inline"
+            />
           </div>
 
           {/* Move-in Date */}
@@ -2384,13 +2431,30 @@ export default function ViewSplitLeasePage() {
                 {/* Price and Continue Row */}
                 <div className={styles.mobileBookingPriceRow}>
                   {/* Price Info */}
-                  <div className={styles.mobileBookingPriceInfo}>
+                  <div className={styles.mobileBookingPriceInfo} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div className={styles.mobileBookingPriceAmount}>
                       {pricingBreakdown?.valid && pricingBreakdown?.pricePerNight
                         ? `$${Number.isInteger(pricingBreakdown.pricePerNight) ? pricingBreakdown.pricePerNight : pricingBreakdown.pricePerNight.toFixed(2)}`
                         : 'Select Days'}
                       <span className={styles.mobileBookingPriceUnit}>/night</span>
                     </div>
+                    <FavoriteButton
+                      listingId={listing?._id}
+                      userId={loggedInUserData?.userId}
+                      initialFavorited={isFavorited}
+                      onToggle={(newState) => {
+                        setIsFavorited(newState);
+                        const displayName = listing?.name || 'Listing';
+                        if (newState) {
+                          showToast(`${displayName} added to favorites`, 'success');
+                        } else {
+                          showToast(`${displayName} removed from favorites`, 'info');
+                        }
+                      }}
+                      onRequireAuth={() => setShowAuthModal(true)}
+                      size="medium"
+                      variant="inline"
+                    />
                   </div>
 
                   {/* Continue Button */}
