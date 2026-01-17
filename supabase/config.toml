@@ -449,3 +449,39 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/qr-generator/deno.json"
 entrypoint = "./functions/qr-generator/index.ts"
+
+[functions.messages]
+enabled = true
+verify_jwt = false
+import_map = "./functions/messages/deno.json"
+entrypoint = "./functions/messages/index.ts"
+
+[functions.rental-application]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/rental-application/index.ts"
+
+[functions.date-change-request]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/date-change-request/index.ts"
+
+[functions.guest-payment-records]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/guest-payment-records/index.ts"
+
+[functions.host-payment-records]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/host-payment-records/index.ts"
+
+[functions.house-manual]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/house-manual/index.ts"
+
+[functions.cohost-request-slack-callback]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/cohost-request-slack-callback/index.ts"
