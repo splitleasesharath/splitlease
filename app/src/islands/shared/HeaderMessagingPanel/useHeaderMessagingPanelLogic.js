@@ -247,20 +247,10 @@ export function useHeaderMessagingPanelLogic({
       }
 
       // Query threads where user is host or guest
+      // Uses RPC function because PostgREST .or() doesn't handle column names
+      // with leading hyphens ("-Host User", "-Guest User") correctly
       const { data: threadsData, error: threadsError } = await supabase
-        .from('thread')
-        .select(`
-          _id,
-          "Modified Date",
-          "-Host User",
-          "-Guest User",
-          "Listing",
-          "~Last Message",
-          "Thread Subject"
-        `)
-        .or(`"-Host User".eq.${bubbleId},"-Guest User".eq.${bubbleId}`)
-        .order('"Modified Date"', { ascending: false })
-        .limit(20); // Limit for panel performance
+        .rpc('get_user_threads', { user_id: bubbleId });
 
       if (threadsError) {
         throw new Error(`Failed to fetch threads: ${threadsError.message}`);
