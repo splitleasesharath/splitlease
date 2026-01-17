@@ -19,6 +19,7 @@ import ProposalSuccessModal from '../modals/ProposalSuccessModal.jsx';
 import { initializeLookups } from '../../lib/dataLookups.js';
 import { checkAuthStatus, validateTokenAndFetchUser, getSessionId, getUserId, getUserType } from '../../lib/auth.js';
 import { fetchListingComplete, getListingIdFromUrl, fetchZatPriceConfiguration } from '../../lib/listingDataFetcher.js';
+import { fetchInformationalTexts } from '../../lib/informationalTextsFetcher.js';
 import {
   calculatePricingBreakdown,
   formatPrice,
@@ -55,7 +56,6 @@ function getInitialScheduleFromUrl() {
   const daysParam = urlParams.get('days-selected');
 
   if (!daysParam) {
-    logger.debug('📅 ViewSplitLeasePage: No days-selected URL param, using empty initial selection');
     return [];
   }
 
@@ -67,11 +67,6 @@ function getInitialScheduleFromUrl() {
     if (validDays.length > 0) {
       // Convert to Day objects using createDay
       const dayObjects = validDays.map(dayIndex => createDay(dayIndex, true));
-      logger.debug('📅 ViewSplitLeasePage: Loaded schedule from URL:', {
-        urlParam: daysParam,
-        dayIndices: validDays,
-        dayObjects: dayObjects.map(d => d.name)
-      });
       return dayObjects;
     }
   } catch (e) {
@@ -94,7 +89,6 @@ function getInitialReservationSpanFromUrl() {
 
   const parsed = parseInt(spanParam, 10);
   if (!isNaN(parsed) && parsed > 0) {
-    logger.debug('📅 ViewSplitLeasePage: Loaded reservation span from URL:', parsed);
     return parsed;
   }
 
@@ -114,96 +108,10 @@ function getInitialMoveInFromUrl() {
 
   // Basic validation: YYYY-MM-DD format
   if (/^\d{4}-\d{2}-\d{2}$/.test(moveInParam)) {
-    logger.debug('📅 ViewSplitLeasePage: Loaded move-in date from URL:', moveInParam);
     return moveInParam;
   }
 
   return null;
-}
-
-/**
- * Fetch informational texts from Supabase
- */
-async function fetchInformationalTexts() {
-  // Use environment variables instead of hardcoded values
-  const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-  const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    logger.error('❌ Missing Supabase environment variables');
-    return {};
-  }
-
-  try {
-    logger.debug('🔍 Fetching informational texts from Supabase...');
-    logger.debug('🌐 Using Supabase URL:', SUPABASE_URL);
-
-    // Use select=* to get all columns (safer with special characters in column names)
-    const response = await fetch(
-      `${SUPABASE_URL}/rest/v1/informationaltexts?select=*`,
-      {
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-
-    logger.debug('📡 Response status:', response.status, response.statusText);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      logger.error('❌ Failed to fetch informational texts:', response.statusText, errorText);
-      return {};
-    }
-
-    const data = await response.json();
-    logger.debug('📦 Raw data received:', data?.length, 'items');
-    logger.debug('📦 First item structure:', data?.[0] ? Object.keys(data[0]) : 'No items');
-
-    // Create a lookup object by tag-title
-    const textsByTag = {};
-    data.forEach((item, index) => {
-      const tag = item['Information Tag-Title'];
-      if (!tag) {
-        logger.warn(`⚠️ Item ${index} has no Information Tag-Title:`, item);
-        return;
-      }
-
-      textsByTag[tag] = {
-        id: item._id,
-        title: tag,
-        desktop: item['Desktop copy'],
-        mobile: item['Mobile copy'],
-        desktopPlus: item['Desktop+ copy'],
-        showMore: item['show more available?']
-      };
-
-      // Debug the specific tags we need
-      if (tag === 'aligned schedule with move-in' ||
-          tag === 'move-in flexibility' ||
-          tag === 'Reservation Span') {
-        logger.debug(`✅ Found "${tag}":`, {
-          desktop: item['Desktop copy']?.substring(0, 50) + '...',
-          mobile: item['Mobile copy']?.substring(0, 50) + '...',
-          showMore: item['show more available?']
-        });
-      }
-    });
-
-    logger.debug('📚 Fetched informational texts:', Object.keys(textsByTag).length, 'total');
-    logger.debug('🎯 Required tags present:', {
-      'aligned schedule with move-in': !!textsByTag['aligned schedule with move-in'],
-      'move-in flexibility': !!textsByTag['move-in flexibility'],
-      'Reservation Span': !!textsByTag['Reservation Span']
-    });
-
-    return textsByTag;
-  } catch (error) {
-    logger.error('❌ Error fetching informational texts:', error);
-    return {};
-  }
 }
 
 // ============================================================================
@@ -615,14 +523,12 @@ export default function ViewSplitLeasePage() {
           const dayNumbers = selectedDayObjects.map(day => day.dayOfWeek);
           const smartDate = calculateSmartMoveInDate(dayNumbers);
           setMoveInDate(smartDate);
-          logger.debug('📅 ViewSplitLeasePage: URL move-in date was before minimum, using smart date:', smartDate);
         }
       } else {
         // No URL date provided, calculate smart default
         const dayNumbers = selectedDayObjects.map(day => day.dayOfWeek);
         const smartDate = calculateSmartMoveInDate(dayNumbers);
         setMoveInDate(smartDate);
-        logger.debug('📅 ViewSplitLeasePage: Set initial move-in date from URL selection:', smartDate);
       }
     }
   }, []); // Run only once on mount - empty deps to prevent recalculation on state changes
@@ -696,7 +602,6 @@ export default function ViewSplitLeasePage() {
           const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
           if (userData) {
             setLoggedInUserData(userData);
-            logger.debug('👤 ViewSplitLeasePage: User data loaded:', userData.firstName);
           }
         }
 
@@ -716,19 +621,6 @@ export default function ViewSplitLeasePage() {
 
         // Fetch complete listing data
         const listingData = await fetchListingComplete(listingId);
-        logger.debug('📋 ViewSplitLeasePage: Listing data fetched:', {
-          id: listingData._id,
-          name: listingData.Name,
-          amenitiesInUnit: listingData.amenitiesInUnit,
-          safetyFeatures: listingData.safetyFeatures,
-          houseRules: listingData.houseRules,
-          coordinates: listingData.coordinates,
-          slightlyDifferentAddress: listingData['Location - slightly different address'],
-          hasAmenitiesInUnit: listingData.amenitiesInUnit?.length > 0,
-          hasSafetyFeatures: listingData.safetyFeatures?.length > 0,
-          hasHouseRules: listingData.houseRules?.length > 0,
-          hasCoordinates: !!(listingData.coordinates?.lat && listingData.coordinates?.lng)
-        });
         setListing(listingData);
         setLoading(false);
 
@@ -790,13 +682,10 @@ export default function ViewSplitLeasePage() {
     // Automatically center and zoom the map when it loads for the first time
     // This replicates the behavior of clicking "Located in" link, but without scrolling
     if (shouldLoadMap && mapRef.current && listing && !hasAutoZoomedRef.current) {
-      logger.debug('🗺️ ViewSplitLeasePage: Auto-zooming map on initial load');
-
       // Wait for map to fully initialize before calling zoomToListing
       // Same 600ms timeout as handleLocationClick
       setTimeout(() => {
         if (mapRef.current && listing) {
-          logger.debug('🗺️ ViewSplitLeasePage: Calling zoomToListing for initial auto-zoom');
           mapRef.current.zoomToListing(listing._id);
           hasAutoZoomedRef.current = true;
         }
@@ -828,8 +717,6 @@ export default function ViewSplitLeasePage() {
       }
 
       try {
-        logger.debug('🔍 ViewSplitLeasePage: Checking for existing proposals for listing:', listing._id);
-
         const { data: existingProposals, error } = await supabase
           .from('proposal')
           .select('_id, "Status", "Created Date"')
@@ -847,10 +734,8 @@ export default function ViewSplitLeasePage() {
         }
 
         if (existingProposals && existingProposals.length > 0) {
-          logger.debug('📋 ViewSplitLeasePage: User already has a proposal for this listing:', existingProposals[0]);
           setExistingProposalForListing(existingProposals[0]);
         } else {
-          logger.debug('✅ ViewSplitLeasePage: No existing proposal found for this listing');
           setExistingProposalForListing(null);
         }
       } catch (err) {
