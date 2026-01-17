@@ -35,10 +35,18 @@ def extract_page_groups(plan_file: Path) -> Dict[str, List[ChunkData]]:
     content = plan_file.read_text(encoding='utf-8')
     groups = {}
 
-    # Pattern to match ## PAGE GROUP: <pages> (Chunks: N, M)
-    # Capture everything between "PAGE GROUP: " and " (Chunks:"
-    # The ([^(]+) captures page paths like "/search, /view" or "AUTO (Shared/Utility)"
-    group_sections = re.split(r'(?:^|\n)## PAGE GROUP: ([^(]+(?:\([^)]+\))?)\s*\(Chunks:', content)
+    # Try multiple patterns for page group headers (Claude outputs vary)
+    # Pattern 1: ## PAGE GROUP: /search (Chunks: 1, 2) - strict format
+    # Pattern 2: ## Page Group: /search - relaxed format (no Chunks list)
+    # Pattern 3: ## Page Group: GLOBAL (Affects Multiple Pages) - with description
+
+    # First try strict format
+    group_sections = re.split(r'(?:^|\n)## PAGE GROUP: ([^(]+(?:\([^)]+\))?)\s*\(Chunks:', content, flags=re.IGNORECASE)
+
+    if len(group_sections) <= 1:
+        # Try relaxed format: ## Page Group: <name>
+        # Split on "## Page Group:" (case insensitive) followed by content
+        group_sections = re.split(r'(?:^|\n)##\s+Page\s+Group:\s+([^\n]+)', content, flags=re.IGNORECASE)
 
     if len(group_sections) > 1:
         # We found group headers - sections alternate: [preamble, pages1, content1, pages2, content2, ...]
@@ -46,11 +54,15 @@ def extract_page_groups(plan_file: Path) -> Dict[str, List[ChunkData]]:
             # Parse the page list (e.g., "/search, /view-split-lease, /favorites" or "AUTO (Shared/Utility)")
             pages_str = group_sections[i].strip()
 
+            # Clean up the page string - remove trailing descriptions in parentheses
+            # e.g., "GLOBAL (Affects Multiple Pages)" -> "GLOBAL"
+            pages_clean = re.sub(r'\s*\([^)]*\)\s*$', '', pages_str).strip()
+
             # Use first page as the key for the group, handling both formats
-            if pages_str.startswith('AUTO') or pages_str.startswith('SHARED'):
-                first_page = pages_str  # Keep as-is for special groups
+            if pages_clean.upper().startswith('AUTO') or pages_clean.upper().startswith('SHARED') or pages_clean.upper().startswith('GLOBAL'):
+                first_page = pages_clean  # Keep as-is for special groups
             else:
-                first_page = pages_str.split(',')[0].strip()
+                first_page = pages_clean.split(',')[0].strip()
 
             group_content = group_sections[i+1] if i+1 < len(group_sections) else ""
 
@@ -78,41 +90,75 @@ def extract_page_groups(plan_file: Path) -> Dict[str, List[ChunkData]]:
 def parse_chunks(content: str) -> List[ChunkData]:
     """
     Parse chunks from a block of markdown.
-    
+
     Args:
         content: Markdown content containing chunks
-        
+
     Returns:
         List of ChunkData objects
     """
-    # Split on ~~~~~ delimiter
-    sections = re.split(r'\n~{5,}\n', content)
     chunks = []
 
-    for section in sections:
-        section = section.strip()
-        if not section or "CHUNK" not in section:
-            continue
+    # Split on chunk headers: ### Chunk N: or ### CHUNK N:
+    # This handles Claude's variable output format
+    chunk_pattern = r'(###?\s+Chunk\s+\d+:)'
+    parts = re.split(chunk_pattern, content, flags=re.IGNORECASE)
 
-        header_match = re.search(r'###?\s+CHUNK\s+(\d+):\s+(.+)', section)
+    # parts = [preamble, "### Chunk 1:", content1, "### Chunk 2:", content2, ...]
+    for i in range(1, len(parts), 2):
+        header = parts[i]
+        section_content = parts[i + 1] if i + 1 < len(parts) else ""
+        section = header + section_content
+
+        # Match both "### CHUNK 1:" and "### Chunk 1:" (case insensitive)
+        header_match = re.search(r'###?\s+Chunk\s+(\d+):\s+(.+)', section, re.IGNORECASE)
         if not header_match:
             continue
 
         chunk_number = int(header_match.group(1))
         chunk_title = header_match.group(2).strip()
 
-        file_match = re.search(r'\*\*File:\*\*\s+(.+)', section)
+        # Try multiple file path patterns
+        # Pattern 1: **File:** path
+        # Pattern 2: **Files Affected:** path (or list)
+        file_match = re.search(r'\*\*Files? Affected:\*\*\s+`?([^`\n]+)`?', section)
+        if not file_match:
+            file_match = re.search(r'\*\*File:\*\*\s+`?([^`\n]+)`?', section)
+
+        # Try to extract line numbers from various formats
+        # Pattern 1: **Line:** 10-20
+        # Pattern 2: **Lines:** 10-20
+        # Pattern 3: Embedded in code block label like (`path:10-20`):
         line_match = re.search(r'\*\*Lines?:\*\*\s+(.+)', section)
+        if not line_match:
+            # Try to extract from code block label like "**Current Code** (`path:82-88`):"
+            line_match = re.search(r'\*\*(?:Current|Refactored)\s+Code\*\*\s*\(`[^:]+:(\d+(?:-\d+)?)`\)', section)
+
+        # Try multiple patterns for affected pages
         pages_match = re.search(r'\*\*(?:Expected )?Affected Pages:\*\*\s+(.+)', section)
 
         if not file_match:
-            continue
+            # Last resort: try to find file path from code block labels
+            path_in_label = re.search(r'\*\*(?:Current|Refactored)\s+Code\*\*\s*\(`([^:]+):', section)
+            if path_in_label:
+                file_path = path_in_label.group(1).strip()
+            else:
+                continue
+        else:
+            file_path = file_match.group(1).strip()
+            # Clean up if it's a list (take first item)
+            if '\n' in file_path:
+                file_path = file_path.split('\n')[0].strip()
+            # Remove markdown list prefix
+            file_path = re.sub(r'^[-*]\s*', '', file_path).strip()
+            # Remove backticks
+            file_path = file_path.strip('`')
 
-        file_path = file_match.group(1).strip()
         line_number = line_match.group(1).strip() if line_match else "unknown"
         affected_pages = pages_match.group(1).strip() if pages_match else "AUTO"
 
-        code_blocks = re.findall(r'```(?:javascript|typescript|python)\s*\n(.*?)\n```', section, re.DOTALL)
+        # Find code blocks - try multiple formats
+        code_blocks = re.findall(r'```(?:javascript|typescript|jsx|tsx|python|js|ts)?\s*\n(.*?)\n```', section, re.DOTALL)
         if len(code_blocks) < 2:
             continue
 
