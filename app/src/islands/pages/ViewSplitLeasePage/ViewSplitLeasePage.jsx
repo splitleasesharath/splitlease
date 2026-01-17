@@ -4,7 +4,10 @@
  * Architecture: ESM + React Islands pattern
  *
  * IMPORTANT: This is a comprehensive rebuild based on documentation and original page inspection
+ *
+ * UPDATE 2026-01-17: Added FavoriteButton to price display section
  */
+console.log('🔄 ViewSplitLeasePage loaded with FavoriteButton support');
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Header from '../shared/Header.jsx';
