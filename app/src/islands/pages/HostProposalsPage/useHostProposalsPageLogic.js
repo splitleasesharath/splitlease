@@ -17,6 +17,7 @@ import { supabase } from '../../../lib/supabase.js';
 import { isHost } from '../../../logic/rules/users/isHost.js';
 import { getAllHouseRules } from '../../shared/EditListingDetails/services/houseRulesService.js';
 import { getVMStateInfo, VM_STATES } from '../../../logic/rules/proposals/virtualMeetingRules.js';
+import { logger } from '../../../lib/logger.js';
 
 /**
  * Hook for Host Proposals Page business logic
@@ -94,7 +95,7 @@ export function useHostProposalsPageLogic() {
           // Success path: Use validated user data
           userType = userData['User Type'] || userData.userType;
           finalUserData = userData;
-          console.log('[HostProposals] User data loaded, userType:', userType);
+          logger.debug('[HostProposals] User data loaded, userType:', userType);
         } else {
           // ========================================================================
           // GOLD STANDARD AUTH PATTERN - Step 3: Fallback to Supabase session metadata
@@ -104,7 +105,7 @@ export function useHostProposalsPageLogic() {
           if (session?.user) {
             // Session valid but profile fetch failed - use session metadata
             userType = session.user.user_metadata?.user_type || getUserType() || null;
-            console.log('[HostProposals] Using fallback session data, userType:', userType);
+            logger.debug('[HostProposals] Using fallback session data, userType:', userType);
 
             // Create minimal user data from session for loadHostData
             if (userType && isHost({ userType })) {
@@ -119,7 +120,7 @@ export function useHostProposalsPageLogic() {
 
             // If we can't determine userType from session, redirect
             if (!userType) {
-              console.log('[HostProposals] Cannot determine user type from session, redirecting');
+              logger.debug('[HostProposals] Cannot determine user type from session, redirecting');
               setAuthState({
                 isChecking: false,
                 isAuthenticated: true,
@@ -131,7 +132,7 @@ export function useHostProposalsPageLogic() {
             }
           } else {
             // No valid session - redirect
-            console.log('[HostProposals] No valid session, redirecting');
+            logger.debug('[HostProposals] No valid session, redirecting');
             setAuthState({
               isChecking: false,
               isAuthenticated: false,
@@ -145,7 +146,7 @@ export function useHostProposalsPageLogic() {
 
         // Check if user is a host
         if (!isHost({ userType })) {
-          console.warn('[HostProposals] User is not a Host, redirecting...');
+          logger.warn('[HostProposals] User is not a Host, redirecting...');
           setAuthState({
             isChecking: false,
             isAuthenticated: false,
@@ -168,7 +169,7 @@ export function useHostProposalsPageLogic() {
         await loadHostData(finalUserData.userId || finalUserData._id);
 
       } catch (err) {
-        console.error('Auth check failed:', err);
+        logger.error('Auth check failed:', err);
         setError('Authentication failed. Please log in again.');
         setAuthState({
           isChecking: false,
@@ -190,9 +191,9 @@ export function useHostProposalsPageLogic() {
       try {
         const rules = await getAllHouseRules();
         setAllHouseRules(rules);
-        console.log('[HostProposals] Loaded all house rules:', rules.length);
+        logger.debug('[HostProposals] Loaded all house rules:', rules.length);
       } catch (err) {
-        console.error('[HostProposals] Failed to load house rules:', err);
+        logger.error('[HostProposals] Failed to load house rules:', err);
       }
     }
     loadReferenceData();
@@ -226,7 +227,7 @@ export function useHostProposalsPageLogic() {
           .or('"Deleted".is.null,"Deleted".eq.false');
 
         if (statsError) {
-          console.warn('[useHostProposalsPageLogic] Could not fetch proposal stats:', statsError);
+          logger.warn('[useHostProposalsPageLogic] Could not fetch proposal stats:', statsError);
         }
 
         // Calculate stats per listing
@@ -265,7 +266,7 @@ export function useHostProposalsPageLogic() {
           return bStats.count - aStats.count;
         });
 
-        console.log('[useHostProposalsPageLogic] Sorted listings by proposals:',
+        logger.debug('[useHostProposalsPageLogic] Sorted listings by proposals:',
           sortedListings.map(l => ({ id: l._id || l.id, name: l.Name, proposals: statsMap[l._id || l.id]?.count || 0 }))
         );
 
@@ -282,7 +283,7 @@ export function useHostProposalsPageLogic() {
           );
           if (matchedListing) {
             listingToSelect = matchedListing;
-            console.log('[useHostProposalsPageLogic] Pre-selected listing from URL:', preselectedListingId);
+            logger.debug('[useHostProposalsPageLogic] Pre-selected listing from URL:', preselectedListingId);
           }
         }
 
@@ -297,7 +298,7 @@ export function useHostProposalsPageLogic() {
       }
 
     } catch (err) {
-      console.error('Failed to load host data:', err);
+      logger.error('Failed to load host data:', err);
       setError('Failed to load your listings and proposals. Please try again.');
     } finally {
       setIsLoading(false);
@@ -316,21 +317,21 @@ export function useHostProposalsPageLogic() {
    */
   const fetchHostListings = async (userId) => {
     try {
-      console.log('[useHostProposalsPageLogic] Fetching listings for user:', userId);
+      logger.debug('[useHostProposalsPageLogic] Fetching listings for user:', userId);
 
       // Use RPC function to fetch listings (handles special characters in column names)
       const { data: listings, error } = await supabase
         .rpc('get_host_listings', { host_user_id: userId });
 
       if (error) {
-        console.error('[useHostProposalsPageLogic] Error fetching listings:', error);
+        logger.error('[useHostProposalsPageLogic] Error fetching listings:', error);
         throw error;
       }
 
-      console.log('[useHostProposalsPageLogic] Found listings:', listings?.length || 0);
+      logger.debug('[useHostProposalsPageLogic] Found listings:', listings?.length || 0);
       return listings || [];
     } catch (err) {
-      console.error('Failed to fetch listings:', err);
+      logger.error('Failed to fetch listings:', err);
       return [];
     }
   };
@@ -341,7 +342,7 @@ export function useHostProposalsPageLogic() {
    */
   const fetchProposalsForListing = async (listingId) => {
     try {
-      console.log('[useHostProposalsPageLogic] Fetching proposals for listing:', listingId);
+      logger.debug('[useHostProposalsPageLogic] Fetching proposals for listing:', listingId);
 
       const { data: proposals, error } = await supabase
         .from('proposal')
@@ -384,11 +385,11 @@ export function useHostProposalsPageLogic() {
         .order('Created Date', { ascending: false });
 
       if (error) {
-        console.error('[useHostProposalsPageLogic] Error fetching proposals:', error);
+        logger.error('[useHostProposalsPageLogic] Error fetching proposals:', error);
         throw error;
       }
 
-      console.log('[useHostProposalsPageLogic] Found proposals:', proposals?.length || 0);
+      logger.debug('[useHostProposalsPageLogic] Found proposals:', proposals?.length || 0);
 
       // Enrich proposals with guest data
       if (proposals && proposals.length > 0) {
@@ -452,7 +453,7 @@ export function useHostProposalsPageLogic() {
 
       return proposals || [];
     } catch (err) {
-      console.error('Failed to fetch proposals:', err);
+      logger.error('Failed to fetch proposals:', err);
       return [];
     }
   };
@@ -472,7 +473,7 @@ export function useHostProposalsPageLogic() {
       const proposalsResult = await fetchProposalsForListing(listing._id || listing.id);
       setProposals(proposalsResult);
     } catch (err) {
-      console.error('Failed to load proposals for listing:', err);
+      logger.error('Failed to load proposals for listing:', err);
       setError('Failed to load proposals. Please try again.');
     } finally {
       setIsLoading(false);
@@ -519,10 +520,10 @@ export function useHostProposalsPageLogic() {
 
       // Remove from local state
       setProposals(prev => prev.filter(p => (p._id || p.id) !== (proposal._id || proposal.id)));
-      console.log('[useHostProposalsPageLogic] Proposal deleted:', proposal._id);
+      logger.debug('[useHostProposalsPageLogic] Proposal deleted:', proposal._id);
 
     } catch (err) {
-      console.error('Failed to delete proposal:', err);
+      logger.error('Failed to delete proposal:', err);
       alert('Failed to delete proposal. Please try again.');
     }
   }, []);
@@ -553,10 +554,10 @@ export function useHostProposalsPageLogic() {
 
       handleCloseModal();
       alert('Proposal accepted successfully!');
-      console.log('[useHostProposalsPageLogic] Proposal accepted:', proposal._id);
+      logger.debug('[useHostProposalsPageLogic] Proposal accepted:', proposal._id);
 
     } catch (err) {
-      console.error('Failed to accept proposal:', err);
+      logger.error('Failed to accept proposal:', err);
       alert('Failed to accept proposal. Please try again.');
     }
   }, [selectedListing, handleCloseModal]);
@@ -625,10 +626,10 @@ export function useHostProposalsPageLogic() {
       setIsEditingProposal(false);
       setSelectedProposal(null);
       alert('Counteroffer sent successfully!');
-      console.log('[useHostProposalsPageLogic] Counteroffer sent:', selectedProposal._id);
+      logger.debug('[useHostProposalsPageLogic] Counteroffer sent:', selectedProposal._id);
 
     } catch (err) {
-      console.error('Failed to send counteroffer:', err);
+      logger.error('Failed to send counteroffer:', err);
       alert('Failed to send counteroffer. Please try again.');
     }
   }, [selectedProposal, selectedListing]);
@@ -660,10 +661,10 @@ export function useHostProposalsPageLogic() {
       setIsEditingProposal(false);
       setSelectedProposal(null);
       alert('Proposal rejected.');
-      console.log('[useHostProposalsPageLogic] Proposal rejected from editing:', proposal._id);
+      logger.debug('[useHostProposalsPageLogic] Proposal rejected from editing:', proposal._id);
 
     } catch (err) {
-      console.error('Failed to reject proposal:', err);
+      logger.error('Failed to reject proposal:', err);
       alert('Failed to reject proposal. Please try again.');
     }
   }, [selectedListing]);
@@ -693,10 +694,10 @@ export function useHostProposalsPageLogic() {
   const handleRemindSplitLease = useCallback(async (proposal) => {
     try {
       // For now, just show a confirmation - can be connected to a notification system later
-      console.log('[useHostProposalsPageLogic] Reminder requested for proposal:', proposal._id);
+      logger.debug('[useHostProposalsPageLogic] Reminder requested for proposal:', proposal._id);
       alert('Reminder feature coming soon! For urgent matters, please contact support@splitlease.com');
     } catch (err) {
-      console.error('Failed to send reminder:', err);
+      logger.error('Failed to send reminder:', err);
       alert('Failed to send reminder. Please try again.');
     }
   }, []);

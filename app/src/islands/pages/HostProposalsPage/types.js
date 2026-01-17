@@ -329,7 +329,7 @@ export function getCheckInOutFromDays(daysSelected) {
         return numericValue; // 0-indexed
       }
       // It's a day name - find its 0-indexed position
-      const jsIndex = dayNames.indexOf(trimmed);
+      const jsIndex = DAY_NAMES.indexOf(trimmed);
       return jsIndex >= 0 ? jsIndex : -1;
     }
     return -1;
