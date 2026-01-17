@@ -371,6 +371,7 @@ export function useHostProposalsPageLogic() {
           "4 week compensation",
           "cleaning fee",
           "damage deposit",
+          "rental type",
           "Guest email",
           "need for space",
           "about_yourself",
