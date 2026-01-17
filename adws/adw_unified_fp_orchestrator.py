@@ -142,10 +142,33 @@ def implement_chunks_with_validation(chunks: List[ChunkData], working_dir: Path,
 
         prompt = f"""Implement ONLY chunk {chunk.number} from the refactoring plan.
 
+---
+## REFACTORING RULES (MUST FOLLOW)
+
+This is a **BEHAVIOR-PRESERVING** refactor. The code MUST behave IDENTICALLY after your change.
+
+**YOU MAY:**
+- Replace mutation with immutable patterns (`push` → spread)
+- Replace imperative loops with `map`/`filter`/`reduce`
+- Replace `let` with `const` where never reassigned
+- Extract pure functions (no side effects)
+
+**YOU MAY NOT:**
+- Add features or new functionality
+- Fix bugs (even obvious ones)
+- Change error handling behavior
+- Add logging or console statements
+- Change any function signatures
+- Introduce or remove side effects
+
+**If the refactored code would change behavior in ANY way, STOP and report the issue.**
+---
+
 **Chunk Details:**
 - File: {chunk.file_path}
 - Line: {chunk.line_number}
 - Title: {chunk.title}
+- Affected Pages: {chunk.affected_pages}
 
 **Current Code:**
 ```javascript
@@ -159,20 +182,22 @@ def implement_chunks_with_validation(chunks: List[ChunkData], working_dir: Path,
 
 **Instructions:**
 1. Read the file: {chunk.file_path}
-2. Locate the current code.
-3. **BEFORE writing**: Validate the refactored code has valid JavaScript/JSX syntax:
+2. Locate the current code (use the line number as a guide, but verify the code matches).
+3. **BEFORE writing**: Validate the refactored code:
    - Check for balanced braces, brackets, and parentheses
    - Verify all strings are properly closed
    - Confirm JSX tags are properly closed
    - Check import statements are valid
+   - **VERIFY**: The change is purely structural (same behavior)
 4. Replace the current code with the refactored code EXACTLY as shown.
 5. **AFTER writing**: Read the file back and verify:
    - The change was applied correctly
    - No syntax errors were introduced
    - The file structure remains valid
+   - All imports still resolve
 6. Do NOT commit.
 
-**CRITICAL**: If you detect ANY syntax issues in the refactored code, STOP and report the error instead of writing broken code.
+**CRITICAL**: If you detect ANY syntax issues OR behavior changes, STOP and report the error instead of writing broken code.
 """
         agent_dir = working_dir / "adws" / "agents" / "implementation" / f"chunk_{chunk.number}"
         agent_dir.mkdir(parents=True, exist_ok=True)

@@ -6,8 +6,8 @@ This module parses refactoring plan markdown files and groups chunks by affected
 
 import re
 from pathlib import Path
-from typing import List, Dict
-from dataclasses import dataclass
+from typing import List, Dict, Optional
+from dataclasses import dataclass, field
 
 
 @dataclass
@@ -20,6 +20,8 @@ class ChunkData:
     current_code: str
     refactored_code: str
     affected_pages: str
+    category: str = "MIGRATE"  # SCAFFOLD, MIGRATE, or CLEANUP
+    depends_on: List[int] = field(default_factory=list)  # List of chunk numbers this depends on
 
 
 def extract_page_groups(plan_file: Path) -> Dict[str, List[ChunkData]]:
@@ -137,6 +139,28 @@ def parse_chunks(content: str) -> List[ChunkData]:
         # Try multiple patterns for affected pages
         pages_match = re.search(r'\*\*(?:Expected )?Affected Pages:\*\*\s+(.+)', section)
 
+        # Extract category (SCAFFOLD, MIGRATE, CLEANUP)
+        category_match = re.search(r'\*\*Category:\*\*\s*(SCAFFOLD|MIGRATE|CLEANUP|S|M|C)', section, re.IGNORECASE)
+        category = "MIGRATE"  # Default
+        if category_match:
+            cat = category_match.group(1).upper()
+            if cat in ('S', 'SCAFFOLD'):
+                category = "SCAFFOLD"
+            elif cat in ('M', 'MIGRATE'):
+                category = "MIGRATE"
+            elif cat in ('C', 'CLEANUP'):
+                category = "CLEANUP"
+
+        # Extract depends_on (list of chunk numbers)
+        depends_match = re.search(r'\*\*Depends\s+On:\*\*\s*(.+)', section, re.IGNORECASE)
+        depends_on = []
+        if depends_match:
+            depends_str = depends_match.group(1).strip()
+            if depends_str.lower() not in ('none', '(none)', '-', 'n/a'):
+                # Extract chunk numbers from formats like "Chunk 1, Chunk 2" or "1, 2"
+                chunk_refs = re.findall(r'(?:Chunk\s+)?(\d+)', depends_str, re.IGNORECASE)
+                depends_on = [int(ref) for ref in chunk_refs]
+
         if not file_match:
             # Last resort: try to find file path from code block labels
             path_in_label = re.search(r'\*\*(?:Current|Refactored)\s+Code\*\*\s*\(`([^:]+):', section)
@@ -169,6 +193,8 @@ def parse_chunks(content: str) -> List[ChunkData]:
             line_number=line_number,
             current_code=code_blocks[0].strip(),
             refactored_code=code_blocks[1].strip(),
-            affected_pages=affected_pages
+            affected_pages=affected_pages,
+            category=category,
+            depends_on=depends_on
         ))
     return chunks
