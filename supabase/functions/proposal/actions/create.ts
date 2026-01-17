@@ -620,22 +620,32 @@ export async function handleCreate(
       ]);
 
       // ================================================
-      // GENERATE AI SUMMARY FOR HOST (non-blocking)
+      // GENERATE AI SUMMARY FOR HOST (with 8-second timeout)
       // ================================================
       let aiHostSummary: string | null = null;
       try {
-        console.log(`[proposal:create] Generating AI summary for host...`);
+        console.log(`[proposal:create] Generating AI summary for host (8s timeout)...`);
 
-        aiHostSummary = await generateHostProposalSummary(supabase, {
-          listingName: resolvedListingName,
-          reservationWeeks: input.reservationSpanWeeks,
-          moveInStart: formatDateForDisplay(input.moveInStartRange),
-          moveInEnd: formatDateForDisplay(input.moveInEndRange),
-          selectedDays: formatDaysAsRange(input.daysSelected),
-          hostCompensation: compensation.host_compensation_per_night,
-          totalCompensation: compensation.total_compensation,
-          guestComment: input.comment || undefined,
+        // Create a timeout promise that rejects after 8 seconds
+        const AI_TIMEOUT_MS = 8000;
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('AI summary generation timed out')), AI_TIMEOUT_MS);
         });
+
+        // Race between AI generation and timeout
+        aiHostSummary = await Promise.race([
+          generateHostProposalSummary(supabase, {
+            listingName: resolvedListingName,
+            reservationWeeks: input.reservationSpanWeeks,
+            moveInStart: formatDateForDisplay(input.moveInStartRange),
+            moveInEnd: formatDateForDisplay(input.moveInEndRange),
+            selectedDays: formatDaysAsRange(input.daysSelected),
+            hostCompensation: compensation.host_compensation_per_night,
+            totalCompensation: compensation.total_compensation,
+            guestComment: input.comment || undefined,
+          }),
+          timeoutPromise,
+        ]);
 
         if (aiHostSummary) {
           console.log(`[proposal:create] AI host summary generated successfully`);
@@ -643,7 +653,7 @@ export async function handleCreate(
           console.log(`[proposal:create] AI host summary returned null, using default message`);
         }
       } catch (aiError) {
-        console.warn(`[proposal:create] AI host summary generation failed, using default:`, aiError);
+        console.warn(`[proposal:create] AI host summary generation failed/timed out, using default:`, aiError);
       }
 
       // Send SplitBot message to GUEST
