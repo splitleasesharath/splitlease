@@ -287,81 +287,109 @@
   gap: 12px;
 }
 
-/* Self-contained MessageBubble styles for header panel */
-.header-messaging-panel__messages .message-bubble {
-  max-width: 85%;
-  min-width: 0;
+/* ============================================================================
+   MESSAGE ROW STYLES (MessageBubble component uses .message-row, .msg-* classes)
+   ============================================================================ */
+
+/* Message row container */
+.header-messaging-panel__messages .message-row {
   display: flex;
-  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 8px;
 }
 
-.header-messaging-panel__messages .message-bubble--incoming {
-  align-self: flex-start;
+.header-messaging-panel__messages .message-row.outgoing {
+  flex-direction: row-reverse;
 }
 
-.header-messaging-panel__messages .message-bubble--outgoing {
-  align-self: flex-end;
+/* Hide avatars in header panel to save space */
+.header-messaging-panel__messages .msg-avatar {
+  display: none;
 }
 
-.header-messaging-panel__messages .message-bubble--splitbot {
-  align-self: center;
+/* Message content area */
+.header-messaging-panel__messages .msg-content {
+  flex: 1;
   max-width: 90%;
   min-width: 0;
 }
 
-.header-messaging-panel__messages .message-bubble__sender {
-  font-size: 11px;
-  font-weight: 500;
-  color: #6b4fa1;
-  margin-bottom: 4px;
-  padding-left: 4px;
+.header-messaging-panel__messages .message-row.outgoing .msg-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
 }
 
-.header-messaging-panel__messages .message-bubble__content {
+/* Message header with sender and time */
+.header-messaging-panel__messages .msg-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.header-messaging-panel__messages .message-row.outgoing .msg-header {
+  flex-direction: row-reverse;
+}
+
+.header-messaging-panel__messages .msg-sender {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.header-messaging-panel__messages .msg-time {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+/* Message bubble */
+.header-messaging-panel__messages .msg-bubble {
   padding: 10px 14px;
   border-radius: 16px;
-  min-width: 0;
   max-width: 100%;
-  width: fit-content;
-  overflow-wrap: anywhere;
-  word-break: break-word;
 }
 
-.header-messaging-panel__messages .message-bubble--incoming .message-bubble__content {
-  background-color: #f3f4f6;
-  color: #1a1a1a;
+.header-messaging-panel__messages .message-row:not(.outgoing) .msg-bubble {
+  background: #f3f4f6;
+  border: 1px solid #e5e5e5;
   border-bottom-left-radius: 4px;
 }
 
-.header-messaging-panel__messages .message-bubble--outgoing .message-bubble__content {
-  background-color: #6b4fa1;
+.header-messaging-panel__messages .message-row.outgoing .msg-bubble {
+  background: #6b4fa1;
   color: white;
   border-bottom-right-radius: 4px;
 }
 
-.header-messaging-panel__messages .message-bubble--splitbot .message-bubble__content {
-  background-color: #fef3c7;
-  color: #1a1a1a;
-  border-radius: 12px;
-  border: 1px solid #fcd34d;
-}
-
-.header-messaging-panel__messages .message-bubble__text {
+/* Message text - ensure full display, no truncation */
+.header-messaging-panel__messages .msg-text {
   margin: 0;
   font-size: 14px;
   line-height: 1.5;
-  white-space: normal;
+  white-space: pre-wrap;
   word-wrap: break-word;
   word-break: break-word;
   overflow-wrap: anywhere;
-  color: inherit;
 }
 
-/* Ensure outgoing message text is white */
-.header-messaging-panel__messages .message-bubble--outgoing .message-bubble__text {
-  color: #FFFFFF !important;
+.header-messaging-panel__messages .message-row.outgoing .msg-text {
+  color: #FFFFFF;
 }
 
+/* Split Bot message styling */
+.header-messaging-panel__messages .message-row--splitbot .msg-bubble {
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 12px;
+}
+
+.header-messaging-panel__messages .message-row--splitbot .msg-avatar-placeholder {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* CTA button within messages */
 .header-messaging-panel__messages .message-bubble__cta {
   display: inline-block;
   margin-top: 10px;
@@ -388,17 +416,6 @@
   font-size: 12px;
   color: #EF4444;
   font-style: italic;
-}
-
-.header-messaging-panel__messages .message-bubble__timestamp {
-  font-size: 11px;
-  color: #9ca3af;
-  margin-top: 6px;
-  padding: 0 4px;
-}
-
-.header-messaging-panel__messages .message-bubble--outgoing .message-bubble__timestamp {
-  text-align: right;
 }
 
 /* ============================================================================
