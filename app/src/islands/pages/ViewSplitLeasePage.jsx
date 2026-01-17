@@ -1244,13 +1244,16 @@ export default function ViewSplitLeasePage() {
         // Use the actual status returned from the Edge Function
         const actualProposalStatus = data.data?.status || 'Host Review';
         const actualHostId = data.data?.hostId || listing.host?.userId;
+        // Extract AI-generated host summary from proposal response
+        const aiHostSummary = data.data?.aiHostSummary || null;
 
         logger.debug('   Thread params:', {
           proposalId: newProposalId,
           guestId: guestId,
           hostId: actualHostId,
           listingId: proposalData.listingId,
-          proposalStatus: actualProposalStatus
+          proposalStatus: actualProposalStatus,
+          hasAiHostSummary: !!aiHostSummary
         });
 
         const threadResponse = await supabase.functions.invoke('messages', {
@@ -1261,7 +1264,9 @@ export default function ViewSplitLeasePage() {
               guestId: guestId,
               hostId: actualHostId,
               listingId: proposalData.listingId,
-              proposalStatus: actualProposalStatus
+              proposalStatus: actualProposalStatus,
+              // Pass AI host summary so messages handler can use it for host message
+              customHostMessage: aiHostSummary
             }
           }
         });

@@ -37,17 +37,9 @@ import {
   addUserListingFavorite,
 } from "../../_shared/junctionHelpers.ts";
 import {
-  createSplitBotMessage,
-  updateThreadLastMessage,
-  getUserProfile,
   getListingName,
 } from "../../_shared/messagingHelpers.ts";
-import {
-  getCTAForProposalStatus,
-  buildTemplateContext,
-  getDefaultMessage,
-  getVisibilityForRole,
-} from "../../_shared/ctaHelpers.ts";
+// NOTE: CTA helpers removed - messages are now created by create_proposal_thread handler
 import {
   generateHostProposalSummary,
   formatDaysAsRange,
@@ -591,114 +583,52 @@ export async function handleCreate(
   }
 
   // ================================================
-  // SEND SPLITBOT MESSAGES & HOST AI SUMMARY (Non-blocking)
+  // GENERATE AI SUMMARY FOR HOST (Non-blocking)
   // ================================================
-  // This entire section is wrapped in try/catch - failures don't block proposal creation
+  // NOTE: Messages are NO LONGER created here - they are created by the
+  // create_proposal_thread handler called by the frontend.
+  // We only generate the AI summary here and return it so the frontend
+  // can pass it to the messages handler.
+
+  let aiHostSummary: string | null = null;
 
   if (threadCreated && threadId) {
     try {
-      // Fetch user profiles and listing name for messages
-      const [guestProfile, hostProfile, listingName] = await Promise.all([
-        getUserProfile(supabase, input.guestId),
-        getUserProfile(supabase, hostUserData._id),
-        getListingName(supabase, input.listingId),
-      ]);
-
-      const guestFirstName = guestProfile?.firstName || "Guest";
-      const hostFirstName = hostProfile?.firstName || "Host";
+      // Fetch listing name for AI summary
+      const listingName = await getListingName(supabase, input.listingId);
       const resolvedListingName = listingName || "this listing";
 
-      // Build template context for CTA rendering
-      const templateContext = buildTemplateContext(hostFirstName, guestFirstName, resolvedListingName);
+      console.log(`[proposal:create] Generating AI summary for host (8s timeout)...`);
 
-      console.log(`[proposal:create] Sending SplitBot messages for status: ${status}`);
+      // Create a timeout promise that rejects after 8 seconds
+      const AI_TIMEOUT_MS = 8000;
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('AI summary generation timed out')), AI_TIMEOUT_MS);
+      });
 
-      // Get CTAs for guest and host based on proposal status
-      const [guestCTA, hostCTA] = await Promise.all([
-        getCTAForProposalStatus(supabase, status, "guest", templateContext),
-        getCTAForProposalStatus(supabase, status, "host", templateContext),
+      // Race between AI generation and timeout
+      aiHostSummary = await Promise.race([
+        generateHostProposalSummary(supabase, {
+          listingName: resolvedListingName,
+          reservationWeeks: input.reservationSpanWeeks,
+          moveInStart: formatDateForDisplay(input.moveInStartRange),
+          moveInEnd: formatDateForDisplay(input.moveInEndRange),
+          selectedDays: formatDaysAsRange(input.daysSelected),
+          hostCompensation: compensation.host_compensation_per_night,
+          totalCompensation: compensation.total_compensation,
+          guestComment: input.comment || undefined,
+        }),
+        timeoutPromise,
       ]);
 
-      // ================================================
-      // GENERATE AI SUMMARY FOR HOST (with 8-second timeout)
-      // ================================================
-      let aiHostSummary: string | null = null;
-      try {
-        console.log(`[proposal:create] Generating AI summary for host (8s timeout)...`);
-
-        // Create a timeout promise that rejects after 8 seconds
-        const AI_TIMEOUT_MS = 8000;
-        const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error('AI summary generation timed out')), AI_TIMEOUT_MS);
-        });
-
-        // Race between AI generation and timeout
-        aiHostSummary = await Promise.race([
-          generateHostProposalSummary(supabase, {
-            listingName: resolvedListingName,
-            reservationWeeks: input.reservationSpanWeeks,
-            moveInStart: formatDateForDisplay(input.moveInStartRange),
-            moveInEnd: formatDateForDisplay(input.moveInEndRange),
-            selectedDays: formatDaysAsRange(input.daysSelected),
-            hostCompensation: compensation.host_compensation_per_night,
-            totalCompensation: compensation.total_compensation,
-            guestComment: input.comment || undefined,
-          }),
-          timeoutPromise,
-        ]);
-
-        if (aiHostSummary) {
-          console.log(`[proposal:create] AI host summary generated successfully`);
-        } else {
-          console.log(`[proposal:create] AI host summary returned null, using default message`);
-        }
-      } catch (aiError) {
-        console.warn(`[proposal:create] AI host summary generation failed/timed out, using default:`, aiError);
+      if (aiHostSummary) {
+        console.log(`[proposal:create] AI host summary generated successfully`);
+      } else {
+        console.log(`[proposal:create] AI host summary returned null`);
       }
-
-      // Send SplitBot message to GUEST
-      if (guestCTA) {
-        const guestMessageBody = guestCTA.message || getDefaultMessage(status, "guest", templateContext);
-        const guestVisibility = getVisibilityForRole("guest");
-
-        await createSplitBotMessage(supabase, {
-          threadId,
-          messageBody: guestMessageBody,
-          callToAction: guestCTA.display,
-          visibleToHost: guestVisibility.visibleToHost,
-          visibleToGuest: guestVisibility.visibleToGuest,
-          recipientUserId: input.guestId,
-        });
-        console.log(`[proposal:create] SplitBot message sent to guest`);
-      }
-
-      // Send SplitBot message to HOST (with AI summary if available)
-      if (hostCTA) {
-        // Use AI summary if available, otherwise fall back to CTA template or default
-        const hostMessageBody = aiHostSummary ||
-          hostCTA.message ||
-          getDefaultMessage(status, "host", templateContext);
-        const hostVisibility = getVisibilityForRole("host");
-
-        await createSplitBotMessage(supabase, {
-          threadId,
-          messageBody: hostMessageBody,
-          callToAction: hostCTA.display,
-          visibleToHost: hostVisibility.visibleToHost,
-          visibleToGuest: hostVisibility.visibleToGuest,
-          recipientUserId: hostUserData._id,
-        });
-        console.log(`[proposal:create] SplitBot message sent to host`);
-      }
-
-      // Update thread's last message preview
-      const lastMessageBody = aiHostSummary || hostCTA?.message || guestCTA?.message || `Proposal for ${resolvedListingName}`;
-      await updateThreadLastMessage(supabase, threadId, lastMessageBody);
-
-      console.log(`[proposal:create] SplitBot messages complete`);
-    } catch (msgError) {
-      // Non-blocking - proposal and thread created, messages are secondary
-      console.error(`[proposal:create] SplitBot messages failed:`, msgError);
+    } catch (aiError) {
+      console.warn(`[proposal:create] AI host summary generation failed/timed out:`, aiError);
+      // aiHostSummary remains null, frontend will use default CTA message
     }
   }
 
@@ -716,5 +646,7 @@ export async function handleCreate(
     guestId: input.guestId,
     hostId: hostAccountData.User,
     createdAt: now,
+    threadId: threadId || null,
+    aiHostSummary: aiHostSummary,
   };
 }
