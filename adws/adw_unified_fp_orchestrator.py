@@ -40,8 +40,7 @@ from typing import List, Optional
 # Add adws to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from adw_modules.agent import prompt_claude_code
-from adw_modules.data_types import AgentPromptRequest
+from adw_modules.gemini_agent import prompt_gemini_agent
 from adw_modules.run_logger import create_run_logger, RunLogger
 from adw_modules.dev_server import DevServerManager
 from adw_modules.visual_regression import check_visual_parity
@@ -173,21 +172,11 @@ def implement_chunks_with_validation(chunks: List[ChunkData], working_dir: Path,
 
 **CRITICAL**: If you detect ANY syntax issues in the refactored code, STOP and report the error instead of writing broken code.
 """
-        agent_dir = working_dir / "adws" / "agents" / "implementation" / f"chunk_{chunk.number}"
-        agent_dir.mkdir(parents=True, exist_ok=True)
-        output_file = agent_dir / "raw_output.jsonl"
-
-        request = AgentPromptRequest(
+        # Use Gemini SDK directly for chunk implementation
+        response = prompt_gemini_agent(
             prompt=prompt,
-            adw_id=f"refactor_chunk_{chunk.number}",
-            agent_name="chunk_implementor",
-            model="sonnet",
-            output_file=str(output_file),
-            working_dir=str(working_dir),
-            dangerously_skip_permissions=True
+            model_name="gemini-3-flash-preview"
         )
-
-        response = prompt_claude_code(request)
         if not response.success:
             logger.log(f"    [FAIL] Chunk {chunk.number} implementation failed: {response.output[:100]}")
             return False

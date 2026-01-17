@@ -6,18 +6,66 @@ import json
 import logging
 import subprocess
 import re
+from pathlib import Path
 from google import genai
 from google.genai import types
 from typing import Optional, List, Dict, Any, Union
 from dotenv import load_dotenv
 from .data_types import AgentPromptResponse, RetryCode
 
-# Load environment variables as a fallback
-load_dotenv()
+# Load environment variables from adws/.env explicitly
+_ADWS_ENV_PATH = Path(__file__).parent.parent / ".env"
+load_dotenv(_ADWS_ENV_PATH)
+
+# State file for key rotation (persists across calls)
+_KEY_STATE_FILE = Path(__file__).parent.parent / ".gemini_key_state"
+
+# Logger for key rotation tracking
+_logger = logging.getLogger("gemini_agent")
+
 
 def get_gemini_api_key() -> Optional[str]:
-    """Get Gemini API Key from environment."""
-    return os.getenv("GEMINIAPIKEY") or os.getenv("GEMINI_API_KEY")
+    """Get next Gemini API Key using round-robin rotation.
+
+    Alternates between PRIMARY and SECONDARY keys on each call.
+    State is persisted to disk for cross-process consistency.
+    """
+    keys = [
+        os.getenv("GEMINIAPIKEY_PRIMARY"),
+        os.getenv("GEMINIAPIKEY_SECONDARY"),
+    ]
+
+    # Filter out None/empty keys
+    available_keys = [(i, k) for i, k in enumerate(keys) if k]
+
+    if not available_keys:
+        _logger.error("No Gemini API keys found in environment")
+        return None
+
+    if len(available_keys) == 1:
+        idx, key = available_keys[0]
+        label = "PRIMARY" if idx == 0 else "SECONDARY"
+        _logger.info(f"[GEMINI KEY] Using {label} (only key available)")
+        return key
+
+    # Read last used index from state file
+    try:
+        last_index = int(_KEY_STATE_FILE.read_text().strip())
+    except (FileNotFoundError, ValueError):
+        last_index = 1  # Start with 1 so first rotation gives 0 (PRIMARY)
+
+    # Rotate to next key
+    next_index = (last_index + 1) % 2
+
+    # Persist state
+    _KEY_STATE_FILE.write_text(str(next_index))
+
+    # Get key and log
+    key = keys[next_index]
+    label = "PRIMARY" if next_index == 0 else "SECONDARY"
+    _logger.info(f"[GEMINI KEY] Rotated to {label}")
+
+    return key
 
 def list_files(path: str = ".") -> str:
     """List files in a directory."""
