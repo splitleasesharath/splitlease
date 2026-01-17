@@ -586,10 +586,10 @@ const FREEFORM_TOPICS = [
     id: 'schedule',
     label: 'Schedule',
     patterns: [
-      /\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i,
-      /\b(weekday|weekend|weekly|daily|monthly)\b/i,
-      /\b(morning|afternoon|evening|night)\b/i,
-      /\b(schedule|timing|hours|days?|time)\b/i,
+      /\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)s?\b/i,
+      /\b(weekday|weekend|weekly|daily|monthly)s?\b/i,
+      /\b(morning|afternoon|evening|night)s?\b/i,
+      /\b(schedule|timing|hours?|days?|time|weeks?)\b/i,
       /\b(\d+\s*(am|pm|days?|weeks?|months?))\b/i,
     ],
   },
@@ -623,6 +623,7 @@ const FREEFORM_TOPICS = [
       /\b(near|close to|walking distance|neighborhood)\b/i,
       /\b(area|location|place|spot|zone)\b/i,
       /\b(east side|west side|upper|lower)\b/i,
+      /\b(new york|nyc|ny|the city)\b/i,
     ],
   },
   {
