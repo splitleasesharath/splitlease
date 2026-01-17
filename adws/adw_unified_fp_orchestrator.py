@@ -416,7 +416,11 @@ def main():
                 logger.phase_complete(f"Page {page_path}", success=False, error=str(e)[:50])
                 continue
 
-            # 4c. Start dev server (only if build passed)
+            # 4c. Clean up zombie browsers BEFORE starting dev server
+            # (Must happen before dev_server.start() because cleanup kills all node processes)
+            _cleanup_browser_processes(logger, silent=True)
+
+            # 4d. Start dev server (only if build passed)
             logger.step("Starting dev server...")
             try:
                 port, base_url = dev_server.start()
@@ -429,10 +433,7 @@ def main():
                 continue
 
             try:
-                # Clean up any zombie browser processes before visual check
-                _cleanup_browser_processes(logger, silent=True)
-
-                # 4d. Visual regression check (concurrent LIVE vs DEV)
+                # 4e. Visual regression check (concurrent LIVE vs DEV)
                 mcp_live, mcp_dev = get_concurrent_mcp_sessions(page_path)
                 page_info = get_page_info(page_path)
                 auth_type = page_info.auth_type if page_info else "public"
@@ -450,7 +451,7 @@ def main():
                     concurrent=True  # Enable concurrent capture
                 )
 
-                # 4e. Commit or reset
+                # 4f. Commit or reset
                 if visual_result.get("visualParity") == "PASS":
                     logger.log(f"  [PASS] Visual parity OK")
                     commit_msg = f"refactor({page_path}): Implement chunks {chunk_ids}\n\n{visual_result.get('explanation', '')}"
