@@ -441,6 +441,19 @@
   align-items: flex-end;
 }
 
+/* Hide the toolbar in header panel - it takes up too much space */
+.header-messaging-panel__input .message-input__toolbar {
+  display: none;
+}
+
+/* Also hide the wrapper div that contains both textarea and toolbar */
+.header-messaging-panel__input .message-input__wrapper {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  width: 100%;
+}
+
 .header-messaging-panel__input .message-input__field {
   flex: 1;
   padding: 10px 14px;
