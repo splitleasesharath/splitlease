@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-01-18T16:01:30.511981",
+  "generated_at": "2026-01-18T17:19:24.591954",
   "root_dir": "C:\\Users\\Split Lease\\Documents\\Split Lease\\app\\src\\logic",
-  "content_hash": "2cb403c6f2aa4222f8cf719a3cc2c65e3f1753c30595d2055d57cf50f2034699",
-  "total_files": 66,
-  "total_exports": 179,
-  "total_imports": 42,
+  "content_hash": "658f538507fa4dde1ab96eab955addcd2a64b95268e8f26e9ec4ce930b4dfc62",
+  "total_files": 67,
+  "total_exports": 180,
+  "total_imports": 43,
   "parse_error_count": 0,
   "symbol_table": {
     "calculators\\pricing\\calculateFourWeekRent.js": [
@@ -20,7 +20,7 @@
       {
         "name": "calculateGuestFacingPrice",
         "type": "declaration",
-        "line": 33,
+        "line": 35,
         "source_file": null,
         "original_name": null
       }
@@ -145,6 +145,15 @@
         "name": "shiftMoveInDateIfPast",
         "type": "declaration",
         "line": 35,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "constants\\pricingConstants.js": [
+      {
+        "name": "PRICING_CONSTANTS",
+        "type": "declaration",
+        "line": 5,
         "source_file": null,
         "original_name": null
       }
@@ -1394,6 +1403,16 @@
     ]
   },
   "dependency_graph": {
+    "calculators\\pricing\\calculateGuestFacingPrice.js": [
+      {
+        "name": "PRICING_CONSTANTS",
+        "type": "named",
+        "source": "../../constants/pricingConstants.js",
+        "resolved_path": "constants\\pricingConstants.js",
+        "line": 33,
+        "alias": null
+      }
+    ],
     "calculators\\pricing\\calculatePricingBreakdown.js": [
       {
         "name": "getNightlyRateByFrequency",
@@ -1770,6 +1789,9 @@
     ]
   },
   "reverse_dependencies": {
+    "constants\\pricingConstants.js": [
+      "calculators\\pricing\\calculateGuestFacingPrice.js"
+    ],
     "calculators\\pricing\\getNightlyRateByFrequency.js": [
       "calculators\\pricing\\calculatePricingBreakdown.js"
     ],
