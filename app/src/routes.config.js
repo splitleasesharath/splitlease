@@ -337,6 +337,17 @@ export const routes = [
     hasDynamicSegment: false
   },
 
+  // ===== TRIAL HOST SIGNUP =====
+  {
+    path: '/signup-trial-host',
+    file: 'signup-trial-host.html',
+    aliases: ['/signup-trial-host.html'],
+    protected: false,
+    cloudflareInternal: true,
+    internalName: 'signup-trial-host-view',
+    hasDynamicSegment: false
+  },
+
   // ===== INTERNAL/DEV PAGES =====
   {
     path: '/_internal-test',
