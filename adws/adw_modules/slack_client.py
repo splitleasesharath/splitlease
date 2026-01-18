@@ -106,7 +106,8 @@ class SlackClient:
         initial_comment: Optional[str] = None
     ) -> SlackResponse:
         """
-        Upload a file to Slack.
+        Upload a file to Slack using the 3-step external upload flow.
+        Required for reliable thread sharing in some slack-sdk versions.
 
         Args:
             file_path: Path to the file to upload
@@ -127,26 +128,37 @@ class SlackClient:
             return SlackResponse(ok=False, error=f"File not found: {file_path}")
 
         try:
+            import urllib.request
             client = self._get_client()
 
-            # files.upload_v2 is the modern API
-            result = client.files_upload_v2(
-                channel=target_channel,
-                file=str(path),
+            # Step 1: Get upload URL
+            get_url = client.files_getUploadURLExternal(
                 filename=path.name,
-                title=title or path.name,
-                initial_comment=initial_comment,
-                thread_ts=thread_ts
+                length=path.stat().st_size
+            )
+            upload_url = get_url['upload_url']
+            file_id = get_url['file_id']
+
+            # Step 2: Upload file content
+            with open(path, 'rb') as f:
+                req = urllib.request.Request(upload_url, data=f.read(), method='POST')
+                req.add_header('Content-Type', 'application/octet-stream')
+                urllib.request.urlopen(req)
+
+            # Step 3: Complete upload and share to channel/thread
+            complete = client.files_completeUploadExternal(
+                files=[{'id': file_id, 'title': title or path.name}],
+                channel_id=target_channel,
+                thread_ts=thread_ts,
+                initial_comment=initial_comment
             )
 
             # Extract file info from response
-            file_info = result.get("file", {})
-            if not file_info and "files" in result:
-                file_info = result["files"][0] if result["files"] else {}
+            file_info = complete.get('files', [{}])[0] if complete.get('files') else {}
 
             return SlackResponse(
-                ok=result.get("ok", False),
-                error=result.get("error"),
+                ok=complete.get("ok", False),
+                error=complete.get("error"),
                 file_id=file_info.get("id"),
                 file_permalink=file_info.get("permalink")
             )
