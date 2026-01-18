@@ -25,6 +25,7 @@ import {
   isTerminalStatus,
   getListingPhoto,
   getHostDisplayName,
+  getHostProfilePhoto,
   buildMetaText,
   getProgressStageLabels
 } from './displayUtils.js';
@@ -91,10 +92,31 @@ function getAllDaysWithSelection(daysSelected) {
 
 /**
  * Get check-in to checkout day range string
- * Days Selected represents the NIGHTS stayed. Check-in is the first night's day,
- * and checkout is the day AFTER the last night (i.e., next day after last selected).
+ *
+ * Priority order:
+ * 1. Use explicit check in/out day fields if available (most reliable)
+ * 2. Fall back to deriving from Days Selected array
+ *
+ * Days Selected represents the range from check-in to checkout (inclusive).
+ * Check-in = first day, Checkout = last day in the selection.
  */
 function getCheckInOutRange(proposal) {
+  // Priority 1: Use explicit check-in/check-out day fields if available
+  const checkInDay = proposal['check in day'] || proposal['hc check in day'];
+  const checkOutDay = proposal['check out day'] || proposal['hc check out day'];
+
+  if (checkInDay != null && checkOutDay != null) {
+    const checkInIndex = typeof checkInDay === 'number' ? checkInDay : parseInt(checkInDay, 10);
+    const checkOutIndex = typeof checkOutDay === 'number' ? checkOutDay : parseInt(checkOutDay, 10);
+
+    if (!isNaN(checkInIndex) && !isNaN(checkOutIndex) &&
+        checkInIndex >= 0 && checkInIndex <= 6 &&
+        checkOutIndex >= 0 && checkOutIndex <= 6) {
+      return `${DAY_NAMES[checkInIndex]} to ${DAY_NAMES[checkOutIndex]}`;
+    }
+  }
+
+  // Priority 2: Derive from Days Selected array
   let daysSelected = proposal['Days Selected'] || proposal.hcDaysSelected || [];
   if (typeof daysSelected === 'string') {
     try {
@@ -124,7 +146,7 @@ function getCheckInOutRange(proposal) {
 
   const sorted = [...dayIndices].sort((a, b) => a - b);
 
-  // Handle wrap-around case (e.g., Fri, Sat, Sun, Mon = [0, 1, 5, 6])
+  // Handle wrap-around case (e.g., Fri, Sat, Sun, Mon = [5, 6, 0, 1])
   const hasLowNumbers = sorted.some(d => d <= 2); // Sun, Mon, Tue
   const hasHighNumbers = sorted.some(d => d >= 4); // Thu, Fri, Sat
 
@@ -139,19 +161,16 @@ function getCheckInOutRange(proposal) {
     }
 
     if (gapIndex !== -1) {
-      // Wrapped selection: check-in is after the gap, checkout is day after the day before gap
+      // Wrapped selection: check-in is after the gap, checkout is before the gap
       const checkInDayIndex = sorted[gapIndex];
-      const lastNightDayIndex = sorted[gapIndex - 1];
-      const checkOutDayIndex = (lastNightDayIndex + 1) % 7;
-
+      const checkOutDayIndex = sorted[gapIndex - 1];
       return `${DAY_NAMES[checkInDayIndex]} to ${DAY_NAMES[checkOutDayIndex]}`;
     }
   }
 
-  // Standard case (no wrap-around): check-in is first day, checkout is day after last day
+  // Standard case (no wrap-around): check-in is first day, checkout is last day
   const checkInDayIndex = sorted[0];
-  const lastNightDayIndex = sorted[sorted.length - 1];
-  const checkOutDayIndex = (lastNightDayIndex + 1) % 7;
+  const checkOutDayIndex = sorted[sorted.length - 1];
 
   return `${DAY_NAMES[checkInDayIndex]} to ${DAY_NAMES[checkOutDayIndex]}`;
 }
@@ -412,6 +431,7 @@ export default function ExpandableProposalCard({
   const listingName = listing?.Name || 'Listing';
   const location = [listing?.hoodName, listing?.boroughName].filter(Boolean).join(', ') || 'New York';
   const hostName = getHostDisplayName(host);
+  const hostPhoto = getHostProfilePhoto(host);
 
   // Schedule
   let daysSelected = proposal?.['Days Selected'] || proposal?.hcDaysSelected || [];
@@ -593,6 +613,13 @@ export default function ExpandableProposalCard({
               <div className="epc-detail-location">{location}</div>
             </div>
             <div className="epc-detail-host">
+              {hostPhoto ? (
+                <img src={hostPhoto} alt={hostName} className="epc-host-photo" />
+              ) : (
+                <div className="epc-host-photo-placeholder">
+                  {hostName.charAt(0).toUpperCase()}
+                </div>
+              )}
               <div className="epc-host-name">{hostName}</div>
               <div className="epc-host-label">Host</div>
             </div>

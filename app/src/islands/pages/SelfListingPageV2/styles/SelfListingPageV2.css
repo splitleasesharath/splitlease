@@ -1179,6 +1179,8 @@
   overflow: hidden;
   background: linear-gradient(to bottom, #f9fafb, #f3f4f6);
   flex-shrink: 0;
+  /* Enforce horizontal aspect ratio to prevent vertical images from stretching card */
+  aspect-ratio: 4 / 3;
 }
 
 .review-listing-images img {

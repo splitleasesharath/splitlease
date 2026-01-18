@@ -42,8 +42,10 @@ export interface CreateProposalThreadPayload {
   hostId: string;
   listingId: string;
   proposalStatus: string;
-  // Optional: custom message body (overrides CTA template)
+  // Optional: custom message body (overrides CTA template for guest)
   customMessageBody?: string;
+  // Optional: custom host message (AI-generated summary from proposal creation)
+  customHostMessage?: string;
   // Optional: warning message for SplitBot
   splitBotWarning?: string;
 }
@@ -85,6 +87,7 @@ function validatePayload(payload: Record<string, unknown>): CreateProposalThread
     listingId,
     proposalStatus,
     customMessageBody: payload.customMessageBody as string | undefined,
+    customHostMessage: payload.customHostMessage as string | undefined,
     splitBotWarning: payload.splitBotWarning as string | undefined,
   };
 }
@@ -109,6 +112,7 @@ export async function handleCreateProposalThread(
   console.log('[createProposalThread] Validated input:', {
     proposalId: input.proposalId,
     proposalStatus: input.proposalStatus,
+    hasCustomHostMessage: !!input.customHostMessage,
   });
 
   // ─────────────────────────────────────────────────────────
@@ -195,7 +199,10 @@ export async function handleCreateProposalThread(
   let hostMessageId: string | null = null;
 
   if (hostCTA) {
-    const hostMessageBody = hostCTA.message ||
+    // Use custom host message (AI summary from proposal creation) if provided,
+    // otherwise fall back to CTA template or default message
+    const hostMessageBody = input.customHostMessage ||
+      hostCTA.message ||
       getDefaultMessage(input.proposalStatus, 'host', templateContext);
 
     const hostVisibility = getVisibilityForRole('host');
@@ -210,7 +217,8 @@ export async function handleCreateProposalThread(
       recipientUserId: input.hostId,
     });
 
-    console.log('[createProposalThread] Created host message:', hostMessageId);
+    console.log('[createProposalThread] Created host message:', hostMessageId,
+      input.customHostMessage ? '(using AI summary)' : '(using CTA template)');
   }
 
   // ─────────────────────────────────────────────────────────

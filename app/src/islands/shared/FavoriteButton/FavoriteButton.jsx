@@ -36,6 +36,7 @@ const FavoriteButton = ({
   onRequireAuth,
   disabled = false,
   size = 'medium', // 'small', 'medium', 'large'
+  variant = 'overlay', // 'overlay' (absolute positioned) or 'inline' (static positioned)
 }) => {
   // Local state for immediate visual feedback
   const [isFavorited, setIsFavorited] = useState(initialFavorited);
@@ -143,7 +144,7 @@ const FavoriteButton = ({
   return (
     <button
       type="button"
-      className={`favorite-button-shared ${sizeClass} ${isFavorited ? 'favorited' : ''} ${isAnimating ? 'animating' : ''} ${isLoading ? 'loading' : ''}`}
+      className={`favorite-button-shared ${sizeClass} ${variant === 'inline' ? 'favorite-button--inline' : ''} ${isFavorited ? 'favorited' : ''} ${isAnimating ? 'animating' : ''} ${isLoading ? 'loading' : ''}`}
       onClick={handleClick}
       disabled={disabled || isLoading}
       aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}

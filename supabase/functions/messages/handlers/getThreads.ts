@@ -76,19 +76,10 @@ export async function handleGetThreads(
   }
 
   // Step 1: Query threads where user is host or guest
+  // Uses RPC function because PostgREST .or() doesn't handle column names
+  // with leading hyphens ("-Host User", "-Guest User") correctly
   const { data: threads, error: threadsError } = await supabaseAdmin
-    .from('thread')
-    .select(`
-      _id,
-      "Modified Date",
-      "-Host User",
-      "-Guest User",
-      "Listing",
-      "~Last Message",
-      "Thread Subject"
-    `)
-    .or(`"-Host User".eq.${userBubbleId},"-Guest User".eq.${userBubbleId}`)
-    .order('"Modified Date"', { ascending: false });
+    .rpc('get_user_threads', { user_id: userBubbleId });
 
   console.log('[getThreads] Query result:', {
     threadCount: threads?.length || 0,

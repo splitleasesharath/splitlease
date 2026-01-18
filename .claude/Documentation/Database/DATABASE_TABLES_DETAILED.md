@@ -425,6 +425,7 @@
 | `need for space` | text | YES |
 | `preferred gender` | text | YES |
 | `rental type` | text | YES |
+| `custom_schedule_description` | text | YES | Guest's free-form description of preferred recurrent schedule |
 
 #### Relations
 | Column | Type | Nullable | FK Target |

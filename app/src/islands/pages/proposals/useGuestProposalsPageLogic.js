@@ -23,7 +23,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { fetchUserProposalsFromUrl } from '../../../lib/proposals/userProposalQueries.js';
-import { updateUrlWithProposal, cleanLegacyUserIdFromUrl } from '../../../lib/proposals/urlParser.js';
+import { updateUrlWithProposal, cleanLegacyUserIdFromUrl, getProposalIdFromQuery } from '../../../lib/proposals/urlParser.js';
 import { transformProposalData, getProposalDisplayText } from '../../../lib/proposals/dataTransformers.js';
 import { getStatusConfig, getStageFromStatus } from '../../../logic/constants/proposalStatuses.js';
 import { getAllStagesFormatted } from '../../../logic/constants/proposalStages.js';
@@ -228,6 +228,31 @@ export function useGuestProposalsPageLogic() {
       loadProposals();
     }
   }, [authState.isAuthenticated, authState.isGuest, authState.isChecking, loadProposals]);
+
+  // ============================================================================
+  // URL-BASED AUTO-EXPAND
+  // ============================================================================
+
+  /**
+   * Auto-expand proposal card if proposal ID is in URL query parameter
+   * This enables deep linking: /guest-proposals?proposal=<id> opens the card
+   */
+  useEffect(() => {
+    // Wait until proposals are loaded
+    if (proposals.length === 0 || isLoading) return;
+
+    const proposalIdFromUrl = getProposalIdFromQuery();
+    if (!proposalIdFromUrl) return;
+
+    // Verify the proposal exists in the user's proposals
+    const proposalExists = proposals.some(p => p._id === proposalIdFromUrl);
+    if (proposalExists) {
+      console.log('📂 Auto-expanding proposal from URL:', proposalIdFromUrl);
+      setExpandedProposalId(proposalIdFromUrl);
+    } else {
+      console.warn('⚠️ Proposal ID from URL not found in user proposals:', proposalIdFromUrl);
+    }
+  }, [proposals, isLoading]);
 
   // ============================================================================
   // HANDLERS

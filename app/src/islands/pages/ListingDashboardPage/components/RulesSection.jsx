@@ -1,3 +1,5 @@
+import { useListingDashboard } from '../context/ListingDashboardContext';
+
 // Default icon for rules without a database icon URL
 const DefaultRuleIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -50,7 +52,8 @@ const GuestsIcon = () => (
   </svg>
 );
 
-export default function RulesSection({ listing, onEdit }) {
+export default function RulesSection() {
+  const { listing, handleEditSection } = useListingDashboard();
   const houseRules = listing?.houseRules || [];
   const preferredGender = listing?.preferredGender?.display || 'Any';
   const maxGuests = listing?.maxGuests || 2;
@@ -62,7 +65,7 @@ export default function RulesSection({ listing, onEdit }) {
       {/* Section Header */}
       <div className="listing-dashboard-section__header">
         <h2 className="listing-dashboard-section__title">Rules</h2>
-        <button className="listing-dashboard-section__edit" onClick={onEdit}>
+        <button className="listing-dashboard-section__edit" onClick={() => handleEditSection('rules')}>
           edit
         </button>
       </div>
@@ -82,7 +85,7 @@ export default function RulesSection({ listing, onEdit }) {
             ))}
           </div>
         ) : (
-          <EmptyRuleTag onClick={onEdit} />
+          <EmptyRuleTag onClick={() => handleEditSection('rules')} />
         )}
 
         {/* Guest Restrictions */}

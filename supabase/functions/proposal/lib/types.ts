@@ -121,6 +121,8 @@ export interface CreateProposalResponse {
   guestId: string;
   hostId: string;
   createdAt: string;
+  threadId: string | null;
+  aiHostSummary: string | null;
 }
 
 /**

@@ -16,6 +16,7 @@ import ContactHostMessaging from '../shared/ContactHostMessaging.jsx';
 import InformationalText from '../shared/InformationalText.jsx';
 import SignUpLoginModal from '../shared/SignUpLoginModal.jsx';
 import ProposalSuccessModal from '../modals/ProposalSuccessModal.jsx';
+import FavoriteButton from '../shared/FavoriteButton';
 import { initializeLookups } from '../../lib/dataLookups.js';
 import { checkAuthStatus, validateTokenAndFetchUser, getSessionId, getUserId, getUserType } from '../../lib/auth.js';
 import { fetchListingComplete, getListingIdFromUrl, fetchZatPriceConfiguration } from '../../lib/listingDataFetcher.js';
@@ -553,6 +554,9 @@ export default function ViewSplitLeasePage() {
   // Toast notification state
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
+  // Favorite state
+  const [isFavorited, setIsFavorited] = useState(false);
+
   // Show toast notification helper
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
@@ -861,6 +865,32 @@ export default function ViewSplitLeasePage() {
     }
 
     checkExistingProposal();
+  }, [loggedInUserData?.userId, listing?._id]);
+
+  // Check if listing is favorited
+  useEffect(() => {
+    async function checkIfFavorited() {
+      if (!loggedInUserData?.userId || !listing?._id) {
+        setIsFavorited(false);
+        return;
+      }
+      try {
+        const { data: userData, error } = await supabase
+          .from('user')
+          .select('"Favorited Listings"')
+          .eq('_id', loggedInUserData.userId)
+          .single();
+        if (error) {
+          setIsFavorited(false);
+          return;
+        }
+        const favorites = userData?.['Favorited Listings'] || [];
+        setIsFavorited(favorites.includes(listing._id));
+      } catch {
+        setIsFavorited(false);
+      }
+    }
+    checkIfFavorited();
   }, [loggedInUserData?.userId, listing?._id]);
 
   // ============================================================================
@@ -1214,13 +1244,16 @@ export default function ViewSplitLeasePage() {
         // Use the actual status returned from the Edge Function
         const actualProposalStatus = data.data?.status || 'Host Review';
         const actualHostId = data.data?.hostId || listing.host?.userId;
+        // Extract AI-generated host summary from proposal response
+        const aiHostSummary = data.data?.aiHostSummary || null;
 
         logger.debug('   Thread params:', {
           proposalId: newProposalId,
           guestId: guestId,
           hostId: actualHostId,
           listingId: proposalData.listingId,
-          proposalStatus: actualProposalStatus
+          proposalStatus: actualProposalStatus,
+          hasAiHostSummary: !!aiHostSummary
         });
 
         const threadResponse = await supabase.functions.invoke('messages', {
@@ -1231,7 +1264,9 @@ export default function ViewSplitLeasePage() {
               guestId: guestId,
               hostId: actualHostId,
               listingId: proposalData.listingId,
-              proposalStatus: actualProposalStatus
+              proposalStatus: actualProposalStatus,
+              // Pass AI host summary so messages handler can use it for host message
+              customHostMessage: aiHostSummary
             }
           }
         });
@@ -1394,20 +1429,54 @@ export default function ViewSplitLeasePage() {
 
       {/* Toast Notification */}
       {toast.show && (
-        <div className={`toast toast-${toast.type} show`}>
-          <span className="toast-icon">
+        <div className="toast-container">
+          <div className={`toast toast-${toast.type} show`}>
+            {/* Icon */}
             {toast.type === 'success' && (
-              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+              <svg className="toast-icon" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" strokeLinecap="round" strokeLinejoin="round"/>
+                <polyline points="22 4 12 14.01 9 11.01" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            )}
+            {toast.type === 'info' && (
+              <svg className="toast-icon" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12" strokeLinecap="round"/>
+                <line x1="12" y1="8" x2="12.01" y2="8" strokeLinecap="round"/>
               </svg>
             )}
             {toast.type === 'error' && (
-              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+              <svg className="toast-icon" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="15" y1="9" x2="9" y2="15" strokeLinecap="round"/>
+                <line x1="9" y1="9" x2="15" y2="15" strokeLinecap="round"/>
               </svg>
             )}
-          </span>
-          <span className="toast-message">{toast.message}</span>
+            {toast.type === 'warning' && (
+              <svg className="toast-icon" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13" strokeLinecap="round"/>
+                <line x1="12" y1="17" x2="12.01" y2="17" strokeLinecap="round"/>
+              </svg>
+            )}
+
+            {/* Content */}
+            <div className="toast-content">
+              <h4 className="toast-title">{toast.message}</h4>
+            </div>
+
+            {/* Close Button */}
+            <button
+              className="toast-close"
+              onClick={() => setToast({ show: false, message: '', type: 'success' })}
+              aria-label="Close notification"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="18" y1="6" x2="6" y2="18" strokeLinecap="round"/>
+                <line x1="6" y1="6" x2="18" y2="18" strokeLinecap="round"/>
+              </svg>
+            </button>
+          </div>
         </div>
       )}
 
@@ -1870,13 +1939,30 @@ export default function ViewSplitLeasePage() {
         {/* RIGHT COLUMN - BOOKING WIDGET (hidden on mobile) */}
         <div className={`${styles.bookingWidget} ${isMobile ? styles.hiddenMobile : ''}`}>
           {/* Price Display */}
-          <div className={styles.bookingPriceDisplay}>
+          <div className={styles.bookingPriceDisplay} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div className={styles.bookingPriceAmount}>
               {pricingBreakdown?.valid && pricingBreakdown?.pricePerNight
                 ? `$${Number.isInteger(pricingBreakdown.pricePerNight) ? pricingBreakdown.pricePerNight : pricingBreakdown.pricePerNight.toFixed(2)}`
                 : 'Select Days'}
               <span className={styles.bookingPriceUnit}>/night</span>
             </div>
+            <FavoriteButton
+              listingId={listing?._id}
+              userId={loggedInUserData?.userId}
+              initialFavorited={isFavorited}
+              onToggle={(newState) => {
+                setIsFavorited(newState);
+                const displayName = listing?.name || 'Listing';
+                if (newState) {
+                  showToast(`${displayName} added to favorites`, 'success');
+                } else {
+                  showToast(`${displayName} removed from favorites`, 'info');
+                }
+              }}
+              onRequireAuth={() => setShowAuthModal(true)}
+              size="large"
+              variant="inline"
+            />
           </div>
 
           {/* Move-in Date */}
@@ -2222,11 +2308,10 @@ export default function ViewSplitLeasePage() {
           reservationSpan={reservationSpan}
           pricingBreakdown={priceBreakdown}
           zatConfig={zatConfig}
-          // For ViewSplitLeasePage: User starts on REVIEW if they have proposals OR filled user info
-          // This ensures returning users with existing data go straight to review (hub-and-spoke model)
+          // For ViewSplitLeasePage: User starts on REVIEW only if they have previous proposals
+          // First-time proposers (proposalCount === 0) always see UserDetailsSection first for verification
           isFirstProposal={
-            !loggedInUserData ||
-            (loggedInUserData.proposalCount === 0 && !loggedInUserData.needForSpace && !loggedInUserData.aboutMe)
+            !loggedInUserData || loggedInUserData.proposalCount === 0
           }
           existingUserData={loggedInUserData ? {
             needForSpace: loggedInUserData.needForSpace || '',
@@ -2384,13 +2469,30 @@ export default function ViewSplitLeasePage() {
                 {/* Price and Continue Row */}
                 <div className={styles.mobileBookingPriceRow}>
                   {/* Price Info */}
-                  <div className={styles.mobileBookingPriceInfo}>
+                  <div className={styles.mobileBookingPriceInfo} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div className={styles.mobileBookingPriceAmount}>
                       {pricingBreakdown?.valid && pricingBreakdown?.pricePerNight
                         ? `$${Number.isInteger(pricingBreakdown.pricePerNight) ? pricingBreakdown.pricePerNight : pricingBreakdown.pricePerNight.toFixed(2)}`
                         : 'Select Days'}
                       <span className={styles.mobileBookingPriceUnit}>/night</span>
                     </div>
+                    <FavoriteButton
+                      listingId={listing?._id}
+                      userId={loggedInUserData?.userId}
+                      initialFavorited={isFavorited}
+                      onToggle={(newState) => {
+                        setIsFavorited(newState);
+                        const displayName = listing?.name || 'Listing';
+                        if (newState) {
+                          showToast(`${displayName} added to favorites`, 'success');
+                        } else {
+                          showToast(`${displayName} removed from favorites`, 'info');
+                        }
+                      }}
+                      onRequireAuth={() => setShowAuthModal(true)}
+                      size="medium"
+                      variant="inline"
+                    />
                   </div>
 
                   {/* Continue Button */}
