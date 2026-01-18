@@ -246,9 +246,6 @@ export function useAccountProfilePageLogic() {
   const [isVerifyingEmail, setIsVerifyingEmail] = useState(false);
   const [verificationEmailSent, setVerificationEmailSent] = useState(false);
 
-  // Toast notification state
-  const [toast, setToast] = useState({ show: false, type: 'success', message: '' });
-
   // ============================================================================
   // COMPUTED VALUES
   // ============================================================================
@@ -693,11 +690,9 @@ export function useAccountProfilePageLogic() {
 
         if (updateError) {
           console.error('[email-verification] Error updating verification status:', updateError);
-          setToast({
-            show: true,
-            type: 'error',
-            message: 'Failed to update email verification status.'
-          });
+          if (window.showToast) {
+            window.showToast({ title: 'Error', content: 'Failed to update email verification status.', type: 'error' });
+          }
           return;
         }
 
@@ -707,19 +702,15 @@ export function useAccountProfilePageLogic() {
         await fetchProfileData(profileUserId);
 
         // Show success toast
-        setToast({
-          show: true,
-          type: 'success',
-          message: 'Your email has been verified successfully!'
-        });
+        if (window.showToast) {
+          window.showToast({ title: 'Email Verified', content: 'Your email has been verified successfully!', type: 'success' });
+        }
 
       } catch (err) {
         console.error('[email-verification] Unexpected error:', err);
-        setToast({
-          show: true,
-          type: 'error',
-          message: 'An error occurred during verification.'
-        });
+        if (window.showToast) {
+          window.showToast({ title: 'Error', content: 'An error occurred during verification.', type: 'error' });
+        }
       }
     };
 
@@ -919,11 +910,9 @@ export function useAccountProfilePageLogic() {
     const userEmail = profileData?.email;
     if (!userEmail) {
       console.error('[handleVerifyEmail] No email found in profile data');
-      setToast({
-        show: true,
-        type: 'error',
-        message: 'Unable to verify email. Please refresh and try again.'
-      });
+      if (window.showToast) {
+        window.showToast({ title: 'Error', content: 'Unable to verify email. Please refresh and try again.', type: 'error' });
+      }
       return;
     }
 
@@ -963,11 +952,9 @@ export function useAccountProfilePageLogic() {
 
       if (magicLinkError || !magicLinkData?.success) {
         console.error('[handleVerifyEmail] Error generating magic link:', magicLinkError || magicLinkData);
-        setToast({
-          show: true,
-          type: 'error',
-          message: 'Failed to generate verification link. Please try again.'
-        });
+        if (window.showToast) {
+          window.showToast({ title: 'Error', content: 'Failed to generate verification link. Please try again.', type: 'error' });
+        }
         setIsVerifyingEmail(false);
         return;
       }
@@ -1010,28 +997,22 @@ export function useAccountProfilePageLogic() {
 
       if (emailError) {
         console.error('[handleVerifyEmail] Error sending email:', emailError);
-        setToast({
-          show: true,
-          type: 'error',
-          message: 'Failed to send verification email. Please try again.'
-        });
+        if (window.showToast) {
+          window.showToast({ title: 'Error', content: 'Failed to send verification email. Please try again.', type: 'error' });
+        }
       } else {
         console.log('[handleVerifyEmail] Verification email sent successfully');
         setVerificationEmailSent(true);
-        setToast({
-          show: true,
-          type: 'success',
-          message: 'Verification email sent! Check your inbox and click the link to verify.'
-        });
+        if (window.showToast) {
+          window.showToast({ title: 'Email Sent', content: 'Verification email sent! Check your inbox and click the link to verify.', type: 'success' });
+        }
       }
 
     } catch (err) {
       console.error('[handleVerifyEmail] Unexpected error:', err);
-      setToast({
-        show: true,
-        type: 'error',
-        message: 'An unexpected error occurred. Please try again.'
-      });
+      if (window.showToast) {
+        window.showToast({ title: 'Error', content: 'An unexpected error occurred. Please try again.', type: 'error' });
+      }
     }
 
     setIsVerifyingEmail(false);
@@ -1317,10 +1298,6 @@ export function useAccountProfilePageLogic() {
 
     // Email verification state
     isVerifyingEmail,
-    verificationEmailSent,
-
-    // Toast notification
-    toast,
-    setToast
+    verificationEmailSent
   };
 }
