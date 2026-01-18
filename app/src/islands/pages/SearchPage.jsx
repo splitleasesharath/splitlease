@@ -37,6 +37,7 @@ import CompactScheduleIndicator from './SearchPage/components/CompactScheduleInd
 import MobileFilterBar from './SearchPage/components/MobileFilterBar.jsx';
 import { NeighborhoodCheckboxList, NeighborhoodDropdownFilter } from './SearchPage/components/NeighborhoodFilters.jsx';
 import PropertyCard from '../shared/ListingCard/PropertyCard.jsx';
+import UsabilityPopup from '../shared/UsabilityPopup/UsabilityPopup.jsx';
 
 // ============================================================================
 // Internal Components
@@ -3021,6 +3022,9 @@ export default function SearchPage() {
           </div>
         </div>
       )}
+
+      {/* Usability Testing Popup - Shows for desktop testers to switch to mobile */}
+      <UsabilityPopup userData={authenticatedUser} />
     </div>
   );
 }
