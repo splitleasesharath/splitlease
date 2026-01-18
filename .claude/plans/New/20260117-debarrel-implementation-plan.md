@@ -8,13 +8,16 @@
 
 ## Current State Analysis
 
-### Barrel File Census
+### Barrel File Census (Actual Baseline - 2026-01-18)
 
 | Category | Count | Risk Level | Action |
 |----------|-------|------------|--------|
-| **Pure Barrels** | 28 | LOW | Remove (update imports) |
-| **Mixed Files** | 12 | MEDIUM | Extract logic, then remove |
-| **Entry Points** | 5 | HIGH | Keep (framework requirements) |
+| **Pure Barrels** | 33 | LOW | Remove (update imports) |
+| **Mixed Files** | 10 | MEDIUM | Extract logic, then remove |
+| **Entry Points** | 2 | HIGH | Keep (framework requirements) |
+
+> **Note**: Baseline established via `python refactor/barrel_detector.py` on 2026-01-18.
+> Report saved to `refactor/reports/baseline-20260118.json`
 
 ### Pure Barrels by Location
 
@@ -908,11 +911,514 @@ The loop outputs progress to stdout. Watch for:
 
 ---
 
+## Test Strategy
+
+### Overview
+
+De-barreling doesn't change runtime behavior—it changes *how* code is loaded. Tests must verify:
+1. **Import resolution** works at build time (no broken paths)
+2. **Runtime behavior** remains unchanged (same components render)
+3. **Build optimization** isn't degraded (tree-shaking, bundle size)
+
+### Test Directory Structure
+
+```
+refactor/
+├── barrel_detector.py           # Detection script (CREATED)
+├── reports/
+│   └── baseline-20260118.json   # Baseline snapshot (CREATED)
+└── tests/
+    ├── baseline/                # Run BEFORE de-barreling
+    │   ├── import-resolution.test.js
+    │   ├── component-render.test.jsx
+    │   └── build-health.test.js
+    ├── verification/            # Run AFTER each phase
+    │   ├── barrel-removal.test.js
+    │   ├── direct-imports.test.js
+    │   ├── orphaned-imports.test.js
+    │   └── consumer-updates.test.js
+    ├── phase-specific/          # Phase-targeted tests
+    │   ├── phase2-favorite-button.test.jsx
+    │   └── phase3-host-overview.test.jsx
+    ├── regression/              # Performance & optimization
+    │   ├── tree-shaking.test.js
+    │   └── build-performance.test.js
+    └── e2e/                     # End-to-end smoke tests
+        └── smoke.test.js
+```
+
+---
+
+### 1. Baseline Tests (BEFORE De-Barreling)
+
+#### 1.1 Build Health Baseline
+
+```bash
+# Capture baseline metrics BEFORE any changes
+bun run build 2>&1 | tee refactor/reports/baseline-build.log
+
+# Measure bundle sizes
+ls -la app/dist/assets/*.js | tee refactor/reports/baseline-bundle-sizes.txt
+```
+
+#### 1.2 Import Resolution Baseline Test
+
+**File**: `refactor/tests/baseline/import-resolution.test.js`
+
+```javascript
+import { describe, it, expect } from 'vitest';
+
+// Logic layer barrels
+describe('Logic Layer Barrel Imports (Baseline)', () => {
+  it('can import from logic/index.js', async () => {
+    const mod = await import('@/logic');
+    expect(mod).toBeDefined();
+  });
+
+  it('can import from logic/calculators/index.js', async () => {
+    const mod = await import('@/logic/calculators');
+    expect(mod).toBeDefined();
+  });
+
+  it('can import from logic/rules/index.js', async () => {
+    const mod = await import('@/logic/rules');
+    expect(mod).toBeDefined();
+  });
+
+  it('can import from logic/processors/index.js', async () => {
+    const mod = await import('@/logic/processors');
+    expect(mod).toBeDefined();
+  });
+});
+
+// Shared component barrels
+describe('Shared Component Barrel Imports (Baseline)', () => {
+  it('can import FavoriteButton from barrel', async () => {
+    const mod = await import('@/islands/shared/FavoriteButton');
+    expect(mod.default).toBeDefined();
+  });
+
+  it('can import LoggedInAvatar from barrel', async () => {
+    const mod = await import('@/islands/shared/LoggedInAvatar');
+    expect(mod.default).toBeDefined();
+  });
+});
+
+// Page component barrels
+describe('Page Component Barrel Imports (Baseline)', () => {
+  it('can import HostOverviewPage components from barrel', async () => {
+    const mod = await import('@/islands/pages/HostOverviewPage/components');
+    expect(Object.keys(mod).length).toBeGreaterThan(0);
+  });
+
+  it('can import SearchPage components from barrel', async () => {
+    const mod = await import('@/islands/pages/SearchPage/components');
+    expect(Object.keys(mod).length).toBeGreaterThan(0);
+  });
+});
+```
+
+#### 1.3 Component Render Baseline Test
+
+**File**: `refactor/tests/baseline/component-render.test.jsx`
+
+```javascript
+import { render, screen } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
+
+// Components that rely on barrel imports
+import FavoriteButton from '@/islands/shared/FavoriteButton';
+
+describe('Component Rendering (Baseline)', () => {
+  it('FavoriteButton renders from barrel import', () => {
+    render(<FavoriteButton listingId="test-123" />);
+    expect(document.body).toBeDefined();
+  });
+});
+```
+
+---
+
+### 2. Post-Refactor Verification Tests (AFTER Each Phase)
+
+#### 2.1 Barrel Removal Verification
+
+**File**: `refactor/tests/verification/barrel-removal.test.js`
+
+```javascript
+import { describe, it, expect } from 'vitest';
+import fs from 'fs';
+import path from 'path';
+
+describe('Barrel File Removal Verification', () => {
+  // Update this list as barrels are removed
+  const removedBarrels = [
+    // Phase 2
+    'app/src/islands/shared/FavoriteButton/index.js',
+    // Phase 3
+    'app/src/islands/pages/HostOverviewPage/components/index.js',
+    // Add more as they're removed
+  ];
+
+  removedBarrels.forEach((barrelPath) => {
+    it(`${barrelPath} should be deleted`, () => {
+      const fullPath = path.resolve(process.cwd(), barrelPath);
+      expect(fs.existsSync(fullPath)).toBe(false);
+    });
+  });
+});
+```
+
+#### 2.2 Direct Import Resolution Test
+
+**File**: `refactor/tests/verification/direct-imports.test.js`
+
+```javascript
+import { describe, it, expect } from 'vitest';
+
+describe('Direct Import Resolution (Post-Debarrel)', () => {
+  // After FavoriteButton barrel is removed
+  it('can import FavoriteButton directly', async () => {
+    const mod = await import('@/islands/shared/FavoriteButton/FavoriteButton.jsx');
+    expect(mod.default).toBeDefined();
+  });
+
+  // After HostOverviewPage barrel is removed
+  it('can import HostOverview components directly', async () => {
+    const Cards = await import('@/islands/pages/HostOverviewPage/components/HostOverviewCards.jsx');
+    expect(Cards).toBeDefined();
+  });
+});
+```
+
+#### 2.3 Orphaned Import Detection Script
+
+**File**: `refactor/scripts/check-orphaned-imports.sh`
+
+```bash
+#!/bin/bash
+# Run after de-barreling to find any broken imports
+
+echo "Checking for imports pointing to removed barrels..."
+
+# List of removed barrel directories (update as you progress)
+REMOVED=(
+  "islands/shared/FavoriteButton'"
+  "islands/shared/FavoriteButton\""
+  "HostOverviewPage/components'"
+  "HostOverviewPage/components\""
+)
+
+FOUND_ERRORS=0
+
+for pattern in "${REMOVED[@]}"; do
+  matches=$(grep -r "from.*$pattern" app/src --include="*.js" --include="*.jsx" 2>/dev/null | grep -v ".test." | grep -v "node_modules")
+  if [ ! -z "$matches" ]; then
+    echo "ERROR: Found orphaned imports for pattern: $pattern"
+    echo "$matches"
+    FOUND_ERRORS=1
+  fi
+done
+
+if [ $FOUND_ERRORS -eq 0 ]; then
+  echo "OK: No orphaned imports found"
+  exit 0
+else
+  exit 1
+fi
+```
+
+#### 2.4 Consumer Import Update Verification
+
+**File**: `refactor/tests/verification/consumer-updates.test.js`
+
+```javascript
+import { describe, it, expect } from 'vitest';
+import fs from 'fs';
+
+describe('Consumer Import Updates', () => {
+  // After FavoriteButton de-barrel, verify its consumers were updated
+  const favoriteButtonConsumers = [
+    'app/src/islands/pages/SearchPage/SearchPage.jsx',
+    'app/src/islands/pages/ViewSplitLeasePage/ViewSplitLeasePage.jsx',
+    // Add actual consumers found during analysis
+  ];
+
+  favoriteButtonConsumers.forEach((consumerPath) => {
+    it(`${consumerPath} imports FavoriteButton directly`, () => {
+      if (!fs.existsSync(consumerPath)) return; // Skip if file doesn't exist
+
+      const content = fs.readFileSync(consumerPath, 'utf-8');
+
+      // Should NOT have old barrel import
+      expect(content).not.toMatch(/from.*FavoriteButton['"](?!\/FavoriteButton)/);
+
+      // Should have direct import (or no import if not using)
+      const usesFavoriteButton = content.includes('FavoriteButton');
+      if (usesFavoriteButton) {
+        expect(content).toMatch(/from.*FavoriteButton\/FavoriteButton/);
+      }
+    });
+  });
+});
+```
+
+---
+
+### 3. Phase-Specific Tests
+
+#### Phase 2: FavoriteButton Pilot
+
+**File**: `refactor/tests/phase-specific/phase2-favorite-button.test.jsx`
+
+```javascript
+import { describe, it, expect } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
+
+// Import using the NEW direct path (post-debarrel)
+import FavoriteButton from '@/islands/shared/FavoriteButton/FavoriteButton.jsx';
+
+describe('Phase 2: FavoriteButton Post-Debarrel', () => {
+  it('renders correctly after barrel removal', () => {
+    render(<FavoriteButton listingId="test-listing-123" />);
+    expect(screen.getByRole('button')).toBeInTheDocument();
+  });
+
+  it('handles click interactions', async () => {
+    const onFavorite = vi.fn();
+    render(
+      <FavoriteButton
+        listingId="test-listing-123"
+        onFavorite={onFavorite}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button'));
+    // Verify interaction still works
+  });
+
+  it('maintains same props interface', () => {
+    const props = {
+      listingId: 'test',
+      isFavorited: false,
+      onFavorite: () => {},
+    };
+
+    expect(() => render(<FavoriteButton {...props} />)).not.toThrow();
+  });
+});
+```
+
+#### Phase 3: HostOverviewPage Components Pilot
+
+**File**: `refactor/tests/phase-specific/phase3-host-overview.test.jsx`
+
+```javascript
+import { describe, it, expect } from 'vitest';
+import { render, screen } from '@testing-library/react';
+
+// Import using NEW direct paths (post-debarrel)
+// Note: Update these paths based on actual file structure
+import { Card, ListingCard, ClaimListingCard } from '@/islands/pages/HostOverviewPage/components/HostOverviewCards.jsx';
+import { Modal } from '@/islands/pages/HostOverviewPage/components/HostOverviewModals.jsx';
+
+describe('Phase 3: HostOverviewPage Components Post-Debarrel', () => {
+  it('Card renders correctly', () => {
+    render(<Card title="Test Card">Content</Card>);
+    expect(screen.getByText('Test Card')).toBeInTheDocument();
+  });
+
+  it('ListingCard renders with listing data', () => {
+    render(<ListingCard listing={{ id: '1', title: 'Test Listing' }} />);
+    expect(screen.getByText('Test Listing')).toBeInTheDocument();
+  });
+
+  it('Modal renders and can be controlled', () => {
+    render(<Modal isOpen={true} onClose={() => {}}>Modal Content</Modal>);
+    expect(screen.getByText('Modal Content')).toBeInTheDocument();
+  });
+});
+```
+
+---
+
+### 4. Regression & Performance Tests
+
+#### 4.1 Tree Shaking Effectiveness
+
+**File**: `refactor/tests/regression/tree-shaking.test.js`
+
+```javascript
+import { describe, it, expect } from 'vitest';
+import fs from 'fs';
+import path from 'path';
+
+describe('Tree Shaking Effectiveness', () => {
+  it('bundle size does not increase after de-barreling', () => {
+    const bundlePath = path.resolve('app/dist/assets');
+
+    if (!fs.existsSync(bundlePath)) {
+      console.warn('Build not found, skipping bundle size test');
+      return;
+    }
+
+    const jsFiles = fs.readdirSync(bundlePath).filter(f => f.endsWith('.js'));
+    const totalSize = jsFiles.reduce((sum, f) => {
+      return sum + fs.statSync(path.join(bundlePath, f)).size;
+    }, 0);
+
+    // Read baseline from report (update this value after establishing baseline)
+    const baselineSize = 5000000; // ~5MB placeholder
+
+    // Should be same or smaller (allow 5% tolerance for minor variations)
+    expect(totalSize).toBeLessThanOrEqual(baselineSize * 1.05);
+  });
+});
+```
+
+#### 4.2 Build Comparison Script
+
+**File**: `refactor/scripts/compare-builds.sh`
+
+```bash
+#!/bin/bash
+echo "Comparing build metrics before/after de-barreling..."
+
+# Run build and capture metrics
+bun run build 2>&1 | tee refactor/reports/post-debarrel-build.log
+
+echo ""
+echo "=== Bundle Size Comparison ==="
+echo "BEFORE:"
+cat refactor/reports/baseline-bundle-sizes.txt 2>/dev/null || echo "(no baseline found)"
+echo ""
+echo "AFTER:"
+ls -la app/dist/assets/*.js 2>/dev/null || echo "(build not found)"
+
+# Note: Bundle sizes should stay the same or decrease (better tree-shaking)
+# An INCREASE would indicate a problem
+```
+
+---
+
+### 5. E2E Smoke Tests
+
+**File**: `refactor/tests/e2e/smoke.test.js` (Playwright)
+
+```javascript
+import { test, expect } from '@playwright/test';
+
+test.describe('E2E Smoke Tests Post-Debarrel', () => {
+  test('Home page loads without errors', async ({ page }) => {
+    const consoleLogs = [];
+    page.on('console', msg => consoleLogs.push(msg.text()));
+
+    await page.goto('/');
+    await expect(page.locator('body')).toBeVisible();
+
+    await page.waitForTimeout(2000);
+
+    const importErrors = consoleLogs.filter(log =>
+      log.includes('Failed to resolve import') ||
+      log.includes('Cannot find module')
+    );
+    expect(importErrors).toHaveLength(0);
+  });
+
+  test('Search page renders with FavoriteButton', async ({ page }) => {
+    await page.goto('/search');
+    // Adjust selector based on actual implementation
+    await expect(page.locator('[data-testid="favorite-button"]').first()).toBeVisible();
+  });
+
+  test('Host Overview page renders all components', async ({ page }) => {
+    // Note: May need authentication
+    await page.goto('/host/overview');
+    await expect(page.locator('[data-testid="listing-card"]').first()).toBeVisible();
+  });
+});
+```
+
+---
+
+### 6. Test Execution Script
+
+**File**: `refactor/scripts/run-tests.sh`
+
+```bash
+#!/bin/bash
+echo "======================================================================"
+echo "               DE-BARREL TEST SUITE"
+echo "======================================================================"
+
+PHASE=${1:-"baseline"}
+
+case $PHASE in
+  "baseline")
+    echo "Running BASELINE tests (before de-barreling)..."
+    bun run test refactor/tests/baseline/
+    python refactor/barrel_detector.py --json -o refactor/reports/baseline-barrels.json
+    bun run build
+    ;;
+
+  "post-phase2")
+    echo "Running Phase 2 verification tests..."
+    bun run test refactor/tests/phase-specific/phase2-*
+    bun run test refactor/tests/verification/
+    ./refactor/scripts/check-orphaned-imports.sh
+    ;;
+
+  "post-phase3")
+    echo "Running Phase 3 verification tests..."
+    bun run test refactor/tests/phase-specific/phase3-*
+    bun run test refactor/tests/verification/
+    ;;
+
+  "full")
+    echo "Running FULL test suite..."
+    bun run test refactor/tests/
+    bun run build
+    ./refactor/scripts/compare-builds.sh
+    python refactor/barrel_detector.py
+    ;;
+
+  *)
+    echo "Usage: $0 [baseline|post-phase2|post-phase3|full]"
+    exit 1
+    ;;
+esac
+
+echo "======================================================================"
+echo "                    TESTS COMPLETE"
+echo "======================================================================"
+```
+
+---
+
+### Test Execution Summary Table
+
+| Test Category | Purpose | When to Run |
+|---------------|---------|-------------|
+| Import Resolution Baseline | Verify barrel imports work | BEFORE Phase 1 |
+| Component Render Baseline | Verify components render via barrels | BEFORE Phase 1 |
+| Build Health Baseline | Capture build time + bundle sizes | BEFORE Phase 1 |
+| Barrel Census Baseline | Count barrels (expect 33) | BEFORE Phase 1 |
+| Barrel Removal Verification | Confirm barrels are deleted | AFTER each phase |
+| Direct Import Resolution | Verify direct imports work | AFTER each phase |
+| Orphaned Import Check | Find broken barrel references | AFTER each phase |
+| Consumer Update Verification | Verify consumers updated | AFTER each phase |
+| Build Comparison | Compare bundle sizes | AFTER all phases |
+| E2E Smoke Tests | Verify app works end-to-end | AFTER each phase |
+
+---
+
 ## Next Steps
 
 1. **Approve this plan** - Review and confirm approach
-2. **Execute Phase 1** - Build and test the detector
-3. **Execute Phase 2** - First pilot with FavoriteButton
-4. **Continue sequentially** through remaining phases
+2. **Execute Phase 1** - Build and test the detector ✓ COMPLETE
+3. **Create test infrastructure** - Set up `refactor/tests/` directory
+4. **Run baseline tests** - Establish baseline before any changes
+5. **Execute Phase 2** - First pilot with FavoriteButton
+6. **Continue sequentially** through remaining phases
 
 Ready to proceed?
