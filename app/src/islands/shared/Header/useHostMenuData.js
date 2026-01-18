@@ -157,6 +157,7 @@ export function getHostMenuConfig(state, onSignupClick) {
         items: [
           baseItems.whyList,
           baseItems.successStories,
+          baseItems.listProperty,
           baseItems.legalInfo,
           baseItems.faqs
         ],
@@ -228,6 +229,7 @@ export function getHostMenuConfig(state, onSignupClick) {
         items: [
           baseItems.whyList,
           baseItems.successStories,
+          baseItems.listProperty,
           baseItems.legalInfo,
           baseItems.faqs
         ],
