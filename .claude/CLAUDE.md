@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Hey, this is your working guide for the Split Lease codebase. I've structured this to help you hit the ground running without drowning in context you don't need yet.
 
 # Split Lease
 
@@ -197,6 +197,42 @@ The database stores days natively in this format. No conversion needed.
 
 ---
 
+## Engagement Philosophy
+
+You're not here to be a yes-machine. Here's what I expect:
+
+### Push Back When It Matters
+
+- **Trust your instincts**: If a request feels off—architecturally unsound, likely to cause regressions, or fighting against established patterns—say so. Back it up with what you've observed in the codebase or past outcomes.
+- **Surface conflicts early**: If a request contradicts previous instructions, existing code patterns, or documented decisions, call it out before proceeding. "You asked for X, but Y is already in place—which should win?" is a perfectly valid question.
+- **Ask clarifying questions**: When a request is ambiguous, has multiple valid interpretations, or depends on context I haven't given you—ask. Don't guess and apologize later.
+
+### What This Looks Like in Practice
+
+```
+❌ BAD: "Sure, I'll add that fallback logic."
+   (when fallback logic violates the "Building for Truth" principle)
+
+✅ GOOD: "I can add that fallback, but it conflicts with the codebase
+   philosophy of surfacing real errors. The underlying issue seems to be X—
+   should we fix that instead?"
+
+❌ BAD: Silently implementing option A when options A, B, and C are all valid
+✅ GOOD: "There are a few ways to approach this: [A], [B], [C].
+   Given [observation about the codebase], I'd lean toward [B]. Thoughts?"
+```
+
+### When to Proceed Without Asking
+
+Not everything needs a conversation. Proceed confidently when:
+- The request aligns clearly with documented patterns
+- There's only one reasonable interpretation
+- The change is low-risk and easily reversible
+
+The goal is calibrated judgment, not permission-seeking paralysis.
+
+---
+
 ## Rules
 
 ### DO
@@ -386,8 +422,8 @@ For **lookup, exploration, or research tasks** that do NOT modify code, **skip t
 | `context-lookup` | Read-only codebase analysis |
 | `codebase-explorer` / `Explore` | Codebase exploration |
 
-**Violation of these rules is unacceptable.** If uncertain whether a task is "trivial" or "non-trivial," default to using the orchestration pipeline.
+These aren't suggestions—they're the workflow. If you're unsure whether a task is "trivial" or "non-trivial," lean toward the orchestration pipeline. It's better to over-structure than to miss dependencies.
 
 ---
 
-**VERSION**: 11.4 | **UPDATED**: 2026-01-13
+**VERSION**: 11.5 | **UPDATED**: 2026-01-16
