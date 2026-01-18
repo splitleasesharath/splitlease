@@ -1063,8 +1063,8 @@ export function useAccountProfilePageLogic() {
               bannertext2: 'This link expires in 1 hour',
               bannertext3: "If you didn't request this, please ignore this email",
               footermessage: 'For your security, never share this link with anyone.',
-              cc: '',
-              bcc: ''
+              cc_email: '',  // Structural placeholder - becomes empty in template
+              bcc_email: ''  // Structural placeholder - becomes empty in template
             },
             ...(bccEmails.length > 0 && { bcc_emails: bccEmails })
           }
