@@ -258,14 +258,6 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
     }
 
     if (startStep > 1) {
-      console.log('[DEBUG] Resuming from step', startStep, 'based on loaded draft data');
-      console.log('[DEBUG] isStep1Complete:', isStep1Complete, {
-        fullName: formData.fullName,
-        dob: formData.dob,
-        email: formData.email,
-        phone: formData.phone,
-      });
-      console.log('[DEBUG] Setting visitedSteps to:', stepsToVisit);
       setCurrentStep(startStep);
       if (stepsToVisit.length > 0) {
         setVisitedSteps(stepsToVisit);
@@ -581,25 +573,10 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
 
     const newCompleted = [];
     for (let step = 1; step <= TOTAL_STEPS; step++) {
-      const isComplete = checkStepComplete(step, visitedSteps);
-      if (isComplete) {
+      if (checkStepComplete(step, visitedSteps)) {
         newCompleted.push(step);
       }
-      // DEBUG: Log step completion check for step 1
-      if (step === 1) {
-        console.log('[DEBUG] Step 1 completion check:', {
-          isComplete,
-          visitedSteps,
-          formDataStep1: {
-            fullName: formData.fullName,
-            dob: formData.dob,
-            email: formData.email,
-            phone: formData.phone,
-          }
-        });
-      }
     }
-    console.log('[DEBUG] New completed steps:', newCompleted);
     // Only update if the array actually changed to prevent unnecessary re-renders
     setCompletedSteps(prev => {
       const isSame = prev.length === newCompleted.length &&
