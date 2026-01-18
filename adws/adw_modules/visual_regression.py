@@ -6,6 +6,7 @@ Supports concurrent LIVE vs DEV comparison using dual MCP sessions:
 - playwright-guest-live / playwright-guest-dev for guest pages
 
 Automatic retry on rate limits with provider switching.
+Slack integration for reporting results with screenshots.
 """
 
 import os
@@ -19,6 +20,7 @@ from .agent import prompt_claude_code
 from .data_types import AgentPromptRequest
 from .mcp_config import get_session_config, get_url_for_session
 from .config import get_phase_model
+from .slack_client import notify_parity_check_result
 
 
 def verify_environment_accessibility(
@@ -85,7 +87,8 @@ def check_visual_parity(
     port: int = 8010,
     max_retries: int = 3,
     use_claude: bool = False,
-    concurrent: bool = False
+    concurrent: bool = False,
+    slack_channel: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Use Playwright MCP to compare refactored page vs live.
@@ -99,12 +102,67 @@ def check_visual_parity(
         max_retries: Maximum retry attempts on rate limit errors
         use_claude: If True, use Claude instead of Gemini
         concurrent: If True, use concurrent capture with dual sessions
+        slack_channel: Optional Slack channel for notifications (e.g., "#dev-alerts")
 
     Returns:
         Dict with "visualParity" ("PASS"/"FAIL"), "issues", and "consoleErrors"
     """
     session_info = f"LIVE:{mcp_session or 'public'}, DEV:{mcp_session_dev or 'public'}" if concurrent else f"Session:{mcp_session}"
     print(f"  [Visual Check] Comparing {page_path} ({session_info})")
+
+    # Helper to send Slack notification with result
+    def _notify_slack(result: Dict[str, Any]) -> None:
+        if not slack_channel:
+            return
+        try:
+            screenshots = result.get("screenshots", {})
+            live_screenshot = screenshots.get("live")
+            dev_screenshot = screenshots.get("dev")
+
+            # Try to find screenshots in common locations if not in result
+            if not live_screenshot or not dev_screenshot:
+                safe_path = page_path.replace('/', '_').strip('_') or 'homepage'
+                adws_dir = Path(__file__).parent.parent
+
+                # Search patterns for screenshot files
+                search_patterns = [
+                    # .playwright-mcp directory (common location)
+                    (adws_dir / ".playwright-mcp" / f"live-{safe_path}.png",
+                     adws_dir / ".playwright-mcp" / f"dev-{safe_path}.png"),
+                    (adws_dir / ".playwright-mcp" / "live-homepage.png",
+                     adws_dir / ".playwright-mcp" / "dev-homepage.png"),
+                    # Standard parity naming
+                    (adws_dir / f"parity_LIVE{page_path.replace('/', '_')}.png",
+                     adws_dir / f"parity_DEV{page_path.replace('/', '_')}.png"),
+                    # Current working directory
+                    (Path.cwd() / f"parity_LIVE{page_path.replace('/', '_')}.png",
+                     Path.cwd() / f"parity_DEV{page_path.replace('/', '_')}.png"),
+                ]
+
+                for live_candidate, dev_candidate in search_patterns:
+                    if not live_screenshot and live_candidate.exists():
+                        live_screenshot = str(live_candidate)
+                    if not dev_screenshot and dev_candidate.exists():
+                        dev_screenshot = str(dev_candidate)
+                    if live_screenshot and dev_screenshot:
+                        break
+
+            slack_result = notify_parity_check_result(
+                page_path=page_path,
+                result=result.get("visualParity", "FAIL"),
+                live_screenshot=live_screenshot,
+                dev_screenshot=dev_screenshot,
+                channel=slack_channel,
+                issues=result.get("issues")
+            )
+            if slack_result.get("ok"):
+                print(f"  [Slack] Notification sent to {slack_channel}")
+            elif slack_result.get("skipped"):
+                print(f"  [Slack] Skipped: {slack_result.get('error', 'No token configured')}")
+            else:
+                print(f"  [Slack] Failed: {slack_result.get('error', 'Unknown error')}")
+        except Exception as e:
+            print(f"  [Slack] Error sending notification: {e}")
 
     # Pre-flight check: Verify both environments are accessible before agent invocation
     if concurrent and mcp_session and mcp_session_dev:
@@ -126,12 +184,14 @@ def check_visual_parity(
                 issues.append(f"DEV environment unreachable: {error_detail}")
 
             print(f"  [Pre-flight] BLOCKED: {', '.join(issues)}")
-            return {
+            result = {
                 "visualParity": "BLOCKED",
                 "issues": issues,
                 "consoleErrors": [],
                 "accessibility": accessibility
             }
+            _notify_slack(result)
+            return result
 
         print(f"  [Pre-flight] Both environments accessible, proceeding with visual check")
 
@@ -185,19 +245,23 @@ def check_visual_parity(
                     output_file = timestamp_dir / f"visual_check_{os.urandom(4).hex()}.jsonl"
                     continue
                 else:
-                    return {
+                    result = {
                         "visualParity": "FAIL",
                         "issues": [f"{provider_name} quota exhausted after {max_retries} retries."],
                         "consoleErrors": [],
                         "retryable": True
                     }
+                    _notify_slack(result)
+                    return result
 
             if not response.success:
-                return {
+                result = {
                     "visualParity": "FAIL",
                     "issues": [f"Visual check agent failed: {response.output}"],
                     "consoleErrors": []
                 }
+                _notify_slack(result)
+                return result
 
             # Success - parse JSON from response
             try:
@@ -211,21 +275,27 @@ def check_visual_parity(
                 # Find JSON object in the output
                 json_match = re.search(r'\{.*\}', output_text, re.DOTALL)
                 if json_match:
-                    return json.loads(json_match.group(0))
+                    result = json.loads(json_match.group(0))
+                    _notify_slack(result)
+                    return result
                 else:
                     # Provide more diagnostic info
                     output_preview = response.output[:500] if response.output else "(empty)"
-                    return {
+                    result = {
                         "visualParity": "FAIL",
                         "issues": [f"Could not parse JSON from visual check response. Output preview: {output_preview}"],
                         "explanation": response.output
                     }
+                    _notify_slack(result)
+                    return result
             except json.JSONDecodeError as e:
-                return {
+                result = {
                     "visualParity": "FAIL",
                     "issues": [f"Error parsing visual check response: {str(e)}"],
                     "explanation": response.output
                 }
+                _notify_slack(result)
+                return result
 
     finally:
         if use_claude:
@@ -239,11 +309,13 @@ def check_visual_parity(
             else:
                 os.environ["ADW_PROVIDER"] = original_adw_provider
 
-    return {
+    result = {
         "visualParity": "FAIL",
         "issues": ["Unexpected error in visual check"],
         "consoleErrors": []
     }
+    _notify_slack(result)
+    return result
 
 
 def _build_sequential_prompt(page_path: str, mcp_session: Optional[str], port: int) -> str:
