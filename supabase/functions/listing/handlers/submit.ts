@@ -15,7 +15,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { validateRequiredFields } from '../../_shared/validation.ts';
 import { parseJsonArray } from '../../_shared/jsonUtils.ts';
-import { handleCreateMockupProposal } from './createMockupProposal.ts';
 import { getGeoByZipCode } from '../../_shared/geoLookup.ts';
 
 /**
@@ -393,15 +392,42 @@ export async function handleSubmit(
         const listings = parseJsonArray<string>(hostUserData?.Listings, 'user.Listings');
 
         if (listings.length === 1) {
-          console.log('[listing:submit] First listing detected, creating mockup proposal');
+          console.log('[listing:submit] First listing detected, triggering mockup proposal creation');
 
-          await handleCreateMockupProposal(supabase, {
-            listingId: listing_id,
-            hostUserId: userId,
-            hostEmail: user_email,
-          });
+          // Fire-and-forget call to proposal edge function
+          // Mockup creation is non-blocking - failures don't affect listing submission
+          const supabaseUrl = Deno.env.get('SUPABASE_URL');
+          const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-          console.log('[listing:submit] ✅ Step 4 complete - Mockup proposal created');
+          if (supabaseUrl && serviceRoleKey) {
+            fetch(`${supabaseUrl}/functions/v1/proposal`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${serviceRoleKey}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                action: 'create_mockup',
+                payload: {
+                  listingId: listing_id,
+                  hostUserId: userId,
+                  hostEmail: user_email,
+                }
+              })
+            }).then(response => {
+              if (response.ok) {
+                console.log('[listing:submit] ✅ Mockup proposal creation triggered successfully');
+              } else {
+                console.warn('[listing:submit] ⚠️ Mockup trigger returned:', response.status);
+              }
+            }).catch(err => {
+              console.warn('[listing:submit] ⚠️ Mockup trigger failed (non-blocking):', err.message);
+            });
+          } else {
+            console.warn('[listing:submit] ⚠️ Missing environment variables for mockup creation');
+          }
+
+          console.log('[listing:submit] ✅ Step 4 complete - Mockup proposal creation triggered');
         } else {
           console.log(`[listing:submit] ⏭️ Step 4 skipped - Not first listing (count: ${listings.length})`);
         }
