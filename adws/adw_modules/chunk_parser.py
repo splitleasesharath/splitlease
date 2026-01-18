@@ -35,42 +35,63 @@ def extract_page_groups(plan_file: Path) -> Dict[str, List[ChunkData]]:
     content = plan_file.read_text(encoding='utf-8')
     groups = {}
 
-    # Pattern to match ## PAGE GROUP: <pages> (Chunks: N, M)
-    # Capture everything between "PAGE GROUP: " and " (Chunks:"
-    # The ([^(]+) captures page paths like "/search, /view" or "AUTO (Shared/Utility)"
+    # Try multiple PAGE GROUP patterns to handle different plan formats
+    # Pattern 1: ## PAGE GROUP: <name> (Chunks: N, M) - old format
+    # Pattern 2: ## PAGE GROUP: <name>\n**Affected Pages**: <pages> - new format
+
+    # First try pattern 1 (old format with Chunks suffix)
     group_sections = re.split(r'(?:^|\n)## PAGE GROUP: ([^(]+(?:\([^)]+\))?)\s*\(Chunks:', content)
 
     if len(group_sections) > 1:
-        # We found group headers - sections alternate: [preamble, pages1, content1, pages2, content2, ...]
+        # Old format found
         for i in range(1, len(group_sections), 2):
-            # Parse the page list (e.g., "/search, /view-split-lease, /favorites" or "AUTO (Shared/Utility)")
             pages_str = group_sections[i].strip()
-
-            # Use first page as the key for the group, handling both formats
             if pages_str.startswith('AUTO') or pages_str.startswith('SHARED'):
-                first_page = pages_str  # Keep as-is for special groups
+                first_page = pages_str
             else:
                 first_page = pages_str.split(',')[0].strip()
 
             group_content = group_sections[i+1] if i+1 < len(group_sections) else ""
-
-            # Extract chunks from this group content
             chunks = parse_chunks(group_content)
             if chunks:
-                # Store with the first page as key, merging if key already exists
                 if first_page in groups:
                     groups[first_page].extend(chunks)
                 else:
                     groups[first_page] = chunks
     else:
-        # Fallback: parse all chunks and group by affected_pages metadata
-        all_chunks = parse_chunks(content)
-        for chunk in all_chunks:
-            # Take the first page if multiple are listed
-            primary_page = chunk.affected_pages.split(',')[0].strip()
-            if primary_page not in groups:
-                groups[primary_page] = []
-            groups[primary_page].append(chunk)
+        # Try pattern 2: ## PAGE GROUP: <name> followed by **Affected Pages**: <pages>
+        # Split by PAGE GROUP headers (new format without Chunks suffix)
+        group_sections = re.split(r'(?:^|\n)## PAGE GROUP:\s+(.+?)(?:\n|$)', content)
+
+        if len(group_sections) > 1:
+            for i in range(1, len(group_sections), 2):
+                group_name = group_sections[i].strip()
+                group_content = group_sections[i+1] if i+1 < len(group_sections) else ""
+
+                # Extract **Affected Pages**: from the group content
+                pages_match = re.search(r'\*\*Affected Pages\*\*:\s*(.+?)(?:\n|$)', group_content)
+                if pages_match:
+                    pages_str = pages_match.group(1).strip().strip('`').strip()
+                    # Remove backticks and clean up
+                    pages_str = re.sub(r'`', '', pages_str)
+                    first_page = pages_str.split(',')[0].strip()
+                else:
+                    first_page = group_name  # Use group name as fallback
+
+                chunks = parse_chunks(group_content)
+                if chunks:
+                    if first_page in groups:
+                        groups[first_page].extend(chunks)
+                    else:
+                        groups[first_page] = chunks
+        else:
+            # Final fallback: parse all chunks and group by affected_pages metadata
+            all_chunks = parse_chunks(content)
+            for chunk in all_chunks:
+                primary_page = chunk.affected_pages.split(',')[0].strip()
+                if primary_page not in groups:
+                    groups[primary_page] = []
+                groups[primary_page].append(chunk)
 
     return groups
 
@@ -101,14 +122,31 @@ def parse_chunks(content: str) -> List[ChunkData]:
         chunk_number = int(header_match.group(1))
         chunk_title = header_match.group(2).strip()
 
-        file_match = re.search(r'\*\*Files?:\*\*\s+(.+)', section)
+        # Try multiple file patterns: **File:**, **Files:**, **Affected Files:**
+        file_match = re.search(r'\*\*(?:Affected )?Files?:\*\*\s+(.+)', section)
+
+        # Also try to extract from **File**: format (with colon after asterisks)
+        if not file_match:
+            file_match = re.search(r'\*\*File\*\*:\s+`?([^`\n]+)`?', section)
+
+        # Try to find file path from the **Issue**: or **Current Code** sections
+        if not file_match:
+            # Look for file paths in backticks like `app/src/logic/...`
+            file_match = re.search(r'`(app/src/[^\s`]+\.(?:js|jsx|ts|tsx))`', section)
+
         line_match = re.search(r'\*\*Lines?:\*\*\s+(.+)', section)
-        pages_match = re.search(r'\*\*(?:Expected )?Affected Pages:\*\*\s+(.+)', section)
+        pages_match = re.search(r'\*\*(?:Expected )?Affected Pages\*?\*?:\*?\s+(.+)', section)
 
         if not file_match:
-            continue
+            # Try extracting from **Current Code** section header
+            current_code_match = re.search(r'\*\*Current Code\*\*\s+\(`([^`]+)`\)', section)
+            if current_code_match:
+                file_path = current_code_match.group(1).strip()
+            else:
+                continue
+        else:
+            file_path = file_match.group(1).strip().strip('`')
 
-        file_path = file_match.group(1).strip()
         line_number = line_match.group(1).strip() if line_match else "unknown"
         affected_pages = pages_match.group(1).strip() if pages_match else "AUTO"
 
