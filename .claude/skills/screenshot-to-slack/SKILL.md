@@ -58,11 +58,32 @@ mcp__playwright-host-dev__browser_take_screenshot({
 
 ### Step 3: Upload to Slack
 
-Run the upload script:
-
+**Option A: TypeScript (standalone)**
 ```bash
 cd "C:/Users/Split Lease/Documents/Split Lease/slack-api" && bun run scripts/upload-screenshot.ts "<filepath>" "<channel>" "<comment>"
 ```
+
+**Option B: Python (for ADW integration)**
+```python
+from adw_modules.slack_client import SlackClient
+
+client = SlackClient()
+result = client.upload_screenshot(
+    screenshot_path="path/to/screenshot.png",
+    channel="#test-bed",
+    thread_ts="optional_thread_ts",  # For thread replies
+    title="Screenshot Title"
+)
+```
+
+> **CRITICAL: Thread Upload Flow**
+>
+> Slack's `files_upload_v2` does NOT properly share files to threads. For thread replies, use the 3-step external upload:
+> 1. `files_getUploadURLExternal` - get upload URL
+> 2. POST file content to the URL
+> 3. `files_completeUploadExternal` - share to channel/thread with `thread_ts`
+>
+> The Python `slack_client.py` handles this automatically.
 
 ### Step 4: Report Result
 
@@ -109,3 +130,21 @@ Return the Slack message permalink and confirm success.
 - Screenshots are saved temporarily and can be cleaned up after upload
 - Full-page screenshots available with `--fullpage` flag
 - Bot must be invited to target channel (`/invite @BotName`)
+
+## Visual Parity Integration
+
+The `visual_regression.py` module automatically sends screenshots to Slack when `slack_channel` is provided:
+
+```python
+from adw_modules.visual_regression import check_visual_parity
+
+result = check_visual_parity(
+    page_path="/",
+    slack_channel="#test-bed"  # Enables Slack notifications with screenshots
+)
+```
+
+Screenshots are searched in:
+1. `.playwright-mcp/` directory (`live-homepage.png`, `dev-homepage.png`)
+2. Standard parity naming (`parity_LIVE_.png`, `parity_DEV_.png`)
+3. Current working directory
