@@ -1,0 +1,19 @@
+{
+  "name": "slack-api",
+  "version": "1.0.0",
+  "description": "Slack Web API client for Split Lease - supports file uploads, screenshots, and rich messaging",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "bun test",
+    "dev": "bun run src/index.ts"
+  },
+  "dependencies": {
+    "@slack/web-api": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}
