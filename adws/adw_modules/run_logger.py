@@ -64,7 +64,13 @@ class RunLogger:
             f.write(timestamped + '\n')
 
         if to_stdout:
-            print(message)
+            # Handle encoding errors gracefully (Windows cp1252 can't encode some Unicode chars)
+            try:
+                print(message)
+            except UnicodeEncodeError:
+                # Replace problematic characters with ASCII alternatives
+                safe_message = message.encode('ascii', errors='replace').decode('ascii')
+                print(safe_message)
 
     def event(self, event_type: str, description: str, notify: bool = True):
         """Log an event with timestamp and optionally send Slack notification.
