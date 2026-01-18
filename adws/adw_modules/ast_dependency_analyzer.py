@@ -594,8 +594,12 @@ class ASTDependencyAnalyzer:
             pattern = str(self.root_dir / '**' / f'*{ext}')
             files.extend(Path(p) for p in glob.glob(pattern, recursive=True))
 
-        # Skip node_modules
-        files = [f for f in files if 'node_modules' not in str(f)]
+        # Skip non-source directories (node_modules, build output, etc.)
+        exclude_patterns = ['node_modules', 'dist', 'build', '.next', 'coverage', '__pycache__']
+        files = [
+            f for f in files
+            if not any(excl in str(f) for excl in exclude_patterns)
+        ]
 
         # Analyze each file
         for file_path in files:
@@ -686,10 +690,10 @@ def analyze_dependencies(
     else:
         cache_dir_path = Path(cache_dir)
 
-    # Create cache filename: <directory_name>-<YYMMDD>.json
+    # Create cache filename: <YYMMDD>-<directory_name>.json (timestamp-first for sorting)
     dir_name = target_resolved.name  # Last part of path (e.g., "logic" from "app/src/logic")
     today_str = datetime.now().strftime("%y%m%d")
-    cache_file = cache_dir_path / f"{dir_name}-{today_str}.json"
+    cache_file = cache_dir_path / f"{today_str}-{dir_name}.json"
 
     # Compute current content hash for comparison
     current_hash = DependencyContext.compute_content_hash(str(target_resolved))
@@ -740,7 +744,7 @@ def _find_recent_cache(cache_dir: Path, dir_name: str, max_age_hours: int) -> Op
 
     Args:
         cache_dir: Directory containing cache files
-        dir_name: Directory name prefix to match
+        dir_name: Directory name suffix to match
         max_age_hours: Maximum age in hours
 
     Returns:
@@ -754,10 +758,11 @@ def _find_recent_cache(cache_dir: Path, dir_name: str, max_age_hours: int) -> Op
     cutoff = datetime.now() - timedelta(hours=max_age_hours)
     candidates = []
 
-    for cache_file in cache_dir.glob(f"{dir_name}-*.json"):
-        # Extract date from filename: <dir_name>-<YYMMDD>.json
+    # New format: <YYMMDD>-<dir_name>.json (timestamp-first)
+    for cache_file in cache_dir.glob(f"*-{dir_name}.json"):
+        # Extract date from filename: <YYMMDD>-<dir_name>.json
         try:
-            date_part = cache_file.stem.split('-')[-1]  # Get YYMMDD part
+            date_part = cache_file.stem.split('-')[0]  # Get YYMMDD part (first segment)
             file_date = datetime.strptime(date_part, "%y%m%d")
             # Assume end of day for comparison
             file_datetime = file_date.replace(hour=23, minute=59, second=59)
@@ -779,19 +784,19 @@ def _cleanup_old_caches(cache_dir: Path, dir_name: str, keep_count: int = 3) -> 
 
     Args:
         cache_dir: Directory containing cache files
-        dir_name: Directory name prefix to match
+        dir_name: Directory name suffix to match
         keep_count: Number of recent cache files to keep
     """
     if not cache_dir.exists():
         return
 
-    # Find all cache files for this directory
-    cache_files = list(cache_dir.glob(f"{dir_name}-*.json"))
+    # Find all cache files for this directory (new format: <YYMMDD>-<dir_name>.json)
+    cache_files = list(cache_dir.glob(f"*-{dir_name}.json"))
 
     if len(cache_files) <= keep_count:
         return
 
-    # Sort by filename (date is embedded, so alphabetical = chronological)
+    # Sort by filename (date prefix means alphabetical = chronological)
     cache_files.sort(reverse=True)
 
     # Remove old files
@@ -803,6 +808,70 @@ def _cleanup_old_caches(cache_dir: Path, dir_name: str, keep_count: int = 3) -> 
             pass
 
 
+def _find_project_root() -> Optional[Path]:
+    """Find project root by looking for markers like package.json + app/ combo.
+
+    Searches from current working directory upward.
+    Prioritizes directories that have both package.json AND app/ folder,
+    which indicates the main project root (not a subproject).
+
+    Returns:
+        Path to project root, or None if not found
+    """
+    current = Path.cwd()
+
+    # First pass: look for the "definitive" combo (package.json + app/)
+    for _ in range(10):  # Limit search depth
+        if (current / 'package.json').exists() and (current / 'app').is_dir():
+            return current
+        parent = current.parent
+        if parent == current:
+            break
+        current = parent
+
+    # Second pass: fall back to simpler markers
+    current = Path.cwd()
+    markers = ['.git', 'package.json', 'bun.lockb']
+    for _ in range(10):
+        for marker in markers:
+            if (current / marker).exists():
+                return current
+        parent = current.parent
+        if parent == current:
+            break
+        current = parent
+
+    return None
+
+
+def _resolve_target_path(target: str) -> Path:
+    """Resolve target path intelligently.
+
+    Handles common shorthand paths like 'app', 'app/src/logic', etc.
+    If the path doesn't exist relative to CWD, tries from project root.
+
+    Args:
+        target: Target path as specified by user
+
+    Returns:
+        Resolved absolute path
+    """
+    # First try as-is (relative to CWD or absolute)
+    direct_path = Path(target)
+    if direct_path.exists():
+        return direct_path.resolve()
+
+    # If not found, try from project root
+    project_root = _find_project_root()
+    if project_root:
+        root_relative = project_root / target
+        if root_relative.exists():
+            return root_relative.resolve()
+
+    # Fall back to the original resolution (will likely fail, but with a clear error)
+    return direct_path.resolve()
+
+
 # CLI support for testing
 if __name__ == "__main__":
     import sys
@@ -810,13 +879,29 @@ if __name__ == "__main__":
 
     if len(sys.argv) < 2:
         print("Usage: python ast_dependency_analyzer.py <target_path> [--json]")
+        print("\nExamples:")
+        print("  python -m ast_dependency_analyzer app")
+        print("  python -m ast_dependency_analyzer app/src/logic")
+        print("  python -m ast_dependency_analyzer . --json")
         sys.exit(1)
 
     target = sys.argv[1]
     output_json = "--json" in sys.argv
 
+    # Resolve path intelligently (tries CWD first, then project root)
+    resolved_target = _resolve_target_path(target)
+
+    if not resolved_target.exists():
+        print(f"Error: Target path does not exist: {target}")
+        print(f"  Resolved to: {resolved_target}")
+        project_root = _find_project_root()
+        if project_root:
+            print(f"  Project root: {project_root}")
+        sys.exit(1)
+
     print(f"Analyzing: {target}")
-    context = analyze_dependencies(target)
+    print(f"  Resolved: {resolved_target}")
+    context = analyze_dependencies(str(resolved_target))
 
     if output_json:
         print(json.dumps(context.to_json_dict(), indent=2))
