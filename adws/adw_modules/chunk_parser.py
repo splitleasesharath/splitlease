@@ -101,7 +101,7 @@ def parse_chunks(content: str) -> List[ChunkData]:
         chunk_number = int(header_match.group(1))
         chunk_title = header_match.group(2).strip()
 
-        file_match = re.search(r'\*\*File:\*\*\s+(.+)', section)
+        file_match = re.search(r'\*\*Files?:\*\*\s+(.+)', section)
         line_match = re.search(r'\*\*Lines?:\*\*\s+(.+)', section)
         pages_match = re.search(r'\*\*(?:Expected )?Affected Pages:\*\*\s+(.+)', section)
 
