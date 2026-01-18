@@ -709,6 +709,7 @@ export default function HomePage() {
 
   // Mount SearchScheduleSelector component in hero section
   // NOTE: Must be BEFORE early return to comply with Rules of Hooks
+  // Store root on DOM element to survive StrictMode double-invocation
   useEffect(() => {
     // Skip if RecoveryComponent is being shown (we're rendering something else)
     if (RecoveryComponent) return;
@@ -716,7 +717,13 @@ export default function HomePage() {
     const mountPoint = document.getElementById('hero-schedule-selector');
     if (!mountPoint) return;
 
-    const root = createRoot(mountPoint);
+    // Check if root already exists on the DOM element (survives StrictMode remounts)
+    let root = mountPoint._reactRoot;
+    if (!root) {
+      root = createRoot(mountPoint);
+      mountPoint._reactRoot = root;
+    }
+
     root.render(
       <SearchScheduleSelector
         onSelectionChange={(days) => {
@@ -727,9 +734,8 @@ export default function HomePage() {
       />
     );
 
-    return () => {
-      root.unmount();
-    };
+    // No cleanup - let the root persist for the lifetime of the page
+    // This prevents race conditions with StrictMode double-invocation
   }, [RecoveryComponent]);
 
   // If we need to render the recovery page instead of home

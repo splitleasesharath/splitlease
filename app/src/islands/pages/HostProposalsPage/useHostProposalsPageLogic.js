@@ -271,12 +271,33 @@ export function useHostProposalsPageLogic() {
 
         setListings(sortedListings);
 
-        // Check for listingId URL parameter to pre-select a specific listing
+        // Check for URL parameters to pre-select listing and/or proposal
         const urlParams = new URLSearchParams(window.location.search);
         const preselectedListingId = urlParams.get('listingId');
+        const preselectedProposalId = urlParams.get('proposalId');
 
         let listingToSelect = sortedListings[0];
-        if (preselectedListingId) {
+
+        // If proposalId is provided, find which listing it belongs to
+        if (preselectedProposalId) {
+          // Query the proposal directly to find its listing
+          const { data: proposalData } = await supabase
+            .from('proposal')
+            .select('Listing')
+            .eq('_id', preselectedProposalId)
+            .single();
+
+          if (proposalData?.Listing) {
+            const matchedListing = sortedListings.find(l =>
+              (l._id || l.id) === proposalData.Listing
+            );
+            if (matchedListing) {
+              listingToSelect = matchedListing;
+              console.log('[useHostProposalsPageLogic] Found listing for proposal:', proposalData.Listing);
+            }
+          }
+        } else if (preselectedListingId) {
+          // No proposalId, but listingId was provided
           const matchedListing = sortedListings.find(l =>
             (l._id || l.id) === preselectedListingId
           );
@@ -291,6 +312,20 @@ export function useHostProposalsPageLogic() {
         // Fetch proposals for the selected listing
         const proposalsResult = await fetchProposalsForListing(listingToSelect._id || listingToSelect.id);
         setProposals(proposalsResult);
+
+        // If proposalId is in URL, auto-open the proposal details modal
+        if (preselectedProposalId && proposalsResult.length > 0) {
+          const matchedProposal = proposalsResult.find(p =>
+            (p._id || p.id) === preselectedProposalId
+          );
+          if (matchedProposal) {
+            console.log('[useHostProposalsPageLogic] Auto-opening proposal from URL:', preselectedProposalId);
+            setSelectedProposal(matchedProposal);
+            setIsModalOpen(true);
+          } else {
+            console.warn('[useHostProposalsPageLogic] Proposal not found in current listing:', preselectedProposalId);
+          }
+        }
       } else {
         setListings([]);
         setProposals([]);
