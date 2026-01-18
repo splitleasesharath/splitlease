@@ -22,7 +22,9 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useToast } from '../Toast';
-import { getUserId, getFirstName, getUsernameFromCookies, checkAuthStatus } from '../../../lib/auth';
+import { getUserId, getFirstName } from '../../../lib/auth/session.js';
+import { getUsernameFromCookies } from '../../../lib/auth/cookies.js';
+import { checkAuthStatus } from '../../../lib/auth/tokenValidation.js';
 import './FeedbackWidget.css';
 
 // Issue type labels for the dropdown

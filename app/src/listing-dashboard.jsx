@@ -1,6 +1,6 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import ListingDashboardPage from './islands/pages/ListingDashboardPage';
+import ListingDashboardPage from './islands/pages/ListingDashboardPage/ListingDashboardPage.jsx';
 import { ToastProvider } from './islands/shared/Toast';
 import { ErrorBoundary } from './islands/shared/ErrorBoundary';
 

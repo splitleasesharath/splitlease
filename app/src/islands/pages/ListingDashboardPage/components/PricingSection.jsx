@@ -1,4 +1,4 @@
-import { HostScheduleSelector } from '../../../shared/HostScheduleSelector';
+import HostScheduleSelector from '../../../shared/HostScheduleSelector/HostScheduleSelector.jsx';
 import NightlyPricingLegend from './NightlyPricingLegend';
 import { useListingDashboard } from '../context/ListingDashboardContext';
 

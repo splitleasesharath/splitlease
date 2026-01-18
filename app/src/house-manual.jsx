@@ -1,6 +1,6 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import HouseManualPage from './islands/pages/HouseManualPage';
+import HouseManualPage from './islands/pages/HouseManualPage/HouseManualPage.jsx';
 import { ToastProvider } from './islands/shared/Toast';
 
 // Mount the HouseManualPage component

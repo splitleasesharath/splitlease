@@ -18,18 +18,14 @@
 import { useEffect } from 'react';
 import Header from '../../shared/Header';
 import Footer from '../../shared/Footer';
-import {
-  AIToolsProvider,
-  InputMethodSelector,
-  FreeformTextInput,
-  WifiPhotoExtractor,
-  AudioRecorder,
-  PdfDocUploader,
-  PhoneCallInterface,
-  HouseManualEditor,
-  useAITools,
-  INPUT_METHODS,
-} from '../../shared/AITools';
+import { AIToolsProvider, useAITools, INPUT_METHODS } from '../../shared/AITools/AIToolsProvider.jsx';
+import InputMethodSelector from '../../shared/AITools/InputMethodSelector.jsx';
+import FreeformTextInput from '../../shared/AITools/FreeformTextInput.jsx';
+import WifiPhotoExtractor from '../../shared/AITools/WifiPhotoExtractor.jsx';
+import AudioRecorder from '../../shared/AITools/AudioRecorder.jsx';
+import PdfDocUploader from '../../shared/AITools/PdfDocUploader.jsx';
+import PhoneCallInterface from '../../shared/AITools/PhoneCallInterface.jsx';
+import HouseManualEditor from '../../shared/AITools/HouseManualEditor.jsx';
 import useHouseManualPageLogic from './useHouseManualPageLogic';
 import '../../../styles/components/house-manual.css';
 import '../../../styles/components/ai-tools.css';
