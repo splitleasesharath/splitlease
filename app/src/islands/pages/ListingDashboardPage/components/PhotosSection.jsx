@@ -130,8 +130,8 @@ export default function PhotosSection() {
     }
 
     // Call the reorder handler
-    if (onReorderPhotos) {
-      onReorderPhotos(draggedIndex, dropIndex);
+    if (handleReorderPhotos) {
+      handleReorderPhotos(draggedIndex, dropIndex);
     }
 
     setDraggedIndex(null);
@@ -169,7 +169,7 @@ export default function PhotosSection() {
         <h2 className="listing-dashboard-section__title">Photos</h2>
         <button
           className="listing-dashboard-section__add-btn"
-          onClick={onAddPhotos}
+          onClick={() => handleEditSection('photos')}
         >
           Add Photos
         </button>
@@ -237,14 +237,14 @@ export default function PhotosSection() {
                 <div className="listing-dashboard-photos__actions">
                   <button
                     className={`listing-dashboard-photos__star-btn ${(photo.isCover || index === 0) ? 'listing-dashboard-photos__star-btn--active' : ''}`}
-                    onClick={() => onSetCover?.(photo.id)}
+                    onClick={() => handleSetCoverPhoto?.(photo.id)}
                     title={(photo.isCover || index === 0) ? 'Current cover photo' : 'Set as cover photo'}
                   >
                     <StarIcon filled={photo.isCover || index === 0} />
                   </button>
                   <button
                     className="listing-dashboard-photos__delete-btn"
-                    onClick={() => onDeletePhoto?.(photo.id)}
+                    onClick={() => handleDeletePhoto?.(photo.id)}
                     title="Delete photo"
                   >
                     <TrashIcon />
@@ -281,7 +281,7 @@ export default function PhotosSection() {
               <polyline points="21,15 16,10 5,21"/>
             </svg>
             <p>No photos uploaded yet.</p>
-            <button onClick={onAddPhotos}>Add your first photo</button>
+            <button onClick={() => handleEditSection('photos')}>Add your first photo</button>
           </div>
         )}
       </div>
