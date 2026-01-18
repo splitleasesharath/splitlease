@@ -1,13 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
-import { redirectToLogin, loginUser, signupUser, logoutUser, validateTokenAndFetchUser, isProtectedPage, getAuthToken, getFirstName, getAvatarUrl, checkUrlForAuthError } from '../../lib/auth.js';
+import { redirectToLogin, loginUser, signupUser, logoutUser, validateTokenAndFetchUser, isProtectedPage, getAuthToken, getFirstName, getAvatarUrl, checkUrlForAuthError, getUserId } from '../../lib/auth.js';
 import { SIGNUP_LOGIN_URL, SEARCH_URL, HOST_OVERVIEW_URL } from '../../lib/constants.js';
-import { getUserType as getStoredUserType, getAuthState, getUserId } from '../../lib/secureStorage.js';
+import { getUserType as getStoredUserType, getAuthState } from '../../lib/secureStorage.js';
 import { supabase } from '../../lib/supabase.js';
 import CreateDuplicateListingModal from './CreateDuplicateListingModal/CreateDuplicateListingModal.jsx';
 import LoggedInAvatar from './LoggedInAvatar/LoggedInAvatar.jsx';
 import SignUpLoginModal from './SignUpLoginModal.jsx';
-import HeaderSuggestedProposalTrigger from './SuggestedProposals/HeaderSuggestedProposalTrigger.jsx';
+import { useHostMenuData, getHostMenuConfig } from './Header/useHostMenuData.js';
+import { useGuestMenuData, getGuestMenuConfig } from './Header/useGuestMenuData.js';
 import SuggestedProposalPopup from './SuggestedProposals/SuggestedProposalPopup.jsx';
+import HeaderSuggestedProposalTrigger from './SuggestedProposals/HeaderSuggestedProposalTrigger.jsx';
 import { fetchPendingConfirmationCount, fetchPendingConfirmationProposals, markProposalInterested, dismissProposal } from './SuggestedProposals/suggestedProposalService.js';
 
 export default function Header({ autoShowLogin = false }) {
@@ -27,12 +29,14 @@ export default function Header({ autoShowLogin = false }) {
   const cachedFirstName = getFirstName();
   const cachedAvatarUrl = getAvatarUrl();
   const cachedUserType = getStoredUserType();
+  const cachedUserId = getUserId(); // Get cached userId for suggested proposals check
   const hasCachedAuth = !!(cachedFirstName && getAuthState());
 
   const [currentUser, setCurrentUser] = useState(() => {
     // Return optimistic user data if we have cached auth
     if (hasCachedAuth) {
       return {
+        userId: cachedUserId, // Include userId for pending proposals check
         firstName: cachedFirstName,
         profilePhoto: cachedAvatarUrl,
         userType: cachedUserType,
@@ -47,12 +51,19 @@ export default function Header({ autoShowLogin = false }) {
   // CreateDuplicateListingModal State
   const [showListPropertyModal, setShowListPropertyModal] = useState(false);
 
-  // Suggested Proposals State (for pending confirmation proposals)
+  // Suggested Proposal Popup State
   const [pendingProposalCount, setPendingProposalCount] = useState(0);
-  const [pendingProposals, setPendingProposals] = useState([]);
   const [showSuggestedPopup, setShowSuggestedPopup] = useState(false);
+  const [pendingProposals, setPendingProposals] = useState([]);
   const [currentProposalIndex, setCurrentProposalIndex] = useState(0);
   const [isProcessingProposal, setIsProcessingProposal] = useState(false);
+  const [isNotInterestedModalOpen, setIsNotInterestedModalOpen] = useState(false);
+
+  // Dynamic menu data hooks for Host and Guest dropdowns
+  const userId = currentUser?.userId || currentUser?.id || '';
+  const isAuthenticated = !!currentUser;
+  const { state: hostMenuState } = useHostMenuData(userId, isAuthenticated);
+  const { state: guestMenuState } = useGuestMenuData(userId, isAuthenticated);
 
   // Background validation: Validate cached auth state and update with real data
   // The optimistic UI is already set synchronously in useState initializer above
@@ -120,23 +131,14 @@ export default function Header({ autoShowLogin = false }) {
           if (hasSupabaseSession) {
             console.log('[Header] Supabase session exists - preserving auth state');
             // Set basic user info from session if available
-            // CRITICAL: Include userId and userType so useHostMenuData and LoggedInAvatar can function
-            // Use Bubble-format user_id from metadata (or localStorage) for downstream queries
-            // Fallback to Supabase UUID only if neither is available
             if (session?.user) {
               const bubbleUserId = session.user.user_metadata?.user_id || getUserId() || session.user.id;
               setCurrentUser({
-                userId: bubbleUserId,
-                id: bubbleUserId,
+                userId: bubbleUserId, // Include userId for pending proposals check
                 firstName: session.user.user_metadata?.first_name || session.user.email?.split('@')[0] || 'User',
                 email: session.user.email,
-                userType: session.user.user_metadata?.user_type || null,
                 _isFromSession: true
               });
-              // Also update userType state so isHost()/isGuest() work correctly
-              if (session.user.user_metadata?.user_type) {
-                setUserType(session.user.user_metadata.user_type);
-              }
             }
           } else {
             setCurrentUser(null);
@@ -217,24 +219,13 @@ export default function Header({ autoShowLogin = false }) {
               console.log('[Header] UI updated for:', userData.firstName);
             } else {
               // Validation failed but we have a valid session - set basic info from session
-              // CRITICAL: Include userId and userType so useHostMenuData and LoggedInAvatar can function
-              // Use Bubble-format user_id from metadata (or localStorage) for downstream queries
-              // Fallback to Supabase UUID only if neither is available
               console.log('[Header] User profile fetch failed, using session data');
               if (session?.user) {
-                const bubbleUserId = session.user.user_metadata?.user_id || getUserId() || session.user.id;
                 setCurrentUser({
-                  userId: bubbleUserId,
-                  id: bubbleUserId,
                   firstName: session.user.user_metadata?.first_name || session.user.email?.split('@')[0] || 'User',
                   email: session.user.email,
-                  userType: session.user.user_metadata?.user_type || null,
                   _isFromSession: true
                 });
-                // Also update userType state so isHost()/isGuest() work correctly
-                if (session.user.user_metadata?.user_type) {
-                  setUserType(session.user.user_metadata.user_type);
-                }
                 setAuthChecked(true);
               }
             }
@@ -506,16 +497,31 @@ export default function Header({ autoShowLogin = false }) {
     }
   };
 
-  // Handle "Remove" action on suggested proposal
-  const handleProposalRemove = async () => {
+  // Handle "Not Interested" action - opens the feedback modal
+  const handleProposalRemove = () => {
+    const proposal = pendingProposals[currentProposalIndex];
+    if (!proposal) return;
+    setIsNotInterestedModalOpen(true);
+  };
+
+  // Close Not Interested modal
+  const handleCloseNotInterestedModal = () => {
+    setIsNotInterestedModalOpen(false);
+  };
+
+  // Confirm Not Interested with optional feedback
+  const handleConfirmNotInterested = async (feedback = null) => {
     const proposal = pendingProposals[currentProposalIndex];
     if (!proposal) return;
 
     setIsProcessingProposal(true);
-    const result = await dismissProposal(proposal._id);
+    const result = await dismissProposal(proposal._id, feedback);
     setIsProcessingProposal(false);
 
     if (result.success) {
+      // Close the modal
+      setIsNotInterestedModalOpen(false);
+
       // Remove from list and update count
       const newProposals = pendingProposals.filter((_, i) => i !== currentProposalIndex);
       setPendingProposals(newProposals);
@@ -604,64 +610,110 @@ export default function Header({ autoShowLogin = false }) {
               role="menu"
               aria-label="Host with Us menu"
             >
-              <a
-                href="/list-with-us"
-                className="dropdown-item"
-                role="menuitem"
-              >
-                <span className="dropdown-title">Why List with Us</span>
-                <span className="dropdown-desc">New to Split Lease? Learn more about hosting</span>
-              </a>
-              <a
-                href="/host-success"
-                className="dropdown-item"
-                role="menuitem"
-              >
-                <span className="dropdown-title">Success Stories</span>
-                <span className="dropdown-desc">Explore other hosts' feedback</span>
-              </a>
-              <a
-                href="/self-listing-v2"
-                className="dropdown-item"
-                role="menuitem"
-                onClick={() => {
-                  setActiveDropdown(null);
-                  setMobileMenuActive(false);
-                }}
-              >
-                <span className="dropdown-title">List Property</span>
-              </a>
-              <a
-                href="/policies"
-                className="dropdown-item"
-                role="menuitem"
-              >
-                <span className="dropdown-title">Legal Information</span>
-                <span className="dropdown-desc">Review most important policies</span>
-              </a>
-              <a
-                href="/faq?section=hosts"
-                className="dropdown-item"
-                role="menuitem"
-              >
-                <span className="dropdown-title">FAQs</span>
-                <span className="dropdown-desc">Frequently Asked Questions</span>
-              </a>
-              {!currentUser && (
-              <a
-                href="#"
-                className="dropdown-item"
-                role="menuitem"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setActiveDropdown(null);
-                  setMobileMenuActive(false);
-                  handleSignupClick();
-                }}
-              >
-                <span className="dropdown-title">Sign Up</span>
-              </a>
-              )}
+              {/* Mega Menu Layout */}
+              {(() => {
+                const hostMenuConfig = getHostMenuConfig(hostMenuState, handleSignupClick);
+                const featured = hostMenuConfig.featured;
+
+                return (
+                  <div className="mega-menu-content">
+                    {/* Featured Section (left side) */}
+                    <div className="mega-menu-featured">
+                      <div className="featured-image">
+                        <img src={featured.image} alt="" />
+                      </div>
+                      <h3 className="featured-title">{featured.title}</h3>
+                      <p className="featured-desc">{featured.desc}</p>
+                      <a
+                        href={featured.ctaHref}
+                        className="featured-link"
+                        onClick={() => {
+                          setActiveDropdown(null);
+                          setMobileMenuActive(false);
+                        }}
+                      >
+                        <span>{featured.cta}</span>
+                        <svg className="featured-link-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                          <path d="M3 8H13M13 8L9 4M13 8L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </a>
+                    </div>
+
+                    {/* Vertical Separator */}
+                    <div className="menu-separator" />
+
+                    {/* Menu Columns */}
+                    <div className="mega-menu-columns">
+                      {/* Column 1: First half of items */}
+                      <div className="menu-column">
+                        <div className="menu-column-title">Learn</div>
+                        {hostMenuConfig.items.slice(0, Math.ceil(hostMenuConfig.items.length / 2)).map((item) => (
+                          <a
+                            key={item.id}
+                            href={item.href}
+                            className="dropdown-item"
+                            role="menuitem"
+                            onClick={item.action ? (e) => {
+                              e.preventDefault();
+                              setActiveDropdown(null);
+                              setMobileMenuActive(false);
+                              item.action();
+                            } : () => {
+                              setActiveDropdown(null);
+                              setMobileMenuActive(false);
+                            }}
+                          >
+                            <span className="dropdown-title">{item.title}</span>
+                          </a>
+                        ))}
+                      </div>
+
+                      {/* Column 2: Second half of items + CTA */}
+                      <div className="menu-column">
+                        <div className="menu-column-title">Get Started</div>
+                        {hostMenuConfig.items.slice(Math.ceil(hostMenuConfig.items.length / 2)).map((item) => (
+                          <a
+                            key={item.id}
+                            href={item.href}
+                            className="dropdown-item"
+                            role="menuitem"
+                            onClick={item.action ? (e) => {
+                              e.preventDefault();
+                              setActiveDropdown(null);
+                              setMobileMenuActive(false);
+                              item.action();
+                            } : () => {
+                              setActiveDropdown(null);
+                              setMobileMenuActive(false);
+                            }}
+                          >
+                            <span className="dropdown-title">{item.title}</span>
+                          </a>
+                        ))}
+
+                        {/* Bottom CTA */}
+                        <div className="dropdown-separator" />
+                        <a
+                          href={hostMenuConfig.cta.href || '#'}
+                          className="dropdown-cta"
+                          role="menuitem"
+                          onClick={hostMenuConfig.cta.action ? (e) => {
+                            e.preventDefault();
+                            setActiveDropdown(null);
+                            setMobileMenuActive(false);
+                            hostMenuConfig.cta.action();
+                          } : () => {
+                            setActiveDropdown(null);
+                            setMobileMenuActive(false);
+                          }}
+                        >
+                          {hostMenuConfig.cta.label}
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
           )}
@@ -704,53 +756,110 @@ export default function Header({ autoShowLogin = false }) {
               role="menu"
               aria-label="Stay with Us menu"
             >
-              <a
-                href={SEARCH_URL}
-                className="dropdown-item"
-                role="menuitem"
-              >
-                <span className="dropdown-title">Explore Rentals</span>
-                <span className="dropdown-desc">See available listings!</span>
-              </a>
-              <a
-                href="/why-split-lease"
-                className="dropdown-item"
-                role="menuitem"
-              >
-                <span className="dropdown-title">Why Split Lease</span>
-                <span className="dropdown-desc">Learn why guests choose Split Lease</span>
-              </a>
-              <a
-                href="/guest-success"
-                className="dropdown-item"
-                role="menuitem"
-              >
-                <span className="dropdown-title">Success Stories</span>
-                <span className="dropdown-desc">Explore other guests' feedback</span>
-              </a>
-              <a
-                href="/faq?section=travelers"
-                className="dropdown-item"
-                role="menuitem"
-              >
-                <span className="dropdown-title">FAQs</span>
-                <span className="dropdown-desc">Frequently Asked Questions</span>
-              </a>
-              {!currentUser && (
-              <a
-                href="#"
-                className="dropdown-item"
-                role="menuitem"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setActiveDropdown(null);
-                  setMobileMenuActive(false);
-                  handleSignupClick();
-                }}
-              >
-                <span className="dropdown-title">Sign Up</span>
-              </a>
-              )}
+              {/* Mega Menu Layout */}
+              {(() => {
+                const guestMenuConfig = getGuestMenuConfig(guestMenuState, handleSignupClick);
+                const featured = guestMenuConfig.featured;
+
+                return (
+                  <div className="mega-menu-content">
+                    {/* Featured Section (left side) */}
+                    <div className="mega-menu-featured">
+                      <div className="featured-image">
+                        <img src={featured.image} alt="" />
+                      </div>
+                      <h3 className="featured-title">{featured.title}</h3>
+                      <p className="featured-desc">{featured.desc}</p>
+                      <a
+                        href={featured.ctaHref}
+                        className="featured-link"
+                        onClick={() => {
+                          setActiveDropdown(null);
+                          setMobileMenuActive(false);
+                        }}
+                      >
+                        <span>{featured.cta}</span>
+                        <svg className="featured-link-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                          <path d="M3 8H13M13 8L9 4M13 8L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </a>
+                    </div>
+
+                    {/* Vertical Separator */}
+                    <div className="menu-separator" />
+
+                    {/* Menu Columns */}
+                    <div className="mega-menu-columns">
+                      {/* Column 1: First half of items */}
+                      <div className="menu-column">
+                        <div className="menu-column-title">Discover</div>
+                        {guestMenuConfig.items.slice(0, Math.ceil(guestMenuConfig.items.length / 2)).map((item) => (
+                          <a
+                            key={item.id}
+                            href={item.href}
+                            className="dropdown-item"
+                            role="menuitem"
+                            onClick={item.action ? (e) => {
+                              e.preventDefault();
+                              setActiveDropdown(null);
+                              setMobileMenuActive(false);
+                              item.action();
+                            } : () => {
+                              setActiveDropdown(null);
+                              setMobileMenuActive(false);
+                            }}
+                          >
+                            <span className="dropdown-title">{item.title}</span>
+                          </a>
+                        ))}
+                      </div>
+
+                      {/* Column 2: Second half of items + CTA */}
+                      <div className="menu-column">
+                        <div className="menu-column-title">Get Started</div>
+                        {guestMenuConfig.items.slice(Math.ceil(guestMenuConfig.items.length / 2)).map((item) => (
+                          <a
+                            key={item.id}
+                            href={item.href}
+                            className="dropdown-item"
+                            role="menuitem"
+                            onClick={item.action ? (e) => {
+                              e.preventDefault();
+                              setActiveDropdown(null);
+                              setMobileMenuActive(false);
+                              item.action();
+                            } : () => {
+                              setActiveDropdown(null);
+                              setMobileMenuActive(false);
+                            }}
+                          >
+                            <span className="dropdown-title">{item.title}</span>
+                          </a>
+                        ))}
+
+                        {/* Bottom CTA */}
+                        <div className="dropdown-separator" />
+                        <a
+                          href={guestMenuConfig.cta.href || '#'}
+                          className="dropdown-cta"
+                          role="menuitem"
+                          onClick={guestMenuConfig.cta.action ? (e) => {
+                            e.preventDefault();
+                            setActiveDropdown(null);
+                            setMobileMenuActive(false);
+                            guestMenuConfig.cta.action();
+                          } : () => {
+                            setActiveDropdown(null);
+                            setMobileMenuActive(false);
+                          }}
+                        >
+                          {guestMenuConfig.cta.label}
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
           )}
@@ -759,7 +868,8 @@ export default function Header({ autoShowLogin = false }) {
         {/* Right Navigation - Auth Buttons */}
         <div className={`nav-right ${mobileMenuActive ? 'mobile-active' : ''}`}>
           {/* Suggested Proposal Trigger - shows for guest users with pending proposals */}
-          {currentUser && isGuest() && pendingProposalCount > 0 && (
+          {/* Hidden on /guest-proposals page since suggestions are already shown in the list */}
+          {currentUser && isGuest() && pendingProposalCount > 0 && window.location.pathname !== '/guest-proposals' && (
             <HeaderSuggestedProposalTrigger
               onClick={handleSuggestedTriggerClick}
               isActive={showSuggestedPopup}
@@ -874,6 +984,9 @@ export default function Header({ autoShowLogin = false }) {
         onClose={() => setShowSuggestedPopup(false)}
         isVisible={showSuggestedPopup}
         isProcessing={isProcessingProposal}
+        isNotInterestedModalOpen={isNotInterestedModalOpen}
+        onCloseNotInterestedModal={handleCloseNotInterestedModal}
+        onConfirmNotInterested={handleConfirmNotInterested}
       />
     </header>
   );

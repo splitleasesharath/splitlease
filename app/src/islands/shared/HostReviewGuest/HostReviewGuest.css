@@ -1,0 +1,426 @@
+/**
+ * Host Review Guest Styles
+ * Component namespace: hrg-*
+ * Based on Split Lease design system
+ */
+
+/* ============================================
+   CSS VARIABLES
+   ============================================ */
+
+:root {
+  --hrg-primary: var(--color-primary, #31135d);
+  --hrg-primary-hover: var(--color-primary-hover, #1f0b38);
+  --hrg-success: #059669;
+  --hrg-error: #dc2626;
+  --hrg-star-filled: #fbbf24;
+  --hrg-star-empty: #d1d5db;
+  --hrg-overlay-bg: rgba(0, 0, 0, 0.5);
+  --hrg-border-color: #e5e7eb;
+  --hrg-text-primary: #1f2937;
+  --hrg-text-secondary: #6b7280;
+}
+
+/* ============================================
+   OVERLAY & CONTAINER
+   ============================================ */
+
+.hrg-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--hrg-overlay-bg);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.hrg-container {
+  background: white;
+  border-radius: 16px;
+  padding: 24px 32px;
+  width: 100%;
+  max-width: 560px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  position: relative;
+  margin-top: 20px;
+}
+
+.hrg-container--success {
+  max-width: 400px;
+  text-align: center;
+}
+
+.hrg-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--hrg-text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.hrg-close-btn:hover {
+  color: var(--hrg-text-primary);
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+
+.hrg-header {
+  margin-bottom: 20px;
+}
+
+.hrg-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--hrg-text-primary);
+  margin: 0 0 8px 0;
+}
+
+.hrg-subtitle {
+  font-size: 14px;
+  color: var(--hrg-text-secondary);
+  margin: 0;
+}
+
+/* ============================================
+   PROGRESS BAR
+   ============================================ */
+
+.hrg-progress {
+  margin-bottom: 20px;
+}
+
+.hrg-progress__bar {
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.hrg-progress__fill {
+  height: 100%;
+  background: var(--hrg-primary);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.hrg-progress__text {
+  font-size: 12px;
+  color: var(--hrg-text-secondary);
+}
+
+/* ============================================
+   ERROR MESSAGE
+   ============================================ */
+
+.hrg-error {
+  background: #fee2e2;
+  color: var(--hrg-error);
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+/* ============================================
+   RATING CATEGORIES
+   ============================================ */
+
+.hrg-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.hrg-rating-category {
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 12px;
+}
+
+.hrg-rating-category--disabled {
+  opacity: 0.6;
+}
+
+.hrg-rating-category__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.hrg-rating-category__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--hrg-text-primary);
+  margin: 0;
+}
+
+.hrg-rating-category__scale-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--hrg-primary);
+  background: rgba(49, 19, 93, 0.1);
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.hrg-rating-category__question {
+  font-size: 13px;
+  color: var(--hrg-text-secondary);
+  margin: 0 0 12px 0;
+}
+
+.hrg-rating-category__input {
+  display: flex;
+  justify-content: center;
+}
+
+/* ============================================
+   STAR RATING
+   ============================================ */
+
+.hrg-star-rating {
+  display: flex;
+  gap: 4px;
+}
+
+.hrg-star-rating--disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.hrg-star {
+  background: none;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  color: var(--hrg-star-empty);
+  transition: transform 0.1s, color 0.2s;
+}
+
+.hrg-star:hover:not(:disabled) {
+  transform: scale(1.15);
+}
+
+.hrg-star--filled {
+  color: var(--hrg-star-filled);
+}
+
+.hrg-star:focus {
+  outline: 2px solid var(--hrg-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ============================================
+   FEEDBACK TEXTAREA
+   ============================================ */
+
+.hrg-feedback {
+  margin-bottom: 20px;
+}
+
+.hrg-feedback__label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--hrg-text-primary);
+  margin-bottom: 8px;
+}
+
+.hrg-feedback__input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--hrg-border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.2s;
+}
+
+.hrg-feedback__input:focus {
+  outline: none;
+  border-color: var(--hrg-primary);
+}
+
+.hrg-feedback__input::placeholder {
+  color: #9ca3af;
+}
+
+/* ============================================
+   SCORE PREVIEW
+   ============================================ */
+
+.hrg-score-preview {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(49, 19, 93, 0.05), rgba(49, 19, 93, 0.1));
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.hrg-score-preview__label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--hrg-text-primary);
+}
+
+.hrg-score-preview__value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--hrg-primary);
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+
+.hrg-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.hrg-button-primary {
+  background: var(--hrg-primary);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.hrg-button-primary:hover:not(:disabled) {
+  background: var(--hrg-primary-hover);
+}
+
+.hrg-button-primary:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.hrg-button-secondary {
+  background: white;
+  color: var(--hrg-text-secondary);
+  padding: 12px 24px;
+  border-radius: 8px;
+  border: 1px solid var(--hrg-border-color);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.hrg-button-secondary:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.hrg-button-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   SUCCESS STATE
+   ============================================ */
+
+.hrg-success-content {
+  padding: 24px 0;
+}
+
+.hrg-success-icon {
+  color: var(--hrg-success);
+  margin-bottom: 16px;
+}
+
+.hrg-success-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--hrg-text-primary);
+  margin: 0 0 12px 0;
+}
+
+.hrg-success-message {
+  font-size: 14px;
+  color: var(--hrg-text-secondary);
+  margin: 0 0 24px 0;
+  line-height: 1.5;
+}
+
+.hrg-success-score {
+  background: #f0fdf4;
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.hrg-success-score__label {
+  display: block;
+  font-size: 12px;
+  color: var(--hrg-text-secondary);
+  margin-bottom: 4px;
+}
+
+.hrg-success-score__value {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--hrg-success);
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 600px) {
+  .hrg-overlay {
+    padding: 10px;
+  }
+
+  .hrg-container {
+    padding: 16px;
+    border-radius: 12px;
+    margin-top: 10px;
+  }
+
+  .hrg-title {
+    font-size: 18px;
+  }
+
+  .hrg-actions {
+    flex-direction: column-reverse;
+  }
+
+  .hrg-button-primary,
+  .hrg-button-secondary {
+    width: 100%;
+  }
+
+  .hrg-rating-category {
+    padding: 12px;
+  }
+}

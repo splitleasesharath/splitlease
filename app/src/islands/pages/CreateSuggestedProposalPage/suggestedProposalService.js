@@ -360,6 +360,17 @@ export async function parseCallTranscription(transcription) {
 // ============================================================================
 
 /**
+ * Extract URL from a photo object or return string as-is
+ * Photo objects have structure: { url: "...", Photo: "...", "Photo (thumbnail)": "..." }
+ */
+function extractPhotoUrl(photo) {
+  if (!photo) return '';
+  if (typeof photo === 'string') return photo;
+  // Photo object - prefer url, then Photo, then thumbnail
+  return photo.url || photo.Photo || photo['Photo (thumbnail)'] || '';
+}
+
+/**
  * Get the first photo URL from a listing
  */
 export function getFirstPhoto(listing, photos = []) {
@@ -371,12 +382,12 @@ export function getFirstPhoto(listing, photos = []) {
   // Fallback to Features - Photos from listing
   const featurePhotos = listing?.['Features - Photos'];
   if (Array.isArray(featurePhotos) && featurePhotos.length > 0) {
-    return featurePhotos[0];
+    return extractPhotoUrl(featurePhotos[0]);
   }
   if (typeof featurePhotos === 'string') {
     try {
       const parsed = JSON.parse(featurePhotos);
-      return Array.isArray(parsed) ? parsed[0] : '';
+      return Array.isArray(parsed) ? extractPhotoUrl(parsed[0]) : '';
     } catch {
       return featurePhotos;
     }
@@ -395,12 +406,12 @@ export function getLastPhoto(listing, photos = []) {
 
   const featurePhotos = listing?.['Features - Photos'];
   if (Array.isArray(featurePhotos) && featurePhotos.length > 0) {
-    return featurePhotos[featurePhotos.length - 1];
+    return extractPhotoUrl(featurePhotos[featurePhotos.length - 1]);
   }
   if (typeof featurePhotos === 'string') {
     try {
       const parsed = JSON.parse(featurePhotos);
-      return Array.isArray(parsed) ? parsed[parsed.length - 1] : '';
+      return Array.isArray(parsed) ? extractPhotoUrl(parsed[parsed.length - 1]) : '';
     } catch {
       return '';
     }

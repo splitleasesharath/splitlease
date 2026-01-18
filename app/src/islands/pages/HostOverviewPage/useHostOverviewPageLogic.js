@@ -620,9 +620,8 @@ export function useHostOverviewPageLogic() {
   // ============================================================================
 
   const handleCreateNewListing = useCallback(() => {
-    // Show the CreateDuplicateListingModal instead of navigating directly
-    // This allows the user to enter a listing name before being redirected to self-listing (v1)
-    setShowCreateListingModal(true);
+    // Navigate directly to self-listing-v2 page for new listing creation
+    window.location.href = '/self-listing-v2';
   }, []);
 
   const handleCloseCreateListingModal = useCallback(() => {

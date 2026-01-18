@@ -6,7 +6,7 @@
  * - Property details (amenities, pricing)
  * - Location map
  * - AI-generated "Why this proposal?" summary
- * - Action buttons (Interested / Remove)
+ * - Action buttons (Interested / Not Interested)
  *
  * Uses native Supabase field names.
  */
@@ -18,6 +18,7 @@ import PriceDisplay from './components/PriceDisplay.jsx';
 import ActionButtons from './components/ActionButtons.jsx';
 import MapSection from './components/MapSection.jsx';
 import WhyThisProposal from './components/WhyThisProposal.jsx';
+import NotInterestedModal from './components/NotInterestedModal.jsx';
 import './SuggestedProposalPopup.css';
 
 /**
@@ -51,13 +52,16 @@ const isBubbleFkId = (value) => {
  * @param {number} props.currentIndex - Current proposal index (0-based)
  * @param {number} props.totalCount - Total number of proposals
  * @param {function} props.onInterested - Handler for "Interested" action
- * @param {function} props.onRemove - Handler for "Remove" action
+ * @param {function} props.onRemove - Handler for "Not Interested" action (opens modal)
  * @param {function} props.onNext - Navigate to next proposal
  * @param {function} props.onPrevious - Navigate to previous proposal
  * @param {function} props.onClose - Close the popup
  * @param {boolean} props.isVisible - Whether popup is shown
  * @param {boolean} props.isProcessing - Whether an action is in progress
  * @param {string} [props.googleMapsApiKey] - Google Maps API key for map display
+ * @param {boolean} props.isNotInterestedModalOpen - Whether the Not Interested modal is open
+ * @param {function} props.onCloseNotInterestedModal - Handler to close Not Interested modal
+ * @param {function} props.onConfirmNotInterested - Handler to confirm Not Interested with feedback
  */
 export default function SuggestedProposalPopup({
   proposal,
@@ -70,7 +74,10 @@ export default function SuggestedProposalPopup({
   onClose,
   isVisible,
   isProcessing = false,
-  googleMapsApiKey
+  googleMapsApiKey,
+  isNotInterestedModalOpen = false,
+  onCloseNotInterestedModal,
+  onConfirmNotInterested
 }) {
   // Handle backdrop click
   const handleBackdropClick = useCallback((e) => {
@@ -164,9 +171,7 @@ export default function SuggestedProposalPopup({
                     aria-label="Previous proposal"
                     type="button"
                   >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M15 18l-6-6 6-6" />
-                    </svg>
+                    <span className="sp-nav-arrow">‹</span>
                   </button>
                   <button
                     className="sp-popup-nav-btn"
@@ -174,9 +179,7 @@ export default function SuggestedProposalPopup({
                     aria-label="Next proposal"
                     type="button"
                   >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M9 18l6-6-6-6" />
-                    </svg>
+                    <span className="sp-nav-arrow">›</span>
                   </button>
                 </div>
               )}
@@ -246,6 +249,15 @@ export default function SuggestedProposalPopup({
           </div>
         </div>
       </div>
+
+      {/* Not Interested Modal */}
+      <NotInterestedModal
+        isOpen={isNotInterestedModalOpen}
+        proposal={proposal}
+        onClose={onCloseNotInterestedModal}
+        onConfirm={onConfirmNotInterested}
+        isProcessing={isProcessing}
+      />
     </>
   );
 }

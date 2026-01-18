@@ -38,7 +38,7 @@ export async function getCommonSafetyFeatures(): Promise<string[]> {
     }
 
     // Extract just the names
-    const names = data.map((feature: SafetyFeature) => feature.Name);
+    const names = data.map((feature: { Name: string }) => feature.Name);
     console.log('[safetyService] Fetched common safety features:', names);
     return names;
   } catch (err) {

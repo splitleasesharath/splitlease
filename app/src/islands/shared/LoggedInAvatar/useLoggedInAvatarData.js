@@ -225,11 +225,9 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
           .neq('Status', 'Proposal Cancelled by Guest'),
 
         // 11. Count message threads where user is a participant (host or guest)
-        //     Note: Column names have leading hyphens: "-Host User", "-Guest User"
-        supabase
-          .from('thread')
-          .select('_id', { count: 'exact', head: true })
-          .or(`"-Host User".eq.${userId},"-Guest User".eq.${userId}`)
+        //     Uses RPC function because PostgREST .or() doesn't handle column names
+        //     with leading hyphens ("-Host User", "-Guest User") correctly
+        supabase.rpc('count_user_threads', { user_id: userId })
       ]);
 
       // Process user data
@@ -333,6 +331,17 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
         userId: userId
       });
 
+      // DEBUG: Log threads result to diagnose messaging icon visibility
+      // Note: RPC returns { data: <integer>, error } not { count, error }
+      console.log('[useLoggedInAvatarData] Threads result:', {
+        count: threadsResult.data,
+        error: threadsResult.error,
+        userId: userId
+      });
+      if (threadsResult.error) {
+        console.error('[useLoggedInAvatarData] Error fetching threads:', threadsResult.error);
+      }
+
       const newData = {
         userType: normalizedType,
         proposalsCount,
@@ -345,7 +354,7 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
         favoritesCount,
         unreadMessagesCount: messagesResult.count || 0,
         suggestedProposalsCount: suggestedProposalsResult.count || 0,
-        threadsCount: threadsResult.count || 0
+        threadsCount: threadsResult.data || 0  // RPC returns data directly, not count
       };
 
       console.log('[useLoggedInAvatarData] Data fetched:', newData);

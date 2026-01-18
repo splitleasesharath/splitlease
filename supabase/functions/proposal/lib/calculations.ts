@@ -45,15 +45,19 @@ export function calculateCompensation(
   let fourWeekRent = 0;
   let fourWeekCompensation = 0;
 
-  // Per-night host compensation (used for "host compensation" field in proposal)
-  // This is the base rate that gets multiplied by nights and weeks
-  const hostCompensationPerNight = hostNightlyRate;
+  // Host compensation per period - the value depends on rental type:
+  // - nightly: per-night rate from listing pricing tiers
+  // - weekly: weekly rate from listing
+  // - monthly: monthly rate from listing
+  // This is stored in the "host compensation" field in the proposal
+  let hostCompensationPerPeriod = hostNightlyRate;
 
   switch (rentalType) {
     case "nightly":
       // Step 13: Nightly calculation
       // Total = host_nightly_rate * nights_per_week * total_weeks
       // This matches Bubble: "host compensation * nights selected:count * actual weeks"
+      hostCompensationPerPeriod = hostNightlyRate;
       totalCompensation = hostNightlyRate * nightsPerWeek * weeks;
       fourWeekRent = hostNightlyRate * nightsPerWeek * 4;
       fourWeekCompensation = fourWeekRent;
@@ -63,15 +67,19 @@ export function calculateCompensation(
     case "weekly":
       // Step 14: Weekly calculation
       // Total = weekly_rate * total_weeks
+      // Host compensation is the per-week rate
+      hostCompensationPerPeriod = weeklyRate;
       totalCompensation = weeklyRate * weeks;
       fourWeekRent = weeklyRate * 4;
       fourWeekCompensation = fourWeekRent;
       durationMonths = weeks / 4;
       break;
 
-    case "monthly":
+    case "monthly": {
       // Monthly uses the monthly rate directly
+      // Host compensation is the per-month rate
       const effectiveMonthlyRate = monthlyRate || (weeklyRate * 4);
+      hostCompensationPerPeriod = effectiveMonthlyRate;
       if (reservationSpan !== "other") {
         // Step 15: Monthly (standard span)
         // Duration in months = weeks / 4
@@ -89,12 +97,14 @@ export function calculateCompensation(
         fourWeekCompensation = fourWeekRent;
       }
       break;
+    }
 
     default:
       // Default to nightly if unknown type
       console.warn(
         `[calculations] Unknown rental type "${rentalType}", defaulting to nightly`
       );
+      hostCompensationPerPeriod = hostNightlyRate;
       totalCompensation = hostNightlyRate * nightsPerWeek * weeks;
       fourWeekRent = hostNightlyRate * nightsPerWeek * 4;
       fourWeekCompensation = fourWeekRent;
@@ -106,7 +116,7 @@ export function calculateCompensation(
     duration_months: roundToTwoDecimals(durationMonths),
     four_week_rent: roundToTwoDecimals(fourWeekRent),
     four_week_compensation: roundToTwoDecimals(fourWeekCompensation),
-    host_compensation_per_night: roundToTwoDecimals(hostCompensationPerNight),
+    host_compensation_per_night: roundToTwoDecimals(hostCompensationPerPeriod),
   };
 }
 

@@ -36,6 +36,15 @@ import {
   addUserProposal,
   addUserListingFavorite,
 } from "../../_shared/junctionHelpers.ts";
+import {
+  getListingName,
+} from "../../_shared/messagingHelpers.ts";
+// NOTE: CTA helpers removed - messages are now created by create_proposal_thread handler
+import {
+  generateHostProposalSummary,
+  formatDaysAsRange,
+  formatDateForDisplay,
+} from "../../_shared/negotiationSummaryHelpers.ts";
 
 // ID generation is now done via RPC: generate_bubble_id()
 
@@ -536,23 +545,92 @@ export async function handleCreate(
   await addUserProposal(supabase, hostAccountData.User, proposalId, 'host');
 
   // ================================================
-  // TRIGGER ASYNC WORKFLOWS (Non-blocking)
+  // CREATE THREAD FOR PROPOSAL
   // ================================================
 
-  // These are placeholder logs - actual async calls will be implemented in Phase 4
-  console.log(`[proposal:create] [ASYNC] Would trigger: proposal-communications`, {
-    proposalId: proposalId,
-    guestId: input.guestId,
-    hostId: hostAccountData.User,
-  });
+  // Generate Bubble-compatible ID for thread
+  const { data: threadId, error: threadIdError } = await supabase.rpc('generate_bubble_id');
+  if (threadIdError || !threadId) {
+    console.error(`[proposal:create] Thread ID generation failed:`, threadIdError);
+    // Non-blocking - proposal already created, thread can be created later
+  }
 
-  console.log(`[proposal:create] [ASYNC] Would trigger: proposal-summary (ai-gateway)`, {
-    proposalId: proposalId,
-  });
+  let threadCreated = false;
+  if (threadId) {
+    const threadData = {
+      _id: threadId,
+      Proposal: proposalId,
+      Listing: input.listingId,
+      "-Guest User": input.guestId,
+      "-Host User": hostUserData._id,
+      "Created Date": now,
+      "Modified Date": now,
+    };
 
-  console.log(`[proposal:create] [ASYNC] Would trigger: proposal-suggestions`, {
-    proposalId: proposalId,
-  });
+    console.log(`[proposal:create] Inserting thread: ${threadId}`);
+
+    const { error: threadInsertError } = await supabase
+      .from("thread")
+      .insert(threadData);
+
+    if (threadInsertError) {
+      console.error(`[proposal:create] Thread insert failed:`, threadInsertError);
+      // Non-blocking - proposal created, thread creation failed
+    } else {
+      threadCreated = true;
+      console.log(`[proposal:create] Thread created successfully`);
+    }
+  }
+
+  // ================================================
+  // GENERATE AI SUMMARY FOR HOST (Non-blocking)
+  // ================================================
+  // NOTE: Messages are NO LONGER created here - they are created by the
+  // create_proposal_thread handler called by the frontend.
+  // We only generate the AI summary here and return it so the frontend
+  // can pass it to the messages handler.
+
+  let aiHostSummary: string | null = null;
+
+  if (threadCreated && threadId) {
+    try {
+      // Fetch listing name for AI summary
+      const listingName = await getListingName(supabase, input.listingId);
+      const resolvedListingName = listingName || "this listing";
+
+      console.log(`[proposal:create] Generating AI summary for host (8s timeout)...`);
+
+      // Create a timeout promise that rejects after 8 seconds
+      const AI_TIMEOUT_MS = 8000;
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('AI summary generation timed out')), AI_TIMEOUT_MS);
+      });
+
+      // Race between AI generation and timeout
+      aiHostSummary = await Promise.race([
+        generateHostProposalSummary(supabase, {
+          listingName: resolvedListingName,
+          reservationWeeks: input.reservationSpanWeeks,
+          moveInStart: formatDateForDisplay(input.moveInStartRange),
+          moveInEnd: formatDateForDisplay(input.moveInEndRange),
+          selectedDays: formatDaysAsRange(input.daysSelected),
+          hostCompensation: compensation.host_compensation_per_night,
+          totalCompensation: compensation.total_compensation,
+          guestComment: input.comment || undefined,
+        }),
+        timeoutPromise,
+      ]);
+
+      if (aiHostSummary) {
+        console.log(`[proposal:create] AI host summary generated successfully`);
+      } else {
+        console.log(`[proposal:create] AI host summary returned null`);
+      }
+    } catch (aiError) {
+      console.warn(`[proposal:create] AI host summary generation failed/timed out:`, aiError);
+      // aiHostSummary remains null, frontend will use default CTA message
+    }
+  }
 
   // ================================================
   // RETURN RESPONSE
@@ -568,5 +646,7 @@ export async function handleCreate(
     guestId: input.guestId,
     hostId: hostAccountData.User,
     createdAt: now,
+    threadId: threadId || null,
+    aiHostSummary: aiHostSummary,
   };
 }

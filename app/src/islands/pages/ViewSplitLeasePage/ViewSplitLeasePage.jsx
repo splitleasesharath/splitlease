@@ -4,7 +4,12 @@
  * Architecture: ESM + React Islands pattern
  *
  * IMPORTANT: This is a comprehensive rebuild based on documentation and original page inspection
+ *
+ * UPDATE 2026-01-17: Added FavoriteButton to price display section
  */
+// FORCE RELOAD v4 - timestamp: 1768673500000
+console.log('🔄 ViewSplitLeasePage v4 - FavoriteButton ACTIVE - ' + new Date().toISOString());
+console.log('🔄 If you see this, the correct file is loaded!');
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Header from '../shared/Header.jsx';
@@ -16,6 +21,7 @@ import ContactHostMessaging from '../shared/ContactHostMessaging.jsx';
 import InformationalText from '../shared/InformationalText.jsx';
 import SignUpLoginModal from '../shared/SignUpLoginModal.jsx';
 import ProposalSuccessModal from '../modals/ProposalSuccessModal.jsx';
+import FavoriteButton from '../shared/FavoriteButton/FavoriteButton.jsx';
 import { initializeLookups } from '../../lib/dataLookups.js';
 import { checkAuthStatus, validateTokenAndFetchUser, getSessionId } from '../../lib/auth.js';
 import { fetchListingComplete, getListingIdFromUrl, fetchZatPriceConfiguration } from '../../lib/listingDataFetcher.js';
@@ -41,12 +47,10 @@ import '../../styles/listing-schedule-selector.css';
 import '../../styles/components/toast.css';
 import './ViewSplitLeasePage.css';
 
-import {
-  LoadingState,
-  ErrorState,
-  PhotoGallery,
-  SchedulePatternHighlight
-} from './components';
+import { LoadingState } from './components/LoadingState.jsx';
+import { ErrorState } from './components/ErrorState.jsx';
+import { PhotoGallery } from './components/PhotoGallery.jsx';
+import { SchedulePatternHighlight } from './components/SchedulePatternHighlight.jsx';
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -160,6 +164,9 @@ export default function ViewSplitLeasePage() {
 
   // Toast notification state
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+  // Favorite state - tracks if the current listing is favorited by the user
+  const [isFavorited, setIsFavorited] = useState(false);
 
   // Show toast notification helper
   const showToast = (message, type = 'success') => {
@@ -440,6 +447,44 @@ export default function ViewSplitLeasePage() {
   }, [loggedInUserData?.userId, listing?._id]);
 
   // ============================================================================
+  // CHECK IF LISTING IS FAVORITED
+  // ============================================================================
+
+  useEffect(() => {
+    // Check if the current listing is in the user's favorites
+    async function checkIfFavorited() {
+      if (!loggedInUserData?.userId || !listing?._id) {
+        setIsFavorited(false);
+        return;
+      }
+
+      try {
+        const { data: userData, error } = await supabase
+          .from('user')
+          .select('"Favorited Listings"')
+          .eq('_id', loggedInUserData.userId)
+          .single();
+
+        if (error) {
+          logger.debug('ViewSplitLeasePage: Error fetching user favorites:', error);
+          setIsFavorited(false);
+          return;
+        }
+
+        const favorites = userData?.['Favorited Listings'] || [];
+        const isFav = favorites.includes(listing._id);
+        logger.debug('ViewSplitLeasePage: Listing favorited status:', isFav);
+        setIsFavorited(isFav);
+      } catch (err) {
+        logger.debug('ViewSplitLeasePage: Error checking favorite status:', err);
+        setIsFavorited(false);
+      }
+    }
+
+    checkIfFavorited();
+  }, [loggedInUserData?.userId, listing?._id]);
+
+  // ============================================================================
   // COMPUTED VALUES
   // ============================================================================
 
@@ -596,6 +641,11 @@ export default function ViewSplitLeasePage() {
 
   // Submit proposal to backend (after auth is confirmed)
   const submitProposal = async (proposalData) => {
+    // Guard against double submission
+    if (isSubmittingProposal) {
+      logger.debug('Proposal submission already in progress, skipping duplicate call');
+      return;
+    }
     setIsSubmittingProposal(true);
 
     try {
@@ -824,9 +874,12 @@ export default function ViewSplitLeasePage() {
     // If there's a pending proposal, submit it now
     if (pendingProposalData) {
       logger.debug('Submitting pending proposal after auth');
+      // Capture and clear pending data immediately to prevent double submission
+      const dataToSubmit = pendingProposalData;
+      setPendingProposalData(null);
       // Small delay to ensure auth state is fully updated
       setTimeout(async () => {
-        await submitProposal(pendingProposalData);
+        await submitProposal(dataToSubmit);
       }, 500);
     }
   };
@@ -1645,7 +1698,10 @@ export default function ViewSplitLeasePage() {
             padding: '12px',
             borderRadius: '12px',
             marginBottom: '16px',
-            border: '1px solid #e9d5ff'
+            border: '1px solid #e9d5ff',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
           }}>
             <div style={{
               fontSize: '32px',
@@ -1668,6 +1724,15 @@ export default function ViewSplitLeasePage() {
                 WebkitTextFillColor: '#6B7280'
               }}>/night</span>
             </div>
+            <FavoriteButton
+              listingId={listing?._id}
+              userId={loggedInUserData?.userId}
+              initialFavorited={isFavorited}
+              onToggle={(newState) => setIsFavorited(newState)}
+              onRequireAuth={() => setShowAuthModal(true)}
+              size="large"
+              variant="inline"
+            />
           </div>
 
           {/* Move-in Date */}
@@ -2649,7 +2714,10 @@ export default function ViewSplitLeasePage() {
                   padding: '12px',
                   borderRadius: '12px',
                   marginBottom: '16px',
-                  border: '1px solid #e9d5ff'
+                  border: '1px solid #e9d5ff',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
                 }}>
                   <div style={{
                     fontSize: '24px',
@@ -2661,6 +2729,15 @@ export default function ViewSplitLeasePage() {
                       : 'Select Days'}
                     <span style={{ fontSize: '14px', color: '#6B7280', fontWeight: '500' }}>/night</span>
                   </div>
+                  <FavoriteButton
+                    listingId={listing?._id}
+                    userId={loggedInUserData?.userId}
+                    initialFavorited={isFavorited}
+                    onToggle={(newState) => setIsFavorited(newState)}
+                    onRequireAuth={() => setShowAuthModal(true)}
+                    size="medium"
+                    variant="inline"
+                  />
                 </div>
 
                 {/* Move-in Date */}

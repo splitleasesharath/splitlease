@@ -5,7 +5,7 @@
  *
  * Responsibilities:
  * - Authentication check (redirect if not logged in)
- * - Fetch threads on mount via Edge Function
+ * - Fetch threads on mount via Edge Function (bypasses RLS for legacy auth)
  * - URL parameter sync (?thread=THREAD_ID)
  * - Fetch messages when thread selected
  * - Message sending handler
@@ -16,7 +16,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { checkAuthStatus, validateTokenAndFetchUser, getFirstName, getAvatarUrl } from '../../../lib/auth.js';
+import { checkAuthStatus, validateTokenAndFetchUser, getFirstName, getAvatarUrl, getUserType } from '../../../lib/auth.js';
 import { getUserId } from '../../../lib/secureStorage.js';
 import { supabase } from '../../../lib/supabase.js';
 import { useCTAHandler } from './useCTAHandler.js';
@@ -47,6 +47,13 @@ export function useMessagingPageLogic() {
   const [error, setError] = useState(null);
   const [messageInput, setMessageInput] = useState('');
   const [isSending, setIsSending] = useState(false);
+
+  // ============================================================================
+  // RIGHT PANEL DATA STATE
+  // ============================================================================
+  const [proposalData, setProposalData] = useState(null);
+  const [listingData, setListingData] = useState(null);
+  const [isLoadingPanelData, setIsLoadingPanelData] = useState(false);
 
   // ============================================================================
   // REALTIME STATE
@@ -115,9 +122,10 @@ export function useMessagingPageLogic() {
             bubbleId: userData.userId,  // userId from validateTokenAndFetchUser is the Bubble _id
             firstName: userData.firstName,
             lastName: userData.fullName?.split(' ').slice(1).join(' ') || '',
-            profilePhoto: userData.profilePhoto
+            profilePhoto: userData.profilePhoto,
+            userType: userData.userType || null  // 'Host' or 'Guest'
           });
-          console.log('[Messaging] User data loaded:', userData.firstName);
+          console.log('[Messaging] User data loaded:', userData.firstName, '- Type:', userData.userType);
         } else {
           // Fallback: Use session metadata if profile fetch failed but session is valid
           const { data: { session } } = await supabase.auth.getSession();
@@ -129,10 +137,11 @@ export function useMessagingPageLogic() {
               bubbleId: session.user.user_metadata?.user_id || getUserId() || session.user.id,
               firstName: session.user.user_metadata?.first_name || getFirstName() || session.user.email?.split('@')[0] || 'User',
               lastName: session.user.user_metadata?.last_name || '',
-              profilePhoto: getAvatarUrl() || null
+              profilePhoto: getAvatarUrl() || null,
+              userType: session.user.user_metadata?.user_type || getUserType() || null
             };
             setUser(fallbackUser);
-            console.log('[Messaging] Using fallback user data from session:', fallbackUser.firstName);
+            console.log('[Messaging] Using fallback user data from session:', fallbackUser.firstName, '- Type:', fallbackUser.userType);
           } else {
             // No session at all - redirect
             console.log('[Messaging] No valid session, redirecting');
@@ -161,6 +170,18 @@ export function useMessagingPageLogic() {
 
   // Ref to track if initial thread selection has been done
   const hasAutoSelectedThread = useRef(false);
+
+  // ============================================================================
+  // FETCH PANEL DATA WHEN THREAD INFO CHANGES
+  // ============================================================================
+  useEffect(() => {
+    if (threadInfo?.proposal_id || threadInfo?.listing_id) {
+      fetchPanelData(threadInfo.proposal_id, threadInfo.listing_id);
+    } else {
+      setProposalData(null);
+      setListingData(null);
+    }
+  }, [threadInfo?.proposal_id, threadInfo?.listing_id]);
 
   // ============================================================================
   // URL PARAM SYNC FOR THREAD SELECTION (runs once when threads load)
@@ -328,34 +349,81 @@ export function useMessagingPageLogic() {
 
   /**
    * Fetch all threads for the authenticated user
-   * Direct Supabase query - no Edge Function needed for reads
+   * Supports both modern Supabase auth (JWT) and legacy auth (user_id in payload)
    */
   async function fetchThreads() {
+    console.log('[fetchThreads] Starting thread fetch via Edge Function...');
     try {
       setIsLoading(true);
       setError(null);
 
-      // Get user's Bubble ID from multiple sources (state may not be set yet due to async setState)
-      let bubbleId = user?.bubbleId;
+      // Check for Supabase session (modern auth)
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
 
-      if (!bubbleId) {
-        // Try secure storage first (works for legacy auth users)
-        bubbleId = getUserId();
+      console.log('[fetchThreads] Auth state:', {
+        hasSupabaseSession: !!accessToken,
+        hasLegacyUserId: !!getUserId(),
+      });
+
+      // Build request headers - include Authorization only if we have a token
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
       }
 
-      if (!bubbleId) {
-        // Fallback to Supabase session metadata
-        const { data: { session } } = await supabase.auth.getSession();
-        bubbleId = session?.user?.user_metadata?.user_id;
+      // Build payload - include user_id for legacy auth fallback
+      const payload = {};
+      if (!accessToken) {
+        // No Supabase session - use legacy auth via user_id
+        const legacyUserId = getUserId();
+        if (legacyUserId) {
+          payload.user_id = legacyUserId;
+          console.log('[fetchThreads] Using legacy auth with user_id:', legacyUserId);
+        } else {
+          throw new Error('Not authenticated. Please log in again.');
+        }
       }
 
-      if (!bubbleId) {
-        throw new Error('User ID not available');
+      // Make the API call
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const response = await fetch(`${supabaseUrl}/functions/v1/messages`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          action: 'get_threads',
+          payload
+        }),
+      });
+
+      console.log('[fetchThreads] Response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[fetchThreads] Error response:', errorText);
+        throw new Error(`Failed to fetch threads: ${response.status}`);
       }
 
-      await fetchThreadsWithBubbleId(bubbleId);
+      const data = await response.json();
+
+      console.log('[fetchThreads] Edge Function response:', {
+        success: data?.success,
+        threadCount: data?.data?.threads?.length || 0,
+        error: data?.error
+      });
+
+      if (!data?.success) {
+        throw new Error(data?.error || 'Failed to fetch threads');
+      }
+
+      const fetchedThreads = data.data?.threads || [];
+      console.log('[fetchThreads] Found', fetchedThreads.length, 'threads');
+
+      setThreads(fetchedThreads);
     } catch (err) {
-      console.error('Error fetching threads:', err);
+      console.error('[fetchThreads] Error:', err);
       setError(err.message || 'Failed to load conversations');
     } finally {
       setIsLoading(false);
@@ -363,169 +431,63 @@ export function useMessagingPageLogic() {
   }
 
   /**
-   * Fetch threads with a known Bubble ID
-   */
-  async function fetchThreadsWithBubbleId(bubbleId) {
-    // Step 1: Query threads where user is host or guest
-    const { data: threads, error: threadsError } = await supabase
-      .from('thread')
-      .select(`
-        _id,
-        "Modified Date",
-        "-Host User",
-        "-Guest User",
-        "Listing",
-        "~Last Message",
-        "Thread Subject"
-      `)
-      .or(`"-Host User".eq.${bubbleId},"-Guest User".eq.${bubbleId}`)
-      .order('"Modified Date"', { ascending: false });
-
-    if (threadsError) {
-      throw new Error(`Failed to fetch threads: ${threadsError.message}`);
-    }
-
-    if (!threads || threads.length === 0) {
-      setThreads([]);
-      return;
-    }
-
-    // Step 2: Collect contact IDs and listing IDs for batch lookup
-    const contactIds = new Set();
-    const listingIds = new Set();
-
-    threads.forEach(thread => {
-      const hostId = thread['-Host User'];
-      const guestId = thread['-Guest User'];
-      const contactId = hostId === bubbleId ? guestId : hostId;
-      if (contactId) contactIds.add(contactId);
-      if (thread['Listing']) listingIds.add(thread['Listing']);
-    });
-
-    // Step 3: Batch fetch contact user data
-    let contactMap = {};
-    if (contactIds.size > 0) {
-      const { data: contacts } = await supabase
-        .from('user')
-        .select('_id, "Name - First", "Name - Last", "Profile Photo"')
-        .in('_id', Array.from(contactIds));
-
-      if (contacts) {
-        contactMap = contacts.reduce((acc, contact) => {
-          acc[contact._id] = {
-            name: `${contact['Name - First'] || ''} ${contact['Name - Last'] || ''}`.trim() || 'Unknown User',
-            avatar: contact['Profile Photo'],
-          };
-          return acc;
-        }, {});
-      }
-    }
-
-    // Step 4: Batch fetch listing data
-    let listingMap = {};
-    if (listingIds.size > 0) {
-      const { data: listings } = await supabase
-        .from('listing')
-        .select('_id, Name')
-        .in('_id', Array.from(listingIds));
-
-      if (listings) {
-        listingMap = listings.reduce((acc, listing) => {
-          acc[listing._id] = listing.Name || 'Unnamed Property';
-          return acc;
-        }, {});
-      }
-    }
-
-    // Step 5: Transform threads to UI format
-    const transformedThreads = threads.map(thread => {
-      const hostId = thread['-Host User'];
-      const guestId = thread['-Guest User'];
-      const contactId = hostId === bubbleId ? guestId : hostId;
-      const contact = contactId ? contactMap[contactId] : null;
-
-      // Format the last modified time
-      const modifiedDate = thread['Modified Date'] ? new Date(thread['Modified Date']) : new Date();
-      const now = new Date();
-      const diffMs = now.getTime() - modifiedDate.getTime();
-      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-      let lastMessageTime;
-      if (diffDays === 0) {
-        lastMessageTime = modifiedDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-      } else if (diffDays === 1) {
-        lastMessageTime = 'Yesterday';
-      } else if (diffDays < 7) {
-        lastMessageTime = modifiedDate.toLocaleDateString('en-US', { weekday: 'short' });
-      } else {
-        lastMessageTime = modifiedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      }
-
-      return {
-        _id: thread._id,
-        '-Host User': hostId,      // Preserve for CTA role detection
-        '-Guest User': guestId,    // Preserve for CTA role detection
-        contact_name: contact?.name || 'Split Lease',
-        contact_avatar: contact?.avatar,
-        property_name: thread['Listing'] ? listingMap[thread['Listing']] : undefined,
-        last_message_preview: thread['~Last Message'] || 'No messages yet',
-        last_message_time: lastMessageTime,
-        unread_count: 0, // TODO: Implement unread count if needed
-        is_with_splitbot: false,
-      };
-    });
-
-    setThreads(transformedThreads);
-  }
-
-  /**
    * Fetch messages for a specific thread
-   * Uses supabase.functions.invoke() for automatic token refresh
+   * Supports both modern Supabase auth (JWT) and legacy auth (user_id in payload)
    */
   async function fetchMessages(threadId) {
     try {
       setIsLoadingMessages(true);
 
-      // Get fresh session and ensure token is valid
+      // Check for Supabase session (modern auth)
       const { data: sessionData } = await supabase.auth.getSession();
-      console.log('[fetchMessages] Session state:', {
-        hasSession: !!sessionData?.session,
-        hasAccessToken: !!sessionData?.session?.access_token,
-        tokenLength: sessionData?.session?.access_token?.length,
-        userId: sessionData?.session?.user?.id,
+      const accessToken = sessionData?.session?.access_token;
+
+      console.log('[fetchMessages] Auth state:', {
+        hasSupabaseSession: !!accessToken,
+        hasLegacyUserId: !!getUserId(),
       });
 
-      // If no session, try to refresh
-      if (!sessionData?.session?.access_token) {
-        console.log('[fetchMessages] No session, attempting refresh...');
-        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-        if (refreshError || !refreshData?.session) {
-          console.error('[fetchMessages] Session refresh failed:', refreshError);
+      // Build request headers - include Authorization only if we have a token
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
+
+      // Build payload - include user_id for legacy auth fallback
+      const payload = { thread_id: threadId };
+      if (!accessToken) {
+        // No Supabase session - use legacy auth via user_id
+        const legacyUserId = getUserId();
+        if (legacyUserId) {
+          payload.user_id = legacyUserId;
+          console.log('[fetchMessages] Using legacy auth with user_id:', legacyUserId);
+        } else {
           throw new Error('Not authenticated. Please log in again.');
         }
-        console.log('[fetchMessages] Session refreshed successfully');
       }
 
-      // Get the current access token for explicit header passing
-      const { data: currentSession } = await supabase.auth.getSession();
-      const accessToken = currentSession?.session?.access_token;
-      console.log('[fetchMessages] Making function call with token:', !!accessToken);
-
-      // Use supabase.functions.invoke() with explicit Authorization header
-      // This works around potential SDK issues where the token isn't auto-included
-      const { data, error } = await supabase.functions.invoke('messages', {
-        body: {
+      // Make the API call
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const response = await fetch(`${supabaseUrl}/functions/v1/messages`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
           action: 'get_messages',
-          payload: { thread_id: threadId }
-        },
-        headers: accessToken ? {
-          Authorization: `Bearer ${accessToken}`
-        } : undefined
+          payload
+        }),
       });
 
-      if (error) {
-        throw new Error(error.message || 'Failed to fetch messages');
+      console.log('[fetchMessages] Response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[fetchMessages] Error response:', errorText);
+        throw new Error(`Failed to fetch messages: ${response.status}`);
       }
+
+      const data = await response.json();
 
       if (data?.success) {
         setMessages(data.data.messages || []);
@@ -544,7 +506,7 @@ export function useMessagingPageLogic() {
   /**
    * Send a new message
    * After sending, Realtime will deliver the message to all subscribers
-   * Uses supabase.functions.invoke() for automatic token refresh
+   * Supports both modern Supabase auth (JWT) and legacy auth (user_id in payload)
    */
   async function sendMessage() {
     if (!messageInput.trim() || !selectedThread || isSending) return;
@@ -558,28 +520,52 @@ export function useMessagingPageLogic() {
         clearTimeout(typingTimeoutRef.current);
       }
 
-      // Get the current access token for explicit header passing
-      const { data: currentSession } = await supabase.auth.getSession();
-      const accessToken = currentSession?.session?.access_token;
+      // Check for Supabase session (modern auth)
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
 
-      // Use supabase.functions.invoke() with explicit Authorization header
-      // This works around potential SDK issues where the token isn't auto-included
-      const { data, error } = await supabase.functions.invoke('messages', {
-        body: {
+      // Build request headers - include Authorization only if we have a token
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
+
+      // Build payload - include user_id for legacy auth fallback
+      const payload = {
+        thread_id: selectedThread._id,
+        message_body: messageInput.trim(),
+      };
+      if (!accessToken) {
+        // No Supabase session - use legacy auth via user_id
+        const legacyUserId = getUserId();
+        if (legacyUserId) {
+          payload.user_id = legacyUserId;
+          console.log('[sendMessage] Using legacy auth with user_id:', legacyUserId);
+        } else {
+          throw new Error('No access token available. Please log in again.');
+        }
+      }
+
+      // Make the API call
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const response = await fetch(`${supabaseUrl}/functions/v1/messages`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
           action: 'send_message',
-          payload: {
-            thread_id: selectedThread._id,
-            message_body: messageInput.trim(),
-          },
-        },
-        headers: accessToken ? {
-          Authorization: `Bearer ${accessToken}`
-        } : undefined
+          payload,
+        }),
       });
 
-      if (error) {
-        throw new Error(error.message || 'Failed to send message');
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[sendMessage] Error response:', errorText);
+        throw new Error(`Failed to send message: ${response.status}`);
       }
+
+      const data = await response.json();
 
       if (data?.success) {
         // Clear input immediately
@@ -620,30 +606,233 @@ export function useMessagingPageLogic() {
   }
 
   // ============================================================================
+  // RIGHT PANEL DATA FETCHING
+  // ============================================================================
+
+  /**
+   * Fetch extended proposal and listing data for the right panel
+   * Called when a thread is selected
+   */
+  async function fetchPanelData(proposalId, listingId) {
+    if (!proposalId && !listingId) {
+      setProposalData(null);
+      setListingData(null);
+      return;
+    }
+
+    try {
+      setIsLoadingPanelData(true);
+
+      // Fetch proposal and listing data in parallel
+      const [proposalResult, listingResult] = await Promise.all([
+        proposalId ? fetchProposalDetails(proposalId) : Promise.resolve(null),
+        listingId ? fetchListingDetails(listingId) : Promise.resolve(null),
+      ]);
+
+      setProposalData(proposalResult);
+      setListingData(listingResult);
+    } catch (err) {
+      console.error('[RightPanel] Error fetching panel data:', err);
+      // Don't set error state - panel will show empty/gracefully degrade
+    } finally {
+      setIsLoadingPanelData(false);
+    }
+  }
+
+  /**
+   * Fetch proposal details by ID
+   */
+  async function fetchProposalDetails(proposalId) {
+    try {
+      const { data, error } = await supabase
+        .from('proposal')
+        .select(`
+          _id,
+          "Status",
+          "Created Date",
+          "Start Date",
+          "End Date",
+          "Days per Week",
+          "Total Monthly Price",
+          "Modified Date"
+        `)
+        .eq('_id', proposalId)
+        .single();
+
+      if (error) {
+        console.error('[RightPanel] Error fetching proposal:', error);
+        return null;
+      }
+
+      // Transform to UI format
+      return {
+        id: data._id,
+        status: data['Status'] || 'pending',
+        createdAt: data['Created Date'],
+        startDate: data['Start Date'],
+        endDate: data['End Date'],
+        daysPerWeek: data['Days per Week'],
+        totalMonthlyPrice: data['Total Monthly Price'],
+        modifiedDate: data['Modified Date'],
+      };
+    } catch (err) {
+      console.error('[RightPanel] Error fetching proposal:', err);
+      return null;
+    }
+  }
+
+  /**
+   * Fetch listing details by ID
+   */
+  async function fetchListingDetails(listingId) {
+    try {
+      const { data, error } = await supabase
+        .from('listing')
+        .select(`
+          _id,
+          "Name",
+          "Primary Photo",
+          "Neighborhood",
+          "City",
+          "Street Address",
+          "State",
+          "Monthly Rate",
+          "Listing Type"
+        `)
+        .eq('_id', listingId)
+        .single();
+
+      if (error) {
+        console.error('[RightPanel] Error fetching listing:', error);
+        return null;
+      }
+
+      // Build address string
+      const addressParts = [
+        data['Neighborhood'],
+        data['City'],
+        data['State']
+      ].filter(Boolean);
+
+      // Transform to UI format
+      return {
+        id: data._id,
+        name: data['Name'] || 'Unnamed Listing',
+        primaryImage: data['Primary Photo'],
+        address: addressParts.join(', ') || 'Location not specified',
+        monthlyRate: data['Monthly Rate'],
+        listingType: data['Listing Type'] || 'Flexible',
+      };
+    } catch (err) {
+      console.error('[RightPanel] Error fetching listing:', err);
+      return null;
+    }
+  }
+
+  /**
+   * Handle quick action button clicks from the right panel
+   */
+  const handlePanelAction = useCallback((actionType) => {
+    console.log('[RightPanel] Action clicked:', actionType);
+
+    switch (actionType) {
+      case 'accept':
+        // Open proposal acceptance modal/flow
+        handleOpenModal('accept_proposal', {
+          proposalId: threadInfo?.proposal_id,
+          proposalData,
+        });
+        break;
+
+      case 'counter':
+        // Open counter proposal modal
+        handleOpenModal('counter_proposal', {
+          proposalId: threadInfo?.proposal_id,
+          proposalData,
+        });
+        break;
+
+      case 'video':
+        // Open video call scheduling modal
+        handleOpenModal('schedule_video', {
+          threadId: selectedThread?._id,
+          contactName: threadInfo?.contact_name,
+        });
+        break;
+
+      case 'decline':
+        // Open decline confirmation modal
+        handleOpenModal('decline_proposal', {
+          proposalId: threadInfo?.proposal_id,
+          proposalData,
+        });
+        break;
+
+      case 'view_profile':
+        // Navigate to contact's profile (if we have the ID)
+        // For now, log - implementation depends on routing
+        console.log('[RightPanel] View profile clicked');
+        break;
+
+      case 'view_listing':
+        // Navigate to listing page
+        if (listingData?.id) {
+          window.location.href = `/listing?id=${listingData.id}`;
+        }
+        break;
+
+      default:
+        console.warn('[RightPanel] Unknown action:', actionType);
+    }
+  }, [threadInfo, proposalData, listingData, selectedThread, handleOpenModal]);
+
+  // ============================================================================
   // HANDLERS
   // ============================================================================
 
   /**
    * Internal thread selection (does not update URL, used by effect)
+   * Also marks the thread as read in local state
    */
   function handleThreadSelectInternal(thread) {
     setSelectedThread(thread);
     setMessages([]);
     setThreadInfo(null);
+    setProposalData(null);
+    setListingData(null);
     setIsOtherUserTyping(false);
     setTypingUserName(null);
+
+    // Mark thread as read in local state (backend will mark messages as read)
+    setThreads(prevThreads =>
+      prevThreads.map(t =>
+        t._id === thread._id ? { ...t, unread_count: 0 } : t
+      )
+    );
+
     fetchMessages(thread._id);
   }
 
   /**
    * Handle thread selection from user interaction
+   * Also marks the thread as read by setting unread_count to 0 locally
+   * (backend marks messages as read when fetchMessages is called)
    */
   const handleThreadSelect = useCallback((thread) => {
     setSelectedThread(thread);
     setMessages([]);
     setThreadInfo(null);
+    setProposalData(null);
+    setListingData(null);
     setIsOtherUserTyping(false);
     setTypingUserName(null);
+
+    // Mark thread as read in local state (backend will mark messages as read)
+    setThreads(prevThreads =>
+      prevThreads.map(t =>
+        t._id === thread._id ? { ...t, unread_count: 0 } : t
+      )
+    );
 
     // Update URL
     const params = new URLSearchParams(window.location.search);
@@ -653,6 +842,16 @@ export function useMessagingPageLogic() {
     // Fetch messages for selected thread
     fetchMessages(thread._id);
   }, []);
+
+  /**
+   * Insert suggestion text into message input
+   * Called when a user clicks a suggestion chip in the empty state
+   */
+  const insertSuggestion = useCallback((suggestionText) => {
+    setMessageInput(suggestionText);
+    // Trigger typing indicator so recipient sees activity
+    trackTyping(true);
+  }, [trackTyping]);
 
   /**
    * Handle message input change with typing indicator
@@ -704,6 +903,11 @@ export function useMessagingPageLogic() {
     messages,
     threadInfo,
 
+    // Right panel data
+    proposalData,
+    listingData,
+    isLoadingPanelData,
+
     // UI state
     isLoading,
     isLoadingMessages,
@@ -724,6 +928,8 @@ export function useMessagingPageLogic() {
     handleMessageInputChange,
     handleSendMessage,
     handleRetry,
+    insertSuggestion,
+    handlePanelAction,
 
     // CTA handlers
     handleCTAClick,

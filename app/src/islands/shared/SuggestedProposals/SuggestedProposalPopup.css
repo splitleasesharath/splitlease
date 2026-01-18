@@ -129,7 +129,21 @@
 .sp-popup-nav-btn svg {
   width: 18px;
   height: 18px;
-  color: var(--sp-text-dark);
+}
+
+.sp-popup-nav-btn svg path {
+  stroke: #424242;
+}
+
+.sp-nav-arrow {
+  font-size: 24px;
+  font-weight: 300;
+  color: #424242;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
 }
 
 .sp-popup-close-btn {

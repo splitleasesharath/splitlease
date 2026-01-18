@@ -24,7 +24,7 @@ import { checkAuthStatus, validateTokenAndFetchUser } from '../../../lib/auth.js
 import { createListing, saveDraft, getListingById } from '../../../lib/listingService.js';
 import { isGuest } from '../../../logic/rules/users/isGuest.js';
 import { supabase } from '../../../lib/supabase.js';
-import { NYC_BOUNDS, isValidServiceArea, getBoroughForZipCode } from '../../../lib/nycZipCodes';
+import { NYC_BOUNDS, isValidServiceArea, getBoroughForZipCode, getBoroughFromCounty } from '../../../lib/nycZipCodes';
 import { fetchInformationalTexts } from '../../../lib/informationalTextsFetcher.js';
 import './styles/SelfListingPageV2.css';
 import '../../../styles/components/toast.css';
@@ -209,6 +209,7 @@ export function SelfListingPageV2() {
   const desiredRentInfoRef = useRef<HTMLButtonElement>(null);
   const securityDepositInfoRef = useRef<HTMLButtonElement>(null);
   const utilitiesInfoRef = useRef<HTMLButtonElement>(null);
+  const scheduleInfoRef = useRef<HTMLButtonElement>(null);
 
   // Mapping of tooltip IDs to database tag titles with fallback content
   const infoContentConfig: Record<string, { title: string; dbTag: string; fallbackContent: string; fallbackExpanded: string }> = {
@@ -271,6 +272,12 @@ export function SelfListingPageV2() {
       dbTag: 'Utilities',
       fallbackContent: 'Specify whether utilities are included in the rent or charged separately.',
       fallbackExpanded: 'If utilities are not included, specify the estimated monthly cost so guests know what to expect. Common utilities include electricity, gas, water, internet, and trash removal.',
+    },
+    schedule: {
+      title: 'Schedule Information',
+      dbTag: 'Schedule Information',
+      fallbackContent: 'This shows how many nights per week you\'ve selected to make available for guests.',
+      fallbackExpanded: 'With Split Lease, you can select specific nights of the week to share your space. You keep access to your home on the nights you don\'t select. The more nights you offer, the more you can earn.',
     },
   };
 
@@ -622,10 +629,26 @@ export function SelfListingPageV2() {
 
         // Validate service area
         if (!isValidServiceArea(zip, state, county)) {
-          const borough = zip ? getBoroughForZipCode(zip) : null;
-          const errorMsg = borough
-            ? `This address appears to be outside our service area.`
-            : `This address is outside our NYC / Hudson County service area.`;
+          // Try to identify the borough for a more helpful error message
+          const boroughFromZip = zip ? getBoroughForZipCode(zip) : null;
+          const boroughFromCounty = county ? getBoroughFromCounty(county) : null;
+
+          let errorMsg: string;
+          if (boroughFromZip) {
+            // Has a zip but it's not in our service area
+            errorMsg = `This address (zip: ${zip}) is outside our service area. We only accept listings in NYC and Hudson County, NJ.`;
+          } else if (state === 'NJ' && county) {
+            // New Jersey but not Hudson County
+            errorMsg = `This address is outside our service area. We only accept listings in Hudson County, NJ, not ${county}.`;
+          } else if (boroughFromCounty) {
+            // Found a borough from county name but still failed - shouldn't happen now
+            errorMsg = `This address in ${boroughFromCounty} couldn't be validated. Please try selecting a more specific address.`;
+          } else {
+            // Generic fallback
+            errorMsg = `This address is outside our NYC / Hudson County service area.`;
+          }
+
+          console.warn('Address validation failed:', { zip, state, county, boroughFromZip, boroughFromCounty });
           setAddressError(errorMsg);
           setIsAddressValid(false);
           return;
@@ -953,6 +976,9 @@ export function SelfListingPageV2() {
 
   // Submit handler
   const handleSubmit = async () => {
+    // IMMEDIATELY disable the button to prevent double-clicks
+    setIsSubmitting(true);
+
     // Try to get user data from Edge Function first
     // CRITICAL: Use clearOnFailure: false to preserve session if Edge Function fails
     const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
@@ -968,13 +994,14 @@ export function SelfListingPageV2() {
 
     if (!loggedIn) {
       console.log('[SelfListingPageV2] User not logged in, showing auth modal');
+      setIsSubmitting(false); // RE-ENABLE button so user can try again after login
       setShowAuthModal(true);
       setPendingSubmit(true);
       return;
     }
 
     console.log('[SelfListingPageV2] User is logged in, proceeding with submission');
-    setIsSubmitting(true);
+    // isSubmitting already true, no need to set again
 
     try {
       // Map form data to listingService format
@@ -988,12 +1015,13 @@ export function SelfListingPageV2() {
       localStorage.setItem(LAST_HOST_TYPE_KEY, formData.hostType);
       localStorage.setItem(LAST_MARKET_STRATEGY_KEY, formData.marketStrategy);
       localStorage.removeItem(STORAGE_KEY);
+      // NOTE: Do NOT reset isSubmitting on success - button stays disabled as success modal appears
     } catch (error) {
       console.error('[SelfListingPageV2] Submit error:', error);
       alert('Failed to create listing. Please try again.');
-    } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false); // Re-enable button on error for retry
     }
+    // Remove the finally block since we handle success/error separately
   };
 
   // Map form data to listingService format
@@ -1108,11 +1136,12 @@ export function SelfListingPageV2() {
         blockedDates: [],
       },
 
-      // Photos
+      // Photos - include file property for upload to Supabase Storage
       photos: {
         photos: data.photos.map((p, i) => ({
           id: p.id,
           url: p.url,
+          file: p.file, // Required for photoUpload.js to upload to storage
           caption: '',
           displayOrder: i,
         })),
@@ -1216,7 +1245,7 @@ export function SelfListingPageV2() {
               const infoRef = style === 'nightly' ? leaseStyleNightlyInfoRef
                 : style === 'weekly' ? leaseStyleWeeklyInfoRef
                 : leaseStyleMonthlyInfoRef;
-              const tooltipId = `leaseStyle${style.charAt(0).toUpperCase() + style.slice(1)}` as keyof typeof infoContent;
+              const tooltipId = `leaseStyle${style.charAt(0).toUpperCase() + style.slice(1)}` as keyof typeof infoContentConfig;
 
               return (
                 <div
@@ -1764,7 +1793,7 @@ export function SelfListingPageV2() {
     const files = e.target.files;
     if (!files) return;
 
-    const newPhotos = Array.from(files).map((file, index) => ({
+    const newPhotos = Array.from(files).map((file: File, index: number) => ({
       id: `photo_${Date.now()}_${index}_${Math.random().toString(36).substr(2, 9)}`,
       url: URL.createObjectURL(file),
       file,
@@ -1988,25 +2017,25 @@ export function SelfListingPageV2() {
             <div className="review-listing-price-row">
               <span className="review-price-amount">{priceDisplay}</span>
               <span className="review-price-period">/ {freq.toLowerCase()}</span>
-              <span className="review-price-from">
-                {schedule}
-                <button type="button" className="review-price-info-btn" aria-label="Price info">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              {formData.leaseStyle === 'nightly' ? (
+                <button
+                  type="button"
+                  ref={scheduleInfoRef}
+                  className="review-price-from review-price-info-trigger"
+                  onClick={handleInfoClick('schedule')}
+                  aria-label="Schedule information"
+                >
+                  {schedule}
+                  <svg className="review-price-info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <circle cx="12" cy="12" r="10" />
                     <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
                     <line x1="12" y1="17" x2="12.01" y2="17" />
                   </svg>
                 </button>
-              </span>
+              ) : (
+                <span className="review-price-from">{schedule}</span>
+              )}
             </div>
-
-            {/* Message Button */}
-            <button type="button" className="review-message-btn">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-              </svg>
-              Message
-            </button>
 
             {/* Host Name */}
             <div className="review-listing-host">
@@ -2021,7 +2050,7 @@ export function SelfListingPageV2() {
             onClick={handleSubmit}
             disabled={isSubmitting}
           >
-            {isSubmitting ? 'Creating...' : 'Activate Listing'}
+            {isSubmitting ? 'Activating...' : 'Activate Listing'}
           </button>
           <button className="btn-back" onClick={prevStep} disabled={isSubmitting}>Back</button>
         </div>
@@ -2237,7 +2266,7 @@ export function SelfListingPageV2() {
 
   return (
     <div className="self-listing-v2-page">
-      <Header key={headerKey} />
+      <Header key={headerKey} autoShowLogin={false} />
 
       <main className="self-listing-v2-main">
         <div className="container">
@@ -2266,7 +2295,7 @@ export function SelfListingPageV2() {
             setShowAuthModal(false);
             setPendingSubmit(false);
           }}
-          initialView="signup"
+          initialView="identity"
           defaultUserType="host"
           skipReload={true}
           onAuthSuccess={handleAuthSuccess}
@@ -2379,6 +2408,16 @@ export function SelfListingPageV2() {
         content={getInfoContent('utilities').content}
         expandedContent={getInfoContent('utilities').expandedContent}
         showMoreAvailable={getInfoContent('utilities').showMore}
+      />
+
+      <InformationalText
+        isOpen={activeInfoTooltip === 'schedule'}
+        onClose={() => setActiveInfoTooltip(null)}
+        triggerRef={scheduleInfoRef}
+        title={getInfoContent('schedule').title}
+        content={getInfoContent('schedule').content}
+        expandedContent={getInfoContent('schedule').expandedContent}
+        showMoreAvailable={getInfoContent('schedule').showMore}
       />
     </div>
   );

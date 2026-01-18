@@ -12,7 +12,7 @@ import Header from '../../shared/Header';
 import SignUpLoginModal from '../../shared/SignUpLoginModal';
 import Toast, { useToast } from '../../shared/Toast';
 import { getListingById } from '../../../lib/bubbleAPI';
-import { checkAuthStatus, validateTokenAndFetchUser } from '../../../lib/auth';
+import { checkAuthStatus, validateTokenAndFetchUser } from '../../../lib/auth/tokenValidation.js';
 import { createListing } from '../../../lib/listingService';
 import { isGuest } from '../../../logic/rules/users/isGuest.js';
 import './styles/SelfListingPage.css';
@@ -670,7 +670,7 @@ export const SelfListingPage: React.FC = () => {
 
       {/* Shared Header Island - key forces re-render after auth change */}
       {console.log('🎨 Rendering Header component')}
-      <Header key={headerKey} />
+      <Header key={headerKey} autoShowLogin={false} />
 
       <div className="self-listing-page">
         {/* Page Header */}
@@ -835,7 +835,6 @@ export const SelfListingPage: React.FC = () => {
         }}
         initialView="signup"
         defaultUserType="host"
-        showUserTypeSelector={false}
         skipReload={true}
         onAuthSuccess={handleAuthSuccess}
       />

@@ -57,7 +57,7 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 16px;
+  padding: 80px 16px 16px 16px; /* Extra top padding to clear the header */
   overflow-y: auto;
   animation: fadeIn 0.2s ease-in-out;
 }
@@ -74,8 +74,8 @@
 .guest-editing-proposal {
   width: 100%;
   max-width: 480px;
-  min-height: 100px;
-  max-height: calc(100vh - 32px);
+  height: 780px; /* Fixed height - fits Proposal Details without scroll, Edit view scrolls */
+  max-height: calc(100vh - 120px); /* Fallback for small screens, ensures gap from header */
   background-color: var(--gep-bg-primary);
   border-radius: var(--gep-roundness-large);
   box-sizing: border-box;
@@ -109,7 +109,7 @@
   min-height: 0;
   background-color: var(--gep-bg-primary);
   border-radius: var(--gep-roundness);
-  overflow-y: auto;
+  overflow-y: auto; /* Entire content area scrolls */
   overflow-x: hidden;
 }
 
@@ -127,10 +127,7 @@
   justify-content: space-between;
   padding: 16px 20px;
   border-bottom: 1px solid var(--gep-border-light);
-  position: sticky;
-  top: 0;
   background-color: var(--gep-bg-primary);
-  z-index: 10;
 }
 
 .gep-back-button,
@@ -617,6 +614,7 @@
   justify-content: center;
   background: var(--gep-bg-secondary);
   border-top: 1px solid var(--gep-border-light);
+  flex-shrink: 0; /* Prevent buttons from shrinking, keep at bottom */
 }
 
 /* Vertical stacking for pristine state buttons */

@@ -143,24 +143,34 @@ export async function markProposalInterested(proposalId) {
  * Dismiss/remove a suggested proposal
  *
  * This soft-deletes the proposal or marks it as not interested,
- * removing it from the suggestions list.
+ * removing it from the suggestions list. Optionally stores
+ * feedback about why the user wasn't interested.
  *
  * @param {string} proposalId - The proposal's _id
+ * @param {string|null} feedback - Optional feedback text explaining why not interested
  * @returns {Promise<{success: boolean, error?: string}>}
  */
-export async function dismissProposal(proposalId) {
+export async function dismissProposal(proposalId, feedback = null) {
   if (!proposalId) {
     return { success: false, error: 'No proposal ID provided' };
   }
 
   try {
+    // Build update payload
+    const updatePayload = {
+      Deleted: true,
+      'Modified Date': new Date().toISOString()
+    };
+
+    // Store feedback if provided (using Guest Comments field)
+    if (feedback && feedback.trim()) {
+      updatePayload['Guest Comments'] = `[Not Interested] ${feedback.trim()}`;
+    }
+
     // Soft delete the proposal
     const { error } = await supabase
       .from('proposal')
-      .update({
-        Deleted: true,
-        'Modified Date': new Date().toISOString()
-      })
+      .update(updatePayload)
       .eq('_id', proposalId);
 
     if (error) {
@@ -168,7 +178,7 @@ export async function dismissProposal(proposalId) {
       return { success: false, error: error.message };
     }
 
-    console.log(`Dismissed proposal ${proposalId}`);
+    console.log(`Dismissed proposal ${proposalId}${feedback ? ' with feedback' : ''}`);
     return { success: true };
   } catch (err) {
     console.error('Exception dismissing proposal:', err);

@@ -22,7 +22,7 @@ import { useHostProposalsPageLogic } from './useHostProposalsPageLogic.js';
 import ListingSelector from './ListingSelector.jsx';
 import ProposalGrid from './ProposalGrid.jsx';
 import ProposalDetailsModal from './ProposalDetailsModal.jsx';
-import { HostEditingProposal } from '../../shared/HostEditingProposal/index.js';
+import { HostEditingProposal } from '../../shared/HostEditingProposal/HostEditingProposal.jsx';
 import VirtualMeetingManager from '../../shared/VirtualMeetingManager/VirtualMeetingManager.jsx';
 
 // ============================================================================

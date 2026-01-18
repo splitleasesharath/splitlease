@@ -78,7 +78,8 @@ const ALLOWED_ACTIONS = [
 type Action = typeof ALLOWED_ACTIONS[number];
 
 // Actions that require Bubble API configuration
-const BUBBLE_REQUIRED_ACTIONS: ReadonlySet<string> = new Set(['validate']);
+// NOTE: validate was removed - it no longer uses Bubble API (uses Supabase only)
+const BUBBLE_REQUIRED_ACTIONS: ReadonlySet<string> = new Set([]);
 
 // Handler map (immutable record) - replaces switch statement
 const handlers: Readonly<Record<Action, Function>> = {
@@ -257,8 +258,8 @@ async function executeHandler(
       return handler(payload);
 
     case 'validate':
-      // Validate requires both Bubble and Supabase config
-      return handler(bubbleBaseUrl, bubbleApiKey, supabaseUrl, supabaseServiceKey, payload);
+      // Validate uses Supabase only (Bubble params passed for signature compatibility but unused)
+      return handler('', '', supabaseUrl, supabaseServiceKey, payload);
 
     case 'request_password_reset':
       // Password reset uses Supabase Auth natively

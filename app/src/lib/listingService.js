@@ -158,13 +158,15 @@ export async function createListing(formData) {
 
   logger.debug('[ListingService] ✅ Generated listing _id:', generatedId);
 
-  // Step 2: Process photos - they should already be uploaded to Supabase Storage
-  // The Section6Photos component now uploads directly, so we just format them here
+  // Step 2: Process photos
+  // Photos may come with:
+  // - http/https URLs: Already uploaded to Supabase Storage (just format them)
+  // - blob URLs + file property: Need upload to Supabase Storage (SelfListingPageV2 flow)
   let uploadedPhotos = [];
   if (formData.photos?.photos?.length > 0) {
     logger.debug('[ListingService] Processing photos...');
 
-    // Check if photos already have Supabase URLs (uploaded during form editing)
+    // Check if photos already have permanent URLs (uploaded during form editing)
     const allPhotosHaveUrls = formData.photos.photos.every(
       (p) => p.url && (p.url.startsWith('http://') || p.url.startsWith('https://'))
     );
@@ -184,8 +186,9 @@ export async function createListing(formData) {
         toggleMainPhoto: i === 0
       }));
     } else {
-      // Legacy path: Some photos may still need uploading (shouldn't happen with new flow)
-      logger.debug('[ListingService] Uploading remaining photos to Supabase Storage...');
+      // Photos have blob URLs - need to upload to Supabase Storage
+      // Requires photo.file (File object) to be present for upload
+      logger.debug('[ListingService] Uploading photos to Supabase Storage...');
       try {
         uploadedPhotos = await uploadPhotos(formData.photos.photos, generatedId);
         logger.debug('[ListingService] ✅ Photos uploaded:', uploadedPhotos.length);

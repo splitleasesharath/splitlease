@@ -5,7 +5,7 @@
  */
 
 import { useEffect } from 'react';
-import { NotificationSettingsIsland } from '../shared/NotificationSettingsIsland/index.js';
+import NotificationSettingsIsland from '../shared/NotificationSettingsIsland/NotificationSettingsIsland.jsx';
 
 // Inline styles for modal (compatible with pages not using Tailwind CSS)
 const styles = {

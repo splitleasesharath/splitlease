@@ -12,7 +12,7 @@
 
 import { useState } from 'react';
 import { X, MapPin, ChevronLeft, ChevronRight, Bed, Bath, Square } from 'lucide-react';
-import FavoriteButton from '../FavoriteButton';
+import FavoriteButton from '../FavoriteButton/FavoriteButton.jsx';
 import './ListingCardForMap.css';
 
 /**

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../../lib/supabase';
 import { logger } from '../../../../lib/logger';
-import { checkAuthStatus, validateTokenAndFetchUser, getFirstName } from '../../../../lib/auth';
+import { checkAuthStatus, validateTokenAndFetchUser } from '../../../../lib/auth/tokenValidation.js';
+import { getFirstName } from '../../../../lib/auth/session.js';
 import { getUserId } from '../../../../lib/secureStorage';
 
 /**

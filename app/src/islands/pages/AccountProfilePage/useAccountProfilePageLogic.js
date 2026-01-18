@@ -141,13 +141,21 @@ function generateNextActions(profileData, verifications) {
 
 /**
  * Convert day names array to day indices (0-6)
- * @param {string[]} dayNames - Array of day names ['Monday', 'Tuesday', ...]
- * @returns {number[]} Array of day indices [1, 2, ...]
+ * Handles both string day names ['Monday', 'Tuesday', ...] and numeric indices [0, 1, 2, ...]
+ * @param {(string|number)[]} dayValues - Array of day names or indices
+ * @returns {number[]} Array of day indices [0, 1, 2, ...]
  */
-function dayNamesToIndices(dayNames) {
-  if (!Array.isArray(dayNames)) return [];
-  return dayNames
-    .map(name => DAY_NAMES.indexOf(name))
+function dayNamesToIndices(dayValues) {
+  if (!Array.isArray(dayValues)) return [];
+  return dayValues
+    .map(value => {
+      // If it's already a valid numeric index (0-6), use it directly
+      if (typeof value === 'number' && value >= 0 && value <= 6) {
+        return value;
+      }
+      // Otherwise, treat as day name string and look up the index
+      return DAY_NAMES.indexOf(value);
+    })
     .filter(idx => idx !== -1);
 }
 
@@ -441,17 +449,10 @@ export function useAccountProfilePageLogic() {
 
       // Map RPC results to the format expected by ListingsCard component
       // RPC returns: _id, Name, Complete, "Location - Borough", hood, bedrooms, bathrooms,
-      //              "Features - Photos", min_nightly, rental_type, monthly_rate, etc.
+      //              "Features - Photos" (JSONB array), min_nightly, rental_type, monthly_rate, weekly_rate, etc.
       const mappedListings = (data || [])
         .filter(listing => listing.Complete === true) // Only show complete listings
         .map(listing => {
-          // Convert Features - Photos (array of URLs) to listing_photo format (array of {url, Order})
-          const photosArray = listing['Features - Photos'] || [];
-          const listing_photo = photosArray.map((url, index) => ({
-            url: url,
-            Order: index + 1
-          }));
-
           return {
             // Use 'id' (Bubble-style ID) for routing, not '_id' (internal Supabase ID)
             // id format: 1764973043780x52847445415716824 (for URLs)
@@ -465,14 +466,16 @@ export function useAccountProfilePageLogic() {
             // Bedroom/bathroom counts (now returned by updated RPC)
             'Qty of Bedrooms': listing.bedrooms || 0,
             'Qty of Bathrooms': listing.bathrooms || 0,
-            // Pricing - use min_nightly which is the "Start Nightly Price"
-            'Start Nightly Price': listing.min_nightly || listing.rate_2_nights || listing.monthly_rate || 0,
+            // Pricing fields - pass through for rental-type-aware display
+            'Start Nightly Price': listing.min_nightly || 0,
+            min_nightly: listing.min_nightly || 0,
+            weekly_rate: listing.weekly_rate || 0,
+            monthly_rate: listing.monthly_rate || 0,
             Complete: listing.Complete,
-            // Photos converted to listing_photo format for ListingsCard
-            listing_photo: listing_photo,
-            // Additional fields for display
-            rental_type: listing.rental_type,
-            monthly_rate: listing.monthly_rate,
+            // Pass raw JSONB photo array - ListingsCard handles extraction
+            listing_photo: listing['Features - Photos'] || [],
+            // Rental type for proper price label (Nightly/Weekly/Monthly)
+            rental_type: listing.rental_type || 'Nightly',
             source: listing.source || 'listing'
           };
         });
@@ -1020,10 +1023,10 @@ export function useAccountProfilePageLogic() {
   }, [isEditorView]);
 
   /**
-   * Navigate to create listing page
+   * Navigate to create listing page (Self Listing V2)
    */
   const handleCreateListing = useCallback(() => {
-    window.location.href = '/self-listing';
+    window.location.href = '/self-listing-v2';
   }, []);
 
   // ============================================================================

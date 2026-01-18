@@ -555,7 +555,7 @@
 }
 
 .listing-meta .meta-item:not(:last-child)::after {
-    content: '·';
+    content: '\00B7';
     margin-left: 6px;
     color: #999;
 }
@@ -1030,77 +1030,84 @@
     gap: 0.25rem;
 }
 
-/* Location */
-.listing-location {
-    display: flex;
+/* Location Pill Button - Clickable to zoom map */
+.listing-card .listing-location-pill {
+    display: inline-flex;
     align-items: center;
-    gap: 4px;
-    font-size: 12px;
-    color: #666;
-    margin-bottom: 4px;
-}
-
-.listing-location svg {
-    width: 12px;
-    height: 12px;
-    color: #31135D;
-    flex-shrink: 0;
-}
-
-.location-text {
-    font-size: 12px;
-    color: #666;
-}
-
-/* Interactive location - clickable to zoom map */
-.listing-location[onclick] {
+    gap: 6px;
+    padding: 6px 12px 6px 10px !important;
+    margin-bottom: 6px;
+    background: #f3f0f7 !important;
+    border: 1px solid #e0dbe6 !important;
+    border-radius: 100px !important;
     cursor: pointer;
     transition: all 0.2s ease;
-    padding: 4px 8px;
-    margin: -4px -8px 0.375rem -8px;
-    border-radius: 6px;
-    position: relative;
-}
-
-.listing-location[onclick]:hover {
+    font-family: inherit;
+    font-size: 12px;
     color: var(--primary-purple, #31135d);
-    background-color: rgba(49, 19, 93, 0.05);
+    font-weight: 500;
+    white-space: nowrap;
+    max-width: fit-content;
 }
 
-.listing-location[onclick]:hover svg {
-    stroke: var(--primary-purple, #31135d);
+.listing-card .listing-location-pill:hover {
+    background: var(--primary-purple, #31135d) !important;
+    border-color: var(--primary-purple, #31135d) !important;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(49, 19, 93, 0.25);
 }
 
-.listing-location[onclick]:active {
-    background-color: rgba(49, 19, 93, 0.1);
-    transform: scale(0.98);
+.listing-card .listing-location-pill:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(49, 19, 93, 0.2);
 }
 
 /* Focus state for keyboard navigation */
-.listing-location[onclick]:focus {
+.listing-card .listing-location-pill:focus {
     outline: 2px solid var(--primary-purple, #31135d);
     outline-offset: 2px;
 }
 
 /* Remove focus outline for mouse users */
-.listing-location[onclick]:focus:not(:focus-visible) {
+.listing-card .listing-location-pill:focus:not(:focus-visible) {
     outline: none;
 }
 
-/* Subtle animation hint - PORTED FROM ORIGINAL (lines 787-800) */
-.listing-location[onclick]::after {
-    content: '';
-    position: absolute;
-    inset: -2px;
-    border-radius: 8px;
-    background: radial-gradient(circle at center, rgba(49, 19, 93, 0.1) 0%, transparent 70%);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none;
+/* Location pin icon */
+.listing-card .listing-location-pill .location-pin-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    color: var(--primary-purple, #31135d);
+    transition: color 0.2s ease;
 }
 
-.listing-location[onclick]:hover::after {
+.listing-card .listing-location-pill:hover .location-pin-icon {
+    color: white;
+}
+
+/* Location text */
+.listing-card .listing-location-pill .location-text {
+    font-size: 12px;
+    color: inherit;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Arrow icon */
+.listing-card .listing-location-pill .location-arrow-icon {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+    opacity: 0.7;
+    transition: all 0.2s ease;
+    stroke: currentColor;
+}
+
+.listing-card .listing-location-pill:hover .location-arrow-icon {
     opacity: 1;
+    transform: translateX(2px);
 }
 
 /* Title */
@@ -1416,11 +1423,21 @@
         color: #1a1a1a;
     }
 
-    /* Location below title */
-    .listing-location {
-        margin-bottom: 2px;
-        font-size: 13px;
-        color: #666;
+    /* Location pill on mobile */
+    .listing-card .listing-location-pill {
+        padding: 5px 10px 5px 8px !important;
+        margin-bottom: 4px;
+        font-size: 11px;
+    }
+
+    .listing-card .listing-location-pill .location-pin-icon {
+        width: 12px;
+        height: 12px;
+    }
+
+    .listing-card .listing-location-pill .location-arrow-icon {
+        width: 10px;
+        height: 10px;
     }
 
     /* Meta section as inline details text */
@@ -1446,7 +1463,7 @@
     }
 
     .listing-meta .meta-item::after {
-        content: ' · ';
+        content: ' \00B7  ';
         color: #999;
     }
 

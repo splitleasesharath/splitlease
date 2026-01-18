@@ -3,11 +3,11 @@ import { createRoot } from 'react-dom/client';
 import GoogleMap from '../shared/GoogleMap.jsx';
 import InformationalText from '../shared/InformationalText.jsx';
 import ContactHostMessaging from '../shared/ContactHostMessaging.jsx';
-import AiSignupMarketReport from '../shared/AiSignupMarketReport';
+import AiSignupMarketReport from '../shared/AiSignupMarketReport/AiSignupMarketReport.jsx';
 import AuthAwareSearchScheduleSelector from '../shared/AuthAwareSearchScheduleSelector.jsx';
 import SignUpLoginModal from '../shared/SignUpLoginModal.jsx';
 import LoggedInAvatar from '../shared/LoggedInAvatar/LoggedInAvatar.jsx';
-import FavoriteButton from '../shared/FavoriteButton';
+import FavoriteButton from '../shared/FavoriteButton/FavoriteButton.jsx';
 import CreateProposalFlowV2, { clearProposalDraft } from '../shared/CreateProposalFlowV2.jsx';
 import { isGuest } from '../../logic/rules/users/isGuest.js';
 import { isHost } from '../../logic/rules/users/isHost.js';
@@ -15,7 +15,8 @@ import { supabase } from '../../lib/supabase.js';
 import { logger } from '../../lib/logger.js';
 import { fetchProposalsByGuest, fetchLastProposalDefaults } from '../../lib/proposalDataFetcher.js';
 import { fetchZatPriceConfiguration } from '../../lib/listingDataFetcher.js';
-import { checkAuthStatus, getUserId, getSessionId, logoutUser } from '../../lib/auth.js';
+import { checkAuthStatus, getUserId, getSessionId, logoutUser, getFirstName, getAvatarUrl, validateTokenAndFetchUser } from '../../lib/auth.js';
+import { getUserType as getStoredUserType, getAuthState } from '../../lib/secureStorage.js';
 import { useAuthenticatedUser } from '../../hooks/useAuthenticatedUser.js';
 import { PRICE_TIERS, SORT_OPTIONS, WEEK_PATTERNS, LISTING_CONFIG, VIEW_LISTING_URL, SEARCH_URL } from '../../lib/constants.js';
 import { initializeLookups, getNeighborhoodName, getBoroughName, getPropertyTypeLabel, isInitialized } from '../../lib/dataLookups.js';
@@ -326,6 +327,7 @@ export default function SearchPage() {
   const [fallbackDisplayedListings, setFallbackDisplayedListings] = useState([]); // Lazy-loaded subset for fallback
   const [fallbackLoadedCount, setFallbackLoadedCount] = useState(0);
   const [isFallbackLoading, setIsFallbackLoading] = useState(false);
+  const [fallbackFetchFailed, setFallbackFetchFailed] = useState(false); // Track if fallback fetch failed to prevent infinite retry loop
 
   // Modal state management
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
@@ -1448,6 +1450,8 @@ export default function SearchPage() {
       logger.error('Failed to fetch fallback listings:', err);
       // Don't set error state - this is a fallback, so we just show nothing
       setFallbackListings([]);
+      // Mark that fetch failed to prevent infinite retry loop
+      setFallbackFetchFailed(true);
     } finally {
       setIsFallbackLoading(false);
     }
@@ -1632,10 +1636,11 @@ export default function SearchPage() {
 
   // Fetch fallback listings when filtered results are empty
   useEffect(() => {
-    if (!isLoading && allListings.length === 0 && fallbackListings.length === 0 && !isFallbackLoading) {
+    // Don't retry if fetch already failed (prevents infinite loop)
+    if (!isLoading && allListings.length === 0 && fallbackListings.length === 0 && !isFallbackLoading && !fallbackFetchFailed) {
       fetchAllListings();
     }
-  }, [isLoading, allListings.length, fallbackListings.length, isFallbackLoading, fetchAllListings]);
+  }, [isLoading, allListings.length, fallbackListings.length, isFallbackLoading, fallbackFetchFailed, fetchAllListings]);
 
   // Clear fallback listings when filtered results are found
   useEffect(() => {
@@ -2208,25 +2213,54 @@ export default function SearchPage() {
     <div className="search-page">
       {/* Toast Notification */}
       {toast.show && (
-        <div className={`toast toast-${toast.type} show`}>
-          <span className="toast-icon">
+        <div className="toast-container">
+          <div className={`toast toast-${toast.type} show`}>
+            {/* Icon */}
             {toast.type === 'success' && (
-              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+              <svg className="toast-icon" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" strokeLinecap="round" strokeLinejoin="round"/>
+                <polyline points="22 4 12 14.01 9 11.01" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             )}
             {toast.type === 'info' && (
-              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+              <svg className="toast-icon" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12" strokeLinecap="round"/>
+                <line x1="12" y1="8" x2="12.01" y2="8" strokeLinecap="round"/>
               </svg>
             )}
             {toast.type === 'error' && (
-              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+              <svg className="toast-icon" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="15" y1="9" x2="9" y2="15" strokeLinecap="round"/>
+                <line x1="9" y1="9" x2="15" y2="15" strokeLinecap="round"/>
               </svg>
             )}
-          </span>
-          <span className="toast-message">{toast.message}</span>
+            {toast.type === 'warning' && (
+              <svg className="toast-icon" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13" strokeLinecap="round"/>
+                <line x1="12" y1="17" x2="12.01" y2="17" strokeLinecap="round"/>
+              </svg>
+            )}
+
+            {/* Content */}
+            <div className="toast-content">
+              <h4 className="toast-title">{toast.message}</h4>
+            </div>
+
+            {/* Close Button */}
+            <button
+              className="toast-close"
+              onClick={() => setToast({ show: false, message: '', type: 'success' })}
+              aria-label="Close notification"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="18" y1="6" x2="6" y2="18" strokeLinecap="round"/>
+                <line x1="6" y1="6" x2="18" y2="18" strokeLinecap="round"/>
+              </svg>
+            </button>
+          </div>
         </div>
       )}
 
@@ -2262,7 +2296,15 @@ export default function SearchPage() {
           <CompactScheduleIndicator isVisible={mobileHeaderHidden} />
 
           {/* Desktop Compact Schedule Indicator - Shows when filter section is collapsed */}
-          <div className={`desktop-compact-indicator ${desktopHeaderCollapsed ? 'desktop-compact-indicator--visible' : ''}`}>
+          <div
+            className={`desktop-compact-indicator desktop-compact-indicator--clickable ${desktopHeaderCollapsed ? 'desktop-compact-indicator--visible' : ''}`}
+            onClick={() => setDesktopHeaderCollapsed(false)}
+            role="button"
+            tabIndex={desktopHeaderCollapsed ? 0 : -1}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setDesktopHeaderCollapsed(false); }}
+            aria-label="Click to expand filter section"
+            title="Click anywhere to show filters"
+          >
             <div className="desktop-compact-dots">
               {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((dayLetter, index) => (
                 <div
@@ -2287,7 +2329,7 @@ export default function SearchPage() {
             </div>
             {activeFilterTags.length > 0 && (
               <div className="desktop-compact-filters">
-                <button className="desktop-compact-filter-btn" onClick={toggleFilterPopup}>
+                <button className="desktop-compact-filter-btn" onClick={(e) => { e.stopPropagation(); toggleFilterPopup(); }}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
                   </svg>
@@ -2295,6 +2337,14 @@ export default function SearchPage() {
                 </button>
               </div>
             )}
+            {/* Expand Icon - Visual indicator that header is clickable */}
+            <div className="desktop-compact-expand">
+              <div className="desktop-compact-expand-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </div>
+            </div>
           </div>
 
           {/* NEW FILTER SECTION - Desktop Only */}
@@ -2950,7 +3000,7 @@ export default function SearchPage() {
               onMarkerClick={(listing) => {
                 logger.debug('Marker clicked:', listing.title);
                 // Close mobile map and scroll to listing
-                setIsMobileMapVisible(false);
+                setMobileMapVisible(false);
                 setTimeout(() => scrollToListingCard(listing), 300);
               }}
               onMessageClick={(listing) => {

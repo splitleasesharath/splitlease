@@ -909,6 +909,30 @@
   font-size: var(--text-sm-md);
 }
 
+/* Custom Schedule Content */
+.custom-schedule-content {
+  padding: 12px 16px;
+}
+
+.custom-schedule-label {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.custom-schedule-text {
+  font-size: 14px;
+  color: #333;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 8px;
+  border-left: 3px solid #7C3AED;
+  margin: 0;
+}
+
 /* Virtual Meeting Content */
 .virtual-meeting-content {
   display: flex;

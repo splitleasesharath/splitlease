@@ -36,6 +36,9 @@ export function useSuggestedProposals({
   const [isLoading, setIsLoading] = useState(!initialProposals);
   const [error, setError] = useState(null);
 
+  // Not Interested modal state
+  const [isNotInterestedModalOpen, setIsNotInterestedModalOpen] = useState(false);
+
   // Filtered proposals (only non-deleted suggested ones)
   const filteredProposals = useMemo(() => {
     return proposals.filter(p => !p.Deleted && !p._dismissed);
@@ -146,14 +149,25 @@ export function useSuggestedProposals({
     }
   }, [currentProposal, isProcessing, filteredProposals.length, onInterested, hide]);
 
-  // Action: Remove/dismiss suggestion
-  const handleRemove = useCallback(async () => {
+  // Open Not Interested modal
+  const openNotInterestedModal = useCallback(() => {
+    if (!currentProposal || isProcessing) return;
+    setIsNotInterestedModalOpen(true);
+  }, [currentProposal, isProcessing]);
+
+  // Close Not Interested modal
+  const closeNotInterestedModal = useCallback(() => {
+    setIsNotInterestedModalOpen(false);
+  }, []);
+
+  // Confirm Not Interested with optional feedback
+  const confirmNotInterested = useCallback(async (feedback = null) => {
     if (!currentProposal || isProcessing) return;
 
     setIsProcessing(true);
 
     try {
-      await dismissProposal(currentProposal._id);
+      await dismissProposal(currentProposal._id, feedback);
 
       // Update local state
       setProposals(prev => prev.map(p =>
@@ -162,12 +176,15 @@ export function useSuggestedProposals({
           : p
       ));
 
+      // Close the modal
+      setIsNotInterestedModalOpen(false);
+
       // Call callback
       if (onRemove) {
         await onRemove(currentProposal);
       }
 
-      // Auto-close if no more proposals
+      // Auto-close popup if no more proposals
       if (filteredProposals.length <= 1) {
         hide();
       }
@@ -178,6 +195,11 @@ export function useSuggestedProposals({
       setIsProcessing(false);
     }
   }, [currentProposal, isProcessing, filteredProposals.length, onRemove, hide]);
+
+  // Action: Remove/dismiss suggestion (opens modal instead of direct dismiss)
+  const handleRemove = useCallback(() => {
+    openNotInterestedModal();
+  }, [openNotInterestedModal]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -248,6 +270,12 @@ export function useSuggestedProposals({
     handleInterested,
     handleRemove,
     refresh,
+
+    // Not Interested modal
+    isNotInterestedModalOpen,
+    openNotInterestedModal,
+    closeNotInterestedModal,
+    confirmNotInterested,
 
     // Setters for external control
     setProposals

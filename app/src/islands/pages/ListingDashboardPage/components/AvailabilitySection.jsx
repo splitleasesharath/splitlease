@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
+import { useListingDashboard } from '../context/ListingDashboardContext';
 
 // Calendar navigation icons
 const ChevronLeftIcon = () => (
@@ -58,7 +59,8 @@ const formatDateForInput = (date) => {
   return d.toISOString().split('T')[0];
 };
 
-export default function AvailabilitySection({ listing, onEdit, onBlockedDatesChange, onAvailabilityChange }) {
+export default function AvailabilitySection() {
+  const { listing, handleEditSection, handleBlockedDatesChange, handleAvailabilityChange } = useListingDashboard();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [dateSelectionMode, setDateSelectionMode] = useState('individual'); // 'range' or 'individual'
 
@@ -165,13 +167,13 @@ export default function AvailabilitySection({ listing, onEdit, onBlockedDatesCha
         : [...prev, dateKey];
 
       // Notify parent component of the change
-      if (onBlockedDatesChange) {
-        onBlockedDatesChange(newBlockedDates);
+      if (handleBlockedDatesChange) {
+        handleBlockedDatesChange(newBlockedDates);
       }
 
       return newBlockedDates;
     });
-  }, [onBlockedDatesChange]);
+  }, [handleBlockedDatesChange]);
 
   // Add multiple dates to blocked list
   const addBlockedDates = useCallback((datesToAdd) => {
@@ -181,13 +183,13 @@ export default function AvailabilitySection({ listing, onEdit, onBlockedDatesCha
       const newBlockedDates = [...prev, ...newDates];
 
       // Notify parent component of the change
-      if (onBlockedDatesChange) {
-        onBlockedDatesChange(newBlockedDates);
+      if (handleBlockedDatesChange) {
+        handleBlockedDatesChange(newBlockedDates);
       }
 
       return newBlockedDates;
     });
-  }, [onBlockedDatesChange]);
+  }, [handleBlockedDatesChange]);
 
   // Handle date click
   const handleDateClick = useCallback((dayInfo) => {
@@ -292,7 +294,7 @@ export default function AvailabilitySection({ listing, onEdit, onBlockedDatesCha
                 max={52}
                 onChange={(e) => {
                   const val = Math.min(52, Math.max(6, parseInt(e.target.value) || 6));
-                  onAvailabilityChange?.('leaseTermMin', val);
+                  handleAvailabilityChange?.('leaseTermMin', val);
                 }}
               />
               <span>-</span>
@@ -303,7 +305,7 @@ export default function AvailabilitySection({ listing, onEdit, onBlockedDatesCha
                 max={52}
                 onChange={(e) => {
                   const val = Math.min(52, Math.max(6, parseInt(e.target.value) || 52));
-                  onAvailabilityChange?.('leaseTermMax', val);
+                  handleAvailabilityChange?.('leaseTermMax', val);
                 }}
               />
             </div>
@@ -316,7 +318,7 @@ export default function AvailabilitySection({ listing, onEdit, onBlockedDatesCha
               type="date"
               value={formatDateForInput(listing?.earliestAvailableDate)}
               className="listing-dashboard-availability__date-input"
-              onChange={(e) => onAvailabilityChange?.('earliestAvailableDate', e.target.value)}
+              onChange={(e) => handleAvailabilityChange?.('earliestAvailableDate', e.target.value)}
             />
           </div>
 
@@ -326,7 +328,7 @@ export default function AvailabilitySection({ listing, onEdit, onBlockedDatesCha
               <label>Check In Time</label>
               <select
                 value={listing?.checkInTime || '1:00 pm'}
-                onChange={(e) => onAvailabilityChange?.('checkInTime', e.target.value)}
+                onChange={(e) => handleAvailabilityChange?.('checkInTime', e.target.value)}
               >
                 <option value="12:00 pm">12:00 pm</option>
                 <option value="1:00 pm">1:00 pm</option>
@@ -340,7 +342,7 @@ export default function AvailabilitySection({ listing, onEdit, onBlockedDatesCha
               <label>Check Out Time</label>
               <select
                 value={listing?.checkOutTime || '11:00 am'}
-                onChange={(e) => onAvailabilityChange?.('checkOutTime', e.target.value)}
+                onChange={(e) => handleAvailabilityChange?.('checkOutTime', e.target.value)}
               >
                 <option value="9:00 am">9:00 am</option>
                 <option value="10:00 am">10:00 am</option>

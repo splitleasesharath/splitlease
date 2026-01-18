@@ -47,15 +47,13 @@ import {
 import { sanitizeNeighborhoodSearch } from '../../lib/sanitize.js'
 import { fetchInformationalTexts } from '../../lib/informationalTextsFetcher.js'
 
-// Logic Core imports
-import {
-  calculateGuestFacingPrice,
-  formatHostName,
-  extractListingCoordinates,
-  isValidPriceTier,
-  isValidWeekPattern,
-  isValidSortOption
-} from '../../logic/index.js'
+// Logic Core imports - direct imports from source files
+import { calculateGuestFacingPrice } from '../../logic/calculators/pricing/calculateGuestFacingPrice.js';
+import { formatHostName } from '../../logic/processors/display/formatHostName.js';
+import { extractListingCoordinates } from '../../logic/processors/listing/extractListingCoordinates.js';
+import { isValidPriceTier } from '../../logic/rules/search/isValidPriceTier.js';
+import { isValidWeekPattern } from '../../logic/rules/search/isValidWeekPattern.js';
+import { isValidSortOption } from '../../logic/rules/search/isValidSortOption.js';
 
 /**
  * Extract unique photo IDs from an array of listings.

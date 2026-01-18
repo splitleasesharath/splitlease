@@ -79,3 +79,183 @@
 .floating-badge:hover {
     transform: translateY(-5px) scale(1.05);
 }
+
+/* ============================================================================
+   A/B TEST: Market Report Popup Styles
+   ============================================================================ */
+
+.market-popup-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 1000;
+}
+
+.market-popup-container.animate-in {
+    animation: popupSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.market-popup-container.animate-out {
+    animation: popupSlideDown 0.3s ease-in forwards;
+}
+
+@keyframes popupSlideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes popupSlideDown {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(20px); }
+}
+
+.market-popup-card {
+    display: flex;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 20px 40px -8px rgba(0,0,0,0.15);
+    overflow: hidden;
+    max-width: 420px;
+    position: relative;
+}
+
+.market-popup-content {
+    padding: 20px 24px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.market-popup-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #666;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.market-popup-badge svg {
+    width: 16px;
+    height: 16px;
+    color: #888;
+}
+
+.market-popup-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a1a1a;
+    line-height: 1.3;
+    margin: 0;
+}
+
+.market-popup-description {
+    font-size: 14px;
+    color: #666;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.market-popup-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.market-popup-btn-primary,
+.market-popup-btn-secondary {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    font-family: inherit;
+}
+
+.market-popup-btn-primary {
+    background: #1a1a1a;
+    color: #ffffff;
+}
+
+.market-popup-btn-primary:hover {
+    background: #333;
+    transform: translateY(-1px);
+}
+
+.market-popup-btn-secondary {
+    background: transparent;
+    color: #1a1a1a;
+    border: 1.5px solid #e0e0e0;
+}
+
+.market-popup-btn-secondary:hover {
+    border-color: #ccc;
+    background: #f8f8f8;
+}
+
+.market-popup-illustration {
+    width: 140px;
+    min-width: 140px;
+    background: linear-gradient(135deg, #5B4B8A 0%, #3D2E6B 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+}
+
+.market-popup-close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: rgba(0,0,0,0.05);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.market-popup-card:hover .market-popup-close {
+    opacity: 1;
+}
+
+.market-popup-close:hover {
+    background: rgba(0,0,0,0.1);
+}
+
+.market-popup-close svg {
+    width: 14px;
+    height: 14px;
+    color: #666;
+}
+
+/* Mobile responsive */
+@media (max-width: 480px) {
+    .market-popup-container {
+        bottom: 16px;
+        right: 16px;
+        left: 16px;
+    }
+
+    .market-popup-card {
+        max-width: 100%;
+    }
+
+    .market-popup-illustration {
+        width: 100px;
+        min-width: 100px;
+    }
+
+    .market-popup-illustration lottie-player {
+        width: 80px !important;
+        height: 80px !important;
+    }
+}

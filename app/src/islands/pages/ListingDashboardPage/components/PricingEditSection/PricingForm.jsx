@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { HostScheduleSelector } from '../../../../shared/HostScheduleSelector';
+import HostScheduleSelector from '../../../../shared/HostScheduleSelector/HostScheduleSelector.jsx';
 import InformationalText from '../../../../shared/InformationalText';
 
 // Rental type options with descriptions

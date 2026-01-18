@@ -998,26 +998,15 @@ const GoogleMap = forwardRef(({
       `;
 
       // In marker creation, add proper hover handling
-      const handleMarkerHover = (listing, isEntering) => {
-        if (!listing || !googleMapRef.current) return;
-
-        const marker = markersRef.current.find(m => m.listingId === listing.id);
-        if (!marker) return;
+      const handleMarkerHover = (_listing, isEntering) => {
+        if (!googleMapRef.current) return;
 
         if (isEntering) {
-          // Scale up marker
-          priceTag.style.zIndex = String(google.maps.Marker.MAX_ZINDEX + 1);
-          // Show info window or tooltip
-          if (infoWindowRef.current) {
-            infoWindowRef.current.setContent(renderMarkerTooltip(listing));
-            infoWindowRef.current.open(googleMapRef.current, marker);
-          }
+          // Scale up marker - bring to front
+          priceTag.style.zIndex = String(window.google.maps.Marker.MAX_ZINDEX + 1);
         } else {
-          // Reset marker
+          // Reset marker z-index
           priceTag.style.zIndex = color === '#5B21B6' ? '1002' : '1001';
-          if (infoWindowRef.current) {
-            infoWindowRef.current.close();
-          }
         }
       };
 
