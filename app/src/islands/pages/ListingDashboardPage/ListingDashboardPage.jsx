@@ -7,22 +7,20 @@ import ImportListingReviewsModal from '../../shared/ImportListingReviewsModal/Im
 import AIImportAssistantModal from '../../shared/AIImportAssistantModal/AIImportAssistantModal.jsx';
 import ReferralModal from '../AccountProfilePage/components/ReferralModal';
 import { ListingDashboardProvider, useListingDashboard } from './context/ListingDashboardContext';
-import {
-  NavigationHeader,
-  ActionCardGrid,
-  AlertBanner,
-  SecondaryActions,
-  PropertyInfoSection,
-  DetailsSection,
-  AmenitiesSection,
-  DescriptionSection,
-  PricingSection,
-  PricingEditSection,
-  RulesSection,
-  AvailabilitySection,
-  PhotosSection,
-  CancellationPolicySection,
-} from './components';
+import NavigationHeader from './components/NavigationHeader';
+import ActionCardGrid from './components/ActionCardGrid';
+import AlertBanner from './components/AlertBanner';
+import SecondaryActions from './components/SecondaryActions';
+import PropertyInfoSection from './components/PropertyInfoSection';
+import DetailsSection from './components/DetailsSection';
+import AmenitiesSection from './components/AmenitiesSection';
+import DescriptionSection from './components/DescriptionSection';
+import PricingSection from './components/PricingSection';
+import PricingEditSection from './components/PricingEditSection';
+import RulesSection from './components/RulesSection';
+import AvailabilitySection from './components/AvailabilitySection';
+import PhotosSection from './components/PhotosSection';
+import CancellationPolicySection from './components/CancellationPolicySection';
 import '../../../styles/components/listing-dashboard.css';
 import '../AccountProfilePage/AccountProfilePage.css'; // For ReferralModal styles
 

@@ -47,12 +47,10 @@ import '../../styles/listing-schedule-selector.css';
 import '../../styles/components/toast.css';
 import './ViewSplitLeasePage.css';
 
-import {
-  LoadingState,
-  ErrorState,
-  PhotoGallery,
-  SchedulePatternHighlight
-} from './components';
+import { LoadingState } from './components/LoadingState.jsx';
+import { ErrorState } from './components/ErrorState.jsx';
+import { PhotoGallery } from './components/PhotoGallery.jsx';
+import { SchedulePatternHighlight } from './components/SchedulePatternHighlight.jsx';
 
 // ============================================================================
 // HELPER FUNCTIONS
