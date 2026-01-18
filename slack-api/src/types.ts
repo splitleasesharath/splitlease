@@ -59,6 +59,7 @@ export interface SlackResponse {
   ok: boolean;
   error?: string;
   ts?: string;
+  channel?: string; // Channel ID returned from API calls
   file?: {
     id: string;
     name: string;

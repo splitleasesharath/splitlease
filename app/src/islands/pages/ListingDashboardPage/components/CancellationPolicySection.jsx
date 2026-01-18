@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useListingDashboard } from '../context/ListingDashboardContext';
 
 // Policy IDs from reference_table.zat_features_cancellationpolicy
 const POLICY_IDS = {
@@ -6,7 +7,12 @@ const POLICY_IDS = {
   ADDITIONAL_RESTRICTIONS: '1665431684611x656977293321267800',
 };
 
-export default function CancellationPolicySection({ listing, onPolicyChange, onRestrictionsChange }) {
+export default function CancellationPolicySection() {
+  const {
+    listing,
+    handleCancellationPolicyChange,
+    handleCancellationRestrictionsChange
+  } = useListingDashboard();
   // Determine if the current policy is "Additional Host Restrictions"
   const isAdditionalRestrictions = listing?.cancellationPolicy === POLICY_IDS.ADDITIONAL_RESTRICTIONS ||
     listing?.cancellationPolicy === 'Additional Host Restrictions';
@@ -33,12 +39,12 @@ export default function CancellationPolicySection({ listing, onPolicyChange, onR
     try {
       // Convert display value to policy ID for database storage
       const policyId = isAdditional ? POLICY_IDS.ADDITIONAL_RESTRICTIONS : POLICY_IDS.STANDARD;
-      await onPolicyChange?.(policyId);
+      await handleCancellationPolicyChange?.(policyId);
 
       // If switching away from additional restrictions, clear the text
       if (!isAdditional && restrictionsText) {
         setRestrictionsText('');
-        await onRestrictionsChange?.('');
+        await handleCancellationRestrictionsChange?.('');
       }
     } finally {
       setIsSaving(false);
@@ -49,7 +55,7 @@ export default function CancellationPolicySection({ listing, onPolicyChange, onR
     if (restrictionsText !== listing?.cancellationPolicyAdditionalRestrictions) {
       setIsSaving(true);
       try {
-        await onRestrictionsChange?.(restrictionsText);
+        await handleCancellationRestrictionsChange?.(restrictionsText);
       } finally {
         setIsSaving(false);
       }

@@ -19,10 +19,53 @@ import type {
 export class SlackClient {
   private client: WebClient;
   private defaultChannel?: string;
+  private channelCache: Map<string, string> = new Map();
 
   constructor(config: SlackConfig) {
     this.client = new WebClient(config.botToken);
     this.defaultChannel = config.defaultChannel;
+  }
+
+  /**
+   * Resolve a channel name to its ID
+   * Accepts: #channel-name, channel-name, or C1234567890 (already an ID)
+   */
+  private async resolveChannelId(channel: string): Promise<string> {
+    // Already a channel ID (starts with C, G, or D and is alphanumeric)
+    if (/^[CGD][A-Z0-9]{8,}$/i.test(channel)) {
+      return channel;
+    }
+
+    // Remove # prefix if present
+    const channelName = channel.replace(/^#/, '');
+
+    // Check cache first
+    if (this.channelCache.has(channelName)) {
+      return this.channelCache.get(channelName)!;
+    }
+
+    // Look up channel by posting a test message (most reliable method)
+    // This works because chat.postMessage accepts channel names
+    try {
+      const result = await this.client.conversations.list({
+        types: 'public_channel,private_channel',
+        limit: 1000,
+      });
+
+      const found = result.channels?.find(
+        (ch) => ch.name === channelName || ch.id === channel
+      );
+
+      if (found?.id) {
+        this.channelCache.set(channelName, found.id);
+        return found.id;
+      }
+    } catch {
+      // If conversations.list fails (missing scope), try to get channel info directly
+    }
+
+    // Fallback: return as-is and let the API handle it
+    return channel;
   }
 
   /**
@@ -40,6 +83,7 @@ export class SlackClient {
       ok: result.ok ?? false,
       error: result.error,
       ts: result.ts,
+      channel: result.channel, // Return channel ID for subsequent operations
     };
   }
 
@@ -104,6 +148,8 @@ export class SlackClient {
 
   /**
    * Send a message with an attached screenshot in one call
+   * Uses chat.postMessage first (accepts channel names), then uses the
+   * returned channel ID for file upload (which requires channel IDs)
    */
   async sendMessageWithScreenshot(
     channel: string,
@@ -115,16 +161,20 @@ export class SlackClient {
       threadTs?: string;
     }
   ): Promise<{ message: SlackResponse; file: SlackResponse }> {
-    // Send message first
+    // Send message first - chat.postMessage accepts channel names
     const messageResult = await this.sendMessage({
       channel,
       text: message,
       threadTs: options?.threadTs,
     });
 
+    // Use the channel ID from the message response for file upload
+    // files.uploadV2 requires actual channel IDs, not names
+    const channelId = messageResult.channel ?? channel;
+
     // Upload screenshot in the same thread
     const fileResult = await this.uploadScreenshot({
-      channels: channel,
+      channels: channelId,
       screenshot,
       filename: options?.filename,
       title: options?.title,
