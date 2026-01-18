@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-01-18T13:41:50.800590",
+  "generated_at": "2026-01-18T16:51:49.630291",
   "root_dir": "C:\\Users\\Split Lease\\Documents\\Split Lease\\app",
-  "content_hash": "fad804c42bfe37f7cdf175d993cb4016f975bea69852e6b157646ebcb1858dd8",
+  "content_hash": "69b60ca34cd4c07c6c9f1888ee920085c5ab427151543d58efa53f29dc5c2207",
   "total_files": 519,
   "total_exports": 1439,
   "total_imports": 2345,
@@ -4109,6 +4109,430 @@
         "name": "default",
         "type": "default",
         "line": 2426,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "src\\islands\\pages\\RentalApplicationPage\\store\\index.ts": [
+      {
+        "name": "rentalApplicationLocalStore",
+        "type": "re-export",
+        "line": 7,
+        "source_file": "./rentalApplicationLocalStore",
+        "original_name": null
+      },
+      {
+        "name": "StoreState",
+        "type": "re-export",
+        "line": 7,
+        "source_file": "./rentalApplicationLocalStore",
+        "original_name": null
+      },
+      {
+        "name": "RentalApplicationFormData",
+        "type": "re-export",
+        "line": 7,
+        "source_file": "./rentalApplicationLocalStore",
+        "original_name": null
+      },
+      {
+        "name": "Occupant",
+        "type": "re-export",
+        "line": 7,
+        "source_file": "./rentalApplicationLocalStore",
+        "original_name": null
+      },
+      {
+        "name": "VerificationStatus",
+        "type": "re-export",
+        "line": 7,
+        "source_file": "./rentalApplicationLocalStore",
+        "original_name": null
+      },
+      {
+        "name": "useRentalApplicationStore",
+        "type": "re-export",
+        "line": 15,
+        "source_file": "./useRentalApplicationStore",
+        "original_name": null
+      }
+    ],
+    "src\\islands\\pages\\RentalApplicationPage\\store\\rentalApplicationLocalStore.ts": [
+      {
+        "name": "rentalApplicationLocalStore",
+        "type": "declaration",
+        "line": 433,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "src\\islands\\pages\\RentalApplicationPage\\store\\useRentalApplicationStore.ts": [
+      {
+        "name": "useRentalApplicationStore",
+        "type": "declaration",
+        "line": 54,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "src\\islands\\pages\\RentalApplicationPage\\utils\\rentalApplicationFieldMapper.ts": [
+      {
+        "name": "mapDatabaseToFormData",
+        "type": "declaration",
+        "line": 85,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "src\\islands\\pages\\SelfListingPage\\index.ts": [
+      {
+        "name": "SelfListingPage",
+        "type": "re-export",
+        "line": 8,
+        "source_file": "./SelfListingPage",
+        "original_name": null
+      },
+      {
+        "name": "*",
+        "type": "re-export",
+        "line": 9,
+        "source_file": "./types/listing.types",
+        "original_name": null
+      }
+    ],
+    "src\\islands\\pages\\SelfListingPage\\store\\index.ts": [
+      {
+        "name": "listingLocalStore",
+        "type": "re-export",
+        "line": 7,
+        "source_file": "./listingLocalStore",
+        "original_name": null
+      },
+      {
+        "name": "StoreState",
+        "type": "re-export",
+        "line": 7,
+        "source_file": "./listingLocalStore",
+        "original_name": null
+      },
+      {
+        "name": "useListingStore",
+        "type": "re-export",
+        "line": 8,
+        "source_file": "./useListingStore",
+        "original_name": null
+      },
+      {
+        "name": "prepareListingSubmission",
+        "type": "re-export",
+        "line": 9,
+        "source_file": "./prepareListingSubmission",
+        "original_name": null
+      },
+      {
+        "name": "prepareDraftPayload",
+        "type": "re-export",
+        "line": 9,
+        "source_file": "./prepareListingSubmission",
+        "original_name": null
+      },
+      {
+        "name": "preparePhotoPayload",
+        "type": "re-export",
+        "line": 9,
+        "source_file": "./prepareListingSubmission",
+        "original_name": null
+      },
+      {
+        "name": "validateBubblePayload",
+        "type": "re-export",
+        "line": 9,
+        "source_file": "./prepareListingSubmission",
+        "original_name": null
+      },
+      {
+        "name": "BubbleListingPayload",
+        "type": "re-export",
+        "line": 9,
+        "source_file": "./prepareListingSubmission",
+        "original_name": null
+      }
+    ],
+    "src\\islands\\pages\\SelfListingPage\\store\\listingLocalStore.ts": [
+      {
+        "name": "listingLocalStore",
+        "type": "declaration",
+        "line": 521,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "StoreState",
+        "type": "type",
+        "line": 524,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "src\\islands\\pages\\SelfListingPage\\store\\prepareListingSubmission.ts": [
+      {
+        "name": "prepareListingSubmission",
+        "type": "declaration",
+        "line": 148,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "prepareDraftPayload",
+        "type": "declaration",
+        "line": 231,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "preparePhotoPayload",
+        "type": "declaration",
+        "line": 249,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "validateBubblePayload",
+        "type": "declaration",
+        "line": 264,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "BubbleListingPayload",
+        "type": "type",
+        "line": 297,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "src\\islands\\pages\\SelfListingPage\\store\\useListingStore.ts": [
+      {
+        "name": "useListingStore",
+        "type": "declaration",
+        "line": 53,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "src\\islands\\pages\\SelfListingPage\\types\\listing.types.ts": [
+      {
+        "name": "SAFETY_FEATURES",
+        "type": "declaration",
+        "line": 157,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "AMENITIES_INSIDE",
+        "type": "declaration",
+        "line": 223,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "AMENITIES_OUTSIDE",
+        "type": "declaration",
+        "line": 254,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "HOUSE_RULES",
+        "type": "declaration",
+        "line": 281,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "DEFAULT_LISTING_DATA",
+        "type": "declaration",
+        "line": 315,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "src\\islands\\pages\\SelfListingPage\\utils\\amenitiesService.ts": [
+      {
+        "name": "getAllAmenitiesByType",
+        "type": "declaration",
+        "line": 17,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getAllInUnitAmenities",
+        "type": "declaration",
+        "line": 56,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getAllBuildingAmenities",
+        "type": "declaration",
+        "line": 64,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getCommonAmenitiesByType",
+        "type": "declaration",
+        "line": 73,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getCommonInUnitAmenities",
+        "type": "declaration",
+        "line": 115,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getCommonBuildingAmenities",
+        "type": "declaration",
+        "line": 123,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "src\\islands\\pages\\SelfListingPage\\utils\\neighborhoodService.ts": [
+      {
+        "name": "getNeighborhoodByZipCode",
+        "type": "declaration",
+        "line": 21,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "extractZipCode",
+        "type": "declaration",
+        "line": 62,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getNeighborhoodDescriptionWithFallback",
+        "type": "declaration",
+        "line": 77,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "src\\islands\\pages\\SelfListingPage\\utils\\safetyService.ts": [
+      {
+        "name": "getCommonSafetyFeatures",
+        "type": "declaration",
+        "line": 19,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "src\\islands\\pages\\SelfListingPageV2\\index.ts": [
+      {
+        "name": "SelfListingPageV2",
+        "type": "re-export",
+        "line": 1,
+        "source_file": "./SelfListingPageV2",
+        "original_name": null
+      },
+      {
+        "name": "default",
+        "type": "re-export",
+        "line": 1,
+        "source_file": "./SelfListingPageV2",
+        "original_name": null
+      }
+    ],
+    "src\\islands\\shared\\Header.d.ts": [
+      {
+        "name": "default",
+        "type": "default",
+        "line": 13,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "src\\lib\\nycZipCodes.ts": [
+      {
+        "name": "NYC_ZIP_CODES",
+        "type": "declaration",
+        "line": 11,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "ALL_NYC_ZIP_CODES",
+        "type": "declaration",
+        "line": 78,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isNYCZipCode",
+        "type": "declaration",
+        "line": 90,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getBoroughForZipCode",
+        "type": "declaration",
+        "line": 97,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "NYC_BOUNDS",
+        "type": "declaration",
+        "line": 111,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "HUDSON_COUNTY_NAMES",
+        "type": "declaration",
+        "line": 121,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "NYC_COUNTY_NAMES",
+        "type": "declaration",
+        "line": 131,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isHudsonCountyNJ",
+        "type": "declaration",
+        "line": 148,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isNYCCounty",
+        "type": "declaration",
+        "line": 160,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getBoroughFromCounty",
+        "type": "declaration",
+        "line": 172,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isValidServiceArea",
+        "type": "declaration",
+        "line": 182,
         "source_file": null,
         "original_name": null
       }
@@ -10593,433 +11017,19 @@
         "source_file": null,
         "original_name": null
       }
-    ],
-    "src\\islands\\pages\\RentalApplicationPage\\store\\index.ts": [
-      {
-        "name": "rentalApplicationLocalStore",
-        "type": "re-export",
-        "line": 7,
-        "source_file": "./rentalApplicationLocalStore",
-        "original_name": null
-      },
-      {
-        "name": "StoreState",
-        "type": "re-export",
-        "line": 7,
-        "source_file": "./rentalApplicationLocalStore",
-        "original_name": null
-      },
-      {
-        "name": "RentalApplicationFormData",
-        "type": "re-export",
-        "line": 7,
-        "source_file": "./rentalApplicationLocalStore",
-        "original_name": null
-      },
-      {
-        "name": "Occupant",
-        "type": "re-export",
-        "line": 7,
-        "source_file": "./rentalApplicationLocalStore",
-        "original_name": null
-      },
-      {
-        "name": "VerificationStatus",
-        "type": "re-export",
-        "line": 7,
-        "source_file": "./rentalApplicationLocalStore",
-        "original_name": null
-      },
-      {
-        "name": "useRentalApplicationStore",
-        "type": "re-export",
-        "line": 15,
-        "source_file": "./useRentalApplicationStore",
-        "original_name": null
-      }
-    ],
-    "src\\islands\\pages\\RentalApplicationPage\\store\\rentalApplicationLocalStore.ts": [
-      {
-        "name": "rentalApplicationLocalStore",
-        "type": "declaration",
-        "line": 433,
-        "source_file": null,
-        "original_name": null
-      }
-    ],
-    "src\\islands\\pages\\RentalApplicationPage\\store\\useRentalApplicationStore.ts": [
-      {
-        "name": "useRentalApplicationStore",
-        "type": "declaration",
-        "line": 54,
-        "source_file": null,
-        "original_name": null
-      }
-    ],
-    "src\\islands\\pages\\RentalApplicationPage\\utils\\rentalApplicationFieldMapper.ts": [
-      {
-        "name": "mapDatabaseToFormData",
-        "type": "declaration",
-        "line": 85,
-        "source_file": null,
-        "original_name": null
-      }
-    ],
-    "src\\islands\\pages\\SelfListingPage\\index.ts": [
-      {
-        "name": "SelfListingPage",
-        "type": "re-export",
-        "line": 8,
-        "source_file": "./SelfListingPage",
-        "original_name": null
-      },
-      {
-        "name": "*",
-        "type": "re-export",
-        "line": 9,
-        "source_file": "./types/listing.types",
-        "original_name": null
-      }
-    ],
-    "src\\islands\\pages\\SelfListingPage\\store\\index.ts": [
-      {
-        "name": "listingLocalStore",
-        "type": "re-export",
-        "line": 7,
-        "source_file": "./listingLocalStore",
-        "original_name": null
-      },
-      {
-        "name": "StoreState",
-        "type": "re-export",
-        "line": 7,
-        "source_file": "./listingLocalStore",
-        "original_name": null
-      },
-      {
-        "name": "useListingStore",
-        "type": "re-export",
-        "line": 8,
-        "source_file": "./useListingStore",
-        "original_name": null
-      },
-      {
-        "name": "prepareListingSubmission",
-        "type": "re-export",
-        "line": 9,
-        "source_file": "./prepareListingSubmission",
-        "original_name": null
-      },
-      {
-        "name": "prepareDraftPayload",
-        "type": "re-export",
-        "line": 9,
-        "source_file": "./prepareListingSubmission",
-        "original_name": null
-      },
-      {
-        "name": "preparePhotoPayload",
-        "type": "re-export",
-        "line": 9,
-        "source_file": "./prepareListingSubmission",
-        "original_name": null
-      },
-      {
-        "name": "validateBubblePayload",
-        "type": "re-export",
-        "line": 9,
-        "source_file": "./prepareListingSubmission",
-        "original_name": null
-      },
-      {
-        "name": "BubbleListingPayload",
-        "type": "re-export",
-        "line": 9,
-        "source_file": "./prepareListingSubmission",
-        "original_name": null
-      }
-    ],
-    "src\\islands\\pages\\SelfListingPage\\store\\listingLocalStore.ts": [
-      {
-        "name": "listingLocalStore",
-        "type": "declaration",
-        "line": 521,
-        "source_file": null,
-        "original_name": null
-      },
-      {
-        "name": "StoreState",
-        "type": "type",
-        "line": 524,
-        "source_file": null,
-        "original_name": null
-      }
-    ],
-    "src\\islands\\pages\\SelfListingPage\\store\\prepareListingSubmission.ts": [
-      {
-        "name": "prepareListingSubmission",
-        "type": "declaration",
-        "line": 148,
-        "source_file": null,
-        "original_name": null
-      },
-      {
-        "name": "prepareDraftPayload",
-        "type": "declaration",
-        "line": 231,
-        "source_file": null,
-        "original_name": null
-      },
-      {
-        "name": "preparePhotoPayload",
-        "type": "declaration",
-        "line": 249,
-        "source_file": null,
-        "original_name": null
-      },
-      {
-        "name": "validateBubblePayload",
-        "type": "declaration",
-        "line": 264,
-        "source_file": null,
-        "original_name": null
-      },
-      {
-        "name": "BubbleListingPayload",
-        "type": "type",
-        "line": 297,
-        "source_file": null,
-        "original_name": null
-      }
-    ],
-    "src\\islands\\pages\\SelfListingPage\\store\\useListingStore.ts": [
-      {
-        "name": "useListingStore",
-        "type": "declaration",
-        "line": 53,
-        "source_file": null,
-        "original_name": null
-      }
-    ],
-    "src\\islands\\pages\\SelfListingPage\\types\\listing.types.ts": [
-      {
-        "name": "SAFETY_FEATURES",
-        "type": "declaration",
-        "line": 157,
-        "source_file": null,
-        "original_name": null
-      },
-      {
-        "name": "AMENITIES_INSIDE",
-        "type": "declaration",
-        "line": 223,
-        "source_file": null,
-        "original_name": null
-      },
-      {
-        "name": "AMENITIES_OUTSIDE",
-        "type": "declaration",
-        "line": 254,
-        "source_file": null,
-        "original_name": null
-      },
-      {
-        "name": "HOUSE_RULES",
-        "type": "declaration",
-        "line": 281,
-        "source_file": null,
-        "original_name": null
-      },
-      {
-        "name": "DEFAULT_LISTING_DATA",
-        "type": "declaration",
-        "line": 315,
-        "source_file": null,
-        "original_name": null
-      }
-    ],
-    "src\\islands\\pages\\SelfListingPage\\utils\\amenitiesService.ts": [
-      {
-        "name": "getAllAmenitiesByType",
-        "type": "declaration",
-        "line": 17,
-        "source_file": null,
-        "original_name": null
-      },
-      {
-        "name": "getAllInUnitAmenities",
-        "type": "declaration",
-        "line": 56,
-        "source_file": null,
-        "original_name": null
-      },
-      {
-        "name": "getAllBuildingAmenities",
-        "type": "declaration",
-        "line": 64,
-        "source_file": null,
-        "original_name": null
-      },
-      {
-        "name": "getCommonAmenitiesByType",
-        "type": "declaration",
-        "line": 73,
-        "source_file": null,
-        "original_name": null
-      },
-      {
-        "name": "getCommonInUnitAmenities",
-        "type": "declaration",
-        "line": 115,
-        "source_file": null,
-        "original_name": null
-      },
-      {
-        "name": "getCommonBuildingAmenities",
-        "type": "declaration",
-        "line": 123,
-        "source_file": null,
-        "original_name": null
-      }
-    ],
-    "src\\islands\\pages\\SelfListingPage\\utils\\neighborhoodService.ts": [
-      {
-        "name": "getNeighborhoodByZipCode",
-        "type": "declaration",
-        "line": 21,
-        "source_file": null,
-        "original_name": null
-      },
-      {
-        "name": "extractZipCode",
-        "type": "declaration",
-        "line": 62,
-        "source_file": null,
-        "original_name": null
-      },
-      {
-        "name": "getNeighborhoodDescriptionWithFallback",
-        "type": "declaration",
-        "line": 77,
-        "source_file": null,
-        "original_name": null
-      }
-    ],
-    "src\\islands\\pages\\SelfListingPage\\utils\\safetyService.ts": [
-      {
-        "name": "getCommonSafetyFeatures",
-        "type": "declaration",
-        "line": 19,
-        "source_file": null,
-        "original_name": null
-      }
-    ],
-    "src\\islands\\pages\\SelfListingPageV2\\index.ts": [
-      {
-        "name": "SelfListingPageV2",
-        "type": "re-export",
-        "line": 1,
-        "source_file": "./SelfListingPageV2",
-        "original_name": null
-      },
-      {
-        "name": "default",
-        "type": "re-export",
-        "line": 1,
-        "source_file": "./SelfListingPageV2",
-        "original_name": null
-      }
-    ],
-    "src\\islands\\shared\\Header.d.ts": [
-      {
-        "name": "default",
-        "type": "default",
-        "line": 13,
-        "source_file": null,
-        "original_name": null
-      }
-    ],
-    "src\\lib\\nycZipCodes.ts": [
-      {
-        "name": "NYC_ZIP_CODES",
-        "type": "declaration",
-        "line": 11,
-        "source_file": null,
-        "original_name": null
-      },
-      {
-        "name": "ALL_NYC_ZIP_CODES",
-        "type": "declaration",
-        "line": 78,
-        "source_file": null,
-        "original_name": null
-      },
-      {
-        "name": "isNYCZipCode",
-        "type": "declaration",
-        "line": 90,
-        "source_file": null,
-        "original_name": null
-      },
-      {
-        "name": "getBoroughForZipCode",
-        "type": "declaration",
-        "line": 97,
-        "source_file": null,
-        "original_name": null
-      },
-      {
-        "name": "NYC_BOUNDS",
-        "type": "declaration",
-        "line": 111,
-        "source_file": null,
-        "original_name": null
-      },
-      {
-        "name": "HUDSON_COUNTY_NAMES",
-        "type": "declaration",
-        "line": 121,
-        "source_file": null,
-        "original_name": null
-      },
-      {
-        "name": "NYC_COUNTY_NAMES",
-        "type": "declaration",
-        "line": 131,
-        "source_file": null,
-        "original_name": null
-      },
-      {
-        "name": "isHudsonCountyNJ",
-        "type": "declaration",
-        "line": 148,
-        "source_file": null,
-        "original_name": null
-      },
-      {
-        "name": "isNYCCounty",
-        "type": "declaration",
-        "line": 160,
-        "source_file": null,
-        "original_name": null
-      },
-      {
-        "name": "getBoroughFromCounty",
-        "type": "declaration",
-        "line": 172,
-        "source_file": null,
-        "original_name": null
-      },
-      {
-        "name": "isValidServiceArea",
-        "type": "declaration",
-        "line": 182,
-        "source_file": null,
-        "original_name": null
-      }
     ]
   },
   "dependency_graph": {
+    "scripts\\kill-port.cjs": [
+      {
+        "name": "*",
+        "type": "namespace",
+        "source": "child_process",
+        "resolved_path": null,
+        "line": 2,
+        "alias": null
+      }
+    ],
     "src\\404.jsx": [
       {
         "name": "React",
@@ -24544,58 +24554,6 @@
         "alias": null
       }
     ],
-    "scripts\\kill-port.cjs": [
-      {
-        "name": "*",
-        "type": "namespace",
-        "source": "child_process",
-        "resolved_path": null,
-        "line": 2,
-        "alias": null
-      }
-    ],
-    "scripts\\extract-email-placeholders.mjs": [
-      {
-        "name": "createClient",
-        "type": "named",
-        "source": "@supabase/supabase-js",
-        "resolved_path": null,
-        "line": 11,
-        "alias": null
-      },
-      {
-        "name": "config",
-        "type": "named",
-        "source": "dotenv",
-        "resolved_path": null,
-        "line": 12,
-        "alias": null
-      },
-      {
-        "name": "resolve",
-        "type": "named",
-        "source": "path",
-        "resolved_path": null,
-        "line": 13,
-        "alias": null
-      },
-      {
-        "name": "dirname",
-        "type": "named",
-        "source": "path",
-        "resolved_path": null,
-        "line": 13,
-        "alias": null
-      },
-      {
-        "name": "fileURLToPath",
-        "type": "named",
-        "source": "url",
-        "resolved_path": null,
-        "line": 14,
-        "alias": null
-      }
-    ],
     "src\\islands\\pages\\SelfListingPage\\SelfListingPage.tsx": [
       {
         "name": "React",
@@ -25597,6 +25555,282 @@
         "source": "../../../styles/components/toast.css",
         "resolved_path": "src\\styles\\components\\toast.css",
         "line": 30,
+        "alias": null
+      }
+    ],
+    "scripts\\extract-email-placeholders.mjs": [
+      {
+        "name": "createClient",
+        "type": "named",
+        "source": "@supabase/supabase-js",
+        "resolved_path": null,
+        "line": 11,
+        "alias": null
+      },
+      {
+        "name": "config",
+        "type": "named",
+        "source": "dotenv",
+        "resolved_path": null,
+        "line": 12,
+        "alias": null
+      },
+      {
+        "name": "resolve",
+        "type": "named",
+        "source": "path",
+        "resolved_path": null,
+        "line": 13,
+        "alias": null
+      },
+      {
+        "name": "dirname",
+        "type": "named",
+        "source": "path",
+        "resolved_path": null,
+        "line": 13,
+        "alias": null
+      },
+      {
+        "name": "fileURLToPath",
+        "type": "named",
+        "source": "url",
+        "resolved_path": null,
+        "line": 14,
+        "alias": null
+      }
+    ],
+    "src\\islands\\pages\\RentalApplicationPage\\store\\useRentalApplicationStore.ts": [
+      {
+        "name": "useState",
+        "type": "named",
+        "source": "react",
+        "resolved_path": null,
+        "line": 8,
+        "alias": null
+      },
+      {
+        "name": "useEffect",
+        "type": "named",
+        "source": "react",
+        "resolved_path": null,
+        "line": 8,
+        "alias": null
+      },
+      {
+        "name": "useCallback",
+        "type": "named",
+        "source": "react",
+        "resolved_path": null,
+        "line": 8,
+        "alias": null
+      },
+      {
+        "name": "rentalApplicationLocalStore",
+        "type": "named",
+        "source": "./rentalApplicationLocalStore",
+        "resolved_path": "src\\islands\\pages\\RentalApplicationPage\\store\\rentalApplicationLocalStore.ts",
+        "line": 9,
+        "alias": null
+      },
+      {
+        "name": "StoreState",
+        "type": "named",
+        "source": "./rentalApplicationLocalStore",
+        "resolved_path": "src\\islands\\pages\\RentalApplicationPage\\store\\rentalApplicationLocalStore.ts",
+        "line": 9,
+        "alias": null
+      },
+      {
+        "name": "RentalApplicationFormData",
+        "type": "named",
+        "source": "./rentalApplicationLocalStore",
+        "resolved_path": "src\\islands\\pages\\RentalApplicationPage\\store\\rentalApplicationLocalStore.ts",
+        "line": 9,
+        "alias": null
+      },
+      {
+        "name": "Occupant",
+        "type": "named",
+        "source": "./rentalApplicationLocalStore",
+        "resolved_path": "src\\islands\\pages\\RentalApplicationPage\\store\\rentalApplicationLocalStore.ts",
+        "line": 9,
+        "alias": null
+      },
+      {
+        "name": "VerificationStatus",
+        "type": "named",
+        "source": "./rentalApplicationLocalStore",
+        "resolved_path": "src\\islands\\pages\\RentalApplicationPage\\store\\rentalApplicationLocalStore.ts",
+        "line": 9,
+        "alias": null
+      }
+    ],
+    "src\\islands\\pages\\RentalApplicationPage\\utils\\rentalApplicationFieldMapper.ts": [
+      {
+        "name": "RentalApplicationFormData",
+        "type": "type",
+        "source": "../store/rentalApplicationLocalStore",
+        "resolved_path": "src\\islands\\pages\\RentalApplicationPage\\store\\rentalApplicationLocalStore.ts",
+        "line": 8,
+        "alias": null
+      },
+      {
+        "name": "Occupant",
+        "type": "type",
+        "source": "../store/rentalApplicationLocalStore",
+        "resolved_path": "src\\islands\\pages\\RentalApplicationPage\\store\\rentalApplicationLocalStore.ts",
+        "line": 8,
+        "alias": null
+      }
+    ],
+    "src\\islands\\pages\\SelfListingPage\\store\\listingLocalStore.ts": [
+      {
+        "name": "ListingFormData",
+        "type": "type",
+        "source": "../types/listing.types",
+        "resolved_path": "src\\islands\\pages\\SelfListingPage\\types\\listing.types.ts",
+        "line": 12,
+        "alias": null
+      },
+      {
+        "name": "PhotoData",
+        "type": "type",
+        "source": "../types/listing.types",
+        "resolved_path": "src\\islands\\pages\\SelfListingPage\\types\\listing.types.ts",
+        "line": 12,
+        "alias": null
+      },
+      {
+        "name": "DEFAULT_LISTING_DATA",
+        "type": "named",
+        "source": "../types/listing.types",
+        "resolved_path": "src\\islands\\pages\\SelfListingPage\\types\\listing.types.ts",
+        "line": 13,
+        "alias": null
+      }
+    ],
+    "src\\islands\\pages\\SelfListingPage\\store\\prepareListingSubmission.ts": [
+      {
+        "name": "ListingFormData",
+        "type": "type",
+        "source": "../types/listing.types",
+        "resolved_path": "src\\islands\\pages\\SelfListingPage\\types\\listing.types.ts",
+        "line": 8,
+        "alias": null
+      },
+      {
+        "name": "NightlyPricing",
+        "type": "type",
+        "source": "../types/listing.types",
+        "resolved_path": "src\\islands\\pages\\SelfListingPage\\types\\listing.types.ts",
+        "line": 8,
+        "alias": null
+      }
+    ],
+    "src\\islands\\pages\\SelfListingPage\\store\\useListingStore.ts": [
+      {
+        "name": "useState",
+        "type": "named",
+        "source": "react",
+        "resolved_path": null,
+        "line": 7,
+        "alias": null
+      },
+      {
+        "name": "useEffect",
+        "type": "named",
+        "source": "react",
+        "resolved_path": null,
+        "line": 7,
+        "alias": null
+      },
+      {
+        "name": "useCallback",
+        "type": "named",
+        "source": "react",
+        "resolved_path": null,
+        "line": 7,
+        "alias": null
+      },
+      {
+        "name": "listingLocalStore",
+        "type": "named",
+        "source": "./listingLocalStore",
+        "resolved_path": "src\\islands\\pages\\SelfListingPage\\store\\listingLocalStore.ts",
+        "line": 8,
+        "alias": null
+      },
+      {
+        "name": "StoreState",
+        "type": "named",
+        "source": "./listingLocalStore",
+        "resolved_path": "src\\islands\\pages\\SelfListingPage\\store\\listingLocalStore.ts",
+        "line": 8,
+        "alias": null
+      },
+      {
+        "name": "ListingFormData",
+        "type": "type",
+        "source": "../types/listing.types",
+        "resolved_path": "src\\islands\\pages\\SelfListingPage\\types\\listing.types.ts",
+        "line": 9,
+        "alias": null
+      }
+    ],
+    "src\\islands\\pages\\SelfListingPage\\utils\\amenitiesService.ts": [
+      {
+        "name": "supabase",
+        "type": "named",
+        "source": "../../../../lib/supabase.js",
+        "resolved_path": "src\\lib\\supabase.js",
+        "line": 1,
+        "alias": null
+      }
+    ],
+    "src\\islands\\pages\\SelfListingPage\\utils\\neighborhoodService.ts": [
+      {
+        "name": "supabase",
+        "type": "named",
+        "source": "../../../../lib/supabase.js",
+        "resolved_path": "src\\lib\\supabase.js",
+        "line": 1,
+        "alias": null
+      },
+      {
+        "name": "generateNeighborhoodDescription",
+        "type": "named",
+        "source": "../../../../lib/aiService",
+        "resolved_path": "src\\lib\\aiService.js",
+        "line": 2,
+        "alias": null
+      }
+    ],
+    "src\\islands\\pages\\SelfListingPage\\utils\\safetyService.ts": [
+      {
+        "name": "supabase",
+        "type": "named",
+        "source": "../../../../lib/supabase.js",
+        "resolved_path": "src\\lib\\supabase.js",
+        "line": 6,
+        "alias": null
+      }
+    ],
+    "src\\islands\\shared\\Header.d.ts": [
+      {
+        "name": "FC",
+        "type": "named",
+        "source": "react",
+        "resolved_path": null,
+        "line": 5,
+        "alias": null
+      },
+      {
+        "name": "Key",
+        "type": "named",
+        "source": "react",
+        "resolved_path": null,
+        "line": 5,
         "alias": null
       }
     ],
@@ -30311,240 +30545,6 @@
         "line": 1,
         "alias": null
       }
-    ],
-    "src\\islands\\pages\\RentalApplicationPage\\store\\useRentalApplicationStore.ts": [
-      {
-        "name": "useState",
-        "type": "named",
-        "source": "react",
-        "resolved_path": null,
-        "line": 8,
-        "alias": null
-      },
-      {
-        "name": "useEffect",
-        "type": "named",
-        "source": "react",
-        "resolved_path": null,
-        "line": 8,
-        "alias": null
-      },
-      {
-        "name": "useCallback",
-        "type": "named",
-        "source": "react",
-        "resolved_path": null,
-        "line": 8,
-        "alias": null
-      },
-      {
-        "name": "rentalApplicationLocalStore",
-        "type": "named",
-        "source": "./rentalApplicationLocalStore",
-        "resolved_path": "src\\islands\\pages\\RentalApplicationPage\\store\\rentalApplicationLocalStore.ts",
-        "line": 9,
-        "alias": null
-      },
-      {
-        "name": "StoreState",
-        "type": "named",
-        "source": "./rentalApplicationLocalStore",
-        "resolved_path": "src\\islands\\pages\\RentalApplicationPage\\store\\rentalApplicationLocalStore.ts",
-        "line": 9,
-        "alias": null
-      },
-      {
-        "name": "RentalApplicationFormData",
-        "type": "named",
-        "source": "./rentalApplicationLocalStore",
-        "resolved_path": "src\\islands\\pages\\RentalApplicationPage\\store\\rentalApplicationLocalStore.ts",
-        "line": 9,
-        "alias": null
-      },
-      {
-        "name": "Occupant",
-        "type": "named",
-        "source": "./rentalApplicationLocalStore",
-        "resolved_path": "src\\islands\\pages\\RentalApplicationPage\\store\\rentalApplicationLocalStore.ts",
-        "line": 9,
-        "alias": null
-      },
-      {
-        "name": "VerificationStatus",
-        "type": "named",
-        "source": "./rentalApplicationLocalStore",
-        "resolved_path": "src\\islands\\pages\\RentalApplicationPage\\store\\rentalApplicationLocalStore.ts",
-        "line": 9,
-        "alias": null
-      }
-    ],
-    "src\\islands\\pages\\RentalApplicationPage\\utils\\rentalApplicationFieldMapper.ts": [
-      {
-        "name": "RentalApplicationFormData",
-        "type": "type",
-        "source": "../store/rentalApplicationLocalStore",
-        "resolved_path": "src\\islands\\pages\\RentalApplicationPage\\store\\rentalApplicationLocalStore.ts",
-        "line": 8,
-        "alias": null
-      },
-      {
-        "name": "Occupant",
-        "type": "type",
-        "source": "../store/rentalApplicationLocalStore",
-        "resolved_path": "src\\islands\\pages\\RentalApplicationPage\\store\\rentalApplicationLocalStore.ts",
-        "line": 8,
-        "alias": null
-      }
-    ],
-    "src\\islands\\pages\\SelfListingPage\\store\\listingLocalStore.ts": [
-      {
-        "name": "ListingFormData",
-        "type": "type",
-        "source": "../types/listing.types",
-        "resolved_path": "src\\islands\\pages\\SelfListingPage\\types\\listing.types.ts",
-        "line": 12,
-        "alias": null
-      },
-      {
-        "name": "PhotoData",
-        "type": "type",
-        "source": "../types/listing.types",
-        "resolved_path": "src\\islands\\pages\\SelfListingPage\\types\\listing.types.ts",
-        "line": 12,
-        "alias": null
-      },
-      {
-        "name": "DEFAULT_LISTING_DATA",
-        "type": "named",
-        "source": "../types/listing.types",
-        "resolved_path": "src\\islands\\pages\\SelfListingPage\\types\\listing.types.ts",
-        "line": 13,
-        "alias": null
-      }
-    ],
-    "src\\islands\\pages\\SelfListingPage\\store\\prepareListingSubmission.ts": [
-      {
-        "name": "ListingFormData",
-        "type": "type",
-        "source": "../types/listing.types",
-        "resolved_path": "src\\islands\\pages\\SelfListingPage\\types\\listing.types.ts",
-        "line": 8,
-        "alias": null
-      },
-      {
-        "name": "NightlyPricing",
-        "type": "type",
-        "source": "../types/listing.types",
-        "resolved_path": "src\\islands\\pages\\SelfListingPage\\types\\listing.types.ts",
-        "line": 8,
-        "alias": null
-      }
-    ],
-    "src\\islands\\pages\\SelfListingPage\\store\\useListingStore.ts": [
-      {
-        "name": "useState",
-        "type": "named",
-        "source": "react",
-        "resolved_path": null,
-        "line": 7,
-        "alias": null
-      },
-      {
-        "name": "useEffect",
-        "type": "named",
-        "source": "react",
-        "resolved_path": null,
-        "line": 7,
-        "alias": null
-      },
-      {
-        "name": "useCallback",
-        "type": "named",
-        "source": "react",
-        "resolved_path": null,
-        "line": 7,
-        "alias": null
-      },
-      {
-        "name": "listingLocalStore",
-        "type": "named",
-        "source": "./listingLocalStore",
-        "resolved_path": "src\\islands\\pages\\SelfListingPage\\store\\listingLocalStore.ts",
-        "line": 8,
-        "alias": null
-      },
-      {
-        "name": "StoreState",
-        "type": "named",
-        "source": "./listingLocalStore",
-        "resolved_path": "src\\islands\\pages\\SelfListingPage\\store\\listingLocalStore.ts",
-        "line": 8,
-        "alias": null
-      },
-      {
-        "name": "ListingFormData",
-        "type": "type",
-        "source": "../types/listing.types",
-        "resolved_path": "src\\islands\\pages\\SelfListingPage\\types\\listing.types.ts",
-        "line": 9,
-        "alias": null
-      }
-    ],
-    "src\\islands\\pages\\SelfListingPage\\utils\\amenitiesService.ts": [
-      {
-        "name": "supabase",
-        "type": "named",
-        "source": "../../../../lib/supabase.js",
-        "resolved_path": "src\\lib\\supabase.js",
-        "line": 1,
-        "alias": null
-      }
-    ],
-    "src\\islands\\pages\\SelfListingPage\\utils\\neighborhoodService.ts": [
-      {
-        "name": "supabase",
-        "type": "named",
-        "source": "../../../../lib/supabase.js",
-        "resolved_path": "src\\lib\\supabase.js",
-        "line": 1,
-        "alias": null
-      },
-      {
-        "name": "generateNeighborhoodDescription",
-        "type": "named",
-        "source": "../../../../lib/aiService",
-        "resolved_path": "src\\lib\\aiService.js",
-        "line": 2,
-        "alias": null
-      }
-    ],
-    "src\\islands\\pages\\SelfListingPage\\utils\\safetyService.ts": [
-      {
-        "name": "supabase",
-        "type": "named",
-        "source": "../../../../lib/supabase.js",
-        "resolved_path": "src\\lib\\supabase.js",
-        "line": 6,
-        "alias": null
-      }
-    ],
-    "src\\islands\\shared\\Header.d.ts": [
-      {
-        "name": "FC",
-        "type": "named",
-        "source": "react",
-        "resolved_path": null,
-        "line": 5,
-        "alias": null
-      },
-      {
-        "name": "Key",
-        "type": "named",
-        "source": "react",
-        "resolved_path": null,
-        "line": 5,
-        "alias": null
-      }
     ]
   },
   "reverse_dependencies": {
@@ -30905,6 +30905,9 @@
       "src\\islands\\shared\\FavoriteButton\\FavoriteButton.jsx",
       "src\\islands\\pages\\SelfListingPage\\sections\\Section6Photos.tsx",
       "src\\islands\\pages\\SelfListingPageV2\\SelfListingPageV2.tsx",
+      "src\\islands\\pages\\SelfListingPage\\utils\\amenitiesService.ts",
+      "src\\islands\\pages\\SelfListingPage\\utils\\neighborhoodService.ts",
+      "src\\islands\\pages\\SelfListingPage\\utils\\safetyService.ts",
       "src\\hooks\\useAuthenticatedUser.js",
       "src\\islands\\pages\\useEmailSmsUnitPageLogic.js",
       "src\\islands\\pages\\useRentalApplicationPageLogic.js",
@@ -30960,10 +30963,7 @@
       "src\\lib\\proposals\\userProposalQueries.js",
       "src\\logic\\workflows\\proposals\\cancelProposalWorkflow.js",
       "src\\logic\\workflows\\proposals\\counterofferWorkflow.js",
-      "src\\logic\\workflows\\proposals\\virtualMeetingWorkflow.js",
-      "src\\islands\\pages\\SelfListingPage\\utils\\amenitiesService.ts",
-      "src\\islands\\pages\\SelfListingPage\\utils\\neighborhoodService.ts",
-      "src\\islands\\pages\\SelfListingPage\\utils\\safetyService.ts"
+      "src\\logic\\workflows\\proposals\\virtualMeetingWorkflow.js"
     ],
     "src\\lib\\toastService.js": [
       "src\\islands\\modals\\EditPhoneNumberModal.jsx",
@@ -32763,13 +32763,13 @@
     "src\\lib\\aiService.js": [
       "src\\islands\\pages\\SelfListingPage\\sections\\Section2Features.tsx",
       "src\\islands\\pages\\SelfListingPage\\sections\\Section2Features.tsx",
+      "src\\islands\\pages\\SelfListingPage\\utils\\neighborhoodService.ts",
       "src\\islands\\pages\\ListingDashboardPage\\hooks\\useAIImportAssistant.js",
       "src\\islands\\pages\\ListingDashboardPage\\hooks\\useAIImportAssistant.js",
       "src\\islands\\pages\\ListingDashboardPage\\hooks\\useAIImportAssistant.js",
       "src\\islands\\shared\\EditListingDetails\\useEditListingDetailsLogic.js",
       "src\\islands\\shared\\EditListingDetails\\useEditListingDetailsLogic.js",
-      "src\\islands\\shared\\EditListingDetails\\services\\neighborhoodService.js",
-      "src\\islands\\pages\\SelfListingPage\\utils\\neighborhoodService.ts"
+      "src\\islands\\shared\\EditListingDetails\\services\\neighborhoodService.js"
     ],
     "src\\islands\\shared\\HostScheduleSelector\\types.js": [
       "src\\islands\\pages\\SelfListingPage\\sections\\Section3LeaseStyles.tsx"
@@ -32787,6 +32787,19 @@
     ],
     "src\\islands\\pages\\SelfListingPageV2\\styles\\SelfListingPageV2.css": [
       "src\\islands\\pages\\SelfListingPageV2\\SelfListingPageV2.tsx"
+    ],
+    "src\\islands\\pages\\RentalApplicationPage\\store\\rentalApplicationLocalStore.ts": [
+      "src\\islands\\pages\\RentalApplicationPage\\store\\useRentalApplicationStore.ts",
+      "src\\islands\\pages\\RentalApplicationPage\\store\\useRentalApplicationStore.ts",
+      "src\\islands\\pages\\RentalApplicationPage\\store\\useRentalApplicationStore.ts",
+      "src\\islands\\pages\\RentalApplicationPage\\store\\useRentalApplicationStore.ts",
+      "src\\islands\\pages\\RentalApplicationPage\\store\\useRentalApplicationStore.ts",
+      "src\\islands\\pages\\RentalApplicationPage\\utils\\rentalApplicationFieldMapper.ts",
+      "src\\islands\\pages\\RentalApplicationPage\\utils\\rentalApplicationFieldMapper.ts"
+    ],
+    "src\\islands\\pages\\SelfListingPage\\store\\listingLocalStore.ts": [
+      "src\\islands\\pages\\SelfListingPage\\store\\useListingStore.ts",
+      "src\\islands\\pages\\SelfListingPage\\store\\useListingStore.ts"
     ],
     "src\\routes.config.js": [
       "vite.config.js",
@@ -32952,19 +32965,6 @@
     ],
     "src\\logic\\rules\\scheduling\\isDateBlocked.js": [
       "src\\logic\\workflows\\scheduling\\validateMoveInDateWorkflow.js"
-    ],
-    "src\\islands\\pages\\RentalApplicationPage\\store\\rentalApplicationLocalStore.ts": [
-      "src\\islands\\pages\\RentalApplicationPage\\store\\useRentalApplicationStore.ts",
-      "src\\islands\\pages\\RentalApplicationPage\\store\\useRentalApplicationStore.ts",
-      "src\\islands\\pages\\RentalApplicationPage\\store\\useRentalApplicationStore.ts",
-      "src\\islands\\pages\\RentalApplicationPage\\store\\useRentalApplicationStore.ts",
-      "src\\islands\\pages\\RentalApplicationPage\\store\\useRentalApplicationStore.ts",
-      "src\\islands\\pages\\RentalApplicationPage\\utils\\rentalApplicationFieldMapper.ts",
-      "src\\islands\\pages\\RentalApplicationPage\\utils\\rentalApplicationFieldMapper.ts"
-    ],
-    "src\\islands\\pages\\SelfListingPage\\store\\listingLocalStore.ts": [
-      "src\\islands\\pages\\SelfListingPage\\store\\useListingStore.ts",
-      "src\\islands\\pages\\SelfListingPage\\store\\useListingStore.ts"
     ]
   }
 }
