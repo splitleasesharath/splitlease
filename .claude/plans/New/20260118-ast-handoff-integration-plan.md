@@ -1,7 +1,7 @@
 # AST Dependency Handoff Integration Plan
 
 **Created**: 2026-01-18
-**Updated**: 2026-01-18 (Added graph algorithms from deep research)
+**Updated**: 2026-01-18 (Added graph algorithms, handoff contracts, robustness requirements)
 **Status**: Ready for Implementation
 **Scope**: Integrate AST analyzer output into audit pipeline with deferred validation
 
@@ -170,8 +170,108 @@ Graph algorithms for dependency analysis:
 - Kahn's algorithm (topological levels)
 """
 
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Set, Tuple, Optional
+from dataclasses import dataclass, field
 from collections import defaultdict
+
+
+@dataclass
+class GraphAnalysisResult:
+    """Bundle all graph algorithm outputs for handoff to downstream consumers.
+
+    This is the PRIMARY handoff contract from graph analysis phase.
+    All downstream steps (topology sort, audit injection, validation) consume this.
+    """
+
+    # Core graph data
+    reduced_graph: Dict[str, List[str]]      # After transitive reduction
+    cycles: List[List[str]]                   # Tarjan's SCC output (2+ file groups)
+    topological_levels: List[List[str]]       # Kahn's algorithm output
+
+    # Metrics (for logging and prompt context)
+    original_edge_count: int
+    reduced_edge_count: int
+    edge_reduction_pct: float
+    cycle_count: int
+    level_count: int
+
+    # Reverse lookups (pre-computed for O(1) access)
+    file_to_level: Dict[str, int] = field(default_factory=dict)
+    file_to_cycle: Dict[str, Optional[int]] = field(default_factory=dict)
+
+    @classmethod
+    def from_analysis(
+        cls,
+        original_graph: Dict[str, List[str]],
+        reduced_graph: Dict[str, List[str]],
+        cycles: List[List[str]],
+        levels: List[List[str]],
+        reduction_pct: float
+    ) -> "GraphAnalysisResult":
+        """Factory method with pre-computed lookups."""
+        # Build file → level lookup
+        file_to_level = {}
+        for level_idx, level_files in enumerate(levels):
+            for f in level_files:
+                file_to_level[normalize_path(f)] = level_idx
+
+        # Build file → cycle lookup
+        file_to_cycle = {}
+        for cycle_idx, cycle_files in enumerate(cycles):
+            for f in cycle_files:
+                file_to_cycle[normalize_path(f)] = cycle_idx
+
+        return cls(
+            reduced_graph=reduced_graph,
+            cycles=cycles,
+            topological_levels=levels,
+            original_edge_count=sum(len(deps) for deps in original_graph.values()),
+            reduced_edge_count=sum(len(deps) for deps in reduced_graph.values()),
+            edge_reduction_pct=reduction_pct,
+            cycle_count=len(cycles),
+            level_count=len(levels),
+            file_to_level=file_to_level,
+            file_to_cycle=file_to_cycle
+        )
+
+    def get_level(self, file_path: str) -> int:
+        """Get topological level for a file. Returns 999 if unknown."""
+        return self.file_to_level.get(normalize_path(file_path), 999)
+
+    def get_cycle_id(self, file_path: str) -> Optional[int]:
+        """Get cycle group ID if file is in a cycle, else None."""
+        return self.file_to_cycle.get(normalize_path(file_path))
+
+
+def normalize_path(path: str) -> str:
+    """Normalize path for cross-platform matching.
+
+    CRITICAL: All path comparisons MUST use this function.
+    Windows uses backslashes, AST analyzer may output forward slashes,
+    and user inputs can vary. This ensures consistent matching.
+
+    Args:
+        path: Any file path string
+
+    Returns:
+        Normalized path with forward slashes, no trailing slash, lowercase on Windows
+    """
+    import os
+    # Convert to forward slashes
+    normalized = path.replace('\\', '/')
+
+    # Remove trailing slash
+    normalized = normalized.rstrip('/')
+
+    # Remove leading ./ if present
+    if normalized.startswith('./'):
+        normalized = normalized[2:]
+
+    # On Windows, normalize case for consistent matching
+    if os.name == 'nt':
+        normalized = normalized.lower()
+
+    return normalized
 
 
 def transitive_reduction(
@@ -857,3 +957,372 @@ If issues arise:
 2. Audit prompt falls back to no dependency context if `{high_impact_summary}` missing
 3. Graph algorithms can be disabled individually via env vars
 4. All changes are on a feature branch until validated
+
+---
+
+## Handoff Contracts
+
+Each step in the pipeline produces output that the next step consumes. These contracts define the exact shape of data at each boundary.
+
+### Contract 1: AST Analyzer → Graph Algorithms
+
+**Producer**: `ast_dependency_analyzer.py`
+**Consumer**: `graph_algorithms.py`
+
+```python
+# Input to graph algorithms
+simple_graph: Dict[str, List[str]]  # file → [resolved imports]
+# Built from DependencyContext.dependency_graph
+
+# Contract: All paths must be resolved (no None values)
+# Contract: All paths normalized via normalize_path()
+```
+
+### Contract 2: Graph Algorithms → All Downstream
+
+**Producer**: `graph_algorithms.py`
+**Consumer**: `high_impact_summary.py`, `topology_sort.py`, `adw_code_audit.py`, orchestrator
+
+```python
+# Output dataclass
+GraphAnalysisResult:
+    reduced_graph: Dict[str, List[str]]
+    cycles: List[List[str]]
+    topological_levels: List[List[str]]
+    edge_reduction_pct: float
+    file_to_level: Dict[str, int]      # Pre-computed for O(1) lookup
+    file_to_cycle: Dict[str, Optional[int]]  # Pre-computed
+```
+
+### Contract 3: Audit (Opus) → Chunk Parser ⚠️ HIGHEST RISK
+
+**Producer**: Claude Opus via `adw_code_audit.py`
+**Consumer**: `chunk_parser.py`
+
+This is the **riskiest handoff** because Opus output is non-deterministic LLM text.
+
+```python
+# Expected Opus output format (in audit plan markdown)
+## Chunk 1 of N
+- Files: path/to/file1.js, path/to/file2.js
+- Rationale: <explanation>
+- Suggested approach: <approach>
+
+## Chunk 2 of N
+...
+
+# Parser must extract:
+@dataclass
+class ChunkData:
+    number: int
+    file_paths: List[str]  # MUST match paths in GraphAnalysisResult
+    rationale: str
+    approach: str
+```
+
+**See robustness requirements below.**
+
+### Contract 4: Topology Sort → Implementation Loop
+
+**Producer**: `topology_sort.py`
+**Consumer**: Orchestrator implementation loop
+
+```python
+TopologySortResult:
+    sorted_chunks: List[ChunkData]       # Flat list in order
+    levels: List[List[ChunkData]]        # Grouped by level
+    cycle_chunks: List[List[ChunkData]]  # Atomic units
+```
+
+### Contract 5: Implementation → Deferred Validation
+
+**Producer**: Orchestrator implementation loop
+**Consumer**: `deferred_validation.py`
+
+```python
+ValidationBatch:
+    chunks: List[ChunkData]
+    implemented_files: Set[str]
+    affected_pages: Set[str]  # Derived from reverse_dependencies
+    cycle_groups: List[List[ChunkData]]
+```
+
+### Contract 6: Validation → OrchestrationResult
+
+**Producer**: `deferred_validation.py`
+**Consumer**: Orchestrator, logging, reporting
+
+```python
+@dataclass
+class OrchestrationResult:
+    """Final pipeline result with metrics for logging and reporting."""
+
+    # Outcome
+    success: bool
+    phase_reached: str  # "audit", "parse", "sort", "implement", "validate"
+
+    # Metrics
+    total_chunks: int
+    chunks_implemented: int
+    topological_levels: int
+    cycles_detected: int
+    edge_reduction_pct: float
+
+    # Timing
+    total_duration_seconds: float
+    phase_durations: Dict[str, float]  # phase_name → seconds
+
+    # Errors (if any)
+    errors: List[str] = field(default_factory=list)
+    affected_chunks: List[int] = field(default_factory=list)  # chunk numbers
+
+    # Artifacts
+    plan_path: Optional[str] = None
+    changelog_path: Optional[str] = None
+
+    def to_summary(self) -> str:
+        """Generate human-readable summary for logging."""
+        status = "✅ SUCCESS" if self.success else "❌ FAILED"
+        return (
+            f"{status} | Phase: {self.phase_reached} | "
+            f"Chunks: {self.chunks_implemented}/{self.total_chunks} | "
+            f"Levels: {self.topological_levels} | "
+            f"Cycles: {self.cycles_detected} | "
+            f"Duration: {self.total_duration_seconds:.1f}s"
+        )
+```
+
+---
+
+## Opus → Parser Robustness Requirements
+
+The handoff from Claude Opus audit output to the chunk parser is the **highest-risk** boundary in the pipeline because:
+
+1. **Non-deterministic output**: LLM responses vary between runs
+2. **No compile-time guarantees**: Parser must handle malformed text
+3. **Path matching required**: Opus paths must match AST analyzer paths
+
+### Required Safeguards
+
+#### 1. Path Normalization at Boundary
+
+```python
+def extract_file_paths(opus_output: str, valid_paths: Set[str]) -> List[str]:
+    """Extract and validate file paths from Opus output.
+
+    Args:
+        opus_output: Raw text from Opus
+        valid_paths: Set of normalized paths from GraphAnalysisResult
+
+    Returns:
+        List of validated, normalized paths
+
+    Raises:
+        ChunkParseError: If paths cannot be matched
+    """
+    extracted = []
+    for raw_path in parse_paths_from_markdown(opus_output):
+        normalized = normalize_path(raw_path)
+
+        # Try exact match first
+        if normalized in valid_paths:
+            extracted.append(normalized)
+            continue
+
+        # Try fuzzy match (file basename)
+        basename = normalized.split('/')[-1]
+        matches = [p for p in valid_paths if p.endswith('/' + basename)]
+        if len(matches) == 1:
+            extracted.append(matches[0])
+        elif len(matches) > 1:
+            # Ambiguous - log warning, use first match
+            logger.warning(f"Ambiguous path '{raw_path}' matches {matches}")
+            extracted.append(matches[0])
+        else:
+            # No match - this is an error
+            raise ChunkParseError(f"Unknown file path: {raw_path}")
+
+    return extracted
+```
+
+#### 2. Structured Output Validation
+
+```python
+@dataclass
+class ChunkParseResult:
+    """Result of parsing Opus audit output."""
+    chunks: List[ChunkData]
+    warnings: List[str]  # Non-fatal issues
+    errors: List[str]    # Fatal issues
+
+    @property
+    def is_valid(self) -> bool:
+        return len(self.errors) == 0 and len(self.chunks) > 0
+
+
+def validate_chunk_data(chunk: ChunkData, graph: GraphAnalysisResult) -> List[str]:
+    """Validate a parsed chunk against the dependency graph.
+
+    Returns list of validation errors (empty if valid).
+    """
+    errors = []
+
+    # Check all paths exist in graph
+    for path in chunk.file_paths:
+        if normalize_path(path) not in graph.file_to_level:
+            errors.append(f"Chunk {chunk.number}: Unknown path '{path}'")
+
+    # Warn if chunk spans multiple levels (may cause issues)
+    levels = {graph.get_level(p) for p in chunk.file_paths}
+    if len(levels) > 2:
+        errors.append(
+            f"Chunk {chunk.number}: Spans {len(levels)} levels - consider splitting"
+        )
+
+    # Warn if chunk contains cycle members but not all of them
+    for path in chunk.file_paths:
+        cycle_id = graph.get_cycle_id(path)
+        if cycle_id is not None:
+            cycle_files = set(graph.cycles[cycle_id])
+            chunk_files = set(normalize_path(p) for p in chunk.file_paths)
+            missing = cycle_files - chunk_files
+            if missing:
+                errors.append(
+                    f"Chunk {chunk.number}: Contains cycle member '{path}' but "
+                    f"missing other cycle members: {missing}"
+                )
+
+    return errors
+```
+
+#### 3. Retry with Clearer Prompts
+
+If parsing fails, the orchestrator should:
+
+```python
+MAX_PARSE_RETRIES = 2
+
+def robust_parse_audit(opus_output: str, graph: GraphAnalysisResult) -> ChunkParseResult:
+    """Parse audit output with retry logic for malformed responses."""
+
+    for attempt in range(MAX_PARSE_RETRIES + 1):
+        result = parse_audit_output(opus_output, graph)
+
+        if result.is_valid:
+            return result
+
+        if attempt < MAX_PARSE_RETRIES:
+            logger.warning(f"Parse attempt {attempt + 1} failed: {result.errors}")
+            # TODO: Could re-prompt Opus with explicit formatting instructions
+            # For now, try alternative parsing strategies
+
+            # Try lenient parsing (ignore path validation)
+            result = parse_audit_output_lenient(opus_output)
+            if result.is_valid:
+                return result
+
+    # All retries exhausted
+    raise ChunkParseError(f"Failed to parse audit after {MAX_PARSE_RETRIES + 1} attempts")
+```
+
+#### 4. Explicit Format Instructions in Prompt
+
+Add to `code_audit_opus.txt`:
+
+```markdown
+## OUTPUT FORMAT REQUIREMENTS
+
+You MUST format each chunk exactly as follows:
+
+```
+## Chunk N of M
+- **Files**: `path/to/file1.js`, `path/to/file2.js`
+- **Rationale**: Why these files are grouped together
+- **Approach**: How to refactor them
+```
+
+IMPORTANT:
+- Use exact file paths from the codebase (shown in dependency analysis above)
+- Each file path MUST be wrapped in backticks
+- Files in CIRCULAR IMPORTS must be in the SAME chunk
+- Do NOT include files not mentioned in the dependency analysis
+```
+
+---
+
+## Handoff Failure Modes
+
+| Handoff | Failure Mode | Detection | Recovery |
+|---------|--------------|-----------|----------|
+| AST → Graph | Unresolved imports | `None` in dependency list | Filter before graph construction |
+| Graph → Summary | Empty graph | `total_files == 0` | Abort with clear error |
+| Opus → Parser | Malformed markdown | Parse errors, no chunks | Retry with clearer prompt |
+| Opus → Parser | Unknown file paths | Path not in `file_to_level` | Fuzzy match or abort |
+| Opus → Parser | Split cycle members | Cycle files in different chunks | Merge chunks or warn |
+| Parser → Sort | Chunk file not in graph | `get_level()` returns 999 | Assign to last level |
+| Sort → Implement | Empty level | Level with 0 chunks | Skip level |
+| Implement → Validate | Syntax error mid-batch | Build fails | Reset all, attribute error |
+
+---
+
+## Data Flow Summary
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          COMPLETE DATA FLOW                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  [1] AST ANALYZER                                                           │
+│      Input:  target_path (string)                                           │
+│      Output: DependencyContext                                              │
+│                                                                             │
+│          ↓ transform: extract simple_graph                                  │
+│                                                                             │
+│  [2] GRAPH ALGORITHMS                                                       │
+│      Input:  simple_graph: Dict[str, List[str]]                            │
+│      Output: GraphAnalysisResult (bundled)                                  │
+│                                                                             │
+│          ↓ branch: to Summary + to Sort + to Audit                         │
+│                                                                             │
+│  [3] HIGH IMPACT SUMMARY                                                    │
+│      Input:  GraphAnalysisResult + DependencyContext.reverse_dependencies   │
+│      Output: HighImpactSummary.to_prompt_context() → string (~100 lines)   │
+│                                                                             │
+│          ↓ inject into prompt template                                      │
+│                                                                             │
+│  [4] OPUS AUDIT                                                             │
+│      Input:  Prompt with {high_impact_summary}                              │
+│      Output: Markdown text with chunk definitions  ⚠️ NON-DETERMINISTIC    │
+│                                                                             │
+│          ↓ parse (HIGHEST RISK HANDOFF)                                    │
+│                                                                             │
+│  [5] CHUNK PARSER                                                           │
+│      Input:  Opus output + GraphAnalysisResult (for validation)            │
+│      Output: ChunkParseResult with List[ChunkData]                         │
+│                                                                             │
+│          ↓ pass to topology sort                                           │
+│                                                                             │
+│  [6] TOPOLOGY SORT                                                          │
+│      Input:  List[ChunkData] + GraphAnalysisResult                         │
+│      Output: TopologySortResult (level-ordered)                            │
+│                                                                             │
+│          ↓ iterate levels                                                   │
+│                                                                             │
+│  [7] IMPLEMENTATION LOOP                                                    │
+│      Input:  TopologySortResult.levels                                      │
+│      Output: Modified files (on disk) + implementation status              │
+│                                                                             │
+│          ↓ batch handoff                                                    │
+│                                                                             │
+│  [8] DEFERRED VALIDATION                                                    │
+│      Input:  ValidationBatch (from TopologySortResult + reverse_deps)      │
+│      Output: ValidationResult                                               │
+│                                                                             │
+│          ↓ final aggregation                                                │
+│                                                                             │
+│  [9] ORCHESTRATION RESULT                                                   │
+│      Input:  ValidationResult + all metrics                                 │
+│      Output: OrchestrationResult (final pipeline state)                    │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
