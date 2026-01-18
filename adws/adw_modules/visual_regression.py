@@ -121,19 +121,31 @@ def check_visual_parity(
 
             # Try to find screenshots in common locations if not in result
             if not live_screenshot or not dev_screenshot:
-                safe_path = page_path.replace('/', '_')
-                possible_dirs = [
-                    Path.cwd(),
-                    Path(__file__).parent.parent,
-                    Path(__file__).parent.parent / "screenshots",
+                safe_path = page_path.replace('/', '_').strip('_') or 'homepage'
+                adws_dir = Path(__file__).parent.parent
+
+                # Search patterns for screenshot files
+                search_patterns = [
+                    # .playwright-mcp directory (common location)
+                    (adws_dir / ".playwright-mcp" / f"live-{safe_path}.png",
+                     adws_dir / ".playwright-mcp" / f"dev-{safe_path}.png"),
+                    (adws_dir / ".playwright-mcp" / "live-homepage.png",
+                     adws_dir / ".playwright-mcp" / "dev-homepage.png"),
+                    # Standard parity naming
+                    (adws_dir / f"parity_LIVE{page_path.replace('/', '_')}.png",
+                     adws_dir / f"parity_DEV{page_path.replace('/', '_')}.png"),
+                    # Current working directory
+                    (Path.cwd() / f"parity_LIVE{page_path.replace('/', '_')}.png",
+                     Path.cwd() / f"parity_DEV{page_path.replace('/', '_')}.png"),
                 ]
-                for dir_path in possible_dirs:
-                    live_candidate = dir_path / f"parity_LIVE{safe_path}.png"
-                    dev_candidate = dir_path / f"parity_DEV{safe_path}.png"
-                    if live_candidate.exists():
+
+                for live_candidate, dev_candidate in search_patterns:
+                    if not live_screenshot and live_candidate.exists():
                         live_screenshot = str(live_candidate)
-                    if dev_candidate.exists():
+                    if not dev_screenshot and dev_candidate.exists():
                         dev_screenshot = str(dev_candidate)
+                    if live_screenshot and dev_screenshot:
+                        break
 
             slack_result = notify_parity_check_result(
                 page_path=page_path,
