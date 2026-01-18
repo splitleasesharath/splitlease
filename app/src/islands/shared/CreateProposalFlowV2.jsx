@@ -17,8 +17,8 @@ import { calculateNightsFromDays } from '../../lib/scheduleSelector/nightCalcula
 import Toast, { useToast } from './Toast.jsx';
 import '../../styles/create-proposal-flow-v2.css';
 
-// Day name constants for check-in/check-out calculation
-const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+// Import from canonical source
+import { DAY_NAMES } from '../../lib/dayUtils.js';
 
 // Flow order constants for step navigation
 // Section IDs: 1 = Review, 2 = User Details, 3 = Move-in, 4 = Days Selection
@@ -229,14 +229,12 @@ export default function CreateProposalFlowV2({
 
   // Convert day objects to day names for compatibility
   const dayObjectsToNames = (dayObjects) => {
-    const dayMap = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    return dayObjects.map(dayObj => dayMap[dayObj.dayOfWeek]);
+    return dayObjects.map(dayObj => DAY_NAMES[dayObj.dayOfWeek]);
   };
 
   const dayNamesToObjects = (dayNames) => {
-    const dayMap = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     return dayNames.map(name => {
-      const dayOfWeek = dayMap.indexOf(name);
+      const dayOfWeek = DAY_NAMES.indexOf(name);
       return {
         id: `day-${dayOfWeek}`,
         dayOfWeek,
