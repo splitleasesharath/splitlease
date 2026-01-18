@@ -26,16 +26,30 @@ import tree_sitter_javascript as ts_js
 import tree_sitter_typescript as ts_ts
 from tree_sitter import Language, Parser, Node
 
-from .ast_types import (
-    DependencyContext,
-    FileAnalysis,
-    ExportedSymbol,
-    ImportedSymbol,
-    ExportType,
-    ImportType,
-    SUPPORTED_EXTENSIONS,
-    is_refactorable_file,
-)
+# Support both package import and direct script execution
+try:
+    from .ast_types import (
+        DependencyContext,
+        FileAnalysis,
+        ExportedSymbol,
+        ImportedSymbol,
+        ExportType,
+        ImportType,
+        SUPPORTED_EXTENSIONS,
+        is_refactorable_file,
+    )
+except ImportError:
+    # Running as script directly (python ast_dependency_analyzer.py)
+    from ast_types import (
+        DependencyContext,
+        FileAnalysis,
+        ExportedSymbol,
+        ImportedSymbol,
+        ExportType,
+        ImportType,
+        SUPPORTED_EXTENSIONS,
+        is_refactorable_file,
+    )
 
 
 class ASTDependencyAnalyzer:
