@@ -24,6 +24,8 @@ export default function StepIndicator({
   onStepClick,               // (stepNumber) => void
   disabled = false,          // Disable all navigation (during submission)
 }) {
+  // DEBUG: Log received props
+  console.log('[DEBUG] StepIndicator render:', { currentStep, completedSteps });
   const handleStepClick = (stepNumber) => {
     if (disabled) return;
     onStepClick?.(stepNumber);

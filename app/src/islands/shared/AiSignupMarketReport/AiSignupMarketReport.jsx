@@ -303,7 +303,7 @@ function sendWelcomeEmail(data) {
           // All 13 placeholders expected by the Basic template ($$variable$$ format)
           'to': data.email,
           'from email': 'tech@leasesplit.com',
-          'from name': 'Split Lease Signup',
+          'from name': ', "name": "Split Lease Signup"',
           'subject': 'New Split Lease Account!',
           'header': 'Welcome to Split Lease!',
           'body text': emailBodyHtml,
@@ -392,7 +392,7 @@ free form text inputted: ${data.freeformText}`;
           // All 13 placeholders expected by the Basic template
           'to': 'acquisition-aaaachs52tzodgc5t3o2oeipli@splitlease.slack.com',
           'from email': 'noreply@splitlease.com',
-          'from name': 'Guest AI Signup',
+          'from name': ', "name": "Guest AI Signup"',
           'subject': `${data.name || 'New User'}, ${data.email}, SIGNED UP thru AI signup feature`,
           'header': 'New AI Signup',
           'body text': emailBodyHtml,

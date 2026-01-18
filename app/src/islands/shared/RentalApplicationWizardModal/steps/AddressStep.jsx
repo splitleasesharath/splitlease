@@ -16,22 +16,32 @@ export default function AddressStep({
   addressInputRef,
 }) {
   const autocompleteRef = useRef(null);
-  const initAttempted = useRef(false);
+  // Store onFieldChange in a ref to avoid dependency issues with the listener
+  const onFieldChangeRef = useRef(onFieldChange);
+
+  // Keep the ref updated
+  useEffect(() => {
+    onFieldChangeRef.current = onFieldChange;
+  }, [onFieldChange]);
 
   // Initialize Google Places Autocomplete with retry logic
   useEffect(() => {
-    // Skip if already initialized
-    if (autocompleteRef.current || initAttempted.current) return;
+    // Skip if already have an autocomplete instance attached
+    if (autocompleteRef.current) {
+      console.log('[RentalAppWizard] Autocomplete already initialized, skipping');
+      return;
+    }
 
     let retryCount = 0;
     const maxRetries = 50; // Try for 5 seconds (50 * 100ms)
+    let retryTimer = null;
 
     const initAutocomplete = () => {
       // Check for Google Maps AND the Places library
       if (!window.google || !window.google.maps || !window.google.maps.places) {
         retryCount++;
         if (retryCount < maxRetries) {
-          setTimeout(initAutocomplete, 100);
+          retryTimer = setTimeout(initAutocomplete, 100);
         } else {
           console.error('[RentalAppWizard] Google Maps API failed to load after 5 seconds');
         }
@@ -41,13 +51,14 @@ export default function AddressStep({
       if (!addressInputRef?.current) {
         retryCount++;
         if (retryCount < maxRetries) {
-          setTimeout(initAutocomplete, 100);
+          retryTimer = setTimeout(initAutocomplete, 100);
         }
         return;
       }
 
       try {
         console.log('[RentalAppWizard] Initializing Google Maps Autocomplete...');
+        console.log('[RentalAppWizard] Input element:', addressInputRef.current);
 
         // Create autocomplete restricted to US addresses only
         const autocomplete = new window.google.maps.places.Autocomplete(
@@ -60,6 +71,7 @@ export default function AddressStep({
         );
 
         console.log('[RentalAppWizard] Google Maps Autocomplete initialized (US addresses)');
+        console.log('[RentalAppWizard] Autocomplete instance:', autocomplete);
 
         // Prevent autocomplete from selecting on Enter key (prevents form submission)
         window.google.maps.event.addDomListener(addressInputRef.current, 'keydown', (e) => {
@@ -70,28 +82,36 @@ export default function AddressStep({
 
         autocompleteRef.current = autocomplete;
 
-        // Listen for place selection
-        autocomplete.addListener('place_changed', () => {
+        // Listen for place selection - use the ref to get the latest callback
+        const placeChangedListener = autocomplete.addListener('place_changed', () => {
+          console.log('[RentalAppWizard] place_changed event fired!');
           const place = autocomplete.getPlace();
-          console.log('[RentalAppWizard] Place selected:', place);
+          console.log('[RentalAppWizard] Place object:', place);
+          console.log('[RentalAppWizard] Place place_id:', place?.place_id);
+          console.log('[RentalAppWizard] Place formatted_address:', place?.formatted_address);
 
           // If user just pressed Enter without selecting, don't do anything
-          if (!place.place_id) {
-            console.log('[RentalAppWizard] No place_id - user did not select from dropdown');
+          if (!place || !place.place_id) {
+            console.log('[RentalAppWizard] No place_id - user may not have selected from dropdown');
+            // Still try to get the input value as fallback
+            const inputValue = addressInputRef.current?.value;
+            console.log('[RentalAppWizard] Current input value:', inputValue);
             return;
           }
 
           if (!place.formatted_address) {
-            console.error('[RentalAppWizard] Invalid place selected');
+            console.error('[RentalAppWizard] Invalid place selected - no formatted_address');
             return;
           }
 
           // Update the currentAddress field with the formatted address
-          onFieldChange('currentAddress', place.formatted_address);
-          console.log('[RentalAppWizard] Address updated:', place.formatted_address);
+          console.log('[RentalAppWizard] Calling onFieldChange with:', place.formatted_address);
+          onFieldChangeRef.current('currentAddress', place.formatted_address);
+          console.log('[RentalAppWizard] Address updated successfully:', place.formatted_address);
         });
 
-        initAttempted.current = true;
+        console.log('[RentalAppWizard] place_changed listener attached');
+
       } catch (error) {
         console.error('[RentalAppWizard] Error initializing Google Maps Autocomplete:', error);
       }
@@ -100,12 +120,18 @@ export default function AddressStep({
     initAutocomplete();
 
     return () => {
+      // Clear any pending retry timers
+      if (retryTimer) {
+        clearTimeout(retryTimer);
+      }
       // Cleanup autocomplete listeners
       if (autocompleteRef.current && window.google && window.google.maps) {
+        console.log('[RentalAppWizard] Cleaning up autocomplete listeners');
         window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
+        autocompleteRef.current = null;
       }
     };
-  }, [addressInputRef, onFieldChange]);
+  }, [addressInputRef]);
 
   return (
     <div className="wizard-step address-step">
