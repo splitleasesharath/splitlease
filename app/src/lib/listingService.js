@@ -457,15 +457,16 @@ async function triggerMockupProposalIfFirstListing(userId, listingId) {
   // Get the Supabase URL from environment or config
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
-  // Call the listing edge function with createMockupProposal action
+  // Call the proposal edge function with create_mockup action
+  // Note: Mockup creation was moved from listing to proposal edge function
   // Uses hostUserId and hostEmail variables set above (from legacy table or Supabase Auth)
-  const response = await fetch(`${supabaseUrl}/functions/v1/listing`, {
+  const response = await fetch(`${supabaseUrl}/functions/v1/proposal`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      action: 'createMockupProposal',
+      action: 'create_mockup',
       payload: {
         listingId: listingId,
         hostUserId: hostUserId,
