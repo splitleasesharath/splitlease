@@ -24,18 +24,24 @@ const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frid
 
 /**
  * Profile strength calculation weights
+ * Base criteria: 75% (available to all users)
+ * Role-specific milestone: 25% (rental app for guests, first listing for hosts)
  * Total = 100%
  */
 const PROFILE_STRENGTH_WEIGHTS = {
-  profilePhoto: 20,
-  bio: 15,
-  firstName: 5,
-  lastName: 5,
-  jobTitle: 5,
-  emailVerified: 10,
-  phoneVerified: 10,
-  govIdVerified: 15,
-  linkedinVerified: 15
+  // Base criteria (75% total)
+  profilePhoto: 15,      // -5% from original 20%
+  bio: 10,               // -5% from original 15%
+  firstName: 5,          // unchanged
+  lastName: 5,           // unchanged
+  jobTitle: 5,           // unchanged
+  emailVerified: 8,      // -2% from original 10%
+  phoneVerified: 8,      // -2% from original 10%
+  govIdVerified: 12,     // -3% from original 15%
+  linkedinVerified: 7,   // -8% from original 15%
+  // Role-specific milestones (25% each - user gets one based on their role)
+  rentalAppSubmitted: 25,  // Guest milestone
+  firstListingCreated: 25  // Host milestone
 };
 
 // ============================================================================
@@ -54,10 +60,16 @@ function getUserIdFromUrl() {
 
 /**
  * Calculate profile strength percentage
+ * Includes base criteria (75%) + role-specific milestone (25%)
+ *
+ * @param {Object} profileData - Basic profile info (photo, bio, names, etc.)
+ * @param {Object} verifications - Verification flags (email, phone, govId, linkedin)
+ * @param {Object} milestones - Role-specific milestones { rentalAppSubmitted, firstListingCreated, isHost }
  */
-function calculateProfileStrength(profileData, verifications) {
+function calculateProfileStrength(profileData, verifications, milestones = {}) {
   let strength = 0;
 
+  // Base criteria (75% total)
   if (profileData?.profilePhoto) {
     strength += PROFILE_STRENGTH_WEIGHTS.profilePhoto;
   }
@@ -86,20 +98,61 @@ function calculateProfileStrength(profileData, verifications) {
     strength += PROFILE_STRENGTH_WEIGHTS.linkedinVerified;
   }
 
+  // Role-specific milestone (25%)
+  // Hosts get credit for first listing, guests get credit for rental application
+  if (milestones?.isHost) {
+    if (milestones?.firstListingCreated) {
+      strength += PROFILE_STRENGTH_WEIGHTS.firstListingCreated;
+    }
+  } else {
+    // Guest user
+    if (milestones?.rentalAppSubmitted) {
+      strength += PROFILE_STRENGTH_WEIGHTS.rentalAppSubmitted;
+    }
+  }
+
   return Math.min(100, Math.round(strength));
 }
 
 /**
  * Generate next action suggestions based on profile completeness
+ * Prioritizes role-specific milestones (25pts) as they have the highest impact
+ *
+ * @param {Object} profileData - Basic profile info (photo, bio, names, etc.)
+ * @param {Object} verifications - Verification flags (email, phone, govId, linkedin)
+ * @param {Object} milestones - Role-specific milestones { rentalAppSubmitted, firstListingCreated, isHost }
  */
-function generateNextActions(profileData, verifications) {
+function generateNextActions(profileData, verifications, milestones = {}) {
   const actions = [];
 
+  // Role-specific milestone (highest priority - 25 points)
+  if (milestones?.isHost) {
+    if (!milestones?.firstListingCreated) {
+      actions.push({
+        id: 'firstListing',
+        text: 'Create your first listing',
+        points: PROFILE_STRENGTH_WEIGHTS.firstListingCreated,
+        icon: 'home'
+      });
+    }
+  } else {
+    // Guest user
+    if (!milestones?.rentalAppSubmitted) {
+      actions.push({
+        id: 'rentalApp',
+        text: 'Complete rental application',
+        points: PROFILE_STRENGTH_WEIGHTS.rentalAppSubmitted,
+        icon: 'clipboard'
+      });
+    }
+  }
+
+  // Base criteria suggestions (sorted by points descending)
   if (!profileData?.profilePhoto) {
     actions.push({
       id: 'photo',
       text: 'Add a profile photo',
-      points: 20,
+      points: PROFILE_STRENGTH_WEIGHTS.profilePhoto,
       icon: 'camera'
     });
   }
@@ -107,23 +160,15 @@ function generateNextActions(profileData, verifications) {
     actions.push({
       id: 'govId',
       text: 'Verify your identity',
-      points: 15,
+      points: PROFILE_STRENGTH_WEIGHTS.govIdVerified,
       icon: 'shield'
-    });
-  }
-  if (!verifications?.linkedin) {
-    actions.push({
-      id: 'linkedin',
-      text: 'Connect your LinkedIn',
-      points: 15,
-      icon: 'linkedin'
     });
   }
   if (!profileData?.bio || profileData.bio.trim().length === 0) {
     actions.push({
       id: 'bio',
       text: 'Write a short bio',
-      points: 15,
+      points: PROFILE_STRENGTH_WEIGHTS.bio,
       icon: 'edit'
     });
   }
@@ -131,8 +176,24 @@ function generateNextActions(profileData, verifications) {
     actions.push({
       id: 'phone',
       text: 'Verify your phone number',
-      points: 10,
+      points: PROFILE_STRENGTH_WEIGHTS.phoneVerified,
       icon: 'phone'
+    });
+  }
+  if (!verifications?.email) {
+    actions.push({
+      id: 'email',
+      text: 'Verify your email',
+      points: PROFILE_STRENGTH_WEIGHTS.emailVerified,
+      icon: 'mail'
+    });
+  }
+  if (!verifications?.linkedin) {
+    actions.push({
+      id: 'linkedin',
+      text: 'Connect your LinkedIn',
+      points: PROFILE_STRENGTH_WEIGHTS.linkedinVerified,
+      icon: 'linkedin'
     });
   }
 
@@ -295,7 +356,21 @@ export function useAccountProfilePageLogic() {
   }, [profileData]);
 
   /**
+   * Extract role-specific milestones
+   * - For hosts: whether they've created their first listing
+   * - For guests: whether they've submitted their rental application
+   */
+  const milestones = useMemo(() => {
+    return {
+      isHost: isHostUser,
+      firstListingCreated: hostListings.length > 0,
+      rentalAppSubmitted: !!profileData?.['Rental Application']
+    };
+  }, [isHostUser, hostListings, profileData]);
+
+  /**
    * Calculate profile strength (0-100)
+   * Includes base criteria (75%) + role-specific milestone (25%)
    */
   const profileStrength = useMemo(() => {
     const profileInfo = {
@@ -305,11 +380,12 @@ export function useAccountProfilePageLogic() {
       lastName: formData.lastName || profileData?.['Name - Last'],
       jobTitle: formData.jobTitle || profileData?.['Job Title']
     };
-    return calculateProfileStrength(profileInfo, verifications);
-  }, [profileData, formData, verifications]);
+    return calculateProfileStrength(profileInfo, verifications, milestones);
+  }, [profileData, formData, verifications, milestones]);
 
   /**
    * Generate next action suggestions
+   * Prioritizes role-specific milestones as they have the highest impact (25pts)
    */
   const nextActions = useMemo(() => {
     const profileInfo = {
@@ -319,8 +395,8 @@ export function useAccountProfilePageLogic() {
       lastName: formData.lastName || profileData?.['Name - Last'],
       jobTitle: formData.jobTitle || profileData?.['Job Title']
     };
-    return generateNextActions(profileInfo, verifications);
-  }, [profileData, formData, verifications]);
+    return generateNextActions(profileInfo, verifications, milestones);
+  }, [profileData, formData, verifications, milestones]);
 
   /**
    * Display name for sidebar
