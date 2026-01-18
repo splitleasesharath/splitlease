@@ -8,3 +8,6 @@ from adw_modules.state import ADWState
 # from adw_modules.batch_state import BatchState, BatchConfig, etc.
 # from adw_modules.test_suite import TEST_SUITE, etc.
 # from adw_modules.notifications import notify_batch_start, etc.
+
+# Slack integration - import on demand
+# from adw_modules.slack_client import SlackClient, notify_parity_check_result

@@ -115,6 +115,7 @@ def check_visual_parity(
         if not slack_channel:
             return
         try:
+            # Extract screenshot paths from result if present
             screenshots = result.get("screenshots", {})
             live_screenshot = screenshots.get("live")
             dev_screenshot = screenshots.get("dev")
@@ -131,9 +132,12 @@ def check_visual_parity(
                      adws_dir / ".playwright-mcp" / f"dev-{safe_path}.png"),
                     (adws_dir / ".playwright-mcp" / "live-homepage.png",
                      adws_dir / ".playwright-mcp" / "dev-homepage.png"),
-                    # Standard parity naming
+                    # Standard parity naming in adws directory
                     (adws_dir / f"parity_LIVE{page_path.replace('/', '_')}.png",
                      adws_dir / f"parity_DEV{page_path.replace('/', '_')}.png"),
+                    # Screenshots subdirectory
+                    (adws_dir / "screenshots" / f"parity_LIVE{page_path.replace('/', '_')}.png",
+                     adws_dir / "screenshots" / f"parity_DEV{page_path.replace('/', '_')}.png"),
                     # Current working directory
                     (Path.cwd() / f"parity_LIVE{page_path.replace('/', '_')}.png",
                      Path.cwd() / f"parity_DEV{page_path.replace('/', '_')}.png"),

@@ -259,9 +259,14 @@ export async function handleSubmit(
   };
 
   // Sync Job Title to user table if provided in rental application
+  // For employees: use their jobTitle field
+  // For business owners: use "Business Owner" as the job title
   if (input.jobTitle && input.jobTitle.trim()) {
     userUpdateData['Job Title'] = input.jobTitle.trim();
     console.log(`[RentalApp:submit] Syncing Job Title to user: ${input.jobTitle.trim()}`);
+  } else if (input.employmentStatus === 'business-owner') {
+    userUpdateData['Job Title'] = 'Business Owner';
+    console.log(`[RentalApp:submit] Syncing Job Title to user: Business Owner (from employment status)`);
   }
 
   const { error: userUpdateError } = await supabase

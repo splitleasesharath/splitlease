@@ -23,18 +23,24 @@ import { DAY_NAMES } from '../../../lib/dayUtils.js';
 
 /**
  * Profile strength calculation weights
+ * Base criteria: 75% (available to all users)
+ * Role-specific milestone: 25% (rental app for guests, first listing for hosts)
  * Total = 100%
  */
 const PROFILE_STRENGTH_WEIGHTS = {
-  profilePhoto: 20,
-  bio: 15,
-  firstName: 5,
-  lastName: 5,
-  jobTitle: 5,
-  emailVerified: 10,
-  phoneVerified: 10,
-  govIdVerified: 15,
-  linkedinVerified: 15
+  // Base criteria (75% total)
+  profilePhoto: 15,      // -5% from original 20%
+  bio: 10,               // -5% from original 15%
+  firstName: 5,          // unchanged
+  lastName: 5,           // unchanged
+  jobTitle: 5,           // unchanged
+  emailVerified: 8,      // -2% from original 10%
+  phoneVerified: 8,      // -2% from original 10%
+  govIdVerified: 12,     // -3% from original 15%
+  linkedinVerified: 7,   // -8% from original 15%
+  // Role-specific milestones (25% each - user gets one based on their role)
+  rentalAppSubmitted: 25,  // Guest milestone
+  firstListingCreated: 25  // Host milestone
 };
 
 // ============================================================================
@@ -53,10 +59,16 @@ function getUserIdFromUrl() {
 
 /**
  * Calculate profile strength percentage
+ * Includes base criteria (75%) + role-specific milestone (25%)
+ *
+ * @param {Object} profileData - Basic profile info (photo, bio, names, etc.)
+ * @param {Object} verifications - Verification flags (email, phone, govId, linkedin)
+ * @param {Object} milestones - Role-specific milestones { rentalAppSubmitted, firstListingCreated, isHost }
  */
-function calculateProfileStrength(profileData, verifications) {
+function calculateProfileStrength(profileData, verifications, milestones = {}) {
   let strength = 0;
 
+  // Base criteria (75% total)
   if (profileData?.profilePhoto) {
     strength += PROFILE_STRENGTH_WEIGHTS.profilePhoto;
   }
@@ -85,20 +97,61 @@ function calculateProfileStrength(profileData, verifications) {
     strength += PROFILE_STRENGTH_WEIGHTS.linkedinVerified;
   }
 
+  // Role-specific milestone (25%)
+  // Hosts get credit for first listing, guests get credit for rental application
+  if (milestones?.isHost) {
+    if (milestones?.firstListingCreated) {
+      strength += PROFILE_STRENGTH_WEIGHTS.firstListingCreated;
+    }
+  } else {
+    // Guest user
+    if (milestones?.rentalAppSubmitted) {
+      strength += PROFILE_STRENGTH_WEIGHTS.rentalAppSubmitted;
+    }
+  }
+
   return Math.min(100, Math.round(strength));
 }
 
 /**
  * Generate next action suggestions based on profile completeness
+ * Prioritizes role-specific milestones (25pts) as they have the highest impact
+ *
+ * @param {Object} profileData - Basic profile info (photo, bio, names, etc.)
+ * @param {Object} verifications - Verification flags (email, phone, govId, linkedin)
+ * @param {Object} milestones - Role-specific milestones { rentalAppSubmitted, firstListingCreated, isHost }
  */
-function generateNextActions(profileData, verifications) {
+function generateNextActions(profileData, verifications, milestones = {}) {
   const actions = [];
 
+  // Role-specific milestone (highest priority - 25 points)
+  if (milestones?.isHost) {
+    if (!milestones?.firstListingCreated) {
+      actions.push({
+        id: 'firstListing',
+        text: 'Create your first listing',
+        points: PROFILE_STRENGTH_WEIGHTS.firstListingCreated,
+        icon: 'home'
+      });
+    }
+  } else {
+    // Guest user
+    if (!milestones?.rentalAppSubmitted) {
+      actions.push({
+        id: 'rentalApp',
+        text: 'Complete rental application',
+        points: PROFILE_STRENGTH_WEIGHTS.rentalAppSubmitted,
+        icon: 'clipboard'
+      });
+    }
+  }
+
+  // Base criteria suggestions (sorted by points descending)
   if (!profileData?.profilePhoto) {
     actions.push({
       id: 'photo',
       text: 'Add a profile photo',
-      points: 20,
+      points: PROFILE_STRENGTH_WEIGHTS.profilePhoto,
       icon: 'camera'
     });
   }
@@ -106,23 +159,15 @@ function generateNextActions(profileData, verifications) {
     actions.push({
       id: 'govId',
       text: 'Verify your identity',
-      points: 15,
+      points: PROFILE_STRENGTH_WEIGHTS.govIdVerified,
       icon: 'shield'
-    });
-  }
-  if (!verifications?.linkedin) {
-    actions.push({
-      id: 'linkedin',
-      text: 'Connect your LinkedIn',
-      points: 15,
-      icon: 'linkedin'
     });
   }
   if (!profileData?.bio || profileData.bio.trim().length === 0) {
     actions.push({
       id: 'bio',
       text: 'Write a short bio',
-      points: 15,
+      points: PROFILE_STRENGTH_WEIGHTS.bio,
       icon: 'edit'
     });
   }
@@ -130,8 +175,24 @@ function generateNextActions(profileData, verifications) {
     actions.push({
       id: 'phone',
       text: 'Verify your phone number',
-      points: 10,
+      points: PROFILE_STRENGTH_WEIGHTS.phoneVerified,
       icon: 'phone'
+    });
+  }
+  if (!verifications?.email) {
+    actions.push({
+      id: 'email',
+      text: 'Verify your email',
+      points: PROFILE_STRENGTH_WEIGHTS.emailVerified,
+      icon: 'mail'
+    });
+  }
+  if (!verifications?.linkedin) {
+    actions.push({
+      id: 'linkedin',
+      text: 'Connect your LinkedIn',
+      points: PROFILE_STRENGTH_WEIGHTS.linkedinVerified,
+      icon: 'linkedin'
     });
   }
 
@@ -241,6 +302,10 @@ export function useAccountProfilePageLogic() {
   // Preview mode state - when true, shows public view even for own profile
   const [previewMode, setPreviewMode] = useState(false);
 
+  // Email verification state
+  const [isVerifyingEmail, setIsVerifyingEmail] = useState(false);
+  const [verificationEmailSent, setVerificationEmailSent] = useState(false);
+
   // ============================================================================
   // COMPUTED VALUES
   // ============================================================================
@@ -290,7 +355,21 @@ export function useAccountProfilePageLogic() {
   }, [profileData]);
 
   /**
+   * Extract role-specific milestones
+   * - For hosts: whether they've created their first listing
+   * - For guests: whether they've submitted their rental application
+   */
+  const milestones = useMemo(() => {
+    return {
+      isHost: isHostUser,
+      firstListingCreated: hostListings.length > 0,
+      rentalAppSubmitted: !!profileData?.['Rental Application']
+    };
+  }, [isHostUser, hostListings, profileData]);
+
+  /**
    * Calculate profile strength (0-100)
+   * Includes base criteria (75%) + role-specific milestone (25%)
    */
   const profileStrength = useMemo(() => {
     const profileInfo = {
@@ -300,11 +379,12 @@ export function useAccountProfilePageLogic() {
       lastName: formData.lastName || profileData?.['Name - Last'],
       jobTitle: formData.jobTitle || profileData?.['Job Title']
     };
-    return calculateProfileStrength(profileInfo, verifications);
-  }, [profileData, formData, verifications]);
+    return calculateProfileStrength(profileInfo, verifications, milestones);
+  }, [profileData, formData, verifications, milestones]);
 
   /**
    * Generate next action suggestions
+   * Prioritizes role-specific milestones as they have the highest impact (25pts)
    */
   const nextActions = useMemo(() => {
     const profileInfo = {
@@ -314,8 +394,8 @@ export function useAccountProfilePageLogic() {
       lastName: formData.lastName || profileData?.['Name - Last'],
       jobTitle: formData.jobTitle || profileData?.['Job Title']
     };
-    return generateNextActions(profileInfo, verifications);
-  }, [profileData, formData, verifications]);
+    return generateNextActions(profileInfo, verifications, milestones);
+  }, [profileData, formData, verifications, milestones]);
 
   /**
    * Display name for sidebar
@@ -652,6 +732,70 @@ export function useAccountProfilePageLogic() {
   }, [isEditorView, isHostUser, profileData]);
 
   // ============================================================================
+  // EMAIL VERIFICATION CALLBACK
+  // ============================================================================
+
+  /**
+   * Handle email verification callback from magic link
+   * Detects ?verified=email URL param and updates database
+   */
+  useEffect(() => {
+    const handleEmailVerificationCallback = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const verifiedType = params.get('verified');
+
+      // Only process if it's an email verification callback and user is authenticated
+      if (verifiedType !== 'email' || !isAuthenticated || !profileUserId) {
+        return;
+      }
+
+      console.log('[email-verification] Processing verification callback');
+
+      // Clean URL immediately to prevent re-processing
+      const url = new URL(window.location.href);
+      url.searchParams.delete('verified');
+      window.history.replaceState({}, '', url.toString());
+
+      try {
+        // Update user's email verification status in database
+        const { error: updateError } = await supabase
+          .from('user')
+          .update({ 'is email confirmed': true })
+          .eq('_id', profileUserId);
+
+        if (updateError) {
+          console.error('[email-verification] Error updating verification status:', updateError);
+          if (window.showToast) {
+            window.showToast({ title: 'Error', content: 'Failed to update email verification status.', type: 'error' });
+          }
+          return;
+        }
+
+        console.log('[email-verification] Email verified successfully');
+
+        // Refresh profile data to reflect new verification status
+        await fetchProfileData(profileUserId);
+
+        // Show success toast
+        if (window.showToast) {
+          window.showToast({ title: 'Email Verified', content: 'Your email has been verified successfully!', type: 'success' });
+        }
+
+      } catch (err) {
+        console.error('[email-verification] Unexpected error:', err);
+        if (window.showToast) {
+          window.showToast({ title: 'Error', content: 'An error occurred during verification.', type: 'error' });
+        }
+      }
+    };
+
+    // Run when authentication state and profile data are available
+    if (isAuthenticated && profileUserId) {
+      handleEmailVerificationCallback();
+    }
+  }, [isAuthenticated, profileUserId, fetchProfileData]);
+
+  // ============================================================================
   // FORM HANDLERS
   // ============================================================================
 
@@ -833,10 +977,121 @@ export function useAccountProfilePageLogic() {
   // VERIFICATION HANDLERS
   // ============================================================================
 
-  const handleVerifyEmail = useCallback(() => {
-    // Trigger email verification flow
-    console.log('Verify email clicked');
-  }, []);
+  const handleVerifyEmail = useCallback(async () => {
+    // Prevent duplicate requests
+    if (isVerifyingEmail) return;
+
+    // Get user's email from profile data
+    const userEmail = profileData?.email;
+    if (!userEmail) {
+      console.error('[handleVerifyEmail] No email found in profile data');
+      if (window.showToast) {
+        window.showToast({ title: 'Error', content: 'Unable to verify email. Please refresh and try again.', type: 'error' });
+      }
+      return;
+    }
+
+    setIsVerifyingEmail(true);
+
+    try {
+      // Step 1: Fetch BCC email addresses from os_slack_channels
+      console.log('[handleVerifyEmail] Fetching BCC email addresses');
+
+      const { data: channelData, error: channelError } = await supabase
+        .schema('reference_table')
+        .from('os_slack_channels')
+        .select('email_address')
+        .in('name', ['bots_log', 'customer_activation']);
+
+      let bccEmails = [];
+      if (!channelError && channelData) {
+        bccEmails = channelData
+          .map(c => c.email_address)
+          .filter(e => e && e.trim() && e.includes('@'));
+      }
+
+      // Step 2: Generate magic link with redirect to account profile + verification param
+      console.log('[handleVerifyEmail] Generating magic link');
+
+      const redirectTo = `${window.location.origin}/account-profile/${profileUserId}?verified=email`;
+
+      const { data: magicLinkData, error: magicLinkError } = await supabase.functions.invoke('auth-user', {
+        body: {
+          action: 'generate_magic_link',
+          payload: {
+            email: userEmail.toLowerCase().trim(),
+            redirectTo: redirectTo
+          }
+        }
+      });
+
+      if (magicLinkError || !magicLinkData?.success) {
+        console.error('[handleVerifyEmail] Error generating magic link:', magicLinkError || magicLinkData);
+        if (window.showToast) {
+          window.showToast({ title: 'Error', content: 'Failed to generate verification link. Please try again.', type: 'error' });
+        }
+        setIsVerifyingEmail(false);
+        return;
+      }
+
+      const magicLink = magicLinkData.data.action_link;
+      const firstName = profileData?.['Name - First'] || 'there';
+
+      // Step 3: Send verification email using send-email edge function
+      console.log('[handleVerifyEmail] Sending verification email');
+
+      const bodyText = `Hi ${firstName}. Please click the link below to verify your email address on Split Lease. This helps us ensure your account is secure and builds trust with other members of our community.`;
+
+      const { error: emailError } = await supabase.functions.invoke('send-email', {
+        body: {
+          action: 'send',
+          payload: {
+            template_id: '1757433099447x202755280527849400', // Security 2 template (Magic Login)
+            to_email: userEmail.toLowerCase().trim(),
+            variables: {
+              toemail: userEmail.toLowerCase().trim(),
+              fromemail: 'tech@leasesplit.com',
+              fromname: 'Split Lease',
+              subject: 'Verify Your Email - Split Lease',
+              preheadertext: 'Click to verify your email address',
+              title: 'Verify Your Email',
+              bodytext: bodyText,
+              buttonurl: magicLink,
+              buttontext: 'Verify Email',
+              bannertext1: 'EMAIL VERIFICATION',
+              bannertext2: 'This link expires in 1 hour',
+              bannertext3: "If you didn't request this, please ignore this email",
+              footermessage: 'For your security, never share this link with anyone.',
+              cc_email: '',  // Structural placeholder - becomes empty in template
+              bcc_email: ''  // Structural placeholder - becomes empty in template
+            },
+            ...(bccEmails.length > 0 && { bcc_emails: bccEmails })
+          }
+        }
+      });
+
+      if (emailError) {
+        console.error('[handleVerifyEmail] Error sending email:', emailError);
+        if (window.showToast) {
+          window.showToast({ title: 'Error', content: 'Failed to send verification email. Please try again.', type: 'error' });
+        }
+      } else {
+        console.log('[handleVerifyEmail] Verification email sent successfully');
+        setVerificationEmailSent(true);
+        if (window.showToast) {
+          window.showToast({ title: 'Email Sent', content: 'Verification email sent! Check your inbox and click the link to verify.', type: 'success' });
+        }
+      }
+
+    } catch (err) {
+      console.error('[handleVerifyEmail] Unexpected error:', err);
+      if (window.showToast) {
+        window.showToast({ title: 'Error', content: 'An unexpected error occurred. Please try again.', type: 'error' });
+      }
+    }
+
+    setIsVerifyingEmail(false);
+  }, [isVerifyingEmail, profileData, profileUserId]);
 
   const handleVerifyPhone = useCallback(() => {
     setShowPhoneEditModal(true);
@@ -1114,6 +1369,10 @@ export function useAccountProfilePageLogic() {
     showRentalWizardModal,
     handleOpenRentalWizard,
     handleCloseRentalWizard,
-    handleRentalWizardSuccess
+    handleRentalWizardSuccess,
+
+    // Email verification state
+    isVerifyingEmail,
+    verificationEmailSent
   };
 }

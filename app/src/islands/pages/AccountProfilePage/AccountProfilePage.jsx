@@ -164,6 +164,8 @@ export default function AccountProfilePage() {
                 rentalApplicationStatus={logic.rentalApplicationStatus}
                 rentalApplicationProgress={logic.rentalApplicationProgress}
                 onOpenRentalWizard={logic.handleOpenRentalWizard}
+                // Email verification state
+                isVerifyingEmail={logic.isVerifyingEmail}
               />
             ) : (
               <PublicView

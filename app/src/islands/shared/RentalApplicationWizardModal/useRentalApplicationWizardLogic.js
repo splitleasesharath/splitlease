@@ -258,7 +258,6 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
     }
 
     if (startStep > 1) {
-      console.log('[RentalAppWizard] Resuming from step', startStep, 'based on loaded draft data');
       setCurrentStep(startStep);
       if (stepsToVisit.length > 0) {
         setVisitedSteps(stepsToVisit);

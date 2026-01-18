@@ -349,3 +349,27 @@ export interface SummaryPayload {
   total_price: number;
   duration_weeks: number;
 }
+
+// ============================================
+// MOCKUP PROPOSAL TYPES
+// ============================================
+
+/**
+ * Input for creating a mockup proposal
+ * Used when a host submits their first listing
+ */
+export interface CreateMockupProposalInput {
+  listingId: string;
+  hostUserId: string;
+  hostEmail: string;
+}
+
+/**
+ * Response after creating a mockup proposal
+ */
+export interface CreateMockupProposalResponse {
+  proposalId: string;
+  threadId: string | null;
+  status: string;
+  createdAt: string;
+}
