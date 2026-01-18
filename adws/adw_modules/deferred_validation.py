@@ -22,7 +22,8 @@ if TYPE_CHECKING:
     from .topology_sort import TopologySortResult
     from .run_logger import RunLogger
 
-# Import test-driven validation for pageless chunks
+# Test-driven validation is a FALLBACK for truly orphaned code (rare)
+# Most code should trace to pages via recursive dependency walking
 from .test_driven_validation import (
     generate_test_suite_for_chunk,
     run_tests_until_predictable,
@@ -31,6 +32,88 @@ from .test_driven_validation import (
     TestSuite,
     TestDrivenResult,
 )
+
+
+def _is_page_file(file_path: str) -> bool:
+    """Check if a file is a page component.
+
+    Page files live in islands/pages/ and are the entry points for routes.
+
+    Args:
+        file_path: Normalized file path (forward slashes)
+
+    Returns:
+        True if this is a page file
+    """
+    normalized = file_path.replace('\\', '/')
+    return '/pages/' in normalized or normalized.startswith('src/islands/pages/')
+
+
+def _trace_to_pages(
+    start_files: Set[str],
+    reverse_deps: Dict[str, List[str]],
+    max_depth: int = 10
+) -> Set[str]:
+    """Recursively trace imports UP the dependency chain to find affected pages.
+
+    Starting from modified files (e.g., logic/rules/proposalRules.js), walks
+    up through the reverse dependency graph until reaching page files.
+
+    Example trace:
+        logic/rules/proposalRules.js
+          ← hooks/useProposalLogic.js
+            ← pages/ProposalPage.jsx ✓ (found!)
+
+    Args:
+        start_files: Set of modified file paths to trace from
+        reverse_deps: Reverse dependency map (file → list of importers)
+        max_depth: Maximum recursion depth to prevent infinite loops
+
+    Returns:
+        Set of page file paths that are affected by the changes
+    """
+    pages: Set[str] = set()
+    visited: Set[str] = set()
+
+    def trace_up(file_path: str, depth: int) -> None:
+        """Recursively trace up the import chain."""
+        if depth > max_depth:
+            return
+        if file_path in visited:
+            return
+        visited.add(file_path)
+
+        normalized = file_path.replace('\\', '/')
+
+        # Check if this file is a page
+        if _is_page_file(normalized):
+            pages.add(normalized)
+            return  # Found a page, no need to trace further
+
+        # Get files that import this file
+        importers = reverse_deps.get(normalized, [])
+
+        # If no importers found, try without leading path variations
+        if not importers:
+            # Try with 'src/' prefix
+            if not normalized.startswith('src/'):
+                alt_path = 'src/' + normalized
+                importers = reverse_deps.get(alt_path, [])
+
+            # Try without 'app/' prefix
+            if not importers and normalized.startswith('app/'):
+                alt_path = normalized[4:]  # Remove 'app/'
+                importers = reverse_deps.get(alt_path, [])
+
+        # Recursively trace each importer
+        for importer in importers:
+            trace_up(importer, depth + 1)
+
+    # Start tracing from each modified file
+    for file_path in start_files:
+        trace_up(file_path, 0)
+
+    return pages
 
 
 @dataclass
@@ -81,18 +164,9 @@ class ValidationBatch:
         """
         files = {c.file_path for c in result.sorted_chunks}
 
-        # Expand to affected pages via reverse dependencies
-        affected: Set[str] = set()
-        for file_path in files:
-            normalized = file_path.replace('\\', '/')
-            dependents = reverse_deps.get(normalized, [])
-            affected.update(dependents)
-
-        # Filter to actual page paths (files under pages/ or islands/pages/)
-        pages = {
-            p for p in affected
-            if '/pages/' in p or p.startswith('src/islands/pages/')
-        }
+        # RECURSIVELY trace up the dependency chain to find ALL affected pages
+        # This walks from logic files → hooks → pages (full transitive closure)
+        pages = _trace_to_pages(files, reverse_deps)
 
         return cls(
             chunks=result.sorted_chunks,
@@ -282,8 +356,9 @@ def run_deferred_validation(
         result.visual_passed = True
         logger.log("  [SKIP] Batch visual regression not yet implemented")
     elif not batch.affected_pages and batch.chunks:
-        # PAGELESS CHUNKS: Run test-driven validation
-        logger.step(f"Test-driven validation for {len(batch.chunks)} pageless chunks...")
+        # ORPHANED CODE: No pages found after recursive tracing
+        # This is RARE and usually indicates dead code or broken import chain
+        logger.step(f"WARNING: {len(batch.chunks)} chunks have no traced pages - checking import chain...")
 
         pageless_test_results = _run_test_driven_validation_for_pageless(
             batch.chunks,
@@ -493,18 +568,9 @@ def create_validation_batch_from_chunks(
     """
     files = {c.file_path for c in chunks}
 
-    # Expand to affected pages via reverse dependencies
-    affected: Set[str] = set()
-    for file_path in files:
-        normalized = file_path.replace('\\', '/')
-        dependents = reverse_deps.get(normalized, [])
-        affected.update(dependents)
-
-    # Filter to actual page paths
-    pages = {
-        p for p in affected
-        if '/pages/' in p or p.startswith('src/islands/pages/')
-    }
+    # RECURSIVELY trace up the dependency chain to find ALL affected pages
+    # This walks from logic files → hooks → pages (full transitive closure)
+    pages = _trace_to_pages(files, reverse_deps)
 
     return ValidationBatch(
         chunks=chunks,
