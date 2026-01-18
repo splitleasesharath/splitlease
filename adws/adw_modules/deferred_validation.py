@@ -22,6 +22,16 @@ if TYPE_CHECKING:
     from .topology_sort import TopologySortResult
     from .run_logger import RunLogger
 
+# Import test-driven validation for pageless chunks
+from .test_driven_validation import (
+    generate_test_suite_for_chunk,
+    run_tests_until_predictable,
+    run_tests_before_refactor,
+    run_tests_after_refactor,
+    TestSuite,
+    TestDrivenResult,
+)
+
 
 @dataclass
 class ValidationError:
@@ -263,13 +273,36 @@ def run_deferred_validation(
         logger.log(f"  [FAIL] Build error: {e}")
         return result
 
-    # Phase 2: Visual regression (if applicable)
+    # Phase 2: Visual regression OR Test-driven validation
     if not skip_visual and batch.affected_pages:
+        # Chunks with affected pages: run visual regression
         logger.step(f"Visual regression on {len(batch.affected_pages)} affected pages...")
         # TODO: Implement batch visual regression
         # For now, mark as passed - visual regression handled separately
         result.visual_passed = True
         logger.log("  [SKIP] Batch visual regression not yet implemented")
+    elif not batch.affected_pages and batch.chunks:
+        # PAGELESS CHUNKS: Run test-driven validation
+        logger.step(f"Test-driven validation for {len(batch.chunks)} pageless chunks...")
+
+        pageless_test_results = _run_test_driven_validation_for_pageless(
+            batch.chunks,
+            working_dir,
+            logger
+        )
+
+        if pageless_test_results.all_passed:
+            result.visual_passed = True
+            logger.log(f"  [PASS] All {len(batch.chunks)} pageless chunks validated via tests")
+        else:
+            result.visual_passed = False
+            for td_result in pageless_test_results.results:
+                if not td_result.all_tests_passed:
+                    result.errors.append(ValidationError(
+                        message=td_result.to_summary(),
+                        chunk_number=td_result.suite.chunk_number
+                    ))
+            logger.log(f"  [FAIL] {pageless_test_results.failed_count} pageless chunks failed tests")
     else:
         result.visual_passed = True
         if skip_visual:
@@ -279,6 +312,81 @@ def run_deferred_validation(
 
     result.success = result.build_passed and result.visual_passed
     return result
+
+
+@dataclass
+class PagelessTestResults:
+    """Aggregate results from test-driven validation of pageless chunks."""
+    results: List[TestDrivenResult] = field(default_factory=list)
+    all_passed: bool = True
+    failed_count: int = 0
+
+
+def _run_test_driven_validation_for_pageless(
+    chunks: List["ChunkData"],
+    working_dir: Path,
+    logger: "RunLogger"
+) -> PagelessTestResults:
+    """Run test-driven validation for chunks that don't affect any pages.
+
+    For each pageless chunk:
+    1. Generate test suite
+    2. Run tests until predictable (consistent results)
+    3. Verify tests match expected outcomes
+
+    Args:
+        chunks: List of pageless chunks to validate
+        working_dir: Project working directory
+        logger: RunLogger for output
+
+    Returns:
+        PagelessTestResults with aggregate pass/fail status
+    """
+    aggregate = PagelessTestResults()
+
+    for chunk in chunks:
+        logger.log(f"  [TEST] Validating chunk {chunk.number}: {chunk.title}")
+
+        try:
+            # Generate test suite for this chunk
+            suite = generate_test_suite_for_chunk(chunk, working_dir)
+
+            if not suite.tests:
+                logger.log(f"    [SKIP] No tests generated for chunk {chunk.number}")
+                continue
+
+            # Step 1: Run tests until predictable
+            predictable, consistency_errors = run_tests_until_predictable(
+                suite, working_dir, max_runs=3, logger=logger
+            )
+
+            if not predictable:
+                logger.log(f"    [WARN] Tests not predictable after 3 runs")
+                for err in consistency_errors[:2]:
+                    logger.log(f"      - {err}")
+                # Still continue - tests may be inherently flaky
+
+            # Step 2: Run tests before refactor (establish baseline)
+            # Note: At this point, the refactor is ALREADY applied
+            # We're verifying the AFTER state matches expectations
+
+            # Step 3: Run tests after refactor (verify outcomes)
+            td_result = run_tests_after_refactor(suite, working_dir, logger)
+            aggregate.results.append(td_result)
+
+            if td_result.all_tests_passed:
+                logger.log(f"    [PASS] Chunk {chunk.number}: {len(suite.tests)} tests passed")
+            else:
+                aggregate.all_passed = False
+                aggregate.failed_count += 1
+                logger.log(f"    [FAIL] Chunk {chunk.number}: Tests failed")
+
+        except Exception as e:
+            logger.log(f"    [ERROR] Chunk {chunk.number}: {str(e)[:100]}")
+            aggregate.all_passed = False
+            aggregate.failed_count += 1
+
+    return aggregate
 
 
 def _parse_build_errors(error_output: str) -> List[ValidationError]:

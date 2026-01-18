@@ -74,6 +74,14 @@ from adw_modules.deferred_validation import (
     run_deferred_validation,
 )
 from adw_modules.ast_dependency_analyzer import analyze_dependencies
+from adw_modules.scoped_git_ops import RefactorScope, create_refactor_scope
+from adw_modules.test_driven_validation import (
+    generate_test_suite_for_chunk,
+    run_tests_until_predictable,
+    run_tests_before_refactor,
+    run_tests_after_refactor,
+    TestSuite,
+)
 from adw_code_audit import run_code_audit_and_plan
 
 
@@ -382,6 +390,10 @@ def main():
         chunks_to_process = all_chunks[:args.limit] if args.limit else all_chunks
         total_chunks = len(chunks_to_process)
 
+        # Create scoped tracker for files modified during refactoring
+        # This allows us to reset ONLY refactored files on failure, preserving pipeline fixes
+        refactor_scope = create_refactor_scope(working_dir)
+
         logger.step(f"Processing {total_chunks} chunks...")
 
         # Group by level if we have sort result
@@ -395,6 +407,9 @@ def main():
                 logger.step(f"Level {level_idx}: {len(level_chunks_filtered)} chunks")
 
                 for chunk in level_chunks_filtered:
+                    # Track file in refactor scope BEFORE implementation
+                    refactor_scope.track_from_chunk(chunk)
+
                     success = implement_chunk_syntax_only(chunk, working_dir, logger)
                     if not success:
                         logger.log(f"  [FAIL] Syntax error in chunk {chunk.number}, aborting...")
@@ -407,6 +422,9 @@ def main():
         else:
             # No topology sort - process in original order
             for chunk in chunks_to_process:
+                # Track file in refactor scope BEFORE implementation
+                refactor_scope.track_from_chunk(chunk)
+
                 success = implement_chunk_syntax_only(chunk, working_dir, logger)
                 if not success:
                     logger.log(f"  [FAIL] Syntax error in chunk {chunk.number}, aborting...")
@@ -418,7 +436,9 @@ def main():
 
         if implementation_failed:
             logger.log(f"Implementation failed at chunk level, resetting...")
-            subprocess.run(["git", "reset", "--hard", "HEAD"], cwd=working_dir, check=False)
+            # SCOPED RESET: Only reset refactored files, preserve pipeline fixes
+            logger.log(refactor_scope.summarize())
+            refactor_scope.reset_scoped(logger)
             logger.phase_complete("PHASE 4: IMPLEMENTATION", success=False, error="Syntax error")
 
             # Build final result
@@ -517,11 +537,13 @@ def main():
 
             else:
                 # ============================================================
-                # FAIL: Reset all changes and report errors
+                # FAIL: Reset refactored files only, preserve pipeline fixes
                 # ============================================================
                 logger.log(f"[FAIL] Validation failed with {len(validation_result.errors)} errors")
 
-                subprocess.run(["git", "reset", "--hard", "HEAD"], cwd=working_dir, check=False)
+                # SCOPED RESET: Only reset refactored files, preserve pipeline fixes
+                logger.log(refactor_scope.summarize())
+                refactor_scope.reset_scoped(logger)
 
                 # Report affected chunks
                 if validation_result.affected_chunks:
