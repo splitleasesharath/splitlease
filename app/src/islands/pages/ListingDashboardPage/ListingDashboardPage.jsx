@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import Header from '../../shared/Header';
 import Footer from '../../shared/Footer';
 import { EditListingDetails } from '../../shared/EditListingDetails/EditListingDetails';
-import ScheduleCohost from '../../shared/ScheduleCohost';
-import ImportListingReviewsModal from '../../shared/ImportListingReviewsModal';
-import AIImportAssistantModal from '../../shared/AIImportAssistantModal';
+import ScheduleCohost from '../../shared/ScheduleCohost/ScheduleCohost.jsx';
+import ImportListingReviewsModal from '../../shared/ImportListingReviewsModal/ImportListingReviewsModal.jsx';
+import AIImportAssistantModal from '../../shared/AIImportAssistantModal/AIImportAssistantModal.jsx';
 import ReferralModal from '../AccountProfilePage/components/ReferralModal';
 import { ListingDashboardProvider, useListingDashboard } from './context/ListingDashboardContext';
 import {

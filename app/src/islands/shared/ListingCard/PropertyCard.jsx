@@ -8,7 +8,7 @@ import { useImageCarousel } from '../../../hooks/useImageCarousel.js';
 import { formatHostName } from '../../../logic/processors/display/formatHostName.js';
 import { calculatePrice } from '../../../lib/scheduleSelector/priceCalculations.js';
 import { logger } from '../../../lib/logger.js';
-import FavoriteButton from '../FavoriteButton';
+import FavoriteButton from '../FavoriteButton/FavoriteButton.jsx';
 
 export default function PropertyCard({
   listing,

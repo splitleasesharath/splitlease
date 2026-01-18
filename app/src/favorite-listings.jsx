@@ -1,6 +1,6 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import FavoriteListingsPage from './islands/pages/FavoriteListingsPage';
+import FavoriteListingsPage from './islands/pages/FavoriteListingsPage/FavoriteListingsPage.jsx';
 import { ErrorBoundary } from './islands/shared/ErrorBoundary';
 
 createRoot(document.getElementById('root')).render(

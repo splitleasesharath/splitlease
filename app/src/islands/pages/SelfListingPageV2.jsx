@@ -1,5 +1,5 @@
 import React from 'react';
-import { SelfListingPageV2 as SelfListingPageV2Component } from './SelfListingPageV2/index';
+import { SelfListingPageV2 as SelfListingPageV2Component } from './SelfListingPageV2/SelfListingPageV2';
 
 export default function SelfListingPageV2() {
   return <SelfListingPageV2Component />;

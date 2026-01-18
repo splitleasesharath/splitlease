@@ -1,6 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import LoggedInAvatar from './islands/shared/LoggedInAvatar';
+import LoggedInAvatar from './islands/shared/LoggedInAvatar/LoggedInAvatar.jsx';
 import { ErrorBoundary } from './islands/shared/ErrorBoundary';
 
 /**
