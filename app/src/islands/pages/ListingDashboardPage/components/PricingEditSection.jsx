@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { HostScheduleSelector } from '../../../shared/HostScheduleSelector';
+import HostScheduleSelector from '../../../shared/HostScheduleSelector/HostScheduleSelector.jsx';
 import InformationalText from '../../../shared/InformationalText';
-import { ConfirmModal } from '../../HostOverviewPage/components/HostOverviewModals';
+import { ConfirmModal } from '../../HostOverviewPage/components/HostOverviewModals.jsx';
 
 // Rental type options with descriptions
 const RENTAL_TYPES = [

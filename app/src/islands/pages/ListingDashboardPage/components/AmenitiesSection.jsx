@@ -1,3 +1,5 @@
+import { useListingDashboard } from '../context/ListingDashboardContext';
+
 // Default icon for amenities without a database icon URL
 const DefaultIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -37,7 +39,8 @@ const EmptyAmenityTag = ({ onClick }) => (
   </button>
 );
 
-export default function AmenitiesSection({ listing, onEditInUnit, onEditBuilding }) {
+export default function AmenitiesSection() {
+  const { listing, handleEditSection } = useListingDashboard();
   const inUnitAmenities = listing?.inUnitAmenities || [];
   const buildingAmenities = listing?.buildingAmenities || [];
 
@@ -49,7 +52,7 @@ export default function AmenitiesSection({ listing, onEditInUnit, onEditBuilding
       {/* Section Header */}
       <div className="listing-dashboard-section__header">
         <h2 className="listing-dashboard-section__title">Amenities</h2>
-        <button className="listing-dashboard-section__edit" onClick={onEditInUnit}>
+        <button className="listing-dashboard-section__edit" onClick={() => handleEditSection('amenities')}>
           edit
         </button>
       </div>
@@ -71,7 +74,7 @@ export default function AmenitiesSection({ listing, onEditInUnit, onEditBuilding
               ))}
             </div>
           ) : (
-            <EmptyAmenityTag onClick={onEditInUnit} />
+            <EmptyAmenityTag onClick={() => handleEditSection('amenities')} />
           )}
         </div>
 
@@ -90,7 +93,7 @@ export default function AmenitiesSection({ listing, onEditInUnit, onEditBuilding
               ))}
             </div>
           ) : (
-            <EmptyAmenityTag onClick={onEditBuilding} />
+            <EmptyAmenityTag onClick={() => handleEditSection('amenities', 'building')} />
           )}
         </div>
       </div>

@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import type { LeaseStylesConfig, RentalType, WeeklyPattern } from '../types/listing.types';
-import { HostScheduleSelector, ALL_NIGHTS } from '../../../shared/HostScheduleSelector';
+import HostScheduleSelector from '../../../shared/HostScheduleSelector/HostScheduleSelector.jsx';
+import { ALL_NIGHTS } from '../../../shared/HostScheduleSelector/constants.js';
 import type { NightId } from '../../../shared/HostScheduleSelector/types';
 
 interface Section3Props {
