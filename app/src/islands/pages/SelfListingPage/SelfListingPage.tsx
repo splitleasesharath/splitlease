@@ -12,7 +12,7 @@ import Header from '../../shared/Header';
 import SignUpLoginModal from '../../shared/SignUpLoginModal';
 import Toast, { useToast } from '../../shared/Toast';
 import { getListingById } from '../../../lib/bubbleAPI';
-import { checkAuthStatus, validateTokenAndFetchUser } from '../../../lib/auth';
+import { checkAuthStatus, validateTokenAndFetchUser } from '../../../lib/auth/tokenValidation.js';
 import { createListing } from '../../../lib/listingService';
 import { isGuest } from '../../../logic/rules/users/isGuest.js';
 import './styles/SelfListingPage.css';

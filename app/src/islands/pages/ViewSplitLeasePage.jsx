@@ -16,7 +16,7 @@ import ContactHostMessaging from '../shared/ContactHostMessaging.jsx';
 import InformationalText from '../shared/InformationalText.jsx';
 import SignUpLoginModal from '../shared/SignUpLoginModal.jsx';
 import ProposalSuccessModal from '../modals/ProposalSuccessModal.jsx';
-import FavoriteButton from '../shared/FavoriteButton';
+import FavoriteButton from '../shared/FavoriteButton/FavoriteButton.jsx';
 import { initializeLookups } from '../../lib/dataLookups.js';
 import { checkAuthStatus, validateTokenAndFetchUser, getSessionId, getUserId, getUserType } from '../../lib/auth.js';
 import { fetchListingComplete, getListingIdFromUrl, fetchZatPriceConfiguration } from '../../lib/listingDataFetcher.js';

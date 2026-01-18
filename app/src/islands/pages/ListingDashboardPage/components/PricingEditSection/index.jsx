@@ -4,7 +4,7 @@ import { NightlyRateDisplay } from './NightlyRateDisplay.jsx';
 import { PricingPreview } from './PricingPreview.jsx';
 import { usePricingLogic } from './usePricingLogic.js';
 import InformationalText from '../../../../shared/InformationalText';
-import { ConfirmModal } from '../../../HostOverviewPage/components/HostOverviewModals';
+import { ConfirmModal } from '../../../HostOverviewPage/components/HostOverviewModals.jsx';
 
 /**
  * PricingEditSection - Main component for pricing and lease style editing

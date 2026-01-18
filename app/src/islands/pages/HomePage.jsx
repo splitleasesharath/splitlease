@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import SearchScheduleSelector from '../shared/SearchScheduleSelector.jsx';
-import AiSignupMarketReport from '../shared/AiSignupMarketReport';
+import AiSignupMarketReport from '../shared/AiSignupMarketReport/AiSignupMarketReport.jsx';
 import LocalJourneySection from './LocalJourneySection.jsx';
 import { checkAuthStatus } from '../../lib/auth.js';
 import { supabase } from '../../lib/supabase.js';

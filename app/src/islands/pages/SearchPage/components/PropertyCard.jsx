@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import FavoriteButton from '../../../shared/FavoriteButton';
+import FavoriteButton from '../../../shared/FavoriteButton/FavoriteButton.jsx';
 import { useImageCarousel } from '../../../../hooks/useImageCarousel.js';
 import { calculatePrice } from '../../../../lib/scheduleSelector/priceCalculations.js';
 import { formatHostName } from '../../../../logic/processors/display/formatHostName.js';
