@@ -242,6 +242,13 @@ export function useAccountProfilePageLogic() {
   // Preview mode state - when true, shows public view even for own profile
   const [previewMode, setPreviewMode] = useState(false);
 
+  // Email verification state
+  const [isVerifyingEmail, setIsVerifyingEmail] = useState(false);
+  const [verificationEmailSent, setVerificationEmailSent] = useState(false);
+
+  // Toast notification state
+  const [toast, setToast] = useState({ show: false, type: 'success', message: '' });
+
   // ============================================================================
   // COMPUTED VALUES
   // ============================================================================
@@ -653,6 +660,76 @@ export function useAccountProfilePageLogic() {
   }, [isEditorView, isHostUser, profileData]);
 
   // ============================================================================
+  // EMAIL VERIFICATION CALLBACK
+  // ============================================================================
+
+  /**
+   * Handle email verification callback from magic link
+   * Detects ?verified=email URL param and updates database
+   */
+  useEffect(() => {
+    const handleEmailVerificationCallback = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const verifiedType = params.get('verified');
+
+      // Only process if it's an email verification callback and user is authenticated
+      if (verifiedType !== 'email' || !isAuthenticated || !profileUserId) {
+        return;
+      }
+
+      console.log('[email-verification] Processing verification callback');
+
+      // Clean URL immediately to prevent re-processing
+      const url = new URL(window.location.href);
+      url.searchParams.delete('verified');
+      window.history.replaceState({}, '', url.toString());
+
+      try {
+        // Update user's email verification status in database
+        const { error: updateError } = await supabase
+          .from('user')
+          .update({ 'is email confirmed': true })
+          .eq('_id', profileUserId);
+
+        if (updateError) {
+          console.error('[email-verification] Error updating verification status:', updateError);
+          setToast({
+            show: true,
+            type: 'error',
+            message: 'Failed to update email verification status.'
+          });
+          return;
+        }
+
+        console.log('[email-verification] Email verified successfully');
+
+        // Refresh profile data to reflect new verification status
+        await fetchProfileData(profileUserId);
+
+        // Show success toast
+        setToast({
+          show: true,
+          type: 'success',
+          message: 'Your email has been verified successfully!'
+        });
+
+      } catch (err) {
+        console.error('[email-verification] Unexpected error:', err);
+        setToast({
+          show: true,
+          type: 'error',
+          message: 'An error occurred during verification.'
+        });
+      }
+    };
+
+    // Run when authentication state and profile data are available
+    if (isAuthenticated && profileUserId) {
+      handleEmailVerificationCallback();
+    }
+  }, [isAuthenticated, profileUserId, fetchProfileData]);
+
+  // ============================================================================
   // FORM HANDLERS
   // ============================================================================
 
@@ -834,10 +911,131 @@ export function useAccountProfilePageLogic() {
   // VERIFICATION HANDLERS
   // ============================================================================
 
-  const handleVerifyEmail = useCallback(() => {
-    // Trigger email verification flow
-    console.log('Verify email clicked');
-  }, []);
+  const handleVerifyEmail = useCallback(async () => {
+    // Prevent duplicate requests
+    if (isVerifyingEmail) return;
+
+    // Get user's email from profile data
+    const userEmail = profileData?.email;
+    if (!userEmail) {
+      console.error('[handleVerifyEmail] No email found in profile data');
+      setToast({
+        show: true,
+        type: 'error',
+        message: 'Unable to verify email. Please refresh and try again.'
+      });
+      return;
+    }
+
+    setIsVerifyingEmail(true);
+
+    try {
+      // Step 1: Fetch BCC email addresses from os_slack_channels
+      console.log('[handleVerifyEmail] Fetching BCC email addresses');
+
+      const { data: channelData, error: channelError } = await supabase
+        .schema('reference_table')
+        .from('os_slack_channels')
+        .select('email_address')
+        .in('name', ['bots_log', 'customer_activation']);
+
+      let bccEmails = [];
+      if (!channelError && channelData) {
+        bccEmails = channelData
+          .map(c => c.email_address)
+          .filter(e => e && e.trim() && e.includes('@'));
+      }
+
+      // Step 2: Generate magic link with redirect to account profile + verification param
+      console.log('[handleVerifyEmail] Generating magic link');
+
+      const redirectTo = `${window.location.origin}/account-profile/${profileUserId}?verified=email`;
+
+      const { data: magicLinkData, error: magicLinkError } = await supabase.functions.invoke('auth-user', {
+        body: {
+          action: 'generate_magic_link',
+          payload: {
+            email: userEmail.toLowerCase().trim(),
+            redirectTo: redirectTo
+          }
+        }
+      });
+
+      if (magicLinkError || !magicLinkData?.success) {
+        console.error('[handleVerifyEmail] Error generating magic link:', magicLinkError || magicLinkData);
+        setToast({
+          show: true,
+          type: 'error',
+          message: 'Failed to generate verification link. Please try again.'
+        });
+        setIsVerifyingEmail(false);
+        return;
+      }
+
+      const magicLink = magicLinkData.data.action_link;
+      const firstName = profileData?.['Name - First'] || 'there';
+
+      // Step 3: Send verification email using send-email edge function
+      console.log('[handleVerifyEmail] Sending verification email');
+
+      const bodyText = `Hi ${firstName}. Please click the link below to verify your email address on Split Lease. This helps us ensure your account is secure and builds trust with other members of our community.`;
+
+      const { error: emailError } = await supabase.functions.invoke('send-email', {
+        body: {
+          action: 'send',
+          payload: {
+            template_id: '1757433099447x202755280527849400', // Security 2 template (Magic Login)
+            to_email: userEmail.toLowerCase().trim(),
+            variables: {
+              toemail: userEmail.toLowerCase().trim(),
+              fromemail: 'tech@leasesplit.com',
+              fromname: 'Split Lease',
+              subject: 'Verify Your Email - Split Lease',
+              preheadertext: 'Click to verify your email address',
+              title: 'Verify Your Email',
+              bodytext: bodyText,
+              buttonurl: magicLink,
+              buttontext: 'Verify Email',
+              bannertext1: 'EMAIL VERIFICATION',
+              bannertext2: 'This link expires in 1 hour',
+              bannertext3: "If you didn't request this, please ignore this email",
+              footermessage: 'For your security, never share this link with anyone.',
+              cc: '',
+              bcc: ''
+            },
+            ...(bccEmails.length > 0 && { bcc_emails: bccEmails })
+          }
+        }
+      });
+
+      if (emailError) {
+        console.error('[handleVerifyEmail] Error sending email:', emailError);
+        setToast({
+          show: true,
+          type: 'error',
+          message: 'Failed to send verification email. Please try again.'
+        });
+      } else {
+        console.log('[handleVerifyEmail] Verification email sent successfully');
+        setVerificationEmailSent(true);
+        setToast({
+          show: true,
+          type: 'success',
+          message: 'Verification email sent! Check your inbox and click the link to verify.'
+        });
+      }
+
+    } catch (err) {
+      console.error('[handleVerifyEmail] Unexpected error:', err);
+      setToast({
+        show: true,
+        type: 'error',
+        message: 'An unexpected error occurred. Please try again.'
+      });
+    }
+
+    setIsVerifyingEmail(false);
+  }, [isVerifyingEmail, profileData, profileUserId]);
 
   const handleVerifyPhone = useCallback(() => {
     setShowPhoneEditModal(true);
@@ -1115,6 +1313,14 @@ export function useAccountProfilePageLogic() {
     showRentalWizardModal,
     handleOpenRentalWizard,
     handleCloseRentalWizard,
-    handleRentalWizardSuccess
+    handleRentalWizardSuccess,
+
+    // Email verification state
+    isVerifyingEmail,
+    verificationEmailSent,
+
+    // Toast notification
+    toast,
+    setToast
   };
 }

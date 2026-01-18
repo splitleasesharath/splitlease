@@ -14,7 +14,6 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { validateRequiredFields } from '../../_shared/validation.ts';
-import { parseJsonArray } from '../../_shared/jsonUtils.ts';
 import { getGeoByZipCode } from '../../_shared/geoLookup.ts';
 
 /**
@@ -382,16 +381,22 @@ export async function handleSubmit(
       try {
         console.log('[listing:submit] Step 4/4: Checking for first listing...');
 
-        // Get user's listings count directly from user table
-        const { data: hostUserData } = await supabase
-          .from('user')
-          .select('"Listings"')
-          .eq('_id', userId)
-          .single();
+        // Query listing table directly to count user's listings
+        // NOTE: We can't use user.Listings array because it's updated asynchronously
+        // by the bubble_sync queue after this handler completes
+        const { count: listingCount, error: countError } = await supabase
+          .from('listing')
+          .select('_id', { count: 'exact', head: true })
+          .eq('Host User', userId);
 
-        const listings = parseJsonArray<string>(hostUserData?.Listings, 'user.Listings');
+        if (countError) {
+          console.warn('[listing:submit] Failed to count listings:', countError.message);
+        }
 
-        if (listings.length === 1) {
+        const totalListings = listingCount ?? 0;
+        console.log('[listing:submit] User listing count from listing table:', totalListings);
+
+        if (totalListings === 1) {
           console.log('[listing:submit] First listing detected, triggering mockup proposal creation');
 
           // Fire-and-forget call to proposal edge function
@@ -429,7 +434,7 @@ export async function handleSubmit(
 
           console.log('[listing:submit] ✅ Step 4 complete - Mockup proposal creation triggered');
         } else {
-          console.log(`[listing:submit] ⏭️ Step 4 skipped - Not first listing (count: ${listings.length})`);
+          console.log(`[listing:submit] ⏭️ Step 4 skipped - Not first listing (count: ${totalListings})`);
         }
       } catch (mockupError) {
         // Non-blocking - log but don't fail listing submission
