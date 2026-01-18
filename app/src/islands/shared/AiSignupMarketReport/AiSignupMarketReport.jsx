@@ -198,6 +198,375 @@ function autoCorrectEmail(email) {
   return `${localPart}@${correctedDomain}`;
 }
 
+// ============ COMMUNICATION FUNCTIONS ============
+
+/**
+ * Generate a magic login link via Supabase Auth
+ * This creates a one-time login URL that allows passwordless authentication
+ *
+ * @param {string} email - User's email address
+ * @returns {Promise<{success: boolean, action_link?: string, error?: string}>}
+ */
+async function generateMagicLink(email) {
+  console.log('[AiSignupMarketReport] Generating magic login link for:', email);
+
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://qcfifybkaddcoimjroca.supabase.co';
+  const edgeFunctionUrl = `${supabaseUrl}/functions/v1/auth-user`;
+
+  try {
+    const response = await fetch(edgeFunctionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'generate_magic_link',
+        payload: {
+          email: email,
+          redirectTo: 'https://splitlease.com/search' // Redirect to search after login
+        }
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[AiSignupMarketReport] Magic link generation failed:', errorText);
+      return { success: false, error: errorText };
+    }
+
+    const result = await response.json();
+
+    if (result.success && result.data?.action_link) {
+      console.log('[AiSignupMarketReport] ✅ Magic link generated successfully');
+      return { success: true, action_link: result.data.action_link };
+    }
+
+    return { success: false, error: 'No action_link in response' };
+  } catch (error) {
+    console.error('[AiSignupMarketReport] Magic link error:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Send welcome email to new user (Step 7 from Bubble workflow)
+ * Uses the send-email Edge Function with template placeholders
+ *
+ * Email contains:
+ * - Welcome message
+ * - Login credentials (email + temporary password)
+ * - Magic link button for one-click login
+ *
+ * IMPORTANT: Uses fetch with keepalive:true to survive page reload/navigation
+ * while still allowing Authorization headers (unlike sendBeacon)
+ *
+ * @param {Object} data - Email data
+ * @param {string} data.email - User's email
+ * @param {string} data.password - Generated password (SL{Name}77)
+ * @param {string} data.magicLink - Magic login link URL
+ * @returns {{success: boolean}}
+ */
+function sendWelcomeEmail(data) {
+  console.log('[AiSignupMarketReport] Sending welcome email to:', data.email);
+
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://qcfifybkaddcoimjroca.supabase.co';
+  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+  const edgeFunctionUrl = `${supabaseUrl}/functions/v1/send-email`;
+
+  // Build the email body HTML (matches Bubble's CORE-Send Basic Email format)
+  // Uses <br> tags for line breaks as expected by the Basic template
+  const emailBodyHtml = `Hey <br> <br> You have a new split lease account<br> <br> Sign in using your: <br> email: ${data.email}<br> temporary password: ${data.password} <br> <br> We recommend you change your password to something private. <br> <br> You can reach out to Robert if you have any questions at robert@leasesplit.com or via text at 9376737470.`;
+
+  // Build button HTML for the template
+  const buttonHtml = `<a href="${data.magicLink || 'https://splitlease.com/login'}" style="background-color: #291D54; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600;">Go to your Account</a>`;
+
+  // Use fetch with keepalive:true - survives page unload AND supports headers
+  // Unlike sendBeacon, this allows us to include the Authorization header
+  fetch(edgeFunctionUrl, {
+    method: 'POST',
+    keepalive: true, // Critical: keeps request alive during page navigation
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${supabaseAnonKey}`,
+    },
+    body: JSON.stringify({
+      action: 'send',
+      payload: {
+        // Basic template - flexible for welcome emails
+        // From: reference_table.zat_email_html_template_eg_sendbasicemailwf_
+        template_id: '1560447575939x331870423481483500',
+        to_email: data.email,
+        from_email: 'tech@leasesplit.com',
+        from_name: 'Split Lease Signup',
+        subject: 'New Split Lease Account!',
+        variables: {
+          // All 13 placeholders expected by the Basic template ($$variable$$ format)
+          'to': data.email,
+          'from email': 'tech@leasesplit.com',
+          'from name': 'Split Lease Signup',
+          'subject': 'New Split Lease Account!',
+          'header': 'Welcome to Split Lease!',
+          'body text': emailBodyHtml,
+          'button': buttonHtml,
+          'year': new Date().getFullYear().toString(),
+          'logo url': 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1599068082301x985428647498498600/SL%20Logo.png',
+          'cc': '',
+          'bcc': '',
+          'reply_to': '',
+          'attachment': '',
+        },
+        bcc_emails: [
+          'splitleaseteam@gmail.com',
+          'acquisition-aaaachs52tzodgc5t3o2oeipli@splitlease.slack.com'
+        ]
+      }
+    }),
+  }).then(response => {
+    if (response.ok) {
+      console.log('[AiSignupMarketReport] ✅ Welcome email sent successfully');
+    } else {
+      console.error('[AiSignupMarketReport] ⚠️ Welcome email failed:', response.status);
+    }
+  }).catch(error => {
+    console.error('[AiSignupMarketReport] ⚠️ Welcome email error:', error.message);
+  });
+
+  console.log('[AiSignupMarketReport] ✅ Welcome email request initiated (keepalive)');
+  return { success: true };
+}
+
+/**
+ * Send internal notification email to customer-acquisition team (Step 5 from Bubble)
+ * Alerts the team about new AI signups with user details
+ *
+ * IMPORTANT: Uses fetch with keepalive:true to survive page reload/navigation
+ * while still allowing Authorization headers (unlike sendBeacon)
+ *
+ * @param {Object} data - Notification data
+ * @param {string} data.email - User's email
+ * @param {string} data.phone - User's phone (if provided)
+ * @param {string} data.name - Extracted name
+ * @param {string} data.password - Generated password
+ * @param {string} data.freeformText - Original freeform input
+ * @returns {{success: boolean}}
+ */
+function sendInternalNotificationEmail(data) {
+  console.log('[AiSignupMarketReport] Sending internal notification email');
+
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://qcfifybkaddcoimjroca.supabase.co';
+  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+  const edgeFunctionUrl = `${supabaseUrl}/functions/v1/send-email`;
+
+  // Build plain text body for internal notification
+  const emailBody = `Name: ${data.name || 'Not extracted'}
+Email: ${data.email}
+Phone number: ${data.phone || 'Not provided'}
+Their temporary password is: ${data.password}
+
+----
+free form text inputted: ${data.freeformText}`;
+
+  // Convert to HTML with line breaks preserved
+  const emailBodyHtml = emailBody.replace(/\n/g, '<br>');
+
+  // Use fetch with keepalive:true - survives page unload AND supports headers
+  fetch(edgeFunctionUrl, {
+    method: 'POST',
+    keepalive: true, // Critical: keeps request alive during page navigation
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${supabaseAnonKey}`,
+    },
+    body: JSON.stringify({
+      action: 'send',
+      payload: {
+        // Basic template - flexible for internal notifications
+        // From: reference_table.zat_email_html_template_eg_sendbasicemailwf_
+        template_id: '1560447575939x331870423481483500',
+        // Slack channel email for #customer-acquisition
+        to_email: 'acquisition-aaaachs52tzodgc5t3o2oeipli@splitlease.slack.com',
+        from_email: 'noreply@splitlease.com',
+        from_name: 'Guest AI Signup',
+        subject: `${data.name || 'New User'}, ${data.email}, SIGNED UP thru AI signup feature`,
+        variables: {
+          // All 13 placeholders expected by the Basic template
+          'to': 'acquisition-aaaachs52tzodgc5t3o2oeipli@splitlease.slack.com',
+          'from email': 'noreply@splitlease.com',
+          'from name': 'Guest AI Signup',
+          'subject': `${data.name || 'New User'}, ${data.email}, SIGNED UP thru AI signup feature`,
+          'header': 'New AI Signup',
+          'body text': emailBodyHtml,
+          'button': '', // No button for internal notification
+          'year': new Date().getFullYear().toString(),
+          'logo url': 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1599068082301x985428647498498600/SL%20Logo.png',
+          'cc': '',
+          'bcc': '',
+          'reply_to': '',
+          'attachment': '',
+        },
+      }
+    }),
+  }).then(response => {
+    if (response.ok) {
+      console.log('[AiSignupMarketReport] ✅ Internal notification sent successfully');
+    } else {
+      console.error('[AiSignupMarketReport] ⚠️ Internal notification failed:', response.status);
+    }
+  }).catch(error => {
+    console.error('[AiSignupMarketReport] ⚠️ Internal notification error:', error.message);
+  });
+
+  console.log('[AiSignupMarketReport] ✅ Internal notification request initiated (keepalive)');
+  return { success: true };
+}
+
+/**
+ * Send welcome SMS to new user (Steps 8/9 from Bubble workflow)
+ * Contains login credentials and magic link
+ *
+ * Uses the public Split Lease SMS number which doesn't require auth
+ * IMPORTANT: Uses fetch with keepalive:true to survive page reload/navigation
+ * while still allowing Authorization headers (unlike sendBeacon)
+ *
+ * @param {Object} data - SMS data
+ * @param {string} data.phone - User's phone number
+ * @param {string} data.email - User's email
+ * @param {string} data.password - Generated password
+ * @param {string} data.magicLink - Magic login link URL
+ * @returns {{success: boolean, skipped?: boolean}}
+ */
+function sendWelcomeSms(data) {
+  if (!data.phone) {
+    console.log('[AiSignupMarketReport] No phone number provided, skipping SMS');
+    return { success: true, skipped: true };
+  }
+
+  console.log('[AiSignupMarketReport] Sending welcome SMS to:', data.phone);
+
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://qcfifybkaddcoimjroca.supabase.co';
+  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+  const edgeFunctionUrl = `${supabaseUrl}/functions/v1/send-sms`;
+
+  // Format phone to E.164 (add +1 if needed)
+  let formattedPhone = data.phone.replace(/\D/g, ''); // Remove non-digits
+  if (formattedPhone.length === 10) {
+    formattedPhone = `+1${formattedPhone}`;
+  } else if (formattedPhone.length === 11 && formattedPhone.startsWith('1')) {
+    formattedPhone = `+${formattedPhone}`;
+  } else if (!formattedPhone.startsWith('+')) {
+    formattedPhone = `+${formattedPhone}`;
+  }
+
+  const smsBody = `You have a new split lease account. Sign in with your email: ${data.email}. Your temporary password: ${data.password}. Click this link to proceed: ${data.magicLink || 'https://splitlease.com/login'}`;
+
+  // Use fetch with keepalive:true - survives page unload AND supports headers
+  fetch(edgeFunctionUrl, {
+    method: 'POST',
+    keepalive: true, // Critical: keeps request alive during page navigation
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${supabaseAnonKey}`,
+    },
+    body: JSON.stringify({
+      action: 'send',
+      payload: {
+        to: formattedPhone,
+        from: '+14155692985', // Public Split Lease SMS number (no auth required)
+        body: smsBody
+      }
+    }),
+  }).then(response => {
+    if (response.ok) {
+      console.log('[AiSignupMarketReport] ✅ Welcome SMS sent successfully');
+    } else {
+      console.error('[AiSignupMarketReport] ⚠️ Welcome SMS failed:', response.status);
+    }
+  }).catch(error => {
+    console.error('[AiSignupMarketReport] ⚠️ Welcome SMS error:', error.message);
+  });
+
+  console.log('[AiSignupMarketReport] ✅ Welcome SMS request initiated (keepalive)');
+  return { success: true };
+}
+
+/**
+ * Send all welcome communications after successful signup
+ * This orchestrates: magic link generation → email → SMS → internal notification
+ *
+ * IMPORTANT: Uses fetch with keepalive:true for email/SMS to survive page reload
+ * while still allowing Authorization headers (required by Edge Functions).
+ * Magic link generation is attempted first, but communications are sent
+ * regardless (with fallback login URL if magic link fails).
+ *
+ * @param {Object} data - Communication data
+ * @param {string} data.email - User's email
+ * @param {string} data.phone - User's phone (optional)
+ * @param {string} data.name - Extracted name
+ * @param {string} data.password - Generated password (SL{Name}77)
+ * @param {string} data.freeformText - Original freeform text
+ */
+async function sendWelcomeCommunications(data) {
+  console.log('[AiSignupMarketReport] ========== SENDING WELCOME COMMUNICATIONS ==========');
+  console.log('[AiSignupMarketReport] Email:', data.email);
+  console.log('[AiSignupMarketReport] Phone:', data.phone || 'Not provided');
+  console.log('[AiSignupMarketReport] Name:', data.name || 'Not extracted');
+
+  // Step 1: Generate magic link with a timeout to avoid blocking
+  // If it takes too long, we'll use the fallback URL
+  let magicLink = 'https://splitlease.com/login'; // Default fallback
+
+  try {
+    // Race between magic link generation and a 3-second timeout
+    const magicLinkPromise = generateMagicLink(data.email);
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Magic link timeout')), 3000)
+    );
+
+    const magicLinkResult = await Promise.race([magicLinkPromise, timeoutPromise]);
+    if (magicLinkResult.success && magicLinkResult.action_link) {
+      magicLink = magicLinkResult.action_link;
+      console.log('[AiSignupMarketReport] ✅ Magic link generated');
+    } else {
+      console.warn('[AiSignupMarketReport] ⚠️ Magic link generation failed, using fallback URL');
+    }
+  } catch (error) {
+    console.warn('[AiSignupMarketReport] ⚠️ Magic link error/timeout, using fallback URL:', error.message);
+  }
+
+  // Step 2: Send all communications using fetch with keepalive (survives page reload)
+  // These are initiated immediately and browser keeps them alive during navigation
+
+  // Welcome email to user (Step 7)
+  sendWelcomeEmail({
+    email: data.email,
+    password: data.password,
+    magicLink: magicLink
+  });
+
+  // Welcome SMS to user (Steps 8/9) - only if phone provided
+  if (data.phone) {
+    sendWelcomeSms({
+      phone: data.phone,
+      email: data.email,
+      password: data.password,
+      magicLink: magicLink
+    });
+  }
+
+  // Internal notification to team (Step 5)
+  sendInternalNotificationEmail({
+    email: data.email,
+    phone: data.phone,
+    name: data.name,
+    password: data.password,
+    freeformText: data.freeformText
+  });
+
+  console.log('[AiSignupMarketReport] ✅ All welcome communications initiated (keepalive fetch)');
+}
+
+// ============ PROFILE PARSING FUNCTIONS ============
+
 /**
  * Queue AI profile parsing via Supabase Edge Function
  * This is non-blocking - user doesn't wait for GPT-4 to finish
@@ -422,6 +791,23 @@ async function submitSignup(data) {
       console.warn('[AiSignupMarketReport] ⚠️ No user ID for queuing profile parsing');
     }
 
+    // ========== STEP 4: Send Welcome Communications (ASYNC - Non-blocking) ==========
+    // User doesn't wait for emails/SMS - they happen in background
+    console.log('[AiSignupMarketReport] Step 4: Sending welcome communications (async)...');
+
+    // Fire-and-forget: send welcome email, SMS, and internal notification
+    sendWelcomeCommunications({
+      email: data.email,
+      phone: data.phone,
+      name: extractedName,
+      password: generatedPassword,
+      freeformText: data.marketResearchText,
+    }).then(() => {
+      console.log('[AiSignupMarketReport] ✅ Welcome communications initiated successfully');
+    }).catch(err => {
+      console.warn('[AiSignupMarketReport] ⚠️ Welcome communications error (non-fatal):', err.message);
+    });
+
     return {
       success: true,
       data: result.data,
@@ -586,10 +972,10 @@ const FREEFORM_TOPICS = [
     id: 'schedule',
     label: 'Schedule',
     patterns: [
-      /\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i,
-      /\b(weekday|weekend|weekly|daily|monthly)\b/i,
-      /\b(morning|afternoon|evening|night)\b/i,
-      /\b(schedule|timing|hours|days?|time)\b/i,
+      /\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)s?\b/i,
+      /\b(weekday|weekend|weekly|daily|monthly)s?\b/i,
+      /\b(morning|afternoon|evening|night)s?\b/i,
+      /\b(schedule|timing|hours?|days?|time|weeks?)\b/i,
       /\b(\d+\s*(am|pm|days?|weeks?|months?))\b/i,
     ],
   },
@@ -623,6 +1009,7 @@ const FREEFORM_TOPICS = [
       /\b(near|close to|walking distance|neighborhood)\b/i,
       /\b(area|location|place|spot|zone)\b/i,
       /\b(east side|west side|upper|lower)\b/i,
+      /\b(new york|nyc|ny|the city)\b/i,
     ],
   },
   {

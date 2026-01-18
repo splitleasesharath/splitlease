@@ -80,6 +80,7 @@ export default function ProposalDetailsModal({
   const [guestDetailsExpanded, setGuestDetailsExpanded] = useState(true);
   const [statusExpanded, setStatusExpanded] = useState(true);
   const [virtualMeetingsExpanded, setVirtualMeetingsExpanded] = useState(false);
+  const [customScheduleExpanded, setCustomScheduleExpanded] = useState(true);
 
   if (!proposal || !isOpen) return null;
 
@@ -145,6 +146,12 @@ export default function ProposalDetailsModal({
   const counterOfferHappened = proposal.counterOfferHappened || proposal['Counter Offer Happened'] || false;
   const reasonForCancellation = proposal.reasonForCancellation || proposal['Reason For Cancellation'] || '';
 
+  // Get rental type for dynamic compensation label (nightly/weekly/monthly)
+  const rentalType = (proposal.rentalType || proposal['rental type'] || proposal['Rental Type'] || 'nightly').toLowerCase();
+
+  // Custom schedule description - guest's free-form text describing preferred schedule
+  const customScheduleDescription = proposal.custom_schedule_description || proposal.customScheduleDescription || '';
+
   // Virtual meeting
   const virtualMeeting = proposal.virtualMeeting || proposal['Virtual Meeting'];
 
@@ -154,11 +161,9 @@ export default function ProposalDetailsModal({
   /**
    * Get progress steps based on usualOrder thresholds from reference_table.os_proposal_status
    *
-   * Step states:
-   * - 'completed': usualOrder >= threshold (green #065F46)
-   * - 'current': actively in progress (highlighted)
-   * - 'incomplete': not yet reached (light gray)
-   * - 'cancelled'/'rejected': proposal was cancelled/rejected (red)
+   * Step states - CURRENT step gets GREEN highlight, COMPLETED steps get PURPLE:
+   * - 'completed': usualOrder >= threshold (purple #31135D)
+   * - 'current': actively at this step now (green #065F46) - takes priority for highlighting
    *
    * Reference table sort_order values:
    * - 0: Awaiting Rental App (proposal submitted, pending rental app)
@@ -171,34 +176,33 @@ export default function ProposalDetailsModal({
    * - 7: Payment Submitted / Lease Activated
    */
   const getProgressSteps = () => {
-    // Special case: Host Review is "current" when status is Host Review
-    const isHostReviewCurrent = statusConfig.key === 'Host Review';
+    // Determine current step based on usualOrder ranges
+    // usualOrder 0: At "Proposal Submitted" / "Awaiting Rental App"
+    // usualOrder 1-2: At "Host Review" (includes counteroffer)
+    // usualOrder 3-4: At "Lease Docs" phase (accepted, drafting/reviewing docs)
+    // usualOrder 5-6: At "Lease Docs" / "Awaiting Payment"
+    // usualOrder 7: At "Initial Payment" / Complete
 
-    // Thresholds based on reference_table.os_proposal_status sort_order:
-    // - Rental App completed: usualOrder >= 1 (moved past "Awaiting Rental App" at sort_order 0)
-    // - Host Review completed: usualOrder >= 3 (Accepted / Drafting Docs)
-    // - Lease Docs completed: usualOrder >= 5 (Lease Documents for Signatures)
-    // - Initial Payment completed: usualOrder >= 7 (Payment submitted / Lease activated)
     return {
       proposalSubmitted: {
         completed: true, // Always completed once proposal exists
-        current: false
+        current: usualOrder === 0 // Current when awaiting rental app
       },
       rentalApp: {
-        completed: usualOrder >= 1, // Rental app done when past sort_order 0 (Awaiting Rental App)
-        current: false
+        completed: usualOrder >= 1, // Completed once rental app submitted
+        current: false // This is a transitional step, not a "waiting" step
       },
       hostReview: {
-        completed: usualOrder >= 3, // Host Review completed when Accepted (sort_order 3)
-        current: isHostReviewCurrent // Highlighted when in Host Review status
+        completed: usualOrder >= 3, // Completed when accepted (sort_order 3+)
+        current: usualOrder >= 1 && usualOrder < 3 // Current during Host Review & Counteroffer (sort_order 1-2)
       },
       leaseDocs: {
-        completed: usualOrder >= 5, // Lease docs for signatures (sort_order 5)
-        current: false
+        completed: usualOrder >= 6, // Completed when awaiting payment (sort_order 6+)
+        current: usualOrder >= 3 && usualOrder < 6 // Current during lease doc phases (sort_order 3-5)
       },
       initialPayment: {
-        completed: usualOrder >= 7, // Payment submitted / Lease activated (sort_order 7)
-        current: false
+        completed: usualOrder >= 7, // Completed when lease activated (sort_order 7)
+        current: usualOrder === 6 // Current when awaiting payment (sort_order 6)
       }
     };
   };
@@ -206,10 +210,20 @@ export default function ProposalDetailsModal({
   const progress = getProgressSteps();
 
   /**
-   * Determine which step is the "last completed" (rightmost filled dot)
-   * This step will be shown in green to indicate current progress
+   * Determine which step should show the GREEN highlight
+   * Priority: CURRENT step (where we are NOW) > last completed step
+   *
+   * This ensures that when in "Host Review" (usualOrder 1), step 3 shows green,
+   * not step 2 (which is just "completed" but not where we're waiting)
    */
-  const getLastCompletedStep = () => {
+  const getHighlightedStep = () => {
+    // First priority: current step (where we are actively waiting/working)
+    if (progress.initialPayment.current) return 'initialPayment';
+    if (progress.leaseDocs.current) return 'leaseDocs';
+    if (progress.hostReview.current) return 'hostReview';
+    if (progress.proposalSubmitted.current) return 'proposalSubmitted';
+
+    // Fallback: last completed step (rightmost filled dot)
     if (progress.initialPayment.completed) return 'initialPayment';
     if (progress.leaseDocs.completed) return 'leaseDocs';
     if (progress.hostReview.completed) return 'hostReview';
@@ -218,7 +232,7 @@ export default function ProposalDetailsModal({
     return null;
   };
 
-  const lastCompletedStep = getLastCompletedStep();
+  const highlightedStep = getHighlightedStep();
 
   /**
    * Get CSS class for a progress step
@@ -232,19 +246,25 @@ export default function ProposalDetailsModal({
   };
 
   /**
-   * Check if a step should be shown in green (last completed step)
+   * Check if a step should be shown in GREEN (highlighted step = current OR last completed)
+   * This is what makes the "active" step visually distinct
    */
-  const isLastCompleted = (stepName) => {
-    return !isCancelled && lastCompletedStep === stepName;
+  const isHighlighted = (stepName) => {
+    return !isCancelled && highlightedStep === stepName;
   };
 
   /**
    * Get CSS class for a progress line (between two steps)
-   * Line is completed if BOTH adjacent steps are completed
+   * Line is PURPLE (completed) if:
+   * - Previous step is completed AND next step is completed, OR
+   * - Previous step is completed AND next step is CURRENT (we've reached it)
+   *
+   * This ensures the line leading TO the current step is filled purple
    */
   const getLineClass = (prevStep, nextStep) => {
     if (isCancelled) return 'cancelled';
-    if (prevStep.completed && nextStep.completed) return 'completed';
+    // Line fills when we've moved past it (prev completed) AND reached the next step (completed OR current)
+    if (prevStep.completed && (nextStep.completed || nextStep.current)) return 'completed';
     return '';
   };
 
@@ -378,12 +398,14 @@ export default function ProposalDetailsModal({
               <span className="detail-value">{checkInTime} / {checkOutTime}</span>
             </div>
             <div className="detail-row">
-              <span className="detail-label">Compensation per Night</span>
+              <span className="detail-label">
+                Compensation per {rentalType === 'monthly' ? 'Month' : rentalType === 'weekly' ? 'Week' : 'Night'}
+              </span>
               <span className="detail-value">
                 {counterOfferHappened && (
                   <span className="original-value">${hostCompensation}</span>
                 )}
-                ${formatCurrency(compensationPerNight)}/night
+                ${formatCurrency(compensationPerNight)}/{rentalType === 'monthly' ? 'month' : rentalType === 'weekly' ? 'week' : 'night'}
               </span>
             </div>
             <div className="detail-row">
@@ -551,6 +573,32 @@ export default function ProposalDetailsModal({
             )}
           </div>
 
+          {/* Custom Schedule Request Section - only show if guest provided one */}
+          {customScheduleDescription && (
+            <div className="collapsible-section">
+              <button
+                className="section-header"
+                onClick={() => setCustomScheduleExpanded(!customScheduleExpanded)}
+              >
+                <span>Schedule Preferences</span>
+                <svg
+                  className={`chevron ${customScheduleExpanded ? 'open' : ''}`}
+                  width="20"
+                  height="20"
+                  viewBox="0 0 20 20"
+                >
+                  <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                </svg>
+              </button>
+              {customScheduleExpanded && (
+                <div className="section-content custom-schedule-content">
+                  <p className="custom-schedule-label">Guest's schedule request:</p>
+                  <p className="custom-schedule-text">{customScheduleDescription}</p>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Proposal Status Section */}
           <div className="collapsible-section">
             <button
@@ -578,7 +626,7 @@ export default function ProposalDetailsModal({
                     <div className={`progress-step ${getStepClass(progress.proposalSubmitted)}`}>
                       <div
                         className="step-circle"
-                        style={isLastCompleted('proposalSubmitted') ? { backgroundColor: '#065F46' } : undefined}
+                        style={isHighlighted('proposalSubmitted') ? { backgroundColor: '#065F46' } : undefined}
                       ></div>
                     </div>
                     <div className={`progress-line ${getLineClass(progress.proposalSubmitted, progress.rentalApp)}`}></div>
@@ -587,7 +635,7 @@ export default function ProposalDetailsModal({
                     <div className={`progress-step ${getStepClass(progress.rentalApp)}`}>
                       <div
                         className="step-circle"
-                        style={isLastCompleted('rentalApp') ? { backgroundColor: '#065F46' } : undefined}
+                        style={isHighlighted('rentalApp') ? { backgroundColor: '#065F46' } : undefined}
                       ></div>
                     </div>
                     <div className={`progress-line ${getLineClass(progress.rentalApp, progress.hostReview)}`}></div>
@@ -596,7 +644,7 @@ export default function ProposalDetailsModal({
                     <div className={`progress-step ${getStepClass(progress.hostReview)}`}>
                       <div
                         className="step-circle"
-                        style={isLastCompleted('hostReview') ? { backgroundColor: '#065F46' } : undefined}
+                        style={isHighlighted('hostReview') ? { backgroundColor: '#065F46' } : undefined}
                       ></div>
                     </div>
                     <div className={`progress-line ${getLineClass(progress.hostReview, progress.leaseDocs)}`}></div>
@@ -605,7 +653,7 @@ export default function ProposalDetailsModal({
                     <div className={`progress-step ${getStepClass(progress.leaseDocs)}`}>
                       <div
                         className="step-circle"
-                        style={isLastCompleted('leaseDocs') ? { backgroundColor: '#065F46' } : undefined}
+                        style={isHighlighted('leaseDocs') ? { backgroundColor: '#065F46' } : undefined}
                       ></div>
                     </div>
                     <div className={`progress-line ${getLineClass(progress.leaseDocs, progress.initialPayment)}`}></div>
@@ -614,7 +662,7 @@ export default function ProposalDetailsModal({
                     <div className={`progress-step ${getStepClass(progress.initialPayment)}`}>
                       <div
                         className="step-circle"
-                        style={isLastCompleted('initialPayment') ? { backgroundColor: '#065F46' } : undefined}
+                        style={isHighlighted('initialPayment') ? { backgroundColor: '#065F46' } : undefined}
                       ></div>
                     </div>
                   </div>

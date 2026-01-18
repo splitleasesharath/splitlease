@@ -792,6 +792,7 @@ export function useMessagingPageLogic() {
 
   /**
    * Internal thread selection (does not update URL, used by effect)
+   * Also marks the thread as read in local state
    */
   function handleThreadSelectInternal(thread) {
     setSelectedThread(thread);
@@ -801,11 +802,21 @@ export function useMessagingPageLogic() {
     setListingData(null);
     setIsOtherUserTyping(false);
     setTypingUserName(null);
+
+    // Mark thread as read in local state (backend will mark messages as read)
+    setThreads(prevThreads =>
+      prevThreads.map(t =>
+        t._id === thread._id ? { ...t, unread_count: 0 } : t
+      )
+    );
+
     fetchMessages(thread._id);
   }
 
   /**
    * Handle thread selection from user interaction
+   * Also marks the thread as read by setting unread_count to 0 locally
+   * (backend marks messages as read when fetchMessages is called)
    */
   const handleThreadSelect = useCallback((thread) => {
     setSelectedThread(thread);
@@ -815,6 +826,13 @@ export function useMessagingPageLogic() {
     setListingData(null);
     setIsOtherUserTyping(false);
     setTypingUserName(null);
+
+    // Mark thread as read in local state (backend will mark messages as read)
+    setThreads(prevThreads =>
+      prevThreads.map(t =>
+        t._id === thread._id ? { ...t, unread_count: 0 } : t
+      )
+    );
 
     // Update URL
     const params = new URLSearchParams(window.location.search);

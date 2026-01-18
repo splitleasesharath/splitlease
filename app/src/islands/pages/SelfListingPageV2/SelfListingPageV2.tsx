@@ -2295,7 +2295,7 @@ export function SelfListingPageV2() {
             setShowAuthModal(false);
             setPendingSubmit(false);
           }}
-          initialView="signup"
+          initialView="identity"
           defaultUserType="host"
           skipReload={true}
           onAuthSuccess={handleAuthSuccess}

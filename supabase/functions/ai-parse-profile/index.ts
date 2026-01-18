@@ -66,7 +66,7 @@ interface ExtractedData {
 interface MatchedIds {
   boroughId: string | null;
   hoodIds: string[];
-  dayIds: number[];
+  dayNames: string[];  // Changed from dayIds: number[] to dayNames: string[] to match frontend format
 }
 
 // ============================================================================
@@ -200,23 +200,31 @@ async function matchHoodIds(
   return matchedIds;
 }
 
-function matchDayIds(dayNames: string[] | null): number[] {
+/**
+ * Normalize day names from GPT output to properly capitalized day names.
+ * Frontend expects: ["Sunday", "Monday", ...] with proper capitalization.
+ * GPT may return: ["saturday", "Sunday", "MONDAY", etc.]
+ *
+ * @param dayNames - Raw day names from GPT extraction
+ * @returns Properly capitalized day names that match frontend expectations
+ */
+function normalizeDayNames(dayNames: string[] | null): string[] {
   if (!dayNames || dayNames.length === 0) return [];
 
-  // Map day names to JavaScript day indices (0=Sunday, 6=Saturday)
-  const dayMap: Record<string, number> = {
-    'sunday': 0,
-    'monday': 1,
-    'tuesday': 2,
-    'wednesday': 3,
-    'thursday': 4,
-    'friday': 5,
-    'saturday': 6,
+  // Map lowercase day names to properly capitalized versions
+  const dayNameMap: Record<string, string> = {
+    'sunday': 'Sunday',
+    'monday': 'Monday',
+    'tuesday': 'Tuesday',
+    'wednesday': 'Wednesday',
+    'thursday': 'Thursday',
+    'friday': 'Friday',
+    'saturday': 'Saturday',
   };
 
   return dayNames
-    .map(day => dayMap[day.toLowerCase()])
-    .filter(dayNum => dayNum !== undefined);
+    .map(day => dayNameMap[day.toLowerCase()])
+    .filter((dayName): dayName is string => dayName !== undefined);
 }
 
 // ============================================================================
@@ -436,9 +444,10 @@ async function processJob(
     // 6. Match against database
     const boroughId = await matchBoroughId(supabase, extractedData.preferredBorough);
     const hoodIds = await matchHoodIds(supabase, extractedData.preferredHoods);
-    const dayIds = matchDayIds(extractedData.idealDaysSchedule);
+    // Normalize day names to match frontend format (e.g., "Saturday", "Sunday")
+    const dayNames = normalizeDayNames(extractedData.idealDaysSchedule);
 
-    const matchedIds: MatchedIds = { boroughId, hoodIds, dayIds };
+    const matchedIds: MatchedIds = { boroughId, hoodIds, dayNames };
     console.log('[ai-parse-profile] Matched IDs:', matchedIds);
 
     // 7. Update user profile
@@ -483,8 +492,9 @@ async function processJob(
     if (hoodIds.length > 0) {
       userUpdate['Preferred Hoods'] = hoodIds;
     }
-    if (dayIds.length > 0) {
-      userUpdate['Recent Days Selected'] = dayIds;
+    if (dayNames.length > 0) {
+      // Store as day name strings to match frontend format: ["Saturday", "Sunday"]
+      userUpdate['Recent Days Selected'] = dayNames;
     }
     if (extractedData.storedItems && extractedData.storedItems.length > 0) {
       userUpdate['About - Commonly Stored Items'] = extractedData.storedItems;

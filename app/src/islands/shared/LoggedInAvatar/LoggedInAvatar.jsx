@@ -374,7 +374,7 @@ export default function LoggedInAvatar({
 
   // Check if on a page with light header for styling
   const isSearchPage = currentPath.includes('search');
-  const isLightHeaderPage = currentPath.includes('favorite-listings');
+  const isLightHeaderPage = currentPath.includes('favorite-listings') || currentPath.includes('listing-dashboard');
 
   // Hide messaging icon on the messages page (redundant since user is already there)
   const isMessagesPage = currentPath.includes('/messages');

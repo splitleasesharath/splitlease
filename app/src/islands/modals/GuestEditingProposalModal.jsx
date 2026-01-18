@@ -552,17 +552,27 @@ export default function GuestEditingProposalModal({
     }).filter(d => d >= 0 && d <= 6)
   }
 
-  // Helper to parse check-in/check-out day from proposal (stored as day name string)
+  // Helper to parse check-in/check-out day from proposal
+  // Database stores these as numeric strings ("5" for Friday) or day names ("Friday")
   const parseDayFromProposal = (dayValue, fallbackIndex = 1) => {
-    if (!dayValue) {
+    if (dayValue === null || dayValue === undefined || dayValue === '') {
       const fallback = DAYS_OF_WEEK[fallbackIndex]
       return { display: fallback.name, dayIndex: fallback.dayIndex, first3Letters: fallback.shortName }
     }
-    // dayValue is stored as day name string (e.g., "Friday", "Tuesday")
-    const dayObj = DAYS_OF_WEEK.find(d => d.name === dayValue)
+
+    // Handle numeric value (number or numeric string like "5")
+    const numericValue = typeof dayValue === 'number' ? dayValue : parseInt(String(dayValue).trim(), 10)
+    if (!isNaN(numericValue) && numericValue >= 0 && numericValue <= 6) {
+      const dayObj = DAYS_OF_WEEK[numericValue]
+      return { display: dayObj.name, dayIndex: dayObj.dayIndex, first3Letters: dayObj.shortName }
+    }
+
+    // Handle day name string (e.g., "Friday", "Tuesday")
+    const dayObj = DAYS_OF_WEEK.find(d => d.name === dayValue || d.shortName === dayValue)
     if (dayObj) {
       return { display: dayObj.name, dayIndex: dayObj.dayIndex, first3Letters: dayObj.shortName }
     }
+
     // Fallback if not found
     const fallback = DAYS_OF_WEEK[fallbackIndex]
     return { display: fallback.name, dayIndex: fallback.dayIndex, first3Letters: fallback.shortName }
