@@ -2,7 +2,8 @@
 
 .logged-in-avatar {
   position: relative;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   z-index: 10001;
 }
 
@@ -54,6 +55,12 @@
   gap: 4px;
 }
 
+/* Username color on pages with light headers (search, favorites) */
+.logged-in-avatar.on-search-page .user-name-wrapper,
+.logged-in-avatar.on-light-header .user-name-wrapper {
+  color: #31135D;
+}
+
 .dropdown-arrow {
   transition: transform 0.2s ease;
 }
@@ -66,9 +73,9 @@
   width: 300px;
   max-height: 600px;
   background-color: #FFFFFF;
-  border: 1px solid #6B6B6B;
-  border-radius: 10px;
-  box-shadow: 0px 10px 20px 0px rgba(0, 0, 0, 0.1);
+  border: 1px solid #E5E5E5;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
   overflow: visible;
   z-index: 10000 !important;
   display: block !important;
@@ -245,4 +252,77 @@
 
 .logged-in-avatar .menu-container::-webkit-scrollbar-thumb:hover {
   background: #555;
+}
+
+/* Header Messages Wrapper - Contains icon and panel */
+.logged-in-avatar .header-messages-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-right: 12px;
+}
+
+/* Header Messaging Icon */
+.logged-in-avatar .header-messages-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  background: transparent;
+  color: white;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.logged-in-avatar .header-messages-icon:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Active state when panel is open */
+.logged-in-avatar .header-messages-icon[aria-expanded="true"] {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Focus state for accessibility */
+.logged-in-avatar .header-messages-icon:focus {
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
+}
+
+/* Messaging icon color on pages with light headers */
+.logged-in-avatar.on-search-page .header-messages-icon,
+.logged-in-avatar.on-light-header .header-messages-icon {
+  color: #31135D;
+  background: transparent;
+}
+
+.logged-in-avatar.on-search-page .header-messages-icon:hover,
+.logged-in-avatar.on-light-header .header-messages-icon:hover {
+  background: rgba(49, 19, 93, 0.1);
+}
+
+/* Messages badge (red circle with count) */
+.logged-in-avatar .messages-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 50%;
+  background-color: #EF4444;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  line-height: 1;
 }

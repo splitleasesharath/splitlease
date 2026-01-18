@@ -30,6 +30,8 @@ const lookupCache = {
   parking: new Map(),        // parkingId -> {label}
   cancellationPolicies: new Map(), // cancellationPolicyId -> {display}
   storage: new Map(),        // storageId -> {title, summaryGuest}
+  guestCancellationReasons: new Map(), // reasonId -> {reason, displayOrder}
+  hostCancellationReasons: new Map(),  // reasonId -> {reason, displayOrder}
   initialized: false
 };
 
@@ -72,7 +74,8 @@ export async function initializeLookups() {
       initializeHouseRuleLookups(),
       initializeParkingLookups(),
       initializeCancellationPolicyLookups(),
-      initializeStorageLookups()
+      initializeStorageLookups(),
+      initializeCancellationReasonLookups()
     ]);
 
     lookupCache.initialized = true;
@@ -91,6 +94,7 @@ export async function initializeLookups() {
 async function initializeBoroughLookups() {
   try {
     const { data, error } = await supabase
+      .schema('reference_table')
       .from(DATABASE.TABLES.BOROUGH)
       .select('_id, "Display Borough"');
 
@@ -115,6 +119,7 @@ async function initializeBoroughLookups() {
 async function initializeNeighborhoodLookups() {
   try {
     const { data, error } = await supabase
+      .schema('reference_table')
       .from(DATABASE.TABLES.NEIGHBORHOOD)
       .select('_id, Display');
 
@@ -141,6 +146,7 @@ async function initializePropertyTypeLookups() {
   try {
     // IMPORTANT: Column name has trailing space: "Label "
     const { data, error } = await supabase
+      .schema('reference_table')
       .from(DATABASE.TABLES.LISTING_TYPE)
       .select('_id, "Label "')
       .limit(100);
@@ -229,6 +235,7 @@ async function initializeSafetyLookups() {
 async function initializeHouseRuleLookups() {
   try {
     const { data, error } = await supabase
+      .schema('reference_table')
       .from(DATABASE.TABLES.HOUSE_RULE)
       .select('_id, Name, Icon');
 
@@ -255,6 +262,7 @@ async function initializeHouseRuleLookups() {
 async function initializeParkingLookups() {
   try {
     const { data, error } = await supabase
+      .schema('reference_table')
       .from(DATABASE.TABLES.PARKING)
       .select('_id, Label');
 
@@ -280,6 +288,7 @@ async function initializeParkingLookups() {
 async function initializeCancellationPolicyLookups() {
   try {
     const { data, error } = await supabase
+      .schema('reference_table')
       .from(DATABASE.TABLES.CANCELLATION_POLICY)
       .select('_id, Display, "Best Case Text", "Medium Case Text", "Worst Case Text", "Summary Texts"');
 
@@ -309,6 +318,7 @@ async function initializeCancellationPolicyLookups() {
 async function initializeStorageLookups() {
   try {
     const { data, error } = await supabase
+      .schema('reference_table')
       .from(DATABASE.TABLES.STORAGE)
       .select('_id, Title, "Summary - Guest"');
 
@@ -325,6 +335,43 @@ async function initializeStorageLookups() {
     }
   } catch (error) {
     console.error('Failed to initialize storage lookups:', error);
+  }
+}
+
+/**
+ * Fetch and cache all cancellation/rejection reasons for both guests and hosts
+ * @returns {Promise<void>}
+ */
+async function initializeCancellationReasonLookups() {
+  try {
+    const { data, error } = await supabase
+      .schema('reference_table')
+      .from(DATABASE.TABLES.CANCELLATION_REASON)
+      .select('id, user_type, reason, display_order')
+      .eq('is_active', true)
+      .order('display_order', { ascending: true });
+
+    if (error) throw error;
+
+    if (data && Array.isArray(data)) {
+      data.forEach(item => {
+        const cacheData = {
+          id: item.id,
+          reason: item.reason,
+          displayOrder: item.display_order
+        };
+
+        if (item.user_type === 'guest') {
+          lookupCache.guestCancellationReasons.set(item.id, cacheData);
+        } else if (item.user_type === 'host') {
+          lookupCache.hostCancellationReasons.set(item.id, cacheData);
+        }
+      });
+      console.log(`Cached ${lookupCache.guestCancellationReasons.size} guest cancellation reasons`);
+      console.log(`Cached ${lookupCache.hostCancellationReasons.size} host rejection reasons`);
+    }
+  } catch (error) {
+    console.error('Failed to initialize cancellation reason lookups:', error);
   }
 }
 
@@ -506,6 +553,18 @@ export function getCancellationPolicy(policyId) {
 }
 
 /**
+ * Get all cancellation policies from cache (for dropdown options)
+ * @returns {Array<{id: string, display: string}>} Array of policy options
+ */
+export function getAllCancellationPolicies() {
+  const policies = [];
+  lookupCache.cancellationPolicies.forEach((policy, id) => {
+    policies.push({ id, display: policy.display });
+  });
+  return policies;
+}
+
+/**
  * Get storage option data by ID (synchronous lookup from cache)
  * @param {string} storageId - The storage option ID
  * @returns {object|null} The storage option data {title, summaryGuest} or null
@@ -520,6 +579,40 @@ export function getStorageOption(storageId) {
   }
 
   return storage;
+}
+
+/**
+ * Get all active guest cancellation reasons as array (for dropdown population)
+ * Returns reasons sorted by display_order
+ * @returns {Array<{id: number, reason: string, displayOrder: number}>} Array of reason options
+ */
+export function getGuestCancellationReasons() {
+  const reasons = [];
+  lookupCache.guestCancellationReasons.forEach((data, id) => {
+    reasons.push({
+      id,
+      reason: data.reason,
+      displayOrder: data.displayOrder
+    });
+  });
+  return reasons.sort((a, b) => a.displayOrder - b.displayOrder);
+}
+
+/**
+ * Get all active host rejection reasons as array (for dropdown population)
+ * Returns reasons sorted by display_order
+ * @returns {Array<{id: number, reason: string, displayOrder: number}>} Array of reason options
+ */
+export function getHostRejectionReasons() {
+  const reasons = [];
+  lookupCache.hostCancellationReasons.forEach((data, id) => {
+    reasons.push({
+      id,
+      reason: data.reason,
+      displayOrder: data.displayOrder
+    });
+  });
+  return reasons.sort((a, b) => a.displayOrder - b.displayOrder);
 }
 
 // ============================================================================
@@ -541,6 +634,7 @@ export async function fetchNeighborhoodName(neighborhoodId) {
 
   try {
     const { data, error } = await supabase
+      .schema('reference_table')
       .from(DATABASE.TABLES.NEIGHBORHOOD)
       .select('Display')
       .eq('_id', neighborhoodId)
@@ -573,6 +667,7 @@ export async function fetchBoroughName(boroughId) {
 
   try {
     const { data, error } = await supabase
+      .schema('reference_table')
       .from(DATABASE.TABLES.BOROUGH)
       .select('"Display Borough"')
       .eq('_id', boroughId)
@@ -607,6 +702,9 @@ export async function refreshLookups() {
   lookupCache.houseRules.clear();
   lookupCache.parking.clear();
   lookupCache.cancellationPolicies.clear();
+  lookupCache.storage.clear();
+  lookupCache.guestCancellationReasons.clear();
+  lookupCache.hostCancellationReasons.clear();
   lookupCache.initialized = false;
   await initializeLookups();
 }
@@ -625,6 +723,9 @@ export function getCacheStats() {
     houseRules: lookupCache.houseRules.size,
     parking: lookupCache.parking.size,
     cancellationPolicies: lookupCache.cancellationPolicies.size,
+    storage: lookupCache.storage.size,
+    guestCancellationReasons: lookupCache.guestCancellationReasons.size,
+    hostCancellationReasons: lookupCache.hostCancellationReasons.size,
     initialized: lookupCache.initialized
   };
 }

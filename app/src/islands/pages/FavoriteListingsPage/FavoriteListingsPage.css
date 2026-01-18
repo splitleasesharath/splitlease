@@ -1,0 +1,348 @@
+/* ========================================
+   FAVORITES PAGE - MATCHES SEARCH PAGE LAYOUT
+   Two-column: 45% listings, 55% map
+   ======================================== */
+
+/* Import search-page styles for shared layout */
+@import '../../../styles/components/search-page.css';
+@import '../../../styles/components/listings.css';
+@import '../../../styles/components/toast.css';
+
+/* Favorites Page - Same as Search Page */
+.favorites-page {
+  padding-top: 0 !important;
+  margin: 0;
+  height: 100vh;
+  width: 100vw;
+  overflow: visible;
+}
+
+/* Hamburger Menu Button */
+.favorites-page .hamburger-menu {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  transition: all 0.2s;
+}
+
+.favorites-page .hamburger-menu:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.favorites-page .hamburger-menu svg {
+  color: #6b7280;
+}
+
+/* Active state for favorites link */
+.favorites-page .favorites-link.active svg {
+  fill: #FF6B35;
+  stroke: #FF6B35;
+}
+
+/* Toast Notifications */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  z-index: 4000;
+  transform: translateX(100%);
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.toast.show {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.toast-success {
+  border-left: 4px solid #22c55e;
+}
+
+.toast-success .toast-icon {
+  color: #22c55e;
+}
+
+.toast-info {
+  border-left: 4px solid #3b82f6;
+}
+
+.toast-info .toast-icon {
+  color: #3b82f6;
+}
+
+.toast-error {
+  border-left: 4px solid #ef4444;
+}
+
+.toast-error .toast-icon {
+  color: #ef4444;
+}
+
+.toast-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toast-message {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+/* Empty State */
+.empty-state-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  min-height: 400px;
+}
+
+.empty-state-container svg {
+  color: #9ca3af;
+  margin-bottom: 1.5rem;
+}
+
+.empty-state-container h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 0.75rem 0;
+}
+
+.empty-state-container p {
+  font-size: 0.9375rem;
+  color: #6b7280;
+  margin: 0 0 2rem 0;
+  max-width: 400px;
+  line-height: 1.6;
+}
+
+.empty-state-container a,
+.empty-state-container button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.75rem;
+  background: #5b21b6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.empty-state-container a:hover,
+.empty-state-container button:hover {
+  background: #4c1d95;
+  transform: translateY(-1px);
+}
+
+/* Listing CTA Buttons Container */
+.listing-cta-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Create Proposal Button */
+.create-proposal-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.875rem;
+  background: #5b21b6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.create-proposal-btn:hover {
+  background: #4c1d95;
+  transform: translateY(-1px);
+}
+
+.create-proposal-btn svg {
+  flex-shrink: 0;
+}
+
+/* View Proposal Button */
+.view-proposal-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.875rem;
+  background: #059669;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.view-proposal-btn:hover {
+  background: #047857;
+  transform: translateY(-1px);
+}
+
+.view-proposal-btn svg {
+  flex-shrink: 0;
+}
+
+/* Adjust host row for multi-button layout */
+.favorites-page .listing-host-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+/* Explore Rentals Button Style */
+.favorites-page .explore-rentals-btn {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Mobile favorites link active state */
+.favorites-page .mobile-favorites-link.active svg {
+  fill: #FF6B35;
+  stroke: #FF6B35;
+}
+
+/* Mobile Map Row - Hidden on desktop */
+.mobile-map-row {
+  display: none;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .toast {
+    top: auto;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+    transform: translateY(100%);
+  }
+
+  .toast.show {
+    transform: translateY(0);
+  }
+
+  /* ROW 1: Header row - fixed at top */
+  .favorites-page .mobile-header-row {
+    justify-content: flex-start;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+  }
+
+  .favorites-page .mobile-header-row .explore-rentals-btn {
+    flex: 1;
+    max-width: none;
+  }
+
+  /* ROW 2: Map Button Row - fixed below header */
+  .favorites-page .mobile-map-row {
+    display: flex;
+    position: fixed;
+    top: 65px; /* Below header row with visible gap */
+    left: 0;
+    right: 0;
+    z-index: 99;
+    padding: 0.5rem 1rem;
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .favorites-page .mobile-map-row .map-toggle-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .favorites-page .mobile-map-row .map-toggle-btn:hover {
+    background: #e5e7eb;
+    border-color: #9ca3af;
+  }
+
+  /* ROW 3: Schedule Selector - fixed below map row */
+  .favorites-page .mobile-schedule-selector {
+    display: block;
+    position: fixed;
+    top: 115px; /* Below header (65px) + map row (50px) */
+    left: 0;
+    right: 0;
+    z-index: 98;
+    padding: 0.75rem 1rem;
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  /* Adjust listings column padding to account for all 3 fixed rows */
+  .favorites-page .listings-column {
+    padding-top: 205px; /* Header (65px) + Map row (50px) + Schedule selector (90px) */
+  }
+
+  /* Show hamburger menu on mobile for logged out users */
+  .favorites-page .hamburger-menu {
+    display: flex;
+    padding: 0.375rem 0.625rem;
+    font-size: 0.75rem;
+  }
+
+  /* Stack CTA buttons vertically on mobile */
+  .listing-cta-buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .listing-cta-buttons button {
+    width: 100%;
+    justify-content: center;
+  }
+}

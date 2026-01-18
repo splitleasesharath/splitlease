@@ -13,10 +13,11 @@
 export const AUTHORIZED_DOMAIN = 'app.split.lease';
 export const BUBBLE_API_URL = 'https://app.split.lease';
 export const SIGNUP_LOGIN_URL = 'https://app.split.lease/signup-login';
-export const SEARCH_URL = '/search.html';
-export const VIEW_LISTING_URL = 'https://app.split.lease/view-split-lease';
+export const SEARCH_URL = '/search';
+export const HOST_OVERVIEW_URL = '/host-overview';
+export const VIEW_LISTING_URL = '/view-split-lease';
 export const ACCOUNT_PROFILE_URL = 'https://app.split.lease/account-profile';
-export const FAQ_URL = '/faq.html';
+export const FAQ_URL = '/faq';
 
 // API Endpoints (DEPRECATED - Now proxied through Edge Functions)
 // These constants are kept for reference only
@@ -31,7 +32,7 @@ export const AI_SIGNUP_WORKFLOW_URL = 'https://app.split.lease/api/1.1/wf/ai-sig
 // REMOVED: VITE_BUBBLE_API_KEY - Now stored server-side in Supabase Secrets
 // REMOVED: VITE_BUBBLE_API_BASE_URL - Now stored server-side in Supabase Secrets
 // Supabase credentials are configured in supabase.js using VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
-// All Bubble workflows now proxied through bubble-proxy and bubble-auth-proxy Edge Functions
+// All Bubble workflows now proxied through bubble-proxy and auth-user Edge Functions
 
 // ============================================================================
 // Lottie Animation URLs
@@ -71,21 +72,22 @@ export const DAY_NAMES = [
 
 export const DAY_ABBREVIATIONS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
-// Bubble API day numbering (1-based, Sunday=1)
-export const BUBBLE_DAY_NUMBERS = {
-  SUNDAY: 1,
-  MONDAY: 2,
-  TUESDAY: 3,
-  WEDNESDAY: 4,
-  THURSDAY: 5,
-  FRIDAY: 6,
-  SATURDAY: 7
+// JavaScript day numbering (0-based, matching Date.getDay())
+// NOTE: BUBBLE_DAY_NUMBERS removed - database now uses 0-indexed days natively
+export const DAY_NUMBERS = {
+  SUNDAY: 0,
+  MONDAY: 1,
+  TUESDAY: 2,
+  WEDNESDAY: 3,
+  THURSDAY: 4,
+  FRIDAY: 5,
+  SATURDAY: 6
 };
 
 // ============================================================================
 // Schedule Patterns and Presets
-// IMPORTANT: All day arrays use 0-based indexing (0=Sunday, 1=Monday, ... 6=Saturday)
-// Convert to 1-based when sending to Bubble API using toBubbleDays() from dayUtils.js
+// All day arrays use 0-based indexing (0=Sunday, 1=Monday, ... 6=Saturday)
+// Database now stores days in this format natively
 // ============================================================================
 
 export const SCHEDULE_PATTERNS = {
@@ -190,9 +192,7 @@ export const AUTH_STORAGE_KEYS = {
 };
 
 export const SESSION_VALIDATION = {
-  MAX_AGE_MS: 24 * 60 * 60 * 1000, // 24 hours in milliseconds
-  MAX_AUTH_CHECK_ATTEMPTS: 3,
-  CACHE_VALIDITY_MS: 60 * 1000 // 1 minute for auth cache
+  MAX_AUTH_CHECK_ATTEMPTS: 3
 };
 
 // ============================================================================
@@ -265,7 +265,8 @@ export const DATABASE = {
     HOUSE_RULE: 'zat_features_houserule',
     PARKING: 'zat_features_parkingoptions',
     CANCELLATION_POLICY: 'zat_features_cancellationpolicy',
-    STORAGE: 'zat_features_storageoptions'
+    STORAGE: 'zat_features_storageoptions',
+    CANCELLATION_REASON: 'cancellation_reasons'
   },
   BOROUGH_FIELDS: {
     ID: '_id',
@@ -287,7 +288,9 @@ export const DATABASE = {
 export const COLORS = {
   PRIMARY: '#31135d',      // Deep purple
   PRIMARY_HOVER: '#1f0b38', // Darker purple
-  SECONDARY: '#5B21B6',     // Purple
+  SECONDARY: '#5B21B6',     // Purple - used for search result markers
+  ACCENT: '#4A90E2',        // Blue
+  MUTED: '#9CA3AF',         // Grey - used for all active listing markers
   SUCCESS: '#00C851',       // Green
   WARNING: '#FFA500',       // Orange
   ERROR: '#EF4444',         // Red

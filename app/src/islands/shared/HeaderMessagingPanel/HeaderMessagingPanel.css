@@ -1,0 +1,709 @@
+/**
+ * HeaderMessagingPanel Styles
+ *
+ * Compact messaging dropdown panel for the header.
+ * Design specs from Bubble:
+ * - Width: 425px fixed
+ * - Border: 1px solid, roundness 12px
+ * - Shadow: 0px 10px 20px rgba(0,0,0,0.1)
+ * - Background: #FFFFFF
+ */
+
+/* ============================================================================
+   PANEL CONTAINER
+   ============================================================================ */
+.header-messaging-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 425px;
+  max-height: calc(100vh - 100px);
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  z-index: 10001; /* Above header, below modals */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: panelSlideIn 0.2s ease-out;
+}
+
+@keyframes panelSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================================================
+   HEADER
+   ============================================================================ */
+.header-messaging-panel__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid #e5e5e5;
+  background: #ffffff;
+  min-height: 60px;
+}
+
+.header-messaging-panel__title {
+  flex: 1;
+  margin: 0;
+  font-family: 'Inter', 'DM Sans', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.header-messaging-panel__back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: #f5f5f5;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #666;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.header-messaging-panel__back:hover {
+  background: #e8e8e8;
+  color: #333;
+}
+
+.header-messaging-panel__contact {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.header-messaging-panel__contact-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.header-messaging-panel__contact-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.header-messaging-panel__contact-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a1a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-messaging-panel__property {
+  font-size: 12px;
+  color: #6b4fa1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-messaging-panel__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #999;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.header-messaging-panel__close:hover {
+  background: #f5f5f5;
+  color: #666;
+}
+
+/* ============================================================================
+   CONTENT AREA
+   ============================================================================ */
+.header-messaging-panel__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ============================================================================
+   THREAD LIST
+   ============================================================================ */
+.header-messaging-panel__thread-list {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 400px;
+}
+
+/* Override ThreadCard styles for compact panel context */
+.header-messaging-panel__thread-list .thread-card {
+  display: flex;
+  align-items: flex-start;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  gap: 12px;
+}
+
+.header-messaging-panel__thread-list .thread-card:last-child {
+  border-bottom: none;
+}
+
+.header-messaging-panel__thread-list .thread-card:hover {
+  background: #f8f7f6;
+}
+
+.header-messaging-panel__thread-list .thread-card--selected {
+  background: #f3e8ff;
+}
+
+/* Avatar styling for header panel */
+.header-messaging-panel__thread-list .thread-card__avatar-container {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.header-messaging-panel__thread-list .thread-card__avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+/* Content styling for header panel */
+.header-messaging-panel__thread-list .thread-card__content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.header-messaging-panel__thread-list .thread-card__name {
+  display: block;
+  font-weight: 600;
+  font-size: 14px;
+  color: #1a1a1a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-messaging-panel__thread-list .thread-card__property {
+  display: block;
+  font-size: 12px;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-messaging-panel__thread-list .thread-card__property-prefix {
+  color: #6b4fa1;
+  font-weight: 500;
+}
+
+.header-messaging-panel__thread-list .thread-card__preview {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0;
+  /* Allow multi-line display with line clamping */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.4;
+}
+
+/* Meta styling for header panel */
+.header-messaging-panel__thread-list .thread-card__meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.header-messaging-panel__thread-list .thread-card__time {
+  font-size: 12px;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+
+.header-messaging-panel__thread-list .thread-card__unread {
+  background-color: #EF4444;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ============================================================================
+   MESSAGES AREA
+   ============================================================================ */
+.header-messaging-panel__messages {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px;
+  max-height: 350px;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ============================================================================
+   MESSAGE ROW STYLES (MessageBubble component uses .message-row, .msg-* classes)
+   ============================================================================ */
+
+/* Message row container */
+.header-messaging-panel__messages .message-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.header-messaging-panel__messages .message-row.outgoing {
+  flex-direction: row-reverse;
+}
+
+/* Hide avatars in header panel to save space */
+.header-messaging-panel__messages .msg-avatar {
+  display: none;
+}
+
+/* Message content area */
+.header-messaging-panel__messages .msg-content {
+  flex: 1;
+  max-width: 90%;
+  min-width: 0;
+}
+
+.header-messaging-panel__messages .message-row.outgoing .msg-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+/* Message header with sender and time */
+.header-messaging-panel__messages .msg-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.header-messaging-panel__messages .message-row.outgoing .msg-header {
+  flex-direction: row-reverse;
+}
+
+.header-messaging-panel__messages .msg-sender {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.header-messaging-panel__messages .msg-time {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+/* Message bubble */
+.header-messaging-panel__messages .msg-bubble {
+  padding: 10px 14px;
+  border-radius: 16px;
+  max-width: 100%;
+}
+
+.header-messaging-panel__messages .message-row:not(.outgoing) .msg-bubble {
+  background: #f3f4f6;
+  border: 1px solid #e5e5e5;
+  border-bottom-left-radius: 4px;
+}
+
+.header-messaging-panel__messages .message-row.outgoing .msg-bubble {
+  background: #6b4fa1;
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+/* Message text - ensure full display, no truncation */
+.header-messaging-panel__messages .msg-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.header-messaging-panel__messages .message-row.outgoing .msg-text {
+  color: #FFFFFF;
+}
+
+/* Split Bot message styling */
+.header-messaging-panel__messages .message-row--splitbot .msg-bubble {
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 12px;
+}
+
+.header-messaging-panel__messages .message-row--splitbot .msg-avatar-placeholder {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* CTA button within messages */
+.header-messaging-panel__messages .message-bubble__cta {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 8px 14px;
+  background-color: #5B21B6 !important;
+  color: #FFFFFF !important;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  text-decoration: none;
+}
+
+.header-messaging-panel__messages .message-bubble__cta:hover {
+  background-color: #7C3AED !important;
+  color: #FFFFFF !important;
+}
+
+.header-messaging-panel__messages .message-bubble__warning {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #EF4444;
+  font-style: italic;
+}
+
+/* ============================================================================
+   MESSAGE INPUT
+   ============================================================================ */
+.header-messaging-panel__input {
+  padding: 12px 16px;
+  border-top: 1px solid #e5e5e5;
+  background: #ffffff;
+}
+
+/* Self-contained MessageInput styles for header panel */
+.header-messaging-panel__input .message-input {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.header-messaging-panel__input .message-input__container {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+}
+
+/* Hide the toolbar in header panel - it takes up too much space */
+.header-messaging-panel__input .message-input__toolbar {
+  display: none;
+}
+
+/* Also hide the wrapper div that contains both textarea and toolbar */
+.header-messaging-panel__input .message-input__wrapper {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  width: 100%;
+}
+
+.header-messaging-panel__input .message-input__field {
+  flex: 1;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 1.5;
+  border: 1px solid #e5e5e5;
+  border-radius: 20px;
+  outline: none;
+  resize: none;
+  overflow: hidden;
+  min-height: 40px;
+  max-height: 80px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
+}
+
+.header-messaging-panel__input .message-input__field:focus {
+  border-color: #6b4fa1;
+  box-shadow: 0 0 0 3px rgba(107, 79, 161, 0.1);
+}
+
+.header-messaging-panel__input .message-input__field:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.header-messaging-panel__input .message-input__field::placeholder {
+  color: #9ca3af;
+}
+
+.header-messaging-panel__input .message-input__count {
+  position: absolute;
+  right: 12px;
+  bottom: 8px;
+  font-size: 10px;
+  color: #9ca3af;
+}
+
+.header-messaging-panel__input .message-input__count--limit {
+  color: #EF4444;
+  font-weight: 600;
+}
+
+.header-messaging-panel__input .message-input__send {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background-color: #6b4fa1;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.header-messaging-panel__input .message-input__send:hover:not(:disabled) {
+  background-color: #7C3AED;
+}
+
+.header-messaging-panel__input .message-input__send:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.header-messaging-panel__input .message-input__send:disabled {
+  background-color: #e5e5e5;
+  color: #999;
+  cursor: not-allowed;
+}
+
+.header-messaging-panel__input .message-input__send svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.header-messaging-panel__input .message-input__send svg path {
+  fill: white;
+}
+
+.header-messaging-panel__input .message-input__send:disabled svg path {
+  fill: #888;
+}
+
+.header-messaging-panel__input .message-input__sending-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* ============================================================================
+   EMPTY STATES
+   ============================================================================ */
+.header-messaging-panel__empty,
+.header-messaging-panel__no-messages {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  color: #666;
+}
+
+.header-messaging-panel__empty svg,
+.header-messaging-panel__no-messages svg {
+  color: #ccc;
+  margin-bottom: 16px;
+}
+
+.header-messaging-panel__empty p,
+.header-messaging-panel__no-messages p {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #333;
+}
+
+.header-messaging-panel__empty span,
+.header-messaging-panel__no-messages span {
+  font-size: 13px;
+  color: #888;
+}
+
+/* ============================================================================
+   LOADING STATES
+   ============================================================================ */
+.header-messaging-panel__loading,
+.header-messaging-panel__loading-messages {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  gap: 12px;
+}
+
+.header-messaging-panel__loading p {
+  margin: 0;
+  font-size: 14px;
+  color: #666;
+}
+
+.header-messaging-panel__spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #e5e5e5;
+  border-top-color: #6b4fa1;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================================================
+   ERROR STATE
+   ============================================================================ */
+.header-messaging-panel__error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 20px;
+  text-align: center;
+  gap: 12px;
+}
+
+.header-messaging-panel__error p {
+  margin: 0;
+  font-size: 14px;
+  color: #dc3545;
+}
+
+.header-messaging-panel__error button {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b4fa1;
+  background: #f3e8ff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.header-messaging-panel__error button:hover {
+  background: #e8d5f7;
+}
+
+/* ============================================================================
+   FOOTER
+   ============================================================================ */
+.header-messaging-panel__footer {
+  padding: 12px 16px;
+  border-top: 1px solid #e5e5e5;
+  background: #fafafa;
+}
+
+.header-messaging-panel__view-all {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b4fa1;
+  text-decoration: none;
+  background: transparent;
+  border-radius: 8px;
+  transition: background-color 0.15s;
+}
+
+.header-messaging-panel__view-all:hover {
+  background: #f3e8ff;
+}
+
+.header-messaging-panel__view-all svg {
+  transition: transform 0.15s;
+}
+
+.header-messaging-panel__view-all:hover svg {
+  transform: translateX(2px);
+}
+
+/* ============================================================================
+   RESPONSIVE - HIDE ON MOBILE (should navigate to /messages instead)
+   ============================================================================ */
+@media (max-width: 899px) {
+  .header-messaging-panel {
+    display: none;
+  }
+}
+
+/* Adjust width for smaller desktop screens */
+@media (max-width: 1024px) and (min-width: 900px) {
+  .header-messaging-panel {
+    width: 380px;
+    right: -20px;
+  }
+}

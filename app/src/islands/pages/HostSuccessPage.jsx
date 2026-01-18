@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
-import { SIGNUP_LOGIN_URL } from '../../lib/constants.js';
 
 // ============================================================================
 // INTERNAL COMPONENT: Hero Section
@@ -123,7 +122,7 @@ export default function HostSuccessPage() {
 
   // Handle "List Your Property" button click
   const handleListProperty = () => {
-    window.location.href = SIGNUP_LOGIN_URL;
+    window.location.href = '/self-listing-v2';
   };
 
   // Page load effects

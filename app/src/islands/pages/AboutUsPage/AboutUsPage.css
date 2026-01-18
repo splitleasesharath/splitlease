@@ -1,0 +1,396 @@
+/* ==========================================================================
+   SPLIT LEASE - ABOUT US PAGE STYLES
+   ========================================================================== */
+
+/* CSS Variables for About Us Page */
+.about-us-main {
+  --about-header-bg: #5A1868;
+  --about-accent-purple: #800080;
+  --about-team-name-color: #31135D;
+  --about-image-placeholder: #4B47CE;
+  --about-primary-text: #000000;
+  --about-secondary-text: #222222;
+  --about-body-bg: #FFFFFF;
+  --about-section-bg-light: #F0F8FF;
+  --about-border-gray: #6B6B6B;
+  --about-font-family: 'Inter', 'Nunito Sans', 'Avenir Next LT Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --about-container-max-width: 1200px;
+  --about-section-padding: 80px 20px;
+  --about-section-padding-mobile: 50px 16px;
+}
+
+/* Container */
+.about-container {
+  max-width: var(--about-container-max-width);
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* ==========================================================================
+   HERO / MISSION STATEMENT SECTION
+   ========================================================================== */
+
+.about-hero-section {
+  background-color: var(--about-body-bg);
+  padding: 80px 20px;
+  text-align: center;
+}
+
+.about-mission-statement {
+  font-family: var(--about-font-family);
+  font-weight: 700;
+  font-size: 36px;
+  color: var(--about-primary-text);
+  line-height: 1.3;
+  letter-spacing: 0;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* ==========================================================================
+   STORY SECTION
+   ========================================================================== */
+
+.about-story-section {
+  background-color: var(--about-body-bg);
+  padding: var(--about-section-padding);
+}
+
+.about-section-heading {
+  font-family: var(--about-font-family);
+  font-weight: 600;
+  font-size: 28px;
+  color: var(--about-secondary-text);
+  text-align: center;
+  margin-bottom: 40px;
+  word-spacing: 1px;
+  line-height: 1;
+}
+
+.about-story-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.about-story-text {
+  font-family: var(--about-font-family);
+  font-weight: 400;
+  font-size: 20px;
+  color: var(--about-primary-text);
+  line-height: 1.3;
+  letter-spacing: -0.5px;
+  margin-bottom: 24px;
+}
+
+.about-story-text.about-highlight strong {
+  color: var(--about-accent-purple);
+}
+
+.about-story-text.about-standalone {
+  margin-top: 32px;
+  margin-bottom: 32px;
+}
+
+.about-pain-points {
+  margin: 24px 0;
+  padding-left: 24px;
+  list-style: none;
+}
+
+.about-pain-points li {
+  font-family: var(--about-font-family);
+  font-weight: 400;
+  font-size: 20px;
+  color: var(--about-primary-text);
+  line-height: 1.3;
+  letter-spacing: -0.5px;
+  margin-bottom: 12px;
+  position: relative;
+}
+
+.about-pain-points li::before {
+  content: "\2022";
+  position: absolute;
+  left: -20px;
+  color: var(--about-primary-text);
+}
+
+/* ==========================================================================
+   TEAM SECTION
+   ========================================================================== */
+
+.about-team-section {
+  background-color: var(--about-section-bg-light);
+  padding: var(--about-section-padding);
+}
+
+.about-section-heading-large {
+  font-family: var(--about-font-family);
+  font-weight: 700;
+  font-size: 36px;
+  color: var(--about-primary-text);
+  text-align: center;
+  line-height: 1.3;
+  margin-bottom: 60px;
+}
+
+.about-team-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 40px;
+  justify-items: center;
+}
+
+.about-team-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  min-height: 302px;
+}
+
+.about-team-card:hover {
+  transform: translateY(-5px);
+}
+
+.about-team-image {
+  width: 144px;
+  height: 144px;
+  border-radius: 100%;
+  overflow: hidden;
+  background-color: var(--about-image-placeholder);
+  margin-bottom: 20px;
+}
+
+.about-team-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.about-team-name {
+  font-family: var(--about-font-family);
+  font-weight: 700;
+  font-size: 24px;
+  color: var(--about-team-name-color);
+  line-height: 1.3;
+  letter-spacing: -0.5px;
+  margin-bottom: 8px;
+}
+
+.about-team-title {
+  font-family: var(--about-font-family);
+  font-weight: 400;
+  font-size: 18px;
+  color: var(--about-team-name-color);
+  line-height: 1.3;
+  letter-spacing: -0.5px;
+  max-width: 175px;
+  margin: 0;
+}
+
+/* ==========================================================================
+   FEATURES SECTION
+   ========================================================================== */
+
+.about-features-section {
+  background-color: var(--about-section-bg-light);
+  padding: var(--about-section-padding);
+}
+
+.about-features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 40px;
+}
+
+.about-feature-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 20px;
+}
+
+.about-feature-icon {
+  color: #4B47CE;
+  margin-bottom: 24px;
+}
+
+.about-feature-icon svg {
+  width: 64px;
+  height: 64px;
+}
+
+.about-feature-title {
+  font-family: var(--about-font-family);
+  font-weight: 400;
+  font-size: 24px;
+  color: var(--about-primary-text);
+  line-height: 1.3;
+  letter-spacing: -0.5px;
+  margin-bottom: 16px;
+}
+
+.about-feature-description {
+  font-family: var(--about-font-family);
+  font-weight: 400;
+  font-size: 16px;
+  color: var(--about-primary-text);
+  line-height: 1.5;
+  max-width: 300px;
+  margin: 0;
+}
+
+/* ==========================================================================
+   RESPONSIVE STYLES
+   ========================================================================== */
+
+/* Tablet - 954px and below */
+@media (max-width: 954px) {
+  .about-team-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Tablet Small - 760px and below */
+@media (max-width: 760px) {
+  .about-mission-statement {
+    font-size: 30px;
+  }
+
+  .about-section-heading-large {
+    font-size: 30px;
+  }
+}
+
+/* Mobile - 700px and below */
+@media (max-width: 700px) {
+  .about-team-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .about-features-grid {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+
+  .about-hero-section {
+    padding: 50px 20px;
+  }
+
+  .about-story-section,
+  .about-team-section,
+  .about-features-section {
+    padding: var(--about-section-padding-mobile);
+  }
+
+  .about-section-heading {
+    font-size: 24px;
+    margin-bottom: 30px;
+  }
+
+  .about-story-text {
+    font-size: 18px;
+  }
+
+  .about-pain-points li {
+    font-size: 18px;
+  }
+}
+
+/* Mobile Small - 530px and below */
+@media (max-width: 530px) {
+  .about-team-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .about-mission-statement {
+    font-size: 26px;
+  }
+
+  .about-section-heading-large {
+    font-size: 26px;
+  }
+}
+
+/* ==========================================================================
+   SKELETON LOADING STATES
+   ========================================================================== */
+
+.about-team-skeleton {
+  cursor: default;
+}
+
+.about-team-skeleton:hover {
+  transform: none;
+}
+
+.skeleton-pulse {
+  background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-text {
+  height: 24px;
+  width: 120px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.skeleton-text-small {
+  height: 18px;
+  width: 100px;
+  border-radius: 4px;
+}
+
+@keyframes skeleton-pulse {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Error and empty states */
+.about-team-error,
+.about-team-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--about-secondary-text);
+  font-size: 16px;
+  padding: 40px 20px;
+}
+
+/* Clickable team card cursor */
+.about-team-card.clickable {
+  cursor: pointer;
+}
+
+.about-team-card:not(.clickable) {
+  cursor: default;
+}
+
+.about-team-card:not(.clickable):hover {
+  transform: none;
+}
+
+/* ==========================================================================
+   UTILITY CLASSES
+   ========================================================================== */
+
+.about-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

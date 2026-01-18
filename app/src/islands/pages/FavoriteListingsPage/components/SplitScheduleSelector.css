@@ -1,0 +1,146 @@
+/**
+ * SplitScheduleSelector Styles
+ * Matching Bubble.io weekly calendar design
+ */
+
+.split-schedule-selector {
+  background: linear-gradient(135deg, #F0F4FF 0%, #E8EEFF 100%);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(62, 49, 97, 0.08);
+}
+
+/* Header */
+.schedule-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.schedule-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #3E3161;
+  margin: 0;
+  font-family: 'Lato', sans-serif;
+}
+
+/* Weekly Calendar */
+.weekly-calendar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.calendar-icon {
+  color: #3E3161;
+  flex-shrink: 0;
+}
+
+.days-selector {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  justify-content: center;
+}
+
+.day-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid #E0E0E0;
+  background: white;
+  color: #666666;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Lato', sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.day-button:hover {
+  border-color: #6C7FEB;
+  background: #F0F4FF;
+  color: #3E3161;
+}
+
+.day-button.selected {
+  border-color: #3E3161;
+  background: #3E3161;
+  color: white;
+  transform: scale(1.05);
+}
+
+/* Check-In / Check-Out Display */
+.schedule-dates {
+  display: flex;
+  gap: 24px;
+  padding: 12px 16px;
+  background: white;
+  border-radius: 8px;
+}
+
+.date-display {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.date-label {
+  font-size: 12px;
+  color: #666666;
+  font-weight: 500;
+  font-family: 'Lato', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.date-value {
+  font-size: 16px;
+  color: #3E3161;
+  font-weight: 600;
+  font-family: 'Lato', sans-serif;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .split-schedule-selector {
+    padding: 16px;
+  }
+
+  .schedule-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .weekly-calendar {
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .days-selector {
+    gap: 4px;
+  }
+
+  .day-button {
+    width: 36px;
+    height: 36px;
+    font-size: 12px;
+  }
+
+  .schedule-dates {
+    flex-direction: column;
+    gap: 12px;
+  }
+}

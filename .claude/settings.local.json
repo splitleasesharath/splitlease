@@ -1,9 +1,47 @@
 {
   "permissions": {
     "allow": [
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(bun run build)",
+      "Bash(git checkout:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(npx wrangler:*)",
+      "Bash(git push:*)",
+      "Bash(git pull:*)",
+      "mcp__playwright__browser_snapshot",
+      "Bash(powershell:*)",
+      "Skill(fp-rater)",
+      "Skill(preview)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(timeout /t 3 /nobreak)",
+      "Bash(start http://localhost:8000)",
+      "Bash(bun run dev)",
+      "Bash(cat:*)",
+      "Bash(bun install)",
+      "Bash(start http://localhost:8000/guest-proposals)",
+      "Bash(start \"\" \"C:\\\\Users\\\\Split Lease\\\\splitleaseteam\\\\_Agent Context and Tools\\\\SL22\\\\Design\\\\2026\\\\Ongoing Projects\\\\guest-proposal \\(color scheme \\)\\\\index-page-color-scheme.html\")",
+      "Bash(timeout /t 5 /nobreak)",
+      "Bash(curl:*)",
+      "Bash(python:*)"
     ],
     "deny": [],
     "ask": []
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "supabase-dev",
+    "supabase-live",
+    "shadcn",
+    "playwright-host-live",
+    "playwright-host-dev",
+    "playwright-guest-live",
+    "playwright-guest-dev"
+  ],
+  "enabledPlugins": {
+    "supabase@claude-plugins-official": true
+  },
+  "outputStyle": "Explanatory"
 }

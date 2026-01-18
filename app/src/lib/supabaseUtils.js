@@ -9,43 +9,20 @@
 
 import { supabase } from './supabase.js';
 import { DATABASE } from './constants.js';
+import { logger } from './logger.js';
+import { parseJsonArrayFieldOptional } from '../logic/processors/listing/parseJsonArrayField.js';
+
+// Internal alias for use within this module
+const parseJsonArray = parseJsonArrayFieldOptional;
 
 /**
  * Parse a value that may be a native array or stringified JSON array
+ * Re-exported from logic layer to maintain backward compatibility.
  *
- * Supabase JSONB fields can be returned as either:
- * - Native JavaScript arrays: ["Monday", "Tuesday"]
- * - Stringified JSON arrays: '["Monday", "Tuesday"]'
- *
- * This utility handles both cases robustly, following the NO FALLBACK principle.
- *
- * @param {any} value - Value from Supabase JSONB field
- * @returns {Array} - Parsed array or empty array if parsing fails
+ * @deprecated Prefer importing parseJsonArrayFieldOptional directly from logic layer
+ * @see app/src/logic/processors/listing/parseJsonArrayField.js
  */
-export function parseJsonArray(value) {
-  // Already a native array? Return as-is
-  if (Array.isArray(value)) {
-    return value;
-  }
-
-  // Stringified JSON? Try to parse
-  if (typeof value === 'string') {
-    try {
-      const parsed = JSON.parse(value);
-      // Verify the parsed result is actually an array
-      return Array.isArray(parsed) ? parsed : [];
-    } catch (error) {
-      console.warn('Failed to parse JSON array:', { value, error: error.message });
-      return []; // Return empty array - NO FALLBACK to hardcoded data
-    }
-  }
-
-  // Unexpected type (null, undefined, object, number, etc.)
-  if (value != null) {
-    console.warn('Unexpected type for JSONB array field:', { type: typeof value, value });
-  }
-  return []; // Return empty array - NO FALLBACK
-}
+export { parseJsonArrayFieldOptional as parseJsonArray };
 
 /**
  * Fetch photo URLs in batch from database
@@ -53,6 +30,8 @@ export function parseJsonArray(value) {
  * @returns {Promise<Object>} Map of photo ID to photo URL
  */
 export async function fetchPhotoUrls(photoIds) {
+  logger.debug('fetchPhotoUrls called', { count: photoIds?.length || 0 });
+
   if (!photoIds || photoIds.length === 0) {
     return {};
   }
@@ -64,7 +43,11 @@ export async function fetchPhotoUrls(photoIds) {
       .in('_id', photoIds);
 
     if (error) {
-      console.error('❌ Error fetching photos:', error);
+      logger.error('Error fetching photos:', error);
+      return {};
+    }
+
+    if (!data || data.length === 0) {
       return {};
     }
 
@@ -81,143 +64,124 @@ export async function fetchPhotoUrls(photoIds) {
       }
     });
 
-    console.log(`✅ Fetched ${Object.keys(photoMap).length} photo URLs`);
+    logger.debug('Fetched photo URLs', { count: Object.keys(photoMap).length });
     return photoMap;
   } catch (error) {
-    console.error('❌ Error in fetchPhotoUrls:', error);
+    logger.error('Error in fetchPhotoUrls:', error);
     return {};
   }
 }
 
 /**
  * Fetch host data in batch from database
- * @param {Array<string>} hostIds - Array of account_host IDs
- * @returns {Promise<Object>} Map of account_host ID to host data {name, image, verified}
+ * After migration, hostIds are always user._id values (Host User column)
+ * @param {Array<string>} hostIds - Array of host IDs (user._id)
+ * @returns {Promise<Object>} Map of host ID to host data {name, image, verified}
  */
 export async function fetchHostData(hostIds) {
   if (!hostIds || hostIds.length === 0) {
     return {};
   }
 
+  const hostMap = {};
+
   try {
-    // Fetch account_host records
-    const { data: accountHostData, error: accountError } = await supabase
-      .from('account_host')
-      .select('_id, User')
-      .in('_id', hostIds);
-
-    if (accountError) {
-      console.error('❌ Error fetching account_host data:', accountError);
-      return {};
-    }
-
-    // Collect user IDs
-    const userIds = new Set();
-    accountHostData.forEach(account => {
-      if (account.User) {
-        userIds.add(account.User);
-      }
-    });
-
-    if (userIds.size === 0) {
-      return {};
-    }
-
-    // Fetch user records
+    // hostIds are user._id values (Host User column contains user._id directly)
     const { data: userData, error: userError } = await supabase
       .from('user')
       .select('_id, "Name - Full", "Profile Photo"')
-      .in('_id', Array.from(userIds));
+      .in('_id', hostIds);
 
     if (userError) {
-      console.error('❌ Error fetching user data:', userError);
-      return {};
+      logger.error('Error fetching user data by _id:', userError);
     }
 
-    // Create user map
-    const userMap = {};
-    userData.forEach(user => {
-      // Add https: protocol if profile photo URL starts with //
-      let profilePhoto = user['Profile Photo'];
-      if (profilePhoto && profilePhoto.startsWith('//')) {
-        profilePhoto = 'https:' + profilePhoto;
-      }
+    // Process users found by _id
+    if (userData && userData.length > 0) {
+      userData.forEach(user => {
+        let profilePhoto = user['Profile Photo'];
+        if (profilePhoto && profilePhoto.startsWith('//')) {
+          profilePhoto = 'https:' + profilePhoto;
+        }
+        hostMap[user._id] = {
+          name: user['Name - Full'] || null,
+          image: profilePhoto || null,
+          verified: false,
+          userId: user._id
+        };
+      });
+    }
 
-      userMap[user._id] = {
-        name: user['Name - Full'] || null,
-        image: profilePhoto || null,
-        verified: false // TODO: Add verification logic when available
-      };
-    });
-
-    // Create host map keyed by account_host ID
-    const hostMap = {};
-    accountHostData.forEach(account => {
-      const userId = account.User;
-      if (userId && userMap[userId]) {
-        hostMap[account._id] = userMap[userId];
-      }
-    });
-
-    console.log(`✅ Fetched host data for ${Object.keys(hostMap).length} hosts`);
+    logger.debug('Fetched host data', { count: Object.keys(hostMap).length });
     return hostMap;
   } catch (error) {
-    console.error('❌ Error in fetchHostData:', error);
+    logger.error('Error in fetchHostData:', error);
     return {};
   }
 }
 
 /**
- * Extract photos from Supabase photos field and convert IDs to URLs
- * @param {Array|string} photosField - Array of photo IDs or JSON string (double-encoded JSONB)
- * @param {Object} photoMap - Map of photo IDs to actual URLs
+ * Extract photos from Supabase photos field.
+ * Handles three formats:
+ * 1. Embedded objects: [{id, url, Photo, ...}, ...]
+ * 2. Direct URL strings: ["https://...", "https://...", ...]
+ * 3. Legacy IDs (deprecated): ["photoId1", "photoId2"] - requires photoMap
+ *
+ * @param {Array|string} photosField - Array of photo objects/URLs/IDs or JSON string
+ * @param {Object} photoMap - Map of photo IDs to URLs (only needed for legacy ID format)
  * @param {string} listingId - Listing ID for debugging purposes
  * @returns {Array<string>} Array of photo URLs (empty array if none found)
  */
 export function extractPhotos(photosField, photoMap = {}, listingId = null) {
-  console.log(`📸 Processing photos for listing ${listingId}:`, {
-    photosField,
-    photoFieldType: typeof photosField,
-    photoMapKeys: Object.keys(photoMap).length,
-    photoMapSample: Object.keys(photoMap).slice(0, 3)
-  });
-
   // Handle double-encoded JSONB using the centralized parser
-  const photos = parseJsonArray(photosField);
+  const photos = parseJsonArray({ field: photosField, fieldName: 'photos' });
 
   if (photos.length === 0) {
-    console.error(`❌ Listing ${listingId}: Photos array is empty or failed to parse`);
     return []; // Return empty array - NO FALLBACK
   }
 
-  // Convert photo IDs to actual URLs using photoMap
   const photoUrls = [];
-  const missingPhotoIds = [];
 
-  for (const photoId of photos) {
-    if (typeof photoId !== 'string') {
-      console.error(`❌ Listing ${listingId}: Invalid photo ID type:`, typeof photoId, photoId);
+  for (const photo of photos) {
+    // New embedded format: photo is an object with url/Photo field
+    if (typeof photo === 'object' && photo !== null) {
+      // Extract URL from object (prefer 'url' then 'Photo')
+      let photoUrl = photo.url || photo.Photo || null;
+
+      if (photoUrl) {
+        // Add https: protocol if URL starts with //
+        if (photoUrl.startsWith('//')) {
+          photoUrl = 'https:' + photoUrl;
+        }
+        photoUrls.push(photoUrl);
+      }
       continue;
     }
 
-    const url = photoMap[photoId];
-    if (!url) {
-      console.error(`❌ Listing ${listingId}: Photo ID "${photoId}" NOT FOUND in photoMap`);
-      missingPhotoIds.push(photoId);
-    } else {
-      console.log(`✅ Listing ${listingId}: Photo ID "${photoId}" → ${url.substring(0, 60)}...`);
-      photoUrls.push(url);
+    // String format: could be a direct URL or a legacy ID
+    if (typeof photo === 'string') {
+      // Check if it's already a valid URL (starts with http://, https://, or //)
+      if (photo.startsWith('http://') || photo.startsWith('https://') || photo.startsWith('//')) {
+        let photoUrl = photo;
+        // Add https: protocol if URL starts with //
+        if (photoUrl.startsWith('//')) {
+          photoUrl = 'https:' + photoUrl;
+        }
+        photoUrls.push(photoUrl);
+        continue;
+      }
+
+      // Legacy format: photo is an ID string - look up in photoMap
+      const url = photoMap[photo];
+      if (url) {
+        photoUrls.push(url);
+      }
+      continue;
     }
   }
 
-  if (missingPhotoIds.length > 0) {
-    console.error(`❌ Listing ${listingId}: Missing ${missingPhotoIds.length} photo URLs:`, missingPhotoIds);
-  }
-
   if (photoUrls.length === 0) {
-    console.error(`❌ Listing ${listingId}: NO VALID PHOTO URLS RESOLVED - returning empty array`);
-  } else {
-    console.log(`✅ Listing ${listingId}: Resolved ${photoUrls.length} photo URLs`);
+    logger.warn(`Listing ${listingId}: NO VALID PHOTO URLS RESOLVED`);
   }
 
   return photoUrls; // Return all actual photos

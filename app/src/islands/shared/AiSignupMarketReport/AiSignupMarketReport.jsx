@@ -1,13 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Lottie from 'lottie-react';
+import { signupUser } from '../../../lib/auth.js';
+import Toast, { useToast } from '../Toast.jsx';
 
 /**
  * AiSignupMarketReport - Advanced AI-powered market research signup modal
  *
  * Features:
- * - Smart email/phone extraction from freeform text
+ * - Smart email/phone/name extraction from freeform text
  * - Auto-correction for common email typos
  * - Incomplete phone number handling
+ * - Automatic user account creation with generated password (SL{name}77)
  * - Three Lottie animations (parsing, loading, success)
  * - Dynamic form flow based on data quality
  * - Integrated with Bubble.io workflow
@@ -20,6 +23,70 @@ import Lottie from 'lottie-react';
 
 // ============ UTILITY FUNCTIONS ============
 
+/**
+ * Extract a name from freeform text
+ * Looks for common patterns like "I'm [Name]", "My name is [Name]", "I am [Name]"
+ * Also extracts from email local part (before @) as fallback
+ *
+ * @param {string} text - The freeform text to extract name from
+ * @param {string} email - Optional email to use as fallback for name extraction
+ * @returns {string|null} - Extracted name or null if not found
+ */
+function extractName(text, email = null) {
+  if (!text) return null;
+
+  // Patterns to look for name introduction
+  const namePatterns = [
+    /(?:I'm|I am|my name is|this is|hi,? i'm|hello,? i'm|hey,? i'm)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i,
+    /(?:name:?\s*)([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i,
+    /(?:^|\s)([A-Z][a-z]+)\s+(?:here|speaking|writing)/i,
+    /(?:send to|contact|reach)\s+(?:me at|at|:)?\s*([A-Z][a-z]+)/i,
+  ];
+
+  for (const pattern of namePatterns) {
+    const match = text.match(pattern);
+    if (match && match[1]) {
+      // Clean up and return the first name only
+      const fullName = match[1].trim();
+      const firstName = fullName.split(/\s+/)[0];
+      return firstName;
+    }
+  }
+
+  // Fallback: try to extract name from email local part
+  if (email) {
+    const localPart = email.split('@')[0];
+    if (localPart) {
+      // Remove common suffixes like numbers
+      const nameFromEmail = localPart
+        .replace(/[0-9]+$/, '')     // Remove trailing numbers
+        .replace(/[._-]/g, ' ')      // Replace separators with spaces
+        .split(/\s+/)[0];            // Take first part
+
+      // Capitalize first letter
+      if (nameFromEmail && nameFromEmail.length > 1) {
+        return nameFromEmail.charAt(0).toUpperCase() + nameFromEmail.slice(1).toLowerCase();
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Generate a password in the format SL{Name}77
+ *
+ * @param {string} name - The name to include in the password
+ * @returns {string} - Generated password
+ */
+function generatePassword(name) {
+  // Default to "User" if no name is provided
+  const safeName = name ? name.trim() : 'User';
+  // Capitalize first letter, lowercase rest for consistency
+  const formattedName = safeName.charAt(0).toUpperCase() + safeName.slice(1).toLowerCase();
+  return `SL${formattedName}77`;
+}
+
 function extractEmail(text) {
   if (!text) return null;
   const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+[.,][a-zA-Z]{2,}/;
@@ -30,13 +97,43 @@ function extractEmail(text) {
 function extractPhone(text) {
   if (!text) return null;
 
-  const completePhoneRegex = /\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/;
-  const completeMatch = text.match(completePhoneRegex);
-  if (completeMatch) return completeMatch[0];
+  // Only extract phone numbers that match standard US phone formats
+  // or are explicitly mentioned as phone numbers
+  // This avoids catching budget numbers like "$1500" or "1500"
 
-  const partialPhoneRegex = /\(?\d{1,3}\)?[-.\s]?\d{1,4}[-.\s]?\d{0,4}|\b\d{3,}\b/;
-  const partialMatch = text.match(partialPhoneRegex);
-  return partialMatch ? partialMatch[0] : null;
+  // Standard US phone formats (10 digits with various separators)
+  const standardPhonePatterns = [
+    /\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/,              // (123) 456-7890, 123-456-7890, 123.456.7890
+    /\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/, // +1 (123) 456-7890
+  ];
+
+  for (const pattern of standardPhonePatterns) {
+    const match = text.match(pattern);
+    if (match) return match[0];
+  }
+
+  // Look for numbers explicitly mentioned as phone numbers
+  // e.g., "my phone is 5551234567", "call me at 555-123-4567", "phone: 5551234567"
+  const explicitPhonePatterns = [
+    /(?:phone|call|text|reach|contact|cell|mobile)[:\s]+(?:me\s+)?(?:at\s+)?(\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}|\d{10,11})/i,
+    /(\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}|\d{10,11})(?:\s+(?:is my|my)\s+(?:phone|cell|mobile|number))/i,
+  ];
+
+  for (const pattern of explicitPhonePatterns) {
+    const match = text.match(pattern);
+    if (match && match[1]) {
+      return match[1];
+    }
+  }
+
+  // Match 10-11 digit sequences only (standard US phone number length)
+  // This catches cases like "5551234567" but NOT "1500" (a budget)
+  const tenDigitMatch = text.match(/\b(\d{10,11})\b/);
+  if (tenDigitMatch) {
+    return tenDigitMatch[1];
+  }
+
+  return null;
 }
 
 function validateEmail(email) {
@@ -101,11 +198,424 @@ function autoCorrectEmail(email) {
   return `${localPart}@${correctedDomain}`;
 }
 
+// ============ COMMUNICATION FUNCTIONS ============
+
+/**
+ * Generate a magic login link via Supabase Auth
+ * This creates a one-time login URL that allows passwordless authentication
+ *
+ * @param {string} email - User's email address
+ * @returns {Promise<{success: boolean, action_link?: string, error?: string}>}
+ */
+async function generateMagicLink(email) {
+  console.log('[AiSignupMarketReport] Generating magic login link for:', email);
+
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://qcfifybkaddcoimjroca.supabase.co';
+  const edgeFunctionUrl = `${supabaseUrl}/functions/v1/auth-user`;
+
+  try {
+    const response = await fetch(edgeFunctionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'generate_magic_link',
+        payload: {
+          email: email,
+          redirectTo: 'https://splitlease.com/search' // Redirect to search after login
+        }
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[AiSignupMarketReport] Magic link generation failed:', errorText);
+      return { success: false, error: errorText };
+    }
+
+    const result = await response.json();
+
+    if (result.success && result.data?.action_link) {
+      console.log('[AiSignupMarketReport] ✅ Magic link generated successfully');
+      return { success: true, action_link: result.data.action_link };
+    }
+
+    return { success: false, error: 'No action_link in response' };
+  } catch (error) {
+    console.error('[AiSignupMarketReport] Magic link error:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Send welcome email to new user (Step 7 from Bubble workflow)
+ * Uses the send-email Edge Function with template placeholders
+ *
+ * Email contains:
+ * - Welcome message
+ * - Login credentials (email + temporary password)
+ * - Magic link button for one-click login
+ *
+ * @param {Object} data - Email data
+ * @param {string} data.email - User's email
+ * @param {string} data.password - Generated password (SL{Name}77)
+ * @param {string} data.magicLink - Magic login link URL
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+async function sendWelcomeEmail(data) {
+  console.log('[AiSignupMarketReport] Sending welcome email to:', data.email);
+
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://qcfifybkaddcoimjroca.supabase.co';
+  const edgeFunctionUrl = `${supabaseUrl}/functions/v1/send-email`;
+
+  // Build the email body HTML (matches Bubble's CORE-Send Basic Email format)
+  // Uses <br> tags for line breaks as expected by the Basic template
+  const emailBodyHtml = `Hey <br> <br> You have a new split lease account<br> <br> Sign in using your: <br> email: ${data.email}<br> temporary password: ${data.password} <br> <br> We recommend you change your password to something private. <br> <br> You can reach out to Robert if you have any questions at robert@leasesplit.com or via text at 9376737470.`;
+
+  // Build button HTML for the template
+  const buttonHtml = `<a href="${data.magicLink || 'https://splitlease.com/login'}" style="background-color: #291D54; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600;">Go to your Account</a>`;
+
+  try {
+    // Fire-and-forget: don't await full response
+    fetch(edgeFunctionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'send',
+        payload: {
+          // Basic template - flexible for welcome emails
+          // From: reference_table.zat_email_html_template_eg_sendbasicemailwf_
+          template_id: '1560447575939x331870423481483500',
+          to_email: data.email,
+          from_email: 'tech@leasesplit.com',
+          from_name: 'Split Lease Signup',
+          subject: 'New Split Lease Account!',
+          variables: {
+            // All 13 placeholders expected by the Basic template ($$variable$$ format)
+            'to': data.email,
+            'from email': 'tech@leasesplit.com',
+            'from name': ', "name": "Split Lease Signup"',
+            'subject': 'New Split Lease Account!',
+            'header': 'Welcome to Split Lease!',
+            'body text': emailBodyHtml,
+            'button': buttonHtml,
+            'year': new Date().getFullYear().toString(),
+            'logo url': 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1599068082301x985428647498498600/SL%20Logo.png',
+            'cc': '',
+            'bcc': '',
+            'reply_to': '',
+            'attachment': '',
+          },
+          bcc_emails: [
+            'splitleaseteam@gmail.com',
+            'acquisition-aaaachs52tzodgc5t3o2oeipli@splitlease.slack.com'
+          ]
+        }
+      }),
+    })
+      .then(response => {
+        if (response.ok) {
+          console.log('[AiSignupMarketReport] ✅ Welcome email sent successfully');
+        } else {
+          console.error('[AiSignupMarketReport] ⚠️ Welcome email send failed:', response.status);
+        }
+      })
+      .catch(error => {
+        console.error('[AiSignupMarketReport] ⚠️ Welcome email error:', error.message);
+      });
+
+    return { success: true };
+  } catch (error) {
+    console.error('[AiSignupMarketReport] Welcome email exception:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Send internal notification email to customer-acquisition team (Step 5 from Bubble)
+ * Alerts the team about new AI signups with user details
+ *
+ * @param {Object} data - Notification data
+ * @param {string} data.email - User's email
+ * @param {string} data.phone - User's phone (if provided)
+ * @param {string} data.name - Extracted name
+ * @param {string} data.password - Generated password
+ * @param {string} data.freeformText - Original freeform input
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+async function sendInternalNotificationEmail(data) {
+  console.log('[AiSignupMarketReport] Sending internal notification email');
+
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://qcfifybkaddcoimjroca.supabase.co';
+  const edgeFunctionUrl = `${supabaseUrl}/functions/v1/send-email`;
+
+  // Build plain text body for internal notification
+  const emailBody = `Name: ${data.name || 'Not extracted'}
+Email: ${data.email}
+Phone number: ${data.phone || 'Not provided'}
+Their temporary password is: ${data.password}
+
+----
+free form text inputted: ${data.freeformText}`;
+
+  // Convert to HTML with line breaks preserved
+  const emailBodyHtml = emailBody.replace(/\n/g, '<br>');
+
+  try {
+    // Fire-and-forget
+    fetch(edgeFunctionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'send',
+        payload: {
+          // Basic template - flexible for internal notifications
+          // From: reference_table.zat_email_html_template_eg_sendbasicemailwf_
+          template_id: '1560447575939x331870423481483500',
+          // Slack channel email for #customer-acquisition
+          to_email: 'acquisition-aaaachs52tzodgc5t3o2oeipli@splitlease.slack.com',
+          from_email: 'noreply@splitlease.com',
+          from_name: 'Guest AI Signup',
+          subject: `${data.name || 'New User'}, ${data.email}, SIGNED UP thru AI signup feature`,
+          variables: {
+            // All 13 placeholders expected by the Basic template
+            'to': 'acquisition-aaaachs52tzodgc5t3o2oeipli@splitlease.slack.com',
+            'from email': 'noreply@splitlease.com',
+            'from name': ', "name": "Guest AI Signup"',
+            'subject': `${data.name || 'New User'}, ${data.email}, SIGNED UP thru AI signup feature`,
+            'header': 'New AI Signup',
+            'body text': emailBodyHtml,
+            'button': '', // No button for internal notification
+            'year': new Date().getFullYear().toString(),
+            'logo url': 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1599068082301x985428647498498600/SL%20Logo.png',
+            'cc': '',
+            'bcc': '',
+            'reply_to': '',
+            'attachment': '',
+          },
+        }
+      }),
+    })
+      .then(response => {
+        if (response.ok) {
+          console.log('[AiSignupMarketReport] ✅ Internal notification sent');
+        } else {
+          console.error('[AiSignupMarketReport] ⚠️ Internal notification failed:', response.status);
+        }
+      })
+      .catch(error => {
+        console.error('[AiSignupMarketReport] ⚠️ Internal notification error:', error.message);
+      });
+
+    return { success: true };
+  } catch (error) {
+    console.error('[AiSignupMarketReport] Internal notification exception:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Send welcome SMS to new user (Steps 8/9 from Bubble workflow)
+ * Contains login credentials and magic link
+ *
+ * Uses the public Split Lease SMS number which doesn't require auth
+ *
+ * @param {Object} data - SMS data
+ * @param {string} data.phone - User's phone number
+ * @param {string} data.email - User's email
+ * @param {string} data.password - Generated password
+ * @param {string} data.magicLink - Magic login link URL
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+async function sendWelcomeSms(data) {
+  if (!data.phone) {
+    console.log('[AiSignupMarketReport] No phone number provided, skipping SMS');
+    return { success: true, skipped: true };
+  }
+
+  console.log('[AiSignupMarketReport] Sending welcome SMS to:', data.phone);
+
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://qcfifybkaddcoimjroca.supabase.co';
+  const edgeFunctionUrl = `${supabaseUrl}/functions/v1/send-sms`;
+
+  // Format phone to E.164 (add +1 if needed)
+  let formattedPhone = data.phone.replace(/\D/g, ''); // Remove non-digits
+  if (formattedPhone.length === 10) {
+    formattedPhone = `+1${formattedPhone}`;
+  } else if (formattedPhone.length === 11 && formattedPhone.startsWith('1')) {
+    formattedPhone = `+${formattedPhone}`;
+  } else if (!formattedPhone.startsWith('+')) {
+    formattedPhone = `+${formattedPhone}`;
+  }
+
+  const smsBody = `You have a new split lease account. Sign in with your email: ${data.email}. Your temporary password: ${data.password}. Click this link to proceed: ${data.magicLink || 'https://splitlease.com/login'}`;
+
+  try {
+    // Fire-and-forget
+    fetch(edgeFunctionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'send',
+        payload: {
+          to: formattedPhone,
+          from: '+14155692985', // Public Split Lease SMS number (no auth required)
+          body: smsBody
+        }
+      }),
+    })
+      .then(response => {
+        if (response.ok) {
+          console.log('[AiSignupMarketReport] ✅ Welcome SMS sent successfully');
+        } else {
+          console.error('[AiSignupMarketReport] ⚠️ Welcome SMS send failed:', response.status);
+        }
+      })
+      .catch(error => {
+        console.error('[AiSignupMarketReport] ⚠️ Welcome SMS error:', error.message);
+      });
+
+    return { success: true };
+  } catch (error) {
+    console.error('[AiSignupMarketReport] Welcome SMS exception:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Send all welcome communications after successful signup
+ * This orchestrates: magic link generation → email → SMS → internal notification
+ * All communications are fire-and-forget (non-blocking)
+ *
+ * @param {Object} data - Communication data
+ * @param {string} data.email - User's email
+ * @param {string} data.phone - User's phone (optional)
+ * @param {string} data.name - Extracted name
+ * @param {string} data.password - Generated password (SL{Name}77)
+ * @param {string} data.freeformText - Original freeform text
+ */
+async function sendWelcomeCommunications(data) {
+  console.log('[AiSignupMarketReport] ========== SENDING WELCOME COMMUNICATIONS ==========');
+  console.log('[AiSignupMarketReport] Email:', data.email);
+  console.log('[AiSignupMarketReport] Phone:', data.phone || 'Not provided');
+  console.log('[AiSignupMarketReport] Name:', data.name || 'Not extracted');
+
+  // Step 1: Generate magic link (this one we wait for since others depend on it)
+  const magicLinkResult = await generateMagicLink(data.email);
+  const magicLink = magicLinkResult.success ? magicLinkResult.action_link : null;
+
+  if (!magicLink) {
+    console.warn('[AiSignupMarketReport] ⚠️ Magic link generation failed, using fallback URL');
+  }
+
+  // Step 2: Send all communications in parallel (fire-and-forget)
+  // These don't block the user experience
+
+  // Welcome email to user (Step 7)
+  sendWelcomeEmail({
+    email: data.email,
+    password: data.password,
+    magicLink: magicLink || 'https://splitlease.com/login'
+  });
+
+  // Welcome SMS to user (Steps 8/9) - only if phone provided
+  if (data.phone) {
+    sendWelcomeSms({
+      phone: data.phone,
+      email: data.email,
+      password: data.password,
+      magicLink: magicLink || 'https://splitlease.com/login'
+    });
+  }
+
+  // Internal notification to team (Step 5)
+  sendInternalNotificationEmail({
+    email: data.email,
+    phone: data.phone,
+    name: data.name,
+    password: data.password,
+    freeformText: data.freeformText
+  });
+
+  console.log('[AiSignupMarketReport] ✅ All welcome communications initiated');
+}
+
+// ============ PROFILE PARSING FUNCTIONS ============
+
+/**
+ * Queue AI profile parsing via Supabase Edge Function
+ * This is non-blocking - user doesn't wait for GPT-4 to finish
+ *
+ * @param {Object} data - Data for queuing
+ * @param {string} data.user_id - User ID to parse
+ * @param {string} data.email - User email
+ * @param {string} data.freeform_text - Freeform text to parse
+ * @returns {Promise<Object>} - Queue result with job ID
+ */
+async function queueProfileParsing(data) {
+  console.log('[AiSignupMarketReport] Queuing profile parsing (async)...');
+
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://qcfifybkaddcoimjroca.supabase.co';
+  const edgeFunctionUrl = `${supabaseUrl}/functions/v1/ai-parse-profile`;
+
+  try {
+    // Use queue_and_process to both queue AND process in one call
+    // This ensures GPT-4 parsing actually happens (not just queued forever)
+    const response = await fetch(edgeFunctionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'queue_and_process',
+        payload: {
+          user_id: data.user_id,
+          email: data.email,
+          freeform_text: data.freeform_text,
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[AiSignupMarketReport] Queue error:', errorText);
+      // Non-fatal - don't throw, just log
+      return { success: false, error: errorText };
+    }
+
+    const result = await response.json();
+    console.log('[AiSignupMarketReport] ✅ Profile parsing queued successfully');
+    console.log('[AiSignupMarketReport] Job ID:', result.data?.jobId);
+    return result;
+  } catch (error) {
+    console.warn('[AiSignupMarketReport] ⚠️ Queue error (non-fatal):', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
 /**
  * Submit AI signup via Supabase Edge Function (GUEST endpoint)
+ * Also creates a user account with generated password
+ *
  * ✅ MIGRATED: No more hardcoded API key!
  * ✅ UNAUTHENTICATED: Works for guest users without login
+ * ✅ NEW: Creates user account with password format SL{Name}77
+ * ✅ ASYNC QUEUE: Profile parsing happens in background (non-blocking)
  * API key is now stored server-side in Supabase Secrets
+ *
+ * @param {Object} data - Signup data
+ * @param {string} data.email - User email
+ * @param {string} data.phone - User phone (optional)
+ * @param {string} data.marketResearchText - The market research description
+ * @param {string} data.name - Extracted name for account creation
+ * @returns {Promise<Object>} - Result with success status and data
  */
 async function submitSignup(data) {
   // Validate required fields
@@ -119,11 +629,80 @@ async function submitSignup(data) {
     throw new Error('Market research description is required');
   }
 
-  console.log('[AiSignupMarketReport] ========== SIGNUP REQUEST (GUEST ENDPOINT) ==========');
+  // Extract name from text or email for password generation
+  const extractedName = data.name || extractName(data.marketResearchText, data.email);
+  const generatedPassword = generatePassword(extractedName);
+
+  console.log('[AiSignupMarketReport] ========== SIGNUP REQUEST ==========');
   console.log('[AiSignupMarketReport] Email:', data.email);
   console.log('[AiSignupMarketReport] Phone:', data.phone || 'Not provided');
+  console.log('[AiSignupMarketReport] Extracted Name:', extractedName || 'Not found (using default)');
+  console.log('[AiSignupMarketReport] Generated Password:', generatedPassword);
   console.log('[AiSignupMarketReport] Text length:', data.marketResearchText.length);
   console.log('[AiSignupMarketReport] ================================================================');
+
+  // ========== STEP 1: Create User Account ==========
+  console.log('[AiSignupMarketReport] Step 1: Creating user account...');
+
+  let signupResult = null;
+  let emailAlreadyExists = false;
+
+  try {
+    signupResult = await signupUser(
+      data.email,
+      generatedPassword,
+      generatedPassword, // retype (same as password)
+      {
+        firstName: extractedName || 'Guest',
+        lastName: '', // Not available from freeform text
+        userType: 'Guest',
+        phoneNumber: data.phone || ''
+      }
+    );
+
+    if (signupResult.success) {
+      console.log('[AiSignupMarketReport] ✅ User account created successfully');
+      console.log('[AiSignupMarketReport] User ID:', signupResult.user_id);
+    } else {
+      // Check if the error is because email already exists
+      if (signupResult.error?.includes('already in use') ||
+          signupResult.error?.includes('already registered') ||
+          signupResult.error?.includes('USED_EMAIL')) {
+        console.log('[AiSignupMarketReport] ℹ️ User already exists - need to login first');
+        emailAlreadyExists = true;
+        // Return special flag for email already exists
+        return {
+          success: false,
+          emailAlreadyExists: true,
+          email: data.email,
+          marketResearchText: data.marketResearchText,
+          error: 'An account with this email already exists. Please log in to continue.',
+        };
+      } else {
+        console.warn('[AiSignupMarketReport] ⚠️ Account creation failed:', signupResult.error);
+        throw new Error(signupResult.error || 'Account creation failed');
+      }
+    }
+  } catch (signupError) {
+    // Check for email exists error from exception
+    if (signupError.message?.includes('already in use') ||
+        signupError.message?.includes('already registered') ||
+        signupError.message?.includes('USED_EMAIL')) {
+      console.log('[AiSignupMarketReport] ℹ️ User already exists (from exception) - need to login first');
+      return {
+        success: false,
+        emailAlreadyExists: true,
+        email: data.email,
+        marketResearchText: data.marketResearchText,
+        error: 'An account with this email already exists. Please log in to continue.',
+      };
+    }
+    console.error('[AiSignupMarketReport] ⚠️ Account creation error:', signupError.message);
+    throw signupError;
+  }
+
+  // ========== STEP 2: Submit Market Research (save freeform text) ==========
+  console.log('[AiSignupMarketReport] Step 2: Submitting market research...');
 
   // Get Supabase URL from environment
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://qcfifybkaddcoimjroca.supabase.co';
@@ -166,16 +745,133 @@ async function submitSignup(data) {
 
     const result = await response.json();
     console.log('[AiSignupMarketReport] ========== SUCCESS ==========');
-    console.log('[AiSignupMarketReport] Signup completed successfully');
+    console.log('[AiSignupMarketReport] Market research submitted successfully');
     console.log('[AiSignupMarketReport] Result:', JSON.stringify(result, null, 2));
     console.log('[AiSignupMarketReport] ================================');
 
-    return { success: true, data: result.data };
+    // ========== STEP 3: Queue Profile Parsing (ASYNC - Non-blocking) ==========
+    // User doesn't wait for GPT-4 - it happens in background
+    console.log('[AiSignupMarketReport] Step 3: Queuing profile parsing (async)...');
+
+    const userId = signupResult?.user_id || result.data?._id;
+    if (userId) {
+      // Queue the parsing job - this returns immediately
+      queueProfileParsing({
+        user_id: userId,
+        email: data.email,
+        freeform_text: data.marketResearchText,
+      }).then(queueResult => {
+        if (queueResult?.success) {
+          console.log('[AiSignupMarketReport] ✅ Parsing job queued:', queueResult.data?.jobId);
+        } else {
+          console.warn('[AiSignupMarketReport] ⚠️ Failed to queue parsing (non-fatal)');
+        }
+      }).catch(err => {
+        console.warn('[AiSignupMarketReport] ⚠️ Queue error (non-fatal):', err.message);
+      });
+    } else {
+      console.warn('[AiSignupMarketReport] ⚠️ No user ID for queuing profile parsing');
+    }
+
+    // ========== STEP 4: Send Welcome Communications (ASYNC - Non-blocking) ==========
+    // User doesn't wait for emails/SMS - they happen in background
+    console.log('[AiSignupMarketReport] Step 4: Sending welcome communications (async)...');
+
+    // Fire-and-forget: send welcome email, SMS, and internal notification
+    sendWelcomeCommunications({
+      email: data.email,
+      phone: data.phone,
+      name: extractedName,
+      password: generatedPassword,
+      freeformText: data.marketResearchText,
+    }).then(() => {
+      console.log('[AiSignupMarketReport] ✅ Welcome communications initiated successfully');
+    }).catch(err => {
+      console.warn('[AiSignupMarketReport] ⚠️ Welcome communications error (non-fatal):', err.message);
+    });
+
+    return {
+      success: true,
+      data: result.data,
+      generatedPassword: generatedPassword, // Include for reference (will be sent via email)
+      extractedName: extractedName,
+      isAsync: true, // Flag indicating parsing is happening in background
+    };
   } catch (error) {
     console.error('[AiSignupMarketReport] ========== EXCEPTION ==========');
     console.error('[AiSignupMarketReport] Error:', error);
     console.error('[AiSignupMarketReport] Error message:', error.message);
     console.error('[AiSignupMarketReport] ==================================');
+    throw error;
+  }
+}
+
+/**
+ * Parse user profile using AI (GPT-4)
+ * Calls the bubble-proxy edge function with parse_profile action
+ *
+ * This extracts structured data from freeform text:
+ * - Biography, Special Needs, Need for Space, Reasons to Host
+ * - Credit Score, Name, Transportation
+ * - Preferred boroughs, neighborhoods, days, weekly schedule
+ *
+ * Also auto-favorites listings that match user preferences
+ *
+ * @param {Object} data - Data for parsing
+ * @param {string} data.user_id - User ID to update
+ * @param {string} data.email - User email
+ * @param {string} data.text_inputted - Freeform text to parse
+ * @returns {Promise<Object>} - Parsing result with extracted data
+ */
+async function parseProfileWithAI(data) {
+  if (!data.user_id) {
+    console.warn('[AiSignupMarketReport] Skipping profile parsing - no user_id');
+    return null;
+  }
+
+  if (!data.text_inputted) {
+    console.warn('[AiSignupMarketReport] Skipping profile parsing - no text_inputted');
+    return null;
+  }
+
+  console.log('[AiSignupMarketReport] ========== PARSE PROFILE REQUEST ==========');
+  console.log('[AiSignupMarketReport] User ID:', data.user_id);
+  console.log('[AiSignupMarketReport] Email:', data.email);
+  console.log('[AiSignupMarketReport] Text length:', data.text_inputted.length);
+
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://qcfifybkaddcoimjroca.supabase.co';
+  const edgeFunctionUrl = `${supabaseUrl}/functions/v1/bubble-proxy`;
+
+  try {
+    const response = await fetch(edgeFunctionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'parse_profile',
+        payload: {
+          user_id: data.user_id,
+          email: data.email,
+          text_inputted: data.text_inputted,
+        },
+      }),
+    });
+
+    console.log('[AiSignupMarketReport] Parse response status:', response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[AiSignupMarketReport] Parse error response:', errorText);
+      throw new Error(`Failed to parse profile: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('[AiSignupMarketReport] Parse result:', JSON.stringify(result, null, 2));
+
+    return result;
+  } catch (error) {
+    console.error('[AiSignupMarketReport] Parse profile error:', error);
     throw error;
   }
 }
@@ -248,10 +944,152 @@ function LottieAnimation({ src, loop = true, autoplay = true, className = '' }) 
 // ============ SUB-COMPONENTS ============
 
 const PARSING_LOTTIE_URL = 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1722533720265x199451206376484160/Animation%20-%201722533570126.json';
-const LOADING_LOTTIE_URL = 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1720724605167x733559911663532000/Animation%20-%201720724343172.lottie';
+// Use a JSON lottie instead of .lottie format (which requires special handling)
+const LOADING_LOTTIE_URL = 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1722533720265x199451206376484160/Animation%20-%201722533570126.json';
 const SUCCESS_LOTTIE_URL = 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1745939792891x394981453861459140/Report.json';
 
+// Topic definitions for freeform input detection
+const FREEFORM_TOPICS = [
+  {
+    id: 'schedule',
+    label: 'Schedule',
+    patterns: [
+      /\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)s?\b/i,
+      /\b(weekday|weekend|weekly|daily|monthly)s?\b/i,
+      /\b(morning|afternoon|evening|night)s?\b/i,
+      /\b(schedule|timing|hours?|days?|time|weeks?)\b/i,
+      /\b(\d+\s*(am|pm|days?|weeks?|months?))\b/i,
+    ],
+  },
+  {
+    id: 'patterns',
+    label: 'Patterns',
+    patterns: [
+      /\b(every|recurring|regular|repeat|routine)\b/i,
+      /\b(alternating|rotating|flexible|fixed)\b/i,
+      /\b(once|twice|three times)\s+(a|per)\s+(week|month)\b/i,
+      /\b(pattern|frequency|interval)\b/i,
+    ],
+  },
+  {
+    id: 'commute',
+    label: 'Commute',
+    patterns: [
+      /\b(commute|commuting|travel|traveling)\b/i,
+      /\b(subway|metro|train|bus|drive|driving)\b/i,
+      /\b(office|work|job|workplace)\b/i,
+      /\b(remote|hybrid|in-?person)\b/i,
+      /\b(transit|transportation)\b/i,
+    ],
+  },
+  {
+    id: 'location',
+    label: 'Location',
+    patterns: [
+      /\b(manhattan|brooklyn|queens|bronx|staten island)\b/i,
+      /\b(midtown|downtown|uptown|village|heights)\b/i,
+      /\b(near|close to|walking distance|neighborhood)\b/i,
+      /\b(area|location|place|spot|zone)\b/i,
+      /\b(east side|west side|upper|lower)\b/i,
+      /\b(new york|nyc|ny|the city)\b/i,
+    ],
+  },
+  {
+    id: 'needs',
+    label: 'Needs',
+    patterns: [
+      /\b(need|require|want|looking for|must have)\b/i,
+      /\b(quiet|peaceful|private|furnished|unfurnished)\b/i,
+      /\b(pet|dog|cat|animal)\b/i,
+      /\b(laundry|kitchen|bathroom|bedroom)\b/i,
+      /\b(wifi|internet|utilities|amenities)\b/i,
+    ],
+  },
+  {
+    id: 'background',
+    label: 'About You',
+    patterns: [
+      /\b(i am|i'm|my name|myself)\b/i,
+      /\b(student|professional|nurse|doctor|teacher|engineer)\b/i,
+      /\b(work at|working at|employed|job at)\b/i,
+      /\b(years? old|age|background|bio)\b/i,
+      /\b(relocating|moving|new to|visiting)\b/i,
+    ],
+  },
+  {
+    id: 'storage',
+    label: 'Storage',
+    patterns: [
+      /\b(storage|store|closet|space for)\b/i,
+      /\b(luggage|bags?|boxes?|belongings)\b/i,
+      /\b(bring|keep|leave|store)\b/i,
+      /\b(furniture|stuff|things|items)\b/i,
+    ],
+  },
+];
+
+// Implement topic detection from user query
+const detectTopicFromQuery = (query) => {
+  const lowerQuery = query.toLowerCase();
+
+  // Topic patterns
+  const topicPatterns = {
+    pricing: /price|cost|rent|budget|afford|cheap|expensive/i,
+    neighborhood: /neighborhood|area|location|where|live/i,
+    amenities: /amenity|feature|gym|pool|parking|laundry/i,
+    commute: /commute|transit|subway|bus|train|walk/i,
+    safety: /safe|crime|security|family/i,
+    comparison: /compare|vs|versus|better|difference/i
+  };
+
+  for (const [topic, pattern] of Object.entries(topicPatterns)) {
+    if (pattern.test(lowerQuery)) {
+      return topic;
+    }
+  }
+
+  return 'general';
+};
+
+function detectTopics(text) {
+  if (!text || text.trim().length === 0) {
+    return [];
+  }
+
+  const detectedTopics = [];
+
+  for (const topic of FREEFORM_TOPICS) {
+    const isDetected = topic.patterns.some(pattern => pattern.test(text));
+    if (isDetected) {
+      detectedTopics.push(topic.id);
+    }
+  }
+
+  return detectedTopics;
+}
+
+function TopicIndicators({ detectedTopics }) {
+  return (
+    <div className="topic-indicators">
+      {FREEFORM_TOPICS.map((topic) => {
+        const isDetected = detectedTopics.includes(topic.id);
+        return (
+          <span
+            key={topic.id}
+            className={`topic-chip ${isDetected ? 'topic-detected' : ''}`}
+          >
+            {isDetected && <span className="topic-checkmark">✓</span>}
+            {topic.label}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
 function FreeformInput({ value, onChange }) {
+  const detectedTopics = detectTopics(value);
+
   return (
     <div className="freeform-container">
       <div className="freeform-header">
@@ -271,6 +1109,8 @@ Send to (415) 555-5555 and guest@mail.com`}
         rows={8}
         aria-label="Market research description"
       />
+
+      <TopicIndicators detectedTopics={detectedTopics} />
 
       <div className="freeform-animation-message">
         <p className="freeform-helper-text">
@@ -333,6 +1173,8 @@ function ParsingStage() {
           autoplay={true}
           className="parsing-lottie"
         />
+        {/* Fallback spinner shown while Lottie loads or if it fails */}
+        <div className="loading-spinner-fallback" />
       </div>
       <h3 className="parsing-message">Analyzing your request...</h3>
       <p className="parsing-sub-message">Please wait while we extract the information</p>
@@ -350,6 +1192,8 @@ function LoadingStage({ message }) {
           autoplay={true}
           className="loading-lottie"
         />
+        {/* Fallback spinner shown while Lottie loads or if it fails */}
+        <div className="loading-spinner-fallback" />
       </div>
       <h3 className="loading-message">{message}</h3>
       <p className="loading-sub-message">This will only take a moment...</p>
@@ -357,7 +1201,7 @@ function LoadingStage({ message }) {
   );
 }
 
-function FinalMessage({ message }) {
+function FinalMessage({ message, isAsync = false }) {
   return (
     <div className="final-container">
       <div className="final-lottie-wrapper">
@@ -370,9 +1214,45 @@ function FinalMessage({ message }) {
       </div>
       <h3 className="final-title">Success!</h3>
       <p className="final-message">{message}</p>
-      <p className="final-sub-message">
-        Check your inbox for the comprehensive market research report.
+      {isAsync ? (
+        <p className="final-sub-message">
+          We're analyzing your preferences in the background. Your personalized market research report will be ready by tomorrow morning!
+        </p>
+      ) : (
+        <p className="final-sub-message">
+          Check your inbox for the comprehensive market research report.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function EmailExistsMessage({ email, onLoginClick }) {
+  return (
+    <div className="final-container">
+      <div className="final-lottie-wrapper" style={{ opacity: 0.7 }}>
+        <LottieAnimation
+          src={LOADING_LOTTIE_URL}
+          loop={true}
+          autoplay={true}
+          className="final-lottie"
+        />
+      </div>
+      <h3 className="final-title">Account Already Exists</h3>
+      <p className="final-message">
+        An account with <strong>{email}</strong> already exists.
       </p>
+      <p className="final-sub-message">
+        Please log in to continue with your market research request.
+      </p>
+      <button
+        type="button"
+        className="nav-next-button"
+        onClick={onLoginClick}
+        style={{ marginTop: '1rem' }}
+      >
+        Log In
+      </button>
     </div>
   );
 }
@@ -414,13 +1294,22 @@ function NavigationButtons({ showBack, onBack, onNext, nextLabel, isLoading = fa
 // ============ MAIN COMPONENT ============
 
 export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
+  // Toast notifications (with fallback rendering when no ToastProvider)
+  const { toasts, showToast, removeToast } = useToast();
+
   const [state, setState] = useState({
     currentSection: 'freeform',
     formData: {},
     emailCertainty: null,
     isLoading: false,
     error: null,
+    emailAlreadyExists: false,
+    existingEmail: null,
+    isAsyncProcessing: false,
   });
+
+  // Ref to track toast timeout for cleanup
+  const robotsToastTimeoutRef = useRef(null);
 
   const goToSection = useCallback((section) => {
     setState(prev => ({ ...prev, currentSection: section }));
@@ -458,6 +1347,9 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
       const correctedEmail = extractedEmail ? autoCorrectEmail(extractedEmail) : '';
       const emailCertainty = correctedEmail ? checkEmailCertainty(correctedEmail) : 'uncertain';
 
+      // Extract name from text (for user account creation)
+      const extractedNameFromText = extractName(formData.marketResearchText || '', correctedEmail);
+
       const emailWasCorrected = extractedEmail !== correctedEmail;
       const phoneIsComplete = extractedPhone ? /^\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$/.test(extractedPhone) : false;
 
@@ -465,6 +1357,7 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
         ...formData,
         email: correctedEmail || formData.email || '',
         phone: extractedPhone || formData.phone || '',
+        name: extractedNameFromText || formData.name || '', // Store extracted name
       };
 
       const shouldAutoSubmit =
@@ -476,16 +1369,84 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
 
       if (shouldAutoSubmit) {
         setEmailCertainty('yes');
+
+        // Show initial toast
+        showToast({
+          title: 'Thank you!',
+          content: 'Creating your account...',
+          type: 'info',
+          duration: 3000
+        });
+
+        // Show second toast after a delay
+        robotsToastTimeoutRef.current = setTimeout(() => {
+          showToast({
+            title: 'Almost there!',
+            content: 'Our robots are still working...',
+            type: 'info',
+            duration: 3000
+          });
+        }, 1500);
+
         try {
-          await submitSignup({
+          const result = await submitSignup({
             email: correctedEmail,
             phone: extractedPhone,
             marketResearchText: formData.marketResearchText,
+            name: extractedNameFromText, // Pass extracted name
             timestamp: new Date().toISOString(),
           });
 
-          goToSection('final');
+          // Clear the timeout
+          if (robotsToastTimeoutRef.current) {
+            clearTimeout(robotsToastTimeoutRef.current);
+          }
+
+          // Check if email already exists
+          if (result.emailAlreadyExists) {
+            showToast({
+              title: 'Account Exists',
+              content: 'Please log in to continue.',
+              type: 'info',
+              duration: 4000
+            });
+
+            setState(prev => ({
+              ...prev,
+              currentSection: 'emailExists',
+              emailAlreadyExists: true,
+              existingEmail: correctedEmail,
+              formData: updatedFormData,
+            }));
+            return;
+          }
+
+          // Show success toast
+          showToast({
+            title: 'Welcome to Split Lease!',
+            content: 'Your account has been created successfully.',
+            type: 'success',
+            duration: 4000
+          });
+
+          setState(prev => ({
+            ...prev,
+            currentSection: 'final',
+            isAsyncProcessing: result.isAsync || false,
+          }));
         } catch (error) {
+          // Clear the timeout
+          if (robotsToastTimeoutRef.current) {
+            clearTimeout(robotsToastTimeoutRef.current);
+          }
+
+          showToast({
+            title: 'Signup Issue',
+            content: error instanceof Error ? error.message : 'Please try again.',
+            type: 'error',
+            duration: 5000
+          });
+
           setError(error instanceof Error ? error.message : 'Signup failed. Please try again.');
           setState(prev => ({
             ...prev,
@@ -503,7 +1464,7 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
         emailCertainty: emailCertainty === 'uncertain' ? 'no' : null,
       }));
     }
-  }, [state, goToSection, setEmailCertainty, setError]);
+  }, [state, goToSection, setEmailCertainty, setError, showToast]);
 
   const handleBack = useCallback(() => {
     if (state.currentSection === 'contact') {
@@ -529,23 +1490,90 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
     setLoading(true);
     goToSection('loading');
 
+    // Show initial toast
+    showToast({
+      title: 'Thank you!',
+      content: 'Creating your account...',
+      type: 'info',
+      duration: 3000
+    });
+
+    // Show second toast after a delay
+    robotsToastTimeoutRef.current = setTimeout(() => {
+      showToast({
+        title: 'Almost there!',
+        content: 'Our robots are still working...',
+        type: 'info',
+        duration: 3000
+      });
+    }, 1500);
+
     try {
-      await submitSignup({
+      const result = await submitSignup({
         email: formData.email,
         phone: formData.phone,
         marketResearchText: formData.marketResearchText,
+        name: formData.name, // Pass the extracted name
         timestamp: new Date().toISOString(),
       });
 
+      // Clear the timeout
+      if (robotsToastTimeoutRef.current) {
+        clearTimeout(robotsToastTimeoutRef.current);
+      }
+
+      // Check if email already exists
+      if (result.emailAlreadyExists) {
+        showToast({
+          title: 'Account Exists',
+          content: 'Please log in to continue.',
+          type: 'info',
+          duration: 4000
+        });
+
+        setState(prev => ({
+          ...prev,
+          currentSection: 'emailExists',
+          emailAlreadyExists: true,
+          existingEmail: formData.email,
+          isLoading: false,
+        }));
+        return;
+      }
+
+      // Show success toast
+      showToast({
+        title: 'Welcome to Split Lease!',
+        content: 'Your account has been created successfully.',
+        type: 'success',
+        duration: 4000
+      });
+
       setTimeout(() => {
-        goToSection('final');
-        setLoading(false);
+        setState(prev => ({
+          ...prev,
+          currentSection: 'final',
+          isLoading: false,
+          isAsyncProcessing: result.isAsync || false,
+        }));
       }, 1500);
     } catch (error) {
+      // Clear the timeout
+      if (robotsToastTimeoutRef.current) {
+        clearTimeout(robotsToastTimeoutRef.current);
+      }
+
+      showToast({
+        title: 'Signup Issue',
+        content: error instanceof Error ? error.message : 'Please try again.',
+        type: 'error',
+        duration: 5000
+      });
+
       setError(error instanceof Error ? error.message : 'Signup failed. Please try again.');
       goToSection('contact');
     }
-  }, [state, goToSection, setError, setLoading]);
+  }, [state, goToSection, setError, setLoading, showToast]);
 
   const resetFlow = useCallback(() => {
     setState({
@@ -554,8 +1582,21 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
       emailCertainty: null,
       isLoading: false,
       error: null,
+      emailAlreadyExists: false,
+      existingEmail: null,
+      isAsyncProcessing: false,
     });
   }, []);
+
+  // Handle login click for existing email users
+  const handleLoginClick = useCallback(() => {
+    // Close this modal and trigger the login modal in Header
+    onClose();
+    // Dispatch custom event to open login modal
+    window.dispatchEvent(new CustomEvent('openLoginModal', {
+      detail: { email: state.existingEmail }
+    }));
+  }, [onClose, state.existingEmail]);
 
   const getButtonText = useCallback(() => {
     const { formData } = state;
@@ -611,11 +1652,36 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isOpen, onClose]);
 
+  // Auto-close modal and reload page after success (to show logged-in state)
+  useEffect(() => {
+    if (state.currentSection === 'final' && isOpen) {
+      const autoCloseTimer = setTimeout(() => {
+        onClose();
+        // Short delay before reload to allow toast to be visible
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      }, 3500); // 3.5 seconds to read success message
+
+      return () => clearTimeout(autoCloseTimer);
+    }
+  }, [state.currentSection, isOpen, onClose]);
+
+  // Cleanup toast timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (robotsToastTimeoutRef.current) {
+        clearTimeout(robotsToastTimeoutRef.current);
+      }
+    };
+  }, []);
+
   if (!isOpen) return null;
 
   const showNavigation = state.currentSection !== 'final' &&
                         state.currentSection !== 'loading' &&
-                        state.currentSection !== 'parsing';
+                        state.currentSection !== 'parsing' &&
+                        state.currentSection !== 'emailExists';
 
   return (
     <div
@@ -676,7 +1742,18 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
 
           {state.currentSection === 'parsing' && <ParsingStage />}
           {state.currentSection === 'loading' && <LoadingStage message="We are processing your request" />}
-          {state.currentSection === 'final' && <FinalMessage message="Tomorrow morning, you'll receive a full report." />}
+          {state.currentSection === 'emailExists' && (
+            <EmailExistsMessage
+              email={state.existingEmail}
+              onLoginClick={handleLoginClick}
+            />
+          )}
+          {state.currentSection === 'final' && (
+            <FinalMessage
+              message="Your account has been created successfully!"
+              isAsync={state.isAsyncProcessing}
+            />
+          )}
         </div>
 
         {/* Error Display */}
@@ -702,7 +1779,7 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
           <div className="ai-signup-final-button-wrapper">
             <button
               className="ai-signup-final-close-button"
-              onClick={onClose}
+              onClick={() => { window.location.reload(); }}
             >
               Close
             </button>
@@ -838,6 +1915,39 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
           color: #718096;
         }
 
+        /* Topic Indicators */
+        .topic-indicators {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          padding: 12px 0;
+        }
+
+        .topic-chip {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          padding: 6px 12px;
+          font-size: 13px;
+          font-weight: 500;
+          color: #a0aec0;
+          background: #f7fafc;
+          border: 1px solid #e2e8f0;
+          border-radius: 16px;
+          transition: all 0.3s ease;
+        }
+
+        .topic-chip.topic-detected {
+          color: #22543d;
+          background: #c6f6d5;
+          border-color: #68d391;
+        }
+
+        .topic-checkmark {
+          font-weight: 700;
+          color: #38a169;
+        }
+
         /* Contact Form */
         .contact-container {
           display: flex;
@@ -904,6 +2014,10 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
           width: 200px;
           height: 200px;
           margin-bottom: 24px;
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
         .parsing-message {
@@ -933,6 +2047,10 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
           width: 200px;
           height: 200px;
           margin-bottom: 24px;
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
         .loading-message {
@@ -946,6 +2064,29 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
           margin: 0;
           font-size: 14px;
           color: #718096;
+        }
+
+        
+        /* Loading Spinner Fallback - shown underneath Lottie as backup */
+        .loading-spinner-fallback {
+          position: absolute;
+          width: 60px;
+          height: 60px;
+          border: 4px solid #e2e8f0;
+          border-top-color: #31135D;
+          border-radius: 50%;
+          animation: spinner-rotate 1s linear infinite;
+          z-index: 0;
+        }
+
+        /* Hide spinner when Lottie animation is loaded */
+        .parsing-lottie-wrapper > div:first-child:not(:empty) ~ .loading-spinner-fallback,
+        .loading-lottie-wrapper > div:first-child:not(:empty) ~ .loading-spinner-fallback {
+          display: none;
+        }
+
+        @keyframes spinner-rotate {
+          to { transform: rotate(360deg); }
         }
 
         /* Final Message */
@@ -1085,6 +2226,9 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
           }
         }
       `}</style>
+
+      {/* Toast notifications (rendered here as fallback when no ToastProvider) */}
+      {toasts && toasts.length > 0 && <Toast toasts={toasts} onRemove={removeToast} />}
     </div>
   );
 }

@@ -1,0 +1,1938 @@
+/* ViewSplitLeasePage - Extracted CSS Module */
+/* Phase 1: CSS Custom Properties */
+
+/* CSS Custom Properties (Colors, Spacing, Radii, Shadows) */
+:root {
+  --color-primary: #31135d;
+  --color-primary-hover: #1f0b38;
+  --color-text-dark: #111827;
+  --color-text-light: #6B7280;
+  --color-bg-light: #f3f4f6;
+  --color-border: #E5E7EB;
+  --color-success: #16a34a;
+  --color-warning: #ea580c;
+  --color-error: #dc2626;
+  --color-purple-accent: #7C3AED;
+  --color-purple-light: #5B21B6;
+  --color-purple-medium: #6B21A8;
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(49, 19, 93, 0.1);
+  --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+/* ============================================================================
+   SCHEDULE PATTERN HIGHLIGHT
+   ============================================================================ */
+
+.schedulePatternContainer {
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: linear-gradient(135deg, #EDE9FE 0%, #F3E8FF 100%);
+  border-radius: 8px;
+  border: 1px solid #C4B5FD;
+  font-size: 13px;
+}
+
+.schedulePatternHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.schedulePatternLabel {
+  font-weight: 600;
+  color: #5B21B6;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  font-size: 11px;
+}
+
+.schedulePatternText {
+  color: #6B21A8;
+}
+
+.schedulePatternTextBold {
+  font-weight: 700;
+}
+
+.schedulePatternTextAccent {
+  color: #7C3AED;
+}
+
+/* ============================================================================
+   LOADING STATE
+   ============================================================================ */
+
+.loadingStateContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+  padding: 2rem;
+}
+
+.loadingSpinner {
+  width: 60px;
+  height: 60px;
+  border: 4px solid var(--color-bg-light);
+  border-top: 4px solid var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================================================
+   ERROR STATE
+   ============================================================================ */
+
+.errorStateContainer {
+  text-align: center;
+  padding: 4rem 2rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.errorIcon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.errorTitle {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: var(--color-text-dark);
+}
+
+.errorMessage {
+  font-size: 1.125rem;
+  color: var(--color-text-light);
+  margin-bottom: 2rem;
+}
+
+.errorButton {
+  display: inline-block;
+  padding: 1rem 2rem;
+  background: var(--color-primary);
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.errorButton:hover {
+  background: var(--color-primary-hover);
+}
+
+/* ============================================================================
+   PHOTO GALLERY
+   ============================================================================ */
+
+.photoGalleryMobileContainer {
+  position: relative;
+}
+
+.photoGalleryMobileImage {
+  cursor: pointer;
+  border-radius: 12px;
+  overflow: hidden;
+  height: 280px;
+}
+
+.photoGalleryMobileImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.photoGalleryShowAllButton {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.photoGalleryDesktopGrid {
+  display: grid;
+  gap: 10px;
+}
+
+.photoGalleryDesktopGrid1 {
+  grid-template-columns: 1fr;
+  grid-template-rows: 400px;
+}
+
+.photoGalleryDesktopGrid2 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 400px;
+}
+
+.photoGalleryDesktopGrid3 {
+  grid-template-columns: 2fr 1fr;
+  grid-template-rows: 200px 200px;
+}
+
+.photoGalleryDesktopGrid4 {
+  grid-template-columns: 2fr 1fr;
+  grid-template-rows: 133px 133px 133px;
+}
+
+.photoGalleryDesktopGrid5Plus {
+  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-rows: 200px 200px;
+}
+
+.photoGalleryImageWrapper {
+  cursor: pointer;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+}
+
+.photoGalleryImageWrapperSpan2 {
+  grid-row: 1 / 3;
+}
+
+.photoGalleryImageWrapperSpan3 {
+  grid-row: 1 / 4;
+}
+
+.photoGalleryImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.photoGalleryDesktopShowAll {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ============================================================================
+   MAIN LAYOUT
+   ============================================================================ */
+
+.mainContainerLoading {
+  min-height: 70vh;
+  padding-top: calc(80px + 2rem);
+}
+
+.mainGrid {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--spacing-xl);
+  padding-top: calc(100px + 2rem);
+  display: grid;
+  grid-template-columns: 1fr 440px;
+  gap: var(--spacing-xl);
+  box-sizing: border-box;
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .mainGrid {
+    grid-template-columns: 1fr;
+    padding: var(--spacing-md);
+    padding-top: calc(80px + 1rem);
+    gap: var(--spacing-lg);
+  }
+}
+
+.leftColumn {
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* ============================================================================
+   SECTION CONTAINERS
+   ============================================================================ */
+
+.section {
+  margin-bottom: var(--spacing-lg);
+}
+
+@media (min-width: 901px) {
+  .section {
+    margin-bottom: var(--spacing-xl);
+  }
+}
+
+.sectionSmall {
+  margin-bottom: 1.25rem;
+}
+
+@media (min-width: 901px) {
+  .sectionSmall {
+    margin-bottom: var(--spacing-lg);
+  }
+}
+
+.sectionTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--color-text-dark);
+}
+
+@media (min-width: 901px) {
+  .sectionTitle {
+    font-size: 1.125rem;
+    margin-bottom: 0.75rem;
+  }
+}
+
+.sectionContent {
+  line-height: 1.6;
+  color: var(--color-text-light);
+  white-space: pre-wrap;
+}
+
+/* ============================================================================
+   LISTING HEADER
+   ============================================================================ */
+
+.listingTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  color: var(--color-text-dark);
+}
+
+@media (min-width: 901px) {
+  .listingTitle {
+    font-size: 2rem;
+    margin-bottom: var(--spacing-md);
+  }
+}
+
+.listingMeta {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  color: var(--color-text-light);
+  font-size: 0.875rem;
+}
+
+@media (min-width: 901px) {
+  .listingMeta {
+    gap: var(--spacing-md);
+    font-size: 1rem;
+  }
+}
+
+.locationLink {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+  text-decoration: underline;
+  transition: color 0.2s;
+}
+
+.locationLink:hover {
+  color: var(--color-primary);
+}
+
+/* ============================================================================
+   FEATURES GRID
+   ============================================================================ */
+
+.featuresGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-sm);
+}
+
+@media (min-width: 901px) {
+  .featuresGrid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: var(--spacing-md);
+  }
+}
+
+.featureCard {
+  text-align: center;
+  padding: 0.75rem;
+  background: var(--color-bg-light);
+  border-radius: var(--radius-sm);
+}
+
+@media (min-width: 901px) {
+  .featureCard {
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+  }
+}
+
+.featureIconWrapper {
+  margin-bottom: var(--spacing-sm);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 1.5rem;
+}
+
+@media (min-width: 901px) {
+  .featureIconWrapper {
+    height: 2rem;
+  }
+}
+
+.featureIcon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+@media (min-width: 901px) {
+  .featureIcon {
+    width: 2rem;
+    height: 2rem;
+  }
+}
+
+.featureImage {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.featureText {
+  font-size: 0.8125rem;
+}
+
+@media (min-width: 901px) {
+  .featureText {
+    font-size: 1rem;
+  }
+}
+
+/* ============================================================================
+   INFO CARD (Storage, Commute)
+   ============================================================================ */
+
+.infoCard {
+  padding: var(--spacing-md);
+  background: var(--color-bg-light);
+  border-radius: var(--radius-md);
+}
+
+@media (min-width: 901px) {
+  .infoCard {
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-lg);
+  }
+}
+
+.infoCardRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+}
+
+.infoCardIcon {
+  min-width: 24px;
+  min-height: 24px;
+  color: var(--color-primary);
+}
+
+.infoCardTitle {
+  font-weight: 600;
+  margin-bottom: var(--spacing-sm);
+}
+
+.infoCardSubtitle {
+  color: var(--color-text-light);
+  font-size: 0.9375rem;
+}
+
+.infoCardSubtitleSmall {
+  color: var(--color-text-light);
+  font-size: 0.875rem;
+}
+
+.commuteList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+/* ============================================================================
+   AMENITIES
+   ============================================================================ */
+
+.amenitiesSection {
+  margin-bottom: var(--spacing-md);
+}
+
+.amenitiesCategoryTitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: var(--spacing-sm);
+  color: var(--color-text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+@media (min-width: 901px) {
+  .amenitiesCategoryTitle {
+    font-size: 0.875rem;
+  }
+}
+
+.amenitiesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--spacing-sm);
+}
+
+@media (min-width: 901px) {
+  .amenitiesGrid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.75rem;
+  }
+}
+
+.amenityItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 0.375rem;
+}
+
+@media (min-width: 901px) {
+  .amenityItem {
+    padding: var(--spacing-sm);
+  }
+}
+
+.amenityIcon {
+  width: 20px;
+  height: 20px;
+}
+
+@media (min-width: 901px) {
+  .amenityIcon {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+.amenityText {
+  font-size: 0.8125rem;
+}
+
+@media (min-width: 901px) {
+  .amenityText {
+    font-size: 0.875rem;
+  }
+}
+
+/* ============================================================================
+   HOUSE RULES
+   ============================================================================ */
+
+.houseRulesList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.houseRuleItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 0.375rem;
+}
+
+@media (min-width: 901px) {
+  .houseRuleItem {
+    padding: var(--spacing-sm);
+  }
+}
+
+.houseRuleIcon {
+  width: 20px;
+  height: 20px;
+}
+
+@media (min-width: 901px) {
+  .houseRuleIcon {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+.houseRuleText {
+  font-size: 0.875rem;
+}
+
+@media (min-width: 901px) {
+  .houseRuleText {
+    font-size: 1rem;
+  }
+}
+
+/* ============================================================================
+   MAP SECTION
+   ============================================================================ */
+
+.mapContainer {
+  height: 300px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--color-bg-light);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-bg-light);
+}
+
+@media (min-width: 901px) {
+  .mapContainer {
+    height: 400px;
+    border-radius: var(--radius-lg);
+  }
+}
+
+.mapPlaceholder {
+  color: var(--color-text-light);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+/* ============================================================================
+   HOST SECTION
+   ============================================================================ */
+
+.hostCard {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: var(--color-bg-light);
+  border-radius: var(--radius-md);
+}
+
+@media (min-width: 901px) {
+  .hostCard {
+    padding: var(--spacing-md);
+    border-radius: 10px;
+  }
+}
+
+.hostPhoto {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+@media (min-width: 901px) {
+  .hostPhoto {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+.hostInfo {
+  flex: 1;
+}
+
+.hostName {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.125rem;
+}
+
+@media (min-width: 901px) {
+  .hostName {
+    font-size: 0.9375rem;
+  }
+}
+
+.hostLabel {
+  color: var(--color-text-light);
+  font-size: 0.75rem;
+}
+
+@media (min-width: 901px) {
+  .hostLabel {
+    font-size: 0.8125rem;
+  }
+}
+
+.hostActions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.hostButtonPrimary {
+  padding: 0.375rem 0.75rem;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  box-shadow: 0 2px 6px rgba(49, 19, 93, 0.2);
+}
+
+@media (min-width: 901px) {
+  .hostButtonPrimary {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+}
+
+.hostButtonPrimary:hover {
+  background: var(--color-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(49, 19, 93, 0.25);
+}
+
+.hostButtonSecondary {
+  padding: 0.375rem 0.75rem;
+  background: transparent;
+  color: var(--color-primary);
+  border: 1.5px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+@media (min-width: 901px) {
+  .hostButtonSecondary {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+}
+
+.hostButtonSecondary:hover {
+  background: var(--color-primary);
+  color: white;
+  transform: translateY(-1px);
+}
+
+/* ============================================================================
+   CANCELLATION POLICY
+   ============================================================================ */
+
+.cancellationCard {
+  padding: var(--spacing-md);
+  background: var(--color-bg-light);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-bg-light);
+}
+
+@media (min-width: 901px) {
+  .cancellationCard {
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-lg);
+  }
+}
+
+.cancellationTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: var(--color-primary);
+}
+
+@media (min-width: 901px) {
+  .cancellationTitle {
+    font-size: 1.125rem;
+    margin-bottom: var(--spacing-md);
+  }
+}
+
+.cancellationCase {
+  margin-bottom: 0.75rem;
+}
+
+.cancellationCaseTitle {
+  font-weight: 600;
+  margin-bottom: var(--spacing-xs);
+}
+
+.cancellationCaseBest {
+  color: var(--color-success);
+}
+
+.cancellationCaseMedium {
+  color: var(--color-warning);
+}
+
+.cancellationCaseWorst {
+  color: var(--color-error);
+}
+
+.cancellationCaseText {
+  color: var(--color-text-light);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+.cancellationSummary {
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid #e5e7eb;
+}
+
+.cancellationSummaryTitle {
+  font-weight: 600;
+  margin-bottom: var(--spacing-sm);
+  font-size: 0.875rem;
+}
+
+.cancellationSummaryList {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--color-text-light);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.cancellationSummaryItem {
+  margin-bottom: var(--spacing-xs);
+}
+
+.cancellationLink {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.cancellationLink:hover {
+  text-decoration: underline;
+}
+
+.cancellationFooter {
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid #e5e7eb;
+}
+
+/* ============================================================================
+   PHOTO PLACEHOLDER
+   ============================================================================ */
+
+.photoPlaceholder {
+  width: 100%;
+  height: 250px;
+  background: var(--color-bg-light);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-light);
+}
+
+@media (min-width: 901px) {
+  .photoPlaceholder {
+    height: 400px;
+    border-radius: var(--radius-lg);
+  }
+}
+
+/* ============================================================================
+   DESKTOP BOOKING WIDGET
+   ============================================================================ */
+
+.bookingWidget {
+  position: sticky;
+  top: calc(80px + 20px);
+  align-self: flex-start;
+  height: fit-content;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-xl);
+  padding: 28px;
+  background: white;
+  box-shadow: var(--shadow-lg), 0 0 1px rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(10px);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.bookingWidget:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35), 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+@media (max-width: 900px) {
+  .bookingWidget {
+    display: none;
+  }
+}
+
+.bookingPriceDisplay {
+  background: linear-gradient(135deg, #f8f9ff 0%, #faf5ff 100%);
+  padding: 12px;
+  border-radius: var(--radius-lg);
+  margin-bottom: 16px;
+  border: 1px solid #e9d5ff;
+}
+
+.bookingPriceValue {
+  font-size: 32px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #31135d 0%, #31135d 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -1px;
+  display: inline-block;
+}
+
+.bookingPriceUnit {
+  font-size: 16px;
+  color: var(--color-text-light);
+  font-weight: 500;
+  background: none;
+  -webkit-text-fill-color: var(--color-text-light);
+}
+
+/* Form Labels */
+.bookingLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.bookingLabelText {
+  cursor: pointer;
+}
+
+.bookingInfoIcon {
+  width: 16px;
+  height: 16px;
+  color: #9CA3AF;
+  cursor: pointer;
+}
+
+/* Date Input */
+.bookingDateInput {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid var(--color-border);
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-text-dark);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  background: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.bookingDateInput:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+}
+
+.bookingDateInput:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px rgba(49, 19, 93, 0.15);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.bookingFieldGroup {
+  margin-bottom: 10px;
+}
+
+.bookingDateWrapper {
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.bookingHelpText {
+  font-size: 12px;
+  color: var(--color-text-light);
+  line-height: 1.4;
+  margin-bottom: 10px;
+  font-weight: 400;
+  padding-left: 4px;
+}
+
+/* Strict Mode Checkbox */
+.bookingCheckboxWrapper {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 12px;
+  background: linear-gradient(135deg, #f8f9ff 0%, #faf5ff 100%);
+  border-radius: 10px;
+  border: 1px solid #e9d5ff;
+  transition: all 0.2s ease;
+}
+
+.bookingCheckboxWrapper:hover {
+  background: linear-gradient(135deg, #f5f3ff 0%, #faf5ff 100%);
+  border-color: #d8b4fe;
+}
+
+.bookingCheckbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--color-primary);
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.bookingCheckboxLabel {
+  font-size: 14px;
+  color: var(--color-text-dark);
+  user-select: none;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.bookingCheckboxLabelText {
+  cursor: pointer;
+}
+
+.bookingCheckboxInfoIcon {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  vertical-align: middle;
+  margin-left: 2px;
+  opacity: 0.6;
+  cursor: pointer;
+}
+
+/* Schedule Selector Container */
+.bookingScheduleWrapper {
+  margin-bottom: 14px;
+  padding: 12px;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+}
+
+.bookingScheduleInfo {
+  margin-top: 12px;
+  font-size: 13px;
+  color: #4B5563;
+}
+
+.bookingScheduleStrong {
+  color: var(--color-primary);
+}
+
+.bookingCustomScheduleLink {
+  background: none;
+  border: none;
+  color: var(--color-purple-accent);
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Custom Schedule Textarea */
+.bookingCustomScheduleInput {
+  margin-top: 10px;
+}
+
+.bookingTextarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 10px 12px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.bookingTextarea:focus {
+  border-color: var(--color-purple-accent);
+  outline: none;
+}
+
+.bookingTextareaHelp {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--color-text-light);
+}
+
+/* Select Dropdown */
+.bookingSelectWrapper {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.bookingSelect {
+  width: 100%;
+  padding: 10px 12px;
+  padding-right: 40px;
+  border: 2px solid var(--color-border);
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-text-dark);
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  appearance: none;
+  box-shadow: var(--shadow-sm);
+}
+
+.bookingSelect:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+}
+
+.bookingSelect:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px rgba(49, 19, 93, 0.15);
+  outline: none;
+}
+
+.bookingSelectArrow {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid var(--color-primary);
+  pointer-events: none;
+}
+
+/* Price Breakdown */
+.bookingPriceBreakdown {
+  margin-bottom: 12px;
+  padding: 12px;
+  background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+}
+
+.bookingPriceRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 15px;
+}
+
+.bookingPriceLabel {
+  color: var(--color-text-dark);
+  font-weight: 500;
+}
+
+.bookingPriceAmount {
+  color: var(--color-text-dark);
+  font-weight: 700;
+  font-size: 16px;
+}
+
+/* Total Row */
+.bookingTotalRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-top: 2px solid var(--color-border);
+  margin-bottom: 10px;
+}
+
+.bookingTotalLabel {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-dark);
+}
+
+.bookingTotalAmount {
+  font-size: 28px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #31135d 0%, #31135d 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Create Proposal Button */
+.bookingSubmitButton {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #31135d 0%, #31135d 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 14px rgba(49, 19, 93, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.bookingSubmitButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(49, 19, 93, 0.5);
+}
+
+.bookingSubmitButton:disabled {
+  background: #D1D5DB;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.bookingExistingLink {
+  display: block;
+  text-align: center;
+  margin-top: 12px;
+  color: var(--color-primary);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.bookingExistingLink:hover {
+  text-decoration: underline;
+}
+
+/* ============================================================================
+   MODALS - Tutorial
+   ============================================================================ */
+
+.modalOverlayBase {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--spacing-md);
+}
+
+.modalOverlayDark {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.modalOverlayDarker {
+  background: rgba(0, 0, 0, 0.9);
+}
+
+.tutorialModal {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  max-width: 500px;
+  position: relative;
+}
+
+.tutorialCloseButton {
+  position: absolute;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--color-text-light);
+}
+
+.tutorialTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: var(--spacing-md);
+  color: var(--color-text-dark);
+}
+
+.tutorialContent {
+  line-height: 1.6;
+  color: var(--color-text-light);
+  margin-bottom: var(--spacing-lg);
+}
+
+.tutorialHighlight {
+  padding: var(--spacing-md);
+  background: var(--color-bg-light);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-lg);
+  text-align: center;
+}
+
+.tutorialHighlightIcon {
+  font-size: 2rem;
+  margin-bottom: var(--spacing-sm);
+}
+
+.tutorialHighlightText {
+  font-size: 0.875rem;
+  color: var(--color-text-dark);
+}
+
+.tutorialActions {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+.tutorialButtonPrimary {
+  flex: 1;
+  padding: 0.75rem;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tutorialButtonSecondary {
+  flex: 1;
+  padding: 0.75rem;
+  background: white;
+  color: var(--color-primary);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ============================================================================
+   MODALS - Photo
+   ============================================================================ */
+
+.photoModal {
+  flex-direction: column;
+}
+
+.photoModalClose {
+  position: absolute;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  font-size: 2rem;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1002;
+}
+
+@media (min-width: 901px) {
+  .photoModalClose {
+    top: var(--spacing-xl);
+    right: var(--spacing-xl);
+  }
+}
+
+.photoModalImage {
+  max-width: 95vw;
+  max-height: 75vh;
+  object-fit: contain;
+  margin-bottom: 6rem;
+}
+
+@media (min-width: 901px) {
+  .photoModalImage {
+    max-width: 90vw;
+    max-height: 80vh;
+    margin-bottom: 5rem;
+  }
+}
+
+.photoModalNav {
+  position: absolute;
+  bottom: 4rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+  z-index: 1001;
+}
+
+@media (min-width: 901px) {
+  .photoModalNav {
+    bottom: 5rem;
+    gap: var(--spacing-lg);
+  }
+}
+
+.photoModalNavButton {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+@media (min-width: 901px) {
+  .photoModalNavButton {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+  }
+}
+
+.photoModalCounter {
+  color: white;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  min-width: 60px;
+  text-align: center;
+}
+
+@media (min-width: 901px) {
+  .photoModalCounter {
+    font-size: 0.875rem;
+    min-width: 80px;
+  }
+}
+
+.photoModalCloseBottom {
+  position: absolute;
+  bottom: var(--spacing-md);
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border: none;
+  color: var(--color-text-dark);
+  padding: 0.5rem 2rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.875rem;
+  z-index: 1001;
+}
+
+@media (min-width: 901px) {
+  .photoModalCloseBottom {
+    bottom: var(--spacing-lg);
+    padding: 0.75rem 2.5rem;
+    font-size: 1rem;
+  }
+}
+
+/* ============================================================================
+   MOBILE BOOKING BAR
+   ============================================================================ */
+
+.mobileBookingOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 9998;
+}
+
+.mobileBookingBar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+  transition: all 0.3s ease;
+}
+
+.mobileBookingBarExpanded {
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.mobileBookingCollapsed {
+  padding: 12px 16px;
+}
+
+.mobileBookingExpanded {
+  padding: 20px 16px 24px;
+}
+
+/* Collapsed View */
+.mobileBookingScheduleRow {
+  margin-bottom: 12px;
+}
+
+.mobileBookingPriceRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.mobileBookingPriceInfo {
+  flex: 1;
+}
+
+.mobileBookingPriceValue {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.mobileBookingPriceUnit {
+  font-size: 14px;
+  color: var(--color-text-light);
+  font-weight: 500;
+}
+
+.mobileBookingContinueButton {
+  padding: 12px 24px;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* Expanded View */
+.mobileBookingHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.mobileBookingTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text-dark);
+  margin: 0;
+}
+
+.mobileBookingCloseButton {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--color-text-light);
+  padding: 4px;
+}
+
+.mobileBookingPriceDisplay {
+  background: linear-gradient(135deg, #f8f9ff 0%, #faf5ff 100%);
+  padding: 12px;
+  border-radius: var(--radius-lg);
+  margin-bottom: 16px;
+  border: 1px solid #e9d5ff;
+}
+
+.mobileBookingPriceLarge {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--color-primary);
+}
+
+/* Mobile Form Elements */
+.mobileBookingFieldGroup {
+  margin-bottom: 16px;
+}
+
+.mobileBookingLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: 8px;
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.mobileBookingInput {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid var(--color-border);
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--color-text-dark);
+  box-sizing: border-box;
+}
+
+.mobileBookingSelect {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid var(--color-border);
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--color-text-dark);
+  background: white;
+  box-sizing: border-box;
+}
+
+/* Mobile Strict Mode */
+.mobileBookingCheckboxWrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #f8f9ff;
+  border-radius: 10px;
+  border: 1px solid #e9d5ff;
+}
+
+.mobileBookingCheckbox {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: var(--color-primary);
+}
+
+.mobileBookingCheckboxLabel {
+  font-size: 14px;
+  color: var(--color-text-dark);
+  font-weight: 500;
+}
+
+/* Mobile Schedule Section */
+.mobileBookingScheduleWrapper {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+}
+
+.mobileBookingScheduleInfo {
+  margin-top: 12px;
+  font-size: 13px;
+  color: #4B5563;
+}
+
+.mobileBookingCustomScheduleLink {
+  background: none;
+  border: none;
+  color: var(--color-purple-accent);
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.mobileBookingCustomScheduleInput {
+  margin-top: 10px;
+}
+
+.mobileBookingTextarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 10px 12px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.mobileBookingTextarea:focus {
+  border-color: var(--color-purple-accent);
+  outline: none;
+}
+
+.mobileBookingTextareaHelp {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--color-text-light);
+}
+
+/* Mobile Price Breakdown */
+.mobileBookingBreakdown {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+}
+
+.mobileBookingBreakdownRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 15px;
+}
+
+.mobileBookingBreakdownLabel {
+  color: var(--color-text-dark);
+  font-weight: 500;
+}
+
+.mobileBookingBreakdownAmount {
+  color: var(--color-text-dark);
+  font-weight: 700;
+}
+
+.mobileBookingTotalRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border);
+}
+
+.mobileBookingTotalLabel {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-dark);
+}
+
+.mobileBookingTotalAmount {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--color-primary);
+}
+
+/* Mobile Submit Button */
+.mobileBookingSubmitButton {
+  width: 100%;
+  padding: 16px;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mobileBookingSubmitButton:disabled {
+  background: #D1D5DB;
+  cursor: not-allowed;
+}
+
+.mobileBookingExistingLink {
+  display: block;
+  text-align: center;
+  margin-top: 12px;
+  color: var(--color-primary);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Mobile Spacer */
+.mobileBookingSpacer {
+  height: 140px;
+}
+
+.mobileBookingSpacerCollapsed {
+  height: 0;
+}
+
+/* ============================================================================
+   UTILITY CLASSES
+   ============================================================================ */
+
+.hiddenMobile {
+  display: block;
+}
+
+@media (max-width: 900px) {
+  .hiddenMobile {
+    display: none;
+  }
+}
+
+.hiddenDesktop {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .hiddenDesktop {
+    display: block;
+  }
+}
+
+.readMoreButton {
+  margin-top: var(--spacing-sm);
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+/* ============================================================================
+   LEGACY CLASSES (from original file - kept for compatibility)
+   ============================================================================ */
+
+/* Main Layout (legacy) */
+.mainContainer {
+  padding-top: calc(80px + 2rem);
+  min-height: 70vh;
+}
+
+.mainContent {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.rightColumn {
+  position: sticky;
+  top: calc(80px + 20px);
+  align-self: flex-start;
+  max-height: calc(100vh - 80px - 40px);
+  overflow-y: auto;
+  border-radius: 16px;
+  padding: 28px;
+  background: white;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+/* Buttons (legacy) */
+.buttonPrimary {
+  padding: 0.75rem 1.5rem;
+  background: #31135d;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.buttonPrimary:hover:not(:disabled) {
+  background: #1f0b38;
+}
+
+.buttonPrimary:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* Form Elements (legacy) */
+.formInput {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.formInput:focus {
+  outline: none;
+  border-color: #31135d;
+  box-shadow: 0 0 0 3px rgba(49, 19, 93, 0.1);
+}
+
+/* Modal Overlay (legacy) */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2002;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 100px;
+  padding-bottom: 50px;
+  background-color: rgba(0, 0, 0, 0.5);
+  overflow-y: auto;
+}
+
+/* Responsive (legacy) */
+@media (max-width: 900px) {
+  .mainContent {
+    grid-template-columns: 1fr;
+  }
+
+  .rightColumn {
+    position: static;
+    max-height: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .mainContainer {
+    padding-top: calc(80px + 1rem);
+  }
+
+  .mainContent {
+    padding: 0 1rem;
+  }
+}

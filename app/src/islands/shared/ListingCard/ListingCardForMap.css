@@ -38,10 +38,10 @@
 
 .listing-card-for-map-container {
   position: relative;
-  width: 340px;
+  width: 300px;
   background-color: #FFFFFF;
   border: 1px solid #E0E0E0;
-  border-radius: 12px;
+  border-radius: 10px;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -61,15 +61,157 @@
   }
 }
 
+/* ========================================
+   MOBILE OPTIMIZATION - 768px
+   Target: 25-30% size reduction
+   ======================================== */
+
 @media (max-width: 768px) {
+  /* Container - reduced width */
   .listing-card-for-map-container {
-    width: 320px;
+    width: 260px;
+    border-radius: 8px;
+  }
+
+  /* Image - reduced height */
+  .listing-card-image-container {
+    height: 120px;
+  }
+
+  /* Close button - tighter positioning */
+  .listing-card-close-btn {
+    top: 4px;
+    right: 4px;
+    padding: 3px;
+  }
+
+  /* Favorite button - tighter positioning */
+  .listing-card-for-map-container .favorite-button-shared {
+    top: 4px;
+    left: 4px;
+  }
+
+  /* Gallery controls - smaller buttons */
+  .listing-card-gallery-btn {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+  }
+
+  /* NEW badge - smaller */
+  .listing-card-new-badge {
+    top: 6px;
+    right: 30px;
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+
+  /* Content section - reduced padding and gap */
+  .listing-card-content {
+    padding: 8px;
+    gap: 2px;
+  }
+
+  /* Header row - reduced spacing */
+  .listing-card-header-row {
+    gap: 6px;
+    margin-bottom: 0;
+  }
+
+  /* Title - slightly smaller */
+  .listing-card-title {
+    font-size: 13px;
+  }
+
+  /* Price - reduced size */
+  .listing-card-price-highlight {
+    font-size: 13px;
+  }
+
+  .listing-card-price-subtext {
+    font-size: 10px;
+  }
+
+  /* Location - smaller */
+  .listing-card-location {
+    font-size: 11px;
+    gap: 2px;
+  }
+
+  /* Features row - tighter spacing */
+  .listing-card-features-row {
+    gap: 8px;
+    margin-top: 0;
+  }
+
+  .listing-card-feature-item {
+    font-size: 11px;
+    gap: 2px;
+  }
+
+  /* Divider - reduced margin */
+  .listing-card-divider {
+    margin: 4px 0;
+  }
+
+  /* Action row - tighter spacing */
+  .listing-card-action-row {
+    gap: 6px;
+    margin-top: 0;
+  }
+
+  /* Action buttons - smaller */
+  .listing-card-view-details-btn,
+  .listing-card-send-message-btn {
+    padding: 6px 10px;
+    font-size: 11px;
+    border-radius: 5px;
+  }
+
+  /* Arrow - proportionally smaller */
+  .listing-card-arrow {
+    bottom: -8px;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 8px solid #FFFFFF;
+  }
+
+  .listing-card-arrow-border {
+    bottom: -9px;
+    border-left: 9px solid transparent;
+    border-right: 9px solid transparent;
+    border-top: 9px solid #E0E0E0;
   }
 }
 
+/* ========================================
+   MOBILE OPTIMIZATION - 480px (Small screens)
+   Target: Additional 5% reduction
+   ======================================== */
+
 @media (max-width: 480px) {
   .listing-card-for-map-container {
-    width: 280px;
+    width: 240px;
+    border-radius: 8px;
+  }
+
+  .listing-card-image-container {
+    height: 100px;
+  }
+
+  .listing-card-content {
+    padding: 6px;
+    gap: 2px;
+  }
+
+  .listing-card-title {
+    font-size: 12px;
+  }
+
+  .listing-card-price-highlight {
+    font-size: 12px;
   }
 }
 
@@ -96,34 +238,45 @@
   transform: scale(1.1);
 }
 
-/* Favorite Button */
-.listing-card-favorite-btn {
-  position: absolute;
+/* Favorite Button - Override styles for shared FavoriteButton component in map card context */
+.listing-card-for-map-container .favorite-button-shared {
+  /* Position at top-left instead of top-right */
   top: 6px;
   left: 6px;
+  right: auto;
+
+  /* White background for map card (to match close button style) */
   background: rgba(255, 255, 255, 0.95);
-  border: none;
-  cursor: pointer;
-  z-index: 10;
-  padding: 4px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.listing-card-favorite-btn:hover {
+.listing-card-for-map-container .favorite-button-shared:hover:not(:disabled) {
   background: rgba(255, 255, 255, 1);
-  transform: scale(1.1);
+}
+
+/* Override icon colors for light background context */
+.listing-card-for-map-container .favorite-button-shared:not(.favorited) .favorite-button-icon {
+  color: #4D4D4D;
+  stroke: #4D4D4D;
+}
+
+.listing-card-for-map-container .favorite-button-shared:not(.favorited):hover .favorite-button-icon {
+  color: #FF6B35;
+  stroke: #FF6B35;
+}
+
+/* Keep favorited state colors (orange) */
+.listing-card-for-map-container .favorite-button-shared.favorited .favorite-button-icon {
+  color: #FF6B35;
+  stroke: #FF6B35;
+  fill: #FF6B35;
 }
 
 /* Image Container */
 .listing-card-image-container {
   position: relative;
   width: 100%;
-  height: 180px;
+  height: 140px;
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -202,18 +355,18 @@
 
 /* Content Section */
 .listing-card-content {
-  padding: 12px;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 2px;
 }
 
 .listing-card-header-row {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: baseline;
   gap: 8px;
-  margin-bottom: 2px;
+  margin-bottom: 0;
 }
 
 .listing-card-title {
@@ -231,19 +384,21 @@
 }
 
 .listing-card-title:hover {
-  color: #6C63FF;
+  color: #31135D;
 }
 
 .listing-card-price-section {
   flex-shrink: 0;
-  text-align: right;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
 }
 
 .listing-card-price-highlight {
   font-family: 'Lato', sans-serif;
   font-weight: 700;
-  font-size: 18px;
-  color: #000000;
+  font-size: 14px;
+  color: #31135D;
   white-space: nowrap;
 }
 
@@ -252,7 +407,6 @@
   font-weight: 300;
   font-size: 11px;
   color: #666;
-  margin-top: -2px;
 }
 
 .listing-card-location {
@@ -271,15 +425,15 @@
 }
 
 .listing-card-location:hover {
-  color: #6C63FF;
+  color: #31135D;
 }
 
 .listing-card-features-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
-  margin-top: 2px;
+  margin-top: 0;
 }
 
 .listing-card-feature-item {
@@ -295,20 +449,20 @@
 .listing-card-divider {
   height: 1px;
   background: #E0E0E0;
-  margin: 8px 0;
+  margin: 6px 0;
 }
 
 .listing-card-action-row {
   display: flex;
   gap: 8px;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .listing-card-view-details-btn {
   flex: 1;
   background-color: transparent;
-  color: #6C63FF;
-  border: 1px solid #6C63FF;
+  color: #31135D;
+  border: 1px solid #31135D;
   border-radius: 6px;
   padding: 8px 12px;
   font-family: 'Lato', sans-serif;
@@ -319,13 +473,13 @@
 }
 
 .listing-card-view-details-btn:hover {
-  background-color: #6C63FF;
+  background-color: #31135D;
   color: white;
 }
 
 .listing-card-send-message-btn {
   flex: 1;
-  background-color: #6C63FF;
+  background-color: #6D31C2;
   color: white;
   border: none;
   border-radius: 6px;
@@ -338,7 +492,7 @@
 }
 
 .listing-card-send-message-btn:hover {
-  background-color: #5a52e0;
+  background-color: #5a28a3;
 }
 
 .listing-card-send-message-btn:active {

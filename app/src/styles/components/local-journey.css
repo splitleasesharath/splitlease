@@ -1,0 +1,417 @@
+/* Local Journey Section - Enhanced Horizontal Scroll Animation */
+
+.local-journey-section {
+    position: relative;
+    width: 100%;
+    background: linear-gradient(180deg, var(--bg-white) 0%, var(--bg-light) 50%, var(--bg-white) 100%);
+    overflow: hidden;
+    padding: 4rem 0;
+}
+
+/* Progress Indicator - Fixed at top during scroll */
+.local-journey-progress-container {
+    position: absolute;
+    top: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.local-journey-progress-bar {
+    width: 200px;
+    height: 3px;
+    background: var(--border-color);
+    border-radius: 2px;
+    position: relative;
+    overflow: hidden;
+    transform-origin: left center;
+    transform: scaleX(0);
+}
+
+.local-journey-progress-bar::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--gradient-purple-button);
+    transform-origin: left center;
+}
+
+.local-journey-progress-dots {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.local-journey-progress-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border-color);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.local-journey-progress-dot.active {
+    background: var(--primary-purple);
+    transform: scale(1.2);
+}
+
+.local-journey-progress-dot.cta {
+    width: 10px;
+    height: 10px;
+    background: var(--border-color);
+}
+
+.local-journey-progress-dot.cta.active {
+    background: var(--accent-purple);
+}
+
+/* Wrapper */
+.local-journey-wrapper {
+    height: 100vh;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+    perspective: 1000px;
+}
+
+/* Header Section */
+.local-journey-header {
+    padding: 0 2rem;
+    margin-bottom: 3rem;
+    text-align: center;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+    will-change: transform, opacity;
+}
+
+.local-journey-eyebrow {
+    display: inline-block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--accent-purple);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 1rem;
+    padding: 0.5rem 1rem;
+    background: rgba(109, 49, 194, 0.1);
+    border-radius: 100px;
+}
+
+.local-journey-header h2 {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--text-dark);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+}
+
+.local-journey-header p {
+    font-size: 1.25rem;
+    color: var(--text-gray);
+    line-height: 1.6;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Track - Horizontal Scroll Container */
+.local-journey-track {
+    display: flex;
+    gap: 3rem;
+    padding-left: 50vw;
+    padding-right: 20vw;
+    width: max-content;
+    align-items: center;
+    transform-style: preserve-3d;
+}
+
+/* Feature Cards */
+.local-journey-card {
+    width: 380px;
+    flex-shrink: 0;
+    background: var(--bg-white);
+    border: 1px solid var(--border-color);
+    border-radius: 24px;
+    padding: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    position: relative;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+    transition: box-shadow 0.4s ease, border-color 0.4s ease;
+    will-change: transform, opacity;
+    transform-style: preserve-3d;
+    overflow: hidden;
+}
+
+/* Card Number Badge */
+.local-journey-card-number {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-light-gray);
+    opacity: 0.5;
+}
+
+.local-journey-card-number span {
+    font-family: var(--font-dm);
+}
+
+/* Card Accent Line */
+.local-journey-card-accent {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--gradient-purple-button);
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Active Card State */
+.local-journey-card.is-active {
+    box-shadow: 0 12px 48px rgba(49, 19, 93, 0.15);
+    border-color: var(--accent-purple);
+}
+
+.local-journey-card.is-active .local-journey-card-accent {
+    transform: scaleX(1);
+}
+
+.local-journey-card.is-active .local-journey-card-number {
+    opacity: 1;
+    color: var(--accent-purple);
+}
+
+/* Hover States - Only on devices with hover capability (not touch) */
+@media (hover: hover) {
+    .local-journey-card:hover {
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        border-color: var(--accent-blue);
+    }
+
+    .local-journey-card:hover .local-journey-card-accent {
+        transform: scaleX(0.5);
+    }
+}
+
+/* Icon Container */
+.local-journey-icon {
+    width: 72px;
+    height: 72px;
+    margin-bottom: 1.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(74, 144, 226, 0.1) 0%, rgba(109, 49, 194, 0.1) 100%);
+    border-radius: 20px;
+    color: var(--accent-blue);
+    transition: all 0.4s ease;
+}
+
+.local-journey-card.is-active .local-journey-icon {
+    background: linear-gradient(135deg, rgba(74, 144, 226, 0.2) 0%, rgba(109, 49, 194, 0.2) 100%);
+    transform: scale(1.05);
+}
+
+.local-journey-icon svg {
+    width: 36px;
+    height: 36px;
+    transition: transform 0.3s ease;
+}
+
+@media (hover: hover) {
+    .local-journey-card:hover .local-journey-icon svg {
+        transform: scale(1.1);
+    }
+}
+
+/* Card Typography */
+.local-journey-card h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--text-dark);
+    line-height: 1.2;
+}
+
+.local-journey-card p {
+    font-size: 1rem;
+    color: var(--text-gray);
+    line-height: 1.7;
+    margin-bottom: 0;
+}
+
+/* CTA Card Styling */
+.local-journey-card.cta-card {
+    background: var(--gradient-purple-primary);
+    color: white;
+    border: none;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 400px;
+}
+
+.local-journey-card.cta-card .local-journey-card-accent {
+    display: none;
+}
+
+.cta-card-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.local-journey-card.cta-card h3,
+.local-journey-card.cta-card p {
+    color: white;
+}
+
+.local-journey-card.cta-card h3 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.local-journey-card.cta-card p {
+    font-size: 1.125rem;
+    opacity: 0.9;
+    margin-bottom: 1rem;
+}
+
+/* CTA Button */
+.local-journey-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    background: white;
+    color: var(--primary-purple);
+    padding: 1rem 2rem;
+    border-radius: 14px;
+    font-weight: 600;
+    font-size: 1rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.local-journey-button svg {
+    width: 20px;
+    height: 20px;
+    transition: transform 0.3s ease;
+}
+
+@media (hover: hover) {
+    .local-journey-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    }
+
+    .local-journey-button:hover svg {
+        transform: translateX(4px);
+    }
+}
+
+.local-journey-button:active {
+    transform: translateY(0);
+}
+
+/* Mobile Adjustments */
+@media (max-width: 768px) {
+    .local-journey-section {
+        padding: 2rem 0;
+    }
+
+    .local-journey-progress-container {
+        top: 1rem;
+    }
+
+    .local-journey-progress-bar {
+        width: 120px;
+    }
+
+    .local-journey-header h2 {
+        font-size: 2rem;
+    }
+
+    .local-journey-header p {
+        font-size: 1rem;
+    }
+
+    .local-journey-eyebrow {
+        font-size: 0.75rem;
+        padding: 0.375rem 0.75rem;
+    }
+
+    .local-journey-card {
+        width: 85vw;
+        max-width: 340px;
+        padding: 1.75rem;
+    }
+
+    .local-journey-track {
+        gap: 1.5rem;
+        padding-left: 10vw;
+        padding-right: 10vw;
+    }
+
+    .local-journey-icon {
+        width: 56px;
+        height: 56px;
+    }
+
+    .local-journey-icon svg {
+        width: 28px;
+        height: 28px;
+    }
+
+    .local-journey-card h3 {
+        font-size: 1.25rem;
+    }
+
+    .local-journey-card.cta-card h3 {
+        font-size: 1.5rem;
+    }
+
+    .local-journey-card.cta-card {
+        min-height: 320px;
+    }
+
+    .local-journey-button {
+        padding: 0.875rem 1.5rem;
+        font-size: 0.9375rem;
+    }
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+    .local-journey-card,
+    .local-journey-icon,
+    .local-journey-button,
+    .local-journey-progress-dot,
+    .local-journey-card-accent {
+        transition: none;
+    }
+
+    .local-journey-header {
+        will-change: auto;
+    }
+
+    .local-journey-card {
+        will-change: auto;
+    }
+}

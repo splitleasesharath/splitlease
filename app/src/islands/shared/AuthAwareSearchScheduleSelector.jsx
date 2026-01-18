@@ -140,6 +140,18 @@ export default function AuthAwareSearchScheduleSelector({
       console.log('📅 AuthAwareSearchScheduleSelector: getSessionId() returned:', sessionId);
       setUserId(sessionId);
 
+      // Check if there's a days-selected URL parameter - if so, prioritize it over DB
+      // This allows navigation from WhySplitLeasePage to override saved preferences
+      const urlParams = new URLSearchParams(window.location.search);
+      const daysFromUrl = urlParams.get('days-selected');
+
+      if (daysFromUrl) {
+        console.log('📅 AuthAwareSearchScheduleSelector: URL has days-selected parameter, prioritizing URL over DB:', daysFromUrl);
+        // Don't set userDays - let SearchScheduleSelector read from URL
+        setIsLoading(false);
+        return;
+      }
+
       if (!sessionId) {
         console.log('📅 AuthAwareSearchScheduleSelector: No session, using default behavior');
         setIsLoading(false);

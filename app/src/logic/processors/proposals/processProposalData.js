@@ -69,7 +69,7 @@ export function processListingData(rawListing) {
     houseRules: rawListing.houseRules || [],
     checkInTime: rawListing['NEW Date Check-in Time'] || null,
     checkOutTime: rawListing['NEW Date Check-out Time'] || null,
-    hostAccountId: rawListing['Host / Landlord'] || null
+    hostUserId: rawListing['Host User'] || null
   };
 }
 
@@ -93,7 +93,8 @@ export function processHostData(rawHost) {
     linkedInVerified: rawHost['Verify - Linked In ID'] || false,
     phoneVerified: rawHost['Verify - Phone'] || false,
     userVerified: rawHost['user verified?'] || false,
-    hostAccountId: rawHost['Account - Host / Landlord'] || null
+    // hostUserId same as user._id after migration (Host User column contains user._id directly)
+    hostUserId: rawHost._id || null
   };
 }
 

@@ -99,6 +99,7 @@ export function serializeFiltersToUrl(filters) {
 /**
  * Update browser URL without page reload
  * Uses History API to maintain browser navigation
+ * IMPORTANT: Preserves 'days-selected' parameter which is managed by SearchScheduleSelector
  * @param {object} filters - Filter state object
  * @param {boolean} replace - If true, replaces current history entry instead of pushing new one
  */
@@ -106,9 +107,24 @@ export function updateUrlParams(filters, replace = false) {
   if (typeof window === 'undefined') return;
 
   const queryString = serializeFiltersToUrl(filters);
-  const newUrl = queryString
-    ? `${window.location.pathname}?${queryString}`
-    : window.location.pathname;
+
+  // Preserve days-selected parameter if it exists (managed by SearchScheduleSelector)
+  const currentParams = new URLSearchParams(window.location.search);
+  const daysSelected = currentParams.get('days-selected');
+
+  let newUrl;
+  if (queryString) {
+    const newParams = new URLSearchParams(queryString);
+    if (daysSelected) {
+      newParams.set('days-selected', daysSelected);
+    }
+    newUrl = `${window.location.pathname}?${newParams.toString()}`;
+  } else if (daysSelected) {
+    // No other filters, but preserve days-selected
+    newUrl = `${window.location.pathname}?days-selected=${daysSelected}`;
+  } else {
+    newUrl = window.location.pathname;
+  }
 
   if (replace) {
     window.history.replaceState(null, '', newUrl);

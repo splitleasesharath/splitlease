@@ -132,6 +132,50 @@ export async function fetchProposalsByGuest(userId) {
 }
 
 /**
+ * Fetch move-in date and reservation span from user's most recent proposal
+ * for pre-populating new proposal creation flows.
+ *
+ * @param {string} userId - The user's _id
+ * @returns {Promise<{moveInDate: string|null, reservationSpanWeeks: number|null}|null>}
+ *          Returns object with last proposal defaults, or null if no previous proposal exists
+ */
+export async function fetchLastProposalDefaults(userId) {
+  if (!userId) {
+    console.log('fetchLastProposalDefaults: No userId provided');
+    return null;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('proposal')
+      .select('"Move in range start", "Reservation Span (Weeks)"')
+      .eq('Guest', userId)
+      .or('Deleted.is.null,Deleted.eq.false')
+      .order('Created Date', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (error || !data) {
+      console.log('No previous proposal found for pre-population');
+      return null;
+    }
+
+    console.log('Found last proposal defaults:', {
+      moveInDate: data['Move in range start'],
+      reservationSpanWeeks: data['Reservation Span (Weeks)']
+    });
+
+    return {
+      moveInDate: data['Move in range start'] || null,
+      reservationSpanWeeks: data['Reservation Span (Weeks)'] || null
+    };
+  } catch (err) {
+    console.warn('Error fetching last proposal defaults:', err);
+    return null;
+  }
+}
+
+/**
  * Load complete details for a specific proposal
  * Enriches proposal with:
  * - Listing data
@@ -212,6 +256,7 @@ export async function loadProposalDetails(proposal) {
     // Load house rules
     if (proposal['House Rules'] && Array.isArray(proposal['House Rules']) && proposal['House Rules'].length > 0) {
       const { data: rulesData, error: rulesError } = await supabase
+        .schema('reference_table')
         .from('zat_features_houserule')
         .select('_id, Name, Icon')
         .in('_id', proposal['House Rules']);

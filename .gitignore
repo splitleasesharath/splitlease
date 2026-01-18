@@ -33,6 +33,7 @@ dist/
 *.sqlite
 *.sqlite3
 !app/server/db/backup.db
+supabase-migrations/
 
 # IDE
 .vscode/
@@ -52,6 +53,9 @@ Thumbs.db
 # Logs
 *.log
 
+# ADW orchestrator run logs
+adws/adw_run_logs/
+
 # Worktrees directory
 trees/
 !trees/README.md
@@ -64,11 +68,17 @@ trees/
 # Claude hooks logs
 logs/
 
-# Agent output directories
-agents/
+# Commit counter (local state tracking)
+.claude/commit_count.txt
+
+# Agent output directories (root level only, not .claude/agents/)
+/agents/
 
 claude-max-output.json
 claude-max-output.jsonl
+
+# Goodbye skill temporary files (may contain webhook URLs)
+.claude/condensed_summary.json
 
 storage.json
 
@@ -79,12 +89,11 @@ screenshots/
 # Playwright video recordings
 videos/
 
-# Bun lock files
-bun.lock
-bun.lockb
+# Note: bun.lock files are tracked for reproducible builds
 
 # Agent Context and Tools directories
 input/
+Input/
 .playwright-mcp/
 dump/
 
@@ -94,3 +103,14 @@ plan/
 
 # Temporary directories
 .temp/*.gdoc
+*.gdoc
+
+# Deprecated code
+Deprecated/
+desktop.ini
+nul
+
+# Implementation directory
+Implementation/
+.temp-cohost-request/
+.temp-host-editing-proposal/

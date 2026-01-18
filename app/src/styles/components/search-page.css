@@ -38,6 +38,840 @@
   position: relative;
 }
 
+/* ========================================
+   NEW FILTER SECTION - Redesigned Layout
+   ======================================== */
+
+/* Filter Section Container */
+.filter-section {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+  background: white;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+/* Filter Bar - Schedule + Toggle Button Row */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Schedule Selector Container */
+.schedule-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Calendar Icon Button - New Indigo Style */
+.calendar-icon-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f3ff;
+  border: 1px solid #e0e7ff;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #6366f1;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.calendar-icon-btn:hover {
+  background: #ede9fe;
+  border-color: #c7d2fe;
+}
+
+.calendar-icon-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Day Pills Container */
+.day-pills {
+  display: flex;
+  gap: 6px;
+}
+
+/* Divider between schedule and filter button */
+.filter-divider {
+  width: 1px;
+  height: 38px;
+  background: #e5e5e5;
+  flex-shrink: 0;
+}
+
+/* Check-in/Check-out Block */
+.checkin-block {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+  border: 1px solid #e0e7ff;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.checkin-block .sync-icon {
+  width: 20px;
+  height: 20px;
+  color: #6366f1;
+  flex-shrink: 0;
+}
+
+.checkin-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.checkin-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.checkin-row .label {
+  font-weight: 500;
+}
+
+.checkin-row .day {
+  font-weight: 700;
+  color: #4338ca;
+}
+
+/* ========================================
+   DESKTOP COLLAPSED STATE
+   ======================================== */
+
+/* Desktop Compact Indicator - Shows when scrolling on desktop */
+.desktop-compact-indicator {
+  display: none;
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 10px 20px;
+  z-index: 101;
+  align-items: center;
+  gap: 16px;
+  transform: translateY(-100%);
+  opacity: 0;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+/* Visible state for desktop compact indicator */
+.desktop-compact-indicator--visible {
+  display: flex;
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* Clickable state - entire header expands filters */
+.desktop-compact-indicator--clickable {
+  cursor: pointer;
+  transition: transform 0.3s ease, opacity 0.3s ease, background-color 0.2s ease;
+}
+
+.desktop-compact-indicator--clickable:hover {
+  background-color: #f9fafb;
+}
+
+.desktop-compact-indicator--clickable:focus {
+  outline: 2px solid #6366f1;
+  outline-offset: -2px;
+}
+
+/* Desktop compact dots - day indicators */
+.desktop-compact-dots {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.desktop-compact-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  background: #f3f4f6;
+  color: #9ca3af;
+  transition: all 0.2s ease;
+}
+
+.desktop-compact-dot.active {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: white;
+}
+
+/* Desktop compact check-in info */
+.desktop-compact-checkin {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+  border: 1px solid #e0e7ff;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.desktop-compact-label {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.desktop-compact-day {
+  color: #4338ca;
+  font-weight: 700;
+}
+
+.desktop-compact-separator {
+  color: #9ca3af;
+  font-size: 11px;
+}
+
+/* Desktop compact filter button */
+.desktop-compact-filters {
+  /* No margin-left: auto - let expand button handle right alignment */
+}
+
+.desktop-compact-filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: white;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  transition: all 0.2s ease;
+}
+
+.desktop-compact-filter-btn:hover {
+  border-color: #9ca3af;
+  background: #f9fafb;
+}
+
+.desktop-compact-filter-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Desktop compact expand icon - visual indicator that header is clickable */
+.desktop-compact-expand {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+
+.desktop-compact-expand-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  border-radius: 6px;
+  color: white;
+  transition: all 0.2s ease;
+}
+
+.desktop-compact-indicator--clickable:hover .desktop-compact-expand-icon {
+  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+  transform: translateY(1px);
+}
+
+.desktop-compact-expand-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Filter section collapsed state */
+.filter-section--collapsed {
+  max-height: 0;
+  padding: 0 20px;
+  border-bottom: none;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.2s ease;
+}
+
+/* Results header desktop hidden state */
+.results-header--desktop-hidden {
+  max-height: 0;
+  padding: 0;
+  border-bottom: none;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.2s ease;
+}
+
+/* Filter tags row desktop collapsed state */
+.filter-tags-row--collapsed {
+  max-height: 0 !important;
+  padding: 0 20px !important;
+  border-bottom: none !important;
+  opacity: 0 !important;
+  overflow: hidden;
+  transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.2s ease;
+}
+
+/* Hide desktop compact indicator on mobile */
+@media (max-width: 768px) {
+  .desktop-compact-indicator {
+    display: none !important;
+  }
+
+  .filter-section--collapsed {
+    max-height: none;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e5e7eb;
+    opacity: 1;
+    overflow: visible;
+  }
+
+  .results-header--desktop-hidden {
+    max-height: none;
+    padding: 12px 16px;
+    border-bottom: 1px solid #e5e7eb;
+    opacity: 1;
+    overflow: visible;
+  }
+
+  .filter-tags-row--collapsed {
+    max-height: 80px !important;
+    opacity: 1 !important;
+    padding: 12px 20px !important;
+    border-bottom-color: #e5e7eb !important;
+  }
+}
+
+/* Filter Popup Wrapper */
+.filter-popup-wrapper {
+  position: relative;
+}
+
+/* Filter Toggle Button - Square Icon Button */
+.filter-toggle-btn-new {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid #e5e5e5;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  flex: none;
+  padding: 0;
+}
+
+.filter-toggle-btn-new:hover,
+.filter-toggle-btn-new.active {
+  border-color: #9ca3af;
+  background: #f9fafb;
+}
+
+.filter-toggle-btn-new svg {
+  width: 18px;
+  height: 18px;
+  color: #6b7280;
+}
+
+.filter-toggle-btn-new:hover svg,
+.filter-toggle-btn-new.active svg {
+  color: #374151;
+}
+
+.filter-toggle-btn-new:active {
+  transform: scale(0.95);
+}
+
+/* Filter Badge */
+.filter-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 20px;
+  height: 20px;
+  background: var(--secondary-purple, #6D31C2);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* ========================================
+   FILTER TAGS ROW - Shows Active Filters
+   ======================================== */
+
+.filter-tags-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 20px;
+  background: #fafafa;
+  border-bottom: 1px solid transparent;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.25s ease,
+              padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.2s ease;
+}
+
+.filter-tags-row.has-filters {
+  max-height: 80px;
+  opacity: 1;
+  padding: 12px 20px;
+  border-bottom-color: #e5e7eb;
+}
+
+/* Results Filter Button (in tags row) */
+.results-filter-btn {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 8px;
+  border: 1px solid #e5e5e5;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.results-filter-btn:hover {
+  border-color: #9ca3af;
+  background: #f9fafb;
+}
+
+.results-filter-btn svg {
+  width: 16px;
+  height: 16px;
+  color: #6b7280;
+}
+
+.results-filter-btn:hover svg {
+  color: #374151;
+}
+
+.results-filter-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 18px;
+  height: 18px;
+  background: var(--secondary-purple, #6D31C2);
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+}
+
+/* Filter Tags Container */
+.filter-tags-single-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  min-width: 0;
+}
+
+.filter-tags-single-row::-webkit-scrollbar {
+  height: 0;
+  display: none;
+}
+
+/* Filter Tag Pill */
+.filter-tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #f0f0ff;
+  border: 1px solid #e0e0ff;
+  border-radius: 9999px;
+  font-size: 13px;
+  color: #4338ca;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  animation: tagSlideIn 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.filter-tag:hover {
+  background: #e8e8ff;
+  border-color: #d0d0ff;
+}
+
+.filter-tag svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.filter-tag-sm {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.filter-tag-sm svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* Filter Tag Remove Button */
+.filter-tag-remove {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6366f1;
+  border-radius: 50%;
+  margin-left: 2px;
+  padding: 0;
+  transition: background 0.2s ease;
+}
+
+.filter-tag-remove:hover {
+  background: #e0e7ff;
+}
+
+.filter-tag-remove svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* Stagger animation for tags */
+.filter-tag:nth-child(1) { animation-delay: 0ms; }
+.filter-tag:nth-child(2) { animation-delay: 50ms; }
+.filter-tag:nth-child(3) { animation-delay: 100ms; }
+.filter-tag:nth-child(4) { animation-delay: 150ms; }
+.filter-tag:nth-child(5) { animation-delay: 200ms; }
+
+@keyframes tagSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-8px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* Hide top filter button when filters exist */
+.filter-section.has-active-filters .filter-popup-wrapper {
+  opacity: 0;
+  transform: scale(0.8);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ========================================
+   FILTER POPUP MODAL
+   ======================================== */
+
+.filter-popup {
+  position: fixed;
+  top: 140px;
+  left: 20px;
+  width: 840px;
+  max-width: calc(100vw - 40px);
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15), 0 4px 16px rgba(0,0,0,0.1);
+  border: 1px solid #e5e5e5;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px) scale(0.98);
+  transition: all 0.2s ease;
+}
+
+.filter-popup.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+.filter-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.filter-popup-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.filter-popup-clear {
+  font-size: 13px;
+  color: var(--secondary-purple, #6D31C2);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  padding: 0;
+}
+
+.filter-popup-clear:hover {
+  text-decoration: underline;
+}
+
+.filter-popup-body {
+  padding: 24px 28px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.filter-popup-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Full width group - spans all 3 columns */
+.filter-popup-group--full-width {
+  grid-column: 1 / -1;
+}
+
+.filter-popup-label {
+  font-size: 12px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.filter-popup-input {
+  padding: 12px 14px;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+  font-size: 14px;
+  width: 100%;
+  background: white;
+  transition: all 0.15s;
+}
+
+.filter-popup-input:focus {
+  outline: none;
+  border-color: var(--secondary-purple, #6D31C2);
+  box-shadow: 0 0 0 3px rgba(109, 49, 194, 0.1);
+}
+
+.filter-popup-select {
+  padding: 12px 36px 12px 14px;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+  font-size: 14px;
+  background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 14px center;
+  appearance: none;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.15s;
+}
+
+.filter-popup-select:focus {
+  outline: none;
+  border-color: var(--secondary-purple, #6D31C2);
+  box-shadow: 0 0 0 3px rgba(109, 49, 194, 0.1);
+}
+
+/* Neighborhood Multi-Select in Filter Popup */
+.filter-popup-neighborhoods {
+  max-height: 180px;
+  overflow-y: auto;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+  padding: 8px;
+}
+
+.neighborhood-checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+
+.neighborhood-checkbox-item-popup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #374151;
+  transition: background 0.15s ease;
+}
+
+.neighborhood-checkbox-item-popup:hover {
+  background: #f5f3ff;
+}
+
+.neighborhood-checkbox-item-popup input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--secondary-purple, #6D31C2);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.neighborhood-checkbox-item-popup span {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.filter-popup-footer {
+  padding: 16px 20px;
+  border-top: 1px solid #f3f4f6;
+  display: flex;
+  gap: 12px;
+}
+
+.filter-popup-footer .btn {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+
+.filter-popup-footer .btn-secondary {
+  background: white;
+  border: 1px solid #e5e5e5;
+  color: #374151;
+}
+
+.filter-popup-footer .btn-secondary:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.filter-popup-footer .btn-primary {
+  background: var(--secondary-purple, #6D31C2);
+  border: 1px solid var(--secondary-purple, #6D31C2);
+  color: white;
+}
+
+.filter-popup-footer .btn-primary:hover {
+  background: var(--primary-purple, #31135D);
+  border-color: var(--primary-purple, #31135D);
+}
+
+/* Filter Backdrop Overlay */
+.filter-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.1);
+  z-index: 500;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+}
+
+.filter-backdrop.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ========================================
+   END NEW FILTER SECTION
+   ======================================== */
+
+/* Desktop: Show new filter section, hide old inline-filters */
+@media (min-width: 769px) {
+  .filter-section {
+    display: block;
+  }
+
+  .filter-tags-row {
+    display: flex;
+  }
+
+  /* Hide old inline-filters on desktop */
+  .inline-filters {
+    display: none !important;
+  }
+}
+
+/* Mobile: Hide new filter section, show old inline-filters */
+@media (max-width: 768px) {
+  .filter-section {
+    display: none !important;
+  }
+
+  .filter-tags-row {
+    display: none !important;
+  }
+
+  .filter-popup {
+    display: none !important;
+  }
+
+  .filter-backdrop {
+    display: none !important;
+  }
+}
+
 /* Inline Filters - All filters in single horizontal container */
 .inline-filters {
   flex-shrink: 0;
@@ -112,8 +946,8 @@
 
 .inline-filters .filter-select:focus {
   outline: none;
-  border-color: #5b21b6;
-  box-shadow: 0 0 0 3px rgba(91, 33, 182, 0.1);
+  border-color: var(--secondary-purple, #6D31C2);
+  box-shadow: 0 0 0 3px rgba(109, 49, 194, 0.1);
 }
 
 /* Neighborhood Multi-Select Dropdown */
@@ -162,8 +996,8 @@
 }
 
 .neighborhood-dropdown-container:focus-within {
-  border-color: #5b21b6;
-  box-shadow: 0 0 0 3px rgba(91, 33, 182, 0.1);
+  border-color: var(--secondary-purple, #6D31C2);
+  box-shadow: 0 0 0 3px rgba(109, 49, 194, 0.1);
 }
 
 .inline-filters .neighborhood-search {
@@ -292,12 +1126,15 @@
 .neighborhood-list input[type="checkbox"] {
   margin-right: 0.5rem;
   cursor: pointer;
-  accent-color: #5b21b6;
+  accent-color: var(--secondary-purple, #6D31C2);
 }
 
-/* Listings Count */
-.listings-count {
+/* Results Header with Listings Count and Sort */
+.results-header {
   flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   padding: 0.75rem 1.5rem;
   background: #f9fafb;
   border-bottom: 1px solid #e5e7eb;
@@ -305,9 +1142,34 @@
   color: #374151;
 }
 
-.listings-count strong {
+.results-count strong {
   font-weight: 600;
   color: #111827;
+}
+
+.sort-select {
+  padding: 0.5rem 2rem 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: #374151;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23374151' d='M2.5 4.5L6 8l3.5-3.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  transition: border-color 0.2s ease;
+}
+
+.sort-select:hover {
+  border-color: #6366f1;
+}
+
+.sort-select:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
 }
 
 /* Listings Content - Scrollable */
@@ -337,7 +1199,7 @@
   height: 100vh;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
   position: relative;
   background: #f3f4f6;
 }
@@ -389,9 +1251,9 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 0.75rem;
   background: transparent;
-  border: 1px solid #d1d5db;
+  border: none;
   border-radius: 8px;
   cursor: pointer;
   font-size: 0.875rem;
@@ -401,8 +1263,7 @@
 }
 
 .search-page .hamburger-menu:hover {
-  background: #f9fafb;
-  border-color: #9ca3af;
+  background: #f3f4f6;
 }
 
 .search-page .hamburger-menu svg {
@@ -447,14 +1308,14 @@
 
 .header-dropdown a:hover {
   background: #f3f4f6;
-  color: #5b21b6;
+  color: var(--secondary-purple, #6D31C2);
 }
 
 /* Map Header Actions - Right side container */
 .map-header-actions {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 /* Favorites Link (Heart) */
@@ -467,7 +1328,7 @@
   height: 40px;
   border-radius: 50%;
   background: #f3f4f6;
-  color: #5b21b6;
+  color: var(--secondary-purple, #6D31C2);
   text-decoration: none;
   transition: all 0.2s ease;
 }
@@ -478,13 +1339,13 @@
 }
 
 .favorites-link svg {
-  stroke: #5b21b6;
+  stroke: var(--secondary-purple, #6D31C2);
   fill: none;
   transition: fill 0.2s ease;
 }
 
 .favorites-link:hover svg {
-  fill: rgba(91, 33, 182, 0.15);
+  fill: rgba(109, 49, 194, 0.15);
 }
 
 /* Favorites Badge */
@@ -498,7 +1359,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #5b21b6;
+  background: var(--secondary-purple, #6D31C2);
   color: white;
   font-size: 11px;
   font-weight: 600;
@@ -610,7 +1471,7 @@
 .retry-btn,
 .reset-filters-btn {
   padding: 0.75rem 1.5rem;
-  background: #5b21b6;
+  background: var(--secondary-purple, #6D31C2);
   color: white;
   border: none;
   border-radius: 8px;
@@ -622,7 +1483,43 @@
 
 .retry-btn:hover,
 .reset-filters-btn:hover {
-  background: #4c1d95;
+  background: var(--primary-purple, #31135D);
+}
+
+/* ========================================
+   FALLBACK LISTINGS SECTION
+   ======================================== */
+
+.fallback-loading {
+  display: flex;
+  justify-content: center;
+  padding: 2rem;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.fallback-listings-section {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.fallback-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.fallback-header h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 0.5rem 0;
+}
+
+.fallback-header p {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
 }
 
 /* ========================================
@@ -668,8 +1565,28 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
+/* Mobile Logo Link - Only visible on mobile */
+.mobile-logo-link {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.mobile-logo-icon {
+  display: block;
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
 /* Mobile Schedule Selector - Hide on desktop */
 .mobile-schedule-selector {
+  display: none;
+}
+
+/* Mobile Header Actions - Hide on desktop */
+.mobile-header-actions {
   display: none;
 }
 
@@ -707,7 +1624,24 @@
   background: #f3f4f6;
 }
 
+/* Compact Schedule Indicator - Hidden by default on desktop */
+.compact-schedule-indicator {
+  display: none !important;
+}
+
 @media (max-width: 768px) {
+  /* Hide map column on mobile - map is accessed via mobile-map-modal */
+  .map-column {
+    display: none;
+  }
+
+  /* Ensure listings column takes full height without map column */
+  .listings-column {
+    flex: 1 1 100%;
+    height: auto;
+    min-height: 100vh;
+  }
+
   /* Show mobile filter bar */
   .mobile-filter-bar {
     display: flex;
@@ -716,6 +1650,80 @@
     left: 0;
     right: 0;
     z-index: 100;
+    align-items: center;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+  }
+
+  /* Hidden state - slides up out of view */
+  .mobile-filter-bar--hidden {
+    transform: translateY(-100%);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* Show mobile logo on mobile */
+  .mobile-logo-link {
+    display: flex;
+    margin-right: 0.5rem;
+  }
+
+  /* Mobile Header Actions - Auth-aware elements */
+  .mobile-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+  }
+
+  /* Mobile Favorites Link */
+  .mobile-favorites-link {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #f3e8ff;
+    color: var(--secondary-purple, #6D31C2);
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .mobile-favorites-link:hover {
+    background: #ede9fe;
+    transform: scale(1.05);
+  }
+
+  .mobile-favorites-link svg {
+    fill: var(--secondary-purple, #6D31C2);
+    stroke: none;
+    transition: fill 0.2s ease;
+  }
+
+  .mobile-favorites-link:hover svg {
+    fill: var(--primary-purple, #31135D);
+  }
+
+  /* Mobile Sign In Button */
+  .mobile-signin-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 0.75rem;
+    background: var(--secondary-purple, #6D31C2);
+    color: white;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+
+  .mobile-signin-btn:hover {
+    background: var(--primary-purple, #31135D);
   }
 
   /* Hide hamburger menu on mobile */
@@ -735,20 +1743,105 @@
     left: 0;
     right: 0;
     z-index: 100;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+  }
+
+  /* Hidden state for mobile schedule selector - collapses with header */
+  .mobile-schedule-selector--hidden {
+    transform: translateY(-100%);
+    opacity: 0;
+    pointer-events: none;
   }
 
   /* Listings column on mobile - adjust for fixed headers */
   .listings-column {
     padding-top: 140px; /* Filter bar (60px) + Schedule selector (80px) */
+    transition: padding-top 0.3s ease;
   }
 
-  /* Listings count - directly below schedule selector, not sticky */
-  .listings-count {
+  /* When header is hidden, collapse the padding */
+  .listings-column--header-hidden {
+    padding-top: 50px; /* Space for compact schedule indicator */
+  }
+
+  /* Compact Schedule Indicator - Shows when header is hidden */
+  .compact-schedule-indicator {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 99;
+    background: white;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transform: translateY(-100%);
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+  }
+
+  /* Visible state - slides in from top (mobile only) */
+  .compact-schedule-indicator--visible {
+    display: flex !important;
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  .compact-schedule-text {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #1f2937;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .compact-schedule-text .compact-label {
+    color: #6b7280;
+    font-weight: 400;
+  }
+
+  .compact-schedule-dots {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .compact-day-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #E5E7EB;
+    transition: background 0.2s ease, transform 0.2s ease;
+  }
+
+  .compact-day-dot.selected {
+    background: #31135D;
+    transform: scale(1.1);
+  }
+
+  /* Results header - directly below schedule selector, not sticky */
+  .results-header {
     position: relative;
     top: 0;
     z-index: 10;
     background: #f9fafb;
     margin-top: 0;
+    transition: opacity 0.3s ease, max-height 0.3s ease;
+    max-height: 50px;
+    overflow: hidden;
+  }
+
+  /* Hide results header when header is collapsed */
+  .results-header--hidden {
+    opacity: 0;
+    max-height: 0;
+    padding: 0;
+    border: none;
   }
 
   /* Listings content takes remaining space */
@@ -850,9 +1943,49 @@
     transform: scale(0.95);
   }
 
-  /* Add padding-top to account for close button */
+  /* Add padding-top to account for close button and padding-bottom for apply button */
   .inline-filters.active {
     padding-top: 4rem;
+    padding-bottom: 6rem; /* Space for fixed apply button */
+  }
+
+  /* Mobile Apply Filters Button Container */
+  .mobile-filter-apply-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 1rem;
+    background: white;
+    border-top: 1px solid #e5e7eb;
+    z-index: 2002;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Mobile Apply Filters Button */
+  .mobile-filter-apply-btn {
+    width: 100%;
+    padding: 1rem 1.5rem;
+    background: var(--secondary-purple, #6D31C2);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mobile-filter-apply-btn:hover {
+    background: var(--primary-purple, #31135D);
+  }
+
+  .mobile-filter-apply-btn:active {
+    background: var(--primary-purple-dark, #1f0a3d);
+    transform: scale(0.98);
   }
 
   /* Improve filter group labels on mobile - maintain floating label design */
@@ -913,8 +2046,8 @@
   }
 
   .inline-filters .neighborhood-dropdown-container:focus-within {
-    border-color: #5b21b6;
-    box-shadow: 0 0 0 3px rgba(91, 33, 182, 0.1);
+    border-color: var(--secondary-purple, #6D31C2);
+    box-shadow: 0 0 0 3px rgba(109, 49, 194, 0.1);
   }
 
   /* Improve neighborhood search input on mobile */
@@ -1117,7 +2250,7 @@
   width: 40px;
   height: 40px;
   border: 3px solid #e5e7eb;
-  border-top-color: #5b21b6;
+  border-top-color: var(--primary-purple, #31135D);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -1136,7 +2269,9 @@
 
 /* Marker Pulse Animation (triggered when zooming to listing) */
 .pulse {
-  animation: markerPulse 1.5s ease-in-out 2;
+  animation: markerPulse 1.5s ease-in-out infinite;
+  background: #4B47CE !important;
+  z-index: 9999 !important;
 }
 
 @keyframes markerPulse {
@@ -1145,7 +2280,7 @@
   }
   50% {
     transform: translate(-50%, -50%) scale(1.2);
-    box-shadow: 0 0 20px rgba(91, 33, 182, 0.6);
+    box-shadow: 0 0 20px rgba(75, 71, 206, 0.6);
   }
 }
 

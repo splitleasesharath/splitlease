@@ -20,6 +20,7 @@ export { isProtectedPage } from './auth/isProtectedPage.js'
 export { isValidPriceTier } from './search/isValidPriceTier.js'
 export { isValidWeekPattern } from './search/isValidWeekPattern.js'
 export { isValidSortOption } from './search/isValidSortOption.js'
+export { hasListingPhotos } from './search/hasListingPhotos.js'
 
 // Proposal Rules
 export { determineProposalStage } from './proposals/determineProposalStage.js'
@@ -43,7 +44,12 @@ export {
   isLeaseActivated,
   requiresSpecialCancellationConfirmation,
   getCancelButtonText,
-  getCancellationReasonOptions
+  getCancellationReasonOptions,
+  // SL Suggested Proposal rules
+  needsRentalApplicationSubmission,
+  isSLSuggestedProposal,
+  canConfirmSuggestedProposal,
+  getNextStatusAfterConfirmation
 } from './proposals/proposalRules.js'
 
 // Virtual Meeting Rules
@@ -69,3 +75,11 @@ export { isHost } from './users/isHost.js'
 export { isGuest } from './users/isGuest.js'
 export { hasProfilePhoto } from './users/hasProfilePhoto.js'
 export { shouldShowFullName } from './users/shouldShowFullName.js'
+
+// Review Rules
+export {
+  isReviewComplete,
+  isValidRating,
+  canSubmitReview,
+  hasExistingReview
+} from './reviews/reviewValidation.js'

@@ -25,6 +25,7 @@ body {
 .hero-section {
   background: white;
   padding: 100px 48px 80px;
+  padding-top: 180px; /* 80px for fixed header + 100px spacing - matches list-with-us */
   margin: 0;
   position: relative;
   overflow: hidden;
@@ -368,6 +369,22 @@ body {
   color: #9CA3AF;
   font-weight: 600;
   text-transform: uppercase;
+}
+
+/* Desktop: Show desktop structure, hide mobile structure */
+.desktop-card-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.mobile-card-inner {
+  display: none; /* Hide mobile flip card on desktop */
+}
+
+/* Hide legacy mobile-only elements on desktop */
+.swipe-hint {
+  display: none;
 }
 
 .mission-content {
@@ -798,6 +815,19 @@ body {
 
 /* Responsive Design */
 @media (max-width: 768px) {
+  /* Ensure correct hero content order - override mobile.css global styles */
+  .hero-section .hero-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Reset order properties that mobile.css sets globally */
+  .hero-section .hero-badge { order: 0 !important; }
+  .hero-section .hero-title { order: 1 !important; }
+  .hero-section .hero-subtitle { order: 2 !important; }
+  .hero-section .hero-cta { order: 3 !important; }
+
   .hero-title {
     font-size: 32px;
     line-height: 1.3;
@@ -856,7 +886,8 @@ body {
   }
 
   .hero-section {
-    padding: 80px 20px 50px;
+    padding: 60px 20px 50px;
+    padding-top: 120px; /* Matches list-with-us mobile */
     min-height: 400px;
   }
 
@@ -873,6 +904,15 @@ body {
     padding: 50px 20px;
   }
 
+  .video-player-container {
+    border-radius: 0;
+    overflow: visible;
+  }
+
+  .video-player {
+    transform: scale(1); /* Remove zoom on mobile so controls are visible */
+  }
+
   .mission-grid {
     grid-template-columns: 1fr;
     gap: 32px;
@@ -882,9 +922,210 @@ body {
     gap: 16px;
   }
 
+  /* Mobile: Hide desktop, show mobile flip structure */
+  .desktop-card-content {
+    display: none !important;
+  }
+
+  .mobile-card-inner {
+    display: block;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-style: preserve-3d;
+  }
+
+  /* Mobile card redesign: horizontal flip/slide transition */
   .example-card {
-    padding: 20px;
-    height: 170px;
+    padding: 0;
+    height: 270px;
+    perspective: 1000px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+  }
+
+  .example-card:hover {
+    transform: none;
+    box-shadow: none;
+    border-color: transparent;
+  }
+
+  .example-card.flipped .mobile-card-inner {
+    transform: rotateY(180deg);
+  }
+
+  /* Front and back faces */
+  .mobile-card-front,
+  .mobile-card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    background: white;
+    border-radius: 16px;
+    border: 2px solid #E5E7EB;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+  }
+
+  .mobile-card-back {
+    transform: rotateY(180deg);
+    border-color: #31135D;
+    background: linear-gradient(180deg, #ffffff 0%, #faf9fc 100%);
+  }
+
+  /* Avatar and header */
+  .mobile-card-front .example-header,
+  .mobile-card-back .example-header {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    max-height: none;
+    opacity: 1;
+  }
+
+  .mobile-card-front .example-avatar,
+  .mobile-card-back .example-avatar {
+    width: 44px;
+    height: 44px;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .mobile-card-front .example-name,
+  .mobile-card-back .example-name {
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  /* Content wrapper */
+  .mobile-card-front .example-content-wrapper {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .mobile-card-front .example-pattern {
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Review content on back of card */
+  .review-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(49, 19, 93, 0.03) 0%, rgba(107, 33, 168, 0.06) 100%);
+    border-radius: 12px;
+    padding: 16px;
+    margin: 4px 0;
+    position: relative;
+  }
+
+  .example-review-text {
+    font-size: 14px;
+    color: #1f2937;
+    line-height: 1.7;
+    font-style: italic;
+    margin: 0;
+    text-align: center;
+    font-weight: 450;
+    letter-spacing: -0.01em;
+  }
+
+  .example-review-text::before {
+    content: '"';
+    font-size: 32px;
+    color: #31135D;
+    opacity: 0.6;
+    position: absolute;
+    top: 8px;
+    left: 12px;
+    font-family: Georgia, serif;
+    line-height: 1;
+  }
+
+  .example-review-text::after {
+    content: '"';
+    font-size: 32px;
+    color: #31135D;
+    opacity: 0.6;
+    position: absolute;
+    bottom: 0;
+    right: 12px;
+    font-family: Georgia, serif;
+    line-height: 1;
+  }
+
+  /* Timeline */
+  .mobile-card-front .example-timeline {
+    margin-top: auto;
+    padding-top: 8px;
+  }
+
+  .mobile-card-front .day-block {
+    height: 6px;
+  }
+
+  .mobile-card-front .timeline-labels {
+    margin-top: 4px;
+  }
+
+  .mobile-card-front .timeline-label {
+    font-size: 9px;
+  }
+
+  /* Swipe hint */
+  .swipe-hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 8px;
+    font-size: 12px;
+    color: #9CA3AF;
+  }
+
+  .swipe-hint.back {
+    color: #31135D;
+  }
+
+  .swipe-hint svg {
+    opacity: 0.7;
+  }
+
+  /* Disable ALL hover effects on mobile - we use tap instead */
+  .example-card:hover .example-header {
+    opacity: 1;
+    max-height: none;
+    margin-bottom: 12px;
+    overflow: visible;
+  }
+
+  .example-card:hover .example-pattern {
+    opacity: 1;
+  }
+
+  .example-card:hover .example-review {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .example-card:hover .example-timeline,
+  .example-card:hover .timeline-labels {
+    opacity: 1;
   }
 
   .role-card {
@@ -907,12 +1148,17 @@ body {
   }
 
   .modal {
-    padding-top: 80px;
+    padding-top: 0;
+    align-items: center;
+    padding: 16px;
   }
 
   .modal-content {
-    width: 95%;
-    max-height: calc(100vh - 100px);
+    width: 100%;
+    max-width: 100%;
+    max-height: calc(100vh - 32px);
+    border-radius: 12px;
+    margin: 0 auto;
   }
 
   .modal-content > div {
@@ -942,7 +1188,7 @@ body {
   }
 
   .example-card {
-    height: 160px;
+    height: 250px;
   }
 
   .timeline-label {

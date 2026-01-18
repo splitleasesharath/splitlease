@@ -1,7 +1,33 @@
 import { useState, useEffect } from 'react';
+import { FileText, ExternalLink } from 'lucide-react';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import { supabase } from '../../lib/supabase.js';
+
+/**
+ * Mobile policy card with title and open button
+ */
+function PolicyCard({ policy }) {
+  return (
+    <div className="policies-mobile-card" id={policy.slug}>
+      <div className="policies-mobile-card-icon">
+        <FileText size={28} strokeWidth={1.5} />
+      </div>
+      <h2 className="policies-mobile-card-title">{policy.name}</h2>
+      {policy.pdfUrl && (
+        <a
+          href={policy.pdfUrl}
+          className="policies-mobile-card-button"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Open Document
+          <ExternalLink size={14} />
+        </a>
+      )}
+    </div>
+  );
+}
 
 /**
  * Transform Supabase document to match expected format
@@ -37,6 +63,15 @@ export default function PoliciesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile viewport (matches CSS breakpoint at 900px)
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth <= 900);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Fetch policies from Supabase
   useEffect(() => {
@@ -46,6 +81,7 @@ export default function PoliciesPage() {
         console.log('📡 Fetching policies from Supabase...');
 
         const { data, error } = await supabase
+          .schema('reference_table')
           .from('zat_policiesdocuments')
           .select('*')
           .eq('Active', true)
@@ -123,14 +159,14 @@ export default function PoliciesPage() {
     setCurrentPolicy(policy);
     window.location.hash = policy.slug;
 
-    // Scroll to PDF on desktop
-    if (window.innerWidth >= 900) {
-      setTimeout(() => {
-        const pdfContainer = document.querySelector('.policies-pdf-container');
-        if (pdfContainer) {
-          pdfContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }, 300);
+    // Only scroll if the document header is not visible
+    const header = document.querySelector('.policies-content-header');
+    if (header) {
+      const rect = header.getBoundingClientRect();
+      const isVisible = rect.top >= 0 && rect.top < window.innerHeight;
+      if (!isVisible) {
+        header.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     }
   };
 
@@ -166,62 +202,73 @@ export default function PoliciesPage() {
       <Header />
 
       <div className="policies-page-container">
-        <div className="policies-content-wrapper">
-          {/* Sidebar Navigation */}
-          <aside className="policies-sidebar">
-            <h2 className="policies-sidebar-title">Contents</h2>
-            <nav className="policies-sidebar-nav">
-              {policies.map((policy) => (
-                <a
-                  key={policy.id}
-                  href={`#${policy.slug}`}
-                  className={`policies-nav-item ${
-                    currentPolicy?.slug === policy.slug ? 'active' : ''
-                  }`}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handlePolicyClick(policy);
-                  }}
-                >
-                  {policy.name}
-                </a>
-              ))}
-            </nav>
-          </aside>
+        {isMobile ? (
+          /* Mobile View: Cards with open buttons */
+          <div className="policies-mobile-wrapper">
+            <h1 className="policies-mobile-page-title">Policies & Documents</h1>
+            {policies.map((policy) => (
+              <PolicyCard key={policy.id} policy={policy} />
+            ))}
+          </div>
+        ) : (
+          /* Desktop View: Sidebar + Single PDF */
+          <div className="policies-content-wrapper">
+            {/* Sidebar Navigation */}
+            <aside className="policies-sidebar">
+              <h2 className="policies-sidebar-title">Contents</h2>
+              <nav className="policies-sidebar-nav">
+                {policies.map((policy) => (
+                  <a
+                    key={policy.id}
+                    href={`#${policy.slug}`}
+                    className={`policies-nav-item ${
+                      currentPolicy?.slug === policy.slug ? 'active' : ''
+                    }`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handlePolicyClick(policy);
+                    }}
+                  >
+                    {policy.name}
+                  </a>
+                ))}
+              </nav>
+            </aside>
 
-          {/* Main Content Area */}
-          <section className="policies-main-content">
-            <div className="policies-content-header">
-              <h1 className="policies-page-title">
-                {currentPolicy?.name || 'Policy Document'}
-              </h1>
-              {currentPolicy?.pdfUrl && (
-                <a
-                  href={currentPolicy.pdfUrl}
-                  className="policies-download-link"
-                  download={`${currentPolicy.slug}.pdf`}
-                  title="Download PDF"
-                >
-                  <i className="fa fa-download"></i>
-                </a>
-              )}
-            </div>
+            {/* Main Content Area */}
+            <section className="policies-main-content">
+              <div className="policies-content-header">
+                <h1 className="policies-page-title">
+                  {currentPolicy?.name || 'Policy Document'}
+                </h1>
+                {currentPolicy?.pdfUrl && (
+                  <a
+                    href={currentPolicy.pdfUrl}
+                    className="policies-download-link"
+                    download={`${currentPolicy.slug}.pdf`}
+                    title="Download PDF"
+                  >
+                    <i className="fa fa-download"></i>
+                  </a>
+                )}
+              </div>
 
-            <div className="policies-pdf-container">
-              {currentPolicy?.pdfUrl ? (
-                <iframe
-                  src={currentPolicy.pdfUrl}
-                  width="100%"
-                  height="700px"
-                  frameBorder="0"
-                  title={`${currentPolicy.name} - Policy Document Viewer`}
-                />
-              ) : (
-                <div className="policies-loading">No policy selected</div>
-              )}
-            </div>
-          </section>
-        </div>
+              <div className="policies-pdf-container">
+                {currentPolicy?.pdfUrl ? (
+                  <iframe
+                    src={currentPolicy.pdfUrl}
+                    width="100%"
+                    height="700px"
+                    frameBorder="0"
+                    title={`${currentPolicy.name} - Policy Document Viewer`}
+                  />
+                ) : (
+                  <div className="policies-loading">No policy selected</div>
+                )}
+              </div>
+            </section>
+          </div>
+        )}
 
         {/* Back to Top Button */}
         <button

@@ -1,1093 +1,3158 @@
 /**
  * Guest Proposals Page Styles
- * Two-column layout with left content + right host profile card
- * Matching the redesigned proposal card design
+ *
+ * V5 Balanced Design
+ * - Refined elegance from V3 with accessibility from V4
+ * - Base font 15px (readable but not oversized)
+ * - Higher contrast text colors for accessibility
+ * - 44x44 day pills (accessible touch target)
+ * - 32px pricing (prominent but not overwhelming)
+ * - 1px borders for refined look
  */
 
-/* CSS Variables for Guest Proposals */
+/* ============================================================================
+   DESIGN SYSTEM VARIABLES - BALANCED
+   ============================================================================ */
+
 :root {
-    --gp-primary-purple: rgb(107, 78, 255);
-    --gp-dark-purple: rgb(49, 19, 93);
-    --gp-indigo: rgb(99, 102, 241);
-    --gp-text-secondary: rgb(107, 114, 128);
-    --gp-border-color: rgb(212, 212, 212);
-    --gp-background-secondary: rgb(244, 244, 248);
+  /* Primary Brand Colors */
+  --gp-purple-dark: #31135D;
+  --gp-purple-primary: #6D31C2;
+  --gp-purple-light: #8C68EE;
+  --gp-purple-bg: #f8f5ff;
+
+  /* Text Colors - High contrast but not harsh */
+  --gp-text: #1a1a1a;              /* Dark but not pure black */
+  --gp-text-secondary: #4b5563;    /* Readable secondary */
+  --gp-text-muted: #6b7280;        /* Soft muted */
+
+  /* Background & Border - Soft and refined */
+  --gp-border: #e5e7eb;
+  --gp-border-light: #f0f0f0;
+  --gp-bg: #fafafa;
+  --gp-white: #fff;
+
+  /* Semantic Colors */
+  --gp-success: #059669;
+  --gp-success-bg: #ecfdf5;
+  --gp-danger: #dc2626;
+  --gp-danger-bg: #fef2f2;
+  --gp-warning: #d97706;
+  --gp-warning-bg: #fef3c7;
+
+  /* Typography - BALANCED SIZES */
+  --gp-font-size-sm: 13px;
+  --gp-font-size-base: 15px;       /* Slightly larger than V3's 14px */
+  --gp-font-size-md: 16px;
+  --gp-font-size-lg: 18px;
+  --gp-font-size-xl: 22px;
+  --gp-font-size-2xl: 32px;        /* Between V3's 28px and V4's 36px */
+  --gp-font-size-label: 12px;
+
+  /* Line Heights */
+  --gp-line-height-tight: 1.3;
+  --gp-line-height-normal: 1.5;
+  --gp-line-height-relaxed: 1.6;
+
+  /* Touch Targets - For interactive elements only */
+  --gp-min-touch-target: 44px;
+
+  /* Focus States */
+  --gp-focus-ring: 0 0 0 3px rgba(109, 49, 194, 0.4);
 }
 
-/* Proposals Page Container */
+/* ============================================================================
+   MAIN CONTENT LAYOUT
+   ============================================================================ */
+
+.main-content {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  background-color: var(--gp-bg);
+  position: relative;
+  min-height: calc(100vh - 70px);
+  padding: 2rem 0;
+  padding-top: 90px;
+}
+
 .proposals-page {
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 6rem 1rem 2rem; /* Added top padding to account for fixed header */
-    width: 100%;
-    box-sizing: border-box;
-    position: relative;
-    background-color: rgb(244, 244, 248);
-    min-height: calc(100vh - 200px);
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 24px;
+  width: 100%;
+  box-sizing: border-box;
+  position: relative;
 }
 
-/* Loading State */
+.page-title {
+  font-size: var(--gp-font-size-xl);
+  font-weight: 700;
+  color: var(--gp-purple-dark);
+  margin-bottom: 24px;
+}
+
+/* ============================================================================
+   LOADING STATE
+   ============================================================================ */
+
 .loading-state {
-    text-align: center;
-    padding: 4rem 2rem;
+  text-align: center;
+  padding: 4rem 2rem;
 }
 
-.loading-state .spinner {
-    border: 4px solid #E5E7EB;
-    border-top: 4px solid var(--gp-primary-purple);
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    animation: spin 1s linear infinite;
-    margin: 0 auto 1rem;
+.spinner {
+  border: 4px solid #E5E7EB;
+  border-top: 4px solid var(--color-primary, #6B4EFF);
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
-/* Error State */
+/* ============================================================================
+   ERROR STATE
+   ============================================================================ */
+
 .error-state {
-    text-align: center;
-    padding: 4rem 2rem;
+  text-align: center;
+  padding: 4rem 2rem;
 }
 
-.error-state .error-icon {
-    font-size: 4rem;
-    margin-bottom: 1rem;
+.error-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: #FEE2E2;
+  color: #DC2626;
+  font-size: 2rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
 }
 
 .error-state h2 {
-    color: rgb(239, 68, 68);
-    margin-bottom: 1rem;
+  color: #DC2626;
+  margin-bottom: 1rem;
 }
 
 .error-state .error-message {
-    color: var(--gp-text-secondary);
-    margin-bottom: 1.5rem;
+  color: #6B7280;
+  margin-bottom: 1.5rem;
 }
 
 .retry-button {
-    padding: 0.75rem 1.5rem;
-    background: var(--gp-primary-purple);
-    color: white;
-    border: none;
-    border-radius: 0.5rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
+  padding: 0.75rem 1.5rem;
+  background: var(--color-primary, #6B4EFF);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
 .retry-button:hover {
-    background: var(--gp-indigo);
+  background: var(--color-primary-hover, #5840E0);
 }
 
-/* Proposal Selector */
+/* ============================================================================
+   EMPTY STATE - V3 Style
+   ============================================================================ */
+
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  background: var(--gp-white);
+  border: 2px solid var(--gp-border);
+  border-radius: 20px;
+}
+
+.empty-state h2 {
+  font-size: var(--gp-font-size-lg);
+  font-weight: 700;
+  color: var(--gp-text);
+  margin-bottom: 12px;
+}
+
+.empty-state p {
+  font-size: var(--gp-font-size-base);
+  color: var(--gp-text-secondary);
+  margin-bottom: 12px;
+  line-height: var(--gp-line-height-relaxed);
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.empty-state .empty-subtext {
+  color: var(--gp-text-muted);
+  margin-bottom: 32px;
+}
+
+.empty-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 24px;
+  background: var(--gp-purple-bg);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  color: var(--gp-purple-primary);
+}
+
+/* ============================================================================
+   PROPOSAL SELECTOR - List Layout (V3)
+   ============================================================================ */
+
 .proposal-selector {
-    background: transparent;
-    padding: 0;
-    margin: 0 auto 1.5rem;
-    max-width: 1200px;
+  background: transparent;
+  padding: 0;
+  margin: 0 auto 32px;
+  max-width: 1100px;
 }
 
 .selector-header {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 16px;
 }
 
 .selector-header h2 {
-    font-family: "Open Sans", sans-serif;
-    font-size: 24px;
-    font-weight: 700;
-    line-height: 31.44px;
-    color: var(--gp-primary-purple);
-    margin: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--gp-font-size-xl);
+  font-weight: 700;
+  line-height: var(--gp-line-height-tight);
+  color: var(--gp-purple-dark);
+  margin: 0;
 }
 
+.proposal-count {
+  display: none;
+}
+
+/* Hide old dropdown - replaced by list */
 .proposal-dropdown {
-    display: block;
-    position: relative;
-    width: 399px;
-    height: 45px;
-    padding: 0px 15px 0px 10px;
-    font-size: 16px;
-    font-weight: 400;
-    font-family: Lato, sans-serif;
-    color: var(--gp-dark-purple);
-    background-color: rgb(255, 255, 255);
-    border: 1px solid var(--gp-border-color);
-    border-radius: 10px;
-    cursor: pointer;
+  display: none;
 }
 
-.proposal-dropdown:focus {
-    outline: none;
-    border-color: var(--gp-primary-purple);
-    box-shadow: 0 0 0 3px rgba(107, 78, 255, 0.1);
+/* New proposal list layout */
+.proposal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-/* Main Proposal Card Container */
-.proposal-card {
-    background: rgb(255, 255, 255);
-    border-radius: 16px;
-    padding: 0;
-    margin: 15px auto 0;
-    width: 100%;
-    max-width: 1200px;
-    border: 1px solid var(--gp-border-color);
-    box-shadow: rgba(0, 0, 0, 0) 0px 4px 6px 0px;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
+.proposal-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: var(--gp-white);
+  border: 1px solid var(--gp-border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-/* Status Banner */
+.proposal-row:hover {
+  border-color: var(--gp-purple-light);
+  background: var(--gp-purple-bg);
+}
+
+.proposal-row.active {
+  border-color: var(--gp-purple-primary);
+  border-width: 2px;
+  background: var(--gp-purple-bg);
+}
+
+.proposal-thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background-color: var(--gp-border-light);
+}
+
+.proposal-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.proposal-name {
+  font-weight: 600;
+  font-size: var(--gp-font-size-base);
+  color: var(--gp-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.proposal-meta {
+  font-size: var(--gp-font-size-sm);
+  color: var(--gp-text-secondary);
+}
+
+.proposal-status {
+  font-size: var(--gp-font-size-sm);
+  font-weight: 500;
+  color: var(--gp-text-muted);
+  padding: 5px 12px;
+  background: var(--gp-border-light);
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.proposal-status.attention {
+  color: var(--gp-purple-primary);
+  background: var(--gp-purple-bg);
+}
+
+.proposal-status.success {
+  color: var(--gp-success);
+  background: var(--gp-success-bg);
+}
+
+.proposal-status.action-required {
+  color: #92400E;
+  background: #FEF3C7;
+  font-weight: 600;
+  animation: pulse-attention 2s ease-in-out infinite;
+}
+
+@keyframes pulse-attention {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(217, 119, 6, 0);
+  }
+}
+
+/* ============================================================================
+   PROPOSAL CARD WRAPPER - Contains banner and card (V3)
+   ============================================================================ */
+
+.proposal-card-wrapper {
+  margin-top: 0;
+}
+
+/* ============================================================================
+   DETAIL SECTION - Main card container (V3)
+   ============================================================================ */
+
+.detail-section {
+  background: var(--gp-white);
+  border: 1px solid var(--gp-border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+/* ============================================================================
+   STATUS BANNER - V3 Style with icon
+   ============================================================================ */
+
 .status-banner {
-    padding: 1rem 1.5rem;
-    border-radius: 8px;
-    margin: 1rem 1rem 0;
-    font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 24px;
+  background: var(--gp-purple-bg);
+  border-bottom: 1px solid var(--gp-border);
+  font-size: var(--gp-font-size-base);
+  animation: fadeIn 0.3s ease-in-out;
 }
 
-.status-banner.status-green {
-    display: block;
-    max-width: 467px;
-    width: 100%;
-    padding: 0.75rem 1rem;
-    background-color: rgb(225, 255, 225);
-    border-radius: 10px;
-    color: #065F46;
-    border: none;
+.status-banner.success {
+  background: var(--gp-success-bg);
 }
 
-.status-banner.status-red {
-    background-color: #FEE2E2;
-    color: #991B1B;
-    border: 1px solid #FCA5A5;
+.status-banner.attention {
+  background: #fef3c7;
 }
 
-.status-banner.status-yellow {
-    background-color: #FEF3C7;
-    color: #92400E;
-    border: 1px solid #FCD34D;
+.status-banner.cancelled {
+  background: var(--gp-danger-bg);
 }
 
-.status-banner.status-blue {
-    background-color: #DBEAFE;
-    color: #1E40AF;
-    border: 1px solid #93C5FD;
+.status-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  background: var(--gp-purple-primary);
+  color: white;
+  flex-shrink: 0;
 }
 
-/* Counteroffer Banner */
-.counteroffer-banner {
-    display: flex;
-    align-items: flex-start;
-    gap: 1rem;
-    padding: 1rem 1.5rem;
-    margin: 1rem;
-    background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
-    border: 1px solid #F59E0B;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
+.status-banner.success .status-icon {
+  background: var(--gp-success);
 }
 
-.counteroffer-banner .banner-icon {
-    font-size: 1.5rem;
-    flex-shrink: 0;
+.status-banner.attention .status-icon {
+  background: #f59e0b;
 }
 
-.counteroffer-banner .banner-content {
-    flex: 1;
+.status-banner.cancelled .status-icon {
+  background: var(--gp-danger);
 }
 
-.counteroffer-banner .banner-title {
-    font-size: 1rem;
-    font-weight: 700;
-    color: #92400E;
-    margin: 0 0 0.25rem 0;
-}
-
-.counteroffer-banner .banner-description {
-    font-size: 0.875rem;
-    color: #B45309;
-    margin: 0;
+.status-text {
+  flex: 1;
 }
 
-.counteroffer-banner .quick-changes-list {
-    list-style: none;
-    padding: 0;
-    margin: 0.5rem 0 0 0;
-    font-size: 0.8rem;
+.status-text strong {
+  font-weight: 600;
+  color: var(--gp-purple-dark);
 }
 
-.counteroffer-banner .quick-change-item {
-    color: #78350F;
-    margin-bottom: 0.25rem;
-}
-
-.counteroffer-banner .change-value.original {
-    text-decoration: line-through;
-    opacity: 0.7;
-}
-
-.counteroffer-banner .change-value.counteroffer {
-    font-weight: 600;
-    color: #047857;
-}
-
-.btn-compare-terms {
-    padding: 0.5rem 1rem;
-    background: #F59E0B;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 0.875rem;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: all 0.2s;
-}
-
-.btn-compare-terms:hover {
-    background: #D97706;
-}
-
-/* Two-Column Layout */
-.proposal-content {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    gap: 20px;
-    margin-bottom: 0;
-    padding: 15px 15px 0 15px;
-    box-sizing: border-box;
-}
-
-/* Left Column Styles */
-.proposal-left {
-    display: flex;
-    flex-direction: column;
-    gap: 1.75rem;
-    flex: 1;
-    max-width: 542px;
-    min-width: 0;
-}
-
-/* Listing Header */
-.listing-header {
-    border-bottom: none;
-    padding-bottom: 0;
-    margin-bottom: 1.5rem;
-    display: flex;
-    flex-direction: column;
-}
-
-.listing-title {
-    font-family: 'Open Sans', sans-serif;
-    font-size: 22px;
-    font-weight: 600;
-    color: rgb(79, 70, 229);
-    letter-spacing: -1px;
-    word-spacing: 1px;
-    line-height: 1.5;
-    display: block;
-    margin: 0 0 0.5rem 0;
-    max-width: 543px;
-}
-
-.listing-subtitle {
-    font-family: Inter, sans-serif;
-    font-size: 15px;
-    font-weight: 400;
-    line-height: 19.2px;
-    color: var(--gp-text-secondary);
-    max-width: 542px;
-    width: 100%;
-    min-height: 20px;
-    margin: 0 0 1rem 0;
-    display: block;
-}
-
-.listing-actions {
-    display: flex;
-    gap: 0.75rem;
-}
-
-.btn-view-listing {
-    display: block;
-    position: relative;
-    width: 116px;
-    height: 40px;
-    font-size: 14px;
-    font-weight: 400;
-    font-family: Inter, sans-serif;
-    line-height: 14px;
-    text-align: center;
-    color: rgb(255, 255, 255);
-    background-color: var(--gp-indigo);
-    border: 0px none;
-    border-radius: 8px;
-    box-shadow: rgb(170, 170, 170) 0px 2px 4px 0px;
-    cursor: pointer;
-    transition: all 0.2s;
-    padding: 0;
-}
-
-.btn-view-map {
-    display: block;
-    position: relative;
-    width: 116px;
-    height: 41px;
-    font-size: 14px;
-    font-weight: 700;
-    font-family: Inter, sans-serif;
-    line-height: 21px;
-    text-align: center;
-    color: rgb(1, 67, 125);
-    background-color: rgba(255, 255, 255, 0.5);
-    border: 1px solid rgb(107, 107, 107);
-    border-radius: 4px;
-    box-shadow: rgba(0, 0, 0, 0.1) 0px 2px 5px 0px;
-    cursor: pointer;
-    transition: all 0.2s;
-    padding: 0;
-}
-
-.btn-view-listing:hover {
-    background-color: rgb(79, 82, 221);
-}
-
-.btn-view-map:hover {
-    background-color: rgba(255, 255, 255, 0.7);
-}
-
-/* Schedule Section */
-.schedule-section {
-    background: transparent;
-    padding: 0;
-    border-radius: 0px;
-    border: none;
-}
-
-.schedule-days {
-    display: block;
-    max-width: 356px;
-    width: 100%;
-    min-height: 23px;
-    font-size: 14px;
-    font-weight: 600;
-    font-family: "DM Sans", sans-serif;
-    line-height: 17.5px;
-    color: var(--gp-dark-purple);
-    margin: 0 0 0.375rem 0;
-}
-
-.duration-text {
-    font-size: 14px;
-    font-weight: 600;
-    font-family: "DM Sans", sans-serif;
-    line-height: 1.25;
-    color: rgb(0, 0, 0);
-    margin: 0 0 1rem 0;
-}
-
-.duration-value {
-    font-weight: 600;
-    color: var(--gp-primary-purple);
-}
-
-/* Weekly Schedule with Circular Badges */
-.weekly-schedule {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    max-width: 280px;
-    width: 100%;
-    margin: 0px 4px 0px 0px;
-    gap: 4px;
-    border-radius: 5px;
-}
-
-.day-badge {
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 400;
-    font-size: 16px;
-    font-family: Helvetica, Arial, sans-serif;
-    line-height: 16px;
-    transition: all 0.2s;
-}
-
-.day-badge.selected {
-    background: rgb(75, 71, 206);
-    color: rgb(255, 255, 255);
-}
-
-.day-badge.unselected {
-    background: rgb(178, 178, 178);
-    color: rgb(255, 255, 255);
-}
-
-.schedule-times {
-    font-size: 12px;
-    font-weight: 500;
-    font-family: Inter, sans-serif;
-    color: rgb(55, 65, 81);
-    margin-top: 1rem;
-    line-height: 1.6;
-}
-
-.schedule-times p {
-    margin: 0 0 0.375rem 0;
-}
-
-/* House Rules Accordion */
-.house-rules-accordion {
-    margin-top: 1rem;
-}
-
-.house-rules-toggle {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.75rem;
-    background: #FFFFFF;
-    border: 1px solid #E5E7EB;
-    border-radius: 8px;
-    cursor: pointer;
-    font-family: Inter, sans-serif;
-    font-size: 14px;
-    font-weight: 600;
-    color: rgb(1, 67, 125);
-    transition: all 0.2s;
-}
-
-.house-rules-toggle:hover {
-    background: #F9FAFB;
-    border-color: #D1D5DB;
-    color: var(--gp-primary-purple);
-}
-
-.toggle-icon {
-    font-size: 12px;
-    transition: transform 0.3s ease;
-    color: #6B7280;
-}
-
-.toggle-icon.open {
-    transform: rotate(180deg);
-}
-
-.house-rules-content {
-    margin-top: 0.75rem;
-    padding: 1rem;
-    background: #F9FAFB;
-    border: 1px solid #E5E7EB;
-    border-radius: 8px;
-    animation: slideDown 0.3s ease-out;
-}
-
-@keyframes slideDown {
-    from {
-        opacity: 0;
-        max-height: 0;
-    }
-    to {
-        opacity: 1;
-        max-height: 500px;
-    }
-}
-
-.house-rules-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.625rem;
-}
-
-.house-rule-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    font-family: Inter, sans-serif;
-    font-size: 14px;
-    color: #374151;
-    line-height: 1.5;
-}
-
-.rule-bullet {
-    color: var(--gp-primary-purple);
-    font-size: 18px;
-    font-weight: 700;
-    flex-shrink: 0;
-}
-
-/* Pricing Section */
-.pricing-section {
-    background: rgba(0, 0, 0, 0.1);
-    padding: 15px 5px;
-    border-radius: 8px;
-    border: none;
-}
-
-.pricing-grid {
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    gap: 2rem;
-    margin-bottom: 1.25rem;
-    padding: 0 10px;
-}
-
-.pricing-details-left {
-    flex: 1;
-}
-
-.total-price,
-.fee-note,
-.deposit,
-.cleaning-fee {
-    font-size: 12px;
-    font-weight: 400;
-    font-family: Inter, sans-serif;
-    color: var(--gp-text-secondary);
-    margin: 0;
-    text-align: center;
-}
-
-.pricing-details-right {
-    text-align: center;
-    flex: 0;
-}
-
-.nightly-rate {
-    display: block;
-    text-align: center;
-}
-
-.rate-amount {
-    font-size: 17px;
-    font-weight: 700;
-    font-family: 'Open Sans', sans-serif;
-    color: rgb(0, 0, 0);
-    line-height: 1.6;
-}
-
-.rate-label {
-    font-size: 17px;
-    font-family: 'Open Sans', sans-serif;
-    color: rgb(0, 0, 0);
-    font-weight: 700;
-    line-height: 1.6;
-}
-
-/* Proposal Actions Container */
-.proposal-actions {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    justify-content: flex-start;
-    padding: 0 10px;
-}
-
-/* Request Virtual Meeting Button */
-.btn-request-meeting {
-    min-width: 150px;
-    max-width: 200px;
-    width: max-content;
-    height: 37px;
-    padding: 4px 12px;
-    font-size: 12px;
-    font-weight: 500;
-    font-family: Inter, sans-serif;
-    letter-spacing: -0.25px;
-    text-align: center;
-    color: rgb(0, 0, 0);
-    background-color: rgb(209, 213, 219);
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.btn-request-meeting:hover {
-    background-color: rgb(189, 193, 199);
-}
-
-/* Primary Action Buttons */
-.btn-primary-action {
-    min-width: 150px;
-    max-width: 250px;
-    width: max-content;
-    height: 37px;
-    padding: 4px 12px;
-    font-size: 14px;
-    font-weight: 400;
-    font-family: Inter, sans-serif;
-    text-align: center;
-    color: rgb(255, 255, 255);
-    background-color: rgb(57, 135, 61);
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.btn-primary-action:hover {
-    background-color: rgb(37, 115, 41);
-}
-
-.btn-review-counteroffer {
-    background-color: rgb(245, 158, 11);
-}
-
-.btn-review-counteroffer:hover {
-    background-color: rgb(217, 119, 6);
-}
-
-.btn-review-docs {
-    background-color: rgb(59, 130, 246);
-}
-
-.btn-review-docs:hover {
-    background-color: rgb(37, 99, 235);
-}
-
-.btn-see-details {
-    width: 150px;
-    height: 37px;
-    padding: 4px;
-    font-size: 14px;
-    font-family: Lato, sans-serif;
-    text-align: center;
-    color: rgb(255, 255, 255);
-    background-color: rgb(109, 49, 194);
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.btn-see-details:hover {
-    background-color: rgb(89, 29, 174);
-}
-
-.btn-delete-proposal,
-.btn-cancel-proposal {
-    width: 150px;
-    height: 37px;
-    padding: 4px;
-    font-size: 14px;
-    font-family: Inter, sans-serif;
-    text-align: center;
-    color: rgb(255, 255, 255);
-    background-color: rgb(239, 68, 68);
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.btn-delete-proposal:hover,
-.btn-cancel-proposal:hover {
-    background-color: rgb(220, 38, 38);
-}
-
-.btn-modify-proposal {
-    min-width: 150px;
-    height: 37px;
-    padding: 4px 12px;
-    font-size: 14px;
-    font-family: Inter, sans-serif;
-    text-align: center;
-    color: rgb(255, 255, 255);
-    background-color: var(--gp-indigo);
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.btn-modify-proposal:hover {
-    background-color: rgb(79, 82, 221);
-}
-
-/* Right Column - Host Profile Card */
-.proposal-right {
-    position: relative;
-    flex: 0 0 379px;
-    width: 379px;
-    min-width: 379px;
-    max-width: 379px;
-    margin-right: 25px;
-}
-
-.host-profile-card {
-    position: sticky;
-    top: 2rem;
-    border-radius: 20px;
-    overflow: hidden;
-    box-shadow: none;
-    background: rgba(255, 255, 255, 0);
-    height: fit-content;
-}
-
-.host-card-background {
-    position: relative;
-    width: 100%;
-    height: 220px;
-    overflow: hidden;
-    border-radius: 20px;
-}
-
-.property-photo {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.host-card-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: none;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.625rem;
-    z-index: 10;
-}
-
-.host-avatar {
-    width: 60px;
-    height: 60px;
-    border-radius: 50px;
-    border: none;
-    object-fit: cover;
-    box-shadow: 0px 2px 5px 0px rgba(0, 0, 0, 0.06);
-}
-
-.host-name-label {
-    background-color: rgba(255, 255, 255, 0.75);
-    color: rgb(66, 66, 66);
-    font-family: Inter, sans-serif;
-    font-weight: 700;
-    font-size: 14px;
-    text-align: center;
-    line-height: 1.25;
-    border-radius: 20px;
-    min-width: 101px;
-    max-width: 300px;
-    width: auto;
-    padding: 2px 8px;
-    margin: 0;
-}
-
-.btn-host-profile {
-    width: 102px;
-    height: 37px;
-    padding: 0;
-    font-size: 14px;
-    font-family: Inter, sans-serif;
-    text-align: center;
-    color: rgb(255, 255, 255);
-    background-color: var(--gp-indigo);
-    border: none;
-    border-radius: 8px;
-    box-shadow: rgb(170, 170, 170) 0px 2px 4px 0px;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.btn-send-message {
-    width: 138px;
-    height: 37px;
-    padding: 0;
-    font-size: 14px;
-    font-family: Inter, sans-serif;
-    text-align: center;
-    color: rgb(255, 255, 255);
-    background-color: rgb(165, 180, 252);
-    border: none;
-    border-radius: 8px;
-    box-shadow: rgb(170, 170, 170) 0px 2px 4px 0px;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.btn-host-profile:hover {
-    background-color: rgb(79, 82, 221);
-}
-
-.btn-send-message:hover {
-    background-color: rgb(145, 160, 232);
-}
-
-/* Progress Tracker */
-.progress-tracker-container {
-    margin-top: 1rem;
-    padding: 0 2rem 2rem 2rem;
-}
-
-.progress-tracker {
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    position: relative;
-    padding: 0;
+.status-banner.success .status-text strong {
+  color: var(--gp-success);
+}
+
+.status-banner.attention .status-text strong {
+  color: #92400e;
+}
+
+.status-banner.cancelled .status-text strong {
+  color: var(--gp-danger);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================================
+   DETAIL HEADER - V3 Style
+   ============================================================================ */
+
+.detail-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 24px;
+  border-bottom: 1px solid var(--gp-border-light);
+}
+
+.detail-image {
+  width: 88px;
+  height: 66px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.detail-title-area {
+  flex: 1;
+}
+
+.detail-title {
+  font-size: var(--gp-font-size-lg);
+  font-weight: 600;
+  color: var(--gp-purple-dark);
+  margin-bottom: 4px;
+}
+
+.detail-location {
+  font-size: var(--gp-font-size-base);
+  color: var(--gp-text-secondary);
+}
+
+.detail-host {
+  text-align: right;
+}
+
+.detail-host .host-name {
+  font-weight: 600;
+  font-size: var(--gp-font-size-base);
+  color: var(--gp-text);
+}
+
+.detail-host .host-label {
+  color: var(--gp-text-muted);
+  font-size: var(--gp-font-size-sm);
+}
+
+/* ============================================================================
+   QUICK LINKS ROW - V3 Style (pill-style buttons)
+   ============================================================================ */
+
+.links-row {
+  display: flex;
+  gap: 8px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--gp-border-light);
+  background: var(--gp-bg);
+  flex-wrap: wrap;
+}
+
+.link-item {
+  font-size: var(--gp-font-size-sm);
+  font-weight: 500;
+  color: var(--gp-purple-primary);
+  text-decoration: none;
+  padding: 8px 14px;
+  border-radius: 20px;
+  transition: all 0.15s;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+}
+
+.link-item:hover {
+  background: var(--gp-purple-bg);
+}
+
+/* ============================================================================
+   INFO GRID - V3 Style (4-column layout)
+   ============================================================================ */
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--gp-border-light);
+  border-bottom: 1px solid var(--gp-border-light);
+}
+
+.info-item {
+  padding: 20px 24px;
+  background: var(--gp-white);
+}
+
+.info-label {
+  font-size: var(--gp-font-size-label);
+  font-weight: 500;
+  color: var(--gp-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.info-value {
+  font-size: var(--gp-font-size-base);
+  font-weight: 600;
+  color: var(--gp-text);
+}
+
+/* ============================================================================
+   DAYS ROW - V5 Style (44x44 pills - balanced)
+   ============================================================================ */
+
+.days-row {
+  display: flex;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--gp-border-light);
+  gap: 16px;
+}
+
+.days-label {
+  font-size: var(--gp-font-size-label);
+  font-weight: 500;
+  color: var(--gp-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.days-pills {
+  display: flex;
+  gap: 8px;
+}
+
+.day-pill {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--gp-font-size-sm);
+  font-weight: 600;
+  background: var(--gp-bg);
+  color: var(--gp-text-muted);
+  border: 1px solid var(--gp-border);
+  transition: all 0.15s;
+}
+
+.day-pill.selected {
+  background: var(--gp-purple-dark);
+  border-color: var(--gp-purple-dark);
+  color: white;
+}
+
+.days-info {
+  margin-left: auto;
+  text-align: right;
+}
+
+.days-count {
+  font-size: var(--gp-font-size-base);
+  font-weight: 600;
+  color: var(--gp-text);
+}
+
+.days-range {
+  font-size: var(--gp-font-size-sm);
+  color: var(--gp-text-secondary);
+}
+
+/* ============================================================================
+   PRICING ROW - V5 Style (32px balanced pricing)
+   ============================================================================ */
+
+.pricing-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--gp-border-light);
+  background: var(--gp-bg);
+}
+
+.pricing-breakdown {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--gp-font-size-base);
+  color: var(--gp-text-secondary);
+}
+
+.pricing-breakdown span {
+  padding: 4px 0;
+}
+
+.pricing-total-label {
+  font-size: var(--gp-font-size-sm);
+  color: var(--gp-text-secondary);
+  margin-bottom: 2px;
+}
+
+.pricing-total {
+  font-size: var(--gp-font-size-2xl);
+  font-weight: 700;
+  color: var(--gp-purple-primary);
+}
+
+/* ============================================================================
+   PROGRESS ROW - V3 Style (horizontal timeline with glow)
+   ============================================================================ */
+
+.progress-row {
+  display: flex;
+  align-items: center;
+  padding: 24px;
+  border-bottom: 1px solid var(--gp-border-light);
+  gap: 4px;
 }
 
 .progress-step {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    flex: 0 0 auto;
-    position: relative;
-    width: 120px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
 }
 
-.progress-circle {
-    width: 26px;
-    height: 26px;
-    border-radius: 100px;
-    background: rgb(109, 49, 194);
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 14px;
-    color: white;
-    margin-bottom: 0.5rem;
-    z-index: 2;
-    position: relative;
+.progress-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--gp-border);
+  flex-shrink: 0;
+  transition: all 0.2s;
 }
 
-.progress-circle.completed,
-.progress-circle.current {
-    background: rgb(109, 49, 194);
-    border: none;
-    color: white;
+.progress-step.completed .progress-dot {
+  background: var(--gp-purple-dark);
+}
+
+.progress-step.current .progress-dot {
+  background: var(--gp-purple-primary);
+  width: 12px;
+  height: 12px;
+  box-shadow: 0 0 0 4px rgba(109, 49, 194, 0.15);
+}
+
+.progress-step.cancelled .progress-dot {
+  background: var(--gp-danger);
+}
+
+.progress-line {
+  flex: 1;
+  height: 2px;
+  background: var(--gp-border);
+  border-radius: 1px;
+}
+
+.progress-step.completed .progress-line {
+  background: var(--gp-purple-dark);
 }
 
 .progress-label {
-    display: block;
-    width: 120px;
-    min-height: 21px;
-    font-size: 12px;
-    font-weight: 500;
-    font-family: Inter, sans-serif;
-    letter-spacing: -1px;
-    word-spacing: 1px;
-    line-height: 1.5;
-    text-align: center;
-    color: rgb(0, 0, 0);
-    max-width: 120px;
+  font-size: var(--gp-font-size-sm);
+  font-weight: 500;
+  color: var(--gp-text-muted);
+  white-space: nowrap;
 }
 
-/* Progress connecting line */
-.progress-step:not(:last-child)::after {
-    content: '';
-    position: absolute;
-    top: 13px;
-    left: 50%;
-    width: 100px;
-    height: 7px;
-    background: rgb(109, 49, 194);
-    z-index: 1;
+.progress-step.completed .progress-label,
+.progress-step.current .progress-label {
+  color: var(--gp-text);
 }
 
-.proposal-metadata {
-    margin-top: 1.5rem;
-    padding-top: 1rem;
-    text-align: center;
-    font-size: 14px;
-    font-weight: 500;
-    font-family: "DM Sans", sans-serif;
-    line-height: 1.25;
-    color: rgb(0, 0, 0);
+/* ============================================================================
+   ACTIONS ROW - V5 Style (balanced touch targets)
+   ============================================================================ */
+
+.actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 24px;
+  align-items: center;
 }
 
-/* Alert Messages */
-.alert {
-    padding: 1rem;
-    border-radius: 8px;
-    margin: 1rem;
-    font-size: 0.875rem;
+/* V5 Button base styles */
+.actions-row .btn {
+  padding: 12px 20px;
+  font-size: var(--gp-font-size-base);
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  font-family: inherit;
+  white-space: nowrap;
+  flex: 0 0 auto;
+  width: auto;
 }
 
-.alert-success {
-    background-color: #D1FAE5;
-    color: #065F46;
-    border: 1px solid #6EE7B7;
+.actions-row .btn-primary {
+  background: var(--gp-purple-primary);
+  color: white;
 }
 
-.alert-error {
-    background-color: #FEE2E2;
-    color: #991B1B;
-    border: 1px solid #FCA5A5;
+.actions-row .btn-primary:hover {
+  background: var(--gp-purple-dark);
 }
 
-/* Responsive Design */
-@media (max-width: 1280px) {
-    .proposal-card {
-        margin: 15px 1rem 0;
-    }
+.actions-row .btn-outline {
+  background: transparent;
+  color: var(--gp-purple-primary);
+  border: 2px solid var(--gp-purple-primary);
 }
 
-@media (max-width: 1000px) {
-    .proposal-content {
-        flex-direction: column;
-        gap: 1.5rem;
-        padding: 1.5rem;
-    }
-
-    .proposal-left {
-        max-width: 100%;
-    }
-
-    .proposal-right {
-        flex: 1 1 auto;
-        width: 100%;
-        min-width: 0;
-        max-width: 500px;
-        margin: 0 auto;
-    }
-
-    .host-card-background {
-        height: 300px;
-    }
+.actions-row .btn-outline:hover {
+  background: var(--gp-purple-bg);
 }
 
-@media (max-width: 900px) {
-    .proposal-card {
-        width: 100%;
-        max-width: 100%;
-        margin: 15px 0 0;
-    }
-
-    .proposal-content {
-        flex-direction: column;
-        padding: 1.5rem;
-    }
-
-    .proposal-left {
-        min-width: 0;
-        max-width: 100%;
-    }
-
-    .proposal-right {
-        order: -1;
-        margin-bottom: 2rem;
-        flex: 1 1 auto;
-        width: 100%;
-        min-width: 0;
-        max-width: 500px;
-        margin: 0 auto 2rem;
-    }
-
-    .host-profile-card {
-        position: relative;
-        top: 0;
-        max-width: 500px;
-        margin: 0 auto;
-    }
-
-    .proposal-dropdown {
-        width: 100%;
-        max-width: 399px;
-    }
+.actions-row .btn-ghost {
+  background: transparent;
+  color: var(--gp-text-secondary);
+  border: 1px solid var(--gp-border);
 }
 
+.actions-row .btn-ghost:hover {
+  border-color: var(--gp-text-secondary);
+  color: var(--gp-text);
+}
+
+.actions-row .btn-danger {
+  background: transparent;
+  color: var(--gp-danger);
+  border: 1px solid var(--gp-danger);
+}
+
+.actions-row .btn-danger:hover {
+  background: var(--gp-danger-bg);
+}
+
+/* VM button text states */
+.actions-row .btn-vm-text {
+  background: transparent;
+  border: none;
+  color: var(--gp-danger);
+  font-weight: 600;
+  padding: 12px 16px;
+  cursor: default;
+}
+
+.actions-row .btn-vm-text.waiting {
+  color: var(--gp-text-muted);
+}
+
+.actions-row .btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ============================================================================
+   PROPOSAL CARD V2 - Two Column Layout (Legacy - keep for transition)
+   ============================================================================ */
+
+.proposal-card-v2 {
+  background: var(--gp-white);
+  border-radius: 16px;
+  border: 1px solid var(--gp-border);
+  overflow: hidden;
+}
+
+.proposal-content-row {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  padding: 15px;
+  justify-content: space-between;
+}
+
+/* Left Column - Listing Details */
+.proposal-left-column {
+  flex: 0 0 auto;
+  max-width: 542px;
+  min-width: 0;
+}
+
+.listing-title-v2 {
+  font-family: "Open Sans", sans-serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: #4F46E5;
+  letter-spacing: -1px;
+  line-height: 1.5;
+  margin: 0 0 0;
+}
+
+.listing-location-v2 {
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 400;
+  color: #6B7280;
+  line-height: 1.28;
+  margin: 0 0 10px 0;
+}
+
+/* Action Buttons Row */
+.listing-actions-row {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.btn-action {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.btn-primary-v2 {
+  background-color: #6366F1;
+  color: white;
+  border: none;
+  box-shadow: 0 2px 4px 0 #aaa;
+}
+
+.btn-primary-v2:hover {
+  background-color: #4F46E5;
+}
+
+.btn-map {
+  background-color: rgba(255, 255, 255, 0);
+  background-size: cover;
+  background-position: center;
+  background-image: url("https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=,h=,f=auto,dpr=1,fit=contain/f1606367384312x912916536391246300/Screen%20Shot%202020-11-26%20at%204.08.57%20pm.png");
+  border: 1px solid #6B6B6B;
+  color: #01437D;
+  font-weight: 700;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  min-width: 116px;
+}
+
+/* Schedule Info Block */
+.schedule-info-block {
+  margin-bottom: 15px;
+}
+
+.schedule-text {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #6B4EFF;
+  line-height: 1.25;
+  margin-bottom: 2px;
+}
+
+.schedule-text .label {
+  color: #000;
+  font-weight: 400;
+}
+
+.schedule-text.primary {
+  color: #6B4EFF;
+}
+
+/* Day Badges Row */
+.day-badges-row {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 15px;
+}
+
+.day-badge-v2 {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  background-color: #B2B2B2;
+  color: #424242;
+  transition: all 0.2s;
+}
+
+.day-badge-v2.selected {
+  background-color: #4B47CE;
+  color: white;
+}
+
+/* Check-in Times */
+.checkin-times {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #374151;
+  line-height: 1.6;
+  margin-bottom: 4px;
+}
+
+/* Move-in Date */
+.movein-date {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #374151;
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+
+.movein-date .label {
+  color: #000;
+}
+
+/* House Rules Link (legacy - keep for compatibility) */
+.house-rules-link {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #4F46E5;
+  text-decoration: none;
+  line-height: 1.6;
+}
+
+.house-rules-link:hover {
+  text-decoration: underline;
+}
+
+/* House Rules Section - Collapsible */
+.house-rules-section {
+  margin-top: 8px;
+  margin-bottom: 10px;
+}
+
+.house-rules-toggle {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #4F46E5;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  line-height: 1.6;
+  transition: color 300ms;
+}
+
+.house-rules-toggle:hover {
+  text-decoration: underline;
+}
+
+/* House Rules Grid - 3 columns (wider badges) */
+.house-rules-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+  margin-bottom: 20px;
+}
+
+.house-rule-badge {
+  background-color: #f0f0f0;
+  border-radius: 5px;
+  padding: 6px 8px;
+  font-family: 'Open Sans', 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  text-align: center;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Responsive: Fewer columns on smaller screens */
 @media (max-width: 768px) {
-    .proposals-page {
-        padding: 1.5rem 1rem;
-    }
-
-    .proposal-card {
-        border-radius: 12px;
-    }
-
-    .proposal-content {
-        padding: 1rem;
-    }
-
-    .progress-tracker {
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
-
-    .progress-step {
-        min-width: 80px;
-    }
-
-    .weekly-schedule {
-        width: 100%;
-        max-width: 100%;
-    }
-
-    .listing-actions {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .btn-view-listing,
-    .btn-view-map {
-        width: 100%;
-    }
-
-    .pricing-grid {
-        flex-direction: column;
-        gap: 1rem;
-        align-items: flex-start;
-    }
-
-    .proposal-dropdown {
-        width: 100%;
-        max-width: 100%;
-    }
+  .house-rules-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 480px) {
-    .proposals-page {
-        padding: 1rem 0.75rem;
-    }
+  .house-rules-grid {
+    grid-template-columns: repeat(1, 1fr);
+  }
+}
 
-    .proposal-content {
-        padding: 0.75rem;
-    }
+/* Right Column - Photo with Host Overlay */
+.proposal-right-column {
+  flex: 0 0 379px;
+  max-width: 379px;
+}
 
-    .schedule-section,
-    .pricing-section {
-        padding: 1rem;
-    }
+.listing-photo-container {
+  width: 100%;
+  height: 220px;
+  border-radius: 20px;
+  background-size: cover;
+  background-position: center;
+  background-color: #f3f4f6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  position: relative;
+}
 
-    .progress-tracker {
-        padding: 1rem 0;
-    }
+/* Host Overlay */
+.host-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
 
-    .progress-circle {
-        width: 40px;
-        height: 40px;
-        font-size: 12px;
-    }
+.host-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50px;
+  object-fit: cover;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.06);
+}
 
-    .progress-label {
-        font-size: 11px;
-        width: 100px;
-    }
+.host-avatar-placeholder {
+  background: #6B4EFF;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.host-name-badge {
+  background-color: rgba(255, 255, 255, 0.75);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #424242;
+}
+
+.btn-host {
+  height: 37px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 4px 0 #aaa;
+  min-width: 102px;
+}
+
+.btn-host-profile {
+  background-color: #6366F1;
+  color: white;
+}
+
+.btn-host-profile:hover {
+  background-color: #4F46E5;
+}
+
+.btn-host-message {
+  background-color: #A5B4FC;
+  color: white;
+}
+
+.btn-host-message:hover {
+  background-color: #818CF8;
+}
+
+/* ============================================================================
+   PRICING BAR
+   ============================================================================ */
+
+.pricing-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  background-color: rgba(66, 66, 66, 0.1);
+  border-radius: 8px;
+  padding: 15px;
+  margin: 0 10px 10px;
+}
+
+.pricing-details {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  color: #6B7280;
+  text-align: center;
+  line-height: 1.6;
+}
+
+.pricing-details span {
+  display: block;
+}
+
+/* Original price with strikethrough (for counteroffers) */
+.pricing-original {
+  color: #808080;
+  display: block;
+}
+
+.pricing-original s {
+  text-decoration: line-through;
+}
+
+.pricing-total {
+  color: #6B7280;
+}
+
+.pricing-fee,
+.pricing-deposit {
+  color: #6B7280;
+}
+
+.pricing-nightly {
+  font-family: "Open Sans", sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: #424242;
+  text-align: center;
+  flex: 1;
+}
+
+/* ============================================================================
+   ACTION BUTTONS - Dynamic buttons based on proposal status
+   ============================================================================ */
+
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.btn-action-bar {
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  cursor: pointer;
+  height: 37px;
+  min-width: 150px;
+  max-width: 250px;
+  transition: all 0.2s;
+}
+
+/* ============================================================================
+   VIRTUAL MEETING BUTTON STATES
+   Implements 8 Bubble conditionals for VM button lifecycle
+   ============================================================================ */
+
+/* Virtual Meeting Request - Default state (no VM exists) */
+.btn-vm-request {
+  background-color: var(--color-primary, #6B4EFF);
+  color: white;
+}
+
+.btn-vm-request:hover:not(:disabled) {
+  background-color: var(--color-primary-hover, #5840E0);
+}
+
+/* Respond to VM Request - Blue (action needed from other party) */
+.btn-vm-respond {
+  background-color: #3B82F6;
+  color: white;
+}
+
+.btn-vm-respond:hover:not(:disabled) {
+  background-color: #2563EB;
+}
+
+/* Virtual Meeting Requested - Gray (waiting for response, disabled) */
+.btn-vm-requested {
+  background-color: #9CA3AF;
+  color: white;
+  cursor: not-allowed;
+}
+
+/* Virtual Meeting Accepted - Green (accepted but not yet confirmed by SL) */
+.btn-vm-accepted {
+  background-color: #10B981;
+  color: white;
+  cursor: not-allowed;
+}
+
+/* Meeting Confirmed - Darker green (confirmed by SL, clickable for details) */
+.btn-vm-confirmed {
+  background-color: #059669;
+  color: white;
+}
+
+.btn-vm-confirmed:hover:not(:disabled) {
+  background-color: #047857;
+}
+
+.btn-vm-confirmed:disabled {
+  background-color: #10B981;
+  cursor: not-allowed;
+}
+
+/* Virtual Meeting Declined - Red outline (can request alternative times) */
+.btn-vm-declined {
+  background-color: transparent;
+  color: #DB2E2E;
+  font-weight: bold;
+  border: 1px solid #DB2E2E;
+}
+
+.btn-vm-declined:hover:not(:disabled) {
+  background-color: #FEE2E2;
+}
+
+/* Go to Leases - Green (for completed proposals) */
+.btn-go-to-leases {
+  background-color: #39873D;
+  color: white;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-go-to-leases:hover {
+  background-color: #2D6B30;
+}
+
+/* Remind Split Lease - Green */
+.btn-remind {
+  background-color: #39873D;
+  color: white;
+}
+
+.btn-remind:hover {
+  background-color: #2D6B30;
+}
+
+/* Modify Proposal - Green (matches Bubble design) */
+.btn-modify-proposal {
+  background-color: #39873D;
+  color: white;
+}
+
+.btn-modify-proposal:hover {
+  background-color: #2D6B30;
+}
+
+/* Cancel Proposal - Red */
+.btn-cancel-proposal {
+  background-color: #EF4444;
+  color: white;
+}
+
+.btn-cancel-proposal:hover {
+  background-color: #DC2626;
+}
+
+/* Delete Proposal - Red */
+.btn-delete-proposal {
+  background-color: #EF4444;
+  color: white;
+}
+
+.btn-delete-proposal:hover {
+  background-color: #DC2626;
+}
+
+/* Accept Counteroffer - Green */
+.btn-accept-counteroffer {
+  background-color: #39873D;
+  color: white;
+}
+
+.btn-accept-counteroffer:hover {
+  background-color: #2D6B30;
+}
+
+/* Interested - Green (for SL-suggested proposals) */
+.btn-interested {
+  background-color: #39873D;
+  color: white;
+}
+
+.btn-interested:hover {
+  background-color: #2D6B30;
+}
+
+/* Primary Action - Green (default for guest action 1) */
+.btn-primary-action {
+  background-color: #39873D;
+  color: white;
+}
+
+.btn-primary-action:hover {
+  background-color: #2D6B30;
+}
+
+/* Not Interested - Gray with red border (for SL-suggested proposals) */
+.btn-not-interested {
+  background-color: #F3F4F6;
+  color: #DC2626;
+  border: 1px solid #DC2626;
+}
+
+.btn-not-interested:hover {
+  background-color: #FEE2E2;
+}
+
+/* Review Host Terms - Yellow/Orange (for counteroffer review) */
+.btn-review-terms {
+  background-color: #FEF3C7;
+  color: #92400E;
+  border: 1px solid #F59E0B;
+}
+
+.btn-review-terms:hover {
+  background-color: #FDE68A;
+}
+
+/* See Details - Blue (informational) */
+.btn-see-details {
+  background-color: #EBF5FF;
+  color: #1D4ED8;
+  border: 1px solid #3B82F6;
+}
+
+.btn-see-details:hover {
+  background-color: #DBEAFE;
+}
+
+/* Verify Identity - Blue (action required) */
+.btn-verify-identity {
+  background-color: #3B82F6;
+  color: white;
+}
+
+.btn-verify-identity:hover {
+  background-color: #2563EB;
+}
+
+/* Secondary Action - Gray (default for guest action 2) */
+.btn-secondary-action {
+  background-color: #F3F4F6;
+  color: #374151;
+  border: 1px solid #D4D4D4;
+}
+
+.btn-secondary-action:hover {
+  background-color: #E5E7EB;
+}
+
+/* See House Manual - Purple (non-clickable for late-stage proposals) */
+.btn-house-manual {
+  background-color: #6D31C2;
+  color: white;
+  cursor: default;
+}
+
+.btn-house-manual:disabled {
+  background-color: #6D31C2;
+  color: white;
+  opacity: 1;
+}
+
+/* Reject Modified Terms - Red outline (for counteroffer rejection) */
+.btn-reject-terms {
+  background-color: #FEE2E2;
+  color: #DC2626;
+  border: 1px solid #DC2626;
+}
+
+.btn-reject-terms:hover {
+  background-color: #FECACA;
+}
+
+/* Reject Proposal - Red (for SL-suggested proposals) */
+.btn-reject-proposal {
+  background-color: #EF4444;
+  color: white;
+}
+
+.btn-reject-proposal:hover {
+  background-color: #DC2626;
+}
+
+/* ============================================================================
+   INLINE PROGRESS TRACKER (Horizontal Timeline)
+   ============================================================================ */
+
+.inline-progress-tracker {
+  padding: 10px 15px 20px;
+}
+
+.progress-line-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.progress-node-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.progress-connector {
+  width: 100px;
+  height: 7px;
+  background-color: #D4D4D4;
+  border-radius: 0;
+}
+
+/* Note: .active colors are now applied via inline styles for dynamic theming */
+.progress-connector.active {
+  /* Color applied via inline style based on status */
+}
+
+.progress-node {
+  width: 26px;
+  height: 26px;
+  border-radius: 100px;
+  background-color: #DEDEDE;
+  flex-shrink: 0;
+}
+
+.progress-node.active {
+  /* Color applied via inline style based on status */
+}
+
+.progress-labels {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+}
+
+.progress-label {
+  width: 120px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #D4D4D4;
+  text-align: center;
+  letter-spacing: -1px;
+  line-height: 1.5;
+}
+
+.progress-label.active {
+  /* Color applied via inline style based on status */
+}
+
+/* ============================================================================
+   HIDE OLD PROGRESS TRACKER (if still rendered separately)
+   ============================================================================ */
+
+.progress-tracker {
+  display: none;
+}
+
+/* ============================================================================
+   RESPONSIVE STYLES - V5 Balanced
+   ============================================================================ */
+
+@media (max-width: 900px) {
+  /* Info grid: 4 columns -> 2 columns */
+  .info-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Days row stacks */
+  .days-row {
+    flex-wrap: wrap;
+  }
+
+  .days-info {
+    width: 100%;
+    margin-left: 0;
+    margin-top: 12px;
+    text-align: left;
+  }
+}
+
+@media (max-width: 768px) {
+  .proposals-page {
+    padding: 1.5rem 1rem;
+  }
+
+  .selector-header h2 {
+    font-size: 20px;
+  }
+
+  /* Detail header stacks on tablet */
+  .detail-header {
+    flex-wrap: wrap;
+  }
+
+  .detail-host {
+    width: 100%;
+    text-align: left;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--gp-border-light);
+  }
+
+  /* Links row scrolls horizontally */
+  .links-row {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 12px;
+  }
+
+  .link-item {
+    flex-shrink: 0;
+  }
+
+  /* Pricing row stacks */
+  .pricing-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .pricing-breakdown {
+    flex-wrap: wrap;
+  }
+
+  /* Progress labels hidden */
+  .progress-label {
+    display: none;
+  }
+
+  /* Actions wrap */
+  .actions-row {
+    flex-wrap: wrap;
+  }
+
+  .actions-row .btn {
+    flex: 1;
+    min-width: 140px;
+  }
+}
+
+@media (max-width: 480px) {
+  .proposals-page {
+    padding: 1rem 0.75rem;
+  }
+
+  .selector-header h2 {
+    font-size: 18px;
+  }
+
+  /* Info grid: 2 columns -> 1 column */
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Day pills smaller */
+  .day-pill {
+    width: 38px;
+    height: 38px;
+    font-size: 12px;
+  }
+
+  .days-pills {
+    gap: 6px;
+  }
+
+  /* Proposal rows stack content */
+  .proposal-row {
+    flex-wrap: wrap;
+  }
+
+  .proposal-info {
+    flex: 1 1 calc(100% - 64px);
+  }
+
+  .proposal-status {
+    width: 100%;
+    margin-top: 8px;
+    text-align: center;
+  }
+
+  /* Actions stack fully */
+  .actions-row {
+    flex-direction: column;
+  }
+
+  .actions-row .btn {
+    width: 100%;
+  }
+}
+
+/* ============================================================================
+   VIRTUAL MEETINGS SECTION - V5 Balanced
+   Displays proposals with active virtual meetings
+   ============================================================================ */
+
+.vm-section-wrapper {
+  margin-top: 40px;
+}
+
+.vm-section-heading {
+  font-size: var(--gp-font-size-xl);
+  font-weight: 700;
+  color: var(--gp-purple-dark);
+  margin-bottom: 20px;
+}
+
+.vm-section-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Individual VM Card - V5 Balanced */
+.vm-section-card {
+  background: var(--gp-white);
+  border: 1px solid var(--gp-border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.vm-section-card-content {
+  padding: 20px;
+}
+
+/* Header row with profile icon and text */
+.vm-section-header-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.vm-section-profile-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--gp-border-light);
+}
+
+.vm-section-profile-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.vm-section-text-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.vm-section-title {
+  font-size: var(--gp-font-size-base);
+  font-weight: 600;
+  color: var(--gp-purple-dark);
+  line-height: var(--gp-line-height-normal);
+}
+
+.vm-section-subtitle {
+  font-size: var(--gp-font-size-sm);
+  color: var(--gp-text-muted);
+  margin-top: 4px;
+}
+
+.vm-section-message-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.vm-section-message-row svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: var(--gp-purple-primary);
+}
+
+.vm-section-message-row svg rect,
+.vm-section-message-row svg line {
+  stroke: var(--gp-purple-primary);
+}
+
+.vm-section-message {
+  font-size: var(--gp-font-size-sm);
+  color: var(--gp-text-secondary);
+  line-height: var(--gp-line-height-normal);
+}
+
+/* Date/time pills row */
+.vm-section-dates-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--gp-border-light);
+}
+
+.vm-section-date-pill {
+  background: var(--gp-bg);
+  font-size: var(--gp-font-size-sm);
+  font-weight: 600;
+  color: var(--gp-text);
+  padding: 10px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--gp-border);
+}
+
+/* Action bar - V5 Balanced */
+.vm-section-action-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: var(--gp-bg);
+  border-top: 1px solid var(--gp-border-light);
+}
+
+.vm-section-cancel-btn {
+  background: transparent;
+  font-size: var(--gp-font-size-sm);
+  font-weight: 600;
+  color: var(--gp-text-secondary);
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--gp-border);
+  cursor: pointer;
+  transition: all 0.15s;
+  min-height: var(--gp-min-touch-target);
+}
+
+.vm-section-cancel-btn:hover {
+  border-color: var(--gp-text-secondary);
+  color: var(--gp-text);
+}
+
+/* ============================================================================
+   VM SECTION - STATE BADGES - V5 Balanced
+   ============================================================================ */
+
+.vm-section-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.vm-section-badge {
+  font-size: var(--gp-font-size-label);
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 16px;
+  white-space: nowrap;
+}
+
+.vm-section-badge-waiting {
+  background: var(--gp-border-light);
+  color: var(--gp-text-muted);
+}
+
+.vm-section-badge-pending {
+  background: var(--gp-purple-bg);
+  color: var(--gp-purple-primary);
+}
+
+.vm-section-badge-confirmed {
+  background: var(--gp-success-bg);
+  color: var(--gp-success);
+}
+
+.vm-section-badge-expired {
+  background: var(--gp-danger-bg);
+  color: var(--gp-danger);
+}
+
+/* ============================================================================
+   VM SECTION - PRIMARY ACTION BUTTONS - V5 Balanced
+   ============================================================================ */
+
+.vm-section-primary-btn {
+  font-size: var(--gp-font-size-sm);
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+  min-height: var(--gp-min-touch-target);
+  min-width: 100px;
+}
+
+/* Respond state - Primary purple */
+.vm-section-primary-btn--respond {
+  background: var(--gp-purple-primary);
+  color: white;
+}
+
+.vm-section-primary-btn--respond:hover {
+  background: var(--gp-purple-dark);
+}
+
+/* Details state - Outline */
+.vm-section-primary-btn--details {
+  background: transparent;
+  color: var(--gp-purple-primary);
+  border: 1px solid var(--gp-purple-primary);
+}
+
+.vm-section-primary-btn--details:hover {
+  background: var(--gp-purple-bg);
+}
+
+/* Join state - Primary purple */
+.vm-section-primary-btn--join {
+  background: var(--gp-purple-primary);
+  color: white;
+}
+
+.vm-section-primary-btn--join:hover {
+  background: var(--gp-purple-dark);
+}
+
+/* Disabled state */
+.vm-section-primary-btn--disabled {
+  background: var(--gp-border);
+  color: var(--gp-text-muted);
+  cursor: not-allowed;
+}
+
+/* Expired state - Outline danger */
+.vm-section-primary-btn--expired {
+  background: transparent;
+  color: var(--gp-purple-primary);
+  border: 1px solid var(--gp-purple-primary);
+}
+
+.vm-section-primary-btn--expired:hover {
+  background: var(--gp-purple-bg);
+}
+
+/* ============================================================================
+   VM SECTION - BOOKED DATE PILL - V5 Balanced
+   ============================================================================ */
+
+.vm-section-date-pill--booked {
+  background: var(--gp-purple-bg);
+  color: var(--gp-purple-dark);
+  border-color: var(--gp-purple-primary);
+  font-weight: 600;
+}
+
+/* Expired date pill styling */
+.vm-section-date-pill--expired {
+  background: var(--gp-danger-bg);
+  color: var(--gp-danger);
+  border-color: var(--gp-danger);
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+/* ============================================================================
+   VM SECTION - MULTI-BUTTON ACTION BAR
+   ============================================================================ */
+
+.vm-section-action-bar--multi {
+  justify-content: flex-start;
+}
+
+/* Responsive styles for VM section - V5 Balanced */
+@media (max-width: 768px) {
+  .vm-section-heading {
+    font-size: var(--gp-font-size-lg);
+  }
+
+  .vm-section-card-content {
+    padding: 16px;
+  }
+
+  .vm-section-title-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .vm-section-action-bar {
+    padding: 14px 16px;
+    flex-wrap: wrap;
+  }
+
+  .vm-section-primary-btn {
+    flex: 1;
+    min-width: 120px;
+    max-width: 240px;
+  }
+
+  .vm-section-cancel-btn {
+    width: 100%;
+    max-width: 240px;
+  }
+}
+
+@media (max-width: 480px) {
+  .vm-section-card-content {
+    padding: 16px;
+  }
+
+  .vm-section-profile-icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .vm-section-action-bar {
+    flex-direction: column;
+    padding: 16px;
+  }
+
+  .vm-section-primary-btn,
+  .vm-section-cancel-btn {
+    width: 100%;
+  }
+}
+
+/* ============================================================================
+   LEGACY STYLES (kept for backward compatibility with other components)
+   ============================================================================ */
+
+.proposal-card {
+  display: none; /* Hide old card if rendered */
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+}
+
+.btn-primary {
+  background: var(--color-primary, #6B4EFF);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--color-primary-hover, #5840E0);
+}
+
+.btn-secondary {
+  background: #F3F4F6;
+  color: var(--color-text-primary, #31135D);
+  border: 1px solid #D4D4D4;
+}
+
+.btn-secondary:hover {
+  background: #E5E7EB;
+}
+
+.btn-danger {
+  background: #DC2626;
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #B91C1C;
+}
+
+/* ============================================================================
+   PROPOSAL DETAILS MODAL - V5 Balanced
+   ============================================================================ */
+
+.proposal-details-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  overflow-y: auto;
+  background-color: rgba(107, 114, 128, 0.75);
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.proposal-details-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 16px;
+}
+
+.proposal-details-modal {
+  position: relative;
+  background: var(--gp-white);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  max-width: 480px;
+  width: 100%;
+  overflow: hidden;
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Modal Header */
+.proposal-details-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--gp-border-light);
+}
+
+.proposal-details-title {
+  font-size: var(--gp-font-size-lg);
+  font-weight: 600;
+  color: var(--gp-purple-dark);
+  margin: 0;
+}
+
+.proposal-details-close {
+  background: transparent;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  color: var(--gp-text-muted);
+  border-radius: 8px;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.proposal-details-close:hover {
+  background: var(--gp-bg);
+  color: var(--gp-text);
+}
+
+.proposal-details-close svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* Modal Content */
+.proposal-details-content {
+  padding: 24px;
+}
+
+/* Info Row */
+.proposal-details-row {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--gp-border-light);
+}
+
+.proposal-details-row:last-child {
+  border-bottom: none;
+}
+
+.proposal-details-label {
+  font-size: var(--gp-font-size-sm);
+  font-weight: 500;
+  color: var(--gp-text-muted);
+  margin-bottom: 4px;
+}
+
+.proposal-details-value {
+  font-size: var(--gp-font-size-base);
+  font-weight: 500;
+  color: var(--gp-text);
+}
+
+/* House Rules Toggle */
+.proposal-details-rules-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: var(--gp-font-size-sm);
+  font-weight: 600;
+  color: var(--gp-purple-primary);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.proposal-details-rules-toggle:hover {
+  color: var(--gp-purple-dark);
+}
+
+.proposal-details-rules-count {
+  background: var(--gp-purple-bg);
+  color: var(--gp-purple-primary);
+  font-size: var(--gp-font-size-label);
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+/* House Rules List */
+.proposal-details-rules-list {
+  margin-top: 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.proposal-details-rule-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  font-size: var(--gp-font-size-sm);
+  color: var(--gp-text-secondary);
+}
+
+.proposal-details-rule-icon {
+  flex-shrink: 0;
+}
+
+.proposal-details-loading {
+  font-size: var(--gp-font-size-sm);
+  color: var(--gp-text-muted);
+  font-style: italic;
+  padding: 8px 0;
+}
+
+/* Pricing Breakdown */
+.proposal-details-pricing {
+  background: var(--gp-bg);
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 8px;
+}
+
+.proposal-details-pricing-title {
+  font-size: var(--gp-font-size-sm);
+  font-weight: 600;
+  color: var(--gp-text);
+  margin: 0 0 16px 0;
+}
+
+.proposal-details-pricing-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.proposal-details-pricing-label {
+  font-size: var(--gp-font-size-sm);
+  color: var(--gp-text-secondary);
+}
+
+.proposal-details-pricing-value {
+  font-size: var(--gp-font-size-sm);
+  font-weight: 600;
+  color: var(--gp-text);
+}
+
+.proposal-details-pricing-divider {
+  height: 1px;
+  background: var(--gp-border);
+  margin: 8px 0;
+}
+
+.proposal-details-pricing-total {
+  padding-top: 12px;
+}
+
+.proposal-details-pricing-total .proposal-details-pricing-label {
+  font-weight: 600;
+  color: var(--gp-text);
+}
+
+.proposal-details-pricing-total .proposal-details-pricing-value {
+  font-size: var(--gp-font-size-md);
+  font-weight: 700;
+  color: var(--gp-purple-primary);
+}
+
+.proposal-details-pricing-note {
+  font-size: var(--gp-font-size-label);
+  color: var(--gp-text-muted);
+  font-style: italic;
+  margin-top: 8px;
+}
+
+/* Modal Footer */
+.proposal-details-footer {
+  padding: 16px 24px;
+  background: var(--gp-bg);
+  border-top: 1px solid var(--gp-border-light);
+}
+
+.proposal-details-footer-btn {
+  width: 100%;
+  padding: 12px 20px;
+  background: var(--gp-purple-primary);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: var(--gp-font-size-base);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.proposal-details-footer-btn:hover {
+  background: var(--gp-purple-dark);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .proposal-details-modal {
+    max-width: 100%;
+    margin: 16px;
+    border-radius: 12px;
+  }
+
+  .proposal-details-header {
+    padding: 16px 20px;
+  }
+
+  .proposal-details-content {
+    padding: 20px;
+  }
+
+  .proposal-details-pricing {
+    padding: 16px;
+  }
+
+  .proposal-details-footer {
+    padding: 16px 20px;
+  }
+}
+
+/* ============================================================================
+   V7 GUEST PROPOSALS - EXPANDABLE PROPOSAL CARDS
+   ============================================================================ */
+
+/* ============================================================================
+   SECTION HEADERS
+   ============================================================================ */
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 0 4px;
+}
+
+.section-header__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.section-header--suggested .section-header__icon {
+  background: var(--gp-purple-bg);
+  color: var(--gp-purple-primary);
+}
+
+.section-header--user .section-header__icon {
+  background: var(--gp-border-light);
+  color: var(--gp-text-secondary);
+}
+
+.section-header__title {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--gp-font-size-lg);
+  font-weight: 700;
+  color: var(--gp-purple-dark);
+  margin: 0;
+}
+
+.section-header__count {
+  font-weight: 400;
+  color: var(--gp-text-secondary);
+  margin-left: 4px;
+}
+
+/* ============================================================================
+   MATCH REASON CARD (for SL-suggested proposals)
+   ============================================================================ */
+
+.match-reason-card {
+  background: var(--gp-purple-bg);
+  border: 1px solid rgba(109, 49, 194, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.match-reason-card__header {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.match-reason-card__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--gp-purple-primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.match-reason-card__content {
+  flex: 1;
+}
+
+.match-reason-card__title {
+  font-size: var(--gp-font-size-sm);
+  font-weight: 600;
+  color: var(--gp-purple-dark);
+  margin: 0 0 4px 0;
+}
+
+.match-reason-card__text {
+  font-size: var(--gp-font-size-sm);
+  color: var(--gp-text-secondary);
+  margin: 0;
+  line-height: var(--gp-line-height-normal);
+}
+
+.match-reason-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(109, 49, 194, 0.15);
+}
+
+.match-tag {
+  background: white;
+  color: var(--gp-purple-primary);
+  font-size: var(--gp-font-size-label);
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(109, 49, 194, 0.2);
+}
+
+/* ============================================================================
+   EXPANDABLE PROPOSAL CARD (EPC) - Main Component
+   ============================================================================ */
+
+.epc-card {
+  background: var(--gp-white);
+  border: 1px solid var(--gp-border);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.2s ease-out;
+  margin-bottom: 12px;
+}
+
+.epc-card:hover {
+  border-color: var(--gp-purple-light);
+}
+
+.epc-card.expanded {
+  border-color: var(--gp-purple-primary);
+  box-shadow: 0 4px 20px rgba(109, 49, 194, 0.1);
+}
+
+.epc-card.suggested {
+  border-color: rgba(109, 49, 194, 0.3);
+}
+
+.epc-card.suggested.expanded {
+  border-color: var(--gp-purple-primary);
+}
+
+/* ============================================================================
+   EPC HEADER (Collapsed Row)
+   ============================================================================ */
+
+.epc-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.epc-header:hover {
+  background: var(--gp-purple-bg);
+}
+
+.epc-thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.epc-thumb--placeholder {
+  background-color: var(--gp-border-light);
+}
+
+.epc-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.epc-name {
+  font-weight: 600;
+  font-size: var(--gp-font-size-base);
+  color: var(--gp-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.epc-meta {
+  font-size: var(--gp-font-size-sm);
+  color: var(--gp-text-secondary);
+  margin-top: 2px;
+}
+
+.epc-status {
+  font-size: var(--gp-font-size-sm);
+  font-weight: 500;
+  color: var(--gp-text-muted);
+  padding: 5px 12px;
+  background: var(--gp-border-light);
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.epc-status.attention {
+  color: var(--gp-purple-primary);
+  background: var(--gp-purple-bg);
+}
+
+.epc-status.success {
+  color: var(--gp-success);
+  background: var(--gp-success-bg);
+}
+
+.epc-status.action-required {
+  color: #92400E;
+  background: #FEF3C7;
+  font-weight: 600;
+  animation: pulse-attention 2s ease-in-out infinite;
+}
+
+/* Chevron icon */
+.expand-chevron {
+  color: var(--gp-text-muted);
+  transition: transform 0.3s ease-out;
+  flex-shrink: 0;
+}
+
+.expand-chevron.expanded {
+  transform: rotate(180deg);
+}
+
+/* ============================================================================
+   EPC CONTENT WRAPPER (Accordion Animation)
+   ============================================================================ */
+
+.epc-content-wrapper {
+  overflow: hidden;
+  transition: height 0.3s ease-out;
+}
+
+.epc-content {
+  padding: 0 20px 20px;
+  border-top: 1px solid var(--gp-border-light);
+}
+
+/* ============================================================================
+   EPC STATUS BANNER
+   ============================================================================ */
+
+.epc-status-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--gp-purple-bg);
+  border-radius: 10px;
+  margin: 16px 0;
+  font-size: var(--gp-font-size-sm);
+}
+
+.epc-status-banner.success {
+  background: var(--gp-success-bg);
+}
+
+.epc-status-banner.attention {
+  background: #fef3c7;
+}
+
+.epc-status-banner.cancelled {
+  background: var(--gp-danger-bg);
+}
+
+.epc-status-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--gp-purple-primary);
+  color: white;
+  flex-shrink: 0;
+}
+
+.epc-status-banner.success .epc-status-icon {
+  background: var(--gp-success);
+}
+
+.epc-status-banner.attention .epc-status-icon {
+  background: #f59e0b;
+}
+
+.epc-status-banner.cancelled .epc-status-icon {
+  background: var(--gp-danger);
+}
+
+.epc-status-text {
+  flex: 1;
+  color: var(--gp-text);
+}
+
+.epc-status-text strong {
+  font-weight: 600;
+}
+
+/* ============================================================================
+   EPC DETAIL HEADER
+   ============================================================================ */
+
+.epc-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--gp-border-light);
+}
+
+.epc-detail-title-area {
+  flex: 1;
+}
+
+.epc-detail-title {
+  font-size: var(--gp-font-size-md);
+  font-weight: 600;
+  color: var(--gp-purple-dark);
+  margin-bottom: 2px;
+}
+
+.epc-detail-location {
+  font-size: var(--gp-font-size-sm);
+  color: var(--gp-text-secondary);
+}
+
+.epc-detail-host {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+}
+
+.epc-host-photo {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.epc-host-photo-placeholder {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: var(--gp-purple-primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.epc-host-name {
+  font-weight: 600;
+  font-size: var(--gp-font-size-sm);
+  color: var(--gp-text);
+}
+
+.epc-host-label {
+  color: var(--gp-text-muted);
+  font-size: var(--gp-font-size-label);
+}
+
+/* ============================================================================
+   EPC QUICK LINKS
+   ============================================================================ */
+
+.epc-links-row {
+  display: flex;
+  gap: 8px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--gp-border-light);
+  flex-wrap: wrap;
+}
+
+.epc-link-item {
+  font-size: var(--gp-font-size-sm);
+  font-weight: 500;
+  color: var(--gp-purple-primary);
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 16px;
+  transition: all 0.15s;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+}
+
+.epc-link-item:hover {
+  background: var(--gp-purple-bg);
+}
+
+/* ============================================================================
+   EPC HOUSE RULES GRID
+   ============================================================================ */
+
+.epc-house-rules-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--gp-border-light);
+}
+
+.epc-house-rule-badge {
+  background-color: var(--gp-border-light);
+  border-radius: 5px;
+  padding: 6px 8px;
+  font-size: var(--gp-font-size-label);
+  font-weight: 600;
+  color: var(--gp-text-secondary);
+  text-align: center;
+}
+
+/* ============================================================================
+   EPC INFO GRID
+   ============================================================================ */
+
+.epc-info-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--gp-border-light);
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 12px 0;
+}
+
+.epc-info-item {
+  padding: 14px 16px;
+  background: var(--gp-white);
+}
+
+.epc-info-label {
+  font-size: var(--gp-font-size-label);
+  font-weight: 500;
+  color: var(--gp-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.epc-info-value {
+  font-size: var(--gp-font-size-sm);
+  font-weight: 600;
+  color: var(--gp-text);
+}
+
+/* ============================================================================
+   EPC DAYS ROW
+   ============================================================================ */
+
+.epc-days-row {
+  display: flex;
+  align-items: center;
+  padding: 14px 0;
+  gap: 12px;
+  border-bottom: 1px solid var(--gp-border-light);
+}
+
+.epc-days-label {
+  font-size: var(--gp-font-size-label);
+  font-weight: 500;
+  color: var(--gp-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.epc-days-pills {
+  display: flex;
+  gap: 6px;
+}
+
+.epc-day-pill {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--gp-font-size-sm);
+  font-weight: 600;
+  background: var(--gp-bg);
+  color: var(--gp-text-muted);
+  border: 1px solid var(--gp-border);
+}
+
+.epc-day-pill.selected {
+  background: var(--gp-purple-dark);
+  border-color: var(--gp-purple-dark);
+  color: white;
+}
+
+.epc-days-info {
+  margin-left: auto;
+  text-align: right;
+}
+
+.epc-days-count {
+  font-size: var(--gp-font-size-sm);
+  font-weight: 600;
+  color: var(--gp-text);
+}
+
+.epc-nights-warning {
+  color: var(--gp-danger);
+  margin-left: 6px;
+}
+
+.epc-days-range {
+  font-size: var(--gp-font-size-label);
+  color: var(--gp-text-secondary);
+  margin-top: 2px;
+}
+
+/* ============================================================================
+   EPC PRICING ROW
+   ============================================================================ */
+
+.epc-pricing-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--gp-border-light);
+}
+
+.epc-pricing-breakdown {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--gp-font-size-sm);
+  color: var(--gp-text-secondary);
+  flex-wrap: wrap;
+}
+
+.epc-pricing-total-area {
+  text-align: right;
+}
+
+.epc-pricing-total-label {
+  font-size: var(--gp-font-size-label);
+  color: var(--gp-text-secondary);
+}
+
+.epc-pricing-original {
+  margin-left: 6px;
+  color: var(--gp-text-muted);
+  text-decoration: line-through;
+}
+
+.epc-pricing-total {
+  font-size: var(--gp-font-size-xl);
+  font-weight: 700;
+  color: var(--gp-purple-primary);
+}
+
+/* ============================================================================
+   EPC PROGRESS ROW
+   ============================================================================ */
+
+.epc-progress-row {
+  display: flex;
+  align-items: center;
+  padding: 16px 0;
+  gap: 4px;
+}
+
+.epc-progress-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+
+.epc-progress-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.epc-progress-label {
+  font-size: var(--gp-font-size-label);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.epc-progress-line {
+  flex: 1;
+  height: 2px;
+  border-radius: 1px;
+  min-width: 10px;
+}
+
+/* ============================================================================
+   EPC ACTIONS ROW
+   ============================================================================ */
+
+.epc-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 16px;
+  align-items: center;
+}
+
+.epc-btn {
+  padding: 10px 18px;
+  font-size: var(--gp-font-size-sm);
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.epc-btn--primary {
+  background: var(--gp-purple-primary);
+  color: white;
+}
+
+.epc-btn--primary:hover {
+  background: var(--gp-purple-dark);
+}
+
+.epc-btn--outline {
+  background: transparent;
+  color: var(--gp-purple-primary);
+  border: 1px solid var(--gp-purple-primary);
+}
+
+.epc-btn--outline:hover {
+  background: var(--gp-purple-bg);
+}
+
+.epc-btn--ghost {
+  background: transparent;
+  color: var(--gp-text-secondary);
+  border: 1px solid var(--gp-border);
+}
+
+.epc-btn--ghost:hover {
+  border-color: var(--gp-text-secondary);
+  color: var(--gp-text);
+}
+
+.epc-btn--danger {
+  background: transparent;
+  color: var(--gp-danger);
+  border: 1px solid var(--gp-danger);
+}
+
+.epc-btn--danger:hover {
+  background: var(--gp-danger-bg);
+}
+
+.epc-btn--not-interested {
+  background: var(--gp-border-light);
+  color: var(--gp-danger);
+  border: 1px solid var(--gp-danger);
+}
+
+.epc-btn--not-interested:hover {
+  background: var(--gp-danger-bg);
+}
+
+.epc-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* VM text states */
+.epc-vm-text {
+  font-size: var(--gp-font-size-sm);
+  font-weight: 600;
+  color: var(--gp-danger);
+  padding: 10px 0;
+}
+
+.epc-vm-text.waiting {
+  color: var(--gp-text-muted);
+}
+
+/* ============================================================================
+   V7 PROPOSALS PAGE SECTIONS
+   ============================================================================ */
+
+.proposals-section {
+  margin-bottom: 32px;
+}
+
+.proposals-section:last-child {
+  margin-bottom: 0;
+}
+
+.proposals-section--suggested {
+  background: linear-gradient(135deg, rgba(109, 49, 194, 0.03) 0%, rgba(109, 49, 194, 0.08) 100%);
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 32px;
+}
+
+/* ============================================================================
+   EPC RESPONSIVE STYLES
+   ============================================================================ */
+
+@media (max-width: 900px) {
+  .epc-info-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .epc-days-row {
+    flex-wrap: wrap;
+  }
+
+  .epc-days-info {
+    width: 100%;
+    margin-left: 0;
+    margin-top: 10px;
+    text-align: left;
+  }
+
+  .epc-progress-label {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .epc-house-rules-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .epc-detail-header {
+    flex-wrap: wrap;
+  }
+
+  .epc-detail-host {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    text-align: left;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--gp-border-light);
+    gap: 12px;
+  }
+
+  .epc-host-photo,
+  .epc-host-photo-placeholder {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+  }
+
+  .epc-host-photo-placeholder {
+    font-size: 16px;
+  }
+
+  .epc-pricing-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .epc-pricing-total-area {
+    text-align: left;
+  }
+
+  .section-header__title {
+    font-size: var(--gp-font-size-base);
+  }
+}
+
+@media (max-width: 480px) {
+  .epc-header {
+    padding: 14px 16px;
+    gap: 12px;
+  }
+
+  .epc-thumb {
+    width: 48px;
+    height: 48px;
+  }
+
+  .epc-content {
+    padding: 0 16px 16px;
+  }
+
+  .epc-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .epc-house-rules-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .epc-day-pill {
+    width: 32px;
+    height: 32px;
+    font-size: var(--gp-font-size-label);
+  }
+
+  .epc-days-pills {
+    gap: 4px;
+  }
+
+  .epc-actions-row {
+    flex-direction: column;
+  }
+
+  .epc-btn {
+    width: 100%;
+  }
+
+  .proposals-section--suggested {
+    padding: 16px;
+  }
 }

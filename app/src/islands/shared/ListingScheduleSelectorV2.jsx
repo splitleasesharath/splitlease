@@ -75,7 +75,7 @@ export default function ListingScheduleSelector({
     <div className="listing-schedule-selector">
       {/* Header */}
       <div className="selector-header">
-        <h3>Weekly Schedule</h3>
+        <h3>Schedule</h3>
         <p className="selector-description">
           Choose consecutive days for your stay
         </p>
@@ -101,21 +101,29 @@ export default function ListingScheduleSelector({
       <div className="selection-info">
         {selectedDays.length > 0 && (
           <>
-            <div className="info-row">
-              <span className="info-value">
-                <strong>{selectedDays.length} days, {nightsCount} nights</strong> Selected
-              </span>
-            </div>
-            <div className="check-dates" style={{
-              fontSize: '12px',
-              color: '#6B7280',
-              fontWeight: 400,
-              lineHeight: '1.6'
-            }}>
-              {selectedDays.length === 7
-                ? 'Full-time stay'
-                : `Check-in day is ${checkInName || ''}\nCheck-out day is ${checkOutName || ''}`}
-            </div>
+            {selectedDays.length === 7 ? (
+              <div className="info-row">
+                <span className="info-value">
+                  <strong>Full-time stay</strong>
+                </span>
+              </div>
+            ) : (
+              <>
+                <div className="info-row">
+                  <span className="info-value">
+                    <strong>{selectedDays.length} days, {nightsCount} nights</strong> Selected
+                  </span>
+                </div>
+                <div className="check-dates" style={{
+                  fontSize: '12px',
+                  color: '#6B7280',
+                  fontWeight: 400,
+                  lineHeight: '1.6'
+                }}>
+                  {`Check-in day is ${checkInName || ''}\nCheck-out day is ${checkOutName || ''}`}
+                </div>
+              </>
+            )}
             {!isContiguous && (
               <div className="info-row">
                 <span className="info-value error">

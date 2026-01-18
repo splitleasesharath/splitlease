@@ -10,6 +10,47 @@ import ListingScheduleSelector from '../ListingScheduleSelector.jsx';
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 /**
+ * Get human-readable description of the weeks offered pattern
+ */
+function getWeeksOfferedDescription(weeksOffered) {
+  if (!weeksOffered) return null;
+  const pattern = weeksOffered.toLowerCase();
+
+  if (pattern.includes('1 on 1 off') || pattern.includes('1on1off') ||
+      (pattern.includes('one week on') && pattern.includes('one week off')) ||
+      (pattern.includes('1 week on') && pattern.includes('1 week off'))) {
+    return {
+      label: '1 week on / 1 week off',
+      explanation: 'Prices shown reflect actual weeks of occupancy only.',
+      actualWeeksPer4: 2
+    };
+  }
+
+  if (pattern.includes('2 on 2 off') || pattern.includes('2on2off') ||
+      pattern.includes('two weeks on') ||
+      (pattern.includes('two week') && pattern.includes('two week')) ||
+      (pattern.includes('2 week on') && pattern.includes('2 week off'))) {
+    return {
+      label: '2 weeks on / 2 weeks off',
+      explanation: 'Prices shown reflect actual weeks of occupancy only.',
+      actualWeeksPer4: 2
+    };
+  }
+
+  if (pattern.includes('1 on 3 off') || pattern.includes('1on3off') ||
+      (pattern.includes('one week on') && pattern.includes('three week')) ||
+      (pattern.includes('1 week on') && pattern.includes('3 week off'))) {
+    return {
+      label: '1 week on / 3 weeks off',
+      explanation: 'Prices shown reflect actual weeks of occupancy only.',
+      actualWeeksPer4: 1
+    };
+  }
+
+  return null;
+}
+
+/**
  * Calculate check-in and check-out days from selected day numbers
  * Check-in = first selected day, Check-out = last selected day (NOT day after)
  * This matches the ListingScheduleSelector behavior
@@ -57,7 +98,7 @@ const calculateCheckInCheckOutFromNumbers = (dayNumbers) => {
   };
 };
 
-export default function DaysSelectionSection({ data, updateData, listing, zatConfig }) {
+export default function DaysSelectionSection({ data, updateData, listing, zatConfig, errors = {} }) {
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
   // Convert day names to day objects for ListingScheduleSelector
@@ -182,21 +223,48 @@ export default function DaysSelectionSection({ data, updateData, listing, zatCon
     <div className="section days-selection-section">
       <h3 className="section-title">
         Please confirm your typical weekly schedule
-        <span className="helper-icon" title="Select the days you plan to use the space each week">
-          ❓
-        </span>
       </h3>
 
-      <ListingScheduleSelector
-        listing={scheduleSelectorListing}
-        initialSelectedDays={initialSelectedDays}
-        limitToFiveNights={false}
-        reservationSpan={data.reservationSpan || 13}
-        zatConfig={zatConfig}
-        onSelectionChange={handleScheduleChange}
-        onPriceChange={handlePriceChange}
-        showPricing={true}
-      />
+      <div id="daysSelected">
+        <ListingScheduleSelector
+          listing={scheduleSelectorListing}
+          initialSelectedDays={initialSelectedDays}
+          limitToFiveNights={false}
+          reservationSpan={data.reservationSpan || 13}
+          zatConfig={zatConfig}
+          onSelectionChange={handleScheduleChange}
+          onPriceChange={handlePriceChange}
+          showPricing={true}
+        />
+        {errors.daysSelected && (
+          <div className="form-error-message" style={{ marginTop: '8px' }}>{errors.daysSelected}</div>
+        )}
+      </div>
+
+      {/* Alternating Schedule Notice */}
+      {(() => {
+        const weeksOffered = listing?.['Weeks offered'] || listing?.weeks_offered;
+        const scheduleInfo = getWeeksOfferedDescription(weeksOffered);
+        if (scheduleInfo) {
+          return (
+            <div className="schedule-notice" style={{
+              backgroundColor: '#E8F4FD',
+              border: '1px solid #B8DAFF',
+              borderRadius: '8px',
+              padding: '10px 14px',
+              marginTop: '16px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '16px' }}>📅</span>
+                <div style={{ fontSize: '13px', color: '#004085' }}>
+                  <strong>Schedule:</strong> {scheduleInfo.label} — {scheduleInfo.explanation}
+                </div>
+              </div>
+            </div>
+          );
+        }
+        return null;
+      })()}
 
       <div className="pricing-display" style={{ marginTop: '16px' }}>
         <p><strong>Price per Night:</strong> ${data.pricePerNight?.toFixed(2) || '0.00'}</p>

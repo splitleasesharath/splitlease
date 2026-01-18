@@ -1,0 +1,1393 @@
+/* Schedule Co-Host Modal Styles */
+/* Design based on Bubble Schedule-Co-Host component specifications */
+
+/* ============================================================
+   COLOR PALETTE (from design spec)
+   ============================================================ */
+:root {
+  --sc-purple-primary: #6F348F;
+  --sc-purple-deep: #31135D;
+  --sc-purple-border: #4847CE;
+  --sc-purple-light: #8C97C7;
+  --sc-purple-text: #5C20B6;
+  --sc-white: #FFFFFF;
+  --sc-background-light: #F7F8F9;
+  --sc-border-gray: #D4D4D4;
+  --sc-text-dark: #000000;
+  --sc-text-medium: #424242;
+  --sc-text-light: #3D3D3D;
+  --sc-placeholder: #B5B5B5;
+  --sc-tag-bg: #dfdff6;
+  --sc-shadow: #AAAAAA;
+  --sc-tag-border: #C9C9C9;
+  --sc-disabled: #DDDDDD;
+  --sc-alert-yellow: #FFF6B2;
+
+  /* Co-host Progress Bar */
+  --sc-progress-inactive: #EDEAF6;
+  --sc-progress-active: #6D31C2;
+  --sc-progress-dot-size: 22px;
+  --sc-progress-bar-height: 5px;
+
+  /* Co-host Details Section */
+  --sc-details-bg: #F1F3F5;
+  --sc-details-border: #000000;
+  --sc-star-unselected: #E3E3E3;
+  --sc-star-selected: #FDE16D;
+  --sc-focus-blue: #52A8EC;
+  --sc-submit-green: #1F8E16;
+}
+
+/* ============================================================
+   OVERLAY
+   ============================================================ */
+.schedule-cohost-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+}
+
+/* ============================================================
+   MODAL CONTAINER
+   ============================================================ */
+.schedule-cohost-modal {
+  position: relative;
+  background-color: var(--sc-white);
+  border-radius: 10px;
+  padding: 0;
+  width: 100%;
+  max-width: 580px;
+  max-height: 90vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-shadow: 0 4px 2px 0 var(--sc-shadow);
+  border: 1px solid var(--sc-border-gray);
+}
+
+/* ============================================================
+   CLOSE BUTTON
+   ============================================================ */
+.schedule-cohost-close {
+  position: absolute;
+  top: 9px;
+  right: 15px;
+  background: none;
+  border: none;
+  color: var(--sc-purple-primary);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+  z-index: 10;
+}
+
+.schedule-cohost-close:hover {
+  background-color: rgba(111, 52, 143, 0.1);
+}
+
+/* ============================================================
+   LOADING OVERLAY
+   ============================================================ */
+.schedule-cohost-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.schedule-cohost-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid var(--sc-purple-deep);
+  border-radius: 50%;
+  animation: schedule-cohost-spin 1s linear infinite;
+}
+
+@keyframes schedule-cohost-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.schedule-cohost-loading-text {
+  margin-top: 16px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--sc-purple-deep);
+  font-family: 'Inter', sans-serif;
+  animation: schedule-cohost-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes schedule-cohost-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+.schedule-cohost-header {
+  padding: 20px 20px 15px 20px;
+  border-bottom: 1px solid var(--sc-text-dark);
+  margin-bottom: 0;
+}
+
+.schedule-cohost-header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.schedule-cohost-icon-img {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+}
+
+.schedule-cohost-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--sc-text-dark);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.schedule-cohost-subtitle {
+  font-family: 'Lato', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--sc-text-medium);
+  margin: 0;
+  line-height: 1.25;
+}
+
+/* ============================================================
+   ALERTS
+   ============================================================ */
+.schedule-cohost-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  margin: 15px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: 'Lato', sans-serif;
+  animation: schedule-cohost-slide-in 0.3s ease-out;
+}
+
+@keyframes schedule-cohost-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.schedule-cohost-alert--success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.schedule-cohost-alert--error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.schedule-cohost-alert-icon {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+/* ============================================================
+   TEAM MEMBERS SECTION
+   ============================================================ */
+.schedule-cohost-team {
+  background-color: var(--sc-background-light);
+  border-radius: 10px;
+  padding: 15px 20px;
+  margin: 15px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.schedule-cohost-avatars {
+  display: flex;
+  flex-shrink: 0;
+}
+
+.schedule-cohost-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 2px solid var(--sc-white);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  margin-left: -10px;
+}
+
+.schedule-cohost-avatar:first-child {
+  margin-left: 0;
+}
+
+.schedule-cohost-team-text {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  color: #010001;
+  margin: 0;
+  line-height: 1.5;
+  letter-spacing: 0.5px;
+}
+
+/* ============================================================
+   CALENDAR SECTION
+   ============================================================ */
+.schedule-cohost-calendar {
+  background-color: var(--sc-white);
+  padding: 15px;
+  margin: 0 15px 15px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.schedule-cohost-calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.schedule-cohost-calendar-nav {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  color: var(--sc-text-dark);
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.schedule-cohost-calendar-nav:hover {
+  background-color: var(--sc-background-light);
+}
+
+.schedule-cohost-calendar-month {
+  font-family: 'Alata', 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--sc-text-dark);
+}
+
+.schedule-cohost-calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+.schedule-cohost-calendar-weekday {
+  text-align: center;
+  font-family: 'Alata', 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--sc-text-medium);
+  padding: 8px 4px;
+  min-width: 44px;
+}
+
+.schedule-cohost-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  width: 100%;
+}
+
+.schedule-cohost-calendar-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Alata', 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #434343;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.05s, color 0.05s;
+  line-height: 1.25;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.schedule-cohost-calendar-day:hover:not(:disabled) {
+  background-color: var(--sc-background-light);
+}
+
+.schedule-cohost-calendar-day--other {
+  color: var(--sc-disabled);
+}
+
+.schedule-cohost-calendar-day--past {
+  color: var(--sc-disabled);
+  cursor: not-allowed;
+}
+
+.schedule-cohost-calendar-day--selected {
+  background-color: var(--sc-purple-light);
+  color: var(--sc-purple-text);
+  font-weight: 700;
+}
+
+.schedule-cohost-calendar-day--has-slots {
+  background-color: var(--sc-purple-light);
+  color: var(--sc-purple-text);
+  font-weight: 700;
+}
+
+.schedule-cohost-calendar-day--today {
+  border: 2px solid var(--sc-purple-border);
+}
+
+.schedule-cohost-calendar-day--today.schedule-cohost-calendar-day--selected,
+.schedule-cohost-calendar-day--today.schedule-cohost-calendar-day--has-slots {
+  border: none;
+}
+
+/* ============================================================
+   TIME SLOTS SECTION
+   ============================================================ */
+.schedule-cohost-timeslots {
+  background-color: var(--sc-white);
+  border-radius: 5px;
+  padding: 15px 20px;
+  margin: 0 20px 15px;
+  border: 1px solid var(--sc-border-gray);
+}
+
+.schedule-cohost-timeslots-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.schedule-cohost-timeslots-title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.schedule-cohost-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--sc-text-dark);
+}
+
+.schedule-cohost-label u {
+  text-decoration: underline;
+}
+
+.schedule-cohost-count {
+  font-family: 'Lato', sans-serif;
+  font-weight: 400;
+  color: var(--sc-text-medium);
+  font-size: 12px;
+}
+
+.schedule-cohost-clear-btn {
+  background: none;
+  border: 1px solid var(--sc-border-gray);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-family: 'Lato', sans-serif;
+  color: var(--sc-text-medium);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.schedule-cohost-clear-btn:hover {
+  background-color: var(--sc-background-light);
+  border-color: var(--sc-purple-deep);
+  color: var(--sc-purple-deep);
+}
+
+.schedule-cohost-selected-date {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background-color: var(--sc-alert-yellow);
+  border: 1px dashed var(--sc-purple-border);
+  border-radius: 6px;
+  margin-bottom: 12px;
+  font-family: 'Lato', sans-serif;
+  font-size: 13px;
+  color: var(--sc-text-dark);
+}
+
+.schedule-cohost-slots-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.schedule-cohost-slot {
+  background-color: var(--sc-white);
+  color: #333;
+  border: 1px solid var(--sc-purple-text);
+  border-radius: 10px;
+  padding: 10px 8px;
+  font-family: 'Alata', 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.schedule-cohost-slot:hover:not(:disabled) {
+  background-color: var(--sc-purple-light);
+  color: var(--sc-purple-text);
+}
+
+.schedule-cohost-slot--selected {
+  background-color: var(--sc-purple-light);
+  color: var(--sc-purple-text);
+  font-weight: 700;
+  border-color: var(--sc-purple-text);
+}
+
+.schedule-cohost-slot--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.schedule-cohost-timezone {
+  font-family: 'Lato', sans-serif;
+  font-size: 12px;
+  color: var(--sc-text-medium);
+  margin: 0;
+}
+
+/* ============================================================
+   SELECTED TIME SLOTS SUMMARY
+   ============================================================ */
+.schedule-cohost-selections-summary {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--sc-border-gray);
+}
+
+.schedule-cohost-selections-summary .schedule-cohost-label {
+  margin-bottom: 10px;
+  display: block;
+}
+
+.schedule-cohost-selections-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.schedule-cohost-selection-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background-color: var(--sc-purple-light);
+  border-radius: 8px;
+  font-family: 'Lato', sans-serif;
+  font-size: 14px;
+}
+
+.schedule-cohost-selection-number {
+  font-weight: 700;
+  color: var(--sc-purple-text);
+  min-width: 24px;
+}
+
+.schedule-cohost-selection-datetime {
+  flex: 1;
+  color: var(--sc-text-dark);
+}
+
+.schedule-cohost-selection-remove {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--sc-text-medium);
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  transition: color 0.15s;
+}
+
+.schedule-cohost-selection-remove:hover {
+  color: var(--sc-purple-text);
+}
+
+/* ============================================================
+   FORM SECTION
+   ============================================================ */
+.schedule-cohost-form {
+  padding: 15px 20px;
+}
+
+.schedule-cohost-field {
+  margin-bottom: 20px;
+}
+
+.schedule-cohost-field:last-child {
+  margin-bottom: 0;
+}
+
+/* Subject Tags (Multi-select) */
+.schedule-cohost-subjects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.schedule-cohost-subject-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--sc-white);
+  border: 1px solid var(--sc-tag-border);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-family: 'Lato', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: #252525;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.schedule-cohost-subject-tag:hover {
+  border-color: var(--sc-purple-border);
+  background-color: var(--sc-tag-bg);
+}
+
+.schedule-cohost-subject-tag--selected {
+  background-color: var(--sc-tag-bg);
+  border-color: var(--sc-purple-border);
+}
+
+.schedule-cohost-subject-remove {
+  color: #999;
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* Textarea */
+.schedule-cohost-textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--sc-purple-border);
+  border-radius: 4px;
+  font-family: 'Lato', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--sc-text-light);
+  resize: vertical;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+  margin-top: 8px;
+}
+
+.schedule-cohost-textarea:focus {
+  outline: none;
+  border-color: var(--sc-purple-deep);
+}
+
+.schedule-cohost-textarea::placeholder {
+  color: var(--sc-placeholder);
+}
+
+.schedule-cohost-charcount {
+  display: block;
+  font-family: 'Lato', sans-serif;
+  font-size: 12px;
+  color: #999;
+  text-align: right;
+  margin-top: 4px;
+}
+
+.schedule-cohost-charcount--warning {
+  color: #d9534f;
+}
+
+/* ============================================================
+   ACTIONS / SUBMIT BUTTON
+   ============================================================ */
+.schedule-cohost-actions {
+  padding: 15px 20px 20px;
+  text-align: center;
+}
+
+.schedule-cohost-submit {
+  background-color: var(--sc-purple-deep);
+  color: #FCFAFF;
+  border: none;
+  border-radius: 20px;
+  padding: 14px 20px;
+  font-family: 'DM Sans', 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.25px;
+  cursor: pointer;
+  transition: all 0.3s;
+  min-width: 200px;
+}
+
+.schedule-cohost-submit:hover:not(:disabled) {
+  background-color: #2d1f3d;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(49, 19, 93, 0.3);
+}
+
+.schedule-cohost-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.schedule-cohost-hint {
+  font-family: 'Lato', sans-serif;
+  font-size: 13px;
+  color: #d9534f;
+  margin: 12px 0 0;
+}
+
+/* ============================================================
+   SUBMITTED STAGE
+   ============================================================ */
+.schedule-cohost-submitted {
+  text-align: center;
+  padding: 30px 20px;
+}
+
+.schedule-cohost-success-icon {
+  width: 64px;
+  height: 64px;
+  background-color: #64b342;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  font-weight: bold;
+  margin: 0 auto 20px;
+}
+
+.schedule-cohost-success-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--sc-purple-deep);
+  margin: 0 0 12px;
+}
+
+.schedule-cohost-success-text {
+  font-family: 'Lato', sans-serif;
+  font-size: 14px;
+  color: var(--sc-text-medium);
+  margin: 0 0 16px;
+}
+
+.schedule-cohost-selected-times {
+  margin-bottom: 20px;
+}
+
+.schedule-cohost-selected-time {
+  background-color: var(--sc-background-light);
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  font-family: 'Lato', sans-serif;
+  font-size: 14px;
+  color: var(--sc-text-dark);
+}
+
+.schedule-cohost-submitted-subject {
+  background-color: var(--sc-tag-bg);
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-family: 'Lato', sans-serif;
+  font-size: 14px;
+  color: var(--sc-text-dark);
+}
+
+.schedule-cohost-success-info {
+  font-family: 'Lato', sans-serif;
+  font-size: 14px;
+  color: var(--sc-text-medium);
+  margin: 0 0 24px;
+}
+
+.schedule-cohost-done-btn {
+  background-color: #64b342;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 32px;
+  font-family: 'DM Sans', 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.schedule-cohost-done-btn:hover {
+  background-color: #559237;
+}
+
+/* ============================================================
+   METADATA
+   ============================================================ */
+.schedule-cohost-metadata {
+  margin: 0 20px 20px;
+  padding: 12px 16px;
+  background-color: var(--sc-background-light);
+  border-radius: 8px;
+  font-size: 13px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.schedule-cohost-metadata-label {
+  font-family: 'Lato', sans-serif;
+  color: var(--sc-text-medium);
+}
+
+.schedule-cohost-metadata-value {
+  font-family: monospace;
+  color: var(--sc-text-dark);
+}
+
+/* ============================================================
+   RESPONSIVE STYLES
+   ============================================================ */
+@media (max-width: 768px) {
+  .schedule-cohost-modal {
+    max-width: 100%;
+    margin: 10px;
+  }
+
+  .schedule-cohost-slots-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .schedule-cohost-subject-tag {
+    font-size: 13px;
+    padding: 6px 10px;
+  }
+
+  .schedule-cohost-calendar-day {
+    font-size: 13px;
+  }
+
+  .schedule-cohost-calendar-weekday {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .schedule-cohost-modal {
+    padding: 0;
+    max-height: 95vh;
+  }
+
+  .schedule-cohost-title {
+    font-size: 16px;
+  }
+
+  .schedule-cohost-slots-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .schedule-cohost-slot {
+    padding: 8px 6px;
+    font-size: 13px;
+  }
+
+  .schedule-cohost-submit {
+    width: 100%;
+  }
+
+  .schedule-cohost-timeslots-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .schedule-cohost-team {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .schedule-cohost-calendar-day {
+    font-size: 12px;
+  }
+
+  .schedule-cohost-calendar-weekday {
+    font-size: 10px;
+    padding: 6px 0;
+  }
+
+  .schedule-cohost-calendar {
+    padding: 10px 15px;
+    margin: 0 15px 15px;
+  }
+}
+
+/* ============================================================
+   TOAST NOTIFICATIONS (from workflow spec)
+   ============================================================ */
+.schedule-cohost-toasts {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10001;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 400px;
+  width: calc(100% - 40px);
+}
+
+.schedule-cohost-toast {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 40px 14px 16px;
+  background-color: var(--sc-white);
+  border-radius: 8px;
+  border-left: 4px solid;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: schedule-cohost-toast-in 0.3s ease-out;
+  overflow: hidden;
+}
+
+@keyframes schedule-cohost-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.schedule-cohost-toast-icon {
+  font-size: 20px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.schedule-cohost-toast-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.schedule-cohost-toast-title {
+  display: block;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--sc-text-dark);
+  margin-bottom: 2px;
+}
+
+.schedule-cohost-toast-message {
+  font-family: 'Lato', sans-serif;
+  font-size: 13px;
+  color: var(--sc-text-medium);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.schedule-cohost-toast-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--sc-text-medium);
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.schedule-cohost-toast-close:hover {
+  color: var(--sc-text-dark);
+}
+
+.schedule-cohost-toast-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  width: 100%;
+  animation: schedule-cohost-toast-progress linear forwards;
+}
+
+@keyframes schedule-cohost-toast-progress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+/* ============================================================
+   STAR RATING (for post-meeting feedback)
+   ============================================================ */
+.schedule-cohost-star-rating {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 15px 0;
+}
+
+.schedule-cohost-star {
+  background: none;
+  border: none;
+  font-size: 32px;
+  color: var(--sc-border-gray);
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s, transform 0.2s;
+}
+
+.schedule-cohost-star:hover:not(:disabled) {
+  transform: scale(1.1);
+}
+
+.schedule-cohost-star--filled {
+  color: #F6DA3B;
+}
+
+.schedule-cohost-star:disabled {
+  cursor: default;
+}
+
+/* ============================================================
+   RATING SECTION
+   ============================================================ */
+.schedule-cohost-rating-section {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--sc-border-gray);
+}
+
+.schedule-cohost-rating-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--sc-text-dark);
+  text-align: center;
+  margin: 0 0 10px;
+}
+
+/* ============================================================
+   DETAILS STAGE
+   ============================================================ */
+.schedule-cohost-details {
+  text-align: center;
+  padding: 30px 20px;
+}
+
+.schedule-cohost-details-subject {
+  background-color: var(--sc-tag-bg);
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-family: 'Lato', sans-serif;
+  font-size: 14px;
+  color: var(--sc-text-dark);
+}
+
+/* ============================================================
+   ASSIGNED CO-HOST INFO (shown after admin assigns co-host)
+   ============================================================ */
+.schedule-cohost-assigned-info {
+  background: linear-gradient(135deg, var(--sc-purple-primary) 0%, var(--sc-purple-deep) 100%);
+  border-radius: 12px;
+  padding: 20px;
+  margin: 16px 20px 24px;
+  color: var(--sc-white);
+}
+
+.schedule-cohost-assigned-cohost,
+.schedule-cohost-assigned-meeting {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.schedule-cohost-assigned-cohost:last-child,
+.schedule-cohost-assigned-meeting:last-child {
+  margin-bottom: 0;
+}
+
+.schedule-cohost-assigned-label {
+  font-family: 'Lato', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  opacity: 0.9;
+}
+
+.schedule-cohost-assigned-value {
+  font-family: 'Lato', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.schedule-cohost-meet-link {
+  display: inline-block;
+  background-color: var(--sc-white);
+  color: var(--sc-purple-primary);
+  font-family: 'Lato', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 8px;
+  text-decoration: none;
+  margin-top: 8px;
+  transition: all 0.2s ease;
+}
+
+.schedule-cohost-meet-link:hover {
+  background-color: var(--sc-tag-bg);
+  transform: translateY(-1px);
+}
+
+/* ============================================================
+   PROGRESS BAR (5-stage tracking)
+   ============================================================ */
+.schedule-cohost-progress {
+  padding: 22px 18px;
+  margin: 0 20px 16px;
+}
+
+.schedule-cohost-progress-labels {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  width: 100%;
+  min-height: 31px;
+}
+
+.schedule-cohost-progress-labels--top {
+  margin-bottom: 8px;
+}
+
+.schedule-cohost-progress-labels--bottom {
+  margin-top: 8px;
+}
+
+.schedule-cohost-progress-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--sc-placeholder);
+  text-align: center;
+  line-height: 1.3;
+  letter-spacing: -0.5px;
+  transition: color 0.3s ease;
+}
+
+.schedule-cohost-progress-label--active {
+  color: var(--sc-text-dark);
+}
+
+.schedule-cohost-progress-track {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.schedule-cohost-progress-dot {
+  width: var(--sc-progress-dot-size);
+  height: var(--sc-progress-dot-size);
+  border-radius: 50%;
+  background-color: var(--sc-progress-inactive);
+  flex-shrink: 0;
+  transition: background-color 0.3s ease;
+}
+
+.schedule-cohost-progress-dot--active {
+  background-color: var(--sc-progress-active);
+}
+
+.schedule-cohost-progress-bar {
+  flex-grow: 1;
+  height: var(--sc-progress-bar-height);
+  background-color: var(--sc-progress-inactive);
+  margin: 0 4px;
+  transition: background-color 0.3s ease;
+}
+
+.schedule-cohost-progress-bar--active {
+  background-color: var(--sc-progress-active);
+}
+
+/* ============================================================
+   DETAILS SECTION (Rating/Feedback - post-meeting)
+   ============================================================ */
+.schedule-cohost-details-section {
+  background-color: var(--sc-details-bg);
+  border: 1px solid var(--sc-details-border);
+  border-radius: 10px;
+  padding: 16px;
+  margin: 24px 20px 0;
+}
+
+.schedule-cohost-details-title {
+  font-family: 'Lato', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--sc-text-light);
+  text-align: center;
+  margin: 0 0 12px;
+}
+
+.schedule-cohost-feedback-textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #686B6B;
+  border-radius: 4px;
+  font-family: 'Lato', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--sc-text-light);
+  resize: vertical;
+  min-height: 80px;
+  margin-top: 16px;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.schedule-cohost-feedback-textarea:focus {
+  outline: none;
+  border-color: var(--sc-focus-blue);
+  box-shadow: 0 0 0 3px rgba(82, 168, 236, 0.25);
+}
+
+.schedule-cohost-feedback-textarea::placeholder {
+  color: var(--sc-placeholder);
+}
+
+.schedule-cohost-submit-rating-btn {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: 2px solid var(--sc-submit-green);
+  border-radius: 8px;
+  padding: 12px 32px;
+  font-family: 'Lato', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--sc-submit-green);
+  cursor: pointer;
+  margin-top: 16px;
+  transition: all 0.2s;
+  letter-spacing: -1px;
+}
+
+.schedule-cohost-submit-rating-btn:hover:not(:disabled) {
+  background-color: var(--sc-submit-green);
+  color: var(--sc-white);
+}
+
+.schedule-cohost-submit-rating-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============================================================
+   METADATA CENTERED
+   ============================================================ */
+.schedule-cohost-metadata-centered {
+  margin-top: 24px;
+  text-align: center;
+  font-family: 'Lato', sans-serif;
+  font-size: 12px;
+  color: var(--sc-text-medium);
+}
+
+.schedule-cohost-metadata-centered p {
+  margin: 4px 0;
+}
+
+/* ============================================================
+   HALF-STAR RATING SUPPORT
+   ============================================================ */
+.schedule-cohost-star-rating-container {
+  display: flex;
+  justify-content: center;
+  margin: 15px 0;
+}
+
+.schedule-cohost-star-wrapper {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  font-size: 32px;
+  color: var(--sc-star-unselected);
+  transition: transform 0.2s;
+}
+
+.schedule-cohost-star-wrapper:hover {
+  transform: scale(1.1);
+}
+
+.schedule-cohost-star-wrapper--disabled {
+  cursor: default;
+}
+
+.schedule-cohost-star-wrapper--disabled:hover {
+  transform: none;
+}
+
+.schedule-cohost-star-bg {
+  color: var(--sc-star-unselected);
+}
+
+.schedule-cohost-star-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  color: var(--sc-star-selected);
+}
+
+.schedule-cohost-star-half-left,
+.schedule-cohost-star-half-right {
+  position: absolute;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.schedule-cohost-star-half-left {
+  left: 0;
+}
+
+.schedule-cohost-star-half-right {
+  right: 0;
+}
+
+/* Update existing star colors to match spec */
+.schedule-cohost-star {
+  color: var(--sc-star-unselected);
+}
+
+.schedule-cohost-star--filled {
+  color: var(--sc-star-selected);
+}
+
+/* ============================================================
+   PROGRESS BAR RESPONSIVE
+   ============================================================ */
+@media (max-width: 768px) {
+  .schedule-cohost-progress {
+    padding: 18px 14px;
+    margin: 0 15px 12px;
+  }
+
+  .schedule-cohost-progress-label {
+    font-size: 11px;
+  }
+
+  .schedule-cohost-progress-dot {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .schedule-cohost-progress {
+    padding: 14px 10px;
+    margin: 0 10px 10px;
+  }
+
+  .schedule-cohost-progress-label {
+    font-size: 10px;
+    letter-spacing: -0.75px;
+  }
+
+  .schedule-cohost-progress-dot {
+    width: 16px;
+    height: 16px;
+  }
+
+  .schedule-cohost-progress-bar {
+    margin: 0 2px;
+  }
+
+  .schedule-cohost-details-section {
+    margin: 16px 10px 0;
+    padding: 12px;
+  }
+
+  .schedule-cohost-submit-rating-btn {
+    font-size: 16px;
+    padding: 10px 24px;
+  }
+}

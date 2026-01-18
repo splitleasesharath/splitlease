@@ -58,7 +58,9 @@ function parseJsonField(field) {
  */
 export async function fetchListingComplete(listingId) {
   try {
-    // 1. Fetch main listing data
+    // Fetch from listing table
+    console.log('🔍 fetchListingComplete: Fetching listing with _id=' + listingId);
+
     const { data: listingData, error: listingError } = await supabase
       .from('listing')
       .select(`
@@ -83,11 +85,15 @@ export async function fetchListingComplete(listingId) {
         "Features - Photos",
         "Location - Address",
         "Location - slightly different address",
+        "Location - City",
+        "Location - State",
+        "Location - Zip Code",
         "Location - Hood",
         "Location - Borough",
         "neighborhood (manual input by user)",
         "Time to Station (commute)",
         "Map HTML Web",
+        "💰Nightly Host Rate for 1 night",
         "💰Nightly Host Rate for 2 nights",
         "💰Nightly Host Rate for 3 nights",
         "💰Nightly Host Rate for 4 nights",
@@ -116,7 +122,7 @@ export async function fetchListingComplete(listingId) {
         "💰Unit Markup",
         "NEW Date Check-in Time",
         "NEW Date Check-out Time",
-        "Host / Landlord",
+        "Host User",
         "host name",
         "host restrictions",
         "Cancellation Policy",
@@ -124,6 +130,7 @@ export async function fetchListingComplete(listingId) {
         "Reviews",
         Active,
         Complete,
+        Deleted,
         "Preferred Gender",
         "allow alternating roommates?"
       `)
@@ -133,17 +140,46 @@ export async function fetchListingComplete(listingId) {
     if (listingError) throw listingError;
     if (!listingData) throw new Error('Listing not found');
 
-    // 2. Fetch photos
-    const { data: photosData, error: photosError } = await supabase
-      .from('listing_photo')
-      .select('_id, Photo, "Photo (thumbnail)", SortOrder, toggleMainPhoto, Caption')
-      .eq('Listing', listingId)
-      .order('SortOrder', { ascending: true, nullsLast: true });
+    // Check if listing is soft-deleted
+    if (listingData.Deleted === true) {
+      throw new Error('Listing has been deleted');
+    }
 
-    if (photosError) console.error('Photos fetch error:', photosError);
+    console.log('✅ Found listing:', listingData._id);
 
-    // 3. Sort photos (main photo first, then by SortOrder, then by _id)
-    const sortedPhotos = (photosData || []).sort((a, b) => {
+    // 2. Fetch photos - check if embedded in Features - Photos or in listing_photo table
+    let sortedPhotos = [];
+    const embeddedPhotos = parseJsonField(listingData['Features - Photos']);
+    const hasEmbeddedObjects = embeddedPhotos.length > 0 &&
+      typeof embeddedPhotos[0] === 'object' &&
+      embeddedPhotos[0] !== null;
+
+    if (hasEmbeddedObjects) {
+      // Photos are embedded objects with URLs
+      sortedPhotos = embeddedPhotos.map((photo, index) => ({
+        _id: photo.id || `embedded_${index}`,
+        Photo: photo.Photo || photo.url || '',
+        'Photo (thumbnail)': photo['Photo (thumbnail)'] || photo.Photo || photo.url || '',
+        toggleMainPhoto: photo.toggleMainPhoto ?? photo.isCover ?? (index === 0),
+        SortOrder: photo.SortOrder ?? photo.sortOrder ?? photo.displayOrder ?? index,
+        Caption: photo.caption || photo.Caption || ''
+      }));
+      console.log('📷 Embedded photos from Features - Photos:', sortedPhotos.length);
+    } else {
+      // Legacy: fetch from listing_photo table
+      const { data: photosData, error: photosError } = await supabase
+        .from('listing_photo')
+        .select('_id, Photo, "Photo (thumbnail)", SortOrder, toggleMainPhoto, Caption')
+        .eq('Listing', listingId)
+        .order('SortOrder', { ascending: true, nullsLast: true });
+
+      if (photosError) console.error('Photos fetch error:', photosError);
+      sortedPhotos = photosData || [];
+      console.log('📷 Photos from listing_photo table:', sortedPhotos.length);
+    }
+
+    // Sort photos (main photo first, then by SortOrder, then by _id)
+    sortedPhotos = sortedPhotos.sort((a, b) => {
       if (a.toggleMainPhoto) return -1;
       if (b.toggleMainPhoto) return 1;
       if (a.SortOrder !== null && b.SortOrder === null) return -1;
@@ -151,7 +187,7 @@ export async function fetchListingComplete(listingId) {
       if (a.SortOrder !== null && b.SortOrder !== null) {
         return a.SortOrder - b.SortOrder;
       }
-      return a._id.localeCompare(b._id);
+      return (a._id || '').localeCompare(b._id || '');
     });
 
     // 4. Resolve geographic data
@@ -200,38 +236,30 @@ export async function fetchListingComplete(listingId) {
       ? getStorageOption(listingData['Features - Secure Storage Option'])
       : null;
 
-    // 8. Fetch host data
+    // 8. Fetch host data - query user table
+    // listing["Host User"] now contains user._id directly (after migration)
     let hostData = null;
-    if (listingData['Host / Landlord']) {
-      // First get the account_host record to find the linked User
-      const { data: accountHost, error: accountHostError } = await supabase
-        .from('account_host')
-        .select('_id, User')
-        .eq('_id', listingData['Host / Landlord'])
-        .single();
+    if (listingData['Host User']) {
+      const { data: userData, error: userError } = await supabase
+        .from('user')
+        .select('_id, "Name - First", "Name - Last", "Profile Photo", "email as text"')
+        .eq('_id', listingData['Host User'])
+        .maybeSingle();
 
-      if (accountHostError) {
-        console.error('Account host fetch error:', accountHostError);
-      } else if (accountHost?.User) {
-        // Then fetch the user data using the User foreign key
-        const { data: userData, error: userError } = await supabase
-          .from('user')
-          .select('"Name - First", "Name - Last", "Profile Photo", "email as text"')
-          .eq('_id', accountHost.User)
-          .single();
+      if (userError) {
+        console.error('User fetch error (by _id):', userError);
+      }
 
-        if (userError) {
-          console.error('User fetch error:', userError);
-        } else if (userData) {
-          // Combine the data for backward compatibility
-          hostData = {
-            _id: accountHost._id,
-            'Name - First': userData['Name - First'],
-            'Name - Last': userData['Name - Last'],
-            'Profile Photo': userData['Profile Photo'],
-            Email: userData['email as text']
-          };
-        }
+      if (userData) {
+        hostData = {
+          _id: userData._id,
+          userId: userData._id,  // Alias for consumers expecting userId
+          'Name - First': userData['Name - First'],
+          'Name - Last': userData['Name - Last'],
+          'Profile Photo': userData['Profile Photo'],
+          Email: userData['email as text']
+        };
+        console.log('📍 Host found via user._id lookup');
       }
     }
 
@@ -339,6 +367,8 @@ export async function fetchListingComplete(listingId) {
  * - ?id=listingId
  * - /view-split-lease/listingId
  * - /view-split-lease.html/listingId
+ * - /preview-split-lease/listingId
+ * - /preview-split-lease.html/listingId
  * @returns {string|null} Listing ID or null
  */
 export function getListingIdFromUrl() {
@@ -355,14 +385,16 @@ export function getListingIdFromUrl() {
     return idFromQuery;
   }
 
-  // 2. Parse pathname for segment after 'view-split-lease'
+  // 2. Parse pathname for segment after 'view-split-lease' or 'preview-split-lease'
   const pathSegments = window.location.pathname.split('/').filter(segment => segment);
   console.log('🔍 [getListingIdFromUrl] Path segments:', pathSegments);
 
   const viewSegmentIndex = pathSegments.findIndex(segment =>
     segment === 'view-split-lease' ||
     segment === 'view-split-lease.html' ||
-    segment === 'view-split-lease-1'
+    segment === 'view-split-lease-1' ||
+    segment === 'preview-split-lease' ||
+    segment === 'preview-split-lease.html'
   );
   console.log('🔍 [getListingIdFromUrl] View segment index:', viewSegmentIndex);
 
@@ -396,6 +428,7 @@ export function getListingIdFromUrl() {
  */
 export function getNightlyPrice(listing, nightsSelected) {
   const priceMap = {
+    1: listing['💰Nightly Host Rate for 1 night'],
     2: listing['💰Nightly Host Rate for 2 nights'],
     3: listing['💰Nightly Host Rate for 3 nights'],
     4: listing['💰Nightly Host Rate for 4 nights'],
@@ -430,7 +463,7 @@ export async function fetchListingBasic(listingId) {
     console.log('📊 Calling Supabase...');
     const { data: listingData, error: listingError } = await supabase
       .from('listing')
-      .select('_id, Name, Description, Active')
+      .select('_id, Name, Description, Active, Deleted')
       .eq('_id', listingId)
       .single();
 
@@ -444,6 +477,11 @@ export async function fetchListingBasic(listingId) {
     if (!listingData) {
       console.error('❌ No listing data returned');
       throw new Error('Listing not found');
+    }
+
+    // Check if listing is soft-deleted
+    if (listingData.Deleted === true) {
+      throw new Error('Listing has been deleted');
     }
 
     console.log('✅ fetchListingBasic: Successfully fetched listing');
@@ -472,6 +510,7 @@ export async function fetchZatPriceConfiguration() {
 
   try {
     const { data, error } = await supabase
+      .schema('reference_table')
       .from('zat_priceconfiguration')
       .select(`
         "Overall Site Markup",

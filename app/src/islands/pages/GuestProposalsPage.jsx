@@ -1,368 +1,211 @@
 /**
- * Guest Proposals Page - HOLLOW COMPONENT PATTERN
+ * Guest Proposals Page (V7)
  *
- * This is a pure visual component that delegates ALL business logic to useGuestProposalsPageLogic hook.
- * The component only handles:
- * - Rendering UI based on pre-calculated state from the hook
- * - Calling handlers provided by the hook
+ * Follows the Hollow Component Pattern:
+ * - This component contains ONLY JSX rendering
+ * - ALL business logic is in useGuestProposalsPageLogic hook
  *
- * Architecture (per Refactoring Architecture for Logic Core.md):
- * - NO business logic in this file (no calculations, no state derivation)
- * - NO direct database calls
- * - NO URL parsing or data transformation
- * - ONLY receives pre-processed data and pre-bound handlers from the hook
+ * Architecture:
+ * - Islands Architecture (independent React root)
+ * - Uses shared Header/Footer components
+ * - Four-Layer Logic Architecture via hook
  *
- * Database Tables Used (via hook):
- * - proposal: Main proposal data with original + hc (host-changed/counteroffer) fields
- * - virtualmeetingschedulesandlinks: Virtual meeting data
- * - user: User profile and verification data
- * - listing: Property details, location, amenities
- * - zat_features_houserule: House rules
+ * V7 Changes:
+ * - Replaced ProposalSelector + ProposalCard with ExpandableProposalCard
+ * - Added "Suggested for You" and "Your Proposals" sections
+ * - All proposals visible as accordion cards
+ * - Match reason cards for SL-suggested proposals
+ *
+ * Authentication:
+ * - Page requires authenticated Guest user
+ * - User ID comes from session, NOT URL
+ * - Redirects to home if not authenticated or not a Guest
  */
 
-// Shared components
-import Header from '../shared/Header.jsx'
-import Footer from '../shared/Footer.jsx'
+import Header from '../shared/Header.jsx';
+import Footer from '../shared/Footer.jsx';
+import { useGuestProposalsPageLogic } from './proposals/useGuestProposalsPageLogic.js';
+import SectionHeader from './proposals/SectionHeader.jsx';
+import ExpandableProposalCard from './proposals/ExpandableProposalCard.jsx';
+import VirtualMeetingsSection from './proposals/VirtualMeetingsSection.jsx';
+// Legacy imports kept for potential fallback
+// import ProposalSelector from './proposals/ProposalSelector.jsx';
+// import ProposalCard from './proposals/ProposalCard.jsx';
 
-// Proposal components
-import ProposalSelector from '../proposals/ProposalSelector.jsx'
-import ProposalCard from '../proposals/ProposalCard.jsx'
-import ProgressTracker from '../proposals/ProgressTracker.jsx'
-import EmptyState from '../proposals/EmptyState.jsx'
-import VirtualMeetingsSection from '../proposals/VirtualMeetingsSection.jsx'
+// ============================================================================
+// LOADING STATE COMPONENT
+// ============================================================================
 
-// Modals
-import HostProfileModal from '../modals/HostProfileModal.jsx'
-import MapModal from '../modals/MapModal.jsx'
-import VirtualMeetingModal from '../modals/VirtualMeetingModal.jsx'
-import CompareTermsModal from '../modals/CompareTermsModal.jsx'
-import EditProposalModal from '../modals/EditProposalModal.jsx'
-import ProposalDetailsModal from '../modals/ProposalDetailsModal.jsx'
-import CancelProposalModal from '../modals/CancelProposalModal.jsx'
-import GuestEditingProposalModal from '../modals/GuestEditingProposalModal.jsx'
+function LoadingState() {
+  return (
+    <div className="loading-state">
+      <div className="spinner"></div>
+      <p>Loading your proposals...</p>
+    </div>
+  );
+}
 
-// Logic Hook - ALL business logic lives here
-import { useGuestProposalsPageLogic } from './useGuestProposalsPageLogic.js'
+// ============================================================================
+// ERROR STATE COMPONENT
+// ============================================================================
 
-export default function GuestProposalsPage({ requireAuth = false, isAuthenticated = true }) {
-  // ============================================================================
-  // LOGIC HOOK - Provides all state and handlers
-  // ============================================================================
+function ErrorState({ error, onRetry }) {
+  return (
+    <div className="error-state">
+      <div className="error-icon">!</div>
+      <h2>Something went wrong</h2>
+      <p className="error-message">{error}</p>
+      <button className="retry-button" onClick={onRetry}>
+        Try Again
+      </button>
+    </div>
+  );
+}
 
+// ============================================================================
+// EMPTY STATE COMPONENT
+// ============================================================================
+
+function EmptyState() {
+  return (
+    <div className="empty-state">
+      <div className="empty-icon">0</div>
+      <h2>No Proposals Yet</h2>
+      <p>You haven't submitted any proposals yet.</p>
+      <p className="empty-subtext">
+        Browse listings and submit a proposal to get started.
+      </p>
+      <a href="/search" className="btn btn-primary" style={{ marginTop: '1rem', display: 'inline-block', textDecoration: 'none' }}>
+        Browse Listings
+      </a>
+    </div>
+  );
+}
+
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
+
+export default function GuestProposalsPage() {
   const {
-    // Core data
+    // Auth state
+    authState,
+
+    // Raw data
+    user,
     proposals,
-    selectedProposal,
-    loading,
+
+    // V7: Categorized proposals
+    categorizedProposals,
+
+    // V7: Accordion state
+    expandedProposalId,
+
+    // UI state
+    isLoading,
     error,
-    currentUser,
 
-    // Computed values (from Logic Core)
-    currentStage,
-    statusConfig,
-    canEdit,
-    canCancel,
-    canAccept,
-    canSubmitApp,
-    canRequestVM,
-    canModify,
-    vmStateInfo,
-    termsComparison,
-    cancelButtonText,
-    buttonStates,
+    // Handlers
+    handleProposalSelect,
+    handleToggleExpand,
+    handleRetry,
+    handleProposalDeleted
+  } = useGuestProposalsPageLogic();
 
-    // Proposal selection
-    handleProposalChange,
-
-    // Action handlers - Proposal Management
-    handleDeleteProposal,
-    handleCancelProposal,
-    handleAcceptProposal,
-    handleModifyProposal,
-    handleReviewCounteroffer,
-
-    // Action handlers - Navigation
-    handleViewListing,
-    handleViewMap,
-    handleViewHostProfile,
-    handleSendMessage,
-    handleSubmitRentalApplication,
-    handleReviewDocuments,
-    handleGoToLeases,
-    handleSeeDetails,
-    handleRequestVirtualMeeting,
-
-    // Modal state - Host Profile
-    showHostProfileModal,
-    closeHostProfileModal,
-
-    // Modal state - Map
-    showMapModal,
-    closeMapModal,
-
-    // Modal state - Virtual Meeting
-    showVirtualMeetingModal,
-    vmModalView,
-    closeVirtualMeetingModal,
-    handleVirtualMeetingSuccess,
-
-    // Modal state - Compare Terms
-    showCompareTermsModal,
-    closeCompareTermsModal,
-    handleAcceptCounteroffer,
-
-    // Modal state - Edit Proposal
-    showEditProposalModal,
-    closeEditProposalModal,
-    handleEditProposalSuccess,
-
-    // Modal state - Proposal Details
-    showProposalDetailsModal,
-    closeProposalDetailsModal,
-
-    // Modal state - Cancel Proposal
-    showCancelProposalModal,
-    closeCancelProposalModal,
-    handleConfirmCancelProposal,
-
-    // Modal state - Guest Editing Proposal
-    showGuestEditingProposalModal,
-    closeGuestEditingProposalModal,
-    handleGuestEditingProposalUpdate,
-    handleGuestEditingProposalCancel,
-    handleGuestEditingProposalAlert,
-    openGuestEditingProposalModal,
-
-    // Utilities
-    formatPrice,
-    formatDate,
-    getProposalDisplayText,
-
-    // Refresh
-    refreshProposals
-  } = useGuestProposalsPageLogic()
-
-  // ============================================================================
-  // RENDER - Loading State
-  // ============================================================================
-
-  if (loading) {
+  // Don't render content if redirecting (auth failed)
+  if (authState.shouldRedirect) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Header autoShowLogin={requireAuth && !isAuthenticated} />
-        <div className="loading-state">
-          <div className="spinner"></div>
-          <p>Loading your proposals...</p>
-        </div>
+      <>
+        <Header />
+        <main className="main-content">
+          <div className="proposals-page">
+            <LoadingState />
+          </div>
+        </main>
         <Footer />
-      </div>
-    )
+      </>
+    );
   }
 
   // ============================================================================
-  // RENDER - Error State
+  // RENDER
   // ============================================================================
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header autoShowLogin={requireAuth && !isAuthenticated} />
-        <div className="error-state">
-          <div className="error-icon">&#9888;&#65039;</div>
-          <h2>Unable to Load Proposals</h2>
-          <p className="error-message">{error}</p>
-          <button onClick={() => window.location.reload()} className="retry-button">
-            Reload Page
-          </button>
-        </div>
-        <Footer />
-      </div>
-    )
-  }
-
-  // ============================================================================
-  // RENDER - Main Page
-  // ============================================================================
+  const { suggested, userCreated } = categorizedProposals || { suggested: [], userCreated: [] };
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'rgb(244, 244, 248)' }}>
-      <Header autoShowLogin={requireAuth && !isAuthenticated} />
+    <>
+      <Header />
 
-      <main className="proposals-page">
-        {/* Empty State: No proposals */}
-        {proposals.length === 0 && <EmptyState />}
+      <main className="main-content">
+        <div className="proposals-page proposals-page--v7">
+          {/* Loading State */}
+          {isLoading && <LoadingState />}
 
-        {/* Proposals exist */}
-        {proposals.length > 0 && (
-          <>
-            {/* Proposal Selector */}
-            <ProposalSelector
-              proposals={proposals}
-              selectedProposal={selectedProposal}
-              onProposalChange={handleProposalChange}
-            />
+          {/* Error State */}
+          {!isLoading && error && (
+            <ErrorState error={error} onRetry={handleRetry} />
+          )}
 
-            {/* Selected Proposal Display */}
-            {selectedProposal && (
-              <>
-                <ProposalCard
-                  proposal={selectedProposal}
-                  currentUser={currentUser}
-                  statusConfig={statusConfig}
-                  canEdit={canEdit}
-                  canCancel={canCancel}
-                  canAccept={canAccept}
-                  canSubmitApp={canSubmitApp}
-                  canRequestVM={canRequestVM}
-                  vmStateInfo={vmStateInfo}
-                  cancelButtonText={cancelButtonText}
-                  buttonStates={buttonStates}
-                  formatPrice={formatPrice}
-                  formatDate={formatDate}
-                  onViewListing={handleViewListing}
-                  onViewMap={handleViewMap}
-                  onViewHostProfile={handleViewHostProfile}
-                  onSendMessage={handleSendMessage}
-                  onDeleteProposal={handleDeleteProposal}
-                  onCancelProposal={handleCancelProposal}
-                  onModifyProposal={handleModifyProposal}
-                  onReviewCounteroffer={handleReviewCounteroffer}
-                  onRequestVirtualMeeting={handleRequestVirtualMeeting}
-                  onSubmitRentalApplication={handleSubmitRentalApplication}
-                  onReviewDocuments={handleReviewDocuments}
-                  onGoToLeases={handleGoToLeases}
-                  onSeeDetails={handleSeeDetails}
-                  onRemindSplitLease={() => {/* TODO: Implement remind Split Lease */}}
-                  onConfirmProposal={() => {/* TODO: Implement confirm proposal */}}
-                  onAcceptModifiedTerms={handleAcceptProposal}
-                  onRejectModifiedTerms={handleCancelProposal}
-                  onSeeHouseManual={() => {
-                    if (selectedProposal?._listing?.['House manual']) {
-                      window.open(selectedProposal._listing['House manual'], '_blank')
-                    }
-                  }}
-                />
+          {/* Empty State */}
+          {!isLoading && !error && proposals.length === 0 && (
+            <EmptyState />
+          )}
 
-                {/* Virtual Meetings Section */}
-                {selectedProposal._virtualMeeting && (
-                  <VirtualMeetingsSection
-                    proposal={selectedProposal}
-                    currentUser={currentUser}
-                    onUpdate={refreshProposals}
-                  />
-                )}
+          {/* V7 Content: Two-section layout with accordion cards */}
+          {!isLoading && !error && proposals.length > 0 && (
+            <div className="proposals-sections">
+              {/* Section 1: Suggested for You (SL-suggested proposals pending confirmation) */}
+              {suggested.length > 0 && (
+                <section className="proposals-section proposals-section--suggested">
+                  <SectionHeader type="suggested" count={suggested.length} />
+                  <div className="proposals-section__cards">
+                    {suggested.map(proposal => (
+                      <ExpandableProposalCard
+                        key={proposal._id}
+                        proposal={proposal}
+                        isExpanded={expandedProposalId === proposal._id}
+                        onToggle={() => handleToggleExpand(proposal._id)}
+                        allProposals={proposals}
+                        onProposalSelect={handleProposalSelect}
+                        onProposalDeleted={handleProposalDeleted}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
 
-                {/* Progress Tracker */}
-                <div className="progress-tracker-container">
-                  <ProgressTracker
-                    status={selectedProposal.Status || selectedProposal.status}
-                    currentStage={currentStage}
-                    proposalId={selectedProposal._id || selectedProposal.id}
-                    createdDate={selectedProposal['Created Date'] || selectedProposal.createdDate}
-                    formatDate={formatDate}
-                  />
-                </div>
-              </>
-            )}
-          </>
-        )}
+              {/* Section 2: Your Proposals (user-submitted and confirmed proposals) */}
+              {userCreated.length > 0 && (
+                <section className="proposals-section proposals-section--user">
+                  <SectionHeader type="user" count={userCreated.length} />
+                  <div className="proposals-section__cards">
+                    {userCreated.map(proposal => (
+                      <ExpandableProposalCard
+                        key={proposal._id}
+                        proposal={proposal}
+                        isExpanded={expandedProposalId === proposal._id}
+                        onToggle={() => handleToggleExpand(proposal._id)}
+                        allProposals={proposals}
+                        onProposalSelect={handleProposalSelect}
+                        onProposalDeleted={handleProposalDeleted}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Virtual Meetings Section - shows proposals with active VMs */}
+              <VirtualMeetingsSection
+                proposals={proposals}
+                currentUserId={user?._id}
+              />
+            </div>
+          )}
+        </div>
       </main>
 
       <Footer />
-
-      {/* ====================================================================
-          MODALS - All controlled by hook state
-          ==================================================================== */}
-
-      {/* Host Profile Modal */}
-      {showHostProfileModal && selectedProposal?._host && (
-        <HostProfileModal
-          host={selectedProposal._host}
-          listing={selectedProposal._listing}
-          onClose={closeHostProfileModal}
-        />
-      )}
-
-      {/* Map Modal */}
-      {showMapModal && selectedProposal?._listing && (
-        <MapModal
-          listing={selectedProposal._listing}
-          address={selectedProposal._listing['Location - Address']}
-          onClose={closeMapModal}
-        />
-      )}
-
-      {/* Virtual Meeting Modal - 5-state workflow */}
-      {showVirtualMeetingModal && selectedProposal && (
-        <VirtualMeetingModal
-          proposal={selectedProposal}
-          virtualMeeting={selectedProposal._virtualMeeting}
-          currentUser={currentUser}
-          view={vmModalView}
-          onClose={closeVirtualMeetingModal}
-          onSuccess={handleVirtualMeetingSuccess}
-        />
-      )}
-
-      {/* Compare Terms Modal (Counteroffer) */}
-      {showCompareTermsModal &&
-        selectedProposal &&
-        (selectedProposal['counter offer happened'] || selectedProposal.hasCounteroffer) && (
-          <CompareTermsModal
-            proposal={selectedProposal}
-            onClose={closeCompareTermsModal}
-            onAcceptCounteroffer={handleAcceptCounteroffer}
-          />
-        )}
-
-      {/* Edit Proposal Modal */}
-      {showEditProposalModal && selectedProposal && (
-        <EditProposalModal
-          proposal={selectedProposal}
-          listing={selectedProposal._listing}
-          onClose={closeEditProposalModal}
-          onSuccess={handleEditProposalSuccess}
-        />
-      )}
-
-      {/* Proposal Details Modal */}
-      {showProposalDetailsModal && selectedProposal && (
-        <ProposalDetailsModal
-          proposal={selectedProposal}
-          listing={selectedProposal._listing}
-          onClose={closeProposalDetailsModal}
-        />
-      )}
-
-      {/* Cancel Proposal Modal */}
-      {showCancelProposalModal && selectedProposal && (
-        <CancelProposalModal
-          isOpen={showCancelProposalModal}
-          proposal={selectedProposal}
-          buttonText={cancelButtonText}
-          onClose={closeCancelProposalModal}
-          onConfirm={handleConfirmCancelProposal}
-        />
-      )}
-
-      {/* Guest Editing Proposal Modal */}
-      {showGuestEditingProposalModal && selectedProposal && (
-        <GuestEditingProposalModal
-          proposal={selectedProposal}
-          listing={selectedProposal._listing}
-          user={currentUser}
-          initialView="general"
-          isVisible={showGuestEditingProposalModal}
-          pageWidth={typeof window !== 'undefined' ? window.innerWidth : 1200}
-          onClose={closeGuestEditingProposalModal}
-          onProposalUpdate={handleGuestEditingProposalUpdate}
-          onProposalCancel={handleGuestEditingProposalCancel}
-          onAlert={handleGuestEditingProposalAlert}
-          pricePerNight={selectedProposal?.['proposal nightly price'] || 0}
-          totalPriceForReservation={selectedProposal?.['Total Price for Reservation (guest)'] || 0}
-          priceRentPer4Weeks={selectedProposal?.['Price Rent per 4 weeks'] || 0}
-        />
-      )}
-    </div>
-  )
+    </>
+  );
 }

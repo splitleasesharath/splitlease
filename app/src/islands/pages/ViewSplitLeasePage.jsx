@@ -9,12 +9,16 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
-import CreateProposalFlowV2 from '../shared/CreateProposalFlowV2.jsx';
+import CreateProposalFlowV2, { clearProposalDraft } from '../shared/CreateProposalFlowV2.jsx';
 import ListingScheduleSelector from '../shared/ListingScheduleSelector.jsx';
 import GoogleMap from '../shared/GoogleMap.jsx';
 import ContactHostMessaging from '../shared/ContactHostMessaging.jsx';
 import InformationalText from '../shared/InformationalText.jsx';
+import SignUpLoginModal from '../shared/SignUpLoginModal.jsx';
+import ProposalSuccessModal from '../modals/ProposalSuccessModal.jsx';
+import FavoriteButton from '../shared/FavoriteButton';
 import { initializeLookups } from '../../lib/dataLookups.js';
+import { checkAuthStatus, validateTokenAndFetchUser, getSessionId, getUserId, getUserType } from '../../lib/auth.js';
 import { fetchListingComplete, getListingIdFromUrl, fetchZatPriceConfiguration } from '../../lib/listingDataFetcher.js';
 import {
   calculatePricingBreakdown,
@@ -28,13 +32,95 @@ import {
   getBlockedDatesList,
   calculateNightsFromDays
 } from '../../lib/availabilityValidation.js';
-import { DAY_ABBREVIATIONS, DEFAULTS, COLORS } from '../../lib/constants.js';
+import { DAY_ABBREVIATIONS, DEFAULTS, COLORS, SCHEDULE_PATTERNS } from '../../lib/constants.js';
 import { createDay } from '../../lib/scheduleSelector/dayHelpers.js';
+import { supabase } from '../../lib/supabase.js';
+import { logger } from '../../lib/logger.js';
+import { toast } from '../../lib/toastService.js';
+// NOTE: adaptDaysToBubble removed - database now uses 0-indexed days natively
 import '../../styles/listing-schedule-selector.css';
+import '../../styles/components/toast.css';
+import styles from './ViewSplitLeasePage.module.css';
 
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
+
+/**
+ * Get initial schedule selection from URL parameter
+ * URL format: ?days-selected=2,3,4,5,6 (0-based, where 0=Sunday, matching JS Date.getDay())
+ * Returns: Array of Day objects (0-based, where 0=Sunday)
+ */
+function getInitialScheduleFromUrl() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const daysParam = urlParams.get('days-selected');
+
+  if (!daysParam) {
+    logger.debug('📅 ViewSplitLeasePage: No days-selected URL param, using empty initial selection');
+    return [];
+  }
+
+  try {
+    // Parse 0-based indices from URL (matching SearchPage and JS Date.getDay() convention)
+    const dayIndices = daysParam.split(',').map(d => parseInt(d.trim(), 10));
+    const validDays = dayIndices.filter(d => d >= 0 && d <= 6); // Validate 0-based range (0=Sun...6=Sat)
+
+    if (validDays.length > 0) {
+      // Convert to Day objects using createDay
+      const dayObjects = validDays.map(dayIndex => createDay(dayIndex, true));
+      logger.debug('📅 ViewSplitLeasePage: Loaded schedule from URL:', {
+        urlParam: daysParam,
+        dayIndices: validDays,
+        dayObjects: dayObjects.map(d => d.name)
+      });
+      return dayObjects;
+    }
+  } catch (e) {
+    logger.warn('⚠️ ViewSplitLeasePage: Failed to parse days-selected URL parameter:', e);
+  }
+
+  return [];
+}
+
+/**
+ * Get initial reservation span from URL parameter
+ * URL format: ?reservation-span=13 (weeks)
+ * Returns: Number or null if not provided/invalid
+ */
+function getInitialReservationSpanFromUrl() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const spanParam = urlParams.get('reservation-span');
+
+  if (!spanParam) return null;
+
+  const parsed = parseInt(spanParam, 10);
+  if (!isNaN(parsed) && parsed > 0) {
+    logger.debug('📅 ViewSplitLeasePage: Loaded reservation span from URL:', parsed);
+    return parsed;
+  }
+
+  return null;
+}
+
+/**
+ * Get initial move-in date from URL parameter
+ * URL format: ?move-in=2025-02-15 (YYYY-MM-DD)
+ * Returns: String (YYYY-MM-DD) or null if not provided/invalid
+ */
+function getInitialMoveInFromUrl() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const moveInParam = urlParams.get('move-in');
+
+  if (!moveInParam) return null;
+
+  // Basic validation: YYYY-MM-DD format
+  if (/^\d{4}-\d{2}-\d{2}$/.test(moveInParam)) {
+    logger.debug('📅 ViewSplitLeasePage: Loaded move-in date from URL:', moveInParam);
+    return moveInParam;
+  }
+
+  return null;
+}
 
 /**
  * Fetch informational texts from Supabase
@@ -45,13 +131,13 @@ async function fetchInformationalTexts() {
   const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    console.error('❌ Missing Supabase environment variables');
+    logger.error('❌ Missing Supabase environment variables');
     return {};
   }
 
   try {
-    console.log('🔍 Fetching informational texts from Supabase...');
-    console.log('🌐 Using Supabase URL:', SUPABASE_URL);
+    logger.debug('🔍 Fetching informational texts from Supabase...');
+    logger.debug('🌐 Using Supabase URL:', SUPABASE_URL);
 
     // Use select=* to get all columns (safer with special characters in column names)
     const response = await fetch(
@@ -65,24 +151,24 @@ async function fetchInformationalTexts() {
       }
     );
 
-    console.log('📡 Response status:', response.status, response.statusText);
+    logger.debug('📡 Response status:', response.status, response.statusText);
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ Failed to fetch informational texts:', response.statusText, errorText);
+      logger.error('❌ Failed to fetch informational texts:', response.statusText, errorText);
       return {};
     }
 
     const data = await response.json();
-    console.log('📦 Raw data received:', data?.length, 'items');
-    console.log('📦 First item structure:', data?.[0] ? Object.keys(data[0]) : 'No items');
+    logger.debug('📦 Raw data received:', data?.length, 'items');
+    logger.debug('📦 First item structure:', data?.[0] ? Object.keys(data[0]) : 'No items');
 
     // Create a lookup object by tag-title
     const textsByTag = {};
     data.forEach((item, index) => {
       const tag = item['Information Tag-Title'];
       if (!tag) {
-        console.warn(`⚠️ Item ${index} has no Information Tag-Title:`, item);
+        logger.warn(`⚠️ Item ${index} has no Information Tag-Title:`, item);
         return;
       }
 
@@ -99,7 +185,7 @@ async function fetchInformationalTexts() {
       if (tag === 'aligned schedule with move-in' ||
           tag === 'move-in flexibility' ||
           tag === 'Reservation Span') {
-        console.log(`✅ Found "${tag}":`, {
+        logger.debug(`✅ Found "${tag}":`, {
           desktop: item['Desktop copy']?.substring(0, 50) + '...',
           mobile: item['Mobile copy']?.substring(0, 50) + '...',
           showMore: item['show more available?']
@@ -107,8 +193,8 @@ async function fetchInformationalTexts() {
       }
     });
 
-    console.log('📚 Fetched informational texts:', Object.keys(textsByTag).length, 'total');
-    console.log('🎯 Required tags present:', {
+    logger.debug('📚 Fetched informational texts:', Object.keys(textsByTag).length, 'total');
+    logger.debug('🎯 Required tags present:', {
       'aligned schedule with move-in': !!textsByTag['aligned schedule with move-in'],
       'move-in flexibility': !!textsByTag['move-in flexibility'],
       'Reservation Span': !!textsByTag['Reservation Span']
@@ -116,9 +202,114 @@ async function fetchInformationalTexts() {
 
     return textsByTag;
   } catch (error) {
-    console.error('❌ Error fetching informational texts:', error);
+    logger.error('❌ Error fetching informational texts:', error);
     return {};
   }
+}
+
+// ============================================================================
+// SCHEDULE PATTERN HELPERS
+// ============================================================================
+
+/**
+ * Calculate actual weeks from reservation span based on schedule pattern
+ * @param {number} reservationSpan - Total weeks in the reservation span
+ * @param {string} weeksOffered - Schedule pattern from listing
+ * @returns {object} { actualWeeks, cycleDescription, showHighlight }
+ */
+function calculateActualWeeks(reservationSpan, weeksOffered) {
+  // Normalize the pattern string for comparison
+  const pattern = (weeksOffered || 'Every week').toLowerCase().trim();
+
+  // Every week or nightly/monthly patterns - no highlighting needed
+  if (pattern === 'every week' || pattern === '') {
+    return {
+      actualWeeks: reservationSpan,
+      cycleDescription: null,
+      showHighlight: false
+    };
+  }
+
+  // One week on, one week off - 2 week cycle, guest gets 1 week per cycle
+  if (pattern.includes('one week on') && pattern.includes('one week off')) {
+    const cycles = reservationSpan / 2;
+    const actualWeeks = Math.floor(cycles); // 1 week per 2-week cycle
+    return {
+      actualWeeks,
+      cycleDescription: '1 week on, 1 week off',
+      showHighlight: true,
+      weeksOn: 1,
+      weeksOff: 1
+    };
+  }
+
+  // Two weeks on, two weeks off - 4 week cycle, guest gets 2 weeks per cycle
+  if (pattern.includes('two weeks on') && pattern.includes('two weeks off')) {
+    const cycles = reservationSpan / 4;
+    const actualWeeks = Math.floor(cycles * 2); // 2 weeks per 4-week cycle
+    return {
+      actualWeeks,
+      cycleDescription: '2 weeks on, 2 weeks off',
+      showHighlight: true,
+      weeksOn: 2,
+      weeksOff: 2
+    };
+  }
+
+  // One week on, three weeks off - 4 week cycle, guest gets 1 week per cycle
+  if (pattern.includes('one week on') && pattern.includes('three weeks off')) {
+    const cycles = reservationSpan / 4;
+    const actualWeeks = Math.floor(cycles); // 1 week per 4-week cycle
+    return {
+      actualWeeks,
+      cycleDescription: '1 week on, 3 weeks off',
+      showHighlight: true,
+      weeksOn: 1,
+      weeksOff: 3
+    };
+  }
+
+  // Default: treat as every week
+  return {
+    actualWeeks: reservationSpan,
+    cycleDescription: null,
+    showHighlight: false
+  };
+}
+
+/**
+ * Component to display schedule pattern info when applicable
+ */
+function SchedulePatternHighlight({ reservationSpan, weeksOffered }) {
+  const patternInfo = calculateActualWeeks(reservationSpan, weeksOffered);
+
+  if (!patternInfo.showHighlight) {
+    return null;
+  }
+
+  return (
+    <div className={styles.schedulePatternContainer}>
+      <div className={styles.schedulePatternHeader}>
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#7C3AED"
+          strokeWidth="2"
+        >
+          <path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z" />
+        </svg>
+        <span className={styles.schedulePatternLabel}>
+          {patternInfo.cycleDescription}
+        </span>
+      </div>
+      <div className={styles.schedulePatternContent}>
+        <span className={styles.schedulePatternWeeks}>{patternInfo.actualWeeks} actual weeks</span>
+        <span className={styles.schedulePatternSpan}> of stay within {reservationSpan}-week span</span>
+      </div>
+    </div>
+  );
 }
 
 // ============================================================================
@@ -127,69 +318,23 @@ async function fetchInformationalTexts() {
 
 function LoadingState() {
   return (
-    <div style={{
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      minHeight: '60vh',
-      padding: '2rem'
-    }}>
-      <div style={{
-        width: '60px',
-        height: '60px',
-        border: `4px solid ${COLORS.BG_LIGHT}`,
-        borderTop: `4px solid ${COLORS.PRIMARY}`,
-        borderRadius: '50%',
-        animation: 'spin 1s linear infinite'
-      }}></div>
-      <style>{`
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
+    <div className={styles.loadingStateContainer}>
+      <div className={styles.loadingSpinner}></div>
     </div>
   );
 }
 
 function ErrorState({ message }) {
   return (
-    <div style={{
-      textAlign: 'center',
-      padding: '4rem 2rem',
-      maxWidth: '600px',
-      margin: '0 auto'
-    }}>
-      <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>⚠️</div>
-      <h2 style={{
-        fontSize: '2rem',
-        fontWeight: '700',
-        marginBottom: '1rem',
-        color: COLORS.TEXT_DARK
-      }}>
+    <div className={styles.errorStateContainer}>
+      <div className={styles.errorIcon}>⚠️</div>
+      <h2 className={styles.errorTitle}>
         Property Not Found
       </h2>
-      <p style={{
-        fontSize: '1.125rem',
-        color: COLORS.TEXT_LIGHT,
-        marginBottom: '2rem'
-      }}>
+      <p className={styles.errorMessage}>
         {message || 'The property you are looking for does not exist or has been removed.'}
       </p>
-      <a
-        href="/search.html"
-        style={{
-          display: 'inline-block',
-          padding: '1rem 2rem',
-          background: COLORS.PRIMARY,
-          color: 'white',
-          textDecoration: 'none',
-          borderRadius: '8px',
-          fontWeight: '600',
-          transition: 'background 0.2s'
-        }}
-        onMouseEnter={(e) => e.target.style.background = COLORS.PRIMARY_HOVER}
-        onMouseLeave={(e) => e.target.style.background = COLORS.PRIMARY}
-      >
+      <a href="/search.html" className={styles.errorButton}>
         Browse All Listings
       </a>
     </div>
@@ -208,73 +353,54 @@ function ErrorState({ message }) {
  * - 4 photos: 2x2 grid
  * - 5+ photos: Classic Pinterest layout (large left + 4 smaller right)
  */
-function PhotoGallery({ photos, listingName, onPhotoClick }) {
+function PhotoGallery({ photos, listingName, onPhotoClick, isMobile }) {
   const photoCount = photos.length;
 
-  // Determine grid style based on photo count
-  const getGridStyle = () => {
-    if (photoCount === 1) {
-      return {
-        display: 'grid',
-        gridTemplateColumns: '1fr',
-        gridTemplateRows: '400px',
-        gap: '10px'
-      };
-    } else if (photoCount === 2) {
-      return {
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gridTemplateRows: '400px',
-        gap: '10px'
-      };
-    } else if (photoCount === 3) {
-      return {
-        display: 'grid',
-        gridTemplateColumns: '2fr 1fr',
-        gridTemplateRows: '200px 200px',
-        gap: '10px'
-      };
-    } else if (photoCount === 4) {
-      return {
-        display: 'grid',
-        gridTemplateColumns: '2fr 1fr',
-        gridTemplateRows: '133px 133px 133px',
-        gap: '10px'
-      };
-    } else {
-      // 5+ photos
-      return {
-        display: 'grid',
-        gridTemplateColumns: '2fr 1fr 1fr',
-        gridTemplateRows: '200px 200px',
-        gap: '10px'
-      };
-    }
-  };
+  // On mobile: always show single image with "Show all" button
+  if (isMobile) {
+    return (
+      <div className={styles.photoGalleryMobileContainer}>
+        <div onClick={() => onPhotoClick(0)} className={styles.photoGalleryMobileImage}>
+          <img
+            src={photos[0].Photo}
+            alt={`${listingName} - main`}
+            className={styles.photoGalleryMobileImg}
+          />
+        </div>
+        {photoCount > 1 && (
+          <button onClick={() => onPhotoClick(0)} className={styles.photoGalleryShowAllButton}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="3" width="7" height="7" rx="1" />
+              <rect x="3" y="14" width="7" height="7" rx="1" />
+              <rect x="14" y="14" width="7" height="7" rx="1" />
+            </svg>
+            Show all {photoCount}
+          </button>
+        )}
+      </div>
+    );
+  }
 
-  const imageStyle = {
-    cursor: 'pointer',
-    borderRadius: '12px',
-    overflow: 'hidden',
-    position: 'relative'
-  };
-
-  const imgStyle = {
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover',
-    display: 'block'
+  // Desktop: Determine grid class based on photo count
+  const getGridClass = () => {
+    const baseClass = styles.photoGalleryDesktopGrid;
+    if (photoCount === 1) return `${baseClass} ${styles.photoGalleryDesktopGrid1}`;
+    if (photoCount === 2) return `${baseClass} ${styles.photoGalleryDesktopGrid2}`;
+    if (photoCount === 3) return `${baseClass} ${styles.photoGalleryDesktopGrid3}`;
+    if (photoCount === 4) return `${baseClass} ${styles.photoGalleryDesktopGrid4}`;
+    return `${baseClass} ${styles.photoGalleryDesktopGrid5Plus}`;
   };
 
   // Render based on photo count
   if (photoCount === 1) {
     return (
-      <div style={getGridStyle()}>
-        <div onClick={() => onPhotoClick(0)} style={imageStyle}>
+      <div className={getGridClass()}>
+        <div onClick={() => onPhotoClick(0)} className={styles.photoGalleryImageWrapper}>
           <img
             src={photos[0].Photo}
             alt={`${listingName} - main`}
-            style={imgStyle}
+            className={styles.photoGalleryImage}
           />
         </div>
       </div>
@@ -283,13 +409,13 @@ function PhotoGallery({ photos, listingName, onPhotoClick }) {
 
   if (photoCount === 2) {
     return (
-      <div style={getGridStyle()}>
+      <div className={getGridClass()}>
         {photos.map((photo, idx) => (
-          <div key={photo._id} onClick={() => onPhotoClick(idx)} style={imageStyle}>
+          <div key={photo._id} onClick={() => onPhotoClick(idx)} className={styles.photoGalleryImageWrapper}>
             <img
               src={photo.Photo}
               alt={`${listingName} - ${idx + 1}`}
-              style={imgStyle}
+              className={styles.photoGalleryImage}
             />
           </div>
         ))}
@@ -299,23 +425,20 @@ function PhotoGallery({ photos, listingName, onPhotoClick }) {
 
   if (photoCount === 3) {
     return (
-      <div style={getGridStyle()}>
-        <div
-          onClick={() => onPhotoClick(0)}
-          style={{ ...imageStyle, gridRow: '1 / 3' }}
-        >
+      <div className={getGridClass()}>
+        <div onClick={() => onPhotoClick(0)} className={`${styles.photoGalleryImageWrapper} ${styles.photoGalleryImageWrapperSpan2}`}>
           <img
             src={photos[0].Photo}
             alt={`${listingName} - main`}
-            style={imgStyle}
+            className={styles.photoGalleryImage}
           />
         </div>
         {photos.slice(1, 3).map((photo, idx) => (
-          <div key={photo._id} onClick={() => onPhotoClick(idx + 1)} style={imageStyle}>
+          <div key={photo._id} onClick={() => onPhotoClick(idx + 1)} className={styles.photoGalleryImageWrapper}>
             <img
               src={photo['Photo (thumbnail)'] || photo.Photo}
               alt={`${listingName} - ${idx + 2}`}
-              style={imgStyle}
+              className={styles.photoGalleryImage}
             />
           </div>
         ))}
@@ -325,23 +448,20 @@ function PhotoGallery({ photos, listingName, onPhotoClick }) {
 
   if (photoCount === 4) {
     return (
-      <div style={getGridStyle()}>
-        <div
-          onClick={() => onPhotoClick(0)}
-          style={{ ...imageStyle, gridRow: '1 / 4' }}
-        >
+      <div className={getGridClass()}>
+        <div onClick={() => onPhotoClick(0)} className={`${styles.photoGalleryImageWrapper} ${styles.photoGalleryImageWrapperSpan3}`}>
           <img
             src={photos[0].Photo}
             alt={`${listingName} - main`}
-            style={imgStyle}
+            className={styles.photoGalleryImage}
           />
         </div>
         {photos.slice(1, 4).map((photo, idx) => (
-          <div key={photo._id} onClick={() => onPhotoClick(idx + 1)} style={imageStyle}>
+          <div key={photo._id} onClick={() => onPhotoClick(idx + 1)} className={styles.photoGalleryImageWrapper}>
             <img
               src={photo['Photo (thumbnail)'] || photo.Photo}
               alt={`${listingName} - ${idx + 2}`}
-              style={imgStyle}
+              className={styles.photoGalleryImage}
             />
           </div>
         ))}
@@ -349,25 +469,24 @@ function PhotoGallery({ photos, listingName, onPhotoClick }) {
     );
   }
 
-  // 5+ photos - Classic Pinterest layout
+  // 5+ photos - Classic Pinterest layout (desktop only, mobile handled above)
+  const photosToShow = photos.slice(1, 5);
+
   return (
-    <div style={getGridStyle()}>
-      <div
-        onClick={() => onPhotoClick(0)}
-        style={{ ...imageStyle, gridRow: '1 / 3' }}
-      >
+    <div className={getGridClass()}>
+      <div onClick={() => onPhotoClick(0)} className={`${styles.photoGalleryImageWrapper} ${styles.photoGalleryImageWrapperSpan2}`}>
         <img
           src={photos[0].Photo}
           alt={`${listingName} - main`}
-          style={imgStyle}
+          className={styles.photoGalleryImage}
         />
       </div>
-      {photos.slice(1, 5).map((photo, idx) => (
-        <div key={photo._id} onClick={() => onPhotoClick(idx + 1)} style={imageStyle}>
+      {photosToShow.map((photo, idx) => (
+        <div key={photo._id} onClick={() => onPhotoClick(idx + 1)} className={styles.photoGalleryImageWrapper}>
           <img
             src={photo['Photo (thumbnail)'] || photo.Photo}
             alt={`${listingName} - ${idx + 2}`}
-            style={imgStyle}
+            className={styles.photoGalleryImage}
           />
           {idx === 3 && photoCount > 5 && (
             <button
@@ -375,24 +494,23 @@ function PhotoGallery({ photos, listingName, onPhotoClick }) {
                 e.stopPropagation();
                 onPhotoClick(0);
               }}
-              style={{
-                position: 'absolute',
-                bottom: '12px',
-                right: '12px',
-                background: 'white',
-                border: 'none',
-                padding: '8px 12px',
-                borderRadius: '8px',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
-                cursor: 'pointer',
-                fontWeight: '600',
-                fontSize: '0.875rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}
+              className={styles.photoGalleryDesktopShowAll}
             >
-              <span>📷</span>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+              </svg>
               <span>Show All Photos</span>
             </button>
           )}
@@ -414,13 +532,38 @@ export default function ViewSplitLeasePage() {
   const [zatConfig, setZatConfig] = useState(null);
   const [informationalTexts, setInformationalTexts] = useState({});
 
-  // Booking widget state
-  const [moveInDate, setMoveInDate] = useState(null);
+  // Booking widget state - initialize from URL parameters if available
+  const [moveInDate, setMoveInDate] = useState(() => getInitialMoveInFromUrl());
   const [strictMode, setStrictMode] = useState(false);
-  const [selectedDayObjects, setSelectedDayObjects] = useState([]); // Day objects from new component
-  const [reservationSpan, setReservationSpan] = useState(13); // 13 weeks default
+  const [selectedDayObjects, setSelectedDayObjects] = useState(() => getInitialScheduleFromUrl()); // Day objects from URL param or empty
+  const [reservationSpan, setReservationSpan] = useState(() => getInitialReservationSpanFromUrl() || 13); // URL value or 13 weeks default
   const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
   const [priceBreakdown, setPriceBreakdown] = useState(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [pendingProposalData, setPendingProposalData] = useState(null);
+  const [loggedInUserData, setLoggedInUserData] = useState(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successProposalId, setSuccessProposalId] = useState(null);
+  const [isSubmittingProposal, setIsSubmittingProposal] = useState(false);
+  const [existingProposalForListing, setExistingProposalForListing] = useState(null);
+
+  // Custom schedule state - for users who want to specify a different recurrent pattern
+  const [customScheduleDescription, setCustomScheduleDescription] = useState('');
+  const [showCustomScheduleInput, setShowCustomScheduleInput] = useState(false);
+
+  // Toast notification state
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+  // Favorite state
+  const [isFavorited, setIsFavorited] = useState(false);
+
+  // Show toast notification helper
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast({ show: false, message: '', type: 'success' });
+    }, 4000);
+  };
 
   // Calculate minimum move-in date (2 weeks from today)
   const minMoveInDate = useMemo(() => {
@@ -449,7 +592,7 @@ export default function ViewSplitLeasePage() {
     const minDayOfWeek = minDate.getDay();
 
     // Calculate days to add to get to the next occurrence of the first selected day
-    let daysToAdd = (firstDayOfWeek - minDayOfWeek + 7) % 7;
+    const daysToAdd = (firstDayOfWeek - minDayOfWeek + 7) % 7;
 
     // If it's the same day, we're already on the right day
     if (daysToAdd === 0) {
@@ -462,6 +605,32 @@ export default function ViewSplitLeasePage() {
 
     return smartDate.toISOString().split('T')[0];
   }, [minMoveInDate]);
+
+  // Set initial move-in date if days were loaded from URL
+  // Also validate URL-provided move-in date is not before minimum (2 weeks from today)
+  useEffect(() => {
+    if (selectedDayObjects.length > 0) {
+      // If move-in date was provided via URL, validate it's not before minimum
+      if (moveInDate) {
+        const providedDate = new Date(moveInDate);
+        const minDate = new Date(minMoveInDate);
+
+        if (providedDate < minDate) {
+          // URL date is in the past, use smart calculation instead
+          const dayNumbers = selectedDayObjects.map(day => day.dayOfWeek);
+          const smartDate = calculateSmartMoveInDate(dayNumbers);
+          setMoveInDate(smartDate);
+          logger.debug('📅 ViewSplitLeasePage: URL move-in date was before minimum, using smart date:', smartDate);
+        }
+      } else {
+        // No URL date provided, calculate smart default
+        const dayNumbers = selectedDayObjects.map(day => day.dayOfWeek);
+        const smartDate = calculateSmartMoveInDate(dayNumbers);
+        setMoveInDate(smartDate);
+        logger.debug('📅 ViewSplitLeasePage: Set initial move-in date from URL selection:', smartDate);
+      }
+    }
+  }, []); // Run only once on mount - empty deps to prevent recalculation on state changes
 
   // UI state
   const [showTutorialModal, setShowTutorialModal] = useState(false);
@@ -482,8 +651,8 @@ export default function ViewSplitLeasePage() {
 
   // Debug: Log when activeInfoTooltip changes
   useEffect(() => {
-    console.log('🎯 activeInfoTooltip changed to:', activeInfoTooltip);
-    console.log('🔗 Refs status:', {
+    logger.debug('🎯 activeInfoTooltip changed to:', activeInfoTooltip);
+    logger.debug('🔗 Refs status:', {
       moveInInfoRef: !!moveInInfoRef.current,
       reservationSpanInfoRef: !!reservationSpanInfoRef.current,
       flexibilityInfoRef: !!flexibilityInfoRef.current
@@ -493,8 +662,8 @@ export default function ViewSplitLeasePage() {
   // Debug: Log when informationalTexts are loaded
   useEffect(() => {
     if (Object.keys(informationalTexts).length > 0) {
-      console.log('📚 informationalTexts loaded with', Object.keys(informationalTexts).length, 'entries');
-      console.log('🎯 Specific tags:', {
+      logger.debug('📚 informationalTexts loaded with', Object.keys(informationalTexts).length, 'entries');
+      logger.debug('🎯 Specific tags:', {
         'aligned schedule with move-in': informationalTexts['aligned schedule with move-in'],
         'move-in flexibility': informationalTexts['move-in flexibility'],
         'Reservation Span': informationalTexts['Reservation Span']
@@ -505,6 +674,7 @@ export default function ViewSplitLeasePage() {
   // Responsive state
   const [isMobile, setIsMobile] = useState(false);
   const [shouldLoadMap, setShouldLoadMap] = useState(false);
+  const [mobileBookingExpanded, setMobileBookingExpanded] = useState(false);
 
   // Section references for navigation
   const mapRef = useRef(null);
@@ -524,6 +694,17 @@ export default function ViewSplitLeasePage() {
         // Initialize lookup caches
         await initializeLookups();
 
+        // Check auth status and fetch user data if logged in
+        const isLoggedIn = await checkAuthStatus();
+        if (isLoggedIn) {
+          // CRITICAL: Use clearOnFailure: false to preserve session if Edge Function fails
+          const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
+          if (userData) {
+            setLoggedInUserData(userData);
+            logger.debug('👤 ViewSplitLeasePage: User data loaded:', userData.firstName);
+          }
+        }
+
         // Fetch ZAT price configuration
         const zatConfigData = await fetchZatPriceConfiguration();
         setZatConfig(zatConfigData);
@@ -540,7 +721,7 @@ export default function ViewSplitLeasePage() {
 
         // Fetch complete listing data
         const listingData = await fetchListingComplete(listingId);
-        console.log('📋 ViewSplitLeasePage: Listing data fetched:', {
+        logger.debug('📋 ViewSplitLeasePage: Listing data fetched:', {
           id: listingData._id,
           name: listingData.Name,
           amenitiesInUnit: listingData.amenitiesInUnit,
@@ -557,7 +738,7 @@ export default function ViewSplitLeasePage() {
         setLoading(false);
 
       } catch (err) {
-        console.error('Error initializing page:', err);
+        logger.error('Error initializing page:', err);
         setError(err.message);
         setLoading(false);
       }
@@ -614,13 +795,13 @@ export default function ViewSplitLeasePage() {
     // Automatically center and zoom the map when it loads for the first time
     // This replicates the behavior of clicking "Located in" link, but without scrolling
     if (shouldLoadMap && mapRef.current && listing && !hasAutoZoomedRef.current) {
-      console.log('🗺️ ViewSplitLeasePage: Auto-zooming map on initial load');
+      logger.debug('🗺️ ViewSplitLeasePage: Auto-zooming map on initial load');
 
       // Wait for map to fully initialize before calling zoomToListing
       // Same 600ms timeout as handleLocationClick
       setTimeout(() => {
         if (mapRef.current && listing) {
-          console.log('🗺️ ViewSplitLeasePage: Calling zoomToListing for initial auto-zoom');
+          logger.debug('🗺️ ViewSplitLeasePage: Calling zoomToListing for initial auto-zoom');
           mapRef.current.zoomToListing(listing._id);
           hasAutoZoomedRef.current = true;
         }
@@ -638,6 +819,79 @@ export default function ViewSplitLeasePage() {
       document.title = `${listing.Name} | Split Lease`;
     }
   }, [listing]);
+
+  // ============================================================================
+  // CHECK FOR EXISTING PROPOSAL
+  // ============================================================================
+
+  useEffect(() => {
+    // Check if logged-in user already has a proposal for this listing
+    async function checkExistingProposal() {
+      if (!loggedInUserData?.userId || !listing?._id) {
+        setExistingProposalForListing(null);
+        return;
+      }
+
+      try {
+        logger.debug('🔍 ViewSplitLeasePage: Checking for existing proposals for listing:', listing._id);
+
+        const { data: existingProposals, error } = await supabase
+          .from('proposal')
+          .select('_id, "Status", "Created Date"')
+          .eq('"Guest"', loggedInUserData.userId)
+          .eq('"Listing"', listing._id)
+          .neq('"Status"', 'Proposal Cancelled by Guest')
+          .or('"Deleted".is.null,"Deleted".eq.false')
+          .order('"Created Date"', { ascending: false })
+          .limit(1);
+
+        if (error) {
+          logger.error('Error checking for existing proposals:', error);
+          setExistingProposalForListing(null);
+          return;
+        }
+
+        if (existingProposals && existingProposals.length > 0) {
+          logger.debug('📋 ViewSplitLeasePage: User already has a proposal for this listing:', existingProposals[0]);
+          setExistingProposalForListing(existingProposals[0]);
+        } else {
+          logger.debug('✅ ViewSplitLeasePage: No existing proposal found for this listing');
+          setExistingProposalForListing(null);
+        }
+      } catch (err) {
+        logger.error('Error checking for existing proposals:', err);
+        setExistingProposalForListing(null);
+      }
+    }
+
+    checkExistingProposal();
+  }, [loggedInUserData?.userId, listing?._id]);
+
+  // Check if listing is favorited
+  useEffect(() => {
+    async function checkIfFavorited() {
+      if (!loggedInUserData?.userId || !listing?._id) {
+        setIsFavorited(false);
+        return;
+      }
+      try {
+        const { data: userData, error } = await supabase
+          .from('user')
+          .select('"Favorited Listings"')
+          .eq('_id', loggedInUserData.userId)
+          .single();
+        if (error) {
+          setIsFavorited(false);
+          return;
+        }
+        const favorites = userData?.['Favorited Listings'] || [];
+        setIsFavorited(favorites.includes(listing._id));
+      } catch {
+        setIsFavorited(false);
+      }
+    }
+    checkIfFavorited();
+  }, [loggedInUserData?.userId, listing?._id]);
 
   // ============================================================================
   // COMPUTED VALUES
@@ -753,8 +1007,8 @@ export default function ViewSplitLeasePage() {
   };
 
   const handlePriceChange = useCallback((newPriceBreakdown) => {
-    console.log('=== PRICE CHANGE CALLBACK ===');
-    console.log('Received price breakdown:', newPriceBreakdown);
+    logger.debug('=== PRICE CHANGE CALLBACK ===');
+    logger.debug('Received price breakdown:', newPriceBreakdown);
     // Only update if the values have actually changed to prevent infinite loops
     setPriceBreakdown((prev) => {
       if (!prev ||
@@ -782,45 +1036,323 @@ export default function ViewSplitLeasePage() {
   const handleCreateProposal = () => {
     // Validate before opening modal
     if (!scheduleValidation?.valid) {
-      alert('Please select a valid contiguous schedule');
+      toast.warning('Please select a valid contiguous schedule');
       return;
     }
 
     if (!moveInDate) {
-      alert('Please select a move-in date');
+      toast.warning('Please select a move-in date');
       return;
     }
 
     setIsProposalModalOpen(true);
   };
 
+  // Submit proposal to backend (after auth is confirmed)
+  const submitProposal = async (proposalData) => {
+    setIsSubmittingProposal(true);
+
+    try {
+      // Get the guest ID (Bubble user _id)
+      const guestId = loggedInUserData?.userId || getSessionId();
+
+      if (!guestId) {
+        throw new Error('User ID not found. Please log in again.');
+      }
+
+      logger.debug('📤 Submitting proposal to Edge Function...');
+      logger.debug('   Guest ID:', guestId);
+      logger.debug('   Listing ID:', proposalData.listingId);
+
+      // Days are already in JS format (0-6) - database now uses 0-indexed natively
+      // proposalData.daysSelectedObjects contains Day objects with dayOfWeek property
+      const daysInJsFormat = proposalData.daysSelectedObjects?.map(d => d.dayOfWeek) || selectedDays;
+
+      // Sort days in JS format first to detect wrap-around (Saturday/Sunday spanning)
+      const sortedJsDays = [...daysInJsFormat].sort((a, b) => a - b);
+
+      // Check for wrap-around case (both Saturday=6 and Sunday=0 present, but not all 7 days)
+      const hasSaturday = sortedJsDays.includes(6);
+      const hasSunday = sortedJsDays.includes(0);
+      const isWrapAround = hasSaturday && hasSunday && daysInJsFormat.length < 7;
+
+      let checkInDayJs, checkOutDayJs, nightsInJsFormat;
+
+      if (isWrapAround) {
+        // Find the gap in the sorted selection to determine wrap-around point
+        let gapIndex = -1;
+        for (let i = 0; i < sortedJsDays.length - 1; i++) {
+          if (sortedJsDays[i + 1] - sortedJsDays[i] > 1) {
+            gapIndex = i + 1;
+            break;
+          }
+        }
+
+        if (gapIndex !== -1) {
+          // Wrap-around: check-in is the first day after the gap, check-out is the last day before gap
+          checkInDayJs = sortedJsDays[gapIndex];
+          checkOutDayJs = sortedJsDays[gapIndex - 1];
+
+          // Reorder days to be in actual sequence (check-in to check-out)
+          // e.g., [0, 6] with gap at index 1 → reorder to [6, 0] (Fri, Sat, Sun)
+          const reorderedDays = [...sortedJsDays.slice(gapIndex), ...sortedJsDays.slice(0, gapIndex)];
+
+          // Nights = all days except the last one (checkout day)
+          nightsInJsFormat = reorderedDays.slice(0, -1);
+        } else {
+          // No gap found, use standard logic
+          checkInDayJs = sortedJsDays[0];
+          checkOutDayJs = sortedJsDays[sortedJsDays.length - 1];
+          nightsInJsFormat = sortedJsDays.slice(0, -1);
+        }
+      } else {
+        // Standard case: check-in = first day, check-out = last day
+        checkInDayJs = sortedJsDays[0];
+        checkOutDayJs = sortedJsDays[sortedJsDays.length - 1];
+        // Nights = all days except the last one (checkout day)
+        nightsInJsFormat = sortedJsDays.slice(0, -1);
+      }
+
+      // Use JS format directly (0-6) - database now uses 0-indexed natively
+      const checkInDay = checkInDayJs;
+      const checkOutDay = checkOutDayJs;
+      const nightsSelected = nightsInJsFormat;
+
+      // Format reservation span text
+      const reservationSpanWeeks = proposalData.reservationSpan || reservationSpan;
+      const reservationSpanText = reservationSpanWeeks === 13
+        ? '13 weeks (3 months)'
+        : reservationSpanWeeks === 20
+          ? '20 weeks (approx. 5 months)'
+          : `${reservationSpanWeeks} weeks`;
+
+      // Build the Edge Function payload (using 0-indexed days)
+      const edgeFunctionPayload = {
+        guestId: guestId,
+        listingId: proposalData.listingId,
+        moveInStartRange: proposalData.moveInDate,
+        moveInEndRange: proposalData.moveInDate, // Same as start if no flexibility
+        daysSelected: daysInJsFormat,
+        nightsSelected: nightsSelected,
+        reservationSpan: reservationSpanText,
+        reservationSpanWeeks: reservationSpanWeeks,
+        checkIn: checkInDay,
+        checkOut: checkOutDay,
+        proposalPrice: proposalData.pricePerNight,
+        fourWeekRent: proposalData.pricePerFourWeeks,
+        hostCompensation: proposalData.pricePerFourWeeks, // Same as 4-week rent for now
+        needForSpace: proposalData.needForSpace || '',
+        aboutMe: proposalData.aboutYourself || '',
+        estimatedBookingTotal: proposalData.totalPrice,
+        // Optional fields
+        specialNeeds: proposalData.hasUniqueRequirements ? proposalData.uniqueRequirements : '',
+        moveInRangeText: proposalData.moveInRange || '',
+        flexibleMoveIn: !!proposalData.moveInRange,
+        fourWeekCompensation: proposalData.pricePerFourWeeks,
+        // Custom schedule description (user's freeform schedule request)
+        customScheduleDescription: customScheduleDescription || ''
+      };
+
+      logger.debug('📋 Edge Function payload:', edgeFunctionPayload);
+      logger.debug('📋 Payload field types:', {
+        guestId: typeof edgeFunctionPayload.guestId,
+        listingId: typeof edgeFunctionPayload.listingId,
+        moveInStartRange: typeof edgeFunctionPayload.moveInStartRange,
+        moveInEndRange: typeof edgeFunctionPayload.moveInEndRange,
+        daysSelected: { type: typeof edgeFunctionPayload.daysSelected, isArray: Array.isArray(edgeFunctionPayload.daysSelected), value: edgeFunctionPayload.daysSelected },
+        nightsSelected: { type: typeof edgeFunctionPayload.nightsSelected, isArray: Array.isArray(edgeFunctionPayload.nightsSelected), value: edgeFunctionPayload.nightsSelected },
+        reservationSpan: typeof edgeFunctionPayload.reservationSpan,
+        reservationSpanWeeks: typeof edgeFunctionPayload.reservationSpanWeeks,
+        checkIn: typeof edgeFunctionPayload.checkIn,
+        checkOut: typeof edgeFunctionPayload.checkOut,
+        proposalPrice: typeof edgeFunctionPayload.proposalPrice,
+        estimatedBookingTotal: typeof edgeFunctionPayload.estimatedBookingTotal,
+      });
+
+      // Call the proposal Edge Function (Supabase-native)
+      const { data, error } = await supabase.functions.invoke('proposal', {
+        body: {
+          action: 'create',
+          payload: edgeFunctionPayload
+        }
+      });
+
+      if (error) {
+        logger.error('❌ Edge Function error:', error);
+        logger.error('❌ Error properties:', Object.keys(error));
+        logger.error('❌ Error context:', error.context);
+
+        // Extract actual error message from response context if available
+        let errorMessage = error.message || 'Failed to submit proposal';
+
+        // FunctionsHttpError has context.json() method or context as Response
+        try {
+          if (error.context && typeof error.context.json === 'function') {
+            // context is a Response object
+            const errorBody = await error.context.json();
+            logger.error('❌ Edge Function error body (from json()):', errorBody);
+            if (errorBody?.error) {
+              errorMessage = errorBody.error;
+            }
+          } else if (error.context?.body) {
+            // context.body might be a ReadableStream or string
+            const errorBody = typeof error.context.body === 'string'
+              ? JSON.parse(error.context.body)
+              : error.context.body;
+            logger.error('❌ Edge Function error body (from body):', errorBody);
+            if (errorBody?.error) {
+              errorMessage = errorBody.error;
+            }
+          }
+        } catch (e) {
+          logger.error('❌ Could not parse error body:', e);
+        }
+
+        throw new Error(errorMessage);
+      }
+
+      if (!data?.success) {
+        logger.error('❌ Proposal submission failed:', data?.error);
+        throw new Error(data?.error || 'Failed to submit proposal');
+      }
+
+      logger.debug('✅ Proposal submitted successfully:', data);
+      logger.debug('   Proposal ID:', data.data?.proposalId);
+
+      // Clear the localStorage draft on successful submission
+      clearProposalDraft(proposalData.listingId);
+
+      // Close the create proposal modal
+      setIsProposalModalOpen(false);
+      setPendingProposalData(null);
+
+      // Store the proposal ID and show success modal
+      const newProposalId = data.data?.proposalId;
+      setSuccessProposalId(newProposalId);
+      setShowSuccessModal(true);
+
+      // Update existingProposalForListing so the button disables after modal closes
+      setExistingProposalForListing({
+        _id: newProposalId,
+        Status: 'Pending Host Review',
+        'Created Date': new Date().toISOString()
+      });
+
+      // Create messaging thread for the proposal (non-blocking)
+      try {
+        logger.debug('💬 Creating proposal messaging thread...');
+        // Use the actual status returned from the Edge Function
+        const actualProposalStatus = data.data?.status || 'Host Review';
+        const actualHostId = data.data?.hostId || listing.host?.userId;
+
+        logger.debug('   Thread params:', {
+          proposalId: newProposalId,
+          guestId: guestId,
+          hostId: actualHostId,
+          listingId: proposalData.listingId,
+          proposalStatus: actualProposalStatus
+        });
+
+        const threadResponse = await supabase.functions.invoke('messages', {
+          body: {
+            action: 'create_proposal_thread',
+            payload: {
+              proposalId: newProposalId,
+              guestId: guestId,
+              hostId: actualHostId,
+              listingId: proposalData.listingId,
+              proposalStatus: actualProposalStatus
+            }
+          }
+        });
+
+        if (threadResponse.error) {
+          logger.warn('⚠️ Thread creation failed (non-blocking):', threadResponse.error);
+        } else {
+          logger.debug('✅ Proposal thread created:', threadResponse.data);
+        }
+      } catch (threadError) {
+        // Non-blocking - don't fail the proposal if thread creation fails
+        logger.warn('⚠️ Thread creation error (non-blocking):', threadError);
+      }
+
+    } catch (error) {
+      logger.error('❌ Error submitting proposal:', error);
+
+      // Provide user-friendly error messages for common failure cases
+      let userMessage = error.message || 'Failed to submit proposal. Please try again.';
+
+      // Network/CORS errors (Edge Function unavailable)
+      if (error.message?.includes('Failed to send a request') ||
+          error.message?.includes('Failed to fetch') ||
+          error.message?.includes('NetworkError')) {
+        userMessage = 'Unable to connect to our servers. Please check your internet connection and try again.';
+      }
+      // Timeout errors
+      else if (error.message?.includes('timeout') || error.message?.includes('Timeout')) {
+        userMessage = 'The request took too long. Please try again.';
+      }
+      // Duplicate proposal error (from Edge Function validation)
+      else if (error.message?.includes('already have an active proposal')) {
+        userMessage = error.message; // Keep the specific message
+      }
+
+      showToast(userMessage, 'error');
+    } finally {
+      setIsSubmittingProposal(false);
+    }
+  };
+
+  // Handle proposal submission - checks auth first
   const handleProposalSubmit = async (proposalData) => {
-    console.log('Proposal submitted:', proposalData);
+    logger.debug('📋 Proposal submission initiated:', proposalData);
 
-    // TODO: Integrate with your backend API to submit the proposal
-    // Example:
-    // try {
-    //   const response = await fetch('/api/proposals', {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify(proposalData)
-    //   });
-    //
-    //   if (response.ok) {
-    //     alert('Proposal submitted successfully!');
-    //     setIsProposalModalOpen(false);
-    //     // Redirect to success page or proposals page
-    //   } else {
-    //     alert('Failed to submit proposal. Please try again.');
-    //   }
-    // } catch (error) {
-    //   console.error('Error submitting proposal:', error);
-    //   alert('An error occurred. Please try again.');
-    // }
+    // Check if user is logged in
+    const isLoggedIn = await checkAuthStatus();
 
-    // For now, just show success and close modal
-    alert('Proposal submitted successfully! (Backend integration pending)');
-    setIsProposalModalOpen(false);
+    if (!isLoggedIn) {
+      logger.debug('🔐 User not logged in, showing auth modal');
+      // Store the proposal data for later submission
+      setPendingProposalData(proposalData);
+      // Close the proposal modal
+      setIsProposalModalOpen(false);
+      // Open auth modal
+      setShowAuthModal(true);
+      return;
+    }
+
+    // User is logged in, proceed with submission
+    logger.debug('✅ User is logged in, submitting proposal');
+    await submitProposal(proposalData);
+  };
+
+  // Handle successful authentication
+  const handleAuthSuccess = async (authResult) => {
+    logger.debug('🎉 Auth success:', authResult);
+
+    // Close the auth modal
+    setShowAuthModal(false);
+
+    // Update the logged-in user data
+    // CRITICAL: Use clearOnFailure: false to preserve session if Edge Function fails
+    try {
+      const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
+      if (userData) {
+        setLoggedInUserData(userData);
+        logger.debug('👤 User data updated after auth:', userData.firstName);
+      }
+    } catch (err) {
+      logger.error('❌ Error fetching user data after auth:', err);
+    }
+
+    // If there's a pending proposal, submit it now
+    if (pendingProposalData) {
+      logger.debug('📤 Submitting pending proposal after auth');
+      // Small delay to ensure auth state is fully updated
+      setTimeout(async () => {
+        await submitProposal(pendingProposalData);
+      }, 500);
+    }
   };
 
   const scrollToSection = (sectionRef, shouldZoomMap = false) => {
@@ -890,69 +1422,83 @@ export default function ViewSplitLeasePage() {
     <>
       <Header />
 
-      <main style={{
-        maxWidth: '1400px',
-        margin: '0 auto',
-        padding: '2rem',
-        paddingTop: 'calc(100px + 2rem)', // Increased from 80px to prevent header overlap
-        display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr' : '1fr 440px',
-        gap: '2rem'
-      }}>
+      {/* Toast Notification */}
+      {toast.show && (
+        <div className="toast-container">
+          <div className={`toast toast-${toast.type} show`}>
+            {/* Icon */}
+            {toast.type === 'success' && (
+              <svg className="toast-icon" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" strokeLinecap="round" strokeLinejoin="round"/>
+                <polyline points="22 4 12 14.01 9 11.01" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            )}
+            {toast.type === 'info' && (
+              <svg className="toast-icon" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12" strokeLinecap="round"/>
+                <line x1="12" y1="8" x2="12.01" y2="8" strokeLinecap="round"/>
+              </svg>
+            )}
+            {toast.type === 'error' && (
+              <svg className="toast-icon" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="15" y1="9" x2="9" y2="15" strokeLinecap="round"/>
+                <line x1="9" y1="9" x2="15" y2="15" strokeLinecap="round"/>
+              </svg>
+            )}
+            {toast.type === 'warning' && (
+              <svg className="toast-icon" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13" strokeLinecap="round"/>
+                <line x1="12" y1="17" x2="12.01" y2="17" strokeLinecap="round"/>
+              </svg>
+            )}
+
+            {/* Content */}
+            <div className="toast-content">
+              <h4 className="toast-title">{toast.message}</h4>
+            </div>
+
+            {/* Close Button */}
+            <button
+              className="toast-close"
+              onClick={() => setToast({ show: false, message: '', type: 'success' })}
+              aria-label="Close notification"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="18" y1="6" x2="6" y2="18" strokeLinecap="round"/>
+                <line x1="6" y1="6" x2="18" y2="18" strokeLinecap="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
+      <main className={styles.mainGrid}>
 
         {/* LEFT COLUMN - CONTENT */}
-        <div className="left-column">
+        <div className={styles.leftColumn}>
 
           {/* Photo Gallery - Magazine Editorial Style */}
-          <section style={{ marginBottom: '2rem' }}>
+          <section className={styles.section}>
             {listing.photos && listing.photos.length > 0 ? (
-              <PhotoGallery photos={listing.photos} listingName={listing.Name} onPhotoClick={handlePhotoClick} />
+              <PhotoGallery photos={listing.photos} listingName={listing.Name} onPhotoClick={handlePhotoClick} isMobile={isMobile} />
             ) : (
-              <div style={{
-                width: '100%',
-                height: '400px',
-                background: COLORS.BG_LIGHT,
-                borderRadius: '12px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: COLORS.TEXT_LIGHT
-              }}>
+              <div className={styles.noImagesPlaceholder}>
                 No images available
               </div>
             )}
           </section>
 
           {/* Listing Header */}
-          <section style={{ marginBottom: '2rem' }}>
-            <h1 style={{
-              fontSize: '2rem',
-              fontWeight: '700',
-              marginBottom: '1rem',
-              color: COLORS.TEXT_DARK
-            }}>
+          <section className={styles.section}>
+            <h1 className={styles.listingTitle}>
               {listing.Name}
             </h1>
-            <div style={{
-              display: 'flex',
-              gap: '1rem',
-              flexWrap: 'wrap',
-              color: COLORS.TEXT_LIGHT
-            }}>
+            <div className={styles.listingMeta}>
               {listing.resolvedNeighborhood && listing.resolvedBorough && (
-                <span
-                  onClick={handleLocationClick}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    cursor: 'pointer',
-                    textDecoration: 'underline',
-                    transition: 'color 0.2s'
-                  }}
-                  onMouseEnter={(e) => e.target.style.color = COLORS.PRIMARY}
-                  onMouseLeave={(e) => e.target.style.color = COLORS.TEXT_LIGHT}
-                >
+                <span onClick={handleLocationClick} className={styles.locationLink}>
                   Located in {listing.resolvedNeighborhood}, {listing.resolvedBorough}
                 </span>
               )}
@@ -965,79 +1511,54 @@ export default function ViewSplitLeasePage() {
           </section>
 
           {/* Features Grid */}
-          <section style={{
-            marginBottom: '2rem',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-            gap: '1rem'
-          }}>
+          <section className={styles.featuresGrid}>
             {listing['Kitchen Type'] && (
-              <div style={{ textAlign: 'center', padding: '1rem', background: COLORS.BG_LIGHT, borderRadius: '8px' }}>
-                <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '2rem' }}>
-                  <img src="/assets/images/fridge.svg" alt="Kitchen" style={{ width: '2rem', height: '2rem' }} />
+              <div className={styles.featureCard}>
+                <div className={styles.featureIconWrapper}>
+                  <img src="/assets/images/fridge.svg" alt="Kitchen" className={styles.featureIcon} />
                 </div>
-                <div>{listing['Kitchen Type']}</div>
+                <div className={styles.featureText}>{listing['Kitchen Type']}</div>
               </div>
             )}
             {listing['Features - Qty Bathrooms'] !== null && (
-              <div style={{ textAlign: 'center', padding: '1rem', background: COLORS.BG_LIGHT, borderRadius: '8px' }}>
-                <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '2rem' }}>
-                  <img src="/assets/images/bath.svg" alt="Bathroom" style={{ width: '2rem', height: '2rem' }} />
+              <div className={styles.featureCard}>
+                <div className={styles.featureIconWrapper}>
+                  <img src="/assets/images/bath.svg" alt="Bathroom" className={styles.featureIcon} />
                 </div>
-                <div>{listing['Features - Qty Bathrooms']} Bathroom(s)</div>
+                <div className={styles.featureText}>{listing['Features - Qty Bathrooms']} Bathroom(s)</div>
               </div>
             )}
             {listing['Features - Qty Bedrooms'] !== null && (
-              <div style={{ textAlign: 'center', padding: '1rem', background: COLORS.BG_LIGHT, borderRadius: '8px' }}>
-                <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '2rem' }}>
-                  <img src="/assets/images/sleeping.svg" alt="Bedroom" style={{ width: '2rem', height: '2rem' }} />
+              <div className={styles.featureCard}>
+                <div className={styles.featureIconWrapper}>
+                  <img src="/assets/images/sleeping.svg" alt="Bedroom" className={styles.featureIcon} />
                 </div>
-                <div>{listing['Features - Qty Bedrooms'] === 0 ? 'Studio' : `${listing['Features - Qty Bedrooms']} Bedroom${listing['Features - Qty Bedrooms'] === 1 ? '' : 's'}`}</div>
+                <div className={styles.featureText}>{listing['Features - Qty Bedrooms'] === 0 ? 'Studio' : `${listing['Features - Qty Bedrooms']} Bedroom${listing['Features - Qty Bedrooms'] === 1 ? '' : 's'}`}</div>
               </div>
             )}
             {listing['Features - Qty Beds'] !== null && (
-              <div style={{ textAlign: 'center', padding: '1rem', background: COLORS.BG_LIGHT, borderRadius: '8px' }}>
-                <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '2rem' }}>
-                  <img src="/assets/images/bed.svg" alt="Bed" style={{ width: '2rem', height: '2rem' }} />
+              <div className={styles.featureCard}>
+                <div className={styles.featureIconWrapper}>
+                  <img src="/assets/images/bed.svg" alt="Bed" className={styles.featureIcon} />
                 </div>
-                <div>{listing['Features - Qty Beds']} Bed(s)</div>
+                <div className={styles.featureText}>{listing['Features - Qty Beds']} Bed(s)</div>
               </div>
             )}
           </section>
 
           {/* Description */}
-          <section style={{ marginBottom: '2rem' }}>
-            <h2 style={{
-              fontSize: '1.5rem',
-              fontWeight: '700',
-              marginBottom: '1rem',
-              color: COLORS.TEXT_DARK
-            }}>
+          <section className={styles.sectionSmall}>
+            <h2 className={styles.sectionTitle}>
               Description of Lodging
             </h2>
-            <p style={{
-              lineHeight: '1.6',
-              color: COLORS.TEXT_LIGHT,
-              whiteSpace: 'pre-wrap'
-            }}>
+            <p className={styles.descriptionText}>
               {expandedSections.description
                 ? listing.Description
                 : listing.Description?.slice(0, 360)}
               {listing.Description?.length > 360 && !expandedSections.description && '...'}
             </p>
             {listing.Description?.length > 360 && (
-              <button
-                onClick={() => toggleSection('description')}
-                style={{
-                  marginTop: '0.5rem',
-                  background: 'none',
-                  border: 'none',
-                  color: COLORS.PRIMARY,
-                  cursor: 'pointer',
-                  fontWeight: '600',
-                  textDecoration: 'underline'
-                }}
-              >
+              <button onClick={() => toggleSection('description')} className={styles.readMoreButton}>
                 {expandedSections.description ? 'Read Less' : 'Read More'}
               </button>
             )}
@@ -1045,25 +1566,12 @@ export default function ViewSplitLeasePage() {
 
           {/* Storage Section */}
           {listing.storageOption && (
-            <section style={{ marginBottom: '2rem' }}>
-              <h2 style={{
-                fontSize: '1.5rem',
-                fontWeight: '700',
-                marginBottom: '1rem',
-                color: COLORS.TEXT_DARK
-              }}>
+            <section className={styles.sectionSmall}>
+              <h2 className={styles.sectionTitle}>
                 Storage
               </h2>
-              <div style={{
-                padding: '1.5rem',
-                background: COLORS.BG_LIGHT,
-                borderRadius: '12px'
-              }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'start',
-                  gap: '1rem'
-                }}>
+              <div className={styles.infoCard}>
+                <div className={styles.infoCardRow}>
                   <svg
                     width="24"
                     height="24"
@@ -1073,17 +1581,17 @@ export default function ViewSplitLeasePage() {
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    style={{ minWidth: '24px', minHeight: '24px', color: COLORS.PRIMARY }}
+                    className={styles.infoCardIcon}
                   >
                     <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
                     <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
                     <line x1="12" y1="22.08" x2="12" y2="12"></line>
                   </svg>
                   <div>
-                    <div style={{ fontWeight: '600', marginBottom: '0.5rem' }}>
+                    <div className={styles.infoCardTitle}>
                       {listing.storageOption.title}
                     </div>
-                    <div style={{ color: COLORS.TEXT_LIGHT, fontSize: '0.9375rem' }}>
+                    <div className={styles.infoCardSubtext}>
                       {listing.storageOption.summaryGuest ||
                        'Store your things between stays, ready when you return.'}
                     </div>
@@ -1095,20 +1603,11 @@ export default function ViewSplitLeasePage() {
 
           {/* Neighborhood Description */}
           {listing['Description - Neighborhood'] && (
-            <section style={{ marginBottom: '2rem' }}>
-              <h2 style={{
-                fontSize: '1.5rem',
-                fontWeight: '700',
-                marginBottom: '1rem',
-                color: COLORS.TEXT_DARK
-              }}>
+            <section className={styles.sectionSmall}>
+              <h2 className={styles.sectionTitle}>
                 Neighborhood
               </h2>
-              <p style={{
-                lineHeight: '1.6',
-                color: COLORS.TEXT_LIGHT,
-                whiteSpace: 'pre-wrap'
-              }}>
+              <p className={styles.descriptionText}>
                 {expandedSections.neighborhood
                   ? listing['Description - Neighborhood']
                   : listing['Description - Neighborhood']?.slice(0, 500)}
@@ -1116,18 +1615,7 @@ export default function ViewSplitLeasePage() {
                  !expandedSections.neighborhood && '...'}
               </p>
               {listing['Description - Neighborhood']?.length > 500 && (
-                <button
-                  onClick={() => toggleSection('neighborhood')}
-                  style={{
-                    marginTop: '0.5rem',
-                    background: 'none',
-                    border: 'none',
-                    color: COLORS.PRIMARY,
-                    cursor: 'pointer',
-                    fontWeight: '600',
-                    textDecoration: 'underline'
-                  }}
-                >
+                <button onClick={() => toggleSection('neighborhood')} className={styles.readMoreButton}>
                   {expandedSections.neighborhood ? 'Read Less' : 'Read More'}
                 </button>
               )}
@@ -1136,18 +1624,13 @@ export default function ViewSplitLeasePage() {
 
           {/* Commute Section */}
           {(listing.parkingOption || listing['Time to Station (commute)']) && (
-            <section ref={commuteSectionRef} style={{ marginBottom: '2rem' }}>
-              <h2 style={{
-                fontSize: '1.5rem',
-                fontWeight: '700',
-                marginBottom: '1rem',
-                color: COLORS.TEXT_DARK
-              }}>
+            <section ref={commuteSectionRef} className={styles.sectionSmall}>
+              <h2 className={styles.sectionTitle}>
                 Commute
               </h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div className={styles.commuteList}>
                 {listing.parkingOption && (
-                  <div style={{ display: 'flex', alignItems: 'start', gap: '1rem' }}>
+                  <div className={styles.infoCardRow}>
                     <svg
                       width="24"
                       height="24"
@@ -1157,22 +1640,22 @@ export default function ViewSplitLeasePage() {
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      style={{ minWidth: '24px', minHeight: '24px', color: COLORS.PRIMARY }}
+                      className={styles.infoCardIcon}
                     >
                       <path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"></path>
                       <circle cx="6.5" cy="16.5" r="2.5"></circle>
                       <circle cx="16.5" cy="16.5" r="2.5"></circle>
                     </svg>
                     <div>
-                      <div style={{ fontWeight: '600' }}>{listing.parkingOption.label}</div>
-                      <div style={{ color: COLORS.TEXT_LIGHT, fontSize: '0.875rem' }}>
+                      <div className={styles.infoCardTitle}>{listing.parkingOption.label}</div>
+                      <div className={styles.infoCardSubtextSmall}>
                         Convenient parking for your car
                       </div>
                     </div>
                   </div>
                 )}
                 {listing['Time to Station (commute)'] && (
-                  <div style={{ display: 'flex', alignItems: 'start', gap: '1rem' }}>
+                  <div className={styles.infoCardRow}>
                     <svg
                       width="24"
                       height="24"
@@ -1182,15 +1665,15 @@ export default function ViewSplitLeasePage() {
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      style={{ minWidth: '24px', minHeight: '24px', color: COLORS.PRIMARY }}
+                      className={styles.infoCardIcon}
                     >
                       <rect x="3" y="6" width="18" height="11" rx="2"></rect>
                       <path d="M7 15h.01M17 15h.01M8 6v5M16 6v5"></path>
                       <path d="M3 12h18"></path>
                     </svg>
                     <div>
-                      <div style={{ fontWeight: '600' }}>{listing['Time to Station (commute)']} to Metro</div>
-                      <div style={{ color: COLORS.TEXT_LIGHT, fontSize: '0.875rem' }}>
+                      <div className={styles.infoCardTitle}>{listing['Time to Station (commute)']} to Metro</div>
+                      <div className={styles.infoCardSubtextSmall}>
                         Quick walk to nearest station
                       </div>
                     </div>
@@ -1202,38 +1685,21 @@ export default function ViewSplitLeasePage() {
 
           {/* Amenities Section */}
           {(listing.amenitiesInUnit?.length > 0 || listing.safetyFeatures?.length > 0) && (
-            <section ref={amenitiesSectionRef} style={{ marginBottom: '2rem' }}>
-              <h2 style={{
-                fontSize: '1.5rem',
-                fontWeight: '700',
-                marginBottom: '1rem',
-                color: COLORS.TEXT_DARK
-              }}>
+            <section ref={amenitiesSectionRef} className={styles.sectionSmall}>
+              <h2 className={styles.sectionTitle}>
                 Amenities
               </h2>
 
               {listing.amenitiesInUnit?.length > 0 && (
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <h3 style={{ fontWeight: '600', marginBottom: '0.75rem' }}>In-Unit</h3>
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-                    gap: '0.75rem'
-                  }}>
+                <div className={styles.amenitiesGroup}>
+                  <h3 className={styles.amenitiesSubtitle}>In-Unit</h3>
+                  <div className={styles.amenitiesGrid}>
                     {listing.amenitiesInUnit.map(amenity => (
-                      <div
-                        key={amenity.id}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem',
-                          padding: '0.5rem'
-                        }}
-                      >
+                      <div key={amenity.id} className={styles.amenityItem}>
                         {amenity.icon && (
-                          <img src={amenity.icon} alt="" style={{ width: '24px', height: '24px' }} />
+                          <img src={amenity.icon} alt="" className={styles.amenityIcon} />
                         )}
-                        <span style={{ fontSize: '0.875rem' }}>{amenity.name}</span>
+                        <span className={styles.amenityText}>{amenity.name}</span>
                       </div>
                     ))}
                   </div>
@@ -1242,26 +1708,14 @@ export default function ViewSplitLeasePage() {
 
               {listing.safetyFeatures?.length > 0 && (
                 <div>
-                  <h3 style={{ fontWeight: '600', marginBottom: '0.75rem' }}>Safety Features</h3>
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-                    gap: '0.75rem'
-                  }}>
+                  <h3 className={styles.amenitiesSubtitle}>Safety Features</h3>
+                  <div className={styles.amenitiesGrid}>
                     {listing.safetyFeatures.map(feature => (
-                      <div
-                        key={feature.id}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem',
-                          padding: '0.5rem'
-                        }}
-                      >
+                      <div key={feature.id} className={styles.amenityItem}>
                         {feature.icon && (
-                          <img src={feature.icon} alt="" style={{ width: '24px', height: '24px' }} />
+                          <img src={feature.icon} alt="" className={styles.amenityIcon} />
                         )}
-                        <span style={{ fontSize: '0.875rem' }}>{feature.name}</span>
+                        <span className={styles.amenityText}>{feature.name}</span>
                       </div>
                     ))}
                   </div>
@@ -1272,30 +1726,17 @@ export default function ViewSplitLeasePage() {
 
           {/* House Rules */}
           {listing.houseRules?.length > 0 && (
-            <section ref={houseRulesSectionRef} style={{ marginBottom: '2rem' }}>
-              <h2 style={{
-                fontSize: '1.5rem',
-                fontWeight: '700',
-                marginBottom: '1rem',
-                color: COLORS.TEXT_DARK
-              }}>
+            <section ref={houseRulesSectionRef} className={styles.sectionSmall}>
+              <h2 className={styles.sectionTitle}>
                 House Rules
               </h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <div className={styles.houseRulesList}>
                 {listing.houseRules.map(rule => (
-                  <div
-                    key={rule.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      padding: '0.5rem'
-                    }}
-                  >
+                  <div key={rule.id} className={styles.houseRuleItem}>
                     {rule.icon && (
-                      <img src={rule.icon} alt="" style={{ width: '24px', height: '24px' }} />
+                      <img src={rule.icon} alt="" className={styles.houseRuleIcon} />
                     )}
-                    <span>{rule.name}</span>
+                    <span className={styles.houseRuleText}>{rule.name}</span>
                   </div>
                 ))}
               </div>
@@ -1303,26 +1744,11 @@ export default function ViewSplitLeasePage() {
           )}
 
           {/* Map Section */}
-          <section ref={mapSectionRef} style={{ marginBottom: '2rem' }}>
-            <h2 style={{
-              fontSize: '1.5rem',
-              fontWeight: '700',
-              marginBottom: '1rem',
-              color: COLORS.TEXT_DARK
-            }}>
+          <section ref={mapSectionRef} className={styles.sectionSmall}>
+            <h2 className={styles.sectionTitle}>
               Map
             </h2>
-            <div style={{
-              height: '400px',
-              borderRadius: '12px',
-              overflow: 'hidden',
-              border: `1px solid ${COLORS.BG_LIGHT}`,
-              position: 'relative',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: COLORS.BG_LIGHT
-            }}>
+            <div className={styles.mapContainer}>
               {shouldLoadMap ? (
                 <GoogleMap
                   ref={mapRef}
@@ -1334,11 +1760,7 @@ export default function ViewSplitLeasePage() {
                   disableAutoZoom={false}
                 />
               ) : (
-                <div style={{
-                  color: COLORS.TEXT_LIGHT,
-                  fontSize: '0.9rem',
-                  textAlign: 'center'
-                }}>
+                <div className={styles.mapPlaceholder}>
                   Loading map...
                 </div>
               )}
@@ -1347,109 +1769,114 @@ export default function ViewSplitLeasePage() {
 
           {/* Host Section */}
           {listing.host && (
-            <section style={{ marginBottom: '2rem' }}>
-              <h2 style={{
-                fontSize: '1.5rem',
-                fontWeight: '700',
-                marginBottom: '1rem',
-                color: COLORS.TEXT_DARK
-              }}>
+            <section className={styles.sectionSmall}>
+              <h2 className={styles.sectionTitle}>
                 Meet Your Host
               </h2>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '1rem',
-                padding: '1.5rem',
-                background: COLORS.BG_LIGHT,
-                borderRadius: '12px'
-              }}>
+              <div className={styles.hostCard}>
                 {listing.host['Profile Photo'] && (
                   <img
                     src={listing.host['Profile Photo']}
                     alt={listing.host['Name - First']}
-                    style={{
-                      width: '80px',
-                      height: '80px',
-                      borderRadius: '50%',
-                      objectFit: 'cover'
-                    }}
+                    className={styles.hostPhoto}
                   />
                 )}
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.25rem' }}>
+                <div className={styles.hostInfo}>
+                  <div className={styles.hostName}>
                     {listing.host['Name - First']} {listing.host['Name - Last']?.charAt(0)}.
                   </div>
-                  <div style={{ color: COLORS.TEXT_LIGHT }}>Host</div>
+                  <div className={styles.hostLabel}>Host</div>
                 </div>
-                <button
-                  onClick={() => setShowContactHostModal(true)}
-                  style={{
-                    padding: '0.75rem 1.5rem',
-                    background: COLORS.PRIMARY,
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '1rem',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    boxShadow: '0 2px 8px rgba(49, 19, 93, 0.2)'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.background = COLORS.PRIMARY_HOVER;
-                    e.target.style.transform = 'translateY(-2px)';
-                    e.target.style.boxShadow = '0 4px 12px rgba(49, 19, 93, 0.3)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.background = COLORS.PRIMARY;
-                    e.target.style.transform = '';
-                    e.target.style.boxShadow = '0 2px 8px rgba(49, 19, 93, 0.2)';
-                  }}
-                >
-                  <span style={{ fontSize: '1.25rem' }}>💬</span>
-                  <span>Message</span>
-                </button>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  {/* Hide Message button for Host users - only Guests can message */}
+                  {(loggedInUserData?.userType || getUserType()) !== 'Host' && (
+                    <button
+                      onClick={() => setShowContactHostModal(true)}
+                      style={{
+                        padding: isMobile ? '0.375rem 0.75rem' : '0.5rem 1rem',
+                        background: COLORS.PRIMARY,
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        fontSize: isMobile ? '0.8125rem' : '0.875rem',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.375rem',
+                        boxShadow: '0 2px 6px rgba(49, 19, 93, 0.2)'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.background = COLORS.PRIMARY_HOVER;
+                        e.target.style.transform = 'translateY(-1px)';
+                        e.target.style.boxShadow = '0 3px 8px rgba(49, 19, 93, 0.25)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.background = COLORS.PRIMARY;
+                        e.target.style.transform = '';
+                        e.target.style.boxShadow = '0 2px 6px rgba(49, 19, 93, 0.2)';
+                      }}
+                    >
+                      <svg
+                        width={isMobile ? '14' : '16'}
+                        height={isMobile ? '14' : '16'}
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                      </svg>
+                      <span>Message</span>
+                    </button>
+                  )}
+                  {listing.host?.userId && (
+                    <button
+                      onClick={() => window.location.href = '/account-profile'}
+                      className={styles.hostButtonSecondary}
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                      </svg>
+                      <span>Profile</span>
+                    </button>
+                  )}
+                </div>
               </div>
             </section>
           )}
 
           {/* Cancellation Policy */}
           {listing.cancellationPolicy && (
-            <section style={{ marginBottom: '2rem' }}>
-              <h2 style={{
-                fontSize: '1.5rem',
-                fontWeight: '700',
-                marginBottom: '1rem',
-                color: COLORS.TEXT_DARK
-              }}>
+            <section className={styles.sectionSmall}>
+              <h2 className={styles.sectionTitle}>
                 Cancellation Policy
               </h2>
-              <div style={{
-                padding: '1.5rem',
-                background: COLORS.BG_LIGHT,
-                borderRadius: '12px',
-                border: `1px solid ${COLORS.BG_LIGHT}`
-              }}>
-                <div style={{
-                  fontSize: '1.125rem',
-                  fontWeight: '600',
-                  marginBottom: '1rem',
-                  color: COLORS.PRIMARY
-                }}>
+              <div className={styles.cancellationCard}>
+                <div className={styles.cancellationTitle}>
                   {listing.cancellationPolicy.display}
                 </div>
 
                 {/* Best Case */}
                 {listing.cancellationPolicy.bestCaseText && (
-                  <div style={{ marginBottom: '0.75rem' }}>
-                    <div style={{ fontWeight: '600', color: '#16a34a', marginBottom: '0.25rem' }}>
-                      ✓ Best Case
+                  <div className={styles.cancellationCase}>
+                    <div className={styles.cancellationCaseBest}>
+                      Best Case
                     </div>
-                    <div style={{ color: COLORS.TEXT_LIGHT, fontSize: '0.9375rem', lineHeight: '1.6' }}>
+                    <div className={styles.cancellationCaseText}>
                       {listing.cancellationPolicy.bestCaseText}
                     </div>
                   </div>
@@ -1457,11 +1884,11 @@ export default function ViewSplitLeasePage() {
 
                 {/* Medium Case */}
                 {listing.cancellationPolicy.mediumCaseText && (
-                  <div style={{ marginBottom: '0.75rem' }}>
-                    <div style={{ fontWeight: '600', color: '#ea580c', marginBottom: '0.25rem' }}>
-                      ⚠ Medium Case
+                  <div className={styles.cancellationCase}>
+                    <div className={styles.cancellationCaseMedium}>
+                      Medium Case
                     </div>
-                    <div style={{ color: COLORS.TEXT_LIGHT, fontSize: '0.9375rem', lineHeight: '1.6' }}>
+                    <div className={styles.cancellationCaseText}>
                       {listing.cancellationPolicy.mediumCaseText}
                     </div>
                   </div>
@@ -1469,11 +1896,11 @@ export default function ViewSplitLeasePage() {
 
                 {/* Worst Case */}
                 {listing.cancellationPolicy.worstCaseText && (
-                  <div style={{ marginBottom: '0.75rem' }}>
-                    <div style={{ fontWeight: '600', color: '#dc2626', marginBottom: '0.25rem' }}>
-                      ✕ Worst Case
+                  <div className={styles.cancellationCase}>
+                    <div className={styles.cancellationCaseWorst}>
+                      Worst Case
                     </div>
-                    <div style={{ color: COLORS.TEXT_LIGHT, fontSize: '0.9375rem', lineHeight: '1.6' }}>
+                    <div className={styles.cancellationCaseText}>
                       {listing.cancellationPolicy.worstCaseText}
                     </div>
                   </div>
@@ -1481,35 +1908,22 @@ export default function ViewSplitLeasePage() {
 
                 {/* Summary Texts */}
                 {listing.cancellationPolicy.summaryTexts && Array.isArray(listing.cancellationPolicy.summaryTexts) && listing.cancellationPolicy.summaryTexts.length > 0 && (
-                  <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: `1px solid #e5e7eb` }}>
-                    <div style={{ fontWeight: '600', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
+                  <div className={styles.cancellationSummary}>
+                    <div className={styles.cancellationSummaryTitle}>
                       Summary:
                     </div>
-                    <ul style={{ margin: 0, paddingLeft: '1.25rem', color: COLORS.TEXT_LIGHT, fontSize: '0.875rem', lineHeight: '1.6' }}>
+                    <ul className={styles.cancellationSummaryList}>
                       {listing.cancellationPolicy.summaryTexts.map((text, idx) => (
-                        <li key={idx} style={{ marginBottom: '0.25rem' }}>{text}</li>
+                        <li key={idx}>{text}</li>
                       ))}
                     </ul>
                   </div>
                 )}
 
                 {/* Link to full policy page */}
-                <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: `1px solid #e5e7eb` }}>
-                  <a
-                    href="/policies#cancellation-and-refund-policy"
-                    style={{
-                      color: COLORS.PRIMARY,
-                      textDecoration: 'none',
-                      fontSize: '0.875rem',
-                      fontWeight: '600',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '0.25rem'
-                    }}
-                    onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
-                    onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
-                  >
-                    View full cancellation policy →
+                <div className={styles.cancellationLink}>
+                  <a href="/policies#cancellation-and-refund-policy" className={styles.cancellationLinkAnchor}>
+                    View full cancellation policy
                   </a>
                 </div>
               </div>
@@ -1517,88 +1931,45 @@ export default function ViewSplitLeasePage() {
           )}
         </div>
 
-        {/* RIGHT COLUMN - BOOKING WIDGET */}
-        <div
-          className="booking-widget"
-          style={{
-            position: isMobile ? 'static' : 'sticky',
-            top: isMobile ? 'auto' : 'calc(80px + 20px)',
-            alignSelf: 'flex-start',
-            maxHeight: 'calc(100vh - 80px - 40px)',
-            overflowY: 'auto',
-            height: 'fit-content',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            borderRadius: '16px',
-            padding: '28px',
-            background: 'white',
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3), 0 0 1px rgba(0, 0, 0, 0.05)',
-            backdropFilter: 'blur(10px)',
-            transition: 'transform 0.3s ease, box-shadow 0.3s ease'
-          }}
-          onMouseEnter={(e) => {
-            if (!isMobile) {
-              e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.boxShadow = '0 24px 70px rgba(0, 0, 0, 0.35), 0 0 1px rgba(0, 0, 0, 0.05)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!isMobile) {
-              e.currentTarget.style.transform = '';
-              e.currentTarget.style.boxShadow = '0 20px 60px rgba(0, 0, 0, 0.3), 0 0 1px rgba(0, 0, 0, 0.05)';
-            }
-          }}
-        >
+        {/* RIGHT COLUMN - BOOKING WIDGET (hidden on mobile) */}
+        <div className={`${styles.bookingWidget} ${isMobile ? styles.hiddenMobile : ''}`}>
           {/* Price Display */}
-          <div style={{
-            background: 'linear-gradient(135deg, #f8f9ff 0%, #faf5ff 100%)',
-            padding: '12px',
-            borderRadius: '12px',
-            marginBottom: '16px',
-            border: '1px solid #e9d5ff'
-          }}>
-            <div style={{
-              fontSize: '32px',
-              fontWeight: '800',
-              background: 'linear-gradient(135deg, #31135d 0%, #31135d 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              letterSpacing: '-1px',
-              display: 'inline-block'
-            }}>
+          <div className={styles.bookingPriceDisplay} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className={styles.bookingPriceAmount}>
               {pricingBreakdown?.valid && pricingBreakdown?.pricePerNight
                 ? `$${Number.isInteger(pricingBreakdown.pricePerNight) ? pricingBreakdown.pricePerNight : pricingBreakdown.pricePerNight.toFixed(2)}`
                 : 'Select Days'}
-              <span style={{
-                fontSize: '16px',
-                color: '#6B7280',
-                fontWeight: '500',
-                background: 'none',
-                WebkitTextFillColor: '#6B7280'
-              }}>/night</span>
+              <span className={styles.bookingPriceUnit}>/night</span>
             </div>
+            <FavoriteButton
+              listingId={listing?._id}
+              userId={loggedInUserData?.userId}
+              initialFavorited={isFavorited}
+              onToggle={(newState) => {
+                setIsFavorited(newState);
+                const displayName = listing?.name || 'Listing';
+                if (newState) {
+                  showToast(`${displayName} added to favorites`, 'success');
+                } else {
+                  showToast(`${displayName} removed from favorites`, 'info');
+                }
+              }}
+              onRequireAuth={() => setShowAuthModal(true)}
+              size="large"
+              variant="inline"
+            />
           </div>
 
           {/* Move-in Date */}
-          <div style={{ marginBottom: '10px' }}>
-            <label style={{
-              fontSize: '12px',
-              fontWeight: '700',
-              color: '#31135d',
-              marginBottom: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>
+          <div className={styles.bookingFieldGroup}>
+            <label className={styles.bookingLabel}>
               <span
                 onClick={(e) => {
                   e.stopPropagation();
-                  console.log('Move-in text clicked, current state:', activeInfoTooltip);
+                  logger.debug('Move-in text clicked, current state:', activeInfoTooltip);
                   setActiveInfoTooltip(activeInfoTooltip === 'moveIn' ? null : 'moveIn');
                 }}
-                style={{ cursor: 'pointer' }}
+                className={styles.bookingLabelClickable}
               >
                 Ideal Move-In
               </span>
@@ -1606,10 +1977,10 @@ export default function ViewSplitLeasePage() {
                 ref={moveInInfoRef}
                 onClick={(e) => {
                   e.stopPropagation();
-                  console.log('Move-in info icon clicked, current state:', activeInfoTooltip);
+                  logger.debug('Move-in info icon clicked, current state:', activeInfoTooltip);
                   setActiveInfoTooltip(activeInfoTooltip === 'moveIn' ? null : 'moveIn');
                 }}
-                style={{ width: '16px', height: '16px', color: '#9CA3AF', cursor: 'pointer' }}
+                className={styles.bookingInfoIcon}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -1617,107 +1988,35 @@ export default function ViewSplitLeasePage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
             </label>
-            <div style={{ position: 'relative', marginBottom: '8px' }}>
+            <div className={styles.bookingInputWrapper}>
               <input
                 type="date"
                 value={moveInDate || ''}
                 min={minMoveInDate}
                 onChange={(e) => setMoveInDate(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  border: '2px solid #E5E7EB',
-                  borderRadius: '10px',
-                  fontSize: '15px',
-                  fontWeight: '500',
-                  color: '#111827',
-                  transition: 'all 0.2s ease',
-                  cursor: 'pointer',
-                  background: 'white',
-                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.borderColor = '#31135d';
-                  e.target.style.boxShadow = '0 4px 6px rgba(49, 19, 93, 0.1)';
-                }}
-                onMouseLeave={(e) => {
-                  if (document.activeElement !== e.target) {
-                    e.target.style.borderColor = '#E5E7EB';
-                    e.target.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)';
-                  }
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = '#31135d';
-                  e.target.style.boxShadow = '0 0 0 4px rgba(49, 19, 93, 0.15)';
-                  e.target.style.transform = 'translateY(-1px)';
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = '#E5E7EB';
-                  e.target.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)';
-                  e.target.style.transform = '';
-                }}
+                className={styles.bookingDateInput}
               />
             </div>
-            <div style={{
-              fontSize: '12px',
-              color: '#6B7280',
-              lineHeight: '1.4',
-              marginBottom: '10px',
-              fontWeight: '400',
-              paddingLeft: '4px'
-            }}>
+            <div className={styles.bookingHelpText}>
               Minimum 2 weeks from today. Date auto-updates based on selected days.
             </div>
           </div>
 
           {/* Strict Mode */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: '10px',
-              marginBottom: '14px',
-              padding: '12px',
-              background: 'linear-gradient(135deg, #f8f9ff 0%, #faf5ff 100%)',
-              borderRadius: '10px',
-              border: '1px solid #e9d5ff',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'linear-gradient(135deg, #f5f3ff 0%, #faf5ff 100%)';
-              e.currentTarget.style.borderColor = '#d8b4fe';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'linear-gradient(135deg, #f8f9ff 0%, #faf5ff 100%)';
-              e.currentTarget.style.borderColor = '#e9d5ff';
-            }}
-          >
+          <div className={styles.bookingStrictMode}>
             <input
               type="checkbox"
               checked={strictMode}
               onChange={() => setStrictMode(!strictMode)}
-              style={{
-                width: '18px',
-                height: '18px',
-                cursor: 'pointer',
-                accentColor: '#31135d',
-                marginTop: '2px',
-                flexShrink: 0
-              }}
+              className={styles.bookingCheckbox}
             />
-            <label style={{
-              fontSize: '14px',
-              color: '#111827',
-              userSelect: 'none',
-              lineHeight: '1.5',
-              fontWeight: '500'
-            }}>
+            <label className={styles.bookingCheckboxLabel}>
               <span
                 onClick={(e) => {
                   e.stopPropagation();
                   setActiveInfoTooltip(activeInfoTooltip === 'flexibility' ? null : 'flexibility');
                 }}
-                style={{ cursor: 'pointer' }}
+                className={styles.bookingLabelClickable}
               >
                 Strict (no negotiation on exact move in)
               </span>
@@ -1727,15 +2026,7 @@ export default function ViewSplitLeasePage() {
                   e.stopPropagation();
                   setActiveInfoTooltip(activeInfoTooltip === 'flexibility' ? null : 'flexibility');
                 }}
-                style={{
-                  display: 'inline-block',
-                  width: '14px',
-                  height: '14px',
-                  verticalAlign: 'middle',
-                  marginLeft: '2px',
-                  opacity: 0.6,
-                  cursor: 'pointer'
-                }}
+                className={styles.bookingInfoIcon}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -1745,15 +2036,9 @@ export default function ViewSplitLeasePage() {
             </label>
           </div>
 
-          {/* Weekly Schedule Selector */}
-          {scheduleSelectorListing && (
-            <div style={{
-              marginBottom: '14px',
-              padding: '12px',
-              background: 'linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)',
-              borderRadius: '12px',
-              border: '1px solid #E5E7EB'
-            }}>
+          {/* Weekly Schedule Selector - Only render on desktop to prevent race conditions with mobile instances */}
+          {!isMobile && scheduleSelectorListing && (
+            <div className={styles.bookingScheduleWrapper}>
               <ListingScheduleSelector
                 listing={scheduleSelectorListing}
                 initialSelectedDays={selectedDayObjects}
@@ -1764,29 +2049,49 @@ export default function ViewSplitLeasePage() {
                 onPriceChange={handlePriceChange}
                 showPricing={false}
               />
+
+              {/* Listing's weekly pattern info + custom schedule option */}
+              <div className={styles.bookingScheduleInfo}>
+                <span>This listing is </span>
+                <strong className={styles.bookingScheduleHighlight}>
+                  {listing?.['Weeks offered'] || 'Every week'}
+                </strong>
+                <span>. </span>
+                <button
+                  onClick={() => setShowCustomScheduleInput(!showCustomScheduleInput)}
+                  className={styles.bookingCustomScheduleToggle}
+                >
+                  {showCustomScheduleInput ? 'Hide custom schedule' : 'Click here if you want to specify another recurrent schedule'}
+                </button>
+              </div>
+
+              {/* Custom schedule freeform input */}
+              {showCustomScheduleInput && (
+                <div className={styles.bookingCustomScheduleInput}>
+                  <textarea
+                    value={customScheduleDescription}
+                    onChange={(e) => setCustomScheduleDescription(e.target.value)}
+                    placeholder="Describe your preferred schedule pattern in detail (e.g., 'I need the space every other week starting January 15th' or 'Weekdays only for the first month, then full weeks')"
+                    className={styles.bookingTextarea}
+                  />
+                  <p className={styles.bookingCustomScheduleHelp}>
+                    The host will review your custom schedule request and may adjust the proposal accordingly.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
           {/* Reservation Span */}
-          <div style={{ marginBottom: '12px' }}>
-            <label style={{
-              fontSize: '12px',
-              fontWeight: '700',
-              color: '#31135d',
-              marginBottom: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>
+          <div className={styles.bookingFieldGroup}>
+            <label className={styles.bookingLabel}>
               <span
                 onClick={(e) => {
                   e.stopPropagation();
-                  console.log('Reservation span text clicked, current state:', activeInfoTooltip);
+                  logger.debug('Reservation span text clicked, current state:', activeInfoTooltip);
                   setActiveInfoTooltip(activeInfoTooltip === 'reservationSpan' ? null : 'reservationSpan');
                 }}
-                style={{ cursor: 'pointer' }}
+                className={styles.bookingLabelClickable}
               >
                 Reservation Span
               </span>
@@ -1794,10 +2099,10 @@ export default function ViewSplitLeasePage() {
                 ref={reservationSpanInfoRef}
                 onClick={(e) => {
                   e.stopPropagation();
-                  console.log('Reservation span info icon clicked, current state:', activeInfoTooltip);
+                  logger.debug('Reservation span info icon clicked, current state:', activeInfoTooltip);
                   setActiveInfoTooltip(activeInfoTooltip === 'reservationSpan' ? null : 'reservationSpan');
                 }}
-                style={{ width: '16px', height: '16px', color: '#9CA3AF', cursor: 'pointer' }}
+                className={styles.bookingInfoIcon}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -1805,43 +2110,11 @@ export default function ViewSplitLeasePage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
             </label>
-            <div style={{ position: 'relative' }}>
+            <div className={styles.bookingSelectWrapper}>
               <select
                 value={reservationSpan}
                 onChange={(e) => setReservationSpan(Number(e.target.value))}
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  paddingRight: '40px',
-                  border: '2px solid #E5E7EB',
-                  borderRadius: '10px',
-                  fontSize: '15px',
-                  fontWeight: '500',
-                  color: '#111827',
-                  background: 'white',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  appearance: 'none',
-                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.borderColor = '#31135d';
-                  e.target.style.boxShadow = '0 4px 6px rgba(49, 19, 93, 0.1)';
-                }}
-                onMouseLeave={(e) => {
-                  if (document.activeElement !== e.target) {
-                    e.target.style.borderColor = '#E5E7EB';
-                    e.target.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)';
-                  }
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = '#31135d';
-                  e.target.style.boxShadow = '0 0 0 4px rgba(49, 19, 93, 0.15)';
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = '#E5E7EB';
-                  e.target.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)';
-                }}
+                className={styles.bookingSelect}
               >
                 {[6, 7, 8, 9, 10, 12, 13, 16, 17, 20, 22, 26].map(weeks => (
                   <option key={weeks} value={weeks}>
@@ -1849,39 +2122,21 @@ export default function ViewSplitLeasePage() {
                   </option>
                 ))}
               </select>
-              <div style={{
-                position: 'absolute',
-                right: '14px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                width: '0',
-                height: '0',
-                borderLeft: '5px solid transparent',
-                borderRight: '5px solid transparent',
-                borderTop: '5px solid #31135d',
-                pointerEvents: 'none'
-              }}></div>
+              <div className={styles.bookingSelectArrow}></div>
             </div>
+            {/* Schedule Pattern Highlight - shows actual weeks for alternating patterns */}
+            <SchedulePatternHighlight
+              reservationSpan={reservationSpan}
+              weeksOffered={listing?.['Weeks offered']}
+            />
           </div>
 
           {/* Price Breakdown */}
-          <div style={{
-            marginBottom: '12px',
-            padding: '12px',
-            background: 'linear-gradient(135deg, #f9fafb 0%, #ffffff 100%)',
-            borderRadius: '10px',
-            border: '1px solid #E5E7EB'
-          }}>
-            {console.log('Rendering prices - pricingBreakdown:', pricingBreakdown)}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '0',
-              fontSize: '15px'
-            }}>
-              <span style={{ color: '#111827', fontWeight: '500' }}>4-Week Rent</span>
-              <span style={{ color: '#111827', fontWeight: '700', fontSize: '16px' }}>
+          <div className={styles.bookingPriceBreakdown}>
+            {logger.debug('Rendering prices - pricingBreakdown:', pricingBreakdown)}
+            <div className={styles.bookingPriceRow}>
+              <span className={styles.bookingPriceLabel}>4-Week Rent</span>
+              <span className={styles.bookingPriceValue}>
                 {pricingBreakdown?.valid && pricingBreakdown?.fourWeekRent
                   ? formatPrice(pricingBreakdown.fourWeekRent)
                   : priceMessage || 'Please Add More Days'}
@@ -1890,27 +2145,9 @@ export default function ViewSplitLeasePage() {
           </div>
 
           {/* Total Row */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '12px 0',
-            borderTop: '2px solid #E5E7EB',
-            marginBottom: '10px'
-          }}>
-            <span style={{
-              fontSize: '16px',
-              fontWeight: '700',
-              color: '#111827'
-            }}>Reservation Estimated Total</span>
-            <span style={{
-              fontSize: '28px',
-              fontWeight: '800',
-              background: 'linear-gradient(135deg, #31135d 0%, #31135d 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text'
-            }}>
+          <div className={styles.bookingTotalRow}>
+            <span className={styles.bookingTotalLabel}>Reservation Estimated Total</span>
+            <span className={styles.bookingTotalValue}>
               {pricingBreakdown?.valid && pricingBreakdown?.reservationTotal
                 ? formatPrice(pricingBreakdown.reservationTotal)
                 : priceMessage || 'Please Add More Days'}
@@ -1919,155 +2156,80 @@ export default function ViewSplitLeasePage() {
 
           {/* Create Proposal Button */}
           <button
-            onClick={(e) => {
-              if (scheduleValidation?.valid && pricingBreakdown?.valid) {
-                e.target.style.transform = 'scale(0.98)';
-                setTimeout(() => {
-                  e.target.style.transform = '';
-                }, 150);
+            onClick={() => {
+              if (scheduleValidation?.valid && pricingBreakdown?.valid && !existingProposalForListing) {
                 handleCreateProposal();
               }
             }}
-            disabled={!scheduleValidation?.valid || !pricingBreakdown?.valid}
-            style={{
-              width: '100%',
-              padding: '14px',
-              background: scheduleValidation?.valid && pricingBreakdown?.valid
-                ? 'linear-gradient(135deg, #31135d 0%, #31135d 100%)'
-                : '#D1D5DB',
-              color: 'white',
-              border: 'none',
-              borderRadius: '10px',
-              fontSize: '16px',
-              fontWeight: '700',
-              cursor: scheduleValidation?.valid && pricingBreakdown?.valid ? 'pointer' : 'not-allowed',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              boxShadow: scheduleValidation?.valid && pricingBreakdown?.valid
-                ? '0 4px 14px rgba(49, 19, 93, 0.4)'
-                : 'none',
-              position: 'relative',
-              overflow: 'hidden'
-            }}
-            onMouseEnter={(e) => {
-              if (scheduleValidation?.valid && pricingBreakdown?.valid) {
-                e.target.style.transform = 'translateY(-2px)';
-                e.target.style.boxShadow = '0 8px 24px rgba(49, 19, 93, 0.5)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (scheduleValidation?.valid && pricingBreakdown?.valid) {
-                e.target.style.transform = '';
-                e.target.style.boxShadow = '0 4px 14px rgba(49, 19, 93, 0.4)';
-              }
-            }}
+            disabled={!scheduleValidation?.valid || !pricingBreakdown?.valid || !!existingProposalForListing}
+            className={`${styles.bookingCreateButton} ${
+              !existingProposalForListing && scheduleValidation?.valid && pricingBreakdown?.valid
+                ? styles.bookingCreateButtonEnabled
+                : styles.bookingCreateButtonDisabled
+            }`}
           >
-            {pricingBreakdown?.valid && pricingBreakdown?.pricePerNight
-              ? `Create Proposal at $${Number.isInteger(pricingBreakdown.pricePerNight) ? pricingBreakdown.pricePerNight : pricingBreakdown.pricePerNight.toFixed(2)}/night`
-              : 'Update Split Schedule Above'}
+            {existingProposalForListing
+              ? 'Proposal Already Exists'
+              : pricingBreakdown?.valid && pricingBreakdown?.pricePerNight
+                ? `Create Proposal at $${Number.isInteger(pricingBreakdown.pricePerNight) ? pricingBreakdown.pricePerNight : pricingBreakdown.pricePerNight.toFixed(2)}/night`
+                : 'Update Split Schedule Above'}
           </button>
+
+          {/* Link to existing proposal */}
+          {existingProposalForListing && loggedInUserData?.userId && (
+            <a
+              href={`/guest-proposals/${loggedInUserData.userId}?proposal=${existingProposalForListing._id}`}
+              className={styles.bookingExistingProposalLink}
+            >
+              View your proposal in Dashboard
+            </a>
+          )}
         </div>
       </main>
 
       {/* Tutorial Modal */}
       {showTutorialModal && (
         <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '1rem'
-          }}
+          className={styles.modalOverlay}
           onClick={() => setShowTutorialModal(false)}
         >
           <div
-            style={{
-              background: 'white',
-              borderRadius: '12px',
-              padding: '2rem',
-              maxWidth: '500px',
-              position: 'relative'
-            }}
+            className={styles.tutorialModalContent}
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => setShowTutorialModal(false)}
-              style={{
-                position: 'absolute',
-                top: '1rem',
-                right: '1rem',
-                background: 'none',
-                border: 'none',
-                fontSize: '1.5rem',
-                cursor: 'pointer',
-                color: COLORS.TEXT_LIGHT
-              }}
+              className={styles.tutorialModalClose}
             >
               ×
             </button>
 
-            <h2 style={{
-              fontSize: '1.5rem',
-              fontWeight: '700',
-              marginBottom: '1rem',
-              color: COLORS.TEXT_DARK
-            }}>
+            <h2 className={styles.tutorialModalTitle}>
               How to set a split schedule
             </h2>
 
-            <p style={{
-              lineHeight: '1.6',
-              color: COLORS.TEXT_LIGHT,
-              marginBottom: '1.5rem'
-            }}>
+            <p className={styles.tutorialModalText}>
               To create a valid split schedule, you must select consecutive days (for example, Monday through Friday).
               Non-consecutive selections like Monday, Wednesday, Friday are not allowed.
             </p>
 
-            <div style={{
-              padding: '1rem',
-              background: COLORS.BG_LIGHT,
-              borderRadius: '8px',
-              marginBottom: '1.5rem',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🏢</div>
-              <div style={{ fontSize: '0.875rem', color: COLORS.TEXT_DARK }}>
+            <div className={styles.tutorialModalHighlight}>
+              <div className={styles.tutorialModalIcon}>🏢</div>
+              <div className={styles.tutorialModalDescription}>
                 Stay 2-5 nights a week, save up to 50% off of a comparable Airbnb
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '1rem' }}>
+            <div className={styles.tutorialModalActions}>
               <button
                 onClick={() => setShowTutorialModal(false)}
-                style={{
-                  flex: 1,
-                  padding: '0.75rem',
-                  background: COLORS.PRIMARY,
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontWeight: '600',
-                  cursor: 'pointer'
-                }}
+                className={styles.tutorialModalButtonPrimary}
               >
                 Okay
               </button>
               <button
                 onClick={() => window.location.href = '/faq.html'}
-                style={{
-                  flex: 1,
-                  padding: '0.75rem',
-                  background: 'white',
-                  color: COLORS.PRIMARY,
-                  border: `2px solid ${COLORS.PRIMARY}`,
-                  borderRadius: '8px',
-                  fontWeight: '600',
-                  cursor: 'pointer'
-                }}
+                className={styles.tutorialModalButtonSecondary}
               >
                 Take me to FAQ
               </button>
@@ -2079,38 +2241,12 @@ export default function ViewSplitLeasePage() {
       {/* Photo Modal */}
       {showPhotoModal && listing.photos && listing.photos.length > 0 && (
         <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.9)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: isMobile ? '1rem' : '2rem'
-          }}
+          className={styles.photoModalOverlay}
           onClick={() => setShowPhotoModal(false)}
         >
           <button
             onClick={() => setShowPhotoModal(false)}
-            style={{
-              position: 'absolute',
-              top: isMobile ? '1rem' : '2rem',
-              right: isMobile ? '1rem' : '2rem',
-              background: 'rgba(255,255,255,0.2)',
-              border: 'none',
-              color: 'white',
-              fontSize: '2rem',
-              width: '48px',
-              height: '48px',
-              borderRadius: '50%',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 1002
-            }}
+            className={styles.photoModalCloseTop}
           >
             ×
           </button>
@@ -2118,53 +2254,22 @@ export default function ViewSplitLeasePage() {
           <img
             src={listing.photos[currentPhotoIndex]?.Photo}
             alt={`${listing.Name} - photo ${currentPhotoIndex + 1}`}
-            style={{
-              width: isMobile ? '95vw' : '90vw',
-              height: isMobile ? '70vh' : '75vh',
-              objectFit: 'contain',
-              marginBottom: isMobile ? '6rem' : '5rem'
-            }}
+            className={styles.photoModalImage}
             onClick={(e) => e.stopPropagation()}
           />
 
-          <div style={{
-            position: 'absolute',
-            bottom: isMobile ? '4rem' : '4.5rem',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            display: 'flex',
-            gap: isMobile ? '0.5rem' : '1.5rem',
-            alignItems: 'center',
-            flexWrap: isMobile ? 'nowrap' : 'nowrap',
-            zIndex: 1001
-          }}>
+          <div className={styles.photoModalControls}>
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 setCurrentPhotoIndex(prev => (prev > 0 ? prev - 1 : listing.photos.length - 1));
               }}
-              style={{
-                background: 'rgba(255,255,255,0.2)',
-                border: 'none',
-                color: 'white',
-                padding: isMobile ? '0.5rem 1rem' : '0.75rem 1.5rem',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontWeight: '600',
-                fontSize: isMobile ? '0.875rem' : '1rem',
-                whiteSpace: 'nowrap'
-              }}
+              className={styles.photoModalNavButton}
             >
               ← Previous
             </button>
 
-            <span style={{
-              color: 'white',
-              fontSize: isMobile ? '0.75rem' : '0.875rem',
-              whiteSpace: 'nowrap',
-              minWidth: isMobile ? '60px' : '80px',
-              textAlign: 'center'
-            }}>
+            <span className={styles.photoModalCounter}>
               {currentPhotoIndex + 1} / {listing.photos.length}
             </span>
 
@@ -2173,17 +2278,7 @@ export default function ViewSplitLeasePage() {
                 e.stopPropagation();
                 setCurrentPhotoIndex(prev => (prev < listing.photos.length - 1 ? prev + 1 : 0));
               }}
-              style={{
-                background: 'rgba(255,255,255,0.2)',
-                border: 'none',
-                color: 'white',
-                padding: isMobile ? '0.5rem 1rem' : '0.75rem 1.5rem',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontWeight: '600',
-                fontSize: isMobile ? '0.875rem' : '1rem',
-                whiteSpace: 'nowrap'
-              }}
+              className={styles.photoModalNavButton}
             >
               Next →
             </button>
@@ -2191,21 +2286,7 @@ export default function ViewSplitLeasePage() {
 
           <button
             onClick={() => setShowPhotoModal(false)}
-            style={{
-              position: 'absolute',
-              bottom: isMobile ? '1rem' : '1.5rem',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              background: 'white',
-              border: 'none',
-              color: COLORS.TEXT_DARK,
-              padding: isMobile ? '0.5rem 2rem' : '0.75rem 2.5rem',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: '600',
-              fontSize: isMobile ? '0.875rem' : '1rem',
-              zIndex: 1001
-            }}
+            className={styles.photoModalCloseBottom}
           >
             Close
           </button>
@@ -2222,10 +2303,48 @@ export default function ViewSplitLeasePage() {
           reservationSpan={reservationSpan}
           pricingBreakdown={priceBreakdown}
           zatConfig={zatConfig}
-          hasExistingUserData={false}
-          existingUserData={null}
+          // For ViewSplitLeasePage: User starts on REVIEW only if they have previous proposals
+          // First-time proposers (proposalCount === 0) always see UserDetailsSection first for verification
+          isFirstProposal={
+            !loggedInUserData || loggedInUserData.proposalCount === 0
+          }
+          existingUserData={loggedInUserData ? {
+            needForSpace: loggedInUserData.needForSpace || '',
+            aboutYourself: loggedInUserData.aboutMe || '',
+            hasUniqueRequirements: !!loggedInUserData.specialNeeds,
+            uniqueRequirements: loggedInUserData.specialNeeds || ''
+          } : null}
           onClose={() => setIsProposalModalOpen(false)}
           onSubmit={handleProposalSubmit}
+          isSubmitting={isSubmittingProposal}
+        />
+      )}
+
+      {/* Auth Modal for Proposal Submission */}
+      {showAuthModal && (
+        <SignUpLoginModal
+          isOpen={showAuthModal}
+          onClose={() => {
+            setShowAuthModal(false);
+            setPendingProposalData(null);
+          }}
+          initialView="signup-step1"
+          onAuthSuccess={handleAuthSuccess}
+          defaultUserType="guest"
+          skipReload={true}
+        />
+      )}
+
+      {/* Proposal Success Modal */}
+      {showSuccessModal && (
+        <ProposalSuccessModal
+          proposalId={successProposalId}
+          listingName={listing?.Name}
+          hasSubmittedRentalApp={loggedInUserData?.hasSubmittedRentalApp ?? false}
+          onClose={() => {
+            setShowSuccessModal(false);
+            setSuccessProposalId(null);
+          }}
         />
       )}
 
@@ -2238,16 +2357,20 @@ export default function ViewSplitLeasePage() {
             id: listing._id,
             title: listing.Name,
             host: {
+              userId: listing.host?.userId,  // User's Bubble ID for messaging
               name: listing.host ? `${listing.host['Name - First']} ${listing.host['Name - Last']?.charAt(0)}.` : 'Host'
             }
           }}
-          userEmail=""
+          onLoginRequired={() => {
+            setShowContactHostModal(false);
+            setShowAuthModal(true);
+          }}
         />
       )}
 
       {/* Informational Text Tooltips */}
       {(() => {
-        console.log('📚 Rendering InformationalText components:', {
+        logger.debug('📚 Rendering InformationalText components:', {
           hasAlignedSchedule: !!informationalTexts['aligned schedule with move-in'],
           hasMoveInFlexibility: !!informationalTexts['move-in flexibility'],
           hasReservationSpan: !!informationalTexts['Reservation Span'],
@@ -2302,6 +2425,256 @@ export default function ViewSplitLeasePage() {
           expandedContent={informationalTexts['Reservation Span'].desktopPlus}
           showMoreAvailable={informationalTexts['Reservation Span'].showMore}
         />
+      )}
+
+      {/* Mobile Bottom Booking Bar - hide when proposal modal or photo gallery is open */}
+      {isMobile && !isProposalModalOpen && !showPhotoModal && (
+        <>
+          {/* Overlay when expanded */}
+          {mobileBookingExpanded && (
+            <div
+              onClick={() => setMobileBookingExpanded(false)}
+              className={styles.mobileBookingOverlay}
+            />
+          )}
+
+          {/* Bottom Bar */}
+          <div
+            className={`${styles.mobileBookingBar} ${mobileBookingExpanded ? styles.mobileBookingBarExpanded : ''}`}
+          >
+            {/* Collapsed View */}
+            {!mobileBookingExpanded ? (
+              <div className={styles.mobileBookingCollapsed}>
+                {/* Schedule Selector Row */}
+                {scheduleSelectorListing && (
+                  <div className={styles.mobileBookingScheduleRow}>
+                    <ListingScheduleSelector
+                      listing={scheduleSelectorListing}
+                      initialSelectedDays={selectedDayObjects}
+                      limitToFiveNights={false}
+                      reservationSpan={reservationSpan}
+                      zatConfig={zatConfig}
+                      onSelectionChange={handleScheduleChange}
+                      onPriceChange={handlePriceChange}
+                      showPricing={false}
+                    />
+                  </div>
+                )}
+
+                {/* Price and Continue Row */}
+                <div className={styles.mobileBookingPriceRow}>
+                  {/* Price Info */}
+                  <div className={styles.mobileBookingPriceInfo} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div className={styles.mobileBookingPriceAmount}>
+                      {pricingBreakdown?.valid && pricingBreakdown?.pricePerNight
+                        ? `$${Number.isInteger(pricingBreakdown.pricePerNight) ? pricingBreakdown.pricePerNight : pricingBreakdown.pricePerNight.toFixed(2)}`
+                        : 'Select Days'}
+                      <span className={styles.mobileBookingPriceUnit}>/night</span>
+                    </div>
+                    <FavoriteButton
+                      listingId={listing?._id}
+                      userId={loggedInUserData?.userId}
+                      initialFavorited={isFavorited}
+                      onToggle={(newState) => {
+                        setIsFavorited(newState);
+                        const displayName = listing?.name || 'Listing';
+                        if (newState) {
+                          showToast(`${displayName} added to favorites`, 'success');
+                        } else {
+                          showToast(`${displayName} removed from favorites`, 'info');
+                        }
+                      }}
+                      onRequireAuth={() => setShowAuthModal(true)}
+                      size="medium"
+                      variant="inline"
+                    />
+                  </div>
+
+                  {/* Continue Button */}
+                  <button
+                    onClick={() => setMobileBookingExpanded(true)}
+                    className={styles.mobileBookingContinueButton}
+                  >
+                    Continue
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* Expanded View */
+              <div className={styles.mobileBookingExpanded}>
+                {/* Header with close button */}
+                <div className={styles.mobileBookingHeader}>
+                  <h3 className={styles.mobileBookingTitle}>
+                    Complete Your Booking
+                  </h3>
+                  <button
+                    onClick={() => setMobileBookingExpanded(false)}
+                    className={styles.mobileBookingCloseButton}
+                  >
+                    ×
+                  </button>
+                </div>
+
+                {/* Price Display */}
+                <div className={styles.mobileBookingPriceDisplay}>
+                  <div className={styles.mobileBookingPriceLarge}>
+                    {pricingBreakdown?.valid && pricingBreakdown?.pricePerNight
+                      ? `$${Number.isInteger(pricingBreakdown.pricePerNight) ? pricingBreakdown.pricePerNight : pricingBreakdown.pricePerNight.toFixed(2)}`
+                      : 'Select Days'}
+                    <span className={styles.mobileBookingPriceUnit}>/night</span>
+                  </div>
+                </div>
+
+                {/* Move-in Date */}
+                <div className={styles.mobileBookingFieldGroup}>
+                  <label className={styles.mobileBookingLabel}>
+                    Ideal Move-In
+                  </label>
+                  <input
+                    type="date"
+                    value={moveInDate || ''}
+                    min={minMoveInDate}
+                    onChange={(e) => setMoveInDate(e.target.value)}
+                    className={styles.mobileBookingDateInput}
+                  />
+                </div>
+
+                {/* Strict Mode - placed directly after Move-in Date for visual grouping */}
+                <div className={styles.mobileBookingStrictMode}>
+                  <input
+                    type="checkbox"
+                    checked={strictMode}
+                    onChange={() => setStrictMode(!strictMode)}
+                    className={styles.mobileBookingCheckbox}
+                  />
+                  <label className={styles.mobileBookingCheckboxLabel}>
+                    Strict (no negotiation on exact move in)
+                  </label>
+                </div>
+
+                {/* Weekly Schedule Selector */}
+                {scheduleSelectorListing && (
+                  <div className={styles.mobileBookingScheduleWrapper}>
+                    <ListingScheduleSelector
+                      listing={scheduleSelectorListing}
+                      initialSelectedDays={selectedDayObjects}
+                      limitToFiveNights={false}
+                      reservationSpan={reservationSpan}
+                      zatConfig={zatConfig}
+                      onSelectionChange={handleScheduleChange}
+                      onPriceChange={handlePriceChange}
+                      showPricing={false}
+                    />
+
+                    {/* Listing's weekly pattern info + custom schedule option (Mobile) */}
+                    <div className={styles.mobileBookingScheduleInfo}>
+                      <span>This listing is </span>
+                      <strong className={styles.mobileBookingScheduleHighlight}>
+                        {listing?.['Weeks offered'] || 'Every week'}
+                      </strong>
+                      <span>. </span>
+                      <button
+                        onClick={() => setShowCustomScheduleInput(!showCustomScheduleInput)}
+                        className={styles.mobileBookingCustomScheduleToggle}
+                      >
+                        {showCustomScheduleInput ? 'Hide custom schedule' : 'Click here if you want to specify another recurrent schedule'}
+                      </button>
+                    </div>
+
+                    {/* Custom schedule freeform input (Mobile) */}
+                    {showCustomScheduleInput && (
+                      <div className={styles.mobileBookingCustomScheduleInput}>
+                        <textarea
+                          value={customScheduleDescription}
+                          onChange={(e) => setCustomScheduleDescription(e.target.value)}
+                          placeholder="Describe your preferred schedule pattern in detail..."
+                          className={styles.mobileBookingTextarea}
+                        />
+                        <p className={styles.mobileBookingCustomScheduleHelp}>
+                          The host will review your custom schedule request.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Reservation Span */}
+                <div className={styles.mobileBookingFieldGroup}>
+                  <label className={styles.mobileBookingLabel}>
+                    Reservation Span
+                  </label>
+                  <select
+                    value={reservationSpan}
+                    onChange={(e) => setReservationSpan(Number(e.target.value))}
+                    className={styles.mobileBookingSelectInput}
+                  >
+                    {[6, 7, 8, 9, 10, 12, 13, 16, 17, 20, 22, 26].map(weeks => (
+                      <option key={weeks} value={weeks}>
+                        {weeks} weeks {weeks >= 12 ? `(${Math.floor(weeks / 4)} months)` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Price Breakdown */}
+                <div className={styles.mobileBookingPriceBreakdown}>
+                  <div className={styles.mobileBookingPriceBreakdownRow}>
+                    <span className={styles.mobileBookingPriceBreakdownLabel}>4-Week Rent</span>
+                    <span className={styles.mobileBookingPriceBreakdownValue}>
+                      {pricingBreakdown?.valid && pricingBreakdown?.fourWeekRent
+                        ? formatPrice(pricingBreakdown.fourWeekRent)
+                        : '—'}
+                    </span>
+                  </div>
+                  <div className={styles.mobileBookingTotalRow}>
+                    <span className={styles.mobileBookingTotalLabel}>
+                      Reservation Total
+                    </span>
+                    <span className={styles.mobileBookingTotalValue}>
+                      {pricingBreakdown?.valid && pricingBreakdown?.reservationTotal
+                        ? formatPrice(pricingBreakdown.reservationTotal)
+                        : '—'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Create Proposal Button */}
+                <button
+                  onClick={() => {
+                    if (scheduleValidation?.valid && pricingBreakdown?.valid && !existingProposalForListing) {
+                      handleCreateProposal();
+                    }
+                  }}
+                  disabled={!scheduleValidation?.valid || !pricingBreakdown?.valid || !!existingProposalForListing}
+                  className={`${styles.mobileBookingCreateButton} ${
+                    !existingProposalForListing && scheduleValidation?.valid && pricingBreakdown?.valid
+                      ? styles.mobileBookingCreateButtonEnabled
+                      : styles.mobileBookingCreateButtonDisabled
+                  }`}
+                >
+                  {existingProposalForListing
+                    ? 'Proposal Already Exists'
+                    : pricingBreakdown?.valid && pricingBreakdown?.pricePerNight
+                      ? `Create Proposal at $${Number.isInteger(pricingBreakdown.pricePerNight) ? pricingBreakdown.pricePerNight : pricingBreakdown.pricePerNight.toFixed(2)}/night`
+                      : 'Update Split Schedule Above'}
+                </button>
+
+                {/* Link to existing proposal */}
+                {existingProposalForListing && loggedInUserData?.userId && (
+                  <a
+                    href={`/guest-proposals/${loggedInUserData.userId}?proposal=${existingProposalForListing._id}`}
+                    className={styles.mobileBookingExistingProposalLink}
+                  >
+                    View your proposal in Dashboard
+                  </a>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Spacer to prevent content from being hidden behind fixed bar */}
+          <div className={mobileBookingExpanded ? styles.mobileBookingSpacerHidden : styles.mobileBookingSpacer} />
+        </>
       )}
 
       <Footer />

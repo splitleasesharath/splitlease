@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import './LoggedInAvatar.css';
 import { useLoggedInAvatarData, getMenuVisibility, NORMALIZED_USER_TYPES } from './useLoggedInAvatarData.js';
+import ReferralModal from '../../pages/AccountProfilePage/components/ReferralModal.jsx';
+import HeaderMessagingPanel from '../HeaderMessagingPanel';
 
 /**
  * Logged In Avatar Dropdown Component
@@ -15,11 +17,12 @@ import { useLoggedInAvatarData, getMenuVisibility, NORMALIZED_USER_TYPES } from 
  *
  * Menu Visibility Rules (from Bubble.io conditionals):
  * 1. My Profile - ALWAYS visible
- * 2. My Proposals - HOST and TRIAL_HOST only
- * 3. My Proposals Suggested - HOST and TRIAL_HOST only (when proposals > 0)
- * 4. My Listings - ALL users
- * 5. Virtual Meetings - When proposals count = 0
+ * 2. My Proposals - ALWAYS visible (all users)
+ * 3. Proposals Suggested - GUEST only AND has proposals with "suggested by SL" status
+ * 4. My Listings - HOST and TRIAL_HOST only
+ * 5. Virtual Meetings - When user HAS proposals (proposalsCount > 0)
  * 6. House Manuals & Visits - GUEST: visits < 1, HOST: house manuals = 0
+ * 7. My Leases - Only when user has leases (leasesCount > 0)
  *
  * @component
  * @param {Object} props - Component props
@@ -48,10 +51,14 @@ export default function LoggedInAvatar({
   onLogout,
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [showReferralModal, setShowReferralModal] = useState(false);
+  const [showMessagingPanel, setShowMessagingPanel] = useState(false);
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 900 : false);
   const dropdownRef = useRef(null);
 
   // Fetch user data from Supabase for menu conditionals
-  const { data: supabaseData, loading: dataLoading } = useLoggedInAvatarData(user.id);
+  // Pass the userType from props as a fallback in case Supabase query doesn't return it
+  const { data: supabaseData, loading: dataLoading } = useLoggedInAvatarData(user.id, user.userType);
 
   // Get menu visibility based on Supabase data
   const menuVisibility = getMenuVisibility(supabaseData, currentPath);
@@ -65,6 +72,23 @@ export default function LoggedInAvatar({
   const effectiveLeasesCount = dataLoading ? (user.leasesCount || 0) : supabaseData.leasesCount;
   const effectiveFavoritesCount = dataLoading ? (user.favoritesCount || 0) : supabaseData.favoritesCount;
   const effectiveUnreadMessagesCount = dataLoading ? (user.unreadMessagesCount || 0) : supabaseData.unreadMessagesCount;
+  const effectiveFirstListingId = dataLoading ? null : supabaseData.firstListingId;
+  const effectiveThreadsCount = dataLoading ? 0 : (supabaseData.threadsCount || 0);
+
+  // Handle resize for mobile detection
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 900;
+      setIsMobile(mobile);
+      // Close messaging panel if transitioning to mobile while open
+      if (mobile && showMessagingPanel) {
+        setShowMessagingPanel(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [showMessagingPanel]);
 
   // Debug logging
   useEffect(() => {
@@ -169,64 +193,57 @@ export default function LoggedInAvatar({
       items.push({
         id: 'profile',
         label: 'My Profile',
-        icon: '/assets/icons/user-purple.svg',
-        path: '/account-profile',
+        icon: '/assets/icons/user-bubble-purple.svg',
+        path: `/account-profile/${user.id}`,
       });
     }
 
-    // 2. My Proposals - HOST and TRIAL_HOST only
-    if (menuVisibility.myProposals && (effectiveUserType === NORMALIZED_USER_TYPES.HOST || effectiveUserType === NORMALIZED_USER_TYPES.TRIAL_HOST)) {
+    // 2. My Proposals - Visible for all users
+    //    - Guests see their submitted proposals
+    //    - Hosts see proposals received from guests
+    if (menuVisibility.myProposals) {
       items.push({
         id: 'proposals',
         label: 'My Proposals',
         icon: '/assets/icons/file-text-purple.svg',
-        path: '/guest-proposals',
+        path: effectiveUserType === NORMALIZED_USER_TYPES.GUEST
+          ? '/guest-proposals'
+          : '/host-proposals',
         badgeCount: effectiveProposalsCount,
         badgeColor: 'purple',
       });
     }
 
-    // For GUEST users, show their proposals
-    if (effectiveUserType === NORMALIZED_USER_TYPES.GUEST) {
-      items.push({
-        id: 'guest-proposals',
-        label: 'My Proposals',
-        icon: '/assets/icons/file-text-purple.svg',
-        path: '/guest-proposals',
-        badgeCount: effectiveProposalsCount,
-        badgeColor: 'purple',
-      });
-    }
-
-    // 3. My Proposals Suggested - HOST and TRIAL_HOST only (when proposals > 0)
+    // 3. Proposals Suggested - GUEST only
+    //    Helps guests discover listings to submit proposals to
     if (menuVisibility.myProposalsSuggested) {
       items.push({
         id: 'proposals-suggested',
         label: 'Proposals Suggested',
         icon: '/assets/icons/file-text-purple.svg',
         path: '/proposals-suggested',
-        badgeCount: effectiveProposalsCount > 0 ? effectiveProposalsCount : undefined,
-        badgeColor: 'purple',
       });
     }
 
-    // 4. My Listings - Visible for all
+    // 4. My Listings - HOST and TRIAL_HOST only
     if (menuVisibility.myListings) {
+      // When user has exactly 1 listing, go directly to listing-dashboard with the ID
+      let listingsPath = '/host-overview';
+      if (effectiveListingsCount === 1 && effectiveFirstListingId) {
+        listingsPath = `/listing-dashboard?id=${effectiveFirstListingId}`;
+      }
+
       items.push({
         id: 'listings',
         label: 'My Listings',
         icon: '/assets/icons/list-purple.svg',
-        path: effectiveListingsCount > 1
-          ? '/host-overview'
-          : effectiveListingsCount === 1
-            ? '/host-dashboard'
-            : '/host-overview',
+        path: listingsPath,
         badgeCount: effectiveListingsCount,
         badgeColor: 'purple',
       });
     }
 
-    // 5. Virtual Meetings - When proposals count = 0
+    // 5. Virtual Meetings - When user HAS proposals (proposalsCount > 0)
     if (menuVisibility.virtualMeetings) {
       items.push({
         id: 'virtual-meetings',
@@ -254,7 +271,7 @@ export default function LoggedInAvatar({
       });
     }
 
-    // 7. My Leases - Always visible
+    // 7. My Leases - Only when user has leases (leasesCount > 0)
     if (menuVisibility.myLeases) {
       items.push({
         id: 'leases',
@@ -286,7 +303,7 @@ export default function LoggedInAvatar({
         id: 'messages',
         label: 'Messages',
         icon: '/assets/icons/message-circle-purple.svg',
-        path: '/messaging',
+        path: '/messages',
         badgeCount: effectiveUnreadMessagesCount,
         badgeColor: 'red',
       });
@@ -300,7 +317,7 @@ export default function LoggedInAvatar({
         icon: '/assets/icons/clipboard-purple.svg',
         path: effectiveUserType === NORMALIZED_USER_TYPES.HOST
           ? '/account'
-          : '/rental-application',
+          : `/account-profile?section=rental-application`,
       });
     }
 
@@ -332,13 +349,22 @@ export default function LoggedInAvatar({
     onNavigate(item.path);
   };
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     setIsOpen(false);
-    onLogout();
+    await onLogout();
   };
 
   const isActivePath = (itemPath) => {
-    return currentPath.includes(itemPath.replace('/', ''));
+    // Items without a path (e.g., Referral modal) are never "active"
+    if (!itemPath) return false;
+
+    // Normalize paths for comparison (remove query params and hash)
+    const normalizedCurrentPath = currentPath.split('?')[0].split('#')[0];
+    const normalizedItemPath = itemPath.split('?')[0].split('#')[0];
+
+    // Check if current path matches or starts with the item path
+    return normalizedCurrentPath === normalizedItemPath ||
+           normalizedCurrentPath.startsWith(normalizedItemPath + '/');
   };
 
   const menuItems = getMenuItems();
@@ -346,8 +372,70 @@ export default function LoggedInAvatar({
   // Extract first name from full name
   const firstName = user.name.split(' ')[0];
 
+  // Check if on a page with light header for styling
+  const isSearchPage = currentPath.includes('search');
+  const isLightHeaderPage = currentPath.includes('favorite-listings') || currentPath.includes('listing-dashboard');
+
+  // Hide messaging icon on the messages page (redundant since user is already there)
+  const isMessagesPage = currentPath.includes('/messages');
+
   return (
-    <div className="logged-in-avatar" ref={dropdownRef}>
+    <div className={`logged-in-avatar ${isSearchPage ? 'on-search-page' : ''} ${isLightHeaderPage ? 'on-light-header' : ''}`} ref={dropdownRef}>
+      {/* Messaging icon - only shows when user has message threads AND not on messages page */}
+      {effectiveThreadsCount > 0 && !isMessagesPage && (
+        <div className="header-messages-wrapper">
+          <button
+            className="header-messages-icon"
+            aria-label={`Messages${effectiveUnreadMessagesCount > 0 ? ` (${effectiveUnreadMessagesCount} unread)` : ''}`}
+            aria-expanded={showMessagingPanel}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+
+              if (isMobile) {
+                // Mobile: Navigate to full messaging page
+                onNavigate('/messages');
+              } else {
+                // Desktop: Toggle messaging panel
+                setShowMessagingPanel(!showMessagingPanel);
+                // Close avatar dropdown if open
+                if (isOpen) setIsOpen(false);
+              }
+            }}
+          >
+            {/* Envelope/Mail icon */}
+            <svg
+              width="32"
+              height="32"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="2" y="4" width="20" height="16" rx="2" />
+              <path d="M22 6L12 13L2 6" />
+            </svg>
+            {effectiveUnreadMessagesCount > 0 && (
+              <span className="messages-badge">
+                {effectiveUnreadMessagesCount > 9 ? '9+' : effectiveUnreadMessagesCount}
+              </span>
+            )}
+          </button>
+
+          {/* Messaging Panel - Desktop only */}
+          {showMessagingPanel && !isMobile && (
+            <HeaderMessagingPanel
+              isOpen={showMessagingPanel}
+              onClose={() => setShowMessagingPanel(false)}
+              userBubbleId={user.id}
+              userName={firstName}
+              userAvatar={user.avatarUrl}
+            />
+          )}
+        </div>
+      )}
       <button
         className="avatar-button"
         onClick={(e) => {

@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import type { Features } from '../types/listing.types';
-import { AMENITIES_INSIDE, AMENITIES_OUTSIDE } from '../types/listing.types';
-import { getNeighborhoodByZipCode } from '../utils/neighborhoodService';
-import { getCommonInUnitAmenities, getCommonBuildingAmenities } from '../utils/amenitiesService';
+import { getNeighborhoodDescriptionWithFallback } from '../utils/neighborhoodService';
+import { getCommonInUnitAmenities, getCommonBuildingAmenities, getAllInUnitAmenities, getAllBuildingAmenities } from '../utils/amenitiesService';
+import { generateListingDescription, extractListingDataFromDraft } from '../../../../lib/aiService';
 
 interface Section2Props {
   data: Features;
@@ -10,6 +10,7 @@ interface Section2Props {
   onNext: () => void;
   onBack: () => void;
   zipCode?: string;
+  showToast: (options: { title: string; content?: string; type?: 'success' | 'error' | 'warning' | 'info'; duration?: number }) => void;
 }
 
 export const Section2Features: React.FC<Section2Props> = ({
@@ -17,12 +18,52 @@ export const Section2Features: React.FC<Section2Props> = ({
   onChange,
   onNext,
   onBack,
-  zipCode
+  zipCode,
+  showToast
 }) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoadingNeighborhood, setIsLoadingNeighborhood] = useState(false);
   const [isLoadingInUnitAmenities, setIsLoadingInUnitAmenities] = useState(false);
   const [isLoadingBuildingAmenities, setIsLoadingBuildingAmenities] = useState(false);
+  const [isLoadingDescription, setIsLoadingDescription] = useState(false);
+
+  // State for amenities fetched from database
+  const [inUnitAmenities, setInUnitAmenities] = useState<string[]>([]);
+  const [buildingAmenities, setBuildingAmenities] = useState<string[]>([]);
+  const [isLoadingAmenityLists, setIsLoadingAmenityLists] = useState(true);
+
+  // Fetch amenities from database on mount
+  useEffect(() => {
+    const fetchAmenities = async () => {
+      setIsLoadingAmenityLists(true);
+      try {
+        const [inUnit, building] = await Promise.all([
+          getAllInUnitAmenities(),
+          getAllBuildingAmenities()
+        ]);
+        setInUnitAmenities(inUnit);
+        setBuildingAmenities(building);
+        console.log('[Section2Features] Loaded amenities from database:', { inUnit: inUnit.length, building: building.length });
+      } catch (error) {
+        console.error('[Section2Features] Error fetching amenities:', error);
+      } finally {
+        setIsLoadingAmenityLists(false);
+      }
+    };
+
+    fetchAmenities();
+  }, []);
+
+  // Scroll to first error field
+  const scrollToFirstError = useCallback((errorKeys: string[]) => {
+    if (errorKeys.length === 0) return;
+    const firstErrorKey = errorKeys[0];
+    const element = document.getElementById(firstErrorKey);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      element.focus();
+    }
+  }, []);
 
   const handleChange = (field: keyof Features, value: any) => {
     onChange({ ...data, [field]: value });
@@ -79,16 +120,41 @@ export const Section2Features: React.FC<Section2Props> = ({
     }
   };
 
-  const loadTemplate = () => {
-    const template = `Welcome to our comfortable and well-appointed space! This listing offers a great location with easy access to local amenities and transportation.
+  const loadTemplate = async () => {
+    setIsLoadingDescription(true);
 
-The space features modern furnishings and all the essentials you need for a pleasant stay. You'll have access to [list specific areas/amenities].
+    try {
+      // Extract listing data from localStorage draft
+      const listingData = extractListingDataFromDraft();
 
-The neighborhood is [describe neighborhood characteristics - quiet, vibrant, family-friendly, etc.] with [mention nearby attractions, restaurants, shops, or transit].
+      if (!listingData) {
+        alert('Please complete Section 1 (Address) first to generate a description.');
+        return;
+      }
 
-We look forward to hosting you!`;
+      // Add current amenities from this section's data
+      const dataForGeneration = {
+        ...listingData,
+        amenitiesInsideUnit: data.amenitiesInsideUnit,
+        amenitiesOutsideUnit: data.amenitiesOutsideUnit,
+      };
 
-    handleChange('descriptionOfLodging', template);
+      console.log('[Section2Features] Generating AI description with data:', dataForGeneration);
+      const generatedDescription = await generateListingDescription(dataForGeneration);
+
+      if (generatedDescription) {
+        handleChange('descriptionOfLodging', generatedDescription);
+        console.log('[Section2Features] ✅ AI description generated successfully');
+      } else {
+        alert('Could not generate description. Please try again.');
+      }
+    } catch (error) {
+      console.error('[Section2Features] Error generating description:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      alert(`Error generating description: ${errorMessage}`);
+    } finally {
+      setIsLoadingDescription(false);
+    }
   };
 
   const loadNeighborhoodTemplate = async () => {
@@ -99,12 +165,29 @@ We look forward to hosting you!`;
 
     setIsLoadingNeighborhood(true);
     try {
-      const neighborhood = await getNeighborhoodByZipCode(zipCode);
+      // Get address data from localStorage draft
+      const draftJson = localStorage.getItem('selfListingDraft');
+      const draft = draftJson ? JSON.parse(draftJson) : null;
+      const addressData = {
+        fullAddress: draft?.spaceSnapshot?.address?.fullAddress || '',
+        city: draft?.spaceSnapshot?.address?.city || '',
+        state: draft?.spaceSnapshot?.address?.state || '',
+        zip: zipCode,
+      };
 
-      if (neighborhood && neighborhood.description) {
-        handleChange('neighborhoodDescription', neighborhood.description);
+      const result = await getNeighborhoodDescriptionWithFallback(zipCode, addressData);
+
+      if (result && result.description) {
+        handleChange('neighborhoodDescription', result.description);
+
+        // Show different message based on source
+        if (result.source === 'ai') {
+          console.log('[Section2Features] AI-generated neighborhood description loaded');
+        } else {
+          console.log(`[Section2Features] Database template loaded for ${result.neighborhood_name || 'neighborhood'}`);
+        }
       } else {
-        alert(`No neighborhood information found for ZIP code: ${zipCode}`);
+        alert(`Could not find or generate neighborhood information for ZIP code: ${zipCode}`);
       }
     } catch (error) {
       console.error('Error loading neighborhood template:', error);
@@ -114,20 +197,37 @@ We look forward to hosting you!`;
     }
   };
 
-  const validateForm = (): boolean => {
+  const validateForm = (): string[] => {
     const newErrors: Record<string, string> = {};
+    const errorOrder: string[] = [];
+
+    // Validate amenities inside unit (required)
+    if (data.amenitiesInsideUnit.length === 0) {
+      newErrors.amenitiesInsideUnit = 'At least one amenity inside unit is required';
+      errorOrder.push('amenitiesInsideUnit');
+    }
 
     if (!data.descriptionOfLodging || data.descriptionOfLodging.trim().length === 0) {
       newErrors.descriptionOfLodging = 'Description of lodging is required';
+      errorOrder.push('descriptionOfLodging');
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return errorOrder;
   };
 
   const handleNext = () => {
-    if (validateForm()) {
+    const errorKeys = validateForm();
+    if (errorKeys.length === 0) {
       onNext();
+    } else {
+      showToast({
+        title: 'Required Fields Missing',
+        content: 'Please complete all required fields before proceeding.',
+        type: 'warning',
+        duration: 5000
+      });
+      scrollToFirstError(errorKeys);
     }
   };
 
@@ -139,33 +239,42 @@ We look forward to hosting you!`;
       {/* Amenities Two-Column Layout */}
       <div className="features-two-column">
         {/* Left Column: Amenities Inside Unit */}
-        <div className="form-group">
+        <div id="amenitiesInsideUnit" className="form-group">
           <div className="label-with-action">
-            <label>Amenities inside Unit</label>
+            <label>Amenities inside Unit<span className="required">*</span></label>
             <button
               type="button"
               className="btn-link"
               onClick={loadCommonInUnitAmenities}
-              disabled={isLoadingInUnitAmenities}
+              disabled={isLoadingInUnitAmenities || isLoadingAmenityLists}
             >
               {isLoadingInUnitAmenities ? 'loading...' : 'load common'}
             </button>
           </div>
+          {errors.amenitiesInsideUnit && (
+            <span className="error-message">{errors.amenitiesInsideUnit}</span>
+          )}
           <div className="checkbox-grid">
-            {AMENITIES_INSIDE.map((amenity) => (
-              <label key={amenity} className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={data.amenitiesInsideUnit.includes(amenity)}
-                  onChange={() => toggleAmenity(amenity, true)}
-                />
-                <span>{amenity}</span>
-              </label>
-            ))}
+            {isLoadingAmenityLists ? (
+              <span className="loading-text">Loading amenities...</span>
+            ) : inUnitAmenities.length === 0 ? (
+              <span className="empty-text">No amenities available</span>
+            ) : (
+              inUnitAmenities.map((amenity) => (
+                <label key={amenity} className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={data.amenitiesInsideUnit.includes(amenity)}
+                    onChange={() => toggleAmenity(amenity, true)}
+                  />
+                  <span>{amenity}</span>
+                </label>
+              ))
+            )}
           </div>
         </div>
 
-        {/* Right Column: Amenities Outside Unit */}
+        {/* Right Column: Amenities Outside Unit (In Building) */}
         <div className="form-group">
           <div className="label-with-action">
             <label>Amenities outside Unit (Optional)</label>
@@ -173,22 +282,28 @@ We look forward to hosting you!`;
               type="button"
               className="btn-link"
               onClick={loadCommonBuildingAmenities}
-              disabled={isLoadingBuildingAmenities}
+              disabled={isLoadingBuildingAmenities || isLoadingAmenityLists}
             >
               {isLoadingBuildingAmenities ? 'loading...' : 'load common'}
             </button>
           </div>
           <div className="checkbox-grid">
-            {AMENITIES_OUTSIDE.map((amenity) => (
-              <label key={amenity} className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={data.amenitiesOutsideUnit.includes(amenity)}
-                  onChange={() => toggleAmenity(amenity, false)}
-                />
-                <span>{amenity}</span>
-              </label>
-            ))}
+            {isLoadingAmenityLists ? (
+              <span className="loading-text">Loading amenities...</span>
+            ) : buildingAmenities.length === 0 ? (
+              <span className="empty-text">No amenities available</span>
+            ) : (
+              buildingAmenities.map((amenity) => (
+                <label key={amenity} className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={data.amenitiesOutsideUnit.includes(amenity)}
+                    onChange={() => toggleAmenity(amenity, false)}
+                  />
+                  <span>{amenity}</span>
+                </label>
+              ))
+            )}
           </div>
         </div>
       </div>
@@ -205,8 +320,9 @@ We look forward to hosting you!`;
               type="button"
               className="btn-link"
               onClick={loadTemplate}
+              disabled={isLoadingDescription || isLoadingNeighborhood}
             >
-              load template
+              {isLoadingDescription ? 'generating...' : 'load template'}
             </button>
           </div>
           <textarea
@@ -232,9 +348,9 @@ We look forward to hosting you!`;
               type="button"
               className="btn-link"
               onClick={loadNeighborhoodTemplate}
-              disabled={isLoadingNeighborhood}
+              disabled={isLoadingNeighborhood || isLoadingDescription}
             >
-              {isLoadingNeighborhood ? 'loading...' : 'load template'}
+              {isLoadingNeighborhood ? 'loading/generating...' : 'load template'}
             </button>
           </div>
           <textarea

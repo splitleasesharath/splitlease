@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import { supabase } from '../../lib/supabase.js';
+import { sendFaqInquiry } from '../../lib/slackService.js';
 
 export default function FAQPage() {
   const [activeTab, setActiveTab] = useState('general');
@@ -50,6 +51,7 @@ export default function FAQPage() {
       setError(null);
 
       const { data, error: fetchError } = await supabase
+        .schema('reference_table')
         .from('zat_faq')
         .select('_id, Question, Answer, Category, sub-category')
         .order('Category', { ascending: true })
@@ -116,27 +118,12 @@ export default function FAQPage() {
     }
 
     try {
-      // Send inquiry to serverless function
-      const response = await fetch('/api/faq-inquiry', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, inquiry })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to send inquiry');
-      }
+      // Send inquiry via Slack Edge Function
+      await sendFaqInquiry({ name, email, inquiry });
 
       setSubmitSuccess(true);
       setInquiryForm({ name: '', email: '', inquiry: '' });
-
-      // Close modal after 2 seconds
-      setTimeout(() => {
-        setShowInquiryModal(false);
-        setSubmitSuccess(false);
-      }, 2000);
+      // User closes modal manually after reading success message
     } catch (err) {
       console.error('Error sending inquiry:', err);
       setSubmitError(err.message || 'Failed to send inquiry. Please try again.');
@@ -182,7 +169,8 @@ export default function FAQPage() {
             role="tab"
             aria-selected={activeTab === 'general'}
           >
-            General Questions
+            <span className="tab-text-full">General Questions</span>
+            <span className="tab-text-short">General</span>
           </button>
           <button
             className={`tab ${activeTab === 'travelers' ? 'active' : ''}`}
@@ -190,7 +178,8 @@ export default function FAQPage() {
             role="tab"
             aria-selected={activeTab === 'travelers'}
           >
-            For Guests
+            <span className="tab-text-full">For Guests</span>
+            <span className="tab-text-short">Guest</span>
           </button>
           <button
             className={`tab ${activeTab === 'hosts' ? 'active' : ''}`}
@@ -198,7 +187,8 @@ export default function FAQPage() {
             role="tab"
             aria-selected={activeTab === 'hosts'}
           >
-            For Hosts
+            <span className="tab-text-full">For Hosts</span>
+            <span className="tab-text-short">Host</span>
           </button>
         </div>
       </div>

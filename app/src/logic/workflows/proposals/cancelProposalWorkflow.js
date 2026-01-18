@@ -14,13 +14,13 @@
  *
  * All cancellations result in:
  * - Status: 'Proposal Cancelled by Guest'
- * - Deleted: true (soft delete)
  * - Modified Date: current timestamp
  * - Optional: reason for cancellation
  */
 
 import { supabase } from '../../../lib/supabase.js';
 import { canCancelProposal, requiresSpecialCancellationConfirmation } from '../../rules/proposals/proposalRules.js';
+import { PROPOSAL_STATUSES } from '../../constants/proposalStatuses.js';
 
 /**
  * Evaluate which cancellation workflow condition applies
@@ -42,9 +42,9 @@ export function determineCancellationCondition(proposal) {
 
   // Condition 3 & 6: Already cancelled or rejected - just inform user
   if (
-    status === 'Proposal Cancelled by Guest' ||
-    status === 'Proposal Cancelled by Split Lease' ||
-    status === 'Proposal Rejected by Host'
+    status === PROPOSAL_STATUSES.CANCELLED_BY_GUEST.key ||
+    status === PROPOSAL_STATUSES.CANCELLED_BY_SPLITLEASE.key ||
+    status === PROPOSAL_STATUSES.REJECTED_BY_HOST.key
   ) {
     return {
       condition: 'already_cancelled',
@@ -100,8 +100,7 @@ export async function executeCancelProposal(proposalId, reason = null) {
   const now = new Date().toISOString();
 
   const updateData = {
-    'Status': 'Proposal Cancelled by Guest',
-    'Deleted': true, // Soft delete - don't remove from database
+    'Status': PROPOSAL_STATUSES.CANCELLED_BY_GUEST.key,
     'Modified Date': now
   };
 
@@ -139,4 +138,38 @@ export async function executeCancelProposal(proposalId, reason = null) {
 export async function cancelProposalFromCompareTerms(proposalId, reason = 'Counteroffer declined') {
   console.log('[cancelProposalWorkflow] Cancel triggered from Compare Terms modal (workflow crkZs5)');
   return executeCancelProposal(proposalId, reason);
+}
+
+/**
+ * Soft-delete a proposal (hide from user's list)
+ *
+ * Used for already-cancelled/rejected proposals where the guest just wants
+ * to remove it from their view. Sets deleted = true without changing status.
+ *
+ * @param {string} proposalId - Proposal ID to delete
+ * @returns {Promise<Object>} Updated proposal data
+ */
+export async function executeDeleteProposal(proposalId) {
+  if (!proposalId) {
+    throw new Error('Proposal ID is required');
+  }
+
+  const now = new Date().toISOString();
+
+  console.log('[cancelProposalWorkflow] Soft-deleting proposal:', proposalId);
+
+  const { error } = await supabase
+    .from('proposal')
+    .update({
+      'Deleted': true,
+      'Modified Date': now
+    })
+    .eq('_id', proposalId);
+
+  if (error) {
+    console.error('[cancelProposalWorkflow] Error deleting proposal:', error);
+    throw new Error(`Failed to delete proposal: ${error.message}`);
+  }
+
+  console.log('[cancelProposalWorkflow] Proposal deleted successfully:', proposalId);
 }

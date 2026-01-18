@@ -34,8 +34,13 @@ const STATE_KEYS = {
   IS_AUTHENTICATED: 'sl_auth_state',
   USER_ID: 'sl_user_id',
   USER_TYPE: 'sl_user_type',
-  LAST_ACTIVITY: 'sl_last_activity',
-  SESSION_VALID: 'sl_session_valid'
+  SESSION_VALID: 'sl_session_valid',
+  FIRST_NAME: 'sl_first_name',
+  AVATAR_URL: 'sl_avatar_url',
+  LINKEDIN_OAUTH_USER_TYPE: 'sl_linkedin_oauth_user_type',
+  LINKEDIN_OAUTH_LOGIN_FLOW: 'sl_linkedin_oauth_login_flow',
+  GOOGLE_OAUTH_USER_TYPE: 'sl_google_oauth_user_type',
+  GOOGLE_OAUTH_LOGIN_FLOW: 'sl_google_oauth_login_flow',
 };
 
 /**
@@ -106,7 +111,6 @@ export function clearSecureStorage() {
  */
 export function setAuthState(isAuthenticated, userId = null) {
   localStorage.setItem(STATE_KEYS.IS_AUTHENTICATED, isAuthenticated ? 'true' : 'false');
-  localStorage.setItem(STATE_KEYS.LAST_ACTIVITY, Date.now().toString());
 
   // Store user ID in public state (non-sensitive identifier)
   if (userId) {
@@ -149,6 +153,42 @@ export function getUserType() {
 }
 
 /**
+ * Set first name (for optimistic UI display)
+ * @param {string} firstName - User's first name
+ */
+export function setFirstName(firstName) {
+  if (firstName) {
+    localStorage.setItem(STATE_KEYS.FIRST_NAME, firstName);
+  }
+}
+
+/**
+ * Get first name
+ * @returns {string|null} First name or null
+ */
+export function getFirstName() {
+  return localStorage.getItem(STATE_KEYS.FIRST_NAME);
+}
+
+/**
+ * Set avatar URL (for optimistic UI display)
+ * @param {string} avatarUrl - User's profile photo URL
+ */
+export function setAvatarUrl(avatarUrl) {
+  if (avatarUrl) {
+    localStorage.setItem(STATE_KEYS.AVATAR_URL, avatarUrl);
+  }
+}
+
+/**
+ * Get avatar URL
+ * @returns {string|null} Avatar URL or null
+ */
+export function getAvatarUrl() {
+  return localStorage.getItem(STATE_KEYS.AVATAR_URL);
+}
+
+/**
  * Set session validity (public state)
  * @param {boolean} isValid - Whether session is valid
  */
@@ -164,35 +204,6 @@ export function getSessionValid() {
   return localStorage.getItem(STATE_KEYS.SESSION_VALID) === 'true';
 }
 
-/**
- * Update last activity timestamp
- */
-export function updateLastActivity() {
-  localStorage.setItem(STATE_KEYS.LAST_ACTIVITY, Date.now().toString());
-}
-
-/**
- * Get last activity timestamp
- * @returns {number|null} Timestamp or null
- */
-export function getLastActivity() {
-  const timestamp = localStorage.getItem(STATE_KEYS.LAST_ACTIVITY);
-  return timestamp ? parseInt(timestamp, 10) : null;
-}
-
-/**
- * Check if session has expired (based on last activity)
- * NOTE: This is only used for UI staleness checks, not for auth validation.
- * Bubble API handles token expiry - we validate on each request.
- * @param {number} maxAgeMs - Maximum session age in milliseconds (default 24 hours)
- * @returns {boolean} True if session expired
- */
-export function isSessionExpired(maxAgeMs = 86400000) { // Default 24 hours
-  const lastActivity = getLastActivity();
-  if (!lastActivity) return true;
-
-  return (Date.now() - lastActivity) > maxAgeMs;
-}
 
 /**
  * Clear all authentication data (both secure and state)
@@ -205,8 +216,11 @@ export function clearAllAuthData() {
   localStorage.removeItem(STATE_KEYS.IS_AUTHENTICATED);
   localStorage.removeItem(STATE_KEYS.USER_ID);
   localStorage.removeItem(STATE_KEYS.USER_TYPE);
-  localStorage.removeItem(STATE_KEYS.LAST_ACTIVITY);
   localStorage.removeItem(STATE_KEYS.SESSION_VALID);
+  localStorage.removeItem(STATE_KEYS.FIRST_NAME);
+  localStorage.removeItem(STATE_KEYS.AVATAR_URL);
+  // Also clear legacy last activity key if present
+  localStorage.removeItem('sl_last_activity');
 
   // Clear legacy keys
   localStorage.removeItem('splitlease_auth_token');
@@ -214,6 +228,17 @@ export function clearAllAuthData() {
   localStorage.removeItem('splitlease_last_auth');
   localStorage.removeItem('splitlease_user_type');
   localStorage.removeItem('userEmail');
+  localStorage.removeItem('splitlease_supabase_user_id');
+
+  // Clear Supabase auth storage (keys follow pattern: sb-<project-ref>-auth-token)
+  const keysToRemove = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && (key.startsWith('sb-') || key.startsWith('supabase.'))) {
+      keysToRemove.push(key);
+    }
+  }
+  keysToRemove.forEach(key => localStorage.removeItem(key));
 
   // Clear cookies
   document.cookie = 'loggedIn=false; path=/; max-age=0';
@@ -270,6 +295,112 @@ export function migrateFromLegacyStorage() {
   }
 
   return false;
+}
+
+/**
+ * Set LinkedIn OAuth user type before redirect
+ * @param {string} userType - 'Host' or 'Guest'
+ */
+export function setLinkedInOAuthUserType(userType) {
+  if (userType) {
+    localStorage.setItem(STATE_KEYS.LINKEDIN_OAUTH_USER_TYPE, userType);
+  }
+}
+
+/**
+ * Get LinkedIn OAuth user type (stored before redirect)
+ * @returns {string|null} User type or null
+ */
+export function getLinkedInOAuthUserType() {
+  return localStorage.getItem(STATE_KEYS.LINKEDIN_OAUTH_USER_TYPE);
+}
+
+/**
+ * Clear LinkedIn OAuth user type after callback handling
+ */
+export function clearLinkedInOAuthUserType() {
+  localStorage.removeItem(STATE_KEYS.LINKEDIN_OAUTH_USER_TYPE);
+}
+
+/**
+ * Set LinkedIn OAuth login flow flag before redirect
+ * Distinguishes login flow from signup flow
+ * @param {boolean} isLoginFlow - Whether this is a login attempt
+ */
+export function setLinkedInOAuthLoginFlow(isLoginFlow) {
+  if (isLoginFlow) {
+    localStorage.setItem(STATE_KEYS.LINKEDIN_OAUTH_LOGIN_FLOW, 'true');
+  } else {
+    localStorage.removeItem(STATE_KEYS.LINKEDIN_OAUTH_LOGIN_FLOW);
+  }
+}
+
+/**
+ * Get LinkedIn OAuth login flow flag
+ * @returns {boolean} True if this is a login flow
+ */
+export function getLinkedInOAuthLoginFlow() {
+  return localStorage.getItem(STATE_KEYS.LINKEDIN_OAUTH_LOGIN_FLOW) === 'true';
+}
+
+/**
+ * Clear LinkedIn OAuth login flow flag after callback handling
+ */
+export function clearLinkedInOAuthLoginFlow() {
+  localStorage.removeItem(STATE_KEYS.LINKEDIN_OAUTH_LOGIN_FLOW);
+}
+
+/**
+ * Set Google OAuth user type before redirect
+ * @param {string} userType - 'Host' or 'Guest'
+ */
+export function setGoogleOAuthUserType(userType) {
+  if (userType) {
+    localStorage.setItem(STATE_KEYS.GOOGLE_OAUTH_USER_TYPE, userType);
+  }
+}
+
+/**
+ * Get Google OAuth user type (stored before redirect)
+ * @returns {string|null} User type or null
+ */
+export function getGoogleOAuthUserType() {
+  return localStorage.getItem(STATE_KEYS.GOOGLE_OAUTH_USER_TYPE);
+}
+
+/**
+ * Clear Google OAuth user type after callback handling
+ */
+export function clearGoogleOAuthUserType() {
+  localStorage.removeItem(STATE_KEYS.GOOGLE_OAUTH_USER_TYPE);
+}
+
+/**
+ * Set Google OAuth login flow flag before redirect
+ * Distinguishes login flow from signup flow
+ * @param {boolean} isLoginFlow - Whether this is a login attempt
+ */
+export function setGoogleOAuthLoginFlow(isLoginFlow) {
+  if (isLoginFlow) {
+    localStorage.setItem(STATE_KEYS.GOOGLE_OAUTH_LOGIN_FLOW, 'true');
+  } else {
+    localStorage.removeItem(STATE_KEYS.GOOGLE_OAUTH_LOGIN_FLOW);
+  }
+}
+
+/**
+ * Get Google OAuth login flow flag
+ * @returns {boolean} True if this is a login flow
+ */
+export function getGoogleOAuthLoginFlow() {
+  return localStorage.getItem(STATE_KEYS.GOOGLE_OAUTH_LOGIN_FLOW) === 'true';
+}
+
+/**
+ * Clear Google OAuth login flow flag after callback handling
+ */
+export function clearGoogleOAuthLoginFlow() {
+  localStorage.removeItem(STATE_KEYS.GOOGLE_OAUTH_LOGIN_FLOW);
 }
 
 /**

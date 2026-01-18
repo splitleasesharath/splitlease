@@ -1,0 +1,2020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Listing Card F - Info Dense Pricing Sidebar</title>
+  <link rel="icon" type="image/png" href="/assets/images/split-lease-purple-circle.png">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: #f5f5f5;
+      padding: 40px;
+      min-height: 100vh;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #31135D;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 40px;
+    }
+
+    .card-container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    /* ========== CARD F: Info Dense - Pricing Sidebar ========== */
+    .card-f {
+      display: flex;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .card-f:hover {
+      box-shadow: 0 3px 12px rgba(0,0,0,0.12);
+    }
+
+    .card-f .image-section {
+      position: relative;
+      width: 280px;
+      flex-shrink: 0;
+      align-self: stretch;
+    }
+
+    .card-f .image-section img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .card-f .image-counter {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
+    .card-f .content {
+      flex: 1;
+      display: flex;
+    }
+
+    .card-f .main-info {
+      flex: 1;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-f .location {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 6px;
+    }
+
+    .card-f .location svg {
+      width: 12px;
+      height: 12px;
+      color: #31135D;
+    }
+
+    .card-f .title {
+      font-size: 17px;
+      font-weight: 600;
+      color: #111;
+      margin-bottom: 6px;
+    }
+
+    .card-f .specs {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 12px;
+    }
+
+    .card-f .specs .dot {
+      margin: 0 4px;
+      color: #ccc;
+    }
+
+    .card-f .host {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: auto;
+    }
+
+    .card-f .host img {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+    }
+
+    .card-f .host-name {
+      font-size: 13px;
+      color: #555;
+    }
+
+    .card-f .price-sidebar {
+      width: 140px;
+      background: #f9f7fc;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      border-left: 1px solid #f0e6ff;
+    }
+
+    .card-f .price-starting {
+      font-size: 10px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .card-f .price-main {
+      font-size: 24px;
+      font-weight: 700;
+      color: #31135D;
+      line-height: 1;
+    }
+
+    .card-f .price-period {
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 6px;
+    }
+
+    .card-f .price-divider {
+      width: 30px;
+      height: 1px;
+      background: #e0d4f0;
+      margin: 6px 0;
+    }
+
+    .card-f .price-current {
+      font-size: 14px;
+      font-weight: 600;
+      color: #31135D;
+      margin-bottom: 10px;
+    }
+
+    .card-f .price-current span {
+      font-size: 11px;
+      font-weight: 400;
+      color: #666;
+    }
+
+    .card-f .message-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      background: #31135D;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    .card-f .message-btn svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    .card-f .availability-note {
+      font-size: 9px;
+      color: #31135D;
+      margin-top: 8px;
+      line-height: 1.3;
+    }
+
+    /* ========== F2: Balanced Layout - Space Between ========== */
+    .card-f2 {
+      display: flex;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .card-f2:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.12); }
+
+    .card-f2 .image-section {
+      position: relative;
+      width: 280px;
+      flex-shrink: 0;
+      align-self: stretch;
+    }
+
+    .card-f2 .image-section img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .card-f2 .image-counter {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
+    .card-f2 .content {
+      flex: 1;
+      display: flex;
+    }
+
+    .card-f2 .main-info {
+      flex: 1;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .card-f2 .info-top {}
+
+    .card-f2 .info-middle {
+      padding: 12px 0;
+    }
+
+    .card-f2 .info-bottom {}
+
+    .card-f2 .location {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 4px;
+    }
+
+    .card-f2 .location svg {
+      width: 12px;
+      height: 12px;
+      color: #31135D;
+    }
+
+    .card-f2 .title {
+      font-size: 17px;
+      font-weight: 600;
+      color: #111;
+    }
+
+    .card-f2 .specs {
+      font-size: 13px;
+      color: #666;
+    }
+
+    .card-f2 .specs .dot {
+      margin: 0 4px;
+      color: #ccc;
+    }
+
+    .card-f2 .host {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-f2 .host img {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+    }
+
+    .card-f2 .host-name {
+      font-size: 13px;
+      color: #555;
+    }
+
+    .card-f2 .price-sidebar {
+      width: 140px;
+      background: #f9f7fc;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      border-left: 1px solid #f0e6ff;
+    }
+
+    .card-f2 .price-starting {
+      font-size: 10px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .card-f2 .price-main {
+      font-size: 24px;
+      font-weight: 700;
+      color: #31135D;
+      line-height: 1;
+    }
+
+    .card-f2 .price-period {
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 6px;
+    }
+
+    .card-f2 .price-divider {
+      width: 30px;
+      height: 1px;
+      background: #e0d4f0;
+      margin: 6px 0;
+    }
+
+    .card-f2 .price-current {
+      font-size: 14px;
+      font-weight: 600;
+      color: #31135D;
+      margin-bottom: 10px;
+    }
+
+    .card-f2 .price-current span {
+      font-size: 11px;
+      font-weight: 400;
+      color: #666;
+    }
+
+    .card-f2 .message-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      background: #31135D;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    .card-f2 .message-btn svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    .card-f2 .availability-note {
+      font-size: 9px;
+      color: #31135D;
+      margin-top: 8px;
+      line-height: 1.3;
+    }
+
+    /* ========== F3: Vertically Centered ========== */
+    .card-f3 {
+      display: flex;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .card-f3:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.12); }
+
+    .card-f3 .image-section {
+      position: relative;
+      width: 280px;
+      flex-shrink: 0;
+      align-self: stretch;
+    }
+
+    .card-f3 .image-section img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .card-f3 .image-counter {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
+    .card-f3 .content {
+      flex: 1;
+      display: flex;
+    }
+
+    .card-f3 .main-info {
+      flex: 1;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .card-f3 .location {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .card-f3 .location svg {
+      width: 12px;
+      height: 12px;
+      color: #31135D;
+    }
+
+    .card-f3 .title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #111;
+    }
+
+    .card-f3 .specs {
+      font-size: 13px;
+      color: #666;
+    }
+
+    .card-f3 .specs .dot {
+      margin: 0 4px;
+      color: #ccc;
+    }
+
+    .card-f3 .host {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .card-f3 .host img {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+    }
+
+    .card-f3 .host-name {
+      font-size: 13px;
+      color: #555;
+    }
+
+    .card-f3 .price-sidebar {
+      width: 140px;
+      background: #f9f7fc;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      border-left: 1px solid #f0e6ff;
+    }
+
+    .card-f3 .price-starting {
+      font-size: 10px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .card-f3 .price-main {
+      font-size: 24px;
+      font-weight: 700;
+      color: #31135D;
+      line-height: 1;
+    }
+
+    .card-f3 .price-period {
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 6px;
+    }
+
+    .card-f3 .price-divider {
+      width: 30px;
+      height: 1px;
+      background: #e0d4f0;
+      margin: 6px 0;
+    }
+
+    .card-f3 .price-current {
+      font-size: 14px;
+      font-weight: 600;
+      color: #31135D;
+      margin-bottom: 10px;
+    }
+
+    .card-f3 .price-current span {
+      font-size: 11px;
+      font-weight: 400;
+      color: #666;
+    }
+
+    .card-f3 .message-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      background: #31135D;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    .card-f3 .message-btn svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    .card-f3 .availability-note {
+      font-size: 9px;
+      color: #31135D;
+      margin-top: 8px;
+      line-height: 1.3;
+    }
+
+    /* ========== F4: Message Button with Host ========== */
+    .card-f4 {
+      display: flex;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .card-f4:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.12); }
+
+    .card-f4 .image-section {
+      position: relative;
+      width: 280px;
+      flex-shrink: 0;
+      align-self: stretch;
+    }
+
+    .card-f4 .image-section img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .card-f4 .image-counter {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
+    .card-f4 .content {
+      flex: 1;
+      display: flex;
+    }
+
+    .card-f4 .main-info {
+      flex: 1;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .card-f4 .info-top {}
+
+    .card-f4 .location {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 4px;
+    }
+
+    .card-f4 .location svg {
+      width: 12px;
+      height: 12px;
+      color: #31135D;
+    }
+
+    .card-f4 .title {
+      font-size: 17px;
+      font-weight: 600;
+      color: #111;
+      margin-bottom: 6px;
+    }
+
+    .card-f4 .specs {
+      font-size: 13px;
+      color: #666;
+    }
+
+    .card-f4 .specs .dot {
+      margin: 0 4px;
+      color: #ccc;
+    }
+
+    .card-f4 .info-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .card-f4 .host {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-f4 .host img {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+    }
+
+    .card-f4 .host-name {
+      font-size: 13px;
+      color: #555;
+    }
+
+    .card-f4 .message-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: #31135D;
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .card-f4 .message-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .card-f4 .price-sidebar {
+      width: 130px;
+      background: #f9f7fc;
+      padding: 16px 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      border-left: 1px solid #f0e6ff;
+    }
+
+    .card-f4 .price-starting {
+      font-size: 10px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .card-f4 .price-main {
+      font-size: 22px;
+      font-weight: 700;
+      color: #31135D;
+      line-height: 1;
+    }
+
+    .card-f4 .price-period {
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+
+    .card-f4 .price-current {
+      font-size: 14px;
+      font-weight: 600;
+      color: #31135D;
+    }
+
+    .card-f4 .price-current span {
+      font-size: 11px;
+      font-weight: 400;
+      color: #666;
+    }
+
+    .card-f4 .availability-note {
+      font-size: 9px;
+      color: #31135D;
+      margin-top: 10px;
+      line-height: 1.3;
+    }
+
+    /* ========== F5: Price Left, Host + CTA Right ========== */
+    .card-f5 {
+      display: flex;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .card-f5:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.12); }
+
+    .card-f5 .image-section {
+      position: relative;
+      width: 280px;
+      flex-shrink: 0;
+      align-self: stretch;
+    }
+
+    .card-f5 .image-section img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .card-f5 .image-counter {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
+    .card-f5 .content {
+      flex: 1;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .card-f5 .info-top {}
+
+    .card-f5 .location {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 4px;
+    }
+
+    .card-f5 .location svg {
+      width: 12px;
+      height: 12px;
+      color: #31135D;
+    }
+
+    .card-f5 .title {
+      font-size: 17px;
+      font-weight: 600;
+      color: #111;
+      margin-bottom: 6px;
+    }
+
+    .card-f5 .specs {
+      font-size: 13px;
+      color: #666;
+    }
+
+    .card-f5 .specs .dot {
+      margin: 0 4px;
+      color: #ccc;
+    }
+
+    .card-f5 .info-bottom {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .card-f5 .pricing {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-f5 .price-starting {
+      font-size: 11px;
+      color: #888;
+    }
+
+    .card-f5 .price-main {
+      font-size: 22px;
+      font-weight: 700;
+      color: #31135D;
+      line-height: 1.2;
+    }
+
+    .card-f5 .price-main span {
+      font-size: 12px;
+      font-weight: 400;
+      color: #666;
+    }
+
+    .card-f5 .availability-note {
+      font-size: 10px;
+      color: #31135D;
+      margin-top: 2px;
+    }
+
+    .card-f5 .host-cta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+
+    .card-f5 .host {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-f5 .host img {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+    }
+
+    .card-f5 .host-name {
+      font-size: 13px;
+      color: #555;
+    }
+
+    .card-f5 .message-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: #31135D;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .card-f5 .message-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    /* ========== F6: Price Left, Host Sidebar Right ========== */
+    .card-f6 {
+      display: flex;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .card-f6:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.12); }
+
+    .card-f6 .image-section {
+      position: relative;
+      width: 280px;
+      flex-shrink: 0;
+      align-self: stretch;
+    }
+
+    .card-f6 .image-section img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .card-f6 .image-counter {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
+    .card-f6 .content {
+      flex: 1;
+      display: flex;
+    }
+
+    .card-f6 .main-info {
+      flex: 1;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .card-f6 .info-top {}
+
+    .card-f6 .location {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 4px;
+    }
+
+    .card-f6 .location svg {
+      width: 12px;
+      height: 12px;
+      color: #31135D;
+    }
+
+    .card-f6 .title {
+      font-size: 17px;
+      font-weight: 600;
+      color: #111;
+      margin-bottom: 6px;
+    }
+
+    .card-f6 .meta {
+      display: flex;
+      gap: 16px;
+      padding: 12px 0;
+      border-top: 1px solid #f0f0f0;
+      border-bottom: 1px solid #f0f0f0;
+      margin: 12px 0;
+    }
+
+    .card-f6 .meta-item {
+      font-size: 13px;
+      color: #555;
+    }
+
+    .card-f6 .meta-item strong {
+      color: #111;
+    }
+
+    .card-f6 .pricing {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-f6 .price-starting {
+      font-size: 11px;
+      color: #888;
+    }
+
+    .card-f6 .price-main {
+      font-size: 22px;
+      font-weight: 700;
+      color: #31135D;
+      line-height: 1.2;
+    }
+
+    .card-f6 .price-main span {
+      font-size: 12px;
+      font-weight: 400;
+      color: #666;
+    }
+
+    .card-f6 .availability-note {
+      font-size: 10px;
+      color: #31135D;
+      margin-top: 2px;
+    }
+
+    .card-f6 .host-sidebar {
+      width: 140px;
+      background: #f9f7fc;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      border-left: 1px solid #f0e6ff;
+    }
+
+    .card-f6 .host-sidebar img {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      margin-bottom: 8px;
+      border: 2px solid white;
+      box-shadow: 0 2px 8px rgba(49, 19, 93, 0.15);
+    }
+
+    .card-f6 .host-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #31135D;
+      margin-bottom: 2px;
+    }
+
+    .card-f6 .host-label {
+      font-size: 11px;
+      color: #888;
+      margin-bottom: 12px;
+    }
+
+    .card-f6 .message-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      background: #31135D;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      width: 100%;
+      transition: background 0.2s;
+    }
+
+    .card-f6 .message-btn:hover {
+      background: #250f4a;
+    }
+
+    .card-f6 .message-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    /* ========== F7: Info Dense with Price Sidebar Right ========== */
+    .card-f7 {
+      display: flex;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .card-f7:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.12); }
+
+    .card-f7 .image-section {
+      position: relative;
+      width: 280px;
+      flex-shrink: 0;
+      align-self: stretch;
+    }
+
+    .card-f7 .image-section img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .card-f7 .image-counter {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
+    .card-f7 .content {
+      flex: 1;
+      display: flex;
+    }
+
+    .card-f7 .main-info {
+      flex: 1;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .card-f7 .info-top {}
+
+    .card-f7 .location {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 4px;
+    }
+
+    .card-f7 .location svg {
+      width: 12px;
+      height: 12px;
+      color: #31135D;
+    }
+
+    .card-f7 .title {
+      font-size: 17px;
+      font-weight: 600;
+      color: #111;
+      margin-bottom: 6px;
+    }
+
+    .card-f7 .meta {
+      display: flex;
+      gap: 16px;
+      padding: 12px 0;
+      border-top: 1px solid #f0f0f0;
+      border-bottom: 1px solid #f0f0f0;
+      margin: 12px 0;
+    }
+
+    .card-f7 .meta-item {
+      font-size: 13px;
+      color: #555;
+    }
+
+    .card-f7 .meta-item strong {
+      color: #111;
+    }
+
+    .card-f7 .host-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .card-f7 .host {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-f7 .host img {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+    }
+
+    .card-f7 .host-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: #333;
+    }
+
+    .card-f7 .host-row .message-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: #31135D;
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .card-f7 .host-row .message-btn:hover {
+      background: #250f4a;
+    }
+
+    .card-f7 .host-row .message-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .card-f7 .price-sidebar {
+      width: 150px;
+      background: #f9f7fc;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      border-left: 1px solid #f0e6ff;
+    }
+
+    .card-f7 .price-starting {
+      font-size: 10px;
+      color: #888;
+      margin-bottom: 4px;
+    }
+
+    .card-f7 .price-starting span {
+      font-weight: 600;
+      color: #666;
+    }
+
+    .card-f7 .price-main {
+      font-size: 24px;
+      font-weight: 700;
+      color: #31135D;
+      line-height: 1;
+    }
+
+    .card-f7 .price-period {
+      font-size: 11px;
+      color: #666;
+    }
+
+    .card-f7 .availability-note {
+      font-size: 9px;
+      color: #31135D;
+      margin-top: 6px;
+      line-height: 1.3;
+    }
+
+    /* ========== F7a: Larger Main Price, Compact ========== */
+    .card-f7a .price-sidebar {
+      width: 150px;
+      background: #f9f7fc;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      border-left: 1px solid #f0e6ff;
+    }
+
+    .card-f7a .price-main {
+      font-size: 28px;
+      font-weight: 700;
+      color: #31135D;
+      line-height: 1;
+    }
+
+    .card-f7a .price-period {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 6px;
+    }
+
+    .card-f7a .price-starting {
+      font-size: 11px;
+      color: #888;
+    }
+
+    .card-f7a .availability-note {
+      font-size: 9px;
+      color: #31135D;
+      margin-top: 8px;
+      line-height: 1.3;
+    }
+
+    /* ========== F7b: Stacked with Divider ========== */
+    .card-f7b .price-sidebar {
+      width: 150px;
+      background: #f9f7fc;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      border-left: 1px solid #f0e6ff;
+    }
+
+    .card-f7b .price-main {
+      font-size: 26px;
+      font-weight: 700;
+      color: #31135D;
+      line-height: 1;
+    }
+
+    .card-f7b .price-period {
+      font-size: 11px;
+      color: #666;
+    }
+
+    .card-f7b .price-divider {
+      width: 40px;
+      height: 1px;
+      background: #e0d4f0;
+      margin: 10px 0;
+    }
+
+    .card-f7b .price-starting {
+      font-size: 11px;
+      color: #888;
+    }
+
+    .card-f7b .price-starting span {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: #31135D;
+      margin-top: 2px;
+    }
+
+    .card-f7b .availability-note {
+      font-size: 9px;
+      color: #31135D;
+      margin-top: 10px;
+      line-height: 1.3;
+    }
+
+    /* ========== F7c: Inline Price with Period ========== */
+    .card-f7c .price-sidebar {
+      width: 150px;
+      background: #f9f7fc;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      border-left: 1px solid #f0e6ff;
+    }
+
+    .card-f7c .price-row {
+      display: flex;
+      align-items: baseline;
+      gap: 2px;
+    }
+
+    .card-f7c .price-main {
+      font-size: 26px;
+      font-weight: 700;
+      color: #31135D;
+      line-height: 1;
+    }
+
+    .card-f7c .price-period {
+      font-size: 13px;
+      color: #666;
+      font-weight: 400;
+    }
+
+    .card-f7c .price-starting {
+      font-size: 11px;
+      color: #888;
+      margin-top: 6px;
+    }
+
+    .card-f7c .availability-note {
+      font-size: 9px;
+      color: #31135D;
+      margin-top: 10px;
+      line-height: 1.3;
+    }
+
+    /* ========== F7d: Bold Hierarchy ========== */
+    .card-f7d .price-sidebar {
+      width: 150px;
+      background: #f9f7fc;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      border-left: 1px solid #f0e6ff;
+    }
+
+    .card-f7d .price-label {
+      font-size: 9px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .card-f7d .price-main {
+      font-size: 24px;
+      font-weight: 800;
+      color: #31135D;
+      line-height: 1;
+    }
+
+    .card-f7d .price-period {
+      font-size: 11px;
+      color: #888;
+      margin-bottom: 8px;
+    }
+
+    .card-f7d .price-starting {
+      font-size: 12px;
+      color: #666;
+      text-decoration: line-through;
+      opacity: 0.7;
+    }
+
+    .card-f7d .availability-note {
+      font-size: 9px;
+      color: #31135D;
+      margin-top: 10px;
+      line-height: 1.3;
+    }
+  </style>
+</head>
+<body>
+  <h1>F. Info Dense - Pricing Sidebar</h1>
+  <p class="subtitle">One Platt | Studio</p>
+
+  <div class="card-container">
+
+    <h2 style="margin-bottom: 16px; font-size: 14px; color: #666;">Original</h2>
+    <a href="#" class="card-f">
+      <div class="image-section">
+        <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop" alt="One Platt Studio">
+        <div class="image-counter">1 / 7</div>
+      </div>
+      <div class="content">
+        <div class="main-info">
+          <div class="location">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+            Civic Center, Manhattan
+          </div>
+          <h3 class="title">One Platt | Studio</h3>
+          <div class="specs">
+            <span>Entire Place</span>
+            <span class="dot">·</span>
+            <span>2 guests</span>
+            <span class="dot">·</span>
+            <span>Studio</span>
+            <span class="dot">·</span>
+            <span>1 bath</span>
+          </div>
+          <div class="host">
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" alt="Robert S.">
+            <span class="host-name">Robert S.</span>
+          </div>
+        </div>
+        <div class="price-sidebar">
+          <div class="price-starting">Starting at</div>
+          <div class="price-main">$227.50</div>
+          <div class="price-period">/night</div>
+          <div class="price-divider"></div>
+          <div class="price-current">$255.94<span>/night</span></div>
+          <button class="message-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            Message
+          </button>
+          <div class="availability-note">Message Split Lease<br>for Availability</div>
+        </div>
+      </div>
+    </a>
+
+    <div style="height: 40px;"></div>
+
+    <h2 style="margin-bottom: 16px; font-size: 14px; color: #666;">F2. Balanced Layout</h2>
+    <a href="#" class="card-f2">
+      <div class="image-section">
+        <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop" alt="One Platt Studio">
+        <div class="image-counter">1 / 7</div>
+      </div>
+      <div class="content">
+        <div class="main-info">
+          <div class="info-top">
+            <div class="location">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              Civic Center, Manhattan
+            </div>
+            <h3 class="title">One Platt | Studio</h3>
+          </div>
+          <div class="info-middle">
+            <div class="specs">
+              <span>Entire Place</span>
+              <span class="dot">·</span>
+              <span>2 guests</span>
+              <span class="dot">·</span>
+              <span>Studio</span>
+              <span class="dot">·</span>
+              <span>1 bath</span>
+            </div>
+          </div>
+          <div class="info-bottom">
+            <div class="host">
+              <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" alt="Robert S.">
+              <span class="host-name">Robert S.</span>
+            </div>
+          </div>
+        </div>
+        <div class="price-sidebar">
+          <div class="price-starting">Starting at</div>
+          <div class="price-main">$227.50</div>
+          <div class="price-period">/night</div>
+          <div class="price-divider"></div>
+          <div class="price-current">$255.94<span>/night</span></div>
+          <button class="message-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            Message
+          </button>
+          <div class="availability-note">Message Split Lease<br>for Availability</div>
+        </div>
+      </div>
+    </a>
+
+    <div style="height: 40px;"></div>
+
+    <h2 style="margin-bottom: 16px; font-size: 14px; color: #666;">F3. Vertically Centered</h2>
+    <a href="#" class="card-f3">
+      <div class="image-section">
+        <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop" alt="One Platt Studio">
+        <div class="image-counter">1 / 7</div>
+      </div>
+      <div class="content">
+        <div class="main-info">
+          <div class="location">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+            Civic Center, Manhattan
+          </div>
+          <h3 class="title">One Platt | Studio</h3>
+          <div class="specs">
+            <span>Entire Place</span>
+            <span class="dot">·</span>
+            <span>2 guests</span>
+            <span class="dot">·</span>
+            <span>Studio</span>
+            <span class="dot">·</span>
+            <span>1 bath</span>
+          </div>
+          <div class="host">
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" alt="Robert S.">
+            <span class="host-name">Robert S.</span>
+          </div>
+        </div>
+        <div class="price-sidebar">
+          <div class="price-starting">Starting at</div>
+          <div class="price-main">$227.50</div>
+          <div class="price-period">/night</div>
+          <div class="price-divider"></div>
+          <div class="price-current">$255.94<span>/night</span></div>
+          <button class="message-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            Message
+          </button>
+          <div class="availability-note">Message Split Lease<br>for Availability</div>
+        </div>
+      </div>
+    </a>
+
+    <div style="height: 40px;"></div>
+
+    <h2 style="margin-bottom: 16px; font-size: 14px; color: #666;">F4. Message Button with Host</h2>
+    <a href="#" class="card-f4">
+      <div class="image-section">
+        <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop" alt="One Platt Studio">
+        <div class="image-counter">1 / 7</div>
+      </div>
+      <div class="content">
+        <div class="main-info">
+          <div class="info-top">
+            <div class="location">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              Civic Center, Manhattan
+            </div>
+            <h3 class="title">One Platt | Studio</h3>
+            <div class="specs">
+              <span>Entire Place</span>
+              <span class="dot">·</span>
+              <span>2 guests</span>
+              <span class="dot">·</span>
+              <span>Studio</span>
+              <span class="dot">·</span>
+              <span>1 bath</span>
+            </div>
+          </div>
+          <div class="info-bottom">
+            <div class="host">
+              <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" alt="Robert S.">
+              <span class="host-name">Robert S.</span>
+            </div>
+            <button class="message-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              Message
+            </button>
+          </div>
+        </div>
+        <div class="price-sidebar">
+          <div class="price-starting">Starting at</div>
+          <div class="price-main">$227.50</div>
+          <div class="price-period">/night</div>
+          <div class="price-current">$255.94<span>/night</span></div>
+          <div class="availability-note">Message Split Lease<br>for Availability</div>
+        </div>
+      </div>
+    </a>
+
+    <div style="height: 40px;"></div>
+
+    <h2 style="margin-bottom: 16px; font-size: 14px; color: #666;">F5. Price Left, Host + CTA Right (No Sidebar)</h2>
+    <a href="#" class="card-f5">
+      <div class="image-section">
+        <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop" alt="One Platt Studio">
+        <div class="image-counter">1 / 7</div>
+      </div>
+      <div class="content">
+        <div class="info-top">
+          <div class="location">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+            Civic Center, Manhattan
+          </div>
+          <h3 class="title">One Platt | Studio</h3>
+          <div class="specs">
+            <span>Entire Place</span>
+            <span class="dot">·</span>
+            <span>2 guests</span>
+            <span class="dot">·</span>
+            <span>Studio</span>
+            <span class="dot">·</span>
+            <span>1 bath</span>
+          </div>
+        </div>
+        <div class="info-bottom">
+          <div class="pricing">
+            <div class="price-starting">Starting at $227.50/night</div>
+            <div class="price-main">$255.94<span>/night</span></div>
+            <div class="availability-note">Message Split Lease for Availability</div>
+          </div>
+          <div class="host-cta">
+            <div class="host">
+              <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" alt="Robert S.">
+              <span class="host-name">Robert S.</span>
+            </div>
+            <button class="message-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              Message
+            </button>
+          </div>
+        </div>
+      </div>
+    </a>
+
+    <div style="height: 40px;"></div>
+
+    <h2 style="margin-bottom: 16px; font-size: 14px; color: #666;">F6. Price Left, Host Sidebar Right</h2>
+    <a href="#" class="card-f6">
+      <div class="image-section">
+        <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop" alt="One Platt Studio">
+        <div class="image-counter">1 / 7</div>
+      </div>
+      <div class="content">
+        <div class="main-info">
+          <div class="info-top">
+            <div class="location">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              Civic Center, Manhattan
+            </div>
+            <h3 class="title">One Platt | Studio</h3>
+          </div>
+          <div class="meta">
+            <span class="meta-item"><strong>Entire Place</strong></span>
+            <span class="meta-item"><strong>2</strong> guests</span>
+            <span class="meta-item"><strong>Studio</strong></span>
+            <span class="meta-item"><strong>1</strong> bath</span>
+          </div>
+          <div class="pricing">
+            <div class="price-starting">Starting at $227.50/night</div>
+            <div class="price-main">$255.94<span>/night</span></div>
+            <div class="availability-note">Message Split Lease for Availability</div>
+          </div>
+        </div>
+        <div class="host-sidebar">
+          <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" alt="Robert S.">
+          <div class="host-name">Robert S.</div>
+          <div class="host-label">Host</div>
+          <button class="message-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            Message
+          </button>
+        </div>
+      </div>
+    </a>
+
+    <div style="height: 40px;"></div>
+
+    <h2 style="margin-bottom: 16px; font-size: 14px; color: #666;">F7. Info Dense with Price Sidebar Right</h2>
+    <a href="#" class="card-f7">
+      <div class="image-section">
+        <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop" alt="One Platt Studio">
+        <div class="image-counter">1 / 7</div>
+      </div>
+      <div class="content">
+        <div class="main-info">
+          <div class="info-top">
+            <div class="location">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              Civic Center, Manhattan
+            </div>
+            <h3 class="title">One Platt | Studio</h3>
+          </div>
+          <div class="meta">
+            <span class="meta-item"><strong>Entire Place</strong></span>
+            <span class="meta-item"><strong>2</strong> guests</span>
+            <span class="meta-item"><strong>Studio</strong></span>
+            <span class="meta-item"><strong>1</strong> bath</span>
+          </div>
+          <div class="host-row">
+            <div class="host">
+              <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" alt="Robert S.">
+              <span class="host-name">Robert S.</span>
+            </div>
+            <button class="message-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              Message
+            </button>
+          </div>
+        </div>
+        <div class="price-sidebar">
+          <div class="price-main">$255.94</div>
+          <div class="price-period">/night</div>
+          <div class="price-starting">Starting at <span>$227.50/night</span></div>
+          <div class="availability-note">Message Split Lease<br>for Availability</div>
+        </div>
+      </div>
+    </a>
+
+    <div style="height: 40px;"></div>
+
+    <h2 style="margin-bottom: 16px; font-size: 14px; color: #666;">F7a. Larger Main Price, Compact</h2>
+    <a href="#" class="card-f7 card-f7a">
+      <div class="image-section">
+        <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop" alt="One Platt Studio">
+        <div class="image-counter">1 / 7</div>
+      </div>
+      <div class="content">
+        <div class="main-info">
+          <div class="info-top">
+            <div class="location">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              Civic Center, Manhattan
+            </div>
+            <h3 class="title">One Platt | Studio</h3>
+          </div>
+          <div class="meta">
+            <span class="meta-item"><strong>Entire Place</strong></span>
+            <span class="meta-item"><strong>2</strong> guests</span>
+            <span class="meta-item"><strong>Studio</strong></span>
+            <span class="meta-item"><strong>1</strong> bath</span>
+          </div>
+          <div class="host-row">
+            <div class="host">
+              <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" alt="Robert S.">
+              <span class="host-name">Robert S.</span>
+            </div>
+            <button class="message-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              Message
+            </button>
+          </div>
+        </div>
+        <div class="price-sidebar">
+          <div class="price-main">$255.94</div>
+          <div class="price-period">/night</div>
+          <div class="price-starting">Starting at $227.50/night</div>
+          <div class="availability-note">Message Split Lease<br>for Availability</div>
+        </div>
+      </div>
+    </a>
+
+    <div style="height: 40px;"></div>
+
+    <h2 style="margin-bottom: 16px; font-size: 14px; color: #666;">F7b. Stacked with Divider</h2>
+    <a href="#" class="card-f7 card-f7b">
+      <div class="image-section">
+        <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop" alt="One Platt Studio">
+        <div class="image-counter">1 / 7</div>
+      </div>
+      <div class="content">
+        <div class="main-info">
+          <div class="info-top">
+            <div class="location">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              Civic Center, Manhattan
+            </div>
+            <h3 class="title">One Platt | Studio</h3>
+          </div>
+          <div class="meta">
+            <span class="meta-item"><strong>Entire Place</strong></span>
+            <span class="meta-item"><strong>2</strong> guests</span>
+            <span class="meta-item"><strong>Studio</strong></span>
+            <span class="meta-item"><strong>1</strong> bath</span>
+          </div>
+          <div class="host-row">
+            <div class="host">
+              <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" alt="Robert S.">
+              <span class="host-name">Robert S.</span>
+            </div>
+            <button class="message-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              Message
+            </button>
+          </div>
+        </div>
+        <div class="price-sidebar">
+          <div class="price-main">$255.94</div>
+          <div class="price-period">/night</div>
+          <div class="price-divider"></div>
+          <div class="price-starting">Starting at<span>$227.50/night</span></div>
+          <div class="availability-note">Message Split Lease<br>for Availability</div>
+        </div>
+      </div>
+    </a>
+
+    <div style="height: 40px;"></div>
+
+    <h2 style="margin-bottom: 16px; font-size: 14px; color: #666;">F7c. Inline Price with Period</h2>
+    <a href="#" class="card-f7 card-f7c">
+      <div class="image-section">
+        <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop" alt="One Platt Studio">
+        <div class="image-counter">1 / 7</div>
+      </div>
+      <div class="content">
+        <div class="main-info">
+          <div class="info-top">
+            <div class="location">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              Civic Center, Manhattan
+            </div>
+            <h3 class="title">One Platt | Studio</h3>
+          </div>
+          <div class="meta">
+            <span class="meta-item"><strong>Entire Place</strong></span>
+            <span class="meta-item"><strong>2</strong> guests</span>
+            <span class="meta-item"><strong>Studio</strong></span>
+            <span class="meta-item"><strong>1</strong> bath</span>
+          </div>
+          <div class="host-row">
+            <div class="host">
+              <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" alt="Robert S.">
+              <span class="host-name">Robert S.</span>
+            </div>
+            <button class="message-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              Message
+            </button>
+          </div>
+        </div>
+        <div class="price-sidebar">
+          <div class="price-row">
+            <span class="price-main">$255.94</span><span class="price-period">/night</span>
+          </div>
+          <div class="price-starting">Starting at $227.50/night</div>
+          <div class="availability-note">Message Split Lease<br>for Availability</div>
+        </div>
+      </div>
+    </a>
+
+    <div style="height: 40px;"></div>
+
+    <h2 style="margin-bottom: 16px; font-size: 14px; color: #666;">F7d. Bold Hierarchy (Strikethrough Starting)</h2>
+    <a href="#" class="card-f7 card-f7d">
+      <div class="image-section">
+        <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop" alt="One Platt Studio">
+        <div class="image-counter">1 / 7</div>
+      </div>
+      <div class="content">
+        <div class="main-info">
+          <div class="info-top">
+            <div class="location">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              Civic Center, Manhattan
+            </div>
+            <h3 class="title">One Platt | Studio</h3>
+          </div>
+          <div class="meta">
+            <span class="meta-item"><strong>Entire Place</strong></span>
+            <span class="meta-item"><strong>2</strong> guests</span>
+            <span class="meta-item"><strong>Studio</strong></span>
+            <span class="meta-item"><strong>1</strong> bath</span>
+          </div>
+          <div class="host-row">
+            <div class="host">
+              <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" alt="Robert S.">
+              <span class="host-name">Robert S.</span>
+            </div>
+            <button class="message-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              Message
+            </button>
+          </div>
+        </div>
+        <div class="price-sidebar">
+          <div class="price-label">Current Price</div>
+          <div class="price-main">$255.94</div>
+          <div class="price-period">/night</div>
+          <div class="price-starting">$227.50/night</div>
+          <div class="availability-note">Message Split Lease<br>for Availability</div>
+        </div>
+      </div>
+    </a>
+
+  </div>
+</body>
+</html>

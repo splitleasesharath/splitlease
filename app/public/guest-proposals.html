@@ -3,17 +3,74 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Proposals - Split Lease</title>
-  <meta name="description" content="View and manage your rental proposals on Split Lease">
+  <title>My Proposals | Split Lease</title>
+  <meta name="description" content="View and manage your proposals on Split Lease">
   <link rel="icon" type="image/png" href="/assets/images/split-lease-purple-circle.png">
   <link rel="stylesheet" href="/src/styles/main.css">
 
-  <!-- Load environment config FIRST - required for Hotjar -->
+  <!-- Hotjar Tracking Code for split.lease -->
+  <script>
+    (function(h,o,t,j,a,r){
+        h.hj=h.hj||function(){(h.hj.q=h.hj.q||[]).push(arguments)};
+        h._hjSettings={hjid:6581463,hjsv:6};
+        a=o.getElementsByTagName('head')[0];
+        r=o.createElement('script');r.async=1;
+        r.src=t+h._hjSettings.hjid+j+h._hjSettings.hjsv;
+        a.appendChild(r);
+    })(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');
+  </script>
+
+  <!-- Load environment config - required for Google Maps -->
   <script type="module" src="/src/lib/config.js"></script>
-  <script type="module" src="/src/lib/hotjar.js"></script>
+
+  <!-- Google Maps API (for proposal map modal) -->
+  <script>
+    // Initialize callback function before loading API
+    window.initMap = function() {
+      console.log('Google Maps API loaded successfully');
+      window.dispatchEvent(new Event('google-maps-loaded'));
+    };
+
+    // Load Google Maps API dynamically
+    function loadGoogleMaps() {
+      const apiKey = window.ENV?.GOOGLE_MAPS_API_KEY;
+      if (!apiKey) {
+        console.error('❌ Google Maps API key not configured in window.ENV');
+        return;
+      }
+
+      console.log('🗺️ Loading Google Maps API...');
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initMap&loading=async`;
+      script.async = true;
+      script.defer = true;
+      script.onerror = function() {
+        console.error('❌ Failed to load Google Maps API');
+      };
+      document.head.appendChild(script);
+    }
+
+    // Wait for config.js to load and set window.ENV
+    if (window.ENV) {
+      loadGoogleMaps();
+    } else {
+      window.addEventListener('env-config-loaded', loadGoogleMaps, { once: true });
+
+      // Fallback timeout
+      setTimeout(() => {
+        if (!window.ENV) {
+          console.error('❌ window.ENV not available after 2 seconds');
+        } else if (!document.querySelector('script[src*="maps.googleapis.com"]')) {
+          console.warn('⚠️ Fallback: Attempting to load Google Maps after timeout');
+          loadGoogleMaps();
+        }
+      }, 2000);
+    }
+  </script>
 </head>
 <body>
-  <div id="guest-proposals-page"></div>
+  <div id="root"></div>
+
   <script type="module" src="/src/guest-proposals.jsx"></script>
 </body>
 </html>

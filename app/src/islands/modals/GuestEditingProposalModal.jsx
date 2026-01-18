@@ -2,32 +2,49 @@
  * GuestEditingProposalModal - Complete popup for guest proposal editing
  *
  * Based on Bubble.io reusable element with view state machine
- * Implements 3-view state machine: 'editing' | 'general' | 'cancel'
+ * Implements 4-view state machine: 'pristine' | 'editing' | 'general' | 'cancel'
+ *
+ * View States & Flow:
+ * - 'pristine': Initial state when modal opens → "Close" + "Edit Proposal"
+ * - 'editing': User is actively editing fields → "Cancel edits" + "Display New Terms"
+ * - 'general': User reviewed new terms, ready to submit → "Close" + "Submit Proposal Edits"
+ * - 'cancel': Cancel proposal modal is shown (handled by separate CancelProposalModal)
+ *
+ * State Transitions:
+ * pristine → editing (click "Edit Proposal")
+ * editing → pristine (click "Cancel edits")
+ * editing → general (click "Display New Terms")
+ * general → closed (click "Close" or "Submit Proposal Edits")
  *
  * Features:
  * - Day/Night selector for schedule editing
  * - Move-in date and flexible range input
  * - Reservation span dropdown with custom weeks
  * - Price breakdown display
- * - Cancel proposal modal with reason input
  * - Responsive design with mobile support
  */
 
 import { useState, useCallback, useMemo, useEffect } from 'react'
+import { executeCancelProposal } from '../../logic/workflows/proposals/cancelProposalWorkflow.js'
+import CancelProposalModal from './CancelProposalModal.jsx'
 import './GuestEditingProposalModal.css'
 
 // ============================================================================
 // CONSTANTS
 // ============================================================================
 
+/**
+ * Days of the week with 0-based indexing (matching JavaScript Date.getDay())
+ * 0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday
+ */
 const DAYS_OF_WEEK = [
-  { id: 0, name: 'Sunday', shortName: 'Sun', singleLetter: 'S', bubbleNumber: 1 },
-  { id: 1, name: 'Monday', shortName: 'Mon', singleLetter: 'M', bubbleNumber: 2 },
-  { id: 2, name: 'Tuesday', shortName: 'Tue', singleLetter: 'T', bubbleNumber: 3 },
-  { id: 3, name: 'Wednesday', shortName: 'Wed', singleLetter: 'W', bubbleNumber: 4 },
-  { id: 4, name: 'Thursday', shortName: 'Thu', singleLetter: 'T', bubbleNumber: 5 },
-  { id: 5, name: 'Friday', shortName: 'Fri', singleLetter: 'F', bubbleNumber: 6 },
-  { id: 6, name: 'Saturday', shortName: 'Sat', singleLetter: 'S', bubbleNumber: 7 }
+  { id: 0, name: 'Sunday', shortName: 'Sun', singleLetter: 'S', dayIndex: 0 },
+  { id: 1, name: 'Monday', shortName: 'Mon', singleLetter: 'M', dayIndex: 1 },
+  { id: 2, name: 'Tuesday', shortName: 'Tue', singleLetter: 'T', dayIndex: 2 },
+  { id: 3, name: 'Wednesday', shortName: 'Wed', singleLetter: 'W', dayIndex: 3 },
+  { id: 4, name: 'Thursday', shortName: 'Thu', singleLetter: 'T', dayIndex: 4 },
+  { id: 5, name: 'Friday', shortName: 'Fri', singleLetter: 'F', dayIndex: 5 },
+  { id: 6, name: 'Saturday', shortName: 'Sat', singleLetter: 'S', dayIndex: 6 }
 ]
 
 const RESERVATION_SPAN_OPTIONS = [
@@ -160,7 +177,7 @@ function DayNightSelector({
 
   const dayToDayOption = useCallback((day) => ({
     display: day.name,
-    bubbleNumber: day.bubbleNumber,
+    dayIndex: day.dayIndex,
     first3Letters: day.shortName
   }), [])
 
@@ -169,11 +186,11 @@ function DayNightSelector({
   }, [selectedDays])
 
   const isCheckInDay = useCallback((day) => {
-    return checkInDay?.bubbleNumber === day.bubbleNumber
+    return checkInDay?.dayIndex === day.dayIndex
   }, [checkInDay])
 
   const isCheckOutDay = useCallback((day) => {
-    return checkOutDay?.bubbleNumber === day.bubbleNumber
+    return checkOutDay?.dayIndex === day.dayIndex
   }, [checkOutDay])
 
   const selectedDaysCount = selectedDays.length
@@ -181,218 +198,37 @@ function DayNightSelector({
 
   return (
     <div className="day-night-selector">
-      {/* Day/Night Grid */}
-      <div className="dns-grid">
-        {/* Calendar icon */}
-        <div className="dns-calendar-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2"/>
-            <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" strokeWidth="2"/>
-            <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
-        </div>
-
-        {/* Day buttons */}
+      {/* Day buttons grid - matches mockup exactly */}
+      <div className="dns-day-grid">
         {days.map((day) => (
           <button
             key={day.id}
             type="button"
-            className={`dns-day-button ${isDaySelected(day.id) ? 'dns-day-button--selected' : ''} ${isCheckInDay(day) ? 'dns-day-button--check-in' : ''} ${isCheckOutDay(day) ? 'dns-day-button--check-out' : ''}`}
+            className={`dns-day-btn ${isDaySelected(day.id) ? 'dns-day-btn--selected' : ''}`}
             onClick={() => handleDayClick(day.id)}
             disabled={disabled}
             title={day.name}
           >
-            <span className="dns-day-label">{day.singleLetter}</span>
+            {day.singleLetter}
           </button>
         ))}
-
-        {/* Info icon */}
-        <div className="dns-info-icon">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="10" cy="10" r="9" stroke="#6366F1" strokeWidth="2"/>
-            <text x="10" y="14" textAnchor="middle" fontSize="12" fill="#6366F1" fontWeight="bold">i</text>
-          </svg>
-        </div>
       </div>
 
-      {/* Selection summary */}
-      <div className="dns-summary">
-        <p className="dns-summary-text">
-          <strong>{selectedDaysCount}</strong> days, <strong>{selectedNightsCount}</strong> nights selected
-        </p>
-      </div>
-
-      {/* Check-in/Check-out selection */}
-      <div className="dns-checkin-checkout">
-        <div className="dns-checkbox-row">
-          <input
-            type="checkbox"
-            id="dns-checkin-checkbox"
-            checked={selectedDaysCount > 0}
-            readOnly
-            className="dns-checkbox"
-          />
-          <label htmlFor="dns-checkin-checkbox" className="dns-checkbox-label">
-            Check-in day is <strong>{checkInDay?.display || 'Not set'}</strong>
-          </label>
+      {/* Schedule info container - combines check-in, check-out, and summary */}
+      <div className="dns-schedule-info">
+        <div className="dns-schedule-info-row">
+          <span className="dns-schedule-info-label">Check-in:</span>
+          <span className="dns-schedule-info-value">{checkInDay?.display || 'Not set'}</span>
         </div>
-
-        <div className="dns-checkbox-row">
-          <input
-            type="checkbox"
-            id="dns-checkout-checkbox"
-            checked={!!checkOutDay}
-            readOnly
-            className="dns-checkbox"
-          />
-          <label htmlFor="dns-checkout-checkbox" className="dns-checkbox-label">
-            Check-out day is <strong>{checkOutDay?.display || 'Not set'}</strong>
-          </label>
+        <div className="dns-schedule-info-row">
+          <span className="dns-schedule-info-label">Check-out:</span>
+          <span className="dns-schedule-info-value">{checkOutDay?.display || 'Not set'}</span>
         </div>
-      </div>
-
-      {/* Day selection row with labels */}
-      <div className="dns-day-labels">
-        {days.map((day) => (
-          <div
-            key={`label-${day.id}`}
-            className={`dns-day-label-item ${isDaySelected(day.id) ? 'dns-day-label-item--selected' : ''}`}
-          >
-            <span className="dns-single-letter">{day.singleLetter}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-// ============================================================================
-// SUB-COMPONENT: CancelProposalModalInner
-// ============================================================================
-
-function CancelProposalModalInner({
-  isVisible,
-  proposal,
-  listing,
-  onCancel,
-  onConfirm
-}) {
-  const [showReasonInput, setShowReasonInput] = useState(false)
-  const [cancellationReason, setCancellationReason] = useState('')
-
-  const handleYesClick = useCallback(() => {
-    if (!showReasonInput) {
-      setShowReasonInput(true)
-    } else {
-      onConfirm(cancellationReason || undefined)
-    }
-  }, [showReasonInput, cancellationReason, onConfirm])
-
-  const handleCancelClick = useCallback(() => {
-    setShowReasonInput(false)
-    setCancellationReason('')
-    onCancel()
-  }, [onCancel])
-
-  const handleCloseClick = useCallback(() => {
-    setShowReasonInput(false)
-    setCancellationReason('')
-    onCancel()
-  }, [onCancel])
-
-  if (!isVisible) {
-    return null
-  }
-
-  const listingName = listing?.Name || proposal?.listing?.Name || 'this listing'
-  const listingPhoto = listing?.['Features - Photos']?.[0]?.Photo ||
-                       proposal?._listing?.['Features - Photos']?.[0]?.Photo ||
-                       null
-
-  return (
-    <div className="cancel-proposal-modal">
-      <div className="cpm-container">
-        {/* Header */}
-        <div className="cpm-header">
-          <button
-            type="button"
-            className="cpm-close-button"
-            onClick={handleCloseClick}
-            aria-label="Close"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
-
-          {/* Warning icon */}
-          <div className="cpm-warning-icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M19 7L5 7M14 11V17M10 11V17M5 7L6 19C6 20.1046 6.89543 21 8 21H16C17.1046 21 18 20.1046 18 19L19 7M9 7V4C9 3.44772 9.44772 3 10 3H14C14.5523 3 15 3.44772 15 4V7" stroke="#FF0000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
-
-          <h2 className="cpm-title">Cancel Proposal?</h2>
-          <p className="cpm-subtitle">This action is irreversible</p>
-        </div>
-
-        {/* Content */}
-        <div className="cpm-content">
-          {/* Listing photo */}
-          <div className="cpm-listing-photo">
-            {listingPhoto ? (
-              <img src={listingPhoto} alt={listingName} className="cpm-photo-image" />
-            ) : (
-              <div className="cpm-photo-placeholder">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="3" y="3" width="18" height="18" rx="2" stroke="#6B6B6B" strokeWidth="2"/>
-                  <circle cx="8.5" cy="8.5" r="1.5" fill="#6B6B6B"/>
-                  <path d="M21 15L16 10L5 21" stroke="#6B6B6B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                <span className="cpm-photo-text">Listing Photo</span>
-              </div>
-            )}
-          </div>
-
-          <p className="cpm-confirmation-text">
-            Are you sure you want to cancel this proposal for <strong>{listingName}</strong>?
-          </p>
-
-          {/* Reason for cancellation - conditionally visible */}
-          {showReasonInput && (
-            <div className="cpm-reason-section">
-              <label htmlFor="cancellation-reason" className="cpm-reason-label">
-                Reason for cancellation (optional):
-              </label>
-              <textarea
-                id="cancellation-reason"
-                className="cpm-reason-input"
-                value={cancellationReason}
-                onChange={(e) => setCancellationReason(e.target.value)}
-                placeholder="Enter your reason for canceling this proposal..."
-                rows={3}
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Action buttons */}
-        <div className="cpm-actions">
-          <button
-            type="button"
-            className="cpm-button cpm-button--secondary"
-            onClick={handleCancelClick}
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            className="cpm-button cpm-button--destructive"
-            onClick={handleYesClick}
-          >
-            Yes, Cancel
-          </button>
+        <div className="dns-schedule-info-divider"></div>
+        <div className="dns-schedule-info-row">
+          <span className="dns-schedule-info-summary">
+            <strong>{selectedDaysCount}</strong> days, <strong>{selectedNightsCount}</strong> nights per week
+          </span>
         </div>
       </div>
     </div>
@@ -486,10 +322,7 @@ function ReservationPriceBreakdown({
 
   return (
     <div className="reservation-price-breakdown">
-      {/* Header - Only visible for guests */}
-      {isGuest && (
-        <h2 className="rpb-header">Proposal Details</h2>
-      )}
+      {/* Note: Header removed - parent GuestEditingProposalModal already has "Proposal Details" in gep-header */}
 
       {/* Move-in Section */}
       <div className="rpb-row">
@@ -678,7 +511,7 @@ export default function GuestEditingProposalModal({
   proposal,
   listing,
   user,
-  initialView = 'general',
+  initialView = 'pristine',
   isVisible = true,
   isInternalUsage = false,
   pageWidth = 1200,
@@ -690,23 +523,84 @@ export default function GuestEditingProposalModal({
   totalPriceForReservation = 0,
   priceRentPer4Weeks = 0
 }) {
-  // View state machine: 'editing' | 'general' | 'cancel'
+  // View state machine: 'pristine' | 'editing' | 'general' | 'cancel'
   const [view, setView] = useState(initialView)
 
+  // Debug log to verify initial view state
+  console.log('[GuestEditingProposalModal] initialView:', initialView, '| current view:', view)
+
+  // Helper to parse days selected from proposal
+  const parseDaysSelected = (proposal) => {
+    let days = proposal?.['Days Selected'] || proposal?.['hc days selected'] || []
+    if (typeof days === 'string') {
+      try { days = JSON.parse(days) } catch (e) { days = [] }
+    }
+    if (!Array.isArray(days) || days.length === 0) return [1, 2, 3, 4, 5] // Default Mon-Fri
+
+    // Convert to day indices (0=Sun, 1=Mon, etc.)
+    return days.map(d => {
+      if (typeof d === 'number') return d
+      if (typeof d === 'string') {
+        const trimmed = d.trim()
+        const numericValue = parseInt(trimmed, 10)
+        if (!isNaN(numericValue) && String(numericValue) === trimmed) return numericValue
+        // Map day names to indices
+        const dayNameMap = { 'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6 }
+        return dayNameMap[trimmed] ?? -1
+      }
+      return -1
+    }).filter(d => d >= 0 && d <= 6)
+  }
+
+  // Helper to parse check-in/check-out day from proposal
+  // Database stores these as numeric strings ("5" for Friday) or day names ("Friday")
+  const parseDayFromProposal = (dayValue, fallbackIndex = 1) => {
+    if (dayValue === null || dayValue === undefined || dayValue === '') {
+      const fallback = DAYS_OF_WEEK[fallbackIndex]
+      return { display: fallback.name, dayIndex: fallback.dayIndex, first3Letters: fallback.shortName }
+    }
+
+    // Handle numeric value (number or numeric string like "5")
+    const numericValue = typeof dayValue === 'number' ? dayValue : parseInt(String(dayValue).trim(), 10)
+    if (!isNaN(numericValue) && numericValue >= 0 && numericValue <= 6) {
+      const dayObj = DAYS_OF_WEEK[numericValue]
+      return { display: dayObj.name, dayIndex: dayObj.dayIndex, first3Letters: dayObj.shortName }
+    }
+
+    // Handle day name string (e.g., "Friday", "Tuesday")
+    const dayObj = DAYS_OF_WEEK.find(d => d.name === dayValue || d.shortName === dayValue)
+    if (dayObj) {
+      return { display: dayObj.name, dayIndex: dayObj.dayIndex, first3Letters: dayObj.shortName }
+    }
+
+    // Fallback if not found
+    const fallback = DAYS_OF_WEEK[fallbackIndex]
+    return { display: fallback.name, dayIndex: fallback.dayIndex, first3Letters: fallback.shortName }
+  }
+
   // Form state for editing
-  const [formState, setFormState] = useState(() => ({
-    moveInDate: proposal?.hcMoveInDate ? new Date(proposal.hcMoveInDate) :
-                proposal?.['hc Move-in Date'] ? new Date(proposal['hc Move-in Date']) :
-                proposal?.['Move in range start'] ? new Date(proposal['Move in range start']) :
-                new Date(),
-    flexibleMoveInRange: proposal?.moveInRangeText || proposal?.['Move in range text'] || '',
-    reservationSpan: RESERVATION_SPAN_OPTIONS.find(s => s.weeks === (proposal?.reservationSpanWeeks || proposal?.['Reservation Span (Weeks)'])) || RESERVATION_SPAN_OPTIONS[1],
-    numberOfWeeks: proposal?.reservationSpanWeeks || proposal?.['Reservation Span (Weeks)'] || 4,
-    selectedDays: [1, 2, 3, 4, 5], // Default Monday-Friday
-    selectedNights: [1, 2, 3, 4], // Default 4 nights
-    checkInDay: { display: 'Monday', bubbleNumber: 2, first3Letters: 'Mon' },
-    checkOutDay: { display: 'Friday', bubbleNumber: 6, first3Letters: 'Fri' }
-  }))
+  const [formState, setFormState] = useState(() => {
+    const daysSelected = parseDaysSelected(proposal)
+    const nightsCount = proposal?.['nights per week (num)'] || daysSelected.length - 1 || 4
+
+    // Parse check-in and check-out days from proposal data
+    const checkInDayValue = proposal?.['check in day'] || proposal?.checkInDay
+    const checkOutDayValue = proposal?.['check out day'] || proposal?.checkOutDay
+
+    return {
+      moveInDate: proposal?.hcMoveInDate ? new Date(proposal.hcMoveInDate) :
+                  proposal?.['hc Move-in Date'] ? new Date(proposal['hc Move-in Date']) :
+                  proposal?.['Move in range start'] ? new Date(proposal['Move in range start']) :
+                  new Date(),
+      flexibleMoveInRange: proposal?.moveInRangeText || proposal?.['Move in range text'] || '',
+      reservationSpan: RESERVATION_SPAN_OPTIONS.find(s => s.weeks === (proposal?.reservationSpanWeeks || proposal?.['Reservation Span (Weeks)'])) || RESERVATION_SPAN_OPTIONS[1],
+      numberOfWeeks: proposal?.reservationSpanWeeks || proposal?.['Reservation Span (Weeks)'] || 4,
+      selectedDays: daysSelected,
+      selectedNights: daysSelected.slice(0, nightsCount), // Nights are a subset of selected days
+      checkInDay: parseDayFromProposal(checkInDayValue, 1),   // Default to Monday (index 1)
+      checkOutDay: parseDayFromProposal(checkOutDayValue, 5)  // Default to Friday (index 5)
+    }
+  })
 
   // Price breakdown visibility state
   const [isPriceBreakdownVisible, setIsPriceBreakdownVisible] = useState(true)
@@ -733,21 +627,32 @@ export default function GuestEditingProposalModal({
   // Computed visibility conditions from Bubble conditionals
   const showMainView = view !== 'cancel'
   const showEditingPortion = view === 'editing'
-  const showBreakdownDetails = view === 'general'
+  const showBreakdownDetails = view === 'general' || view === 'pristine'
   const showScheduleFinancial = isStatusAccepted || view === 'editing' || isInternalUsage
-  const showButtons = view === 'editing' || view === 'general' || isStatusAccepted || isInternalUsage
+  const showButtons = view === 'editing' || view === 'general' || view === 'pristine' || isStatusAccepted || isInternalUsage
+  const isPristine = view === 'pristine'
 
   // Handle initial state setup when proposal changes
   useEffect(() => {
     if (proposal && openForFirstTime) {
       const moveInDateValue = proposal?.hcMoveInDate || proposal?.['hc Move-in Date'] || proposal?.['Move in range start']
       const weeksValue = proposal?.reservationSpanWeeks || proposal?.['Reservation Span (Weeks)'] || 4
+      const daysSelected = parseDaysSelected(proposal)
+      const nightsCount = proposal?.['nights per week (num)'] || daysSelected.length - 1 || 4
+
+      // Parse check-in and check-out days from proposal data
+      const checkInDayValue = proposal?.['check in day'] || proposal?.checkInDay
+      const checkOutDayValue = proposal?.['check out day'] || proposal?.checkOutDay
 
       setFormState(prev => ({
         ...prev,
         moveInDate: moveInDateValue ? new Date(moveInDateValue) : new Date(),
         numberOfWeeks: weeksValue,
-        reservationSpan: RESERVATION_SPAN_OPTIONS.find(s => s.weeks === weeksValue) || RESERVATION_SPAN_OPTIONS[1]
+        reservationSpan: RESERVATION_SPAN_OPTIONS.find(s => s.weeks === weeksValue) || RESERVATION_SPAN_OPTIONS[1],
+        selectedDays: daysSelected,
+        selectedNights: daysSelected.slice(0, nightsCount),
+        checkInDay: parseDayFromProposal(checkInDayValue, 1),
+        checkOutDay: parseDayFromProposal(checkOutDayValue, 5)
       }))
       setOpenForFirstTime(false)
     }
@@ -765,16 +670,16 @@ export default function GuestEditingProposalModal({
     }
   }, [formState.reservationSpan, formState.numberOfWeeks])
 
-  // Handle close
+  // Handle close - reset to pristine state for next opening
   const handleClose = useCallback(() => {
-    setView('general')
+    setView('pristine')
     onClose?.()
   }, [onClose])
 
-  // Handle back button
+  // Handle back button - go back one step in the state machine
   const handleBack = useCallback(() => {
     if (view === 'editing') {
-      setView('general')
+      setView('pristine')
     } else {
       handleClose()
     }
@@ -788,6 +693,11 @@ export default function GuestEditingProposalModal({
       setView('general')
     }
   }, [view])
+
+  // Handle "Edit Proposal" button click from pristine state
+  const handleStartEditing = useCallback(() => {
+    setView('editing')
+  }, [])
 
   // Handle form field changes
   const handleMoveInDateChange = useCallback((e) => {
@@ -835,9 +745,10 @@ export default function GuestEditingProposalModal({
     setIsHouseRulesVisible(prev => !prev)
   }, [])
 
-  // Handle display new terms button
+  // Handle display new terms button - transitions from editing to general (review) state
   const handleDisplayNewTerms = useCallback(() => {
     setIsPriceBreakdownVisible(true)
+    setView('general')
     onAlert?.({
       text: 'New terms calculated',
       alertType: 'information',
@@ -883,9 +794,9 @@ export default function GuestEditingProposalModal({
     handleClose
   ])
 
-  // Handle cancel edits button
+  // Handle cancel edits button - return to pristine state (discard edits)
   const handleCancelEdits = useCallback(() => {
-    setView('general')
+    setView('pristine')
   }, [])
 
   // Handle initiate cancel proposal
@@ -894,15 +805,44 @@ export default function GuestEditingProposalModal({
   }, [])
 
   // Handle cancel proposal confirmation
-  const handleConfirmCancel = useCallback((reason) => {
-    onProposalCancel?.(reason)
-    onAlert?.({
-      text: 'Proposal cancelled',
-      alertType: 'information',
-      showOnLive: true
-    })
-    handleClose()
-  }, [onProposalCancel, onAlert, handleClose])
+  const handleConfirmCancel = useCallback(async (reason) => {
+    // Get proposal ID from the proposal object
+    const proposalId = proposal?._id;
+
+    if (!proposalId) {
+      onAlert?.({
+        text: 'Unable to cancel: proposal ID not found',
+        alertType: 'error',
+        showOnLive: true
+      });
+      return;
+    }
+
+    try {
+      // Execute the cancellation in Supabase
+      await executeCancelProposal(proposalId, reason || undefined);
+
+      // Notify parent component
+      onProposalCancel?.(reason);
+
+      // Show success message
+      onAlert?.({
+        text: 'Proposal cancelled successfully',
+        alertType: 'success',
+        showOnLive: true
+      });
+
+      // Close the modal
+      handleClose();
+    } catch (error) {
+      console.error('[GuestEditingProposalModal] Error cancelling proposal:', error);
+      onAlert?.({
+        text: `Failed to cancel proposal: ${error.message}`,
+        alertType: 'error',
+        showOnLive: true
+      });
+    }
+  }, [proposal, onProposalCancel, onAlert, handleClose])
 
   // Handle cancel modal dismiss
   const handleDismissCancel = useCallback(() => {
@@ -937,37 +877,69 @@ export default function GuestEditingProposalModal({
         {/* Main view for editing and reviewing */}
         {showMainView && (
           <div className={`gep-main-view ${view === 'editing' ? 'gep-main-view--editing' : ''}`}>
-            {/* Header */}
+            {/* Header - matches mockup exactly */}
             <div className="gep-header">
-              <button
-                type="button"
-                className="gep-back-button"
-                onClick={handleBack}
-                aria-label="Back"
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
-
-              <div className="gep-header-title">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                <h2 className="gep-title">Proposal Details</h2>
-              </div>
-
-              <button
-                type="button"
-                className="gep-close-button"
-                onClick={handleClose}
-                aria-label="Close"
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
+              {view === 'pristine' ? (
+                /* Pristine header: icon + title/subtitle on left, close on right */
+                <>
+                  <div className="gep-header-left">
+                    <div className="gep-header-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                        <polyline points="14,2 14,8 20,8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <div className="gep-header-title-text">Proposal Details</div>
+                      <div className="gep-header-subtitle">{listing?.title || listing?.Title || proposal?._listing?.title || 'Listing'}</div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="gep-close-button"
+                    onClick={handleClose}
+                    aria-label="Close"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="18" y1="6" x2="6" y2="18"/>
+                      <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </button>
+                </>
+              ) : (
+                /* Editing/General header: left-aligned with back button, consistent with pristine */
+                <>
+                  <div className="gep-header-left">
+                    <button
+                      type="button"
+                      className="gep-header-back-btn"
+                      onClick={handleBack}
+                      aria-label="Back"
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M15 18L9 12L15 6" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </button>
+                    <div>
+                      <div className="gep-header-title-text">Edit Proposal</div>
+                      <div className="gep-header-subtitle">{listing?.title || listing?.Title || proposal?._listing?.title || 'Listing'}</div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="gep-close-button"
+                    onClick={handleClose}
+                    aria-label="Close"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="18" y1="6" x2="6" y2="18"/>
+                      <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </button>
+                </>
+              )}
             </div>
 
             {/* Guest comment section */}
@@ -1101,8 +1073,75 @@ export default function GuestEditingProposalModal({
               </div>
             )}
 
-            {/* Breakdown details - conditionally visible */}
-            {showBreakdownDetails && (
+            {/* Pristine document view - matches mockup exactly */}
+            {view === 'pristine' && (
+              <div className="gep-document-view">
+                {/* Detail rows */}
+                <div className="gep-detail-row">
+                  <span className="gep-detail-label">Move-in</span>
+                  <span className="gep-detail-value">{formatDate(formState.moveInDate, false)}</span>
+                </div>
+                <div className="gep-detail-row">
+                  <span className="gep-detail-label">Check-in</span>
+                  <span className="gep-detail-value">{formState.checkInDay?.display || 'Not set'}</span>
+                </div>
+                <div className="gep-detail-row">
+                  <span className="gep-detail-label">Check-out</span>
+                  <span className="gep-detail-value">{formState.checkOutDay?.display || 'Not set'}</span>
+                </div>
+                <div className="gep-detail-row">
+                  <span className="gep-detail-label">Reservation Length</span>
+                  <span className="gep-detail-value">{reservationSpan.display}</span>
+                </div>
+                <div className="gep-detail-row">
+                  <span className="gep-detail-label">Weekly Pattern</span>
+                  <span className="gep-detail-value">
+                    {formState.checkInDay?.first3Letters || 'Mon'} - {formState.checkOutDay?.first3Letters || 'Fri'} ({formState.selectedNights.length} nights/week)
+                  </span>
+                </div>
+                <div className="gep-detail-row">
+                  <span className="gep-detail-label">House Rules</span>
+                  <span className="gep-detail-value">{houseRulesToDisplay.length}</span>
+                </div>
+
+                {/* Pricing Breakdown section */}
+                <div className="gep-pricing-section">
+                  <div className="gep-pricing-title">Pricing Breakdown</div>
+                  <div className="gep-pricing-row">
+                    <span className="gep-pricing-label">Price per night</span>
+                    <span className="gep-pricing-value">${(pricePerNight || 0).toFixed(2)}</span>
+                  </div>
+                  <div className="gep-pricing-row">
+                    <span className="gep-pricing-label">{getReservedLabel(listing?.rentalType || 'Nightly')}</span>
+                    <span className="gep-pricing-value">× {formState.selectedNights.length * formState.numberOfWeeks}</span>
+                  </div>
+                  <div className="gep-pricing-row gep-pricing-row--total">
+                    <span className="gep-pricing-label">Total Price for Reservation</span>
+                    <span className="gep-pricing-value">${(totalPriceForReservation || 0).toFixed(2)}</span>
+                  </div>
+                </div>
+
+                {/* Fees section */}
+                <div className="gep-fees-section">
+                  <div className="gep-fee-row">
+                    <span className="gep-fee-label">{get4WeekPriceLabel(listing?.rentalType || 'Nightly')}</span>
+                    <span className="gep-fee-value">${(priceRentPer4Weeks || 0).toFixed(2)}</span>
+                  </div>
+                  <div className="gep-fee-row">
+                    <span className="gep-fee-label">Refundable Damage Deposit*</span>
+                    <span className="gep-fee-value">${(listing?.damageDeposit || listing?.['Damage Deposit'] || 0).toFixed(2)}</span>
+                  </div>
+                  <div className="gep-fee-row">
+                    <span className="gep-fee-label">Maintenance Fee* <span className="gep-fee-note">*see terms of use</span></span>
+                    <span className="gep-fee-value">${(listing?.maintenanceFee || listing?.['Maintenance Fee'] || 0).toFixed(2)}</span>
+                  </div>
+                  <p className="gep-disclaimer">*Refundable Damage Deposit is held with Split Lease</p>
+                </div>
+              </div>
+            )}
+
+            {/* General breakdown details - for general view only */}
+            {view === 'general' && (
               <div className="gep-breakdown-details">
                 <ReservationPriceBreakdown
                   listing={listing || proposal?._listing}
@@ -1152,68 +1191,78 @@ export default function GuestEditingProposalModal({
               </div>
             )}
 
-            {/* Buttons section - conditionally visible */}
-            {showButtons && (
-              <div className="gep-buttons">
-                {view === 'editing' ? (
-                  <>
-                    <button
-                      type="button"
-                      className="gep-button gep-button--secondary"
-                      onClick={handleCancelEdits}
-                    >
-                      Cancel edits
-                    </button>
-                    <button
-                      type="button"
-                      className="gep-button gep-button--primary"
-                      onClick={handleSubmitProposalEdits}
-                    >
-                      Submit Proposal Edits
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      type="button"
-                      className="gep-button gep-button--outline"
-                      onClick={handleDisplayNewTerms}
-                    >
-                      Display New Terms
-                    </button>
-                    <button
-                      type="button"
-                      className="gep-button gep-button--primary"
-                      onClick={handleSubmitProposalEdits}
-                    >
-                      Submit Proposal Edits
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
+          </div>
+        )}
 
-            {/* Cancel Proposal Button - visible in general view */}
-            {view === 'general' && (
-              <div className="gep-cancel-section">
+        {/* Buttons section - OUTSIDE gep-main-view so they stay pinned at bottom */}
+        {showMainView && showButtons && (
+          <div className={`gep-buttons ${view === 'pristine' ? 'gep-buttons--vertical' : ''}`}>
+            {view === 'pristine' ? (
+              /* Pristine state: User just opened modal, hasn't edited anything */
+              /* Edit Proposal on top, Close on bottom - stacked vertically */
+              <>
                 <button
                   type="button"
-                  className="gep-button gep-button--destructive-outline"
-                  onClick={handleInitiateCancelProposal}
+                  className="gep-button gep-button--primary"
+                  onClick={handleStartEditing}
                 >
-                  Cancel Proposal
+                  Edit Proposal
                 </button>
-              </div>
+                <button
+                  type="button"
+                  className="gep-button gep-button--secondary"
+                  onClick={handleClose}
+                >
+                  Close
+                </button>
+              </>
+            ) : view === 'editing' ? (
+              /* Editing state: User is actively changing fields */
+              <>
+                <button
+                  type="button"
+                  className="gep-button gep-button--secondary"
+                  onClick={handleCancelEdits}
+                >
+                  Cancel edits
+                </button>
+                <button
+                  type="button"
+                  className="gep-button gep-button--primary"
+                  onClick={handleDisplayNewTerms}
+                >
+                  Display New Terms
+                </button>
+              </>
+            ) : (
+              /* General state: User has reviewed new terms, ready to submit */
+              <>
+                <button
+                  type="button"
+                  className="gep-button gep-button--secondary"
+                  onClick={handleClose}
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  className="gep-button gep-button--primary"
+                  onClick={handleSubmitProposalEdits}
+                >
+                  Submit Proposal Edits
+                </button>
+              </>
             )}
           </div>
         )}
 
         {/* Cancel proposal modal */}
-        <CancelProposalModalInner
-          isVisible={view === 'cancel'}
+        <CancelProposalModal
+          isOpen={view === 'cancel'}
           proposal={proposal}
           listing={listing || proposal?._listing}
-          onCancel={handleDismissCancel}
+          userType="guest"
+          onClose={handleDismissCancel}
           onConfirm={handleConfirmCancel}
         />
       </div>

@@ -7,15 +7,60 @@
  * No price calculations should happen outside of ListingScheduleSelector.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import ReviewSection from './CreateProposalFlowV2Components/ReviewSection.jsx';
 import UserDetailsSection from './CreateProposalFlowV2Components/UserDetailsSection.jsx';
 import MoveInSection from './CreateProposalFlowV2Components/MoveInSection.jsx';
 import DaysSelectionSection from './CreateProposalFlowV2Components/DaysSelectionSection.jsx';
+import { calculatePrice } from '../../lib/scheduleSelector/priceCalculations.js';
+import { calculateNightsFromDays } from '../../lib/scheduleSelector/nightCalculations.js';
+import Toast, { useToast } from './Toast.jsx';
 import '../../styles/create-proposal-flow-v2.css';
 
 // Day name constants for check-in/check-out calculation
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+// Flow order constants for step navigation
+// Section IDs: 1 = Review, 2 = User Details, 3 = Move-in, 4 = Days Selection
+
+// FULL flow (for pages where days/move-in NOT pre-selected, e.g., FavoriteListingsPage):
+// User Details -> Move-in (reservation span) -> Days -> Review
+// Move-in comes before Days so reservation span is set for accurate price calculations
+const FULL_FIRST_PROPOSAL_FLOW = [2, 3, 4, 1];
+
+// SHORT flow (for pages where days/move-in ARE pre-selected, e.g., ViewSplitLeasePage):
+// User Details -> Review
+const SHORT_FIRST_PROPOSAL_FLOW = [2, 1];
+
+// Returning users start at Review and can edit any section (hub-and-spoke model)
+const RETURNING_USER_START = 1;
+
+/**
+ * Custom hook to lock body scroll when a modal/popup is open
+ * Prevents background content from scrolling when popup is visible
+ */
+const useBodyScrollLock = () => {
+  useEffect(() => {
+    // Save original body overflow style
+    const originalOverflow = document.body.style.overflow;
+    const originalPaddingRight = document.body.style.paddingRight;
+
+    // Calculate scrollbar width to prevent layout shift
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+
+    // Lock body scroll
+    document.body.style.overflow = 'hidden';
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
+
+    // Cleanup: restore original styles when component unmounts
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      document.body.style.paddingRight = originalPaddingRight;
+    };
+  }, []);
+};
 
 // localStorage key prefix for proposal draft data
 const PROPOSAL_DRAFT_KEY_PREFIX = 'splitlease_proposal_draft_';
@@ -52,12 +97,14 @@ const saveProposalDraft = (listingId, data) => {
 
 /**
  * Clear proposal draft from localStorage
+ * Exported so parent components can call this on successful submission
  * @param {string} listingId - The listing ID
  */
-const clearProposalDraft = (listingId) => {
+export const clearProposalDraft = (listingId) => {
   if (!listingId) return;
   try {
     localStorage.removeItem(`${PROPOSAL_DRAFT_KEY_PREFIX}${listingId}`);
+    console.log('🗑️ Cleared proposal draft from localStorage for listing:', listingId);
   } catch (e) {
     console.warn('Failed to clear proposal draft:', e);
   }
@@ -72,10 +119,12 @@ const clearProposalDraft = (listingId) => {
  * @param {number} reservationSpan - Number of weeks for reservation
  * @param {Object} pricingBreakdown - Pricing breakdown from parent (INITIAL ONLY)
  * @param {Object} zatConfig - ZAT price configuration object
- * @param {boolean} hasExistingUserData - Whether user has previously entered data
- * @param {Object} existingUserData - Previously saved user data
+ * @param {boolean} isFirstProposal - Whether this is the user's first proposal (true = first, false = subsequent)
+ * @param {boolean} useFullFlow - Whether to use full sequential flow (days + move-in steps). Default false = short flow (User Info -> Review)
+ * @param {Object} existingUserData - User's saved profile data for prefilling (aboutMe, needForSpace, specialNeeds)
  * @param {Function} onClose - Callback when modal closes
  * @param {Function} onSubmit - Callback when proposal is submitted
+ * @param {boolean} isSubmitting - Whether the proposal is currently being submitted (disables button)
  */
 export default function CreateProposalFlowV2({
   listing,
@@ -85,11 +134,19 @@ export default function CreateProposalFlowV2({
   reservationSpan = 13,
   pricingBreakdown = null,
   zatConfig = null,
-  hasExistingUserData = false,
+  isFirstProposal = true,
+  useFullFlow = false,
   existingUserData = null,
   onClose,
-  onSubmit
+  onSubmit,
+  isSubmitting = false
 }) {
+  // Lock body scroll when popup is open
+  useBodyScrollLock();
+
+  // Toast notifications (with fallback rendering when no ToastProvider)
+  const { toasts, showToast, removeToast } = useToast();
+
   // Get listing ID for localStorage key
   const listingId = listing?._id;
 
@@ -97,11 +154,29 @@ export default function CreateProposalFlowV2({
   const savedDraft = getSavedProposalDraft(listingId);
   const hasSavedDraft = savedDraft && (savedDraft.needForSpace || savedDraft.aboutYourself);
 
-  // Section flow: 1 = Review, 2 = User Details, 3 = Move-in, 4 = Days Selection
-  // Start at Review if we have existing data OR saved draft with content
+  // Determine which flow to use based on useFullFlow and isFirstProposal
+  // - useFullFlow=true (FavoriteListingsPage): ALWAYS use full flow for ALL users
+  //   User Details -> Days -> Move-in -> Review (ignores isFirstProposal)
+  // - useFullFlow=false (ViewSplitLeasePage):
+  //   - First proposal: User Details -> Review (short flow)
+  //   - Returning user: Start on Review (hub-and-spoke)
+  const activeFlow = useFullFlow ? FULL_FIRST_PROPOSAL_FLOW : SHORT_FIRST_PROPOSAL_FLOW;
+
+  // Determine if we should use sequential flow
+  // - useFullFlow=true: ALWAYS sequential (for FavoriteListingsPage)
+  // - useFullFlow=false: Only sequential for first-time users (for ViewSplitLeasePage)
+  const useSequentialFlow = useFullFlow || isFirstProposal;
+
   const [currentSection, setCurrentSection] = useState(
-    (hasExistingUserData || hasSavedDraft) ? 1 : 2
+    useSequentialFlow ? activeFlow[0] : RETURNING_USER_START
   );
+
+  // Track position in the flow for sequential navigation (0 = first step, 1 = second step, etc.)
+  const [flowStepIndex, setFlowStepIndex] = useState(0);
+
+  // Track if we're editing from Review (hub-and-spoke pattern)
+  // When true, "Next" returns directly to Review instead of continuing sequence
+  const [isEditingFromReview, setIsEditingFromReview] = useState(false);
 
   // Internal state for pricing (managed by ListingScheduleSelector in DaysSelectionSection)
   const [internalPricingBreakdown, setInternalPricingBreakdown] = useState(pricingBreakdown);
@@ -115,6 +190,8 @@ export default function CreateProposalFlowV2({
       daysSelected,
       nightsSelected,
       reservationSpan,
+      isFirstProposal,
+      hasExistingUserData: !!(existingUserData?.needForSpace || existingUserData?.aboutYourself),
       pricingBreakdown: {
         pricePerNight: pricingBreakdown?.pricePerNight,
         fourWeekRent: pricingBreakdown?.fourWeekRent,
@@ -123,9 +200,31 @@ export default function CreateProposalFlowV2({
       }
     });
 
+    // Debug: Log the exact isFirstProposal value and type
+    console.log('🔍 isFirstProposal debug:', {
+      value: isFirstProposal,
+      type: typeof isFirstProposal,
+      strictEquals0: isFirstProposal === 0,
+      strictEqualsTrue: isFirstProposal === true,
+      strictEqualsFalse: isFirstProposal === false
+    });
+
     if (hasSavedDraft) {
       console.log('📂 Loaded saved proposal draft from localStorage:', savedDraft);
     }
+
+    if (existingUserData) {
+      console.log('👤 User profile data available for prefilling:', {
+        needForSpace: existingUserData.needForSpace ? 'present' : 'empty',
+        aboutYourself: existingUserData.aboutYourself ? 'present' : 'empty',
+        hasUniqueRequirements: existingUserData.hasUniqueRequirements
+      });
+    }
+
+    console.log(`📍 Starting flow: ${useSequentialFlow
+      ? `Sequential flow (${useFullFlow ? 'full' : 'short'}) [${activeFlow.join(' -> ')}], starting at step 1 (section ${activeFlow[0]})`
+      : '1 (Review - returning user, hub-and-spoke model)'
+    }`);
   }, []);
 
   // Convert day objects to day names for compatibility
@@ -288,6 +387,59 @@ export default function CreateProposalFlowV2({
     proposalData.uniqueRequirements
   ]);
 
+  // Prepare listing data for price calculation (same structure as DaysSelectionSection)
+  const pricingListing = useMemo(() => {
+    if (!listing) return null;
+    return {
+      id: listing._id,
+      minimumNights: listing['Minimum Nights'] || 2,
+      maximumNights: listing['Maximum Nights'] || 7,
+      'rental type': listing['rental type'] || 'Nightly',
+      'Weeks offered': listing['Weeks offered'] || 'Every week',
+      '💰Unit Markup': listing['💰Unit Markup'] || 0,
+      '💰Nightly Host Rate for 2 nights': listing['💰Nightly Host Rate for 2 nights'],
+      '💰Nightly Host Rate for 3 nights': listing['💰Nightly Host Rate for 3 nights'],
+      '💰Nightly Host Rate for 4 nights': listing['💰Nightly Host Rate for 4 nights'],
+      '💰Nightly Host Rate for 5 nights': listing['💰Nightly Host Rate for 5 nights'],
+      '💰Nightly Host Rate for 7 nights': listing['💰Nightly Host Rate for 7 nights'],
+      '💰Weekly Host Rate': listing['💰Weekly Host Rate'],
+      '💰Monthly Host Rate': listing['💰Monthly Host Rate'],
+      '💰Price Override': listing['💰Price Override'],
+      '💰Cleaning Cost / Maintenance Fee': listing['💰Cleaning Cost / Maintenance Fee'],
+      '💰Damage Deposit': listing['💰Damage Deposit']
+    };
+  }, [listing]);
+
+  // Recalculate prices when reservationSpan changes (mirrors main page behavior)
+  useEffect(() => {
+    // Skip if no days selected or no listing data
+    if (!internalDaysSelected || internalDaysSelected.length < 2 || !pricingListing) {
+      return;
+    }
+
+    console.log('📊 Recalculating prices due to reservationSpan change:', proposalData.reservationSpan);
+
+    // Calculate nights from selected days
+    const selectedNights = calculateNightsFromDays(internalDaysSelected);
+
+    if (selectedNights.length === 0) {
+      return;
+    }
+
+    // Recalculate pricing with new reservation span
+    const newPriceBreakdown = calculatePrice(
+      selectedNights,
+      pricingListing,
+      proposalData.reservationSpan,
+      zatConfig
+    );
+
+    console.log('💰 New price breakdown after reservationSpan change:', newPriceBreakdown);
+
+    // Update internal pricing state (this triggers the existing useEffect to update proposalData)
+    setInternalPricingBreakdown(newPriceBreakdown);
+  }, [proposalData.reservationSpan, pricingListing, zatConfig]);
+
   const updateProposalData = (field, value) => {
     // Handle full pricing breakdown object from DaysSelectionSection
     if (field === 'pricingBreakdown' && value && typeof value === 'object') {
@@ -333,32 +485,86 @@ export default function CreateProposalFlowV2({
   };
 
   // Edit handlers - take user to specific section from Review
+  // Sets isEditingFromReview flag so "Next" returns directly to Review (hub-and-spoke pattern)
   const handleEditUserDetails = () => {
     setCurrentSection(2);
+    setIsEditingFromReview(true);
+    console.log('📝 Edit: Jumping to User Details (section 2) from Review');
   };
 
   const handleEditMoveIn = () => {
     setCurrentSection(3);
+    setIsEditingFromReview(true);
+    console.log('📝 Edit: Jumping to Move-in (section 3) from Review');
   };
 
   const handleEditDays = () => {
     setCurrentSection(4);
+    setIsEditingFromReview(true);
+    console.log('📝 Edit: Jumping to Days Selection (section 4) from Review');
   };
 
-  // Navigation - always return to Review (Section 1) after any edit
+  // Navigation - handles both sequential flow and hub-and-spoke editing from Review
   const handleNext = () => {
-    if (validateCurrentSection()) {
-      setCurrentSection(1); // Always go back to Review
+    if (!validateCurrentSection()) return;
+
+    // If we're editing from Review (hub-and-spoke), return directly to Review
+    if (isEditingFromReview) {
+      setCurrentSection(1);
+      setIsEditingFromReview(false);
+      // Also update flowStepIndex to point to Review section
+      const reviewIndex = activeFlow.indexOf(1);
+      if (reviewIndex !== -1) {
+        setFlowStepIndex(reviewIndex);
+      }
+      console.log('📍 Edit complete: Returning to Review section');
+      return;
+    }
+
+    if (useSequentialFlow) {
+      // Sequential flow (full flow for FavoriteListingsPage, short flow for first-time on ViewSplitLeasePage)
+      const nextIndex = flowStepIndex + 1;
+      if (nextIndex < activeFlow.length) {
+        setFlowStepIndex(nextIndex);
+        setCurrentSection(activeFlow[nextIndex]);
+        console.log(`📍 Sequential flow (${useFullFlow ? 'full' : 'short'}): Moving to step ${nextIndex + 1} (section ${activeFlow[nextIndex]})`);
+      }
+      // If at last step (Review), handleSubmit will be called instead
+    } else {
+      // Hub-and-spoke for returning users on ViewSplitLeasePage: always return to Review
+      setCurrentSection(1);
+      console.log('📍 Returning user (hub-and-spoke): Back to Review section');
     }
   };
 
   const handleBack = () => {
-    if (currentSection === 1) {
-      // From Review, go to User Details to edit
-      setCurrentSection(2);
-    } else {
-      // From any edit section, go back to Review
+    // If editing from Review, "Go back" should also return to Review
+    if (isEditingFromReview) {
       setCurrentSection(1);
+      setIsEditingFromReview(false);
+      const reviewIndex = activeFlow.indexOf(1);
+      if (reviewIndex !== -1) {
+        setFlowStepIndex(reviewIndex);
+      }
+      console.log('📍 Edit cancelled: Returning to Review section');
+      return;
+    }
+
+    if (useSequentialFlow) {
+      // Sequential back navigation (flow depends on useFullFlow prop)
+      if (flowStepIndex > 0) {
+        const prevIndex = flowStepIndex - 1;
+        setFlowStepIndex(prevIndex);
+        setCurrentSection(activeFlow[prevIndex]);
+        console.log(`📍 Sequential flow (${useFullFlow ? 'full' : 'short'}): Going back to step ${prevIndex + 1} (section ${activeFlow[prevIndex]})`);
+      }
+      // If at first step (User Details), no back navigation available
+    } else {
+      // Hub-and-spoke for returning users on ViewSplitLeasePage: from any edit section, return to Review
+      if (currentSection !== 1) {
+        setCurrentSection(1);
+        console.log('📍 Returning user (hub-and-spoke): Back to Review section');
+      }
     }
   };
 
@@ -366,23 +572,39 @@ export default function CreateProposalFlowV2({
     switch (currentSection) {
       case 2: // User Details
         if (!proposalData.needForSpace || !proposalData.aboutYourself) {
-          alert('Please fill in all required fields (minimum 10 words each)');
+          showToast({
+            title: 'Required Fields Missing',
+            content: 'Please fill in all required fields (minimum 10 words each)',
+            type: 'warning'
+          });
           return false;
         }
         if (proposalData.hasUniqueRequirements && !proposalData.uniqueRequirements) {
-          alert('Please describe your unique requirements');
+          showToast({
+            title: 'Required Field Missing',
+            content: 'Please describe your unique requirements',
+            type: 'warning'
+          });
           return false;
         }
         return true;
       case 3: // Move-in
         if (!proposalData.moveInDate) {
-          alert('Please select a move-in date');
+          showToast({
+            title: 'Move-in Date Required',
+            content: 'Please select a move-in date',
+            type: 'warning'
+          });
           return false;
         }
         return true;
       case 4: // Days Selection
         if (!proposalData.daysSelected || proposalData.daysSelected.length === 0) {
-          alert('Please select at least one day');
+          showToast({
+            title: 'Days Selection Required',
+            content: 'Please select at least one day',
+            type: 'warning'
+          });
           return false;
         }
         return true;
@@ -395,13 +617,13 @@ export default function CreateProposalFlowV2({
     // Convert day names back to day objects for submission
     const submissionData = {
       ...proposalData,
-      daysSelectedObjects: dayNamesToObjects(proposalData.daysSelected)
+      daysSelectedObjects: dayNamesToObjects(proposalData.daysSelected),
+      // Include listingId so parent can clear draft on success
+      listingId: listingId
     };
 
-    // Clear draft from localStorage on successful submission
-    clearProposalDraft(listingId);
-    console.log('🗑️ Cleared proposal draft from localStorage');
-
+    // NOTE: localStorage draft is NOT cleared here - parent must call clearProposalDraft(listingId)
+    // on successful submission. This ensures data is preserved if submission fails.
     onSubmit(submissionData);
   };
 
@@ -469,12 +691,30 @@ export default function CreateProposalFlowV2({
   };
 
   return (
+    <>
     <div className="create-proposal-popup">
       <div className="proposal-container">
         <div className="proposal-header">
-          <div className="proposal-header-top">
+          <div className="proposal-header-top" style={{ marginBottom: getSectionSubtitle() ? '15px' : '0' }}>
             <div className="proposal-title">
-              📄 {getSectionTitle()}
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#31135D"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ marginRight: '8px', verticalAlign: 'middle' }}
+              >
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+              {getSectionTitle()}
             </div>
             <button className="close-button" onClick={onClose}>
               ✕
@@ -492,22 +732,49 @@ export default function CreateProposalFlowV2({
         </div>
 
         <div className="navigation-buttons">
-          {currentSection !== 2 && (
+          {/* Show back button:
+              - When editing from Review: always show (to cancel and return)
+              - For sequential flow: show if not on first step (flowStepIndex > 0)
+              - For hub-and-spoke: show if not on Review section (currentSection !== 1) */}
+          {(isEditingFromReview || (useSequentialFlow ? flowStepIndex > 0 : currentSection !== 1)) && (
             <button className="nav-button back" onClick={handleBack}>
-              Go back
+              {isEditingFromReview ? 'Cancel' : 'Go back'}
             </button>
           )}
           {currentSection === 1 ? (
-            <button className="nav-button next" onClick={handleSubmit}>
-              Submit Proposal
+            <button
+              className={`nav-button next ${isSubmitting ? 'submitting' : ''}`}
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <span className="button-spinner"></span>
+                  Submitting...
+                </>
+              ) : (
+                'Submit Proposal'
+              )}
             </button>
           ) : (
             <button className="nav-button next" onClick={handleNext}>
-              {currentSection === 2 ? 'Next' : 'Yes, Continue'}
+              {/* Button text based on context:
+                  - When editing from Review: "Save & Review"
+                  - For sequential flow: "Review Proposal" on the step before Review, "Next" otherwise
+                  - For hub-and-spoke: "Next" on User Details, "Yes, Continue" on other sections */}
+              {isEditingFromReview
+                ? 'Save & Review'
+                : useSequentialFlow
+                  ? (flowStepIndex === activeFlow.length - 2 ? 'Review Proposal' : 'Next')
+                  : (currentSection === 2 ? 'Next' : 'Yes, Continue')}
             </button>
           )}
         </div>
       </div>
     </div>
+
+    {/* Toast notifications (rendered here as fallback when no ToastProvider) */}
+    {toasts && toasts.length > 0 && <Toast toasts={toasts} onRemove={removeToast} />}
+    </>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Section1SpaceSnapshot } from './sections/Section1SpaceSnapshot';
 import { Section2Features } from './sections/Section2Features';
 import { Section3LeaseStyles } from './sections/Section3LeaseStyles';
@@ -7,89 +7,372 @@ import { Section5Rules } from './sections/Section5Rules';
 import { Section6Photos } from './sections/Section6Photos';
 import { Section7Review } from './sections/Section7Review';
 import type { ListingFormData } from './types/listing.types';
-import { DEFAULT_LISTING_DATA } from './types/listing.types';
+import { useListingStore, listingLocalStore } from './store';
 import Header from '../../shared/Header';
-import Footer from '../../shared/Footer';
+import SignUpLoginModal from '../../shared/SignUpLoginModal';
+import Toast, { useToast } from '../../shared/Toast';
 import { getListingById } from '../../../lib/bubbleAPI';
+import { checkAuthStatus, validateTokenAndFetchUser } from '../../../lib/auth';
+import { createListing } from '../../../lib/listingService';
+import { isGuest } from '../../../logic/rules/users/isGuest.js';
 import './styles/SelfListingPage.css';
+import '../../../styles/components/toast.css';
+
+// ============================================================================
+// Success Modal Component
+// ============================================================================
+
+interface SuccessModalProps {
+  isOpen: boolean;
+  listingId: string;
+  listingName: string;
+  isLoading?: boolean;
+}
+
+const successModalStyles = {
+  overlay: {
+    position: 'fixed' as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10000,
+  },
+  modal: {
+    backgroundColor: 'white',
+    borderRadius: '16px',
+    padding: '2.5rem',
+    maxWidth: '480px',
+    width: '90%',
+    textAlign: 'center' as const,
+    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+  },
+  iconWrapper: {
+    width: '80px',
+    height: '80px',
+    backgroundColor: '#10B981',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    margin: '0 auto 1.5rem',
+  },
+  icon: {
+    fontSize: '40px',
+    color: 'white',
+  },
+  title: {
+    fontSize: '1.5rem',
+    fontWeight: '700' as const,
+    color: '#1a202c',
+    margin: '0 0 0.75rem',
+  },
+  subtitle: {
+    fontSize: '1rem',
+    color: '#6b7280',
+    margin: '0 0 1.5rem',
+    lineHeight: '1.5',
+  },
+  listingName: {
+    fontWeight: '600' as const,
+    color: '#5B21B6',
+  },
+  button: {
+    display: 'inline-block',
+    padding: '0.875rem 2rem',
+    backgroundColor: '#5B21B6',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '1rem',
+    fontWeight: '600' as const,
+    cursor: 'pointer',
+    textDecoration: 'none',
+    transition: 'background-color 0.15s ease',
+  },
+  secondaryText: {
+    fontSize: '0.875rem',
+    color: '#9ca3af',
+    marginTop: '1rem',
+  },
+  loadingIconWrapper: {
+    width: '80px',
+    height: '80px',
+    backgroundColor: '#5B21B6',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    margin: '0 auto 1.5rem',
+  },
+  spinner: {
+    width: '40px',
+    height: '40px',
+    border: '4px solid rgba(255, 255, 255, 0.3)',
+    borderTop: '4px solid white',
+    borderRadius: '50%',
+    animation: 'spin 1s linear infinite',
+  },
+  loadingTitle: {
+    fontSize: '1.5rem',
+    fontWeight: '700' as const,
+    color: '#1a202c',
+    margin: '0 0 0.75rem',
+  },
+  loadingSubtitle: {
+    fontSize: '1rem',
+    color: '#6b7280',
+    margin: '0 0 1.5rem',
+    lineHeight: '1.5',
+  },
+};
+
+const SuccessModal: React.FC<SuccessModalProps> = ({ isOpen, listingId, listingName, isLoading = false }) => {
+  if (!isOpen) return null;
+
+  const handleGoToDashboard = () => {
+    window.location.href = `/listing-dashboard.html?listing_id=${listingId}`;
+  };
+
+  const handleViewListing = () => {
+    window.location.href = `/preview-split-lease?listing_id=${listingId}`;
+  };
+
+  // Loading state UI
+  if (isLoading) {
+    return (
+      <div style={successModalStyles.overlay}>
+        <style>
+          {`
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `}
+        </style>
+        <div style={successModalStyles.modal}>
+          <div style={successModalStyles.loadingIconWrapper}>
+            <div style={successModalStyles.spinner} />
+          </div>
+          <h2 style={successModalStyles.loadingTitle}>Creating Your Listing...</h2>
+          <p style={successModalStyles.loadingSubtitle}>
+            Please wait while we set up <span style={successModalStyles.listingName}>"{listingName}"</span>. This may take a moment.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Success state UI
+  return (
+    <div style={successModalStyles.overlay}>
+      <div style={successModalStyles.modal}>
+        <div style={successModalStyles.iconWrapper}>
+          <span style={successModalStyles.icon}>✓</span>
+        </div>
+        <h2 style={successModalStyles.title}>Listing Created Successfully!</h2>
+        <p style={successModalStyles.subtitle}>
+          Your listing <span style={successModalStyles.listingName}>"{listingName}"</span> has been submitted and is now pending review.
+        </p>
+        <button
+          style={successModalStyles.button}
+          onClick={handleGoToDashboard}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#4C1D95')}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#5B21B6')}
+        >
+          Go to My Dashboard
+        </button>
+        <button
+          style={{
+            ...successModalStyles.button,
+            backgroundColor: 'transparent',
+            color: '#5B21B6',
+            border: '2px solid #5B21B6',
+            marginTop: '0.75rem',
+          }}
+          onClick={handleViewListing}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#F5F3FF';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+          }}
+        >
+          Preview Listing
+        </button>
+        <p style={successModalStyles.secondaryText}>
+          You'll be notified once your listing is approved.
+        </p>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// Main Component
+// ============================================================================
 
 export const SelfListingPage: React.FC = () => {
   console.log('🏠 SelfListingPage: Component mounting');
 
-  const [formData, setFormData] = useState<ListingFormData>(DEFAULT_LISTING_DATA);
-  const [currentSection, setCurrentSection] = useState(1);
+  // Use the local store for all form data management
+  const {
+    formData,
+    lastSaved,
+    isDirty,
+    stagingStatus,
+    errors: storeErrors,
+    updateFormData,
+    updateSpaceSnapshot,
+    updateFeatures,
+    updateLeaseStyles,
+    updatePricing,
+    updateRules,
+    updatePhotos,
+    updateReview,
+    setCurrentSection: setStoreSection,
+    markSectionComplete,
+    saveDraft,
+    stageForSubmission,
+    markSubmitting,
+    markSubmitted,
+    markSubmissionFailed,
+    getDebugSummary,
+  } = useListingStore();
+
+  const [currentSection, setCurrentSection] = useState(formData.currentSection || 1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingListing, setIsLoadingListing] = useState(false);
 
-  // Initialize data: Check URL for listing_id, then load from localStorage or fetch from database
+  // Auth and modal states
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [pendingSubmit, setPendingSubmit] = useState(false);
+
+  // Access control state - guests should not access this page
+  const [isCheckingAccess, setIsCheckingAccess] = useState(true);
+
+  // Success modal state
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [createdListingId, setCreatedListingId] = useState('');
+
+  // Toast notifications
+  const { toasts, showToast, removeToast } = useToast();
+
+  // Key to force Header re-render after auth change
+  const [headerKey, setHeaderKey] = useState(0);
+
+  // Access control: Redirect guest users to index page
+  // This page is accessible to: logged-out users OR host users
+  // Guest users should be redirected to the index page
   useEffect(() => {
-    const initializeData = async () => {
-      console.log('🔄 SelfListingPage: Initializing data...');
+    const checkAccess = async () => {
+      console.log('🔐 SelfListingPage: Checking access control...');
 
+      const loggedIn = await checkAuthStatus();
+
+      if (!loggedIn) {
+        // Logged out users can access - allow
+        console.log('✅ SelfListingPage: User is logged out - access allowed');
+        setIsCheckingAccess(false);
+        return;
+      }
+
+      // User is logged in - check their type
+      // CRITICAL: Use clearOnFailure: false to preserve session if Edge Function fails
+      const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
+      const userType = userData?.userType;
+
+      console.log('🔐 SelfListingPage: User type:', userType);
+
+      if (isGuest({ userType })) {
+        // Guest users should not access this page - redirect to index
+        console.log('❌ SelfListingPage: Guest user detected - redirecting to index');
+        window.location.href = '/';
+        return;
+      }
+
+      // Host users (or any other type) can access
+      console.log('✅ SelfListingPage: Host user - access allowed');
+      setIsCheckingAccess(false);
+    };
+
+    checkAccess();
+  }, []);
+
+  // Sync current section with store
+  useEffect(() => {
+    if (formData.currentSection && formData.currentSection !== currentSection) {
+      setCurrentSection(formData.currentSection);
+    }
+  }, [formData.currentSection]);
+
+  // Initialize data: Check URL for listing_id to fetch existing listing from Bubble
+  useEffect(() => {
+    const initializeFromUrl = async () => {
       const urlParams = new URLSearchParams(window.location.search);
-      const listingId = urlParams.get('listing_id');
-      console.log('🏠 SelfListingPage: Listing ID from URL:', listingId);
+      const listingIdFromUrl = urlParams.get('listing_id');
+      console.log('🏠 SelfListingPage: Listing ID from URL:', listingIdFromUrl);
 
-      if (listingId) {
+      if (listingIdFromUrl) {
         // If there's a listing ID in the URL, fetch it from Bubble API
         setIsLoadingListing(true);
         try {
           console.log('📡 Fetching listing data from Bubble API...');
-          console.log('📋 Fetching listing data for ID:', listingId);
-          const listingData = await getListingById(listingId);
+          const listingData = await getListingById(listingIdFromUrl);
           console.log('✅ Listing data fetched from Bubble:', listingData);
 
           // Preload the listing name into the form
+          // IMPORTANT: Get fresh data from store, not React state, to avoid race condition
+          // where formData.spaceSnapshot hasn't been updated with localStorage data yet
           if (listingData?.Name) {
             console.log('✅ Preloading listing name:', listingData.Name);
-            setFormData(prevData => {
-              const newData = {
-                ...prevData,
-                spaceSnapshot: {
-                  ...prevData.spaceSnapshot,
-                  listingName: listingData.Name
-                }
-              };
-              console.log('📝 Updated form data with listing name:', newData.spaceSnapshot.listingName);
-              return newData;
+            const currentStoreData = listingLocalStore.getData();
+            updateSpaceSnapshot({
+              ...currentStoreData.spaceSnapshot,
+              listingName: listingData.Name,
             });
           } else {
             console.warn('⚠️ No listing name found in fetched data');
           }
         } catch (error) {
           console.error('❌ Error fetching listing from Bubble:', error);
-          // Don't show error to user, just continue with empty form
         } finally {
           setIsLoadingListing(false);
           console.log('✅ Loading complete');
         }
       } else {
-        // No listing ID in URL, try to load from localStorage draft
-        console.log('📂 No listing ID in URL, checking localStorage for draft...');
-        const savedData = localStorage.getItem('selfListingDraft');
-        if (savedData) {
-          try {
-            const parsed = JSON.parse(savedData);
-            console.log('📂 Loaded draft from localStorage:', parsed);
-            setFormData(parsed);
-            setCurrentSection(parsed.currentSection || 1);
-          } catch (error) {
-            console.error('❌ Error loading saved draft:', error);
-          }
+        console.log('📂 No listing ID in URL, checking for pending listing name');
+
+        // Check if there's a pending listing name from the CreateDuplicateListingModal
+        const pendingName = localStorage.getItem('pendingListingName');
+        if (pendingName) {
+          console.log('📝 Found pending listing name:', pendingName);
+          const currentStoreData = listingLocalStore.getData();
+          updateSpaceSnapshot({
+            ...currentStoreData.spaceSnapshot,
+            listingName: pendingName,
+          });
+          // Clean up the temporary storage key after use
+          localStorage.removeItem('pendingListingName');
+          console.log('✅ Pending listing name applied and cleaned up');
         } else {
-          console.log('📂 No draft found in localStorage');
+          console.log('📂 No pending listing name, using stored draft data');
         }
       }
     };
 
-    initializeData();
-  }, []);
+    initializeFromUrl();
+  }, []); // Only run once on mount
 
+  // Log store debug summary on changes
   useEffect(() => {
-    // Save draft every time formData changes
-    const dataToSave = { ...formData, currentSection };
-    localStorage.setItem('selfListingDraft', JSON.stringify(dataToSave));
-  }, [formData, currentSection]);
+    console.log('📊 Store Debug Summary:', getDebugSummary());
+  }, [formData, getDebugSummary]);
 
   // Validation functions for each section
   const isSectionComplete = (sectionNum: number): boolean => {
@@ -146,69 +429,199 @@ export const SelfListingPage: React.FC = () => {
     return !formData.completedSections.includes(previousSection);
   };
 
-  const handleSectionChange = (section: number) => {
+  const handleSectionChange = useCallback((section: number) => {
     // Prevent navigation to locked sections
     if (isSectionLocked(section)) {
       return;
     }
 
     setCurrentSection(section);
-    setFormData({ ...formData, currentSection: section });
+    setStoreSection(section);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  }, [isSectionLocked, setStoreSection]);
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     if (currentSection < 7) {
       // Only mark section as completed if validation passes
-      let completedSections = formData.completedSections;
-
       if (isSectionComplete(currentSection)) {
-        completedSections = [...new Set([...formData.completedSections, currentSection])];
+        markSectionComplete(currentSection);
       } else {
-        // Section is not complete, show alert
-        alert(`Please complete all required fields in Section ${currentSection} before proceeding.`);
+        // Section is not complete, show toast notification
+        showToast({
+          title: 'Incomplete Section',
+          content: `Please complete all required fields in Section ${currentSection} before proceeding.`,
+          type: 'warning',
+          duration: 6000
+        });
         return;
       }
 
       const nextSection = currentSection + 1;
-      setFormData({ ...formData, completedSections, currentSection: nextSection });
       setCurrentSection(nextSection);
+      setStoreSection(nextSection);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  };
+  }, [currentSection, isSectionComplete, markSectionComplete, setStoreSection]);
 
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     if (currentSection > 1) {
       handleSectionChange(currentSection - 1);
     }
+  }, [currentSection, handleSectionChange]);
+
+  // Handle manual save draft
+  const handleSaveDraft = useCallback(() => {
+    const success = saveDraft();
+    if (success) {
+      alert('Draft saved successfully!');
+    } else {
+      alert('Failed to save draft. Please try again.');
+    }
+  }, [saveDraft]);
+
+  // Handle auth success callback - called after user signs up/logs in via modal
+  const handleAuthSuccess = (result: { success: boolean; isNewUser?: boolean }) => {
+    console.log('[SelfListingPage] Auth success callback triggered', result);
+    setShowAuthModal(false);
+
+    // Show success toast
+    const isSignup = result?.isNewUser !== false; // Default to signup message
+    showToast(
+      isSignup ? 'Account created successfully! Creating your listing...' : 'Logged in successfully! Creating your listing...',
+      'success',
+      4000
+    );
+
+    // User agreed to terms by signing up (modal shows "By signing up or logging in, you agree to...")
+    // So we set agreedToTerms to true to pass validation
+    updateReview({
+      ...formData.review,
+      agreedToTerms: true,
+    });
+
+    // Force Header to re-render after a brief delay to ensure token is stored
+    setTimeout(() => {
+      setHeaderKey(prev => prev + 1);
+    }, 100);
+
+    if (pendingSubmit) {
+      setPendingSubmit(false);
+
+      // Show the success modal immediately with loading state
+      // This provides instant feedback after signup
+      setIsSubmitting(true);
+      setShowSuccessModal(true);
+
+      // Delay submission to ensure auth state is fully updated
+      setTimeout(() => {
+        proceedWithSubmitAfterAuth();
+      }, 300);
+    }
   };
 
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
+  // Submission logic specifically for after auth (modal already shown)
+  const proceedWithSubmitAfterAuth = async () => {
+    markSubmitting();
+
     try {
-      // Here you would make an API call to submit the listing
-      // For now, we'll simulate with a timeout
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Stage the data for submission (validates all fields)
+      const { success, errors } = stageForSubmission();
 
-      console.log('Submitting listing:', formData);
+      if (!success) {
+        console.error('❌ Validation errors:', errors);
+        setShowSuccessModal(false);
+        setIsSubmitting(false);
+        alert(`Please fix the following errors:\n\n${errors.join('\n')}`);
+        return;
+      }
 
-      // Mark as submitted
-      setFormData({ ...formData, isSubmitted: true, isDraft: false });
+      console.log('[SelfListingPage] Submitting listing after auth...');
+      console.log('[SelfListingPage] Form data:', formData);
 
-      // Clear draft from localStorage
-      localStorage.removeItem('selfListingDraft');
+      // Submit to listing table via listingService
+      const newListing = await createListing(formData);
 
-      // Show success message
-      alert('Listing submitted successfully! You will receive a confirmation email shortly.');
+      console.log('[SelfListingPage] ✅ Listing created:', newListing);
 
-      // Optionally redirect to a success page
-      // window.location.href = '/listing-submitted';
+      // Mark as submitted (clears local storage)
+      markSubmitted();
+
+      // Update modal with the listing ID (transitions from loading to success)
+      setCreatedListingId(newListing._id);
     } catch (error) {
-      console.error('Error submitting listing:', error);
-      alert('Error submitting listing. Please try again.');
+      console.error('[SelfListingPage] ❌ Error submitting listing:', error);
+      markSubmissionFailed(error instanceof Error ? error.message : 'Unknown error');
+      // Hide the modal on error
+      setShowSuccessModal(false);
+      alert(`Error submitting listing: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Actual listing submission logic
+  const proceedWithSubmit = async () => {
+    setIsSubmitting(true);
+    markSubmitting();
+
+    try {
+      // Stage the data for submission (validates all fields)
+      const { success, errors } = stageForSubmission();
+
+      if (!success) {
+        console.error('❌ Validation errors:', errors);
+        alert(`Please fix the following errors:\n\n${errors.join('\n')}`);
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Show success modal immediately with loading state
+      // This provides immediate feedback to the user
+      setShowSuccessModal(true);
+
+      console.log('[SelfListingPage] Submitting listing...');
+      console.log('[SelfListingPage] Form data:', formData);
+
+      // Submit to listing table via listingService
+      const newListing = await createListing(formData);
+
+      console.log('[SelfListingPage] ✅ Listing created:', newListing);
+
+      // Mark as submitted (clears local storage)
+      markSubmitted();
+
+      // Update modal with the listing ID (transitions from loading to success)
+      setCreatedListingId(newListing._id);
+    } catch (error) {
+      console.error('[SelfListingPage] ❌ Error submitting listing:', error);
+      markSubmissionFailed(error instanceof Error ? error.message : 'Unknown error');
+      // Hide the modal on error
+      setShowSuccessModal(false);
+      alert(`Error submitting listing: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Handle submit button click - check auth first
+  const handleSubmit = async () => {
+    console.log('[SelfListingPage] Submit clicked, checking auth status...');
+
+    // Check current auth status
+    const loggedIn = await checkAuthStatus();
+    setIsLoggedIn(loggedIn);
+
+    if (!loggedIn) {
+      // User is not logged in - show auth modal
+      console.log('[SelfListingPage] User not logged in, showing auth modal');
+      setPendingSubmit(true);
+      setShowAuthModal(true);
+      return;
+    }
+
+    // User is logged in - proceed with submission
+    console.log('[SelfListingPage] User is logged in, proceeding with submission');
+    proceedWithSubmit();
   };
 
 
@@ -223,8 +636,13 @@ export const SelfListingPage: React.FC = () => {
   ];
 
   const getSectionStatus = (sectionNum: number) => {
-    if (formData.completedSections.includes(sectionNum)) return 'completed';
-    if (sectionNum === currentSection) return 'active';
+    const isCompleted = formData.completedSections.includes(sectionNum);
+    const isActive = sectionNum === currentSection;
+
+    // If section is both completed AND currently active, return combined class
+    if (isCompleted && isActive) return 'completed active';
+    if (isCompleted) return 'completed';
+    if (isActive) return 'active';
     if (isSectionLocked(sectionNum)) return 'locked';
     return 'pending';
   };
@@ -233,11 +651,26 @@ export const SelfListingPage: React.FC = () => {
   console.log('🎨 Current form data:', formData);
   console.log('🎨 Listing name in form:', formData.spaceSnapshot.listingName);
 
+  // Show loading state while checking access
+  if (isCheckingAccess) {
+    return (
+      <>
+        <Header />
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+          <p>Loading...</p>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
-      {/* Shared Header Island */}
+      {/* Toast Notifications */}
+      <Toast toasts={toasts} onRemove={removeToast} />
+
+      {/* Shared Header Island - key forces re-render after auth change */}
       {console.log('🎨 Rendering Header component')}
-      <Header />
+      <Header key={headerKey} autoShowLogin={false} />
 
       <div className="self-listing-page">
         {/* Page Header */}
@@ -245,9 +678,20 @@ export const SelfListingPage: React.FC = () => {
           <div className="header-content">
             <h1>Create Your Listing</h1>
             <div className="header-actions">
-              <button className="btn-save-draft">Save Draft</button>
+              <button
+                className="btn-save-draft"
+                onClick={handleSaveDraft}
+                disabled={!isDirty && stagingStatus !== 'failed'}
+              >
+                {isDirty ? 'Save Draft' : lastSaved ? 'Saved' : 'Save Draft'}
+              </button>
               <button className="btn-help">Need Help?</button>
             </div>
+            {lastSaved && (
+              <span className="last-saved-indicator">
+                Last saved: {lastSaved.toLocaleTimeString()}
+              </span>
+            )}
           </div>
         </header>
 
@@ -263,12 +707,12 @@ export const SelfListingPage: React.FC = () => {
                 />
                 <path
                   className="circle"
-                  strokeDasharray={`${(formData.completedSections.length / 7) * 100}, 100`}
+                  strokeDasharray={`${(Math.min(currentSection, 6) / 6) * 100}, 100`}
                   d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                 />
               </svg>
               <div className="progress-text">
-                {formData.completedSections.length}/{sections.length}
+                {Math.min(currentSection, 6)}/6
               </div>
             </div>
             <p className="progress-label">Sections Complete</p>
@@ -289,7 +733,9 @@ export const SelfListingPage: React.FC = () => {
                 >
                   <div className="nav-icon">{section.icon}</div>
                   <div className="nav-content">
-                    <div className="nav-number">Section {section.number}</div>
+                    <div className="nav-number">
+                      {section.number <= 6 ? `Section ${section.number}` : 'Final Step'}
+                    </div>
                     <div className="nav-title">{section.title}</div>
                   </div>
                   {formData.completedSections.includes(section.number) && (
@@ -309,7 +755,7 @@ export const SelfListingPage: React.FC = () => {
           {currentSection === 1 && (
             <Section1SpaceSnapshot
               data={formData.spaceSnapshot}
-              onChange={(data) => setFormData({ ...formData, spaceSnapshot: data })}
+              onChange={updateSpaceSnapshot}
               onNext={handleNext}
               isLoadingInitialData={isLoadingListing}
             />
@@ -318,17 +764,18 @@ export const SelfListingPage: React.FC = () => {
           {currentSection === 2 && (
             <Section2Features
               data={formData.features}
-              onChange={(data) => setFormData({ ...formData, features: data })}
+              onChange={updateFeatures}
               onNext={handleNext}
               onBack={handleBack}
               zipCode={formData.spaceSnapshot.address.zip}
+              showToast={showToast}
             />
           )}
 
           {currentSection === 3 && (
             <Section3LeaseStyles
               data={formData.leaseStyles}
-              onChange={(data) => setFormData({ ...formData, leaseStyles: data })}
+              onChange={updateLeaseStyles}
               onNext={handleNext}
               onBack={handleBack}
             />
@@ -338,7 +785,7 @@ export const SelfListingPage: React.FC = () => {
             <Section4Pricing
               data={formData.pricing}
               rentalType={formData.leaseStyles.rentalType}
-              onChange={(data) => setFormData({ ...formData, pricing: data })}
+              onChange={updatePricing}
               onNext={handleNext}
               onBack={handleBack}
             />
@@ -348,16 +795,17 @@ export const SelfListingPage: React.FC = () => {
             <Section5Rules
               data={formData.rules}
               rentalType={formData.leaseStyles.rentalType}
-              onChange={(data) => setFormData({ ...formData, rules: data })}
+              onChange={updateRules}
               onNext={handleNext}
               onBack={handleBack}
+              showToast={showToast}
             />
           )}
 
           {currentSection === 6 && (
             <Section6Photos
               data={formData.photos}
-              onChange={(data) => setFormData({ ...formData, photos: data })}
+              onChange={updatePhotos}
               onNext={handleNext}
               onBack={handleBack}
             />
@@ -367,9 +815,10 @@ export const SelfListingPage: React.FC = () => {
             <Section7Review
               formData={formData}
               reviewData={formData.review}
-              onChange={(data) => setFormData({ ...formData, review: data })}
+              onChange={updateReview}
               onSubmit={handleSubmit}
               onBack={handleBack}
+              onNavigateToSection={handleSectionChange}
               isSubmitting={isSubmitting}
             />
           )}
@@ -377,9 +826,26 @@ export const SelfListingPage: React.FC = () => {
       </div>
       </div>
 
-      {/* Shared Footer Island */}
-      {console.log('🎨 Rendering Footer component')}
-      <Footer />
+      {/* Auth Modal for logged-out users */}
+      <SignUpLoginModal
+        isOpen={showAuthModal}
+        onClose={() => {
+          setShowAuthModal(false);
+          setPendingSubmit(false);
+        }}
+        initialView="signup"
+        defaultUserType="host"
+        skipReload={true}
+        onAuthSuccess={handleAuthSuccess}
+      />
+
+      {/* Success Modal - shows loading state while creating, success state when done */}
+      <SuccessModal
+        isOpen={showSuccessModal}
+        listingId={createdListingId}
+        listingName={formData.spaceSnapshot.listingName}
+        isLoading={isSubmitting && !createdListingId}
+      />
     </>
   );
 };

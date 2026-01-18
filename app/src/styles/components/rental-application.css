@@ -1,0 +1,1123 @@
+/* ===========================================
+   SPLIT LEASE RENTAL APPLICATION - STYLES
+   Design System Implementation
+   =========================================== */
+
+/* CSS Variables / Design Tokens */
+:root {
+    /* Primary Colors - Rental App Specific */
+    --rental-app-header: #31135D;
+    --rental-app-primary: #6D31C2;
+    --rental-app-accent: #9780D2;
+    --rental-app-linkedin: #0077B5;
+    --rental-app-facebook: #1877F2;
+
+    /* Status Colors */
+    --rental-app-success: #4CAF50;
+    --rental-app-error: #DC3545;
+    --rental-app-warning: #FF8B00;
+
+    /* Neutral Colors */
+    --rental-app-white: #FFFFFF;
+    --rental-app-background: #F5F5F5;
+    --rental-app-border: #000000;
+    --rental-app-border-light: #E0E0E0;
+    --rental-app-text-primary: #3D3D3D;
+    --rental-app-text-secondary: #757575;
+    --rental-app-placeholder: #757575;
+}
+
+/* ===========================================
+   MAIN CONTENT
+   =========================================== */
+.rental-app-main-content {
+    margin-top: 65px;
+    padding: 30px;
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto;
+    background-color: var(--rental-app-background);
+    min-height: calc(100vh - 65px);
+}
+
+/* Page Header */
+.page-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.header-icon {
+    width: 60px;
+    height: 60px;
+    background-color: var(--rental-app-primary);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.header-icon svg {
+    color: var(--rental-app-white);
+}
+
+.header-text {
+    flex: 1;
+}
+
+.page-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--rental-app-text-primary);
+    margin-bottom: 8px;
+}
+
+.page-subtitle {
+    font-size: 14px;
+    color: var(--rental-app-text-secondary);
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* Application Status (legacy, keeping for backwards compatibility) */
+.application-status {
+    background-color: var(--rental-app-white);
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.status-progress {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.progress-label {
+    font-size: 14px;
+    color: var(--rental-app-text-secondary);
+    min-width: 120px;
+}
+
+.progress-bar-wrapper {
+    flex: 1;
+    height: 24px;
+    background-color: var(--rental-app-white);
+    border: 1px solid #61355D;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background-color: var(--rental-app-accent);
+    border-radius: 5px;
+    transition: width 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.progress-percent {
+    font-family: 'Cousine', monospace;
+    font-size: 12px;
+    color: var(--rental-app-white);
+    font-weight: 600;
+}
+
+.progress-text {
+    font-family: 'Cousine', monospace;
+    font-size: 14px;
+    color: var(--rental-app-text-primary);
+    min-width: 80px;
+    text-align: right;
+}
+
+/* Content Wrapper */
+.content-wrapper {
+    display: flex;
+    gap: 30px;
+}
+
+.form-container {
+    flex: 0 0 70%;
+    max-width: 70%;
+}
+
+.sidebar-status {
+    flex: 0 0 28%;
+    max-width: 28%;
+}
+
+/* ===========================================
+   FORM SECTIONS
+   =========================================== */
+.form-section {
+    background-color: var(--rental-app-white);
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.section-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--rental-app-text-primary);
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--rental-app-border-light);
+}
+
+.section-description {
+    font-size: 13px;
+    color: var(--rental-app-text-secondary);
+    margin-bottom: 15px;
+}
+
+/* Form Layout */
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.form-row-three {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--rental-app-text-primary);
+    margin-bottom: 8px;
+}
+
+.required {
+    color: var(--rental-app-error);
+}
+
+/* Input Styles */
+.input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.form-input {
+    width: 95%;
+    height: 38px;
+    padding: 11px;
+    font-family: 'Lato', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--rental-app-text-primary);
+    background-color: var(--rental-app-white);
+    border: 1px solid var(--rental-app-border);
+    border-radius: 8px;
+    transition: border-color 0.2s ease;
+}
+
+.form-input::placeholder {
+    color: var(--rental-app-placeholder);
+}
+
+.form-input:focus {
+    outline: none;
+    border: 2px solid var(--rental-app-warning);
+}
+
+.form-input.valid {
+    border-color: var(--rental-app-success);
+}
+
+.form-input.error {
+    border-color: var(--rental-app-error);
+}
+
+.form-textarea {
+    height: auto;
+    min-height: 100px;
+    resize: vertical;
+}
+
+.form-select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23757575' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 35px;
+    height: 42px;
+    padding-top: 0;
+    padding-bottom: 0;
+    line-height: 42px;
+}
+
+/* Validation Icon */
+.validation-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.form-input.valid + .validation-icon::after {
+    content: '\2713';
+    color: var(--rental-app-success);
+    opacity: 1;
+}
+
+.form-input.valid + .validation-icon {
+    opacity: 1;
+}
+
+/* Signature Input */
+.signature-input {
+    font-family: 'Brush Script MT', cursive;
+    font-size: 20px;
+    font-style: italic;
+}
+
+/* ===========================================
+   TOGGLE SWITCHES & GROUPS
+   =========================================== */
+.toggle-group {
+    display: flex;
+    gap: 15px;
+}
+
+.toggle-option {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.toggle-option input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    padding: 0;
+    flex-shrink: 0;
+    vertical-align: middle;
+    accent-color: var(--rental-app-primary);
+    cursor: pointer;
+}
+
+.toggle-label {
+    font-size: 14px;
+    line-height: 1;
+    vertical-align: middle;
+    color: var(--rental-app-text-primary);
+}
+
+/* iOS-style Toggle Switch */
+.toggle-switch-wrapper {
+    display: flex;
+    align-items: center;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 26px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.3s ease;
+    border-radius: 26px;
+}
+
+.slider::before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.3s ease;
+    border-radius: 50%;
+}
+
+.toggle-switch input:checked + .slider {
+    background-color: var(--rental-app-primary);
+}
+
+.toggle-switch input:checked + .slider::before {
+    transform: translateX(24px);
+}
+
+/* ===========================================
+   BUTTONS
+   =========================================== */
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    height: 37px;
+    padding: 12px 24px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 18px;
+    font-weight: 500;
+    color: #FCFAFF;
+    background-color: var(--rental-app-primary);
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.btn-primary:hover {
+    background-color: #5a28a3;
+}
+
+.btn-primary:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    height: 37px;
+    padding: 12px 24px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--rental-app-primary);
+    background-color: transparent;
+    border: 2px solid var(--rental-app-primary);
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+    background-color: var(--rental-app-primary);
+    color: var(--rental-app-white);
+}
+
+.btn-secondary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-linkedin {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    height: 40px;
+    padding: 12px 24px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--rental-app-white);
+    background-color: var(--rental-app-linkedin);
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.btn-linkedin:hover {
+    background-color: #006097;
+}
+
+.btn-linkedin.connected {
+    background-color: var(--rental-app-success);
+}
+
+.btn-linkedin:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.btn-facebook {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    height: 40px;
+    padding: 12px 24px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--rental-app-white);
+    background-color: var(--rental-app-facebook);
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.btn-facebook:hover {
+    background-color: #166fe5;
+}
+
+.btn-facebook.connected {
+    background-color: var(--rental-app-success);
+}
+
+.btn-facebook:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.btn-submit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    min-width: 200px;
+    height: 45px;
+    padding: 12px 40px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--rental-app-white);
+    background-color: #28A745;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.btn-submit:hover:not(:disabled) {
+    background-color: #218838;
+}
+
+.btn-submit:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+/* ===========================================
+   FILE UPLOAD
+   =========================================== */
+.upload-box {
+    min-height: 120px;
+    border: 2px dashed var(--rental-app-primary);
+    border-radius: 8px;
+    background-color: #F9F9F9;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.upload-box:hover {
+    background-color: #f0f0f0;
+    border-color: var(--rental-app-accent);
+}
+
+.upload-box.has-file {
+    border-style: solid;
+    border-color: var(--rental-app-success);
+}
+
+.upload-box.uploading {
+    border-color: var(--rental-app-primary);
+    background-color: #f5f0ff;
+    cursor: wait;
+}
+
+.upload-box.complete {
+    border-style: solid;
+    border-color: var(--rental-app-success);
+    background-color: #f0fff0;
+}
+
+.upload-box.error {
+    border-color: var(--rental-app-error);
+    background-color: #fff0f0;
+}
+
+.upload-spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid var(--rental-app-border-light);
+    border-top: 3px solid var(--rental-app-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.upload-icon.success {
+    color: var(--rental-app-success);
+}
+
+.upload-error {
+    color: var(--rental-app-error);
+    font-size: 13px;
+    margin-top: 5px;
+}
+
+/* Existing file display */
+.existing-file-display {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background-color: #f0fff0;
+    border: 1px solid var(--rental-app-success);
+    border-radius: 8px;
+}
+
+.existing-file-display .file-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--rental-app-primary);
+    text-decoration: none;
+    font-size: 14px;
+    flex: 1;
+}
+
+.existing-file-display .file-link:hover {
+    text-decoration: underline;
+}
+
+.existing-file-display .file-link svg {
+    fill: var(--rental-app-primary);
+}
+
+.btn-replace-file {
+    padding: 6px 12px;
+    font-size: 13px;
+    background-color: var(--rental-app-white);
+    border: 1px solid var(--rental-app-border-light);
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--rental-app-text-secondary);
+    transition: all 0.2s ease;
+}
+
+.btn-replace-file:hover {
+    background-color: #f5f5f5;
+    border-color: var(--rental-app-primary);
+    color: var(--rental-app-primary);
+}
+
+.upload-icon {
+    font-size: 32px;
+}
+
+.upload-text {
+    font-size: 14px;
+    color: var(--rental-app-text-secondary);
+}
+
+.helper-text {
+    font-size: 13px;
+    color: var(--rental-app-text-secondary);
+    margin-top: 5px;
+}
+
+.file-preview {
+    margin-top: 10px;
+}
+
+.file-preview-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background-color: #f0f0f0;
+    border-radius: 3px;
+    margin-bottom: 5px;
+}
+
+.file-preview-item .file-name {
+    flex: 1;
+    font-size: 13px;
+    color: var(--rental-app-text-primary);
+}
+
+.file-preview-item .remove-file {
+    background: none;
+    border: none;
+    color: var(--rental-app-error);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0;
+    line-height: 1;
+}
+
+.file-preview-item .remove-file:hover {
+    color: #a71d2a;
+}
+
+/* ===========================================
+   OCCUPANTS
+   =========================================== */
+.occupants-container {
+    margin-bottom: 15px;
+}
+
+.occupant-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 15px;
+    align-items: end;
+    margin-bottom: 15px;
+    padding: 15px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+}
+
+.occupant-row .form-group {
+    margin-bottom: 0;
+}
+
+.delete-occupant {
+    background: none;
+    border: none;
+    color: var(--rental-app-error);
+    cursor: pointer;
+    font-size: 20px;
+    padding: 10px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+}
+
+.delete-occupant:hover {
+    color: #a71d2a;
+}
+
+.occupant-counter {
+    font-size: 13px;
+    color: var(--rental-app-text-secondary);
+    margin-left: 15px;
+}
+
+/* ===========================================
+   VERIFICATION BUTTONS
+   =========================================== */
+.verification-buttons {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.verification-actions {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+/* ===========================================
+   REQUIREMENTS GRID
+   =========================================== */
+.requirements-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.requirement-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+}
+
+.requirement-item .form-label {
+    margin-bottom: 0;
+}
+
+/* ===========================================
+   FORM ACTIONS
+   =========================================== */
+.form-actions {
+    display: flex;
+    justify-content: center;
+    padding: 30px 0;
+}
+
+.submit-error {
+    background-color: #fee2e2;
+    border: 1px solid var(--rental-app-error);
+    color: var(--rental-app-error);
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    text-align: center;
+    font-size: 14px;
+}
+
+/* ===========================================
+   SIDEBAR
+   =========================================== */
+.sidebar-status {
+    position: sticky;
+    top: calc(65px + 30px);
+    height: fit-content;
+}
+
+.sidebar-section {
+    background-color: var(--rental-app-white);
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--rental-app-text-primary);
+    margin-bottom: 15px;
+}
+
+.sidebar-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.sidebar-progress .progress-text {
+    text-align: left;
+}
+
+/* Verification List */
+.verification-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.verification-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--rental-app-border-light);
+}
+
+.verification-item:last-child {
+    border-bottom: none;
+}
+
+.status-icon {
+    font-size: 14px;
+    color: var(--rental-app-text-secondary);
+    width: 16px;
+    text-align: center;
+}
+
+.verification-item.completed .status-icon {
+    color: var(--rental-app-success);
+}
+
+.service-name {
+    flex: 1;
+    font-size: 14px;
+    color: var(--rental-app-text-primary);
+}
+
+.verification-status {
+    font-size: 12px;
+    color: var(--rental-app-text-secondary);
+}
+
+.verification-item.completed .verification-status {
+    color: var(--rental-app-success);
+}
+
+/* Documents List */
+.documents-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.document-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    font-size: 14px;
+    color: var(--rental-app-text-primary);
+}
+
+.doc-icon {
+    color: var(--rental-app-text-secondary);
+    width: 16px;
+    text-align: center;
+}
+
+.doc-icon.completed {
+    color: var(--rental-app-success);
+}
+
+/* ===========================================
+   MODAL
+   =========================================== */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.modal-content {
+    background-color: var(--rental-app-white);
+    padding: 30px;
+    border-radius: 8px;
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+}
+
+.modal-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 30px;
+    color: var(--rental-app-white);
+}
+
+.modal-icon.success {
+    background-color: var(--rental-app-success);
+}
+
+.modal-content h2 {
+    font-size: 24px;
+    margin-bottom: 15px;
+    color: var(--rental-app-text-primary);
+}
+
+.modal-content p {
+    font-size: 14px;
+    color: var(--rental-app-text-secondary);
+    margin-bottom: 20px;
+}
+
+/* ===========================================
+   CONDITIONAL FIELDS
+   =========================================== */
+.conditional-fields {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===========================================
+   CHECKMARKS FOR FIELD LABELS
+   =========================================== */
+.checkmark {
+    color: var(--rental-app-success);
+    font-size: 14px;
+    margin-left: 5px;
+}
+
+/* ===========================================
+   TOGGLE REVEAL SECTIONS
+   =========================================== */
+.toggle-reveal-section {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid var(--rental-app-border-light);
+}
+
+.toggle-reveal-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.toggle-reveal-text {
+    flex: 1;
+    font-size: 13px;
+    color: var(--rental-app-text-secondary);
+    line-height: 1.5;
+}
+
+.toggle-reveal-section .form-group {
+    margin-top: 15px;
+    animation: fadeIn 0.3s ease;
+}
+
+/* ===========================================
+   RESPONSIVE DESIGN
+   =========================================== */
+@media (max-width: 1024px) {
+    .content-wrapper {
+        flex-direction: column;
+    }
+
+    .form-container,
+    .sidebar-status {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
+    .sidebar-status {
+        position: static;
+        order: -1;
+        margin-bottom: 20px;
+    }
+
+    .requirements-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .rental-app-main-content {
+        padding: 15px;
+    }
+
+    .form-row,
+    .form-row-three {
+        grid-template-columns: 1fr;
+    }
+
+    .requirements-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .occupant-row {
+        grid-template-columns: 1fr;
+    }
+
+    .occupant-row .delete-occupant {
+        justify-self: end;
+    }
+
+    .verification-buttons,
+    .verification-actions {
+        flex-direction: column;
+    }
+
+    .verification-buttons button,
+    .verification-actions button {
+        width: 100%;
+    }
+
+    .status-progress {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .progress-label,
+    .progress-text {
+        text-align: center;
+    }
+
+    .page-title {
+        font-size: 22px;
+    }
+}
+
+/* ===========================================
+   ACCESSIBILITY
+   =========================================== */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+:focus-visible {
+    outline: 2px solid var(--rental-app-primary);
+    outline-offset: 2px;
+}
+
+/* ===========================================
+   PRINT STYLES
+   =========================================== */
+@media print {
+    .sidebar-status,
+    .btn-submit,
+    .upload-box {
+        display: none;
+    }
+
+    .rental-app-main-content {
+        margin-top: 0;
+    }
+
+    .form-container {
+        max-width: 100%;
+    }
+}

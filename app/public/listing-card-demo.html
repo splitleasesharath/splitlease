@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Listing Card Demo - Split Lease</title>
+  <link rel="icon" type="image/png" href="/assets/images/split-lease-purple-circle.png">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: #f5f5f5;
+      padding: 40px;
+      min-height: 100vh;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #31135D;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 40px;
+    }
+
+    .card-container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    h2 {
+      color: #333;
+      margin-bottom: 16px;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .card-spacer {
+      height: 40px;
+    }
+
+    /* ========== VARIATION A: Clean & Minimal ========== */
+    .card-a {
+      display: flex;
+      background: white;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color 0.2s ease;
+    }
+
+    .card-a:hover {
+      border-color: #d1d5db;
+    }
+
+    .card-a .image-section {
+      position: relative;
+      width: 300px;
+      flex-shrink: 0;
+      align-self: stretch;
+      overflow: hidden;
+    }
+
+    .card-a .image-section img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .card-a .image-nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255,255,255,0.9);
+      border: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.2s;
+      font-size: 16px;
+      color: #333;
+    }
+
+    .card-a:hover .image-nav { opacity: 1; }
+    .card-a .prev { left: 8px; }
+    .card-a .next { right: 8px; }
+
+    .card-a .image-counter {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      padding: 3px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .card-a .content {
+      flex: 1;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-a .location {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 4px;
+    }
+
+    .card-a .location svg {
+      width: 14px;
+      height: 14px;
+      color: #31135D;
+    }
+
+    .card-a .title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #111;
+      margin-bottom: 4px;
+    }
+
+    .card-a .type {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 2px;
+    }
+
+    .card-a .specs {
+      font-size: 14px;
+      color: #888;
+      margin-bottom: 12px;
+    }
+
+    .card-a .footer {
+      margin-top: auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .card-a .host {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-a .host img {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .card-a .host-name {
+      font-size: 13px;
+      color: #666;
+    }
+
+    .card-a .pricing {
+      text-align: right;
+    }
+
+    .card-a .price-old {
+      font-size: 12px;
+      color: #999;
+      text-decoration: line-through;
+    }
+
+    .card-a .price-current {
+      font-size: 20px;
+      font-weight: 700;
+      color: #31135D;
+    }
+
+    .card-a .price-current span {
+      font-size: 13px;
+      font-weight: 400;
+      color: #666;
+    }
+
+    /* ========== VARIATION B: Compact with CTA ========== */
+    .card-b {
+      display: flex;
+      background: white;
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .card-b:hover {
+      border-color: #c7d2fe;
+    }
+
+    .card-b .image-section {
+      position: relative;
+      width: 260px;
+      flex-shrink: 0;
+      align-self: stretch;
+    }
+
+    .card-b .image-section img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .card-b .image-counter {
+      position: absolute;
+      bottom: 8px;
+      left: 8px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    .card-b .content {
+      flex: 1;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-b .top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+
+    .card-b .location {
+      font-size: 12px;
+      color: #31135D;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .card-b .price-badge {
+      background: #f0e6ff;
+      color: #31135D;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .card-b .title {
+      font-size: 17px;
+      font-weight: 600;
+      color: #111;
+      margin-bottom: 6px;
+    }
+
+    .card-b .details {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 12px;
+    }
+
+    .card-b .footer {
+      margin-top: auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-b .host {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-b .host img {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+    }
+
+    .card-b .host-name {
+      font-size: 13px;
+      color: #555;
+    }
+
+    .card-b .cta-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #31135D;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .card-b .cta-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* ========== VARIATION C: Info Dense ========== */
+    .card-c {
+      display: flex;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .card-c:hover {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    }
+
+    .card-c .image-section {
+      position: relative;
+      width: 280px;
+      flex-shrink: 0;
+      align-self: stretch;
+    }
+
+    .card-c .image-section img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .card-c .image-counter {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: white;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .card-c .content {
+      flex: 1;
+      padding: 16px 20px;
+    }
+
+    .card-c .header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .card-c .title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #111;
+    }
+
+    .card-c .location {
+      font-size: 13px;
+      color: #31135D;
+    }
+
+    .card-c .pricing {
+      text-align: right;
+    }
+
+    .card-c .price-starting {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 2px;
+    }
+
+    .card-c .price-main {
+      font-size: 20px;
+      font-weight: 700;
+      color: #31135D;
+    }
+
+    .card-c .price-main span {
+      font-size: 12px;
+      font-weight: 400;
+      color: #666;
+    }
+
+    .card-c .availability-note {
+      font-size: 11px;
+      color: #31135D;
+      margin-top: 4px;
+      font-weight: 500;
+    }
+
+    .card-c .meta {
+      display: flex;
+      gap: 16px;
+      padding: 12px 0;
+      border-top: 1px solid #f0f0f0;
+      border-bottom: 1px solid #f0f0f0;
+      margin-bottom: 12px;
+    }
+
+    .card-c .meta-item {
+      font-size: 13px;
+      color: #555;
+    }
+
+    .card-c .meta-item strong {
+      color: #111;
+    }
+
+    .card-c .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-c .host {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-c .host img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+    }
+
+    .card-c .host-info .name {
+      font-size: 14px;
+      font-weight: 500;
+      color: #111;
+    }
+
+    .card-c .host-info .label {
+      font-size: 12px;
+      color: #888;
+    }
+
+    .card-c .actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .card-c .btn-outline {
+      padding: 8px 14px;
+      border: 1px solid #31135D;
+      background: white;
+      color: #31135D;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .card-c .btn-primary {
+      padding: 8px 14px;
+      border: none;
+      background: #31135D;
+      color: white;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    /* ========== VARIATION D: Info Dense - Tighter Layout ========== */
+    .card-d {
+      display: flex;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .card-d:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+
+    .card-d .image-section {
+      position: relative;
+      width: 280px;
+      flex-shrink: 0;
+      align-self: stretch;
+    }
+
+    .card-d .image-section img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .card-d .image-counter {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
+    .card-d .content {
+      flex: 1;
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-d .top-section {
+      margin-bottom: 12px;
+    }
+
+    .card-d .location {
+      font-size: 12px;
+      color: #31135D;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .card-d .title {
+      font-size: 17px;
+      font-weight: 600;
+      color: #111;
+      margin-bottom: 4px;
+    }
+
+    .card-d .specs {
+      font-size: 13px;
+      color: #666;
+    }
+
+    .card-d .bottom-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: auto;
+    }
+
+    .card-d .host {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-d .host img {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+    }
+
+    .card-d .host-name {
+      font-size: 13px;
+      color: #555;
+    }
+
+    .card-d .price-action {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .card-d .pricing {
+      text-align: right;
+    }
+
+    .card-d .price-starting {
+      font-size: 11px;
+      color: #888;
+    }
+
+    .card-d .price-main {
+      font-size: 18px;
+      font-weight: 700;
+      color: #31135D;
+    }
+
+    .card-d .price-main span {
+      font-size: 12px;
+      font-weight: 400;
+      color: #666;
+    }
+
+    .card-d .message-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: #31135D;
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .card-d .message-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .card-d .availability-note {
+      font-size: 11px;
+      color: #31135D;
+      text-align: right;
+      margin-top: 8px;
+    }
+
+    /* ========== VARIATION E: Info Dense - Horizontal Meta ========== */
+    .card-e {
+      display: flex;
+      background: white;
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .card-e:hover { border-color: #d1d5db; }
+
+    .card-e .image-section {
+      position: relative;
+      width: 280px;
+      flex-shrink: 0;
+      align-self: stretch;
+    }
+
+    .card-e .image-section img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .card-e .image-counter {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    .card-e .favorite-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: white;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    }
+
+    .card-e .favorite-btn svg {
+      width: 16px;
+      height: 16px;
+      color: #666;
+    }
+
+    .card-e .content {
+      flex: 1;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-e .header {
+      margin-bottom: 10px;
+    }
+
+    .card-e .title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #111;
+      margin-bottom: 4px;
+    }
+
+    .card-e .location {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 13px;
+      color: #666;
+    }
+
+    .card-e .location svg {
+      width: 14px;
+      height: 14px;
+      color: #31135D;
+    }
+
+    .card-e .meta-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .card-e .meta-chip {
+      background: #f5f5f5;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #555;
+    }
+
+    .card-e .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-top: auto;
+    }
+
+    .card-e .host {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-e .host img {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+    }
+
+    .card-e .host-details {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-e .host-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: #111;
+    }
+
+    .card-e .host-label {
+      font-size: 11px;
+      color: #888;
+    }
+
+    .card-e .price-section {
+      text-align: right;
+    }
+
+    .card-e .price-starting {
+      font-size: 11px;
+      color: #888;
+    }
+
+    .card-e .price-main {
+      font-size: 20px;
+      font-weight: 700;
+      color: #31135D;
+    }
+
+    .card-e .price-main span {
+      font-size: 12px;
+      font-weight: 400;
+      color: #666;
+    }
+
+    .card-e .availability-note {
+      font-size: 10px;
+      color: #31135D;
+      margin-top: 2px;
+    }
+
+    /* ========== VARIATION F: Info Dense - Pricing Sidebar ========== */
+    .card-f {
+      display: flex;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .card-f:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.12); }
+
+    .card-f .image-section {
+      position: relative;
+      width: 280px;
+      flex-shrink: 0;
+      align-self: stretch;
+    }
+
+    .card-f .image-section img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .card-f .image-counter {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
+    .card-f .content {
+      flex: 1;
+      display: flex;
+    }
+
+    .card-f .main-info {
+      flex: 1;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-f .location {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 6px;
+    }
+
+    .card-f .location svg {
+      width: 12px;
+      height: 12px;
+      color: #31135D;
+    }
+
+    .card-f .title {
+      font-size: 17px;
+      font-weight: 600;
+      color: #111;
+      margin-bottom: 6px;
+    }
+
+    .card-f .specs {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 12px;
+    }
+
+    .card-f .specs .dot {
+      margin: 0 4px;
+      color: #ccc;
+    }
+
+    .card-f .host {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: auto;
+    }
+
+    .card-f .host img {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+    }
+
+    .card-f .host-name {
+      font-size: 13px;
+      color: #555;
+    }
+
+    .card-f .price-sidebar {
+      width: 140px;
+      background: #f9f7fc;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      border-left: 1px solid #f0e6ff;
+    }
+
+    .card-f .price-starting {
+      font-size: 10px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .card-f .price-main {
+      font-size: 24px;
+      font-weight: 700;
+      color: #31135D;
+      line-height: 1;
+    }
+
+    .card-f .price-period {
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 6px;
+    }
+
+    .card-f .price-divider {
+      width: 30px;
+      height: 1px;
+      background: #e0d4f0;
+      margin: 6px 0;
+    }
+
+    .card-f .price-current {
+      font-size: 14px;
+      font-weight: 600;
+      color: #31135D;
+      margin-bottom: 10px;
+    }
+
+    .card-f .price-current span {
+      font-size: 11px;
+      font-weight: 400;
+      color: #666;
+    }
+
+    .card-f .message-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      background: #31135D;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    .card-f .message-btn svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    .card-f .availability-note {
+      font-size: 9px;
+      color: #31135D;
+      margin-top: 8px;
+      line-height: 1.3;
+    }
+  </style>
+</head>
+<body>
+  <h1>Listing Card Variations</h1>
+  <p class="subtitle">One Platt | Studio - Finding the perfect card design</p>
+
+  <div class="card-container">
+
+    <!-- VARIATION A: Clean & Minimal -->
+    <h2>A. Clean & Minimal</h2>
+    <a href="#" class="card-a">
+      <div class="image-section">
+        <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop" alt="One Platt Studio">
+        <button class="image-nav prev">‹</button>
+        <button class="image-nav next">›</button>
+        <div class="image-counter">1 / 7</div>
+      </div>
+      <div class="content">
+        <div class="location">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+          Civic Center, Manhattan
+        </div>
+        <h3 class="title">One Platt | Studio</h3>
+        <p class="type">Entire Place · 2 guests max</p>
+        <p class="specs">Studio · 1 bathroom</p>
+        <div class="footer">
+          <div class="host">
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" alt="Robert S.">
+            <span class="host-name">Robert S.</span>
+          </div>
+          <div class="pricing">
+            <div class="price-old">$227.50/night</div>
+            <div class="price-current">$255.94<span>/night</span></div>
+          </div>
+        </div>
+      </div>
+    </a>
+
+    <div class="card-spacer"></div>
+
+    <!-- VARIATION B: Compact with CTA -->
+    <h2>B. Compact with CTA</h2>
+    <a href="#" class="card-b">
+      <div class="image-section">
+        <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop" alt="One Platt Studio">
+        <div class="image-counter">1 / 7</div>
+      </div>
+      <div class="content">
+        <div class="top-row">
+          <span class="location">Civic Center, Manhattan</span>
+          <span class="price-badge">$255.94/night</span>
+        </div>
+        <h3 class="title">One Platt | Studio</h3>
+        <p class="details">Entire Place · 2 guests · Studio · 1 bath</p>
+        <div class="footer">
+          <div class="host">
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" alt="Robert S.">
+            <span class="host-name">Robert S.</span>
+          </div>
+          <button class="cta-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            Message
+          </button>
+        </div>
+      </div>
+    </a>
+
+    <div class="card-spacer"></div>
+
+    <!-- VARIATION C: Info Dense -->
+    <h2>C. Info Dense</h2>
+    <a href="#" class="card-c">
+      <div class="image-section">
+        <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop" alt="One Platt Studio">
+        <div class="image-counter">1 / 7</div>
+      </div>
+      <div class="content">
+        <div class="header">
+          <div>
+            <h3 class="title">One Platt | Studio</h3>
+            <span class="location">Civic Center, Manhattan</span>
+          </div>
+          <div class="pricing">
+            <div class="price-starting">Starting at $227.50/night</div>
+            <div class="price-main">$255.94<span>/night</span></div>
+            <div class="availability-note">Message Split Lease for Availability</div>
+          </div>
+        </div>
+        <div class="meta">
+          <span class="meta-item"><strong>Entire Place</strong></span>
+          <span class="meta-item"><strong>2</strong> guests</span>
+          <span class="meta-item"><strong>Studio</strong></span>
+          <span class="meta-item"><strong>1</strong> bathroom</span>
+        </div>
+        <div class="footer">
+          <div class="host">
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" alt="Robert S.">
+            <div class="host-info">
+              <div class="name">Robert S.</div>
+              <div class="label">Host</div>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="btn-outline">View Details</button>
+            <button class="btn-primary">Message</button>
+          </div>
+        </div>
+      </div>
+    </a>
+
+  </div>
+
+    <div class="card-spacer"></div>
+
+    <!-- VARIATION D: Info Dense - Tighter Layout -->
+    <h2>D. Info Dense - Tighter Layout</h2>
+    <a href="#" class="card-d">
+      <div class="image-section">
+        <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop" alt="One Platt Studio">
+        <div class="image-counter">1 / 7</div>
+      </div>
+      <div class="content">
+        <div class="top-section">
+          <span class="location">Civic Center, Manhattan</span>
+          <h3 class="title">One Platt | Studio</h3>
+          <p class="specs">Entire Place · 2 guests · Studio · 1 bath</p>
+        </div>
+        <div class="bottom-section">
+          <div class="host">
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" alt="Robert S.">
+            <span class="host-name">Robert S.</span>
+          </div>
+          <div class="price-action">
+            <div class="pricing">
+              <div class="price-starting">Starting at $227.50/night</div>
+              <div class="price-main">$255.94<span>/night</span></div>
+            </div>
+            <button class="message-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              Message
+            </button>
+          </div>
+        </div>
+        <div class="availability-note">Message Split Lease for Availability</div>
+      </div>
+    </a>
+
+    <div class="card-spacer"></div>
+
+    <!-- VARIATION E: Info Dense - Horizontal Meta -->
+    <h2>E. Info Dense - Horizontal Meta</h2>
+    <a href="#" class="card-e">
+      <div class="image-section">
+        <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop" alt="One Platt Studio">
+        <div class="image-counter">1 / 7</div>
+        <button class="favorite-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+        </button>
+      </div>
+      <div class="content">
+        <div class="header">
+          <div class="title-group">
+            <h3 class="title">One Platt | Studio</h3>
+            <div class="location">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              Civic Center, Manhattan
+            </div>
+          </div>
+        </div>
+        <div class="meta-row">
+          <span class="meta-chip">Entire Place</span>
+          <span class="meta-chip">2 guests</span>
+          <span class="meta-chip">Studio</span>
+          <span class="meta-chip">1 bath</span>
+        </div>
+        <div class="footer">
+          <div class="host">
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" alt="Robert S.">
+            <div class="host-details">
+              <span class="host-name">Robert S.</span>
+              <span class="host-label">Host</span>
+            </div>
+          </div>
+          <div class="price-section">
+            <div class="price-starting">Starting at $227.50/night</div>
+            <div class="price-main">$255.94<span>/night</span></div>
+            <div class="availability-note">Message Split Lease for Availability</div>
+          </div>
+        </div>
+      </div>
+    </a>
+
+    <div class="card-spacer"></div>
+
+    <!-- VARIATION F: Info Dense - Card with Sidebar -->
+    <h2>F. Info Dense - Pricing Sidebar</h2>
+    <a href="#" class="card-f">
+      <div class="image-section">
+        <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop" alt="One Platt Studio">
+        <div class="image-counter">1 / 7</div>
+      </div>
+      <div class="content">
+        <div class="main-info">
+          <div class="location">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+            Civic Center, Manhattan
+          </div>
+          <h3 class="title">One Platt | Studio</h3>
+          <div class="specs">
+            <span>Entire Place</span>
+            <span class="dot">·</span>
+            <span>2 guests</span>
+            <span class="dot">·</span>
+            <span>Studio</span>
+            <span class="dot">·</span>
+            <span>1 bath</span>
+          </div>
+          <div class="host">
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" alt="Robert S.">
+            <span class="host-name">Robert S.</span>
+          </div>
+        </div>
+        <div class="price-sidebar">
+          <div class="price-starting">Starting at</div>
+          <div class="price-main">$227.50</div>
+          <div class="price-period">/night</div>
+          <div class="price-divider"></div>
+          <div class="price-current">$255.94<span>/night</span></div>
+          <button class="message-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            Message
+          </button>
+          <div class="availability-note">Message Split Lease<br>for Availability</div>
+        </div>
+      </div>
+    </a>
+
+  </div>
+</body>
+</html>

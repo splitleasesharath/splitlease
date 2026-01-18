@@ -100,10 +100,14 @@ export interface NightlyPricing {
     night3: number;
     night4: number;
     night5: number;
+    night6: number;
+    night7: number;
     cumulativeNight2: number;
     cumulativeNight3: number;
     cumulativeNight4: number;
     cumulativeNight5: number;
+    cumulativeNight6: number;
+    cumulativeNight7: number;
   };
 }
 
@@ -139,6 +143,9 @@ export interface PhotoData {
   file?: File;
   caption?: string;
   displayOrder: number;
+  storagePath?: string; // Supabase storage path for deletion
+  isUploading?: boolean; // Track upload state
+  uploadError?: string; // Track upload errors
 }
 
 export interface Photos {
@@ -146,18 +153,14 @@ export interface Photos {
   minRequired: number;
 }
 
-// Safety Feature Options
+// Safety Feature Options - names must match database (zfut_safetyfeatures table)
 export const SAFETY_FEATURES: string[] = [
-  'Smoke Alarm',
-  'Carbon Monoxide Alarm',
+  'Smoke Detector',
+  'Carbon Monoxide Detector',
   'Fire Extinguisher',
   'First Aid Kit',
-  'Security Cameras',
-  'Deadbolt Lock',
-  'Emergency Exit',
-  'Well-lit Entrance',
-  'Window Locks',
-  'Motion Sensor Lights'
+  'Fire Sprinklers',
+  'Lock on Bedroom Door'
 ];
 
 // Review Data (Section 7)
@@ -349,8 +352,8 @@ export const DEFAULT_LISTING_DATA: ListingFormData = {
     numberOfGuests: 2,
     checkInTime: '2:00 PM',
     checkOutTime: '11:00 AM',
-    idealMinDuration: 2,
-    idealMaxDuration: 6,
+    idealMinDuration: 6,
+    idealMaxDuration: 52,
     houseRules: [],
     blockedDates: []
   },

@@ -26,18 +26,23 @@ const SelectorRow = styled.div`
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin: 0 0 5px 0;
+  margin: 0;
 `;
 
 const CalendarIcon = styled.div`
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 36px;
   margin-right: 8px;
   flex-shrink: 0;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
 `;
 
 const DaysGrid = styled.div`
@@ -46,29 +51,50 @@ const DaysGrid = styled.div`
   justify-content: center;
   align-items: center;
 
+  /* Attention animation on page load */
+  animation: attention-pulse 0.6s ease-out 0.5s both;
+
+  @keyframes attention-pulse {
+    0% {
+      transform: scale(1);
+    }
+    25% {
+      transform: scale(1.05);
+    }
+    50% {
+      transform: scale(0.98);
+    }
+    75% {
+      transform: scale(1.02);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
   @media (max-width: 768px) {
     gap: 4px;
   }
 `;
 
 const DayCell = styled.button`
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  min-height: 36px;
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  min-height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: "Inter", Helvetica, Arial, sans-serif;
   font-weight: 600;
   font-size: 14px;
-  line-height: 16px;
+  line-height: 17px;
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 0;
   cursor: ${props => props.$isDragging ? 'grabbing' : 'pointer'};
   transition: transform 0.15s ease-in-out, background 0.2s ease-in-out;
-  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: none;
   box-sizing: border-box;
 
   /* Error state styling */
@@ -85,7 +111,7 @@ const DayCell = styled.button`
 
   /* Normal selected/unselected state (no error) */
   ${props => !props.$hasError && `
-    background-color: ${props.$isSelected ? '#4B47CE' : '#b2b2b2'};
+    background-color: ${props.$isSelected ? '#4B47CE' : '#B2B2B2'};
     color: #ffffff;
   `}
 
@@ -103,14 +129,14 @@ const DayCell = styled.button`
   }
 
   @media (max-width: 768px) {
-    width: 36px;
-    height: 36px;
+    width: 34px;
+    height: 34px;
     font-size: 14px;
   }
 
   @media (max-width: 480px) {
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
     font-size: 13px;
   }
 `;
@@ -118,12 +144,16 @@ const DayCell = styled.button`
 const InfoContainer = styled.div`
   min-height: 24px;
   max-width: 450px;
-  display: flex;
+  display: none;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   gap: 8px;
   margin: 5px 0 16px 0;
+
+  @media (max-width: 768px) {
+    display: flex;
+  }
 `;
 
 const InfoText = styled.p`
@@ -151,22 +181,64 @@ const InfoText = styled.p`
   }
 `;
 
+const CheckInOutRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+`;
+
+const RepeatIcon = styled.svg`
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: #4B47CE;
+`;
+
+const RepeatPatternText = styled.p`
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: #666666;
+  text-align: center;
+
+  @media (max-width: 768px) {
+    font-size: 12px;
+  }
+`;
+
 // ============================================================================
 // CONSTANTS
 // ============================================================================
 
 /**
  * Days of the week constant - Starting with Sunday (S, M, T, W, T, F, S)
+ * Uses 0-based indexing matching JavaScript Date.getDay()
  */
 const DAYS_OF_WEEK = [
-  { id: '1', singleLetter: 'S', fullName: 'Sunday', index: 0 },
-  { id: '2', singleLetter: 'M', fullName: 'Monday', index: 1 },
-  { id: '3', singleLetter: 'T', fullName: 'Tuesday', index: 2 },
-  { id: '4', singleLetter: 'W', fullName: 'Wednesday', index: 3 },
-  { id: '5', singleLetter: 'T', fullName: 'Thursday', index: 4 },
-  { id: '6', singleLetter: 'F', fullName: 'Friday', index: 5 },
-  { id: '7', singleLetter: 'S', fullName: 'Saturday', index: 6 },
+  { id: '0', singleLetter: 'S', fullName: 'Sunday', index: 0 },
+  { id: '1', singleLetter: 'M', fullName: 'Monday', index: 1 },
+  { id: '2', singleLetter: 'T', fullName: 'Tuesday', index: 2 },
+  { id: '3', singleLetter: 'W', fullName: 'Wednesday', index: 3 },
+  { id: '4', singleLetter: 'T', fullName: 'Thursday', index: 4 },
+  { id: '5', singleLetter: 'F', fullName: 'Friday', index: 5 },
+  { id: '6', singleLetter: 'S', fullName: 'Saturday', index: 6 },
 ];
+
+/**
+ * Get human-readable repeat pattern description
+ * @param {string} weekPattern - The week pattern key (e.g., 'every-week', 'one-on-off')
+ * @returns {string|null} The repeat description or null if every week
+ */
+const getRepeatPatternText = (weekPattern) => {
+  const patterns = {
+    'every-week': null, // No repeat text for every week
+    'one-on-off': 'Repeats 1 week on, 1 week off',
+    'two-on-off': 'Repeats 2 weeks on, 2 weeks off',
+    'one-three-off': 'Repeats 1 week on, 3 weeks off',
+  };
+  return patterns[weekPattern] || null;
+};
 
 // ============================================================================
 // COMPONENT
@@ -174,7 +246,7 @@ const DAYS_OF_WEEK = [
 
 /**
  * Get initial selection from URL parameter or default to Monday-Friday
- * URL parameter format: ?days-selected=2,3,4,5,6 (1-based, where 1=Sunday)
+ * URL parameter format: ?days-selected=1,2,3,4,5 (0-based, where 0=Sunday)
  * Internal format: [1,2,3,4,5] (0-based, where 0=Sunday)
  */
 const getInitialSelectionFromUrl = () => {
@@ -184,19 +256,16 @@ const getInitialSelectionFromUrl = () => {
 
   if (daysParam) {
     try {
-      // Parse 1-based indices from URL and convert to 0-based
-      const oneBased = daysParam.split(',').map(d => parseInt(d.trim(), 10));
-      const zeroBased = oneBased
-        .filter(d => d >= 1 && d <= 7) // Validate 1-based range
-        .map(d => d - 1); // Convert to 0-based (1→0, 2→1, etc.)
+      // Parse 0-based indices from URL directly
+      const dayIndices = daysParam.split(',').map(d => parseInt(d.trim(), 10));
+      const validDays = dayIndices.filter(d => d >= 0 && d <= 6); // Validate 0-based range
 
-      if (zeroBased.length > 0) {
+      if (validDays.length > 0) {
         console.log('📅 SearchScheduleSelector: Loaded selection from URL:', {
           urlParam: daysParam,
-          oneBased,
-          zeroBased
+          dayIndices: validDays
         });
-        return zeroBased;
+        return validDays;
       }
     } catch (e) {
       console.warn('⚠️ Failed to parse days-selected URL parameter:', e);
@@ -221,6 +290,7 @@ const getInitialSelectionFromUrl = () => {
  * @param {number} [props.minDays=2] - Minimum number of days that can be selected
  * @param {boolean} [props.requireContiguous=true] - Whether to require contiguous day selection
  * @param {number[]} [props.initialSelection] - Initial selected days (array of day indices 0-6). If not provided, reads from URL or defaults to Monday-Friday
+ * @param {string} [props.weekPattern='every-week'] - The weekly pattern (e.g., 'every-week', 'one-on-off', 'two-on-off', 'one-three-off')
  *
  * @example
  * ```jsx
@@ -238,6 +308,7 @@ export default function SearchScheduleSelector({
   requireContiguous = true,
   initialSelection,
   updateUrl = true,
+  weekPattern = 'every-week',
 }) {
   // Use initialSelection if provided, otherwise get from URL or use default
   const getInitialState = () => {
@@ -564,7 +635,7 @@ export default function SearchScheduleSelector({
 
   /**
    * Update URL parameter when selection changes
-   * Format: ?days-selected=2,3,4,5,6 (1-based, where 1=Sunday)
+   * Format: ?days-selected=1,2,3,4,5 (0-based, where 0=Sunday)
    * Only updates URL if updateUrl prop is true
    */
   useEffect(() => {
@@ -576,9 +647,8 @@ export default function SearchScheduleSelector({
     const selectedDaysArray = Array.from(selectedDays).sort((a, b) => a - b);
 
     if (selectedDaysArray.length > 0) {
-      // Convert 0-based indices to 1-based for URL (0→1, 1→2, etc.)
-      const oneBased = selectedDaysArray.map(idx => idx + 1);
-      const daysParam = oneBased.join(',');
+      // Use 0-based indices directly in URL
+      const daysParam = selectedDaysArray.join(',');
 
       // Update URL without reloading the page
       const url = new URL(window.location);
@@ -586,10 +656,12 @@ export default function SearchScheduleSelector({
       window.history.replaceState({}, '', url);
 
       console.log('📅 SearchScheduleSelector: Updated URL parameter:', {
-        zeroBased: selectedDaysArray,
-        oneBased,
+        dayIndices: selectedDaysArray,
         urlParam: daysParam
       });
+
+      // Dispatch custom event for other components to listen to
+      window.dispatchEvent(new CustomEvent('daysSelected', { detail: { days: selectedDaysArray } }));
     } else {
       // Remove parameter if no days selected
       const url = new URL(window.location);
@@ -615,17 +687,27 @@ export default function SearchScheduleSelector({
     // Calculate check-in/check-out
     calculateCheckinCheckout(selectedDays);
 
+    // Validate the current selection to determine if error should be cleared
+    const validation = validateSelection(selectedDays);
+    const selectionIsValid = validation.valid;
+
     // Check for contiguity error (visual feedback + immediate alert)
     if (selectedDays.size > 1 && requireContiguous) {
-      const isValid = isContiguous(selectedDays);
+      const isContiguousNow = isContiguous(selectedDays);
       const wasContiguousError = hasContiguityError;
-      setHasContiguityError(!isValid);
+      setHasContiguityError(!isContiguousNow);
 
       // Show contiguity error immediately only if it's a NEW error (wasn't already showing)
-      if (!isValid && !wasContiguousError && !showError) {
+      if (!isContiguousNow && !wasContiguousError && !showError) {
         displayError('Please select contiguous days (e.g., Mon-Tue-Wed, not Mon-Wed-Fri)');
-      } else if (isValid && showError && wasContiguousError) {
+      } else if (isContiguousNow && showError && wasContiguousError) {
         // Selection became contiguous, clear the error immediately
+        if (errorTimeout) {
+          clearTimeout(errorTimeout);
+        }
+        setShowError(false);
+      } else if (selectionIsValid && showError) {
+        // Selection became valid (enough nights AND contiguous), clear any error
         if (errorTimeout) {
           clearTimeout(errorTimeout);
         }
@@ -633,8 +715,8 @@ export default function SearchScheduleSelector({
       }
     } else {
       setHasContiguityError(false);
-      // Hide error if selection becomes valid
-      if (showError) {
+      // Hide error if selection becomes valid (has enough nights)
+      if (showError && selectionIsValid) {
         if (errorTimeout) {
           clearTimeout(errorTimeout);
         }
@@ -650,10 +732,8 @@ export default function SearchScheduleSelector({
       <SelectorRow>
         <CalendarIcon>
           <img
-            src="https://c.animaapp.com/meh6k861XoGXNn/img/calendar-minimalistic-svgrepo-com-202-svg.svg"
+            src="https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1748370325535x745487629939088300/calendar-minimalistic-svgrepo-com%202.svg"
             alt="Calendar"
-            width="36"
-            height="36"
           />
         </CalendarIcon>
 
@@ -683,21 +763,39 @@ export default function SearchScheduleSelector({
 
       <InfoContainer>
         {selectedDays.size > 0 && (
-          <InfoText>
-            {showError ? (
-              <span style={{ color: '#d32f2f' }}>
-                {errorMessage}
-              </span>
-            ) : selectedDays.size === 7 ? (
-              <span className="day-name">Full Time</span>
-            ) : (
-              checkinDay && checkoutDay && (
-                <>
-                  <strong>Check-in:</strong> <span className="day-name">{checkinDay}</span> • <strong>Check-out:</strong> <span className="day-name">{checkoutDay}</span>
-                </>
-              )
+          <>
+            <InfoText>
+              {showError ? (
+                <span style={{ color: '#d32f2f' }}>
+                  {errorMessage}
+                </span>
+              ) : selectedDays.size === 7 ? (
+                <span className="day-name">Full Time</span>
+              ) : (
+                checkinDay && checkoutDay && (
+                  <CheckInOutRow>
+                    <RepeatIcon viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path
+                        d="M17 2L21 6M21 6L17 10M21 6H8C5.23858 6 3 8.23858 3 11M7 22L3 18M3 18L7 14M3 18H16C18.7614 18 21 15.7614 21 13"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </RepeatIcon>
+                    <span>
+                      <strong>Check-in:</strong> <span className="day-name">{checkinDay}</span> • <strong>Check-out:</strong> <span className="day-name">{checkoutDay}</span>
+                    </span>
+                  </CheckInOutRow>
+                )
+              )}
+            </InfoText>
+            {!showError && selectedDays.size < 7 && getRepeatPatternText(weekPattern) && (
+              <RepeatPatternText>
+                {getRepeatPatternText(weekPattern)}
+              </RepeatPatternText>
             )}
-          </InfoText>
+          </>
         )}
       </InfoContainer>
     </Container>

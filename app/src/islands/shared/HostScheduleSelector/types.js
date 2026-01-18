@@ -1,9 +1,11 @@
 /**
  * Type definitions for the Host Schedule Selector component
- * Based on Bubble.io implementation specifications
+ *
+ * Day indices use JavaScript's 0-based standard (matching Date.getDay()):
+ * 0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday
  *
  * @typedef {'sunday' | 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday'} NightId
- * Night IDs (lowercase for consistency with Bubble implementation)
+ * Night IDs (lowercase)
  *
  * @typedef {'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday'} DayId
  * Day IDs for check-in/check-out calculations
@@ -25,8 +27,7 @@
  * @property {string} display
  * @property {string} singleLetter
  * @property {string} first3Letters
- * @property {number} bubbleNumber
- * @property {string} bubbleNumberText
+ * @property {number} dayIndex - 0-based day index (0=Sunday through 6=Saturday)
  * @property {DayId} associatedCheckin
  * @property {DayId} associatedCheckout
  * @property {DayId} nextDay

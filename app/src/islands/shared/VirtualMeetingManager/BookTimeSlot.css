@@ -1,0 +1,479 @@
+/**
+ * Book Time Slot Calendar Component Styles
+ */
+
+.vm-book-time-slot-container {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  font-family: 'Alata', sans-serif;
+  background: white;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+}
+
+/* ============================================
+   DATE SELECTION SECTION
+   ============================================ */
+
+.vm-select-date-section {
+  margin-bottom: 8px;
+}
+
+.vm-calendar-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 8px;
+  padding: 4px 8px;
+  gap: 8px;
+  background: white;
+}
+
+.vm-calendar-nav-btn {
+  background: none;
+  border: 1px solid #d1d5db;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 8px;
+  color: #6b7280;
+  transition: all 0.2s;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.vm-calendar-nav-btn:hover {
+  color: #000;
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.vm-month-select {
+  font-family: 'Alata', sans-serif;
+  font-size: 17px;
+  border: none;
+  border-radius: 0;
+  padding: 6px 12px;
+  background: transparent;
+  cursor: pointer;
+  font-weight: 400;
+  min-width: 120px;
+  text-align: center;
+  color: rgb(37, 37, 37);
+}
+
+.vm-days-of-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0;
+  margin-bottom: 4px;
+}
+
+.vm-day-header {
+  text-align: center;
+  font-family: 'Alata', sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  padding: 4px 0;
+  color: #6b7280;
+  width: 100%;
+}
+
+.vm-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0;
+  margin-bottom: 12px;
+}
+
+.vm-calendar-cell {
+  width: 100%;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.vm-date-button {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: white;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  font-family: 'Alata', sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vm-date-button:hover:not(:disabled) {
+  background: rgba(92, 32, 182, 0.1);
+  color: rgb(92, 32, 182);
+}
+
+.vm-date-button:disabled {
+  color: rgb(221, 221, 221);
+  cursor: not-allowed;
+  background: transparent;
+}
+
+/* Today's date styling */
+.vm-date-button-today {
+  background: rgba(245, 245, 250, 0.5);
+  font-weight: bold;
+  color: rgb(92, 32, 182);
+}
+
+.vm-date-button-today:hover:not(:disabled) {
+  background: rgba(92, 32, 182, 0.15);
+}
+
+/* Date currently being viewed (time picker shown) */
+.vm-date-button.vm-date-button-active {
+  background: rgb(92, 32, 182);
+  color: white;
+  font-weight: 600;
+}
+
+.vm-date-button.vm-date-button-active:hover:not(:disabled) {
+  background: rgb(82, 28, 162);
+  color: white;
+}
+
+/* Date has selected time slots */
+.vm-date-button-has-slots {
+  background: rgba(92, 32, 182, 0.15);
+  color: rgb(92, 32, 182);
+  font-weight: 600;
+}
+
+.vm-date-button-has-slots:hover:not(:disabled) {
+  background: rgba(92, 32, 182, 0.25);
+}
+
+/* Date is both active AND has slots */
+.vm-date-button-active.vm-date-button-has-slots {
+  background: rgb(92, 32, 182);
+  color: white;
+  box-shadow: 0 0 0 2px rgba(92, 32, 182, 0.3);
+}
+
+/* Legacy class for backwards compatibility */
+.vm-date-button-selected {
+  background: var(--color-primary, #31135d);
+  color: white;
+  border-color: var(--color-primary, #31135d);
+}
+
+.vm-date-button-selected:hover {
+  background: var(--color-primary-hover, #1f0b38);
+}
+
+/* ============================================
+   TIME SELECTION SECTION
+   ============================================ */
+
+.vm-select-time-section {
+  margin-top: 0;
+}
+
+.vm-select-time-title {
+  font-family: 'Alata', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  margin-bottom: 8px;
+  text-align: center;
+  color: #1f2937;
+}
+
+.vm-selected-slots {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+  min-height: 40px;
+  padding: 10px;
+  background: rgb(247, 248, 249);
+  border-radius: 6px;
+  border: none;
+  justify-content: center;
+  align-items: center;
+}
+
+.vm-slot-badge {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 4px 10px;
+  font-family: 'Alata', sans-serif;
+  font-size: 12px;
+  color: #374151;
+  font-weight: 400;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.2s, border-color 0.2s;
+  white-space: nowrap;
+}
+
+.vm-slot-badge::before {
+  content: '';
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235c20b6' stroke-width='2'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 6v6l4 2'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+.vm-slot-badge:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.vm-remove-slot-btn {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0 4px;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.vm-remove-slot-btn:hover {
+  color: #dc2626;
+}
+
+.vm-clear-button {
+  width: 100%;
+  padding: 6px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  font-family: 'Alata', sans-serif;
+  font-size: 12px;
+  color: #6b7280;
+  transition: color 0.2s;
+  margin-bottom: 8px;
+}
+
+.vm-clear-button:hover:not(:disabled) {
+  color: #374151;
+}
+
+.vm-clear-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.vm-current-date-info {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 12px;
+  color: #6b7280;
+  padding: 8px;
+  background: #f9fafb;
+  border-radius: 4px;
+}
+
+.vm-empty-slots {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 13px;
+  padding: 12px;
+  width: 100%;
+}
+
+/* ============================================
+   INLINE TIME SLOTS
+   ============================================ */
+
+.vm-inline-time-slots {
+  margin-top: 0;
+  padding: 12px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  transition: padding 0.2s ease;
+}
+
+.vm-inline-time-slots--collapsed {
+  padding: 8px 12px;
+}
+
+.vm-inline-time-slots--collapsed .vm-time-picker-header-container {
+  margin-bottom: 0;
+}
+
+.vm-time-picker-header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.vm-time-picker-header-container .vm-time-picker-header {
+  margin-bottom: 0;
+}
+
+.vm-time-picker-header {
+  font-family: 'Alata', sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  margin-bottom: 8px;
+  color: #374151;
+  text-align: left;
+}
+
+/* Toggle button styles */
+.vm-grid-toggle-btn {
+  background: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  color: #6b7280;
+}
+
+.vm-grid-toggle-btn:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+  color: #374151;
+}
+
+.vm-grid-toggle-btn:focus {
+  outline: 2px solid rgb(92, 32, 182);
+  outline-offset: 2px;
+}
+
+.vm-grid-toggle-arrow {
+  font-size: 10px;
+  line-height: 1;
+}
+
+.vm-time-slots-list {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  padding: 2px;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.vm-time-slot-button {
+  padding: 8px 4px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  text-align: center;
+  font-family: 'Alata', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  transition: all 0.15s ease;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.vm-time-slot-button:hover:not(:disabled):not(.vm-time-slot-selected) {
+  background: rgba(92, 32, 182, 0.08);
+  border-color: rgb(92, 32, 182);
+  color: rgb(92, 32, 182);
+}
+
+.vm-time-slot-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.vm-time-slot-selected {
+  background: rgb(92, 32, 182) !important;
+  border-color: rgb(92, 32, 182) !important;
+  color: white !important;
+  font-weight: 500;
+}
+
+.vm-time-slot-selected:hover:not(:disabled) {
+  background: rgb(82, 28, 162) !important;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 480px) {
+  .vm-book-time-slot-container {
+    max-width: 100%;
+    gap: 12px;
+  }
+
+  .vm-calendar-header {
+    padding: 4px;
+  }
+
+  .vm-date-button {
+    font-size: 11px;
+    width: 28px;
+    height: 28px;
+  }
+
+  .vm-calendar-cell {
+    height: 32px;
+  }
+
+  .vm-selected-slots {
+    min-height: 36px;
+    padding: 8px;
+    gap: 6px;
+  }
+
+  .vm-slot-badge {
+    font-size: 11px;
+    padding: 3px 8px;
+  }
+
+  .vm-time-slots-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .vm-time-slot-button {
+    padding: 6px 4px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .vm-grid-toggle-btn {
+    padding: 3px 6px;
+  }
+
+  .vm-grid-toggle-arrow {
+    font-size: 9px;
+  }
+}

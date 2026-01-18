@@ -22,6 +22,8 @@
  * canCancelProposal({ proposalStatus: 'Cancelled by Guest' })
  * // => false (already cancelled)
  */
+import { isTerminalStatus, isCompletedStatus } from '../../constants/proposalStatuses.js'
+
 export function canCancelProposal({ proposalStatus, deleted = false }) {
   // Deleted proposals cannot be cancelled
   if (deleted) {
@@ -35,16 +37,7 @@ export function canCancelProposal({ proposalStatus, deleted = false }) {
 
   const status = proposalStatus.trim()
 
-  // Cannot cancel if already in terminal state
-  const terminalStatuses = [
-    'Cancelled by Guest',
-    'Cancelled by Host',
-    'Rejected',
-    'Expired',
-    'Completed'
-  ]
-
-  if (terminalStatuses.includes(status)) {
+  if (isTerminalStatus(status) || isCompletedStatus(status)) {
     return false
   }
 

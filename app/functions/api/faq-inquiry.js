@@ -1,24 +1,25 @@
 // Cloudflare Pages Function to handle FAQ inquiries
 // Sends inquiries to Slack channels via webhooks
 
+// CORS headers used by all handlers
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+  'Content-Type': 'application/json'
+};
+
+// Handle CORS preflight OPTIONS requests
+export async function onRequestOptions() {
+  return new Response(null, {
+    status: 204,
+    headers: corsHeaders
+  });
+}
+
+// Handle POST requests
 export async function onRequestPost(context) {
   const { request } = context;
-
-  // Set CORS headers
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Content-Type': 'application/json'
-  };
-
-  // Handle preflight OPTIONS request
-  if (request.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 204,
-      headers: corsHeaders
-    });
-  }
 
   try {
     // Parse the request body

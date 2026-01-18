@@ -20,5 +20,13 @@
       "Bash(rm -rf:*)"
     ]
   },
-  "hooks": {}
+  "hooks": {},
+  "enabledPlugins": {
+    "commit-commands@claude-plugins-official": true,
+    "feature-dev@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": false,
+    "ralph-loop@claude-plugins-official": true,
+    "hookify@claude-plugins-official": false,
+    "typescript-lsp@claude-plugins-official": true
+  }
 }

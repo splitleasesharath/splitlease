@@ -3,8 +3,98 @@ import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import { SIGNUP_LOGIN_URL } from '../../lib/constants.js';
 
+// Example Card component with mobile flip support
+function SwipeableExampleCard({ name, avatarUrl, pattern, review, activeDays }) {
+  const [isFlipped, setIsFlipped] = useState(false);
+
+  const handleToggle = () => {
+    setIsFlipped(!isFlipped);
+  };
+
+  return (
+    <div
+      className={`example-card ${isFlipped ? 'flipped' : ''}`}
+      onClick={handleToggle}
+    >
+      {/* Desktop structure - uses original hover behavior */}
+      <div className="desktop-card-content">
+        <div className="example-header">
+          <div className="example-avatar">
+            <img src={avatarUrl} alt={name} />
+          </div>
+          <div className="example-name">{name}</div>
+        </div>
+        <div className="example-content-wrapper">
+          <p className="example-pattern">{pattern}</p>
+          <p className="example-review">"{review}"</p>
+        </div>
+        <div className="example-timeline">
+          {[0, 1, 2, 3, 4, 5, 6].map(day => (
+            <div key={day} className={`day-block ${activeDays.includes(day) ? 'active' : ''}`}></div>
+          ))}
+        </div>
+        <div className="timeline-labels">
+          <span className="timeline-label">Mon</span>
+          <span className="timeline-label">Sun</span>
+        </div>
+      </div>
+
+      {/* Mobile structure - flip card */}
+      <div className="mobile-card-inner">
+        {/* Front side */}
+        <div className="mobile-card-front">
+          <div className="example-header">
+            <div className="example-avatar">
+              <img src={avatarUrl} alt={name} />
+            </div>
+            <div className="example-name">{name}</div>
+          </div>
+          <div className="example-content-wrapper">
+            <p className="example-pattern">{pattern}</p>
+          </div>
+          <div className="example-timeline">
+            {[0, 1, 2, 3, 4, 5, 6].map(day => (
+              <div key={day} className={`day-block ${activeDays.includes(day) ? 'active' : ''}`}></div>
+            ))}
+          </div>
+          <div className="timeline-labels">
+            <span className="timeline-label">Mon</span>
+            <span className="timeline-label">Sun</span>
+          </div>
+          <div className="swipe-hint">
+            <span>Tap to see review</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </div>
+        </div>
+
+        {/* Back side */}
+        <div className="mobile-card-back">
+          <div className="example-header">
+            <div className="example-avatar">
+              <img src={avatarUrl} alt={name} />
+            </div>
+            <div className="example-name">{name}</div>
+          </div>
+          <div className="review-content">
+            <p className="example-review-text">"{review}"</p>
+          </div>
+          <div className="swipe-hint back">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            <span>Tap to go back</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function CareersPage() {
   const [typeformModalActive, setTypeformModalActive] = useState(false);
+  const [gameModalActive, setGameModalActive] = useState(false);
   const typeformContainerRef = useRef(null);
 
   // Initialize Feather icons when component mounts
@@ -58,17 +148,28 @@ export default function CareersPage() {
     document.body.style.overflow = 'auto';
   };
 
-  // Handle ESC key to close modal
+  const openGameModal = () => {
+    setGameModalActive(true);
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeGameModal = () => {
+    setGameModalActive(false);
+    document.body.style.overflow = 'auto';
+  };
+
+  // Handle ESC key to close modals
   useEffect(() => {
     const handleEscKey = (e) => {
-      if (e.key === 'Escape' && typeformModalActive) {
-        closeTypeformModal();
+      if (e.key === 'Escape') {
+        if (typeformModalActive) closeTypeformModal();
+        if (gameModalActive) closeGameModal();
       }
     };
 
     document.addEventListener('keydown', handleEscKey);
     return () => document.removeEventListener('keydown', handleEscKey);
-  }, [typeformModalActive]);
+  }, [typeformModalActive, gameModalActive]);
 
   return (
     <>
@@ -108,97 +209,31 @@ export default function CareersPage() {
           <div className="mission-grid">
             <div className="mission-examples">
               {/* Sarah Example */}
-              <div className="example-card">
-                <div className="example-header">
-                  <div className="example-avatar">
-                    <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=faces" alt="Sarah" />
-                  </div>
-                  <div className="example-name">Sarah</div>
-                </div>
-                <div className="example-content-wrapper">
-                  <p className="example-pattern">
-                    Lives in Philly, uses Split Lease in NYC Monday-Wednesday
-                  </p>
-                  <p className="example-review">
-                    "Before Split Lease, my life was a nightmare. I was either drowning in NYC rent or spending 4 hours a day commuting."
-                  </p>
-                </div>
-                <div className="example-timeline">
-                  <div className="day-block active"></div>
-                  <div className="day-block active"></div>
-                  <div className="day-block active"></div>
-                  <div className="day-block"></div>
-                  <div className="day-block"></div>
-                  <div className="day-block"></div>
-                  <div className="day-block"></div>
-                </div>
-                <div className="timeline-labels">
-                  <span className="timeline-label">Mon</span>
-                  <span className="timeline-label">Sun</span>
-                </div>
-              </div>
+              <SwipeableExampleCard
+                name="Sarah"
+                avatarUrl="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=faces"
+                pattern="Lives in Philly, uses Split Lease in NYC Monday-Wednesday"
+                review="Before Split Lease, my life was a nightmare. I was either drowning in NYC rent or spending 4 hours a day commuting."
+                activeDays={[0, 1, 2]}
+              />
 
               {/* Marcus Example */}
-              <div className="example-card">
-                <div className="example-header">
-                  <div className="example-avatar">
-                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=faces" alt="Marcus" />
-                  </div>
-                  <div className="example-name">Marcus</div>
-                </div>
-                <div className="example-content-wrapper">
-                  <p className="example-pattern">
-                    Lives in Boston, uses Split Lease in NYC Thursday-Sunday
-                  </p>
-                  <p className="example-review">
-                    "I was burning out from the weekly grind. Split Lease gave me back my time and sanity. I'm saving $2,000/month."
-                  </p>
-                </div>
-                <div className="example-timeline">
-                  <div className="day-block"></div>
-                  <div className="day-block"></div>
-                  <div className="day-block"></div>
-                  <div className="day-block active"></div>
-                  <div className="day-block active"></div>
-                  <div className="day-block active"></div>
-                  <div className="day-block active"></div>
-                </div>
-                <div className="timeline-labels">
-                  <span className="timeline-label">Mon</span>
-                  <span className="timeline-label">Sun</span>
-                </div>
-              </div>
+              <SwipeableExampleCard
+                name="Marcus"
+                avatarUrl="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=faces"
+                pattern="Lives in Boston, uses Split Lease in NYC Thursday-Sunday"
+                review="I was burning out from the weekly grind. Split Lease gave me back my time and sanity. I'm saving $2,000/month."
+                activeDays={[3, 4, 5, 6]}
+              />
 
               {/* Jenna Example */}
-              <div className="example-card">
-                <div className="example-header">
-                  <div className="example-avatar">
-                    <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=faces" alt="Jenna" />
-                  </div>
-                  <div className="example-name">Jenna</div>
-                </div>
-                <div className="example-content-wrapper">
-                  <p className="example-pattern">
-                    Lives in DC, uses Split Lease in NYC Monday-Thursday
-                  </p>
-                  <p className="example-review">
-                    "I thought I had to choose between my career and quality of life. Split Lease gave me flexibility on my terms."
-                  </p>
-                </div>
-                <div className="example-timeline">
-                  <div className="day-block active"></div>
-                  <div className="day-block active"></div>
-                  <div className="day-block active"></div>
-                  <div className="day-block active"></div>
-                  <div className="day-block"></div>
-                  <div className="day-block"></div>
-                  <div className="day-block"></div>
-                </div>
-                <div className="timeline-labels">
-                  <span className="timeline-label">Mon</span>
-                  <span className="timeline-label">Sun</span>
-                </div>
-              </div>
+              <SwipeableExampleCard
+                name="Jenna"
+                avatarUrl="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=faces"
+                pattern="Lives in DC, uses Split Lease in NYC Monday-Thursday"
+                review="I thought I had to choose between my career and quality of life. Split Lease gave me flexibility on my terms."
+                activeDays={[0, 1, 2, 3]}
+              />
             </div>
 
             <div className="mission-content">
@@ -211,7 +246,7 @@ export default function CareersPage() {
                 Split Lease enables alternating arrangements where multiple guests use the same space on different days. You only pay for the nights you need — whether that's 3 days a week or 5. No traditional lease, no wasted rent, just flexible access.
               </p>
               <div className="section-links">
-                <a href="#" className="section-link">
+                <a href="#" className="section-link" onClick={(e) => { e.preventDefault(); openGameModal(); }}>
                   <i data-feather="play-circle" style={{width: '18px', height: '18px'}}></i>
                   <span>Start with our interactive game</span>
                   <i data-feather="arrow-right"></i>
@@ -558,6 +593,69 @@ export default function CareersPage() {
           <div ref={typeformContainerRef} style={{ width: '100%', height: '100%' }}></div>
         </div>
       </div>
+
+      {/* Modal for Interactive Game */}
+      {gameModalActive && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.8)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeGameModal();
+          }}
+        >
+          <div style={{
+            width: '98vw',
+            height: '98vh',
+            background: 'white',
+            borderRadius: '12px',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            <button
+              onClick={closeGameModal}
+              style={{
+                position: 'absolute',
+                top: '12px',
+                right: '12px',
+                zIndex: 10000,
+                background: '#31135D',
+                color: 'white',
+                border: 'none',
+                borderRadius: '50%',
+                width: '40px',
+                height: '40px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '24px',
+                fontWeight: 'bold'
+              }}
+            >
+              ×
+            </button>
+            <iframe
+              src="/assets/games/schedule-matcher.html"
+              style={{
+                width: '100%',
+                height: '100%',
+                border: 'none'
+              }}
+              title="Schedule Matcher Game"
+            />
+          </div>
+        </div>
+      )}
     </>
   );
 }

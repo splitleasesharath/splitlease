@@ -1,0 +1,779 @@
+/**
+ * Virtual Meeting Manager Styles
+ * Based on Split Lease design system
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Alata&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap');
+
+:root {
+  --vm-purple-accent: rgb(92, 32, 182);
+  --vm-disabled-gray: rgb(221, 221, 221);
+  --vm-selected-slots-bg: rgb(247, 248, 249);
+  --vm-submit-disabled: rgb(104, 104, 104);
+  /* Cancel Modal specific */
+  --vm-cancel-purple: #6f34bf;
+  --vm-cancel-danger: #c82333;
+  --vm-cancel-gray: #424242;
+  --vm-cancel-card-bg: #f7f8f9;
+}
+
+/* ============================================
+   MAIN CONTAINER & OVERLAY
+   ============================================ */
+
+.vm-overlay {
+  position: fixed;
+  top: 70px; /* Below header */
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.vm-container {
+  background: white;
+  border-radius: 16px;
+  padding: 24px 32px;
+  width: auto;
+  max-width: 480px;
+  min-height: auto;
+  max-height: calc(100vh - 130px);
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Alata', sans-serif;
+}
+
+/* ============================================
+   HEADER STYLES
+   ============================================ */
+
+.vm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 8px;
+}
+
+.vm-header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.vm-icon {
+  font-size: 20px;
+  display: inline-block;
+}
+
+.vm-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+}
+
+.vm-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--vm-cancel-purple, #6f34bf);
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.2s;
+  line-height: 1;
+  z-index: 10;
+}
+
+.vm-close-btn:hover {
+  color: #5a2a9e;
+}
+
+.vm-back-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 8px;
+  color: #6b7280;
+  transition: color 0.2s;
+}
+
+.vm-back-btn:hover {
+  color: #000;
+}
+
+/* ============================================
+   TEXT STYLES
+   ============================================ */
+
+.vm-description {
+  color: #6b7280;
+  line-height: 1.6;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.vm-warning-text {
+  color: var(--vm-cancel-gray, #424242);
+  font-size: 14px;
+  margin-bottom: 12px;
+  font-weight: 400;
+}
+
+/* ============================================
+   BUTTON STYLES
+   ============================================ */
+
+.vm-button-group {
+  display: flex;
+  gap: 16px;
+  margin-top: 16px;
+  justify-content: center;
+}
+
+.vm-button-primary {
+  background: var(--color-primary, #31135d);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex: 1;
+}
+
+.vm-button-primary:hover:not(:disabled) {
+  background: var(--color-primary-hover, #1f0b38);
+}
+
+.vm-button-primary:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.vm-button-decline {
+  background: #ffb3ba;
+  color: #dc2626;
+  padding: 12px 24px;
+  border-radius: 8px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex: 1;
+}
+
+.vm-button-decline:hover {
+  background: #ffa0a8;
+}
+
+.vm-button-danger {
+  background: var(--vm-cancel-danger, #c82333);
+  color: white;
+  padding: 0;
+  width: 128px;
+  height: 32px;
+  border-radius: 20px;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex: none;
+}
+
+.vm-button-danger:hover {
+  background: #a71d2a;
+}
+
+.vm-button-danger:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.vm-button-outline {
+  background: white;
+  color: var(--vm-cancel-purple, #6f34bf);
+  padding: 0;
+  width: 128px;
+  height: 32px;
+  border-radius: 20px;
+  border: 2px solid var(--vm-cancel-purple, #6f34bf);
+  font-size: 14px;
+  font-weight: 500;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex: none;
+}
+
+.vm-button-outline:hover {
+  background: #f5f0ff;
+}
+
+.vm-button-success {
+  background: #ffffff;
+  color: #333333;
+  padding: 12px 24px;
+  border-radius: 8px;
+  border: 2px solid var(--vm-purple-accent, rgb(92, 32, 182));
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+  font-family: 'Alata', sans-serif;
+}
+
+.vm-button-success:hover:not(:disabled) {
+  background: #f5f5f5;
+}
+
+.vm-button-success:disabled {
+  background: var(--vm-submit-disabled, rgb(104, 104, 104));
+  color: white;
+  border-color: var(--vm-submit-disabled, rgb(104, 104, 104));
+  cursor: not-allowed;
+}
+
+/* ============================================
+   MESSAGE STYLES
+   ============================================ */
+
+.vm-error {
+  background: #fee2e2;
+  color: #dc2626;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.vm-success {
+  background: #d1fae5;
+  color: #065f46;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+/* ============================================
+   TIME SLOTS STYLES
+   ============================================ */
+
+.vm-time-slots {
+  margin: 20px 0;
+}
+
+.vm-time-slot-option {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  margin-bottom: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.vm-time-slot-option:hover {
+  background: #f9fafb;
+}
+
+.vm-time-slot-option input[type='radio'] {
+  margin-right: 10px;
+  cursor: pointer;
+}
+
+/* ============================================
+   RESPOND VIEW STYLES
+   ============================================ */
+
+.vm-respond-container {
+  padding: 8px 0;
+}
+
+.vm-alternative-section {
+  margin-top: 24px;
+}
+
+.vm-info-box-with-buttons {
+  background-color: #e8e8f0;
+  border: 2px solid #b8b8d0;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.vm-info-text {
+  font-size: 14px;
+  color: #374151;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.vm-confirm-section {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 2px solid #e5e7eb;
+}
+
+.vm-confirm-message {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 12px;
+}
+
+.vm-confirm-time-slot {
+  font-weight: 600;
+  color: var(--color-primary, #31135d);
+  margin: 0 0 16px 0;
+  font-size: 14px;
+}
+
+/* ============================================
+   BOOK VIEW STYLES
+   ============================================ */
+
+.vm-book-container {
+  padding: 8px 0;
+}
+
+.vm-submit-section {
+  margin-top: 24px;
+}
+
+.vm-slots-count {
+  text-align: center;
+  color: #6b7280;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+/* ============================================
+   CANCEL VIEW STYLES
+   ============================================ */
+
+.vm-cancel-container {
+  padding: 4px 0;
+}
+
+.vm-meeting-info-card {
+  border: none;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  background: var(--vm-cancel-card-bg, #f7f8f9);
+}
+
+.vm-meeting-info-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.vm-meeting-info-icon {
+  font-size: 24px;
+  color: var(--vm-cancel-purple, #6f34bf);
+}
+
+.vm-meeting-info-details {
+  flex: 1;
+}
+
+.vm-meeting-info-title {
+  font-size: 17px;
+  font-weight: 400;
+  font-family: 'Roboto', sans-serif;
+  color: #1f2937;
+  margin: 0 0 4px 0;
+}
+
+.vm-meeting-info-listing {
+  font-size: 12px;
+  color: var(--vm-cancel-gray, #424242);
+  margin: 2px 0;
+}
+
+.vm-meeting-info-date {
+  font-size: 14px;
+  color: var(--color-primary, #31135d);
+  font-weight: 600;
+  margin: 4px 0;
+}
+
+.vm-meeting-info-link {
+  font-size: 13px;
+  color: #3b82f6;
+  text-decoration: none;
+  display: inline-block;
+  margin-top: 8px;
+}
+
+.vm-meeting-info-link:hover {
+  text-decoration: underline;
+}
+
+/* ============================================
+   DETAILS VIEW STYLES
+   ============================================ */
+
+.vm-details-container {
+  padding: 8px 0;
+}
+
+.vm-profile-section {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.vm-profile-photo {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--color-primary, #31135d);
+}
+
+.vm-booked-section {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.vm-booked-label {
+  font-size: 18px;
+  font-weight: 600;
+  color: #6b7280;
+  margin: 0 0 8px 0;
+}
+
+.vm-booked-date {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-primary, #31135d);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.vm-details-list {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px 16px;
+  padding: 20px;
+  background: #f9fafb;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.vm-detail-label {
+  font-weight: 600;
+  color: #374151;
+  font-size: 14px;
+}
+
+.vm-detail-value {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.vm-calendar-button {
+  width: 100%;
+  padding: 14px 20px;
+  background: white;
+  border: 2px solid var(--color-primary, #31135d);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-primary, #31135d);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.2s;
+  margin-bottom: 12px;
+}
+
+.vm-calendar-button:hover {
+  background: #f5f3ff;
+}
+
+.vm-meeting-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  font-size: 14px;
+  color: #3b82f6;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.vm-meeting-link:hover {
+  color: #2563eb;
+}
+
+/* ============================================
+   LOADING STATE
+   ============================================ */
+
+.vm-loading {
+  text-align: center;
+  padding: 40px;
+  color: #6b7280;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 520px) {
+  .vm-overlay {
+    top: 60px; /* Smaller header on mobile */
+    padding: 10px;
+  }
+
+  .vm-container {
+    width: 100%;
+    max-width: 100%;
+    padding: 16px;
+    border-radius: 12px;
+    max-height: calc(100vh - 80px);
+  }
+
+  .vm-button-group {
+    flex-direction: column;
+  }
+
+  .vm-title {
+    font-size: 18px;
+  }
+
+  .vm-booked-date {
+    font-size: 22px;
+  }
+
+  .vm-details-list {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .vm-detail-label {
+    margin-bottom: 0;
+  }
+
+  .vm-detail-value {
+    margin-bottom: 12px;
+  }
+}
+
+/* ============================================
+   VM REQUEST SUCCESS MODAL
+   ============================================ */
+
+.vm-success-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  padding: 16px;
+}
+
+.vm-success-modal {
+  background: white;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  animation: vmSuccessModalIn 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes vmSuccessModalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.vm-success-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: #9CA3AF;
+  transition: color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.vm-success-modal-close:hover {
+  color: #374151;
+}
+
+.vm-success-modal-content {
+  padding: 32px 24px 24px;
+  text-align: center;
+}
+
+.vm-success-modal-icon {
+  color: #059669;
+  margin-bottom: 16px;
+}
+
+.vm-success-modal-icon svg {
+  width: 56px;
+  height: 56px;
+}
+
+.vm-success-modal-title {
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 12px 0;
+}
+
+.vm-success-modal-message {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #6B7280;
+  margin: 0 0 20px 0;
+}
+
+.vm-success-modal-btn {
+  background: var(--vm-purple-accent, #5C20B6);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 32px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.vm-success-modal-btn:hover {
+  background: #4a1a94;
+  transform: translateY(-1px);
+}
+
+/* Referral section */
+.vm-success-modal-referral {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: #F9FAFB;
+  border-top: 1px solid #E5E7EB;
+}
+
+.vm-success-modal-referral-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--vm-purple-accent, #5C20B6), #8B5CF6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.vm-success-modal-referral-icon svg {
+  color: white;
+  width: 20px;
+  height: 20px;
+}
+
+.vm-success-modal-referral-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.vm-success-modal-referral-content strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  line-height: 1.3;
+}
+
+.vm-success-modal-referral-content span {
+  display: block;
+  font-size: 12px;
+  color: #6B7280;
+  margin-top: 2px;
+}
+
+.vm-success-modal-referral-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--vm-purple-accent, #5C20B6);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.vm-success-modal-referral-btn:hover {
+  background: #4a1a94;
+}
+
+@media (max-width: 480px) {
+  .vm-success-modal-referral {
+    flex-wrap: wrap;
+  }
+
+  .vm-success-modal-referral-btn {
+    width: 100%;
+    justify-content: center;
+    margin-top: 8px;
+  }
+}

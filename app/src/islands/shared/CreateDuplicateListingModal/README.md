@@ -155,10 +155,8 @@ The `currentUser` prop should match the `zat_user` table structure:
   firstName: 'John',
   'Name - Full': 'John Doe',
   'is usability tester': false,
-  tasksCompleted: ['profile', 'listing'],
-  'Account - Host / Landlord': {
-    _id: 'host-account-uuid'
-  }
+  tasksCompleted: ['profile', 'listing']
+  // Note: user._id is used directly as host reference (no separate account_host)
 }
 ```
 
@@ -173,7 +171,7 @@ The `existingListings` prop should match the `zat_listings` table structure:
   active: false,
   'Default Extension Setting': false,
   '💰Damage Deposit': 500,
-  'Host / Landlord': 'host-account-uuid',
+  'Host User': 'user-uuid',  // user._id directly
   'HOST name': 'John Doe',
   'Host email': 'john@example.com',
   'Features - Qty Beds': 1,

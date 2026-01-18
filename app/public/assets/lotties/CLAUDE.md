@@ -1,7 +1,15 @@
-# Lotties - Animation Assets
+# Lotties - LLM Reference
 
-**GENERATED**: 2025-11-27
-**PARENT**: app/public/assets/
+**GENERATED**: 2025-12-11
+**SCOPE**: Lottie animation JSON files
+
+---
+
+## QUICK_STATS
+
+[TOTAL_FILES]: 2
+[FILE_TYPES]: JSON
+[URL_PATH]: `/assets/lotties/*`
 
 ---
 
@@ -13,13 +21,23 @@
 
 ---
 
+## FILES
+
+### atom-animation.json
+[INTENT]: Atom/science-themed animation
+[USE_CASE]: Loading states, science/technology context
+
+### atom-white.json
+[INTENT]: White-colored atom animation variant
+[USE_CASE]: Dark background contexts
+
+---
+
 ## LOTTIE_OVERVIEW
 
-Lottie is a library for rendering animations exported from After Effects.
-Benefits:
-- Small file sizes compared to video/GIF
-- Scalable (vector-based)
-- Interactive (can control playback)
+[TECHNOLOGY]: Vector-based animations exported from After Effects
+[BENEFITS]: Small file sizes, scalable, interactive playback control
+[COMPARISON]: Better than GIF/video for UI animations
 
 ---
 
@@ -28,7 +46,13 @@ Benefits:
 ### With lottie-player (Web Component)
 ```html
 <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
-<lottie-player src="/assets/lotties/animation.json" background="transparent" speed="1" loop autoplay></lottie-player>
+<lottie-player
+  src="/assets/lotties/atom-animation.json"
+  background="transparent"
+  speed="1"
+  loop
+  autoplay>
+</lottie-player>
 ```
 
 ### With lottie-web (JavaScript)
@@ -36,7 +60,7 @@ Benefits:
 import lottie from 'lottie-web';
 lottie.loadAnimation({
   container: element,
-  path: '/assets/lotties/animation.json',
+  path: '/assets/lotties/atom-animation.json',
   loop: true,
   autoplay: true
 });
@@ -46,11 +70,7 @@ lottie.loadAnimation({
 
 ## COMMON_USES
 
-- Loading spinners
-- Success/error feedback
-- Onboarding illustrations
-- Hero section animations
-
----
-
-**FILE_TYPE**: JSON
+[LOADING]: Animated loading spinners
+[FEEDBACK]: Success/error state animations
+[ONBOARDING]: Instructional animations
+[HERO]: Landing page hero section animations

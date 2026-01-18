@@ -1,0 +1,368 @@
+/**
+ * House Manual Page Styles
+ *
+ * Page-level styles for the AI-powered house manual creation page.
+ */
+
+/* ============================================================================
+   CSS VARIABLES
+   ============================================================================ */
+
+.house-manual {
+  --hm-primary: #6366f1;
+  --hm-primary-hover: #4f46e5;
+  --hm-primary-light: #e0e7ff;
+  --hm-gray-50: #f9fafb;
+  --hm-gray-100: #f3f4f6;
+  --hm-gray-200: #e5e7eb;
+  --hm-gray-300: #d1d5db;
+  --hm-gray-400: #9ca3af;
+  --hm-gray-500: #6b7280;
+  --hm-gray-600: #4b5563;
+  --hm-gray-700: #374151;
+  --hm-gray-800: #1f2937;
+  --hm-border-radius: 8px;
+  --hm-border-radius-lg: 12px;
+}
+
+/* ============================================================================
+   PAGE LAYOUT
+   ============================================================================ */
+
+.house-manual {
+  min-height: calc(100vh - 200px);
+  background: var(--hm-gray-50);
+  padding: 2rem 1rem;
+}
+
+.house-manual__container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* ============================================================================
+   PAGE HEADER
+   ============================================================================ */
+
+.house-manual__header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.house-manual__title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--hm-gray-800);
+  margin: 0 0 0.5rem 0;
+}
+
+.house-manual__subtitle {
+  font-size: 1rem;
+  color: var(--hm-gray-500);
+  margin: 0;
+}
+
+@media (min-width: 640px) {
+  .house-manual__title {
+    font-size: 2.5rem;
+  }
+
+  .house-manual__subtitle {
+    font-size: 1.125rem;
+  }
+}
+
+/* ============================================================================
+   LISTING SECTION
+   ============================================================================ */
+
+.house-manual__listing-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+  padding: 1.25rem;
+  background: white;
+  border: 1px solid var(--hm-gray-200);
+  border-radius: var(--hm-border-radius-lg);
+}
+
+@media (min-width: 640px) {
+  .house-manual__listing-section {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+.house-manual__listing-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.house-manual__listing-thumb {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: var(--hm-border-radius);
+}
+
+.house-manual__listing-title {
+  font-weight: 600;
+  color: var(--hm-gray-800);
+}
+
+.house-manual__listing-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.house-manual__listing-selector label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--hm-gray-600);
+  white-space: nowrap;
+}
+
+.house-manual__listing-selector select {
+  flex: 1;
+  padding: 0.625rem 2rem 0.625rem 0.875rem;
+  border: 1px solid var(--hm-gray-300);
+  border-radius: var(--hm-border-radius);
+  font-size: 0.9375rem;
+  background: white url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e") no-repeat right 0.5rem center;
+  background-size: 1.25rem;
+  appearance: none;
+  cursor: pointer;
+}
+
+.house-manual__listing-selector select:focus {
+  outline: none;
+  border-color: var(--hm-primary);
+  box-shadow: 0 0 0 3px var(--hm-primary-light);
+}
+
+.house-manual__listing-link {
+  font-size: 0.875rem;
+  color: var(--hm-primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.house-manual__listing-link:hover {
+  text-decoration: underline;
+}
+
+/* ============================================================================
+   AI TOOLS SECTION
+   ============================================================================ */
+
+.house-manual__ai-tools {
+  margin-bottom: 2rem;
+}
+
+.house-manual__section-header {
+  margin-bottom: 1.25rem;
+}
+
+.house-manual__section-header h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--hm-gray-800);
+  margin: 0 0 0.25rem 0;
+}
+
+.house-manual__section-header p {
+  font-size: 0.875rem;
+  color: var(--hm-gray-500);
+  margin: 0;
+}
+
+.house-manual__input-area {
+  margin-top: 1rem;
+}
+
+/* ============================================================================
+   EDITOR SECTION
+   ============================================================================ */
+
+.house-manual__editor-section {
+  margin-bottom: 2rem;
+}
+
+/* ============================================================================
+   LOADING STATE
+   ============================================================================ */
+
+.house-manual__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.house-manual__spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--hm-gray-200);
+  border-top-color: var(--hm-primary);
+  border-radius: 50%;
+  animation: house-manual-spin 1s linear infinite;
+}
+
+@keyframes house-manual-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.house-manual__loading p {
+  color: var(--hm-gray-500);
+  font-size: 0.9375rem;
+  margin: 0;
+}
+
+/* ============================================================================
+   ERROR STATE
+   ============================================================================ */
+
+.house-manual__error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.house-manual__error p {
+  color: #ef4444;
+  font-size: 0.9375rem;
+  margin: 0;
+}
+
+.house-manual__error button {
+  padding: 0.75rem 1.5rem;
+  background: var(--hm-primary);
+  color: white;
+  border: none;
+  border-radius: var(--hm-border-radius);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.house-manual__error button:hover {
+  background: var(--hm-primary-hover);
+}
+
+/* ============================================================================
+   EMPTY STATE (NO LISTINGS)
+   ============================================================================ */
+
+.house-manual__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 4rem 2rem;
+  text-align: center;
+  background: white;
+  border: 1px solid var(--hm-gray-200);
+  border-radius: var(--hm-border-radius-lg);
+}
+
+.house-manual__empty-icon {
+  color: var(--hm-gray-300);
+}
+
+.house-manual__empty h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--hm-gray-800);
+  margin: 0;
+}
+
+.house-manual__empty p {
+  font-size: 0.9375rem;
+  color: var(--hm-gray-500);
+  margin: 0;
+  max-width: 400px;
+}
+
+.house-manual__cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.5rem;
+  background: var(--hm-primary);
+  color: white;
+  text-decoration: none;
+  border-radius: var(--hm-border-radius);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  transition: background 0.2s ease;
+}
+
+.house-manual__cta-btn:hover {
+  background: var(--hm-primary-hover);
+}
+
+/* ============================================================================
+   SAVING OVERLAY
+   ============================================================================ */
+
+.house-manual__saving-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  z-index: 1000;
+}
+
+.house-manual__saving-overlay p {
+  color: var(--hm-gray-600);
+  font-size: 1rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* ============================================================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================================================ */
+
+@media (min-width: 768px) {
+  .house-manual {
+    padding: 3rem 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .house-manual {
+    padding: 4rem 2rem;
+  }
+}
+
+/* ============================================================================
+   BODY CLASS STYLES
+   ============================================================================ */
+
+body.house-manual-page {
+  background: var(--hm-gray-50);
+}

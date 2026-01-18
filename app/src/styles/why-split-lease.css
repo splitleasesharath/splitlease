@@ -492,6 +492,17 @@ body {
     border-radius: 20px;
     padding: 48px 40px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Center the SearchScheduleSelector component contents */
+.schedule-selector-wrapper > div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
 }
 
 .selector-label {
@@ -918,6 +929,68 @@ body {
     background: #31135D;
 }
 
+/* Loading skeleton for space cards */
+.space-card.loading {
+    pointer-events: none;
+}
+
+.space-image-skeleton {
+    width: 100%;
+    height: 220px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+.skeleton-text {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+}
+
+.skeleton-text.title {
+    height: 20px;
+    width: 70%;
+    margin-bottom: 12px;
+}
+
+.skeleton-text.location {
+    height: 14px;
+    width: 50%;
+    margin-bottom: 16px;
+}
+
+.skeleton-text.features {
+    height: 24px;
+    width: 90%;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+/* No listings message */
+.no-listings-message {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    background: #f9fafb;
+    border-radius: 16px;
+    border: 2px dashed #e5e7eb;
+}
+
+.no-listings-message p {
+    color: #6b7280;
+    font-size: 16px;
+    margin: 0;
+}
+
 /* PATTERN 5: Trust Section - Light Gray with Gradient Purple Blobs */
 .trust-section {
     background: #f7f8f9;
@@ -1274,6 +1347,19 @@ body {
     margin-top: 16px;
 }
 
+.pricing-savings-badge.pricing-savings-badge-clickable {
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.pricing-savings-badge.pricing-savings-badge-clickable:hover {
+    background: #059669;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
 .pricing-explanation-text {
     max-width: 800px;
     margin: 0 auto;
@@ -1535,22 +1621,114 @@ body {
 
 @media (max-width: 968px) {
     .hero-identity {
-        padding: 60px 32px;
-        padding-top: 140px; /* 80px for fixed header + 60px spacing */
+        padding: 60px 20px;
+        padding-top: 120px;
+        min-height: auto;
+        overflow: visible;
     }
 
+    /* Ensure correct content order - override mobile.css global styles */
+    .hero-identity .hero-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background: transparent !important;
+        margin-top: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* Reset order properties that mobile.css sets globally */
+    .hero-identity .hero-badge { order: 0 !important; }
+    .hero-identity .hero-title { order: 1 !important; }
+    .hero-identity .hero-subtitle { order: 2 !important; }
+    .hero-identity .hero-stats { order: 3 !important; }
+    .hero-identity .hero-cta { order: 4 !important; }
+
+    /* Hide persons 5 and 6 on tablet/mobile - keep 4 around the edges */
     .hero-identity .floating-person {
+        display: block;
+        z-index: 3;
+    }
+
+    .hero-identity .hero-person-5,
+    .hero-identity .hero-person-6 {
         display: none;
     }
 
-    .hero-identity .hero-person-1,
-    .hero-identity .hero-person-2,
+    /* Reposition 4 avatars around the content edges - like reference design */
+    .hero-identity .hero-person-1 {
+        width: 52px;
+        height: 52px;
+        top: auto;
+        bottom: 25%;
+        right: 2%;
+        left: auto;
+    }
+
+    .hero-identity .hero-person-2 {
+        width: 48px;
+        height: 48px;
+        top: 20%;
+        left: 2%;
+        right: auto;
+        bottom: auto;
+    }
+
     .hero-identity .hero-person-3 {
-        display: block;
+        width: 52px;
+        height: 52px;
+        top: auto;
+        bottom: 10%;
+        right: auto;
+        left: 2%;
+    }
+
+    .hero-identity .hero-person-4 {
+        width: 48px;
+        height: 48px;
+        top: 15%;
+        right: 2%;
+        left: auto;
+        bottom: auto;
+    }
+
+    /* Smaller border for mobile avatars */
+    .hero-identity .floating-person {
+        border-width: 3px;
+        box-shadow: 0 4px 12px rgba(49, 19, 93, 0.12);
     }
 
     .hero-identity .hero-title {
-        font-size: 36px;
+        font-size: 28px;
+        padding: 0 24px;
+        line-height: 1.2;
+    }
+
+    .hero-identity .hero-subtitle {
+        font-size: 15px;
+        padding: 0 16px;
+        margin-bottom: 32px;
+    }
+
+    /* Stats in a single row on mobile */
+    .hero-identity .hero-stats {
+        gap: 24px;
+        margin-bottom: 32px;
+        flex-wrap: nowrap;
+    }
+
+    .hero-identity .stat-value {
+        font-size: 24px;
+    }
+
+    .hero-identity .stat-label {
+        font-size: 10px;
+    }
+
+    .hero-badge {
+        margin-bottom: 20px;
+        font-size: 12px;
+        padding: 6px 16px;
     }
 
     .schedule-section,

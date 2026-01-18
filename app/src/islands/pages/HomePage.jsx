@@ -1,53 +1,138 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import SearchScheduleSelector from '../shared/SearchScheduleSelector.jsx';
 import AiSignupMarketReport from '../shared/AiSignupMarketReport';
+import LocalJourneySection from './LocalJourneySection.jsx';
 import { checkAuthStatus } from '../../lib/auth.js';
+import { supabase } from '../../lib/supabase.js';
+import { fetchPhotoUrls, parseJsonArray } from '../../lib/supabaseUtils.js';
+import { getNeighborhoodName, getBoroughName, initializeLookups } from '../../lib/dataLookups.js';
 import {
-  PROPERTY_IDS,
-  FAQ_URL
+  FAQ_URL,
+  SEARCH_URL,
+  VIEW_LISTING_URL
 } from '../../lib/constants.js';
+
+// ============================================================================
+// A/B TEST CONFIG - Market Report Popup vs Drawer
+// Set to false to disable A/B test and use drawer only (easy revert)
+// Note: Popup only shows on desktop (>768px), mobile always gets drawer
+// ============================================================================
+const AB_TEST_ENABLED = true;
+const POPUP_PERCENTAGE = 0.5; // 50% see popup, 50% see drawer
+const MOBILE_BREAKPOINT = 768; // px - below this, always show drawer
+
+function getMarketReportVariant() {
+  if (!AB_TEST_ENABLED) return 'drawer';
+
+  // Mobile always gets drawer
+  if (typeof window !== 'undefined' && window.innerWidth < MOBILE_BREAKPOINT) {
+    return 'drawer';
+  }
+
+  let variant = localStorage.getItem('marketReportVariant');
+  if (!variant) {
+    variant = Math.random() < POPUP_PERCENTAGE ? 'popup' : 'drawer';
+    localStorage.setItem('marketReportVariant', variant);
+    console.log('[A/B Test] Assigned variant:', variant);
+  }
+  return variant;
+}
 
 // ============================================================================
 // INTERNAL COMPONENT: Hero Section
 // ============================================================================
 
-function Hero({ onExploreRentals }) {
+function Hero({ onExploreRentals, onMoreDetails }) {
 
   return (
     <section className="hero-section">
-      {/* Mobile-only floating Empire State Building */}
-      <img
-        src="https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=768,h=777,f=auto,dpr=1,fit=contain/f1754342803901x992060741248266000/ChatGPT_Image_Aug_4__2025__06_20_44_PM-removebg-preview.png"
-        alt="Empire State Building"
-        className="mobile-empire-state"
-      />
-      <div className="hero-content-wrapper">
-        <img
-          src="/assets/images/hero-left.png"
-          alt="Brooklyn Bridge illustration"
-          className="hero-illustration hero-illustration-left"
-        />
-        <img
-          src="/assets/images/hero-right.png"
-          alt="Empire State Building illustration"
-          className="hero-illustration hero-illustration-right"
-        />
-        <div className="hero-content">
-          <h1 className="hero-title">
-            Ongoing Rentals <span className="mobile-break">for Repeat Stays</span>
-          </h1>
-          <p className="hero-subtitle">
-            Discover flexible rental options in NYC.
-            <br />
-            Only pay for the nights you need.
-          </p>
+      {/* Floating Avatars */}
 
-          <button className="hero-cta-button" onClick={onExploreRentals}>
+      {/* Avatar 1 (top-left): With location badge */}
+      <div className="floating-avatar avatar-1">
+        <img src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=400&fit=crop" alt="Modern NYC apartment living room" />
+        <span className="notification-badge location visible">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+          Midtown, Manhattan
+        </span>
+      </div>
+
+      {/* Avatar 2 (right): Plain circle */}
+      <div className="floating-avatar avatar-2">
+        <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=400&fit=crop" alt="Stylish bedroom with city view" />
+      </div>
+
+      {/* Avatar 3 (bottom-left): Plain circle */}
+      <div className="floating-avatar avatar-3">
+        <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&h=400&fit=crop" alt="Cozy furnished apartment" />
+      </div>
+
+      {/* Avatar 4 (right): With location badge */}
+      <div className="floating-avatar avatar-4">
+        <img src="https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=400&h=400&fit=crop" alt="Bright kitchen and dining area" />
+        <span className="notification-badge location visible">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+          Williamsburg, Brooklyn
+        </span>
+      </div>
+
+      {/* Avatar 5 (top-center-left): Plain circle */}
+      <div className="floating-avatar avatar-5">
+        <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&h=400&fit=crop" alt="Luxury apartment interior" />
+      </div>
+
+      {/* Avatar 6 (bottom-right): Plain circle */}
+      <div className="floating-avatar avatar-6">
+        <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=400&fit=crop" alt="Modern home office space" />
+      </div>
+
+      <div className="hero-container">
+        <div className="hero-badge">Ongoing Rentals for Repeat Stays</div>
+
+        <h1 className="hero-title">
+          Your NYC Home Base
+          <span className="savings">45% Less Than Airbnb</span>
+        </h1>
+
+        <p className="hero-subtitle">
+          Discover flexible rental options in NYC. Only pay for the nights you need.
+          Same space every visit. Leave your belongings.
+        </p>
+
+        {/* SearchScheduleSelector mount point */}
+        <div id="hero-schedule-selector" className="schedule-selector-wrapper"></div>
+
+        <div className="hero-cta">
+          <button className="cta-button cta-primary" onClick={onExploreRentals}>
             Explore Rentals
           </button>
+          <button className="cta-button cta-secondary" onClick={onMoreDetails}>
+            More Details
+          </button>
+        </div>
+
+        <div className="hero-stats">
+          <div className="stat-item">
+            <div className="stat-value">2,400+</div>
+            <div className="stat-label">NYC Multi-Locals</div>
+          </div>
+          <div className="stat-item">
+            <div className="stat-value">$18K</div>
+            <div className="stat-label">Avg Yearly Savings</div>
+          </div>
+          <div className="stat-item">
+            <div className="stat-value">200+</div>
+            <div className="stat-label">NYC Listings</div>
+          </div>
         </div>
       </div>
     </section>
@@ -95,72 +180,35 @@ function ValuePropositions() {
 }
 
 // ============================================================================
-// INTERNAL COMPONENT: Schedule Cards (Inverted Delivery Card Style)
+// INTERNAL COMPONENT: Schedule Section (Interactive Tabs Design)
 // ============================================================================
 
-function InvertedScheduleCards() {
+function ScheduleSection() {
+  const [activeIndex, setActiveIndex] = useState(0);
+
   const schedules = [
     {
       id: 'weeknight',
-      title: 'Weeknight Listings',
+      label: 'Weeknights',
       lottieUrl: 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800679546x885675666145660000/Days-of-the-week-lottie.json',
-      days: '2,3,4,5,6', // Monday-Friday
+      days: '2,3,4,5,6',
     },
     {
       id: 'weekend',
-      title: 'Weekend Listings',
+      label: 'Weekends',
       lottieUrl: 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800745354x526611430283845360/weekend-lottie%20%281%29.json',
-      days: '6,7,1,2', // Fri-Sun+Mon
+      days: '6,7,1,2',
     },
     {
-      id: 'monthly',
-      title: 'Monthly Listings',
+      id: 'fullweek',
+      label: 'Full Week',
       lottieUrl: 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800780466x583314971697148400/Weeks-of-the-month-lottie.json',
-      days: '1,2,3,4,5,6,7', // All days
+      days: '1,2,3,4,5,6,7',
     },
   ];
 
-  const handleExploreClick = (days) => {
-    const searchUrl = `/search.html?days-selected=${days}`;
-    window.location.href = searchUrl;
-  };
-
-  const handleMouseEnter = (e) => {
-    const card = e.currentTarget;
-    const player = card.querySelector('lottie-player');
-    const progressLine = card.querySelector('.lottie-progress-line');
-
-    if (player && progressLine) {
-      player.play();
-
-      // Animate progress line
-      const updateProgress = () => {
-        if (player.getLottie) {
-          const lottieInstance = player.getLottie();
-          if (lottieInstance) {
-            const progress = (lottieInstance.currentFrame / lottieInstance.totalFrames) * 100;
-            progressLine.style.width = `${progress}%`;
-          }
-        }
-        if (!player.paused) {
-          requestAnimationFrame(updateProgress);
-        }
-      };
-      updateProgress();
-    }
-  };
-
-  const handleMouseLeave = (e) => {
-    const card = e.currentTarget;
-    const player = card.querySelector('lottie-player');
-    const progressLine = card.querySelector('.lottie-progress-line');
-
-    if (player) {
-      player.stop();
-    }
-    if (progressLine) {
-      progressLine.style.width = '0%';
-    }
+  const handleExploreClick = () => {
+    window.location.href = `/search.html?days-selected=${schedules[activeIndex].days}`;
   };
 
   // Load Lottie player script
@@ -178,265 +226,51 @@ function InvertedScheduleCards() {
   }, []);
 
   return (
-    <section className="inverted-schedule-section">
-      <div className="schedule-header">
-        <h2>Stop playing room roulette!</h2>
-        <h1>Choose Your Split Schedule</h1>
-      </div>
-
-      <div className="inverted-schedule-grid">
-        {schedules.map((schedule) => (
-          <div
-            key={schedule.id}
-            className="lottie-card-v11"
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-          >
-            <div className="visual-section">
-              <div className="lottie-animation">
-                <lottie-player
-                  src={schedule.lottieUrl}
-                  background="white"
-                  speed="1"
-                  style={{ width: '100%', maxWidth: '240px', height: '160px', transform: 'scale(1.15)' }}
-                  loop
-                ></lottie-player>
-              </div>
-              <div className="lottie-progress-bar">
-                <div className="lottie-progress-line"></div>
-              </div>
-            </div>
-            <div className="content-section">
-              <div className="card-footer">
-                <button
-                  className="btn-primary"
-                  onClick={() => handleExploreClick(schedule.days)}
-                >
-                  Explore listings
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-// ============================================================================
-// INTERNAL COMPONENT: Local Section (V5 Design)
-// ============================================================================
-
-function LocalSection({ onExploreRentals }) {
-  const features = [
-    {
-      number: '1',
-      title: 'Move-in Ready',
-      description: 'Fully-furnished spaces ensure move-in is a breeze.',
-    },
-    {
-      number: '2',
-      title: 'Everything You Need',
-      description: 'Store items like toiletries, a second monitor, work attire, and anything else you may need to make yourself at home.',
-    },
-    {
-      number: '3',
-      title: 'Total Flexibility',
-      description: 'Forget HOAs. Switch neighborhoods seasonally, discover amazing flexibility.',
-    },
-  ];
-
-  return (
-    <section className="local-section">
-      <div className="local-container">
-        <div className="local-content-wrapper">
-          <div className="local-left-section">
-            <h1>Choose when to be a local</h1>
-            <p className="local-description">
-              Enjoy a second-home lifestyle on your schedule. Stay in the city on the days you need, relax in fully-set spaces, and experience NYC living with long-term comfort and total flexibility.
-            </p>
-            <div className="local-cta-group">
-              <button className="local-primary-button" onClick={onExploreRentals}>
-                Explore Rentals
-              </button>
-              <a href="/why-split-lease.html" className="local-secondary-button">
-                Learn More
-              </a>
-            </div>
-          </div>
-
-          <div className="local-right-section">
-            {features.map((feature, index) => (
-              <div key={index} className="local-feature-item">
-                <div className="local-feature-number">{feature.number}</div>
-                <div className="local-feature-content">
-                  <h3>{feature.title}</h3>
-                  <p>{feature.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+    <section className="schedule-section">
+      <div className="schedule-section-container">
+        <div className="schedule-section-header">
+          <p className="schedule-section-eyebrow">Stop playing room roulette!</p>
+          <h2>Choose Your Split Schedule</h2>
         </div>
-      </div>
-    </section>
-  );
-}
 
-// ============================================================================
-// INTERNAL COMPONENT: Listings Preview
-// ============================================================================
-
-function ListingsPreview({ selectedDays = [] }) {
-  const listings = [
-    {
-      id: PROPERTY_IDS.ONE_PLATT_STUDIO,
-      image:
-        'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=384,h=313,f=auto,dpr=1.25,fit=contain,q=75/f1586448035769x259434561490871740/255489_1_6782895-650-570.jpg',
-      title: 'One Platt | Studio',
-      location: 'Financial District, Manhattan',
-      description: 'Studio - 1 bed - 1 bathroom - Free Storage',
-    },
-    {
-      id: PROPERTY_IDS.PIED_A_TERRE,
-      image:
-        'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=384,h=313,f=auto,dpr=1.25,fit=contain,q=75/f1746102430270x309647360933492400/pied4.webp',
-      title: 'Perfect 2 BR Apartment',
-      location: 'Upper East Side, Manhattan',
-      description: '2 bedrooms - 2 bed(s) - 1 bathroom - Free Storage',
-    },
-    {
-      id: PROPERTY_IDS.FURNISHED_1BR,
-      image:
-        'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=384,h=313,f=auto,dpr=1.25,fit=contain,q=75/f1746102537155x544568166750526000/harlem4.webp',
-      title: 'Fully furnished 1bdr apartment',
-      location: 'Harlem, Manhattan',
-      description: '1 bedroom - 1 bed - 1 bathroom - Free Storage',
-    },
-    {
-      id: PROPERTY_IDS.FURNISHED_STUDIO,
-      image:
-        'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=384,h=313,f=auto,dpr=1.25,fit=contain,q=75/f1701198008563x119014198947512200/julia4.jpg',
-      title: 'Furnished Studio Apt for Rent',
-      location: 'Hell\'s Kitchen, Manhattan',
-      description: 'Studio - 1 bed - 1 bathroom - Free Storage',
-    },
-  ];
-
-  const handleListingClick = (propertyId) => {
-    // Redirect to local view-split-lease page with property ID in path (clean URL)
-    const propertyUrl = `/view-split-lease/${propertyId}`;
-    window.location.href = propertyUrl;
-  };
-
-  const handleShowMore = () => {
-    // Navigate to search page with current day selection
-    if (selectedDays.length > 0) {
-      // Convert 0-based indices to 1-based for URL (0→1, 1→2, etc.)
-      const oneBased = selectedDays.map(idx => idx + 1);
-      const daysParam = oneBased.join(',');
-      window.location.href = `/search.html?days-selected=${daysParam}`;
-    } else {
-      // No selection, navigate without parameter
-      window.location.href = '/search.html';
-    }
-  };
-
-  return (
-    <section className="listings-section">
-      <h2>Check Out Some Listings</h2>
-      <div className="listings-container">
-        <div className="listings-grid">
-          {listings.map((listing, index) => (
-            <div
-              key={index}
-              className="listing-card"
-              data-property-id={listing.id}
-              onClick={() => handleListingClick(listing.id)}
+        <div className="schedule-section-tabs">
+          {schedules.map((schedule, index) => (
+            <button
+              key={schedule.id}
+              className={`schedule-section-tab ${index === activeIndex ? 'active' : ''}`}
+              onClick={() => setActiveIndex(index)}
             >
-              <div
-                className="listing-image"
-                style={{
-                  backgroundImage: `url('${listing.image}')`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                }}
-              ></div>
-              <div className="listing-details">
-                <div className="listing-location">
-                  <svg className="location-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                    <circle cx="12" cy="10" r="3"></circle>
-                  </svg>
-                  <span>{listing.location}</span>
-                </div>
-                <h3>{listing.title}</h3>
-                <div className="listing-meta">
-                  {listing.description.split(' - ').map((item, idx) => {
-                    const trimmed = item.trim();
-                    let icon = null;
-
-                    // Determine icon based on content
-                    if (trimmed.toLowerCase().includes('bedroom') || trimmed.toLowerCase() === 'studio') {
-                      icon = (
-                        <svg className="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                          <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                        </svg>
-                      );
-                    } else if (trimmed.toLowerCase().includes('bed')) {
-                      icon = (
-                        <svg className="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M2 4v16"></path>
-                          <path d="M2 8h18a2 2 0 0 1 2 2v10"></path>
-                          <path d="M2 17h20"></path>
-                          <path d="M6 8V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v4"></path>
-                        </svg>
-                      );
-                    } else if (trimmed.toLowerCase().includes('bathroom')) {
-                      icon = (
-                        <svg className="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M9 6 6.5 3.5a1.5 1.5 0 0 0-1-.5C4.683 3 4 3.683 4 4.5V17a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"></path>
-                          <line x1="10" y1="5" x2="8" y2="7"></line>
-                          <line x1="2" y1="12" x2="22" y2="12"></line>
-                          <line x1="7" y1="19" x2="7" y2="22"></line>
-                          <line x1="17" y1="19" x2="17" y2="22"></line>
-                        </svg>
-                      );
-                    } else if (trimmed.toLowerCase().includes('storage')) {
-                      icon = (
-                        <svg className="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                          <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                          <line x1="12" y1="22.08" x2="12" y2="12"></line>
-                        </svg>
-                      );
-                    }
-
-                    return icon ? (
-                      <span key={idx} className="meta-item">
-                        {icon}
-                        <span>{trimmed}</span>
-                      </span>
-                    ) : null;
-                  })}
-                </div>
-              </div>
-            </div>
+              {schedule.label}
+            </button>
           ))}
         </div>
-        {/* Scroll indicators for mobile */}
-        <div className="scroll-indicators">
-          {listings.map((_, index) => (
-            <span key={index} className={`indicator ${index === 0 ? 'active' : ''}`} data-slide={index}></span>
-          ))}
+
+        <div className="schedule-section-display">
+          <div className="schedule-section-lottie">
+            <lottie-player
+              key={schedules[activeIndex].id}
+              src={schedules[activeIndex].lottieUrl}
+              background="transparent"
+              speed="1"
+              style={{ width: '340px', height: '240px' }}
+              loop
+              autoplay
+            ></lottie-player>
+          </div>
+
+          <button className="schedule-section-cta" onClick={handleExploreClick}>
+            Browse {schedules[activeIndex].label} Listings
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </button>
         </div>
       </div>
-      <button className="show-more-btn" onClick={handleShowMore}>
-        Show me more Rentals
-      </button>
     </section>
   );
 }
+
+
 
 // ============================================================================
 // INTERNAL COMPONENT: Support Section
@@ -445,44 +279,351 @@ function ListingsPreview({ selectedDays = [] }) {
 function SupportSection() {
   const supportOptions = [
     {
-      icon: 'https://s3.amazonaws.com/appforest_uf/f1612395570366x477803304486100100/COLOR',
-      label: 'Instant Live-Chat',
+      icon: (
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#31135D" strokeWidth="1.5">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="10" r="1" fill="#31135D"/>
+          <circle cx="8" cy="10" r="1" fill="#31135D"/>
+          <circle cx="16" cy="10" r="1" fill="#31135D"/>
+        </svg>
+      ),
+      title: 'Live Chat',
+      description: 'Get instant answers from our team',
       link: FAQ_URL,
     },
     {
-      icon: 'https://s3.amazonaws.com/appforest_uf/f1612395570375x549911933429149100/COLOR',
-      label: 'Browse our FAQs',
+      icon: (
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#31135D" strokeWidth="1.5">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+          <circle cx="12" cy="17" r="0.5" fill="#31135D"/>
+        </svg>
+      ),
+      title: 'FAQs',
+      description: 'Browse common questions',
       link: FAQ_URL,
     },
     {
-      icon: '/images/support-centre-icon.svg',
-      label: 'Support Centre',
+      icon: (
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#31135D" strokeWidth="1.5">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+          <line x1="8" y1="6" x2="16" y2="6"/>
+          <line x1="8" y1="10" x2="14" y2="10"/>
+        </svg>
+      ),
+      title: 'Help Center',
+      description: 'Guides and resources',
       link: '/help-center',
       isInternal: true,
     },
   ];
 
   return (
-    <section className="support-section">
-      <h2>Get personal support</h2>
-      <div className="support-options">
-        {supportOptions.map((option, index) => (
-          <a
-            key={index}
-            href={option.link}
-            {...(option.isInternal ? {} : { target: '_blank', rel: 'noopener noreferrer' })}
-            className="support-card-link"
-          >
-            <div className="support-card">
-              <div className="support-icon">
-                <img src={option.icon} alt={option.label} />
+    <section className="support-section-alt">
+      <div className="support-section-alt-container">
+        <div className="support-section-alt-header">
+          <p className="support-section-alt-eyebrow">Need Help?</p>
+          <h2>We're here for you</h2>
+        </div>
+        <div className="support-section-alt-grid">
+          {supportOptions.map((option, index) => (
+            <a
+              key={index}
+              href={option.link}
+              {...(option.isInternal ? {} : { target: '_blank', rel: 'noopener noreferrer' })}
+              className="support-alt-card"
+            >
+              <div className="support-alt-icon">{option.icon}</div>
+              <div className="support-alt-content">
+                <h3>{option.title}</h3>
+                <p>{option.description}</p>
               </div>
-              <p>{option.label}</p>
-            </div>
-          </a>
-        ))}
+              <svg className="support-alt-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </a>
+          ))}
+        </div>
       </div>
     </section>
+  );
+}
+
+// ============================================================================
+// INTERNAL COMPONENT: Featured Spaces Section (from why-split-lease)
+// ============================================================================
+
+function FeaturedSpacesSection() {
+  const [manhattanId, setManhattanId] = useState(null);
+  const [featuredListings, setFeaturedListings] = useState([]);
+  const [isLoadingListings, setIsLoadingListings] = useState(true);
+
+  // Initialize data lookups and get Manhattan borough ID
+  useEffect(() => {
+    const init = async () => {
+      await initializeLookups();
+
+      try {
+        const { data, error } = await supabase
+          .schema('reference_table')
+          .from('zat_geo_borough_toplevel')
+          .select('_id, "Display Borough"')
+          .ilike('"Display Borough"', 'Manhattan')
+          .single();
+
+        if (error) throw error;
+        if (data) setManhattanId(data._id);
+      } catch (err) {
+        console.error('Failed to load Manhattan borough:', err);
+      }
+    };
+
+    init();
+  }, []);
+
+  // Fetch Manhattan listings
+  const fetchFeaturedListings = useCallback(async () => {
+    if (!manhattanId) return;
+
+    setIsLoadingListings(true);
+    try {
+      const query = supabase
+        .from('listing')
+        .select(`
+          _id,
+          "Name",
+          "Location - Borough",
+          "Location - Hood",
+          "Location - Address",
+          "Features - Photos",
+          "Features - Qty Bedrooms",
+          "Features - Qty Bathrooms",
+          "Days Available (List of Days)"
+        `)
+        .eq('"Complete"', true)
+        .eq('"Location - Borough"', manhattanId)
+        .or('"Active".eq.true,"Active".is.null')
+        .or('"Location - Address".not.is.null,"Location - slightly different address".not.is.null')
+        .limit(3);
+
+      const { data: listings, error } = await query;
+
+      if (error) throw error;
+
+      if (!listings || listings.length === 0) {
+        setFeaturedListings([]);
+        setIsLoadingListings(false);
+        return;
+      }
+
+      const legacyPhotoIds = [];
+      listings.forEach(listing => {
+        const photos = parseJsonArray(listing['Features - Photos']);
+        if (photos && photos.length > 0) {
+          const firstPhoto = photos[0];
+          if (typeof firstPhoto === 'string') {
+            legacyPhotoIds.push(firstPhoto);
+          }
+        }
+      });
+
+      const photoMap = legacyPhotoIds.length > 0
+        ? await fetchPhotoUrls(legacyPhotoIds)
+        : {};
+
+      const transformedListings = listings.map(listing => {
+        const photos = parseJsonArray(listing['Features - Photos']);
+        const firstPhoto = photos?.[0];
+
+        let photoUrl = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&h=400&fit=crop';
+        if (typeof firstPhoto === 'object' && firstPhoto !== null) {
+          let url = firstPhoto.url || firstPhoto.Photo || '';
+          if (url.startsWith('//')) url = 'https:' + url;
+          if (url) photoUrl = url;
+        } else if (typeof firstPhoto === 'string' && photoMap[firstPhoto]) {
+          photoUrl = photoMap[firstPhoto];
+        }
+
+        const neighborhoodName = getNeighborhoodName(listing['Location - Hood']);
+        const boroughName = getBoroughName(listing['Location - Borough']);
+        const location = [neighborhoodName, boroughName].filter(Boolean).join(', ') || 'New York, NY';
+
+        const availableDays = parseJsonArray(listing['Days Available (List of Days)']) || [];
+
+        return {
+          id: listing._id,
+          title: listing['Name'] || 'NYC Space',
+          location,
+          image: photoUrl,
+          bedrooms: listing['Features - Qty Bedrooms'] || 0,
+          bathrooms: listing['Features - Qty Bathrooms'] || 0,
+          availableDays,
+        };
+      });
+
+      setFeaturedListings(transformedListings);
+    } catch (err) {
+      console.error('Failed to fetch featured listings:', err);
+      setFeaturedListings([]);
+    } finally {
+      setIsLoadingListings(false);
+    }
+  }, [manhattanId]);
+
+  useEffect(() => {
+    fetchFeaturedListings();
+  }, [fetchFeaturedListings]);
+
+  return (
+    <section className="featured-spaces">
+      <div className="featured-spaces-container">
+        <div className="spaces-header">
+          <h2>Check Out Some Listings</h2>
+        </div>
+
+        <div className="spaces-grid">
+          {isLoadingListings ? (
+            <>
+              {[1, 2, 3].map(i => (
+                <div key={i} className="space-card loading">
+                  <div className="space-image-skeleton"></div>
+                  <div className="space-info">
+                    <div className="skeleton-text title"></div>
+                    <div className="skeleton-text location"></div>
+                    <div className="skeleton-text features"></div>
+                  </div>
+                </div>
+              ))}
+            </>
+          ) : featuredListings.length === 0 ? (
+            <div className="no-listings-message">
+              <p>No listings available in this area. Try selecting a different borough.</p>
+            </div>
+          ) : (
+            featuredListings.map(listing => (
+              <div
+                key={listing.id}
+                className="space-card"
+                onClick={() => window.location.href = `${VIEW_LISTING_URL}/${listing.id}`}
+              >
+                <div style={{ position: 'relative' }}>
+                  <img
+                    src={listing.image}
+                    alt={listing.title}
+                    className="space-image"
+                    onError={(e) => {
+                      e.target.src = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&h=400&fit=crop';
+                    }}
+                  />
+                  <div className="space-badge">Verified</div>
+                </div>
+                <div className="space-info">
+                  <h3 className="space-title">{listing.title}</h3>
+                  <div className="space-location">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke="#6B7280" strokeWidth="2"/>
+                      <circle cx="12" cy="9" r="2.5" stroke="#6B7280" strokeWidth="2"/>
+                    </svg>
+                    {listing.location}
+                  </div>
+                  <div className="space-features">
+                    <span className="feature-tag">
+                      {listing.bedrooms === 0 ? 'Studio' : `${listing.bedrooms} bed${listing.bedrooms !== 1 ? 's' : ''}`}
+                    </span>
+                    <span className="feature-tag">{listing.bathrooms} bath{listing.bathrooms !== 1 ? 's' : ''}</span>
+                    <span className="feature-tag">Storage</span>
+                  </div>
+                  <div className="space-schedule">
+                    <span className="available-days">all nights available</span>
+                    <div className="day-indicators">
+                      {[0, 1, 2, 3, 4, 5, 6].map((dayIdx) => (
+                        <span key={dayIdx} className="day-dot available" />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="spaces-cta-wrapper">
+          <a href={SEARCH_URL} className="spaces-cta-button">
+            Browse All NYC Spaces
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ============================================================================
+// A/B TEST VARIANT: Market Report Popup (bottom-right corner)
+// ============================================================================
+
+function MarketReportPopup({ onRequestClick, onDismiss, isVisible }) {
+  const [isAnimating, setIsAnimating] = useState(true);
+
+  const handleDismiss = () => {
+    setIsAnimating(false);
+    setTimeout(() => {
+      onDismiss?.();
+      console.log('[A/B Test] Popup dismissed - showing drawer');
+    }, 300);
+  };
+
+  const handleRequest = () => {
+    onRequestClick();
+    console.log('[A/B Test] Popup: Request clicked');
+  };
+
+  if (!isVisible) return null;
+
+  return (
+    <div className={`market-popup-container ${isAnimating ? 'animate-in' : 'animate-out'}`}>
+      <div className="market-popup-card">
+        <button className="market-popup-close" onClick={handleDismiss} aria-label="Close">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+
+        <div className="market-popup-content">
+          <div className="market-popup-badge">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            <span>Free Report</span>
+          </div>
+
+          <h2 className="market-popup-title">Split Lease Market Research</h2>
+          <p className="market-popup-description">Market Research for Lodging, Storage, Transport, Restaurants and more</p>
+
+          <div className="market-popup-buttons">
+            <button className="market-popup-btn-primary" onClick={handleRequest}>Request</button>
+            <button className="market-popup-btn-secondary" onClick={handleDismiss}>Later</button>
+          </div>
+        </div>
+
+        <div className="market-popup-illustration">
+          <lottie-player
+            src="https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1751640509056x731482311814151200/atom%20white.json"
+            background="transparent"
+            speed="1"
+            style={{ width: '120px', height: '120px' }}
+            loop
+            autoplay
+          ></lottie-player>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -524,46 +665,77 @@ export default function HomePage() {
   // State management
   const [isAIResearchModalOpen, setIsAIResearchModalOpen] = useState(false);
   const [selectedDays, setSelectedDays] = useState([]);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isPopupDismissed, setIsPopupDismissed] = useState(false); // A/B test: when true, show drawer instead of popup
 
-  // Check authentication status on mount
+  // Internal routing state for password reset fallback
+  const [RecoveryComponent, setRecoveryComponent] = useState(null);
+
+  // SAFETY NET: Check for password reset redirect
+  // If user lands on home page (or via server rewrite) with recovery token
   useEffect(() => {
-    checkAuthStatus(); // Async function, but we don't need to wait for it
-  }, []);
+    const hash = window.location.hash;
+    if (hash && hash.includes('type=recovery')) {
+      console.log('Detected password reset token.');
+      
+      // If we are at the root, redirect to the specific page to keep URLs clean
+      if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
+         console.log('Redirecting from root to /reset-password...');
+         window.location.href = `/reset-password${hash}`;
+         return;
+      }
 
-  // Mount SearchScheduleSelector component in hero section above Explore Rentals button
-  useEffect(() => {
-    const mountPoint = document.createElement('div');
-    mountPoint.id = 'home-schedule-selector-mount';
-    mountPoint.style.display = 'flex';
-    mountPoint.style.justifyContent = 'center';
-    mountPoint.style.marginBottom = '20px';
-
-    const heroContent = document.querySelector('.hero-content');
-    const exploreButton = document.querySelector('.hero-cta-button');
-
-    if (heroContent && exploreButton) {
-      heroContent.insertBefore(mountPoint, exploreButton);
-
-      const root = createRoot(mountPoint);
-      root.render(
-        <SearchScheduleSelector
-          onSelectionChange={(days) => {
-            console.log('Selected days on home page:', days);
-            // Just update state, don't auto-navigate
-            setSelectedDays(days.map(d => d.index));
-          }}
-          onError={(error) => console.error('SearchScheduleSelector error:', error)}
-        />
-      );
-
-      return () => {
-        root.unmount();
-        if (mountPoint.parentNode) {
-          mountPoint.parentNode.removeChild(mountPoint);
-        }
-      };
+      // If we are NOT at root (e.g. /reset-password), but HomePage loaded,
+      // it means the server rewrote the URL to index.html (SPA fallback).
+      // We must render the ResetPasswordPage manually to avoid a redirect loop.
+      console.log('Loading ResetPasswordPage dynamically (SPA fallback)...');
+      import('./ResetPasswordPage.jsx')
+        .then(module => {
+          setRecoveryComponent(() => module.default);
+        })
+        .catch(err => console.error('Failed to load ResetPasswordPage:', err));
     }
   }, []);
+
+  // Check authentication status on mount
+  // NOTE: Must be BEFORE early return to comply with Rules of Hooks
+  useEffect(() => {
+    const checkAuth = async () => {
+      const loggedIn = await checkAuthStatus();
+      setIsLoggedIn(loggedIn);
+    };
+    checkAuth();
+  }, []);
+
+  // Mount SearchScheduleSelector component in hero section
+  // NOTE: Must be BEFORE early return to comply with Rules of Hooks
+  useEffect(() => {
+    // Skip if RecoveryComponent is being shown (we're rendering something else)
+    if (RecoveryComponent) return;
+
+    const mountPoint = document.getElementById('hero-schedule-selector');
+    if (!mountPoint) return;
+
+    const root = createRoot(mountPoint);
+    root.render(
+      <SearchScheduleSelector
+        onSelectionChange={(days) => {
+          console.log('Selected days on home page:', days);
+          setSelectedDays(days.map(d => d.index));
+        }}
+        onError={(error) => console.error('SearchScheduleSelector error:', error)}
+      />
+    );
+
+    return () => {
+      root.unmount();
+    };
+  }, [RecoveryComponent]);
+
+  // If we need to render the recovery page instead of home
+  if (RecoveryComponent) {
+    return <RecoveryComponent />;
+  }
 
   const handleExploreRentals = () => {
     // Navigate to search page with current day selection
@@ -575,6 +747,14 @@ export default function HomePage() {
     } else {
       // No selection, navigate without parameter
       window.location.href = '/search.html';
+    }
+  };
+
+  const handleMoreDetails = () => {
+    // Scroll to ValuePropositions section
+    const section = document.querySelector('.value-props');
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
@@ -590,26 +770,38 @@ export default function HomePage() {
     <div className="home-page">
       <Header />
 
-      <Hero onExploreRentals={handleExploreRentals} />
+      <Hero onExploreRentals={handleExploreRentals} onMoreDetails={handleMoreDetails} />
 
       <ValuePropositions />
 
-      <InvertedScheduleCards />
+      <ScheduleSection />
 
-      <LocalSection onExploreRentals={handleExploreRentals} />
+      <LocalJourneySection onExploreRentals={handleExploreRentals} />
 
-      <ListingsPreview selectedDays={selectedDays} />
+      <FeaturedSpacesSection />
 
       <SupportSection />
 
       <Footer />
 
-      <FloatingBadge onClick={handleOpenAIResearchModal} />
+      {!isLoggedIn && (
+        <>
+          {getMarketReportVariant() === 'popup' && !isPopupDismissed ? (
+            <MarketReportPopup
+              isVisible={true}
+              onRequestClick={handleOpenAIResearchModal}
+              onDismiss={() => setIsPopupDismissed(true)}
+            />
+          ) : (
+            <FloatingBadge onClick={handleOpenAIResearchModal} />
+          )}
 
-      <AiSignupMarketReport
-        isOpen={isAIResearchModalOpen}
-        onClose={handleCloseAIResearchModal}
-      />
+          <AiSignupMarketReport
+            isOpen={isAIResearchModalOpen}
+            onClose={handleCloseAIResearchModal}
+          />
+        </>
+      )}
     </div>
   );
 }

@@ -58,6 +58,21 @@ import {
 } from '../../logic/index.js'
 
 /**
+ * Extract unique photo IDs from an array of listings.
+ * @param {Array} listings - Array of listing objects
+ * @returns {Array} Array of unique photo IDs
+ */
+function extractPhotoIdsFromListings(listings) {
+  const photoIds = new Set()
+  listings.forEach((listing) => {
+    const photosField = listing['Features - Photos']
+    const parsed = parseJsonArray(photosField)
+    parsed.forEach((id) => photoIds.add(id))
+  })
+  return Array.from(photoIds)
+}
+
+/**
  * Main SearchPage logic hook.
  *
  * @returns {object} Pre-calculated state and handlers for SearchPage component.
@@ -207,6 +222,7 @@ export function useSearchPageLogic() {
         .from('listing')
         .select('*')
         .eq('Active', true)
+        .eq('Deleted', false)
         .eq('isForUsability', false)
         .or(
           '"Location - Address".not.is.null,"Location - slightly different address".not.is.null'
@@ -217,24 +233,12 @@ export function useSearchPageLogic() {
       console.log('📊 fetchAllActiveListings: Supabase returned', data.length, 'active listings')
 
       // Batch fetch photos
-      const allPhotoIds = new Set()
-      data.forEach((listing) => {
-        const photosField = listing['Features - Photos']
-        if (Array.isArray(photosField)) {
-          photosField.forEach((id) => allPhotoIds.add(id))
-        } else if (typeof photosField === 'string') {
-          try {
-            const parsed = JSON.parse(photosField)
-            if (Array.isArray(parsed)) {
-              parsed.forEach((id) => allPhotoIds.add(id))
-            }
-          } catch (e) {
-            // Ignore parse errors
-          }
-        }
-      })
+      const photoIdsArray = extractPhotoIdsFromListings(data)
+      console.log('📷 fetchAllActiveListings: Collected', photoIdsArray.length, 'unique photo IDs')
+      console.log('📷 fetchAllActiveListings: Sample photo IDs:', photoIdsArray.slice(0, 3))
 
-      const photoMap = await fetchPhotoUrls(Array.from(allPhotoIds))
+      const photoMap = await fetchPhotoUrls(photoIdsArray)
+      console.log('📷 fetchAllActiveListings: photoMap has', Object.keys(photoMap).length, 'entries')
 
       // Extract photos per listing
       const resolvedPhotos = {}
@@ -249,8 +253,8 @@ export function useSearchPageLogic() {
       // Batch fetch host data
       const hostIds = new Set()
       data.forEach((listing) => {
-        if (listing['Host / Landlord']) {
-          hostIds.add(listing['Host / Landlord'])
+        if (listing['Host User']) {
+          hostIds.add(listing['Host User'])
         }
       })
 
@@ -259,7 +263,7 @@ export function useSearchPageLogic() {
       // Map host data to listings
       const resolvedHosts = {}
       data.forEach((listing) => {
-        const hostId = listing['Host / Landlord']
+        const hostId = listing['Host User']
         resolvedHosts[listing._id] = hostMap[hostId] || null
       })
 
@@ -327,6 +331,7 @@ export function useSearchPageLogic() {
         .select('*')
         .eq('"Complete"', true)
         .or('"Active".eq.true,"Active".is.null')
+        .eq('Deleted', false)
         .eq('"Location - Borough"', borough.id)
         .or(
           '"Location - Address".not.is.null,"Location - slightly different address".not.is.null'
@@ -366,24 +371,12 @@ export function useSearchPageLogic() {
       console.log('📊 SearchPage: Supabase query returned', data.length, 'listings')
 
       // Batch fetch photos
-      const allPhotoIds = new Set()
-      data.forEach((listing) => {
-        const photosField = listing['Features - Photos']
-        if (Array.isArray(photosField)) {
-          photosField.forEach((id) => allPhotoIds.add(id))
-        } else if (typeof photosField === 'string') {
-          try {
-            const parsed = JSON.parse(photosField)
-            if (Array.isArray(parsed)) {
-              parsed.forEach((id) => allPhotoIds.add(id))
-            }
-          } catch (e) {
-            // Ignore parse errors
-          }
-        }
-      })
+      const photoIdsArray = extractPhotoIdsFromListings(data)
+      console.log('📷 fetchListings: Collected', photoIdsArray.length, 'unique photo IDs')
+      console.log('📷 fetchListings: Sample photo IDs:', photoIdsArray.slice(0, 3))
 
-      const photoMap = await fetchPhotoUrls(Array.from(allPhotoIds))
+      const photoMap = await fetchPhotoUrls(photoIdsArray)
+      console.log('📷 fetchListings: photoMap has', Object.keys(photoMap).length, 'entries')
 
       // Extract photos per listing
       const resolvedPhotos = {}
@@ -398,8 +391,8 @@ export function useSearchPageLogic() {
       // Batch fetch host data
       const hostIds = new Set()
       data.forEach((listing) => {
-        if (listing['Host / Landlord']) {
-          hostIds.add(listing['Host / Landlord'])
+        if (listing['Host User']) {
+          hostIds.add(listing['Host User'])
         }
       })
 
@@ -408,7 +401,7 @@ export function useSearchPageLogic() {
       // Map host data to listings
       const resolvedHosts = {}
       data.forEach((listing) => {
-        const hostId = listing['Host / Landlord']
+        const hostId = listing['Host User']
         resolvedHosts[listing._id] = hostMap[hostId] || null
       })
 
@@ -496,6 +489,7 @@ export function useSearchPageLogic() {
     const loadBoroughs = async () => {
       try {
         const { data, error } = await supabase
+          .schema('reference_table')
           .from('zat_geo_borough_toplevel')
           .select('_id, "Display Borough"')
           .order('"Display Borough"', { ascending: true })
@@ -560,6 +554,7 @@ export function useSearchPageLogic() {
 
       try {
         const { data, error } = await supabase
+          .schema('reference_table')
           .from('zat_geo_hood_mediumlevel')
           .select('_id, Display, "Geo-Borough"')
           .eq('"Geo-Borough"', borough.id)

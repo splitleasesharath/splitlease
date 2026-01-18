@@ -11,7 +11,8 @@
  */
 
 import { useState } from 'react';
-import { X, Heart, MapPin, ChevronLeft, ChevronRight, Bed, Bath, Square } from 'lucide-react';
+import { X, MapPin, ChevronLeft, ChevronRight, Bed, Bath, Square } from 'lucide-react';
+import FavoriteButton from '../FavoriteButton';
 import './ListingCardForMap.css';
 
 /**
@@ -22,16 +23,27 @@ import './ListingCardForMap.css';
  * @param {boolean} props.isVisible - Visibility state
  * @param {Object} props.position - Position {x, y} relative to map container
  * @param {Function} props.onMessageClick - Callback when message button is clicked
+ * @param {boolean} props.isLoggedIn - Whether user is logged in (for showing favorite button)
+ * @param {boolean} props.isFavorited - Whether the listing is favorited by the user
+ * @param {Function} props.onToggleFavorite - Callback when favorite state changes: (listingId, listingTitle, newState) => void
+ * @param {string} props.userId - Current user ID for favorite API calls
+ * @param {Function} props.onRequireAuth - Callback to show login modal if not authenticated
+ * @param {boolean} props.showMessageButton - Whether to show the message button (hidden for host users)
  */
 export default function ListingCardForMap({
   listing,
   onClose,
   isVisible,
   position = { x: 0, y: 0 },
-  onMessageClick
+  onMessageClick,
+  isLoggedIn = false,
+  isFavorited = false,
+  onToggleFavorite,
+  userId = null,
+  onRequireAuth = null,
+  showMessageButton = true
 }) {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
-  const [isFavorited, setIsFavorited] = useState(false);
 
   if (!isVisible || !listing) return null;
 
@@ -49,10 +61,8 @@ export default function ListingCardForMap({
     );
   };
 
-  const handleToggleFavorite = (e) => {
-    e.stopPropagation();
-    setIsFavorited(!isFavorited);
-  };
+  // Get listing ID for FavoriteButton
+  const favoriteListingId = listing.id || listing._id;
 
   const handleViewDetails = () => {
     const listingId = listing.id || listing._id;
@@ -116,18 +126,19 @@ export default function ListingCardForMap({
           <X size={16} color="#4D4D4D" />
         </button>
 
-        {/* Favorite Button */}
-        <button
-          className="listing-card-favorite-btn"
-          onClick={handleToggleFavorite}
-          aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
-        >
-          <Heart
-            size={16}
-            color={isFavorited ? "#FF0000" : "#4D4D4D"}
-            fill={isFavorited ? "#FF0000" : "none"}
-          />
-        </button>
+        {/* Favorite Button - Uses shared FavoriteButton component */}
+        <FavoriteButton
+          listingId={favoriteListingId}
+          userId={userId}
+          initialFavorited={isFavorited}
+          onToggle={(newState, listingId) => {
+            if (onToggleFavorite) {
+              onToggleFavorite(listingId, listing.title, newState);
+            }
+          }}
+          onRequireAuth={onRequireAuth}
+          size="small"
+        />
 
         {/* Image Section */}
         <div className="listing-card-image-container">
@@ -216,12 +227,14 @@ export default function ListingCardForMap({
             >
               View Details
             </button>
-            <button
-              className="listing-card-send-message-btn"
-              onClick={handleMessage}
-            >
-              Message
-            </button>
+            {showMessageButton && (
+              <button
+                className="listing-card-send-message-btn"
+                onClick={handleMessage}
+              >
+                Message
+              </button>
+            )}
           </div>
         </div>
       </div>

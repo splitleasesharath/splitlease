@@ -1,49 +1,157 @@
 # Cloudflare Pages redirects and rewrites
+# AUTO-GENERATED from routes.config.js - DO NOT EDIT MANUALLY
+# Routes: 6 dynamic, 28 static
+#
 # See: https://developers.cloudflare.com/pages/configuration/redirects/
 
-# Handle view-split-lease page with clean URL structure
-# Maps /view-split-lease/[listing-id] to view-split-lease.html
-# The 200 status makes this a rewrite, not a redirect, keeping the URL intact
-# IMPORTANT: Do NOT create a Cloudflare Function for this route!
-# Functions conflict with _redirects and cause the listing ID to be lost.
-# Route all view-split-lease requests to listing-page.html
-# Using a differently named file to avoid Cloudflare's "smart" URL normalization
+# ===== DYNAMIC ROUTES (with parameters) =====
+# These routes use _internal/ files to avoid Cloudflare's 308 redirects
+
+# /view-split-lease → view-split-lease.html
 /view-split-lease  /_internal/listing-view  200
 /view-split-lease/  /_internal/listing-view  200
 /view-split-lease/*  /_internal/listing-view  200
 
-# Handle account-profile page with clean URL structure
-# Maps /account-profile/[user-id] to account-profile.html
-/account-profile/*  /account-profile.html  200
+# /preview-split-lease → preview-split-lease.html
+/preview-split-lease  /_internal/preview-listing-view  200
+/preview-split-lease/  /_internal/preview-listing-view  200
+/preview-split-lease/*  /_internal/preview-listing-view  200
 
-# Handle self-listing page
-/self-listing.html  /self-listing.html  200
+# /guest-proposals → guest-proposals.html
+/guest-proposals  /_internal/guest-proposals-view  200
+/guest-proposals/  /_internal/guest-proposals-view  200
+/guest-proposals/*  /_internal/guest-proposals-view  200
 
-# Handle guest-proposals page
-/guest-proposals.html  /guest-proposals.html  200
+# /account-profile → account-profile.html
+/account-profile  /_internal/account-profile-view  200
+/account-profile/  /_internal/account-profile-view  200
+/account-profile/*  /_internal/account-profile-view  200
 
-# Handle search page
-/search.html  /search.html  200
-
-# Handle FAQ page
-/faq.html  /faq.html  200
-
-# Handle Help Center pages
-# Using internal files without .html extension to avoid Cloudflare's "pretty URL" normalization
-# which causes 308 redirects and redirect loops
-/help-center  /_internal/help-center-view  200
-/help-center/  /_internal/help-center-view  200
+# /help-center/:category → help-center-category.html (wildcard only, base handled separately)
 /help-center/*  /_internal/help-center-category-view  200
 
-# Handle policies page
-/policies.html  /policies.html  200
+# /host-proposals → host-proposals.html
+/host-proposals  /_internal/host-proposals-view  200
+/host-proposals/  /_internal/host-proposals-view  200
+/host-proposals/*  /_internal/host-proposals-view  200
 
-# Handle why-split-lease page
-/why-split-lease.html  /why-split-lease.html  200
+# ===== STATIC PAGES =====
 
 # Homepage
 /  /index.html  200
 /index.html  /index.html  200
+
+# /search → search.html
+/search  /_internal/search-view  200
+/search/  /_internal/search-view  200
+
+# /help-center → help-center.html
+/help-center  /_internal/help-center-view  200
+/help-center/  /_internal/help-center-view  200
+
+# /faq → faq.html
+/faq  /_internal/faq-view  200
+/faq/  /_internal/faq-view  200
+
+# /policies → policies.html
+/policies  /_internal/policies-view  200
+/policies/  /_internal/policies-view  200
+
+# /list-with-us → list-with-us.html
+/list-with-us  /_internal/list-with-us-view  200
+/list-with-us/  /_internal/list-with-us-view  200
+
+# /list-with-us-v2 → list-with-us-v2.html
+/list-with-us-v2  /_internal/list-with-us-v2-view  200
+/list-with-us-v2/  /_internal/list-with-us-v2-view  200
+
+# /why-split-lease → why-split-lease.html
+/why-split-lease  /_internal/why-split-lease-view  200
+/why-split-lease/  /_internal/why-split-lease-view  200
+
+# /careers → careers.html
+/careers  /_internal/careers-view  200
+/careers/  /_internal/careers-view  200
+
+# /about-us → about-us.html
+/about-us  /_internal/about-us-view  200
+/about-us/  /_internal/about-us-view  200
+
+# /host-guarantee → host-guarantee.html
+/host-guarantee  /_internal/host-guarantee-view  200
+/host-guarantee/  /_internal/host-guarantee-view  200
+
+# /referral → referral.html
+/referral  /_internal/referral-view  200
+/referral/  /_internal/referral-view  200
+
+# /guest-success → guest-success.html
+/guest-success  /_internal/guest-success-view  200
+/guest-success/  /_internal/guest-success-view  200
+
+# /host-success → host-success.html
+/host-success  /_internal/host-success-view  200
+/host-success/  /_internal/host-success-view  200
+
+# /self-listing → self-listing.html
+/self-listing  /_internal/self-listing-view  200
+/self-listing/  /_internal/self-listing-view  200
+
+# /self-listing-v2 → self-listing-v2.html
+/self-listing-v2  /_internal/self-listing-v2-view  200
+/self-listing-v2/  /_internal/self-listing-v2-view  200
+
+# /listing-dashboard → listing-dashboard.html
+/listing-dashboard  /_internal/listing-dashboard-view  200
+/listing-dashboard/  /_internal/listing-dashboard-view  200
+
+# /host-overview → host-overview.html
+/host-overview  /_internal/host-overview-view  200
+/host-overview/  /_internal/host-overview-view  200
+
+# /favorite-listings → favorite-listings.html
+/favorite-listings  /_internal/favorite-listings-view  200
+/favorite-listings/  /_internal/favorite-listings-view  200
+
+# /rental-application → rental-application.html
+/rental-application  /_internal/rental-application-view  200
+/rental-application/  /_internal/rental-application-view  200
+
+# /reset-password → reset-password.html
+/reset-password  /_internal/reset-password-view  200
+/reset-password/  /_internal/reset-password-view  200
+
+# /auth/verify → auth-verify.html
+/auth/verify  /_internal/auth-verify-view  200
+/auth/verify/  /_internal/auth-verify-view  200
+
+# /404
+/404  /404.html  200
+/404/  /404.html  200
+/404.html  /404.html  200
+
+# /messages → messages.html
+/messages  /_internal/messages-view  200
+/messages/  /_internal/messages-view  200
+
+# /house-manual → house-manual.html
+/house-manual  /_internal/house-manual-view  200
+/house-manual/  /_internal/house-manual-view  200
+
+# /_internal-test
+/_internal-test  /_internal-test.html  200
+/_internal-test/  /_internal-test.html  200
+/_internal-test.html  /_internal-test.html  200
+
+# /_internal/create-suggested-proposal
+/_internal/create-suggested-proposal  /create-suggested-proposal.html  200
+/_internal/create-suggested-proposal/  /create-suggested-proposal.html  200
+/_internal/create-suggested-proposal.html  /create-suggested-proposal.html  200
+
+# /_email-sms-unit
+/_email-sms-unit  /_email-sms-unit.html  200
+/_email-sms-unit/  /_email-sms-unit.html  200
+/_email-sms-unit.html  /_email-sms-unit.html  200
 
 # Note: Cloudflare Pages automatically serves /404.html for not found routes
 # No explicit catch-all rule needed - native 404.html support handles this

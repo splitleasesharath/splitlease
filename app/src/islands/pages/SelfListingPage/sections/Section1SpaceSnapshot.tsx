@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type {
   SpaceSnapshot,
   SpaceType,
   KitchenType,
   ParkingType
 } from '../types/listing.types';
-import { isNYCZipCode, getBoroughForZipCode, NYC_BOUNDS } from '../../../../lib/nycZipCodes';
+import { isNYCZipCode, getBoroughForZipCode, NYC_BOUNDS, isValidServiceArea, isHudsonCountyNJ } from '../../../../lib/nycZipCodes';
 
 interface Section1Props {
   data: SpaceSnapshot;
@@ -14,12 +14,7 @@ interface Section1Props {
   isLoadingInitialData?: boolean;
 }
 
-// Extend window interface for Google Maps
-declare global {
-  interface Window {
-    google: any;
-  }
-}
+// Note: google maps types from @types/google.maps provide window.google typing
 
 export const Section1SpaceSnapshot: React.FC<Section1Props> = ({
   data,
@@ -40,6 +35,17 @@ export const Section1SpaceSnapshot: React.FC<Section1Props> = ({
     dataRef.current = data;
   }, [data]);
 
+  // Scroll to first error field
+  const scrollToFirstError = useCallback((errorKeys: string[]) => {
+    if (errorKeys.length === 0) return;
+    const firstErrorKey = errorKeys[0];
+    const element = document.getElementById(firstErrorKey);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      element.focus();
+    }
+  }, []);
+
   // Check if address is already validated when component mounts or data changes
   useEffect(() => {
     // If the address has been validated before (has fullAddress and validated flag is true)
@@ -56,7 +62,8 @@ export const Section1SpaceSnapshot: React.FC<Section1Props> = ({
     const maxRetries = 50; // Try for 5 seconds
 
     const initAutocomplete = () => {
-      if (!window.google) {
+      // Check for Google Maps AND the Places library
+      if (!window.google || !window.google.maps || !window.google.maps.places) {
         retryCount++;
         if (retryCount < maxRetries) {
           console.log('Waiting for Google Maps to load...', retryCount);
@@ -95,7 +102,7 @@ export const Section1SpaceSnapshot: React.FC<Section1Props> = ({
           }
         );
 
-        console.log('Google Maps Autocomplete initialized successfully (NYC 5 boroughs only)');
+        console.log('Google Maps Autocomplete initialized successfully (NYC + Hudson County NJ)');
 
         // IMPORTANT: Prevent autocomplete from selecting on Enter key
         // This allows users to type freely without autocomplete interfering
@@ -134,6 +141,7 @@ export const Section1SpaceSnapshot: React.FC<Section1Props> = ({
           let state = '';
           let zip = '';
           let neighborhood = '';
+          let county = '';
 
           place.address_components.forEach((component: any) => {
             const types = component.types;
@@ -150,6 +158,9 @@ export const Section1SpaceSnapshot: React.FC<Section1Props> = ({
             if (types.includes('administrative_area_level_1')) {
               state = component.short_name;
             }
+            if (types.includes('administrative_area_level_2')) {
+              county = component.long_name;
+            }
             if (types.includes('postal_code')) {
               zip = component.long_name;
             }
@@ -158,20 +169,32 @@ export const Section1SpaceSnapshot: React.FC<Section1Props> = ({
             }
           });
 
-          // Validate that the zip code is within NYC's 5 boroughs
-          if (!isNYCZipCode(zip)) {
-            const borough = getBoroughForZipCode(zip);
-            const errorMsg = borough
-              ? `This address appears to be outside NYC's 5 boroughs. Zip code ${zip} is in ${borough}, but we only accept listings in Manhattan, Brooklyn, Queens, Bronx, and Staten Island.`
-              : `This address is outside NYC's 5 boroughs (zip: ${zip}). We only accept listings in Manhattan, Brooklyn, Queens, Bronx, and Staten Island.`;
+          console.log('Extracted address components:', { streetNumber, streetName, city, state, county, zip, neighborhood });
 
-            console.warn('Invalid NYC zip code selected:', zip);
+          // Validate that the address is within our service area (NYC + Hudson County NJ)
+          // Uses zip code when available, falls back to county check for NJ addresses without zip
+          if (!isValidServiceArea(zip, state, county)) {
+            let errorMsg: string;
+            if (zip) {
+              const borough = getBoroughForZipCode(zip);
+              errorMsg = borough
+                ? `This address appears to be outside our service area. Zip code ${zip} is in ${borough}, but we only accept listings in NYC (Manhattan, Brooklyn, Queens, Bronx, Staten Island) and Hudson County, NJ.`
+                : `This address is outside our service area (zip: ${zip}). We only accept listings in NYC (Manhattan, Brooklyn, Queens, Bronx, Staten Island) and Hudson County, NJ.`;
+            } else if (state === 'NJ') {
+              errorMsg = `This address is outside our service area. We only accept listings in Hudson County, NJ (Jersey City, Hoboken, Weehawken, Union City, etc.), not ${county || 'other NJ counties'}.`;
+            } else {
+              errorMsg = `This address is outside our service area. We only accept listings in NYC (Manhattan, Brooklyn, Queens, Bronx, Staten Island) and Hudson County, NJ.`;
+            }
+
+            console.warn('Invalid address selected:', { zip, state, county });
             setAddressError(errorMsg);
             setIsAddressValid(false);
             return;
           }
 
-          console.log('Valid NYC zip code:', zip, '- Borough:', getBoroughForZipCode(zip));
+          // Determine area name for logging
+          const areaName = zip ? getBoroughForZipCode(zip) : (isHudsonCountyNJ(state, county) ? 'Hudson County, NJ' : 'Unknown');
+          console.log('Valid address:', zip || '(no zip)', '- Area:', areaName);
 
           // Update form data with validated address
           const parsedAddress = {
@@ -254,54 +277,68 @@ export const Section1SpaceSnapshot: React.FC<Section1Props> = ({
     setShowManualAddress(!showManualAddress);
   };
 
-  const validateForm = (): boolean => {
+  const validateForm = (): string[] => {
     const newErrors: Record<string, string> = {};
+    const errorOrder: string[] = []; // Track order of errors for scrolling
 
     if (!data.listingName || data.listingName.trim().length === 0) {
       newErrors.listingName = 'Listing name is required';
+      errorOrder.push('listingName');
     } else if (data.listingName.length > 35) {
       newErrors.listingName = 'Listing name must be 35 characters or less';
+      errorOrder.push('listingName');
     }
 
     if (!data.typeOfSpace) {
       newErrors.typeOfSpace = 'Type of space is required';
+      errorOrder.push('typeOfSpace');
     }
 
     if (!data.bedrooms || data.bedrooms < 0) {
       newErrors.bedrooms = 'Number of bedrooms is required';
+      errorOrder.push('bedrooms');
     }
 
     if (!data.typeOfKitchen) {
       newErrors.typeOfKitchen = 'Type of kitchen is required';
+      errorOrder.push('typeOfKitchen');
     }
 
     if (!data.typeOfParking) {
       newErrors.typeOfParking = 'Type of parking is required';
+      errorOrder.push('typeOfParking');
     }
 
     if (!data.bathrooms || data.bathrooms < 0) {
       newErrors.bathrooms = 'Number of bathrooms is required';
+      errorOrder.push('bathrooms');
     }
 
     if (!data.address.fullAddress || data.address.fullAddress.trim().length === 0) {
       setAddressError('Listing address is required');
       newErrors.address = 'Address is required';
+      errorOrder.push('fullAddress');
     } else if (!isAddressValid && !showManualAddress) {
       setAddressError('Please select a valid address from the dropdown or enter manually');
       newErrors.address = 'Address validation required';
+      errorOrder.push('fullAddress');
     }
 
     if (showManualAddress && !data.address.state) {
       newErrors.state = 'State is required when entering address manually';
+      errorOrder.push('state');
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return errorOrder;
   };
 
   const handleNext = () => {
-    if (validateForm()) {
+    const errorKeys = validateForm();
+    if (errorKeys.length === 0) {
       onNext();
+    } else {
+      scrollToFirstError(errorKeys);
     }
   };
 
@@ -347,7 +384,7 @@ export const Section1SpaceSnapshot: React.FC<Section1Props> = ({
       <div className="info-alert">
         <span className="info-icon">ℹ️</span>
         <p>
-          Start typing your address and select from the dropdown. We only accept listings in NYC's 5 boroughs: Manhattan, Brooklyn, Queens, Bronx, and Staten Island.
+          Start typing your address and select from the dropdown. We accept listings in NYC (Manhattan, Brooklyn, Queens, Bronx, Staten Island) and Hudson County, NJ.
         </p>
       </div>
 

@@ -5,11 +5,8 @@
  * Guarantees data shape before it reaches the UI.
  */
 
-// External Adapters (Anti-Corruption Layer for Bubble API)
-export { adaptDaysToBubble } from './external/adaptDaysToBubble.js'
-export { adaptDaysFromBubble } from './external/adaptDaysFromBubble.js'
-export { adaptDayToBubble } from './external/adaptDayToBubble.js'
-export { adaptDayFromBubble } from './external/adaptDayFromBubble.js'
+// NOTE: Bubble day conversion functions removed after migration to 0-indexed days
+// Database now stores days as 0-6 (JavaScript standard) natively
 
 // Listing Processors
 export { parseJsonArrayField, parseJsonArrayFieldOptional } from './listing/parseJsonArrayField.js'
@@ -40,3 +37,10 @@ export {
   formatDateTime,
   getEffectiveTerms
 } from './proposals/processProposalData.js'
+
+// Review Processors
+export {
+  createEmptyRatings,
+  adaptReviewForSubmission,
+  adaptReviewFromApi
+} from './reviews/reviewAdapter.js'

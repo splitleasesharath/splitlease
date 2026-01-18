@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { ListingFormData, ReviewData } from '../types/listing.types';
 import { SAFETY_FEATURES } from '../types/listing.types';
+import { getCommonSafetyFeatures } from '../utils/safetyService';
 
 interface Section7Props {
   formData: ListingFormData;
@@ -8,6 +9,7 @@ interface Section7Props {
   onChange: (data: ReviewData) => void;
   onSubmit: () => void;
   onBack: () => void;
+  onNavigateToSection?: (sectionNum: number) => void;
   isSubmitting: boolean;
 }
 
@@ -17,9 +19,33 @@ export const Section7Review: React.FC<Section7Props> = ({
   onChange,
   onSubmit,
   onBack,
+  onNavigateToSection,
   isSubmitting
 }) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+  const [isLoadingSafetyFeatures, setIsLoadingSafetyFeatures] = useState(false);
+
+  const loadCommonSafetyFeatures = async () => {
+    setIsLoadingSafetyFeatures(true);
+    try {
+      const commonFeatures = await getCommonSafetyFeatures();
+      if (commonFeatures.length > 0) {
+        handleChange('safetyFeatures', commonFeatures);
+      }
+    } catch (err) {
+      console.error('Failed to load common safety features:', err);
+    } finally {
+      setIsLoadingSafetyFeatures(false);
+    }
+  };
+
+  const toggleSection = (sectionKey: string) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [sectionKey]: !prev[sectionKey]
+    }));
+  };
 
   const handleChange = (field: keyof ReviewData, value: any) => {
     onChange({ ...reviewData, [field]: value });
@@ -59,7 +85,17 @@ export const Section7Review: React.FC<Section7Props> = ({
           <div className="optional-field-column">
             {/* Safety Features */}
             <div className="form-group">
-              <label>Safety Features</label>
+              <div className="label-with-action">
+                <label>Safety Features</label>
+                <button
+                  type="button"
+                  className="btn-link load-common-btn"
+                  onClick={loadCommonSafetyFeatures}
+                  disabled={isLoadingSafetyFeatures}
+                >
+                  {isLoadingSafetyFeatures ? 'loading...' : 'load common'}
+                </button>
+              </div>
               <p className="field-hint">Select safety features available at your property</p>
               <div className="checkbox-grid">
                 {SAFETY_FEATURES.map((feature) => (
@@ -122,137 +158,166 @@ export const Section7Review: React.FC<Section7Props> = ({
                 value={reviewData.previousReviewsLink || ''}
                 onChange={(e) => handleChange('previousReviewsLink', e.target.value)}
               />
-              {reviewData.previousReviewsLink && (
-                <a
-                  href={reviewData.previousReviewsLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-link"
-                  style={{ marginTop: '0.5rem', display: 'inline-block' }}
-                >
-                  View Reviews →
-                </a>
-              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Summary Cards */}
+      {/* Summary Cards - Collapsible */}
       <div className="review-summary">
         {/* Space Snapshot Summary */}
-        <div className="summary-card">
-          <h3>📍 Space Details</h3>
-          <div className="summary-content">
-            <p><strong>Listing Name:</strong> {formData.spaceSnapshot.listingName}</p>
-            <p><strong>Type:</strong> {formData.spaceSnapshot.typeOfSpace}</p>
-            <p><strong>Bedrooms:</strong> {formData.spaceSnapshot.bedrooms}</p>
-            <p><strong>Bathrooms:</strong> {formData.spaceSnapshot.bathrooms}</p>
-            <p><strong>Address:</strong> {formData.spaceSnapshot.address.fullAddress}</p>
+        <div className={`summary-card collapsible ${expandedSections['space'] ? 'expanded' : ''}`}>
+          <div className="summary-card-header" onClick={() => toggleSection('space')}>
+            <h3>📍 Space Details</h3>
+            <div className="summary-card-header-right">
+              <span className="summary-brief">{formData.spaceSnapshot.typeOfSpace} in {formData.spaceSnapshot.address.city || 'NYC'}</span>
+              <span className="expand-icon">{expandedSections['space'] ? '▼' : '▶'}</span>
+            </div>
           </div>
-          <button type="button" className="btn-link">Edit</button>
+          {expandedSections['space'] && (
+            <div className="summary-content">
+              <p><strong>Listing Name:</strong> {formData.spaceSnapshot.listingName}</p>
+              <p><strong>Type:</strong> {formData.spaceSnapshot.typeOfSpace}</p>
+              <p><strong>Bedrooms:</strong> {formData.spaceSnapshot.bedrooms}</p>
+              <p><strong>Bathrooms:</strong> {formData.spaceSnapshot.bathrooms}</p>
+              <p><strong>Address:</strong> {formData.spaceSnapshot.address.fullAddress}</p>
+              <button type="button" className="btn-link" onClick={() => onNavigateToSection?.(1)}>Edit Section</button>
+            </div>
+          )}
         </div>
 
         {/* Features Summary */}
-        <div className="summary-card">
-          <h3>✨ Features</h3>
-          <div className="summary-content">
-            <p><strong>Amenities Inside:</strong> {formData.features.amenitiesInsideUnit.length} selected</p>
-            <p><strong>Amenities Outside:</strong> {formData.features.amenitiesOutsideUnit.length} selected</p>
-            <p><strong>Description:</strong> {formData.features.descriptionOfLodging.substring(0, 100)}...</p>
+        <div className={`summary-card collapsible ${expandedSections['features'] ? 'expanded' : ''}`}>
+          <div className="summary-card-header" onClick={() => toggleSection('features')}>
+            <h3>✨ Features</h3>
+            <div className="summary-card-header-right">
+              <span className="summary-brief">{formData.features.amenitiesInsideUnit.length + formData.features.amenitiesOutsideUnit.length} amenities</span>
+              <span className="expand-icon">{expandedSections['features'] ? '▼' : '▶'}</span>
+            </div>
           </div>
-          <button type="button" className="btn-link">Edit</button>
+          {expandedSections['features'] && (
+            <div className="summary-content">
+              <p><strong>Amenities Inside:</strong> {formData.features.amenitiesInsideUnit.length} selected</p>
+              <p><strong>Amenities Outside:</strong> {formData.features.amenitiesOutsideUnit.length} selected</p>
+              <p><strong>Description:</strong> {formData.features.descriptionOfLodging.substring(0, 100)}...</p>
+              <button type="button" className="btn-link" onClick={() => onNavigateToSection?.(2)}>Edit Section</button>
+            </div>
+          )}
         </div>
 
         {/* Lease Style Summary */}
-        <div className="summary-card">
-          <h3>📅 Lease Style</h3>
-          <div className="summary-content">
-            <p><strong>Rental Type:</strong> {formData.leaseStyles.rentalType}</p>
-            {formData.leaseStyles.rentalType === 'Nightly' && formData.leaseStyles.availableNights && (
-              <p>
-                <strong>Available Nights:</strong>{' '}
-                {Object.values(formData.leaseStyles.availableNights).filter(Boolean).length} nights per week
-              </p>
-            )}
-            {formData.leaseStyles.rentalType === 'Weekly' && (
-              <p><strong>Pattern:</strong> {formData.leaseStyles.weeklyPattern}</p>
-            )}
-            {formData.leaseStyles.rentalType === 'Monthly' && (
-              <p><strong>Subsidy Agreement:</strong> {formData.leaseStyles.subsidyAgreement ? 'Agreed' : 'Not agreed'}</p>
-            )}
+        <div className={`summary-card collapsible ${expandedSections['lease'] ? 'expanded' : ''}`}>
+          <div className="summary-card-header" onClick={() => toggleSection('lease')}>
+            <h3>📅 Lease Style</h3>
+            <div className="summary-card-header-right">
+              <span className="summary-brief">{formData.leaseStyles.rentalType} rental</span>
+              <span className="expand-icon">{expandedSections['lease'] ? '▼' : '▶'}</span>
+            </div>
           </div>
-          <button type="button" className="btn-link">Edit</button>
+          {expandedSections['lease'] && (
+            <div className="summary-content">
+              <p><strong>Rental Type:</strong> {formData.leaseStyles.rentalType}</p>
+              {formData.leaseStyles.rentalType === 'Nightly' && formData.leaseStyles.availableNights && (
+                <p>
+                  <strong>Available Nights:</strong>{' '}
+                  {Object.values(formData.leaseStyles.availableNights).filter(Boolean).length} nights per week
+                </p>
+              )}
+              {formData.leaseStyles.rentalType === 'Weekly' && (
+                <p><strong>Pattern:</strong> {formData.leaseStyles.weeklyPattern}</p>
+              )}
+              {formData.leaseStyles.rentalType === 'Monthly' && (
+                <p><strong>Subsidy Agreement:</strong> {formData.leaseStyles.subsidyAgreement ? 'Agreed' : 'Not agreed'}</p>
+              )}
+              <button type="button" className="btn-link" onClick={() => onNavigateToSection?.(3)}>Edit Section</button>
+            </div>
+          )}
         </div>
 
         {/* Pricing Summary */}
-        <div className="summary-card">
-          <h3>💰 Pricing</h3>
-          <div className="summary-content">
-            {formData.leaseStyles.rentalType === 'Monthly' && (
-              <p><strong>Monthly Rate:</strong> ${formData.pricing.monthlyCompensation}</p>
-            )}
-            {formData.leaseStyles.rentalType === 'Weekly' && (
-              <p><strong>Weekly Rate:</strong> ${formData.pricing.weeklyCompensation}</p>
-            )}
-            {formData.leaseStyles.rentalType === 'Nightly' && formData.pricing.nightlyPricing && (
-              <div>
-                <p><strong>1-Night Price:</strong> ${formData.pricing.nightlyPricing.oneNightPrice}</p>
-                <p><strong>5-Night Total:</strong> ${formData.pricing.nightlyPricing.fiveNightTotal}</p>
-              </div>
-            )}
-            <p><strong>Damage Deposit:</strong> ${formData.pricing.damageDeposit}</p>
-            <p><strong>Monthly Maintenance Fee:</strong> ${formData.pricing.maintenanceFee}/month</p>
+        <div className={`summary-card collapsible ${expandedSections['pricing'] ? 'expanded' : ''}`}>
+          <div className="summary-card-header" onClick={() => toggleSection('pricing')}>
+            <h3>💰 Pricing</h3>
+            <div className="summary-card-header-right">
+              <span className="summary-brief">
+                {formData.leaseStyles.rentalType === 'Monthly' && `$${formData.pricing.monthlyCompensation}/mo`}
+                {formData.leaseStyles.rentalType === 'Weekly' && `$${formData.pricing.weeklyCompensation}/wk`}
+                {formData.leaseStyles.rentalType === 'Nightly' && formData.pricing.nightlyPricing && `$${formData.pricing.nightlyPricing.oneNightPrice}/night`}
+              </span>
+              <span className="expand-icon">{expandedSections['pricing'] ? '▼' : '▶'}</span>
+            </div>
           </div>
-          <button type="button" className="btn-link">Edit</button>
+          {expandedSections['pricing'] && (
+            <div className="summary-content">
+              {formData.leaseStyles.rentalType === 'Monthly' && (
+                <p><strong>Monthly Rate:</strong> ${formData.pricing.monthlyCompensation}</p>
+              )}
+              {formData.leaseStyles.rentalType === 'Weekly' && (
+                <p><strong>Weekly Rate:</strong> ${formData.pricing.weeklyCompensation}</p>
+              )}
+              {formData.leaseStyles.rentalType === 'Nightly' && formData.pricing.nightlyPricing && (
+                <div>
+                  <p><strong>1-Night Price:</strong> ${formData.pricing.nightlyPricing.oneNightPrice}</p>
+                  <p><strong>5-Night Total:</strong> ${formData.pricing.nightlyPricing.fiveNightTotal}</p>
+                </div>
+              )}
+              <p><strong>Damage Deposit:</strong> ${formData.pricing.damageDeposit}</p>
+              <p><strong>Monthly Maintenance Fee:</strong> ${formData.pricing.maintenanceFee}/month</p>
+              <button type="button" className="btn-link" onClick={() => onNavigateToSection?.(4)}>Edit Section</button>
+            </div>
+          )}
         </div>
 
         {/* Rules Summary */}
-        <div className="summary-card">
-          <h3>📋 Rules</h3>
-          <div className="summary-content">
-            <p><strong>Cancellation:</strong> {formData.rules.cancellationPolicy}</p>
-            <p><strong>Check-in:</strong> {formData.rules.checkInTime}</p>
-            <p><strong>Check-out:</strong> {formData.rules.checkOutTime}</p>
-            <p><strong>Max Guests:</strong> {formData.rules.numberOfGuests}</p>
-            <p><strong>House Rules:</strong> {formData.rules.houseRules.length} selected</p>
+        <div className={`summary-card collapsible ${expandedSections['rules'] ? 'expanded' : ''}`}>
+          <div className="summary-card-header" onClick={() => toggleSection('rules')}>
+            <h3>📋 Rules</h3>
+            <div className="summary-card-header-right">
+              <span className="summary-brief">{formData.rules.houseRules.length} rules, {formData.rules.cancellationPolicy}</span>
+              <span className="expand-icon">{expandedSections['rules'] ? '▼' : '▶'}</span>
+            </div>
           </div>
-          <button type="button" className="btn-link">Edit</button>
+          {expandedSections['rules'] && (
+            <div className="summary-content">
+              <p><strong>Cancellation:</strong> {formData.rules.cancellationPolicy}</p>
+              <p><strong>Check-in:</strong> {formData.rules.checkInTime}</p>
+              <p><strong>Check-out:</strong> {formData.rules.checkOutTime}</p>
+              <p><strong>Max Guests:</strong> {formData.rules.numberOfGuests}</p>
+              <p><strong>House Rules:</strong> {formData.rules.houseRules.length} selected</p>
+              <button type="button" className="btn-link" onClick={() => onNavigateToSection?.(5)}>Edit Section</button>
+            </div>
+          )}
         </div>
 
         {/* Photos Summary */}
-        <div className="summary-card">
-          <h3>📷 Photos</h3>
-          <div className="summary-content">
-            <p><strong>Total Photos:</strong> {formData.photos.photos.length}</p>
-            <div className="photo-preview-grid">
-              {formData.photos.photos.slice(0, 4).map((photo) => (
-                <img
-                  key={photo.id}
-                  src={photo.url}
-                  alt="Property preview"
-                  className="photo-preview-thumb"
-                />
-              ))}
+        <div className={`summary-card collapsible ${expandedSections['photos'] ? 'expanded' : ''}`}>
+          <div className="summary-card-header" onClick={() => toggleSection('photos')}>
+            <h3>📷 Photos</h3>
+            <div className="summary-card-header-right">
+              <span className="summary-brief">{formData.photos.photos.length} photos uploaded</span>
+              <span className="expand-icon">{expandedSections['photos'] ? '▼' : '▶'}</span>
             </div>
-            {formData.photos.photos.length > 4 && (
-              <p>+{formData.photos.photos.length - 4} more photos</p>
-            )}
           </div>
-          <button type="button" className="btn-link">Edit</button>
+          {expandedSections['photos'] && (
+            <div className="summary-content">
+              <p><strong>Total Photos:</strong> {formData.photos.photos.length}</p>
+              <div className="photo-preview-grid">
+                {formData.photos.photos.slice(0, 4).map((photo) => (
+                  <img
+                    key={photo.id}
+                    src={photo.url}
+                    alt="Property preview"
+                    className="photo-preview-thumb"
+                  />
+                ))}
+              </div>
+              {formData.photos.photos.length > 4 && (
+                <p>+{formData.photos.photos.length - 4} more photos</p>
+              )}
+              <button type="button" className="btn-link" onClick={() => onNavigateToSection?.(6)}>Edit Section</button>
+            </div>
+          )}
         </div>
-      </div>
-
-      {/* Optional Notes */}
-      <div className="form-group">
-        <label htmlFor="optionalNotes">Additional Notes (Optional)</label>
-        <textarea
-          id="optionalNotes"
-          rows={4}
-          placeholder="Any additional information you'd like to share..."
-          value={reviewData.optionalNotes || ''}
-          onChange={(e) => handleChange('optionalNotes', e.target.value)}
-        />
       </div>
 
       {/* Important Information */}

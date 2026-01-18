@@ -1,0 +1,350 @@
+{
+  "desktop": {
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "images": [
+      {
+        "src": "background.png.webp",
+        "alt": "background",
+        "visible": true,
+        "dimensions": {
+          "width": "473px",
+          "height": "557px",
+          "objectFit": "fill",
+          "aspectRatio": "auto 473 / 557"
+        },
+        "position": {
+          "type": "static",
+          "top": "auto",
+          "left": "auto",
+          "right": "auto",
+          "bottom": "auto",
+          "transform": "none",
+          "zIndex": "auto"
+        },
+        "parent": {
+          "position": "relative",
+          "width": "1080px",
+          "height": "557px",
+          "overflow": "visible"
+        },
+        "rect": {
+          "x": 723.5,
+          "y": 573,
+          "width": 473,
+          "height": 557,
+          "top": 573,
+          "right": 1196.5,
+          "bottom": 1130,
+          "left": 723.5
+        }
+      },
+      {
+        "src": "ebay.png.webp",
+        "alt": "ebay",
+        "visible": true,
+        "dimensions": {
+          "width": "299px",
+          "height": "280px",
+          "objectFit": "fill",
+          "aspectRatio": "auto 299 / 280"
+        },
+        "position": {
+          "type": "static",
+          "top": "auto",
+          "left": "auto",
+          "right": "auto",
+          "bottom": "auto",
+          "transform": "none",
+          "zIndex": "auto"
+        },
+        "parent": {
+          "position": "absolute",
+          "width": "299px",
+          "height": "280px",
+          "overflow": "visible"
+        },
+        "rect": {
+          "x": 956.5,
+          "y": 692,
+          "width": 299,
+          "height": 280,
+          "top": 692,
+          "right": 1255.5,
+          "bottom": 972,
+          "left": 956.5
+        }
+      },
+      {
+        "src": "wish.png.webp",
+        "alt": "wish",
+        "visible": true,
+        "dimensions": {
+          "width": "269px",
+          "height": "251px",
+          "objectFit": "fill",
+          "aspectRatio": "auto 269 / 251"
+        },
+        "position": {
+          "type": "static",
+          "top": "auto",
+          "left": "auto",
+          "right": "auto",
+          "bottom": "auto",
+          "transform": "none",
+          "zIndex": "auto"
+        },
+        "parent": {
+          "position": "absolute",
+          "width": "269px",
+          "height": "251px",
+          "overflow": "visible"
+        },
+        "rect": {
+          "x": 803.9999389648438,
+          "y": 1013.4999389648438,
+          "width": 0.0001220703125,
+          "height": 0.0001220703125,
+          "top": 1013.4999389648438,
+          "right": 804.0000610351562,
+          "bottom": 1013.5000610351562,
+          "left": 803.9999389648438
+        }
+      }
+    ]
+  },
+  "tablet": {
+    "viewport": {
+      "width": 768,
+      "height": 1024
+    },
+    "images": [
+      {
+        "src": "background.png.webp",
+        "alt": "background",
+        "visible": true,
+        "dimensions": {
+          "width": "473px",
+          "height": "557px",
+          "objectFit": "fill",
+          "aspectRatio": "auto 473 / 557"
+        },
+        "position": {
+          "type": "static",
+          "top": "auto",
+          "left": "auto",
+          "right": "auto",
+          "bottom": "auto",
+          "transform": "none",
+          "zIndex": "auto"
+        },
+        "parent": {
+          "position": "relative",
+          "width": "738px",
+          "height": "557px",
+          "overflow": "visible"
+        },
+        "rect": {
+          "x": 147.5,
+          "y": 548,
+          "width": 473,
+          "height": 557,
+          "top": 548,
+          "right": 620.5,
+          "bottom": 1105,
+          "left": 147.5
+        }
+      },
+      {
+        "src": "ebay.png.webp",
+        "alt": "ebay",
+        "visible": true,
+        "dimensions": {
+          "width": "299px",
+          "height": "280px",
+          "objectFit": "fill",
+          "aspectRatio": "auto 299 / 280"
+        },
+        "position": {
+          "type": "static",
+          "top": "auto",
+          "left": "auto",
+          "right": "auto",
+          "bottom": "auto",
+          "transform": "none",
+          "zIndex": "auto"
+        },
+        "parent": {
+          "position": "absolute",
+          "width": "299px",
+          "height": "280px",
+          "overflow": "visible"
+        },
+        "rect": {
+          "x": 380.5,
+          "y": 667,
+          "width": 299,
+          "height": 280,
+          "top": 667,
+          "right": 679.5,
+          "bottom": 947,
+          "left": 380.5
+        }
+      },
+      {
+        "src": "wish.png.webp",
+        "alt": "wish",
+        "visible": true,
+        "dimensions": {
+          "width": "269px",
+          "height": "251px",
+          "objectFit": "fill",
+          "aspectRatio": "auto 269 / 251"
+        },
+        "position": {
+          "type": "static",
+          "top": "auto",
+          "left": "auto",
+          "right": "auto",
+          "bottom": "auto",
+          "transform": "none",
+          "zIndex": "auto"
+        },
+        "parent": {
+          "position": "absolute",
+          "width": "269px",
+          "height": "251px",
+          "overflow": "visible"
+        },
+        "rect": {
+          "x": 228,
+          "y": 988.5,
+          "width": 0,
+          "height": 0,
+          "top": 988.5,
+          "right": 228,
+          "bottom": 988.5,
+          "left": 228
+        }
+      }
+    ]
+  },
+  "mobile": {
+    "viewport": {
+      "width": 375,
+      "height": 667
+    },
+    "images": [
+      {
+        "src": "background.png.webp",
+        "alt": "background",
+        "visible": true,
+        "dimensions": {
+          "width": "410px",
+          "height": "557px",
+          "objectFit": "fill",
+          "aspectRatio": "auto 473 / 557"
+        },
+        "position": {
+          "type": "static",
+          "top": "auto",
+          "left": "auto",
+          "right": "auto",
+          "bottom": "auto",
+          "transform": "none",
+          "zIndex": "auto"
+        },
+        "parent": {
+          "position": "relative",
+          "width": "345px",
+          "height": "557px",
+          "overflow": "visible"
+        },
+        "rect": {
+          "x": -17.5,
+          "y": 574,
+          "width": 410,
+          "height": 557,
+          "top": 574,
+          "right": 392.5,
+          "bottom": 1131,
+          "left": -17.5
+        }
+      },
+      {
+        "src": "svg%3E",
+        "alt": "ebay",
+        "visible": true,
+        "dimensions": {
+          "width": "299px",
+          "height": "280px",
+          "objectFit": "fill",
+          "aspectRatio": "auto 299 / 280"
+        },
+        "position": {
+          "type": "static",
+          "top": "auto",
+          "left": "auto",
+          "right": "auto",
+          "bottom": "auto",
+          "transform": "none",
+          "zIndex": "auto"
+        },
+        "parent": {
+          "position": "absolute",
+          "width": "299px",
+          "height": "280px",
+          "overflow": "visible"
+        },
+        "rect": {
+          "x": 75.5,
+          "y": 972,
+          "width": 299,
+          "height": 280,
+          "top": 972,
+          "right": 374.5,
+          "bottom": 1252,
+          "left": 75.5
+        }
+      },
+      {
+        "src": "wish.png.webp",
+        "alt": "wish",
+        "visible": true,
+        "dimensions": {
+          "width": "269px",
+          "height": "251px",
+          "objectFit": "fill",
+          "aspectRatio": "auto 269 / 251"
+        },
+        "position": {
+          "type": "static",
+          "top": "auto",
+          "left": "auto",
+          "right": "auto",
+          "bottom": "auto",
+          "transform": "none",
+          "zIndex": "auto"
+        },
+        "parent": {
+          "position": "absolute",
+          "width": "269px",
+          "height": "251px",
+          "overflow": "visible"
+        },
+        "rect": {
+          "x": 140,
+          "y": 1083.5,
+          "width": 0,
+          "height": 0,
+          "top": 1083.5,
+          "right": 140,
+          "bottom": 1083.5,
+          "left": 140
+        }
+      }
+    ]
+  }
+}

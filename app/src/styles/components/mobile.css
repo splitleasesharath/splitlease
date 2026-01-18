@@ -1,11 +1,26 @@
 /* Responsive Design */
 @media (max-width: 768px) {
+    /* Prevent horizontal scrolling on mobile */
+    html, body {
+        overflow-x: hidden;
+        max-width: 100vw;
+        width: 100%;
+    }
+
+    .home-page {
+        overflow-x: hidden;
+        max-width: 100vw;
+        width: 100%;
+    }
+
     .nav-container {
         position: relative;
         padding: 0.75rem 1rem;
         display: flex;
         align-items: center;
         justify-content: space-between;
+        max-width: 100%;
+        box-sizing: border-box;
     }
 
     .hamburger-menu {
@@ -95,6 +110,63 @@
         display: none !important;
     }
 
+    /* Hide floating avatars on mobile */
+    .floating-avatar {
+        display: none !important;
+    }
+
+    /* Hero container adjustments for mobile */
+    .hero-container {
+        padding: 0 1rem;
+    }
+
+    .hero-badge {
+        font-size: 11px;
+        padding: 6px 14px;
+        margin-bottom: 16px;
+    }
+
+    .hero-title .savings {
+        font-size: 28px;
+    }
+
+    /* Hero CTA buttons mobile layout */
+    .hero-cta {
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .cta-button.cta-primary,
+    .cta-button.cta-secondary {
+        width: 80%;
+        max-width: 280px;
+        justify-content: center;
+        padding: 12px 24px;
+        font-size: 14px;
+    }
+
+    /* Hero stats mobile layout */
+    .hero-stats {
+        flex-direction: column;
+        gap: 24px;
+        margin-top: 32px;
+        padding-top: 24px;
+    }
+
+    .stat-value {
+        font-size: 24px;
+    }
+
+    .stat-label {
+        font-size: 12px;
+    }
+
+    /* Schedule selector wrapper mobile */
+    .schedule-selector-wrapper {
+        margin-bottom: 24px;
+    }
+
     .value-container {
         grid-template-columns: repeat(2, 1fr);
         gap: 1rem;
@@ -114,15 +186,17 @@
     .hero-section {
         margin: 120px auto 2rem;
         width: 90%;
+        max-width: 100%;
         min-height: 420px;
         padding: 0;
         position: relative;
-        overflow: visible;
+        overflow: hidden;
         background: linear-gradient(to bottom, #E8E3F5 0%, #E8E3F5 35%, #ffffff 35%, #ffffff 100%);
         border-radius: 20px;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
         display: flex;
         flex-direction: column;
+        box-sizing: border-box;
     }
 
     /* Mobile Empire State Building in purple section */

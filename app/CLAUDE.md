@@ -1,490 +1,382 @@
-# Split Lease Application - Developer Guide
+# App Directory - LLM Reference
 
-## Project Overview
-
-Split Lease is a **flexible rental marketplace for NYC properties** enabling:
-- **Split Scheduling**: Property owners list spaces available for specific days/weeks
-- **Repeat Stays**: Guests rent the same room repeatedly on selected days (claimed "45% less than Airbnb")
-- **Two User Types**: Hosts (property owners) and Guests (renters)
-- **Proposal System**: Guests submit proposals to Hosts with custom terms
-- **Virtual Meetings**: Video calls between hosts and guests before finalizing
-
-### Core Domain Concepts
-
-| Concept | Description |
-|---------|-------------|
-| **Listing** | A property with photos, amenities, location, and pricing by frequency |
-| **Proposal** | A guest's booking request with selected days, move-in date, and pricing |
-| **Counteroffer** | Host's modified terms in response to a proposal |
-| **Virtual Meeting** | Scheduled video call between host and guest |
-| **Schedule Pattern** | "Every week", "One week on/off", "Two weeks on/off", etc. |
+**GENERATED**: 2025-12-11
+**SCOPE**: Frontend application root - Configuration, build tools, static assets, entry points
+**OPTIMIZATION**: Semantic Searchability + Digestibility
 
 ---
 
-## Architecture Overview
+## QUICK_STATS
 
-### Tech Stack
-- **Frontend**: React 18 with Vite (ESM)
-- **Backend**: Supabase (PostgreSQL + Edge Functions)
-- **Legacy Backend**: Bubble.io (via Edge Function proxies)
-- **Styling**: CSS Modules + CSS Variables
-- **Maps**: Google Maps React
+[TOTAL_ROOT_FILES]: 9
+[TOTAL_SUBDIRECTORIES]: 6
+[PRIMARY_LANGUAGE]: JavaScript/TypeScript (React 18)
+[BUILD_TOOL]: Vite 5.0
+[ARCHITECTURE]: Islands Architecture
+[DEPLOYMENT]: Cloudflare Pages
+[KEY_PATTERNS]: Multi-page app, Route Registry, Islands pattern, ESM modules
+
+---
+
+## ROOT_FILES
+
+### package.json
+[INTENT]: NPM package configuration and dependency management
+[TYPE]: ESM module (type: "module")
+[SCRIPTS]: dev (port 8000), build, preview, generate-routes, prebuild
+[DEPENDENCIES]: React 18, Supabase client, Google Maps React, date-fns, framer-motion, react-hook-form, zod, styled-components
+[DEV_DEPENDENCIES]: Vite 5, @vitejs/plugin-react, esbuild, supabase CLI
+[RUNTIME]: Bun preferred, Node compatible
+
+### vite.config.js
+[INTENT]: Vite bundler configuration for multi-page React application
+[PLUGINS]: @vitejs/plugin-react, multi-page-routing middleware, move-html-to-root post-build
+[ROUTING_LOGIC]: Shared routing function for dev and preview servers using Route Registry
+[BUILD_INPUT]: 27 HTML entry points from public/ directory
+[BUILD_OUTPUT]: dist/ with HTML at root, assets in dist/assets/
+[DEV_SERVER]: Port 8000, localhost + 127.0.0.1, /api proxy to wrangler (port 8788)
+[PREVIEW_SERVER]: Port 8000, 127.0.0.1
+[POST_BUILD_TASKS]: Move HTML to dist root, copy assets/, copy _redirects, copy _headers, copy _routes.json, create _internal/ files, copy images/, copy help-center-articles/, copy functions/
+[IMPORTS]: routes, getInternalRoutes, getBasePath, buildRollupInputs from src/routes.config.js
+
+### tsconfig.json
+[INTENT]: TypeScript compiler configuration for React app
+[TARGET]: ES2020
+[MODULE]: ESNext
+[JSX]: react-jsx
+[MODE]: Bundler mode resolution
+[STRICT]: Disabled (strict: false)
+[INCLUDE]: src directory
+[ALLOW_JS]: true
+[NO_EMIT]: true (type checking only, Vite handles compilation)
+
+### tsconfig.node.json
+[INTENT]: TypeScript configuration for Node.js scripts
+[COMPOSITE]: true
+[MODULE]: ESNext
+[INCLUDE]: vite.config.js
+
+### .env.example
+[INTENT]: Environment variable template for local development
+[REQUIRED_VARS]: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_GOOGLE_MAPS_API_KEY
+[OPTIONAL_VARS]: SLACK_WEBHOOK_ACQUISITION, SLACK_WEBHOOK_GENERAL
+[REMOVED_VARS]: VITE_BUBBLE_API_BASE_URL, VITE_BUBBLE_API_KEY (migrated to Edge Functions)
+[SECURITY_NOTE]: Bubble API keys now stored server-side in Supabase Secrets
+
+### .gitignore
+[INTENT]: Git ignore patterns
+[IGNORED]: node_modules/, dist/, .env, .env.local, *.log, .DS_Store, ../input
+
+### bun.lock
+[INTENT]: Bun package manager lockfile
+[PURPOSE]: Reproducible dependency installation
+
+### .gitkeep-functions
+[INTENT]: Placeholder to keep functions directory in git
+
+---
+
+## SUBDIRECTORIES
+
+### src/
+[INTENT]: React application source code
+[CONTAINS]: Entry points (*.jsx), islands/, lib/, logic/, styles/, routes/, config/, data/
+[ARCHITECTURE]: Islands Architecture with hollow components
+[DOCUMENTATION]: C:\Users\Split Lease\Documents\Split Lease\app\src\CLAUDE.md
+[ENTRY_POINTS]: 27 JSX files that mount React components to HTML pages
+[KEY_SUBDIRS]: islands/ (React components), lib/ (utilities + API clients), logic/ (4-layer business logic), styles/ (CSS)
+
+### public/
+[INTENT]: Static assets and HTML templates for multi-page app
+[CONTAINS]: HTML files, assets/, images/, help-center-articles/, _redirects, _headers, _routes.json
+[HTML_FILES]: 27 files (index.html, search.html, view-split-lease.html, etc.)
+[DEPLOYMENT_FILES]: _redirects (Cloudflare routing), _headers (HTTP headers), _routes.json (Functions control)
+[GENERATED_FILES]: _redirects and _routes.json are auto-generated by scripts/generate-redirects.js
+[COPY_BEHAVIOR]: Assets copied to dist/ during build, HTML files moved to dist root
+
+### public/assets/
+[INTENT]: Static media assets
+[SUBDIRS]: fonts/, games/, icons/, images/, lotties/, resources/, videos/
+[USAGE]: Referenced via /assets/ path in HTML/CSS
+
+### public/images/
+[INTENT]: Public image files
+[CONTAINS]: support-centre-icon.svg
+[USAGE]: Referenced via /images/ path
+
+### public/help-center-articles/
+[INTENT]: Static HTML help articles
+[USAGE]: Served directly by Cloudflare Pages
+
+### scripts/
+[INTENT]: Build and development scripts
+[FILES]: generate-redirects.js
+[USAGE]: Executed via npm/bun scripts (prebuild hook)
+
+### functions/
+[INTENT]: Cloudflare Pages Functions (API routes)
+[SUBDIRS]: api/
+[FILES]: api/faq-inquiry.js
+[DEPLOYMENT]: Automatically deployed to /api/* routes on Cloudflare Pages
+[NOTE]: Most backend logic now uses Supabase Edge Functions, not Cloudflare Functions
+
+### functions/api/
+[INTENT]: Cloudflare Pages API endpoints
+[FILES]: faq-inquiry.js, CLAUDE.md
+[ROUTES]: /api/faq-inquiry
+[STATUS]: Deprecated in favor of Supabase Edge Functions
+
+### dist/
+[INTENT]: Production build output (generated, not in git)
+[STRUCTURE]: HTML at root, assets/ subdir, _internal/ subdir, functions/ copy
+[CREATED_BY]: vite build command
+[DEPLOYMENT_TARGET]: Cloudflare Pages
+
+---
+
+## ROUTING_SYSTEM
+
+### src/routes.config.js
+[INTENT]: Single source of truth for all application routes
+[EXPORTS]: routes array, apiRoutes, excludedFromFunctions, getInternalRoutes(), getBasePath(), matchRoute(), findRouteForUrl(), buildRollupInputs()
+[ROUTE_COUNT]: 27 routes
+[ROUTE_TYPES]: Static pages, dynamic routes (:id, :userId, :category), protected routes, dev-only routes
+[DYNAMIC_ROUTES]: /view-split-lease/:id, /preview-split-lease/:id, /guest-proposals/:userId, /account-profile/:userId, /host-proposals/:userId, /help-center/:category
+[PROTECTED_ROUTES]: /preview-split-lease, /guest-proposals, /account-profile, /host-proposals, /self-listing, /listing-dashboard, /host-overview, /favorite-listings, /rental-application
+[CLOUDFLARE_INTERNAL]: Routes using _internal/ directory to avoid 308 redirects
+[USAGE]: Consumed by vite.config.js, scripts/generate-redirects.js
+
+### scripts/generate-redirects.js
+[INTENT]: Generate Cloudflare Pages routing files from Route Registry
+[EXECUTION]: prebuild hook (bun run generate-routes)
+[GENERATES]: public/_redirects, public/_routes.json
+[INPUT]: src/routes.config.js
+[VALIDATION]: Checks for duplicate paths, missing fields, cloudflareInternal consistency
+[OUTPUT_FORMAT]: _redirects (Cloudflare rewrite syntax), _routes.json (Functions control)
+
+### public/_redirects
+[INTENT]: Cloudflare Pages routing configuration
+[GENERATED_BY]: scripts/generate-redirects.js
+[SYNTAX]: Cloudflare Pages redirects format
+[PATTERN]: path /_internal/name 200 OR path /file.html 200
+[DYNAMIC_HANDLING]: Use _internal/ files to prevent Cloudflare's 308 redirects
+[AUTO_GENERATED]: DO NOT EDIT MANUALLY
+
+### public/_routes.json
+[INTENT]: Control which routes use Cloudflare Functions
+[GENERATED_BY]: scripts/generate-redirects.js
+[INCLUDE]: /api/* (Cloudflare Functions)
+[EXCLUDE]: /guest-proposals, /guest-proposals/*, /host-proposals, /host-proposals/*
+[VERSION]: 1
+
+---
+
+## BUILD_PROCESS
+
+### Development
+[COMMAND]: bun run dev
+[PORT]: 8000
+[SERVER]: Vite dev server with HMR
+[MIDDLEWARE]: Multi-page routing middleware using Route Registry
+[PUBLIC_PREFIX]: /public (proxied to public/ directory)
+[API_PROXY]: /api/* proxied to localhost:8788 (wrangler)
+
+### Production Build
+[COMMAND]: bun run build
+[STEPS]: 1) Prebuild (generate routes), 2) Vite build, 3) Post-build (move HTML, copy assets)
+[OUTPUT]: dist/ directory
+[HTML_LOCATION]: dist root (e.g., dist/index.html)
+[ASSETS_LOCATION]: dist/assets/ with hashed filenames
+[INTERNAL_FILES]: dist/_internal/ (copies of HTML files for Cloudflare routing)
+[COPIED_DIRS]: assets/, images/, help-center-articles/, functions/
+[COPIED_FILES]: _redirects, _headers, _routes.json
+
+### Preview
+[COMMAND]: bun run preview
+[PORT]: 8000
+[SERVER]: Vite preview server (serves dist/)
+[MIDDLEWARE]: Multi-page routing middleware using Route Registry
+[PUBLIC_PREFIX]: Empty string (serves from dist root)
+
+---
+
+## DEPLOYMENT
+
+### Platform
+[TARGET]: Cloudflare Pages
+[BUILD_COMMAND]: bun run build
+[OUTPUT_DIR]: dist
+[NODE_VERSION]: 18 or higher
+[FRAMEWORK_PRESET]: None (custom Vite config)
+
+### Routing Strategy
+[METHOD]: Cloudflare _redirects file + _internal directory
+[WHY_INTERNAL]: Avoid Cloudflare's "pretty URL" 308 redirects that strip query params/hash
+[DYNAMIC_ROUTES]: Rewrite to _internal/route-name files
+[STATIC_ROUTES]: Some use _internal/, some direct to .html
+
+### Functions
+[CLOUDFLARE_FUNCTIONS]: /api/* (legacy, deprecated)
+[SUPABASE_EDGE_FUNCTIONS]: Preferred for all backend logic
+[EXCLUDED_ROUTES]: /guest-proposals/*, /host-proposals/* (no Functions processing)
+
+---
+
+## ENTRY_POINTS
+
+### HTML Templates (public/*.html)
+[COUNT]: 27 files
+[PURPOSE]: Shell pages that load React apps
+[PATTERN]: <div id="root"></div> + <script type="module" src="/src/ENTRY.jsx"></script>
+[BUILD_BEHAVIOR]: Vite processes, outputs to dist root with hashed asset references
+
+### React Entry Points (src/*.jsx)
+[COUNT]: 27 files
+[PATTERN]: Import page component, createRoot, render to #root
+[EXAMPLES]: main.jsx → HomePage, search.jsx → SearchPage, view-split-lease.jsx → ViewSplitLeasePage
+
+### Entry Point Mapping
+[HOMEPAGE]: index.html ← src/main.jsx ← HomePage
+[SEARCH]: search.html ← src/search.jsx ← SearchPage
+[LISTING_VIEW]: view-split-lease.html ← src/view-split-lease.jsx ← ViewSplitLeasePage
+[LISTING_PREVIEW]: preview-split-lease.html ← src/preview-split-lease.jsx ← PreviewSplitLeasePage
+[GUEST_PROPOSALS]: guest-proposals.html ← src/guest-proposals.jsx ← GuestProposalsPage
+[HOST_PROPOSALS]: host-proposals.html ← src/host-proposals.jsx ← HostProposalsPage
+[SELF_LISTING]: self-listing.html ← src/self-listing.jsx ← SelfListingPage
+[SELF_LISTING_V2]: self-listing-v2.html ← src/self-listing-v2.jsx ← SelfListingPageV2
+[LISTING_DASHBOARD]: listing-dashboard.html ← src/listing-dashboard.jsx ← ListingDashboardPage
+[HOST_OVERVIEW]: host-overview.html ← src/host-overview.jsx ← HostOverviewPage
+[ACCOUNT_PROFILE]: account-profile.html ← src/account-profile.jsx ← AccountProfilePage
+[FAQ]: faq.html ← src/faq.jsx ← FAQPage
+[HELP_CENTER]: help-center.html ← src/help-center.jsx ← HelpCenterPage
+[HELP_CATEGORY]: help-center-category.html ← src/help-center-category.jsx ← HelpCenterCategoryPage
+[POLICIES]: policies.html ← src/policies.jsx ← PoliciesPage
+[CAREERS]: careers.html ← src/careers.jsx ← CareersPage
+[ABOUT_US]: about-us.html ← src/about-us.jsx ← AboutUsPage
+[LIST_WITH_US]: list-with-us.html ← src/list-with-us.jsx ← ListWithUsPage
+[WHY_SPLIT_LEASE]: why-split-lease.html ← src/why-split-lease.jsx ← WhySplitLeasePage
+[GUEST_SUCCESS]: guest-success.html ← src/guest-success.jsx ← GuestSuccessPage
+[HOST_SUCCESS]: host-success.html ← src/host-success.jsx ← HostSuccessPage
+[FAVORITE_LISTINGS]: favorite-listings.html ← src/favorite-listings.jsx ← FavoriteListingsPage
+[RENTAL_APPLICATION]: rental-application.html ← src/rental-application.jsx ← RentalApplicationPage
+[RESET_PASSWORD]: reset-password.html ← src/reset-password.jsx ← ResetPasswordPage
+[NOT_FOUND]: 404.html ← src/404.jsx ← NotFoundPage
+[SEARCH_TEST]: search-test.html ← src/search-test.jsx ← SearchPageTest
+[INTERNAL_TEST]: _internal-test.html ← src/_internal-test.jsx ← InternalTestPage
+
+---
+
+## ARCHITECTURE_PATTERNS
 
 ### Islands Architecture
-Each page is an independent React root (island pattern):
-- `src/main.jsx` → `HomePage`
-- `src/search.jsx` → `SearchPage`
-- `src/view-split-lease.jsx` → `ViewSplitLeasePage`
-- `src/guest-proposals.jsx` → `GuestProposalsPage`
-- `src/self-listing.jsx` → `SelfListingPage`
+[DESCRIPTION]: Each HTML page is an independent React root
+[BENEFIT]: No shared state between pages, simpler mental model
+[NAVIGATION]: Full page loads (no client-side routing)
+[STATE_PERSISTENCE]: URL params, localStorage, Supabase database
+
+### Route Registry Pattern
+[DESCRIPTION]: Single source of truth for all routes in src/routes.config.js
+[CONSUMERS]: Vite dev server, Vite preview, Cloudflare _redirects, Vite build inputs
+[BENEFIT]: Change route once, updates everywhere
+[VALIDATION]: Automated checks in generate-redirects.js
+
+### Cloudflare _internal Pattern
+[DESCRIPTION]: Copy HTML files to dist/_internal/ with custom names
+[WHY]: Avoid Cloudflare's automatic 308 redirects that strip query params/hash
+[USAGE]: Dynamic routes and pages needing query/hash preservation
+[EXAMPLE]: /search → /_internal/search-view
+
+### Hollow Component Pattern
+[DESCRIPTION]: Page components delegate all logic to custom hooks
+[BENEFIT]: Testable business logic, focused UI components
+[LOCATION]: src/islands/pages/
+[EXAMPLE]: ViewSplitLeasePage.jsx (UI only) + useViewSplitLeasePageLogic.js (logic)
 
 ### Four-Layer Logic Architecture
-Located in `src/logic/`:
-
-| Layer | Purpose | Naming Convention |
-|-------|---------|-------------------|
-| **Calculators** | Pure math functions | `calculate*`, `get*` |
-| **Rules** | Boolean predicates (business logic) | `can*`, `is*`, `has*`, `should*` |
-| **Processors** | Data transformation | `adapt*`, `extract*`, `process*`, `format*` |
-| **Workflows** | Orchestration | `*Workflow` |
-
----
-
-## Critical Paths & Files
-
-### Entry Points
-```
-src/main.jsx              → HomePage (landing)
-src/search.jsx            → SearchPage (browse listings)
-src/view-split-lease.jsx  → ViewSplitLeasePage (listing details)
-src/guest-proposals.jsx   → GuestProposalsPage (manage proposals)
-src/self-listing.jsx      → SelfListingPage (create/edit listing)
-```
-
-### Key Shared Components
-```
-src/islands/shared/Header.jsx                    → Site navigation, auth modals
-src/islands/shared/Footer.jsx                    → Site footer
-src/islands/shared/ListingScheduleSelector.jsx   → Day selection + pricing
-src/islands/shared/GoogleMap.jsx                 → Map with listing markers
-src/islands/shared/CreateProposalFlowV2.jsx      → Multi-step proposal wizard
-```
-
-### Core Libraries
-```
-src/lib/constants.js        → All configuration (URLs, days, prices, etc.)
-src/lib/auth.js             → Authentication (login, logout, token management)
-src/lib/supabase.js         → Supabase client initialization
-src/lib/secureStorage.js    → Encrypted token storage
-src/lib/priceCalculations.js → Pricing breakdown logic
-```
-
-### Logic Core
-```
-src/logic/calculators/pricing/    → getNightlyRateByFrequency, calculateFourWeekRent
-src/logic/calculators/scheduling/ → calculateCheckInOutDays, calculateNightsFromDays
-src/logic/rules/proposals/        → canCancelProposal, canModifyProposal, canAcceptCounteroffer
-src/logic/rules/auth/             → isSessionValid, isProtectedPage
-src/logic/processors/external/    → adaptDaysFromBubble, adaptDaysToBubble
-src/logic/workflows/              → acceptProposalWorkflow, cancelProposalWorkflow
-```
+[DESCRIPTION]: Business logic separated into calculators, rules, processors, workflows
+[LOCATION]: src/logic/
+[LAYER_1]: Calculators (pure math functions: calculate*, get*)
+[LAYER_2]: Rules (boolean predicates: can*, is*, has*, should*)
+[LAYER_3]: Processors (data transformation: adapt*, extract*, process*, format*)
+[LAYER_4]: Workflows (orchestration: *Workflow)
+[BENEFIT]: Reusable, testable, maintainable business logic
 
 ---
 
-## Day Indexing Convention
+## ENVIRONMENT_VARIABLES
 
-### CRITICAL: Two Day Systems
+### Frontend (VITE_ prefix)
+[VITE_SUPABASE_URL]: Supabase project URL (from Supabase dashboard)
+[VITE_SUPABASE_ANON_KEY]: Supabase anonymous key (public, safe for client)
+[VITE_GOOGLE_MAPS_API_KEY]: Google Maps JavaScript API key
 
-| System | Sunday | Monday | Tuesday | Wednesday | Thursday | Friday | Saturday |
-|--------|--------|--------|---------|-----------|----------|--------|----------|
-| **Internal (JS)** | 0 | 1 | 2 | 3 | 4 | 5 | 6 |
-| **Bubble API** | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+### Backend (Supabase Secrets)
+[BUBBLE_API_BASE_URL]: Bubble.io API endpoint (legacy backend)
+[BUBBLE_API_KEY]: Bubble.io API authentication
+[OPENAI_API_KEY]: OpenAI API for AI features
+[SUPABASE_SERVICE_ROLE_KEY]: Supabase admin key (server-side only)
 
-### Conversion Functions
-```javascript
-// Bubble → Internal
-import { adaptDaysFromBubble } from 'src/logic/processors/external/adaptDaysFromBubble.js'
-const jsDays = adaptDaysFromBubble({ bubbleDays: [2, 3, 4, 5, 6] }) // → [1, 2, 3, 4, 5]
-
-// Internal → Bubble
-import { adaptDaysToBubble } from 'src/logic/processors/external/adaptDaysToBubble.js'
-const bubbleDays = adaptDaysToBubble({ jsDays: [1, 2, 3, 4, 5] }) // → [2, 3, 4, 5, 6]
-```
-
-### Default Day Selection
-Monday-Friday (weeknight pattern): `[1, 2, 3, 4, 5]` (0-based)
+### Configuration Location
+[FRONTEND_ENV]: app/.env (local), Cloudflare Pages settings (production)
+[BACKEND_SECRETS]: Supabase Dashboard → Project Settings → Edge Functions Secrets
+[SECURITY]: Never expose Bubble/OpenAI keys in frontend code
 
 ---
 
-## Authentication Flow
+## CRITICAL_CONVENTIONS
 
-### Storage Keys
-- `splitlease_auth_token` → Encrypted auth token
-- `splitlease_session_id` → Encrypted session/user ID
-- `splitlease_user_type` → "Host" or "Guest"
-- `loggedInAvatar_userType_visible` → UI visibility preference
+### Day Indexing
+[JS_FORMAT]: 0-6 (Sunday=0, Monday=1, ..., Saturday=6)
+[BUBBLE_FORMAT]: 1-7 (Sunday=1, Monday=2, ..., Saturday=7)
+[CONVERSION_FUNCTIONS]: adaptDaysFromBubble(), adaptDaysToBubble()
+[LOCATION]: src/logic/processors/external/
+[RULE]: Always convert at API boundaries, never mix formats
 
-### Auth Functions
-```javascript
-import { checkAuthStatus, loginUser, logoutUser, validateTokenAndFetchUser } from 'src/lib/auth.js'
+### Unique ID Generation
+[METHOD]: Supabase RPC function generate_bubble_id
+[USAGE]: const { data: newId } = await supabaseAdmin.rpc('generate_bubble_id')
+[FORMAT]: 17-character alphanumeric string (Bubble-compatible)
 
-// Check if logged in
-const isLoggedIn = await checkAuthStatus()
-
-// Login
-const result = await loginUser(email, password)
-
-// Validate token and get user data
-const userData = await validateTokenAndFetchUser()
-
-// Logout
-await logoutUser()
-```
-
-### Protected Pages
-- `/guest-proposals`
-- `/account-profile`
-- `/host-dashboard`
+### API Architecture
+[FRONTEND_TO_BACKEND]: Frontend → Supabase Edge Functions → Bubble API
+[DIRECT_SUPABASE]: Frontend → Supabase Database (for Supabase-native tables)
+[NEVER]: Frontend → Bubble API directly (security violation)
 
 ---
 
-## API Architecture
+## DO_RULES
 
-### Supabase Edge Functions (Preferred)
-All Bubble API calls are proxied through Edge Functions:
-- `bubble-proxy` → General Bubble API calls
-- `bubble-auth-proxy` → Authentication (login, signup, logout, validate)
-
-### Why Edge Functions?
-- API keys stored server-side in Supabase Secrets
-- No sensitive keys in frontend code
-- Centralized error handling
-
-### Direct Supabase Queries
-For data not in Bubble:
-- Neighborhoods
-- Boroughs
-- Informational texts
-- ZAT price configuration
+[DO_USE_ROUTE_REGISTRY]: Always update src/routes.config.js for route changes
+[DO_GENERATE_ROUTES]: Run bun run generate-routes after route config changes
+[DO_USE_EDGE_FUNCTIONS]: Proxy all Bubble API calls through Supabase Edge Functions
+[DO_STORE_SECRETS]: Keep API keys in Supabase Secrets, never in frontend
+[DO_COMMIT_CHANGES]: Git commit after each logical change (per project instructions)
+[DO_USE_ESM]: Use ES modules (import/export), not CommonJS
+[DO_USE_BUN]: Prefer bun for package management and script execution
+[DO_USE_HOLLOW_PATTERN]: Keep page components minimal, delegate logic to hooks
+[DO_USE_FOUR_LAYERS]: Organize business logic into calculators/rules/processors/workflows
+[DO_CONVERT_DAYS]: Use adaptDaysFromBubble/adaptDaysToBubble at API boundaries
 
 ---
 
-## Component Patterns
+## DONT_RULES
 
-### 1. Hollow Component Pattern
-UI-only component that delegates ALL logic to a hook.
-
-**Example**: `GuestProposalsPage.jsx`
-```javascript
-// Component contains ONLY JSX
-export default function GuestProposalsPage() {
-  const {
-    proposals,
-    selectedProposal,
-    handleCancelProposal,
-    // ... all state and handlers from hook
-  } = useGuestProposalsPageLogic()
-
-  return (
-    <div>
-      {/* Pure rendering, no business logic */}
-    </div>
-  )
-}
-```
-
-### 2. Multi-Step Form Pattern
-Section-by-section forms with localStorage draft saving.
-
-**Example**: `SelfListingPage.tsx`
-- 7 sections: Space Snapshot → Features → Lease Styles → Pricing → Rules → Photos → Review
-- Draft saved to localStorage between sessions
-- Section validation before proceeding
-
-### 3. Modal Flow Pattern
-Multi-step wizards inside modals with callback to parent.
-
-**Example**: `CreateProposalFlowV2.jsx`
-- Sections: Review → User Details → Move-in Date → Days Selection
-- Parent provides `onSubmit` callback
-- Modal manages internal navigation state
+[DONT_EDIT_GENERATED]: Never manually edit _redirects or _routes.json (auto-generated)
+[DONT_EXPOSE_KEYS]: Never put Bubble/OpenAI API keys in frontend code or .env
+[DONT_SKIP_VALIDATION]: Always run generate-redirects.js validation before deploying
+[DONT_CALL_BUBBLE_DIRECTLY]: Never call Bubble API from frontend (security risk)
+[DONT_MIX_DAY_FORMATS]: Never use 0-based and 1-based days in same function
+[DONT_PUSH_FORCE]: Never git push --force to main/master
+[DONT_ADD_FALLBACKS]: No fallback mechanisms when encountering errors (per project philosophy)
+[DONT_OVER_ENGINEER]: Match solution to actual scale, not hypothetical future needs
+[DONT_MODIFY_DB]: Never modify Supabase tables without explicit instruction
 
 ---
 
-## Database Tables
+## RELATED_DOCUMENTATION
 
-### Supabase Tables
-| Table | Purpose |
-|-------|---------|
-| `zat_geo_borough_toplevel` | NYC boroughs |
-| `zat_geo_hood_mediumlevel` | Neighborhoods |
-| `zat_features_listingtype` | Property types |
-| `zat_features_amenity` | Amenities |
-| `zfut_safetyfeatures` | Safety features |
-| `zat_features_houserule` | House rules |
-| `zat_features_parkingoptions` | Parking options |
-| `zat_features_cancellationpolicy` | Cancellation policies |
-| `zat_features_storageoptions` | Storage options |
-| `informational_texts` | CMS content |
-| `proposal` | Proposals (synced from Bubble) |
-| `virtualmeetingschedulesandlinks` | Virtual meetings |
-
-### Bubble Tables (via Edge Functions)
-- `listing` → Property listings
-- `user` → User accounts
-- `proposal` → Proposals (source of truth)
-
----
-
-## Styling Conventions
-
-### CSS Variables (src/styles/variables.css)
-```css
---color-primary: #31135d;      /* Deep purple */
---color-primary-hover: #1f0b38;
---color-secondary: #5B21B6;
---color-success: #00C851;
---color-warning: #FFA500;
---color-error: #EF4444;
-```
-
-### File Organization
-- Global: `src/styles/main.css`, `variables.css`
-- Components: `src/styles/components/*.css`
-- Islands: Co-located with component (e.g., `Header.css` next to `Header.jsx`)
-
-### Naming
-- CSS classes: `kebab-case` (`.hero-section`, `.btn-primary`)
-- CSS files: Match component name
-
----
-
-## DO's
-
-### Architecture
-- Use the four-layer logic architecture (calculators, rules, processors, workflows)
-- Keep business logic in hooks, not components (Hollow Component Pattern)
-- Use Edge Functions for all Bubble API calls
-- Store all configuration in `src/lib/constants.js`
-
-### Day Handling
-- Always use 0-based indexing internally
-- Convert at system boundaries using `adaptDaysFromBubble` / `adaptDaysToBubble`
-- Validate day arrays before processing
-
-### Authentication
-- Use `checkAuthStatus()` before accessing protected resources
-- Clear auth data on logout AND on token validation failure
-- Redirect to login for protected pages when not authenticated
-
-### Error Handling
-- Throw descriptive errors (no silent failures)
-- Log errors with emoji prefixes for visibility (e.g., `console.error('❌ ...')`)
-- Extract detailed error messages from Edge Function responses
-
-### State Management
-- Use local state (useState) for UI state
-- Use URL parameters for shareable state (filters, listing IDs)
-- Use localStorage for auth tokens and draft forms
-
-### Styling
-- Use CSS variables for colors and spacing
-- Mobile-first responsive design
-- Prefer CSS modules over inline styles
-
----
-
-## DON'Ts
-
-### Architecture
-- Never add fallback mechanisms when encountering errors
-- Never add compatibility layers or workarounds
-- Never over-engineer for hypothetical future needs
-- Never put business logic in UI components
-- Never access tokens directly from components (use auth functions)
-
-### API Calls
-- Never call Bubble API directly from frontend
-- Never expose API keys in frontend code
-- Never hardcode URLs (use constants)
-
-### Day Handling
-- Never assume day indexing (always check documentation)
-- Never mix 0-based and 1-based day numbers in the same function
-- Never send 0-based days to Bubble API (always convert first)
-
-### Authentication
-- Never store sensitive tokens in plain localStorage
-- Never skip token validation on protected pages
-- Never assume auth state without checking
-
-### State
-- Never use Redux or complex state management (keep it simple)
-- Never prop-drill more than 2 levels (use composition)
-- Never mutate state directly
-
-### Styling
-- Never use `!important` without strong justification
-- Never use inline styles for repeatable patterns
-- Never hardcode color values (use CSS variables)
-
----
-
-## Proposal Status Flow
-
-```
-PROPOSAL_SUBMITTED_AWAITING_RENTAL_APP
-    ↓
-RENTAL_APP_SUBMITTED_AWAITING_HOST_REVIEW
-    ↓
-┌─────────────────────────────────────────┐
-│ HOST DECISION                           │
-│ ├─ REJECTED_BY_HOST (terminal)          │
-│ ├─ COUNTEROFFER_SUBMITTED_AWAITING_...  │
-│ └─ PROPOSAL_APPROVED_BY_HOST            │
-└─────────────────────────────────────────┘
-    ↓
-AWAITING_DOCUMENTS_AND_INITIAL_PAYMENT
-    ↓
-INITIAL_PAYMENT_SUBMITTED_LEASE_ACTIVATED (terminal)
-
-Side exits:
-├─ CANCELLED_BY_GUEST (terminal)
-├─ CANCELLED_BY_SPLITLEASE (terminal)
-└─ EXPIRED (terminal)
-```
-
-### Proposal Rules
-```javascript
-import { canCancelProposal, canModifyProposal, canAcceptCounteroffer } from 'src/logic/rules/proposals/proposalRules.js'
-
-canCancelProposal(proposal)    // Can guest cancel?
-canModifyProposal(proposal)    // Can guest edit terms?
-canAcceptCounteroffer(proposal) // Has host made counteroffer?
-```
-
----
-
-## Pricing System
-
-### Price Fields by Night Count
-```javascript
-{
-  'Price 2 nights selected': 150,
-  'Price 3 nights selected': 140,
-  'Price 4 nights selected': 130,
-  'Price 5 nights selected': 120,
-  'Price 6 nights selected': 110,
-  'Price 7 nights selected': 100
-}
-```
-
-### Price Tiers (for search filtering)
-- Under $200: `{ min: 0, max: 199.99 }`
-- $200 - $350: `{ min: 200, max: 350 }`
-- $350 - $500: `{ min: 350.01, max: 500 }`
-- $500+: `{ min: 500.01, max: 999999 }`
-
-### Calculation Functions
-```javascript
-import { getNightlyRateByFrequency, calculateFourWeekRent, calculatePricingBreakdown } from 'src/logic/calculators/pricing/'
-
-const nightlyRate = getNightlyRateByFrequency(listing, nightsSelected)
-const monthlyRent = calculateFourWeekRent(nightlyRate, nightsSelected)
-const breakdown = calculatePricingBreakdown(listing, selectedDays, reservationSpan)
-```
-
----
-
-## Map Configuration
-
-### Borough Centers
-```javascript
-import { getBoroughMapConfig } from 'src/lib/constants.js'
-
-const config = getBoroughMapConfig('manhattan')
-// { center: { lat: 40.7580, lng: -73.9855 }, zoom: 13, name: 'Manhattan' }
-```
-
-### Supported Boroughs
-- manhattan, brooklyn, queens, bronx, staten-island, hudson (NJ)
-
----
-
-## Testing Checklist
-
-When modifying proposal-related code:
-- [ ] Does it handle null/undefined proposals?
-- [ ] Does it check status before allowing actions?
-- [ ] Does it use the correct day indexing?
-- [ ] Does it handle both `status` and `Status` field names?
-
-When modifying auth-related code:
-- [ ] Does it clear auth data on failure?
-- [ ] Does it use Edge Functions (not direct API calls)?
-- [ ] Does it handle network errors gracefully?
-
-When modifying UI components:
-- [ ] Is business logic in the hook, not the component?
-- [ ] Are callbacks properly passed to child components?
-- [ ] Is loading/error state handled?
-
----
-
-## Quick Reference
-
-### Common Imports
-```javascript
-// Constants
-import { DAYS, DAY_NAMES, SCHEDULE_PATTERNS, PRICE_TIERS } from 'src/lib/constants.js'
-
-// Auth
-import { checkAuthStatus, loginUser, logoutUser } from 'src/lib/auth.js'
-
-// Supabase
-import { supabase } from 'src/lib/supabase.js'
-
-// Day conversion
-import { adaptDaysFromBubble } from 'src/logic/processors/external/adaptDaysFromBubble.js'
-import { adaptDaysToBubble } from 'src/logic/processors/external/adaptDaysToBubble.js'
-
-// Proposal rules
-import { canCancelProposal, canModifyProposal } from 'src/logic/rules/proposals/proposalRules.js'
-```
-
-### File Naming Conventions
-| Type | Convention | Example |
-|------|------------|---------|
-| React Components | PascalCase | `HomePage.jsx` |
-| Hooks | camelCase with `use` prefix | `useGuestProposalsPageLogic.js` |
-| Utilities | camelCase | `priceCalculations.js` |
-| Constants | UPPER_SNAKE_CASE | `BUBBLE_API_URL` |
-| CSS Classes | kebab-case | `.hero-section` |
-| CSS Files | Match component | `Header.css` |
-
----
-
-## Build & Development
-
-```bash
-# Install dependencies
-npm install
-
-# Development server
-npm run dev
-
-# Production build
-npm run build
-
-# Preview production build
-npm run preview
-```
-
-### Environment Variables
-```
-VITE_SUPABASE_URL=<supabase-project-url>
-VITE_SUPABASE_ANON_KEY=<supabase-anon-key>
-VITE_GOOGLE_MAPS_API_KEY=<google-maps-api-key>
-```
-
-Note: Bubble API keys are stored server-side in Supabase Secrets, NOT in environment variables.
+[PROJECT_ROOT]: C:\Users\Split Lease\Documents\Split Lease\.claude\CLAUDE.md
+[SOURCE_CODE]: C:\Users\Split Lease\Documents\Split Lease\app\src\CLAUDE.md
+[SUPABASE]: C:\Users\Split Lease\Documents\Split Lease\supabase\CLAUDE.md
+[DATABASE_SCHEMA]: C:\Users\Split Lease\Documents\Split Lease\DATABASE_SCHEMA_OVERVIEW.md
+[ROUTING_GUIDE]: C:\Users\Split Lease\Documents\Split Lease\.claude\Documentation\Routing\ROUTING_GUIDE.md

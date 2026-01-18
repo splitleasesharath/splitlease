@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import type { Pricing, NightlyPricing, RentalType } from '../types/listing.types';
 import { NightlyPriceSlider } from '../components/NightlyPriceSlider';
 
@@ -19,6 +19,17 @@ export const Section4Pricing: React.FC<Section4Props> = ({
 }) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Scroll to first error field
+  const scrollToFirstError = useCallback((errorKeys: string[]) => {
+    if (errorKeys.length === 0) return;
+    const firstErrorKey = errorKeys[0];
+    const element = document.getElementById(firstErrorKey);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      element.focus();
+    }
+  }, []);
+
   const handleChange = (field: keyof Pricing, value: any) => {
     onChange({ ...data, [field]: value });
     if (errors[field]) {
@@ -28,36 +39,44 @@ export const Section4Pricing: React.FC<Section4Props> = ({
     }
   };
 
-  const validateForm = (): boolean => {
+  const validateForm = (): string[] => {
     const newErrors: Record<string, string> = {};
+    const errorOrder: string[] = [];
 
-    // Validate damage deposit
-    if (data.damageDeposit < 500) {
-      newErrors.damageDeposit = 'Damage deposit must be at least $500';
-    }
-
-    // Rental type specific validation
+    // Rental type specific validation (check first as it's at the top)
     if (rentalType === 'Monthly') {
       if (!data.monthlyCompensation || data.monthlyCompensation <= 0) {
         newErrors.monthlyCompensation = 'Monthly compensation is required';
+        errorOrder.push('monthlyCompensation');
       }
     } else if (rentalType === 'Weekly') {
       if (!data.weeklyCompensation || data.weeklyCompensation <= 0) {
         newErrors.weeklyCompensation = 'Weekly compensation is required';
+        errorOrder.push('weeklyCompensation');
       }
     } else if (rentalType === 'Nightly') {
       if (!data.nightlyPricing || data.nightlyPricing.oneNightPrice <= 0) {
         newErrors.nightlyPricing = '1-night price is required';
+        errorOrder.push('nightlyPricing');
       }
     }
 
+    // Validate damage deposit
+    if (data.damageDeposit < 500) {
+      newErrors.damageDeposit = 'Damage deposit must be at least $500';
+      errorOrder.push('damageDeposit');
+    }
+
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return errorOrder;
   };
 
   const handleNext = () => {
-    if (validateForm()) {
+    const errorKeys = validateForm();
+    if (errorKeys.length === 0) {
       onNext();
+    } else {
+      scrollToFirstError(errorKeys);
     }
   };
 
@@ -68,8 +87,10 @@ export const Section4Pricing: React.FC<Section4Props> = ({
 
       {/* Nightly Pricing Interface */}
       {rentalType === 'Nightly' && (
-        <div className="nightly-pricing">
-          <h3>Nightly Rate Calculator</h3>
+        <div className="nightly-pricing" id="nightlyPricing">
+          <p className="pricing-description" style={{ color: '#6b7280', fontSize: '0.9rem', marginBottom: '20px' }}>
+            Set your base rate. Longer stays get automatic discounts to encourage bookings.
+          </p>
           <NightlyPriceSlider
             initialP1={data.nightlyPricing?.oneNightPrice || 99}
             initialDecay={data.nightlyPricing?.decayPerNight || 0.956}
@@ -84,10 +105,14 @@ export const Section4Pricing: React.FC<Section4Props> = ({
                   night3: prices.n3,
                   night4: prices.n4,
                   night5: prices.n5,
+                  night6: prices.n6,
+                  night7: prices.n7,
                   cumulativeNight2: prices.n1 + prices.n2,
                   cumulativeNight3: prices.n1 + prices.n2 + prices.n3,
                   cumulativeNight4: prices.n1 + prices.n2 + prices.n3 + prices.n4,
-                  cumulativeNight5: prices.n1 + prices.n2 + prices.n3 + prices.n4 + prices.n5
+                  cumulativeNight5: prices.n1 + prices.n2 + prices.n3 + prices.n4 + prices.n5,
+                  cumulativeNight6: prices.n1 + prices.n2 + prices.n3 + prices.n4 + prices.n5 + prices.n6,
+                  cumulativeNight7: prices.n1 + prices.n2 + prices.n3 + prices.n4 + prices.n5 + prices.n6 + prices.n7
                 }
               };
               onChange({ ...data, nightlyPricing });
@@ -138,7 +163,8 @@ export const Section4Pricing: React.FC<Section4Props> = ({
               <input
                 type="number"
                 id="monthlyCompensation"
-                value={data.monthlyCompensation || 1850}
+                placeholder="1850 (example)"
+                value={data.monthlyCompensation || ''}
                 onChange={(e) =>
                   handleChange('monthlyCompensation', parseInt(e.target.value) || 0)
                 }

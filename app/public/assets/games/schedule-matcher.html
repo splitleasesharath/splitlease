@@ -1,0 +1,1777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roommate Matcher - Split Lease</title>
+    <link rel="icon" type="image/png" href="/assets/images/split-lease-purple-circle.png">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            /* Split Lease Light Theme */
+            --color-primary: #31135D;
+            --color-primary-dark: #1E0A38;
+            --color-primary-light: #4A1D7F;
+            --color-accent: #31135D;
+            --color-accent-light: #ECE8F7;
+            --color-success: #4A7C59;
+            --color-success-light: #5A9469;
+            --color-warning: #B8860B;
+            --color-error: #8B4049;
+            --color-neutral-900: #2A1548;
+            --color-neutral-800: #3A2058;
+            --color-neutral-700: #4A2B68;
+            --color-neutral-600: #6B5B7B;
+            --color-neutral-500: #8B7B9B;
+            --color-neutral-400: #9999AA;
+            --color-neutral-300: #CCCCDD;
+            --color-neutral-200: #E0E0E8;
+            --color-neutral-100: #F0F0F5;
+            --color-neutral-50: #F8F7FA;
+            --color-white: #FFFFFF;
+            --color-guest-a: #31135D;
+            --color-guest-b: #4A7C59;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background: var(--color-neutral-50);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: var(--color-neutral-900);
+        }
+
+        /* HUD - Top Stats */
+        .hud {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 32px;
+            background: var(--color-primary);
+            z-index: 10;
+            box-shadow: 0 2px 8px rgba(49, 19, 93, 0.15);
+        }
+
+        .timer-display {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+        }
+
+        .timer-num {
+            font-size: 2.5rem;
+            font-weight: 300;
+            font-variant-numeric: tabular-nums;
+            color: var(--color-white);
+            transition: all 0.15s;
+        }
+
+        .timer-num.warning { color: var(--color-warning); }
+        .timer-num.danger { color: #ff6b6b; animation: timerPulse 0.3s infinite; }
+
+        @keyframes timerPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .timer-sec {
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.6);
+            font-weight: 500;
+        }
+
+        .score-display {
+            display: flex;
+            gap: 32px;
+        }
+
+        .score-item {
+            text-align: right;
+        }
+
+        .score-num {
+            font-size: 1.75rem;
+            font-weight: 300;
+            color: var(--color-white);
+        }
+
+        .score-lbl {
+            font-size: 0.6rem;
+            color: rgba(255,255,255,0.6);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        /* Chain indicator */
+        .chain-indicator {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--color-accent-light);
+            color: var(--color-primary);
+            padding: 6px 20px;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            opacity: 0;
+            transition: all 0.2s;
+            letter-spacing: 0.5px;
+            border: 1px solid var(--color-neutral-300);
+        }
+
+        .chain-indicator.show {
+            opacity: 1;
+        }
+
+        /* Main Game */
+        .game {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+            width: 100%;
+            max-width: 900px;
+            padding-top: 80px;
+        }
+
+        /* Listing Card with Photo */
+        .listing-card {
+            background: var(--color-white);
+            border-radius: 12px;
+            width: 100%;
+            border: 1px solid var(--color-neutral-200);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            padding: 24px;
+        }
+
+        .listing-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .listing-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .listing-photo {
+            width: 64px;
+            height: 64px;
+            border-radius: 8px;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .listing-details {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .listing-name {
+            font-size: 1.25rem;
+            font-weight: 500;
+            letter-spacing: -0.02em;
+            color: var(--color-neutral-900);
+        }
+
+        .listing-location {
+            font-size: 0.8rem;
+            color: var(--color-neutral-500);
+        }
+
+        .listing-tag {
+            background: var(--color-accent-light);
+            padding: 6px 14px;
+            border-radius: 100px;
+            font-size: 0.7rem;
+            color: var(--color-primary);
+            letter-spacing: 0.5px;
+            font-weight: 500;
+        }
+
+        /* Week Grid - Compact */
+        .week-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+        }
+
+        .day-header {
+            text-align: center;
+            font-size: 0.65rem;
+            color: var(--color-neutral-500);
+            font-weight: 500;
+            padding-bottom: 8px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .day-slot {
+            aspect-ratio: 1;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 500;
+            transition: all 0.15s;
+            cursor: default;
+            position: relative;
+        }
+
+        .day-slot.open {
+            background: var(--color-neutral-100);
+            border: 2px solid var(--color-neutral-200);
+            color: var(--color-neutral-500);
+        }
+
+        .day-slot.open.highlight-a {
+            border-color: var(--color-guest-a);
+            background: var(--color-accent-light);
+            box-shadow: 0 0 12px rgba(49, 19, 93, 0.15);
+        }
+
+        .day-slot.open.highlight-b {
+            border-color: var(--color-guest-b);
+            background: rgba(74, 124, 89, 0.1);
+            box-shadow: 0 0 12px rgba(74, 124, 89, 0.15);
+        }
+
+        .day-slot.highlight-error {
+            border-color: var(--color-error) !important;
+            background: rgba(139, 64, 73, 0.1) !important;
+            box-shadow: 0 0 12px rgba(139, 64, 73, 0.2);
+        }
+
+        .day-slot.booked-a {
+            background: var(--color-primary);
+            border: 2px solid var(--color-primary);
+            color: white;
+            animation: bookAnim 0.25s ease;
+        }
+
+        .day-slot.booked-b {
+            background: var(--color-success);
+            border: 2px solid var(--color-success);
+            color: white;
+            animation: bookAnim 0.25s ease;
+        }
+
+        @keyframes bookAnim {
+            0% { transform: scale(0.8); opacity: 0; }
+            60% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .day-slot .icon { font-size: 1.1rem; margin-bottom: 2px; }
+
+        .day-slot .guest-initial {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        /* Progress under listing */
+        .listing-progress {
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .progress-lbl {
+            font-size: 0.7rem;
+            color: var(--color-neutral-500);
+            white-space: nowrap;
+            letter-spacing: 0.5px;
+        }
+
+        .progress-track {
+            flex: 1;
+            height: 6px;
+            background: var(--color-neutral-100);
+            border-radius: 3px;
+            overflow: hidden;
+            display: flex;
+            border: 1px solid var(--color-neutral-200);
+        }
+
+        .progress-fill-a {
+            height: 100%;
+            background: var(--color-primary);
+            transition: width 0.2s;
+        }
+
+        .progress-fill-b {
+            height: 100%;
+            background: var(--color-success);
+            transition: width 0.2s;
+        }
+
+        /* Guest Selection Area */
+        .guests-area {
+            width: 100%;
+        }
+
+        .guests-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding: 0 4px;
+        }
+
+        .guests-title {
+            font-size: 0.75rem;
+            color: var(--color-neutral-600);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 500;
+        }
+
+        .guests-hint {
+            font-size: 0.7rem;
+            color: var(--color-neutral-500);
+        }
+
+        .guest-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .guest-card {
+            background: var(--color-white);
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.12s;
+            border: 2px solid var(--color-neutral-200);
+            position: relative;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+
+        .guest-card:hover {
+            border-color: var(--color-neutral-300);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .guest-card.selected-a {
+            border-color: var(--color-guest-a);
+            background: var(--color-accent-light);
+            box-shadow: 0 4px 16px rgba(49, 19, 93, 0.15);
+        }
+
+        .guest-card.selected-b {
+            border-color: var(--color-guest-b);
+            background: rgba(74, 124, 89, 0.08);
+            box-shadow: 0 4px 16px rgba(74, 124, 89, 0.15);
+        }
+
+        .guest-card.matched {
+            opacity: 0.2;
+            pointer-events: none;
+        }
+
+        .guest-card.wrong {
+            animation: wrongShake 0.4s ease;
+            border-color: var(--color-error);
+        }
+
+        @keyframes wrongShake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-8px); }
+            40% { transform: translateX(8px); }
+            60% { transform: translateX(-6px); }
+            80% { transform: translateX(6px); }
+        }
+
+        .guest-card.disabled {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .guest-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .guest-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .guest-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--color-neutral-200);
+        }
+
+        .guest-card.selected-a .guest-avatar {
+            border-color: var(--color-guest-a);
+        }
+
+        .guest-card.selected-b .guest-avatar {
+            border-color: var(--color-guest-b);
+        }
+
+        .guest-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .guest-name {
+            font-size: 1rem;
+            font-weight: 500;
+            letter-spacing: -0.01em;
+            color: var(--color-neutral-900);
+        }
+
+        .guest-job {
+            font-size: 0.75rem;
+            color: var(--color-neutral-500);
+        }
+
+        .guest-nights {
+            background: var(--color-neutral-100);
+            color: var(--color-neutral-600);
+            padding: 4px 10px;
+            border-radius: 100px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            border: 1px solid var(--color-neutral-200);
+        }
+
+        .guest-card.selected-a .guest-nights {
+            background: var(--color-guest-a);
+            color: white;
+            border-color: var(--color-guest-a);
+        }
+
+        .guest-card.selected-b .guest-nights {
+            background: var(--color-guest-b);
+            color: white;
+            border-color: var(--color-guest-b);
+        }
+
+        .guest-sched {
+            display: flex;
+            gap: 6px;
+        }
+
+        .sched-dot {
+            flex: 1;
+            height: 28px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            font-weight: 600;
+        }
+
+        .sched-dot.on {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        .guest-card.selected-a .sched-dot.on {
+            background: var(--color-guest-a);
+            color: white;
+        }
+
+        .guest-card.selected-b .sched-dot.on {
+            background: var(--color-guest-b);
+            color: white;
+        }
+
+        .sched-dot.off {
+            background: var(--color-neutral-100);
+            color: var(--color-neutral-400);
+        }
+
+        /* Selection indicator */
+        .selection-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: white;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.15s ease;
+        }
+
+        .guest-card.selected-a .selection-badge {
+            background: var(--color-guest-a);
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .guest-card.selected-b .selection-badge {
+            background: var(--color-guest-b);
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* Penalty Flash */
+        .penalty-flash {
+            position: fixed;
+            inset: 0;
+            background: rgba(139, 64, 73, 0.15);
+            pointer-events: none;
+            opacity: 0;
+            z-index: 50;
+        }
+
+        .penalty-flash.show {
+            animation: penaltyAnim 0.3s ease;
+        }
+
+        @keyframes penaltyAnim {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* Penalty text */
+        .penalty-text {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4rem;
+            font-weight: 300;
+            color: var(--color-error);
+            text-shadow: 0 0 40px rgba(139, 64, 73, 0.5);
+            pointer-events: none;
+            opacity: 0;
+            z-index: 51;
+        }
+
+        .penalty-text.show {
+            animation: penaltyTextAnim 0.6s ease forwards;
+        }
+
+        @keyframes penaltyTextAnim {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+            100% { opacity: 0; transform: translate(-50%, -60%) scale(1); }
+        }
+
+        /* Overlays */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(49, 19, 93, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .overlay.active { display: flex; }
+
+        .modal {
+            background: var(--color-white);
+            border-radius: 16px;
+            padding: 48px;
+            text-align: center;
+            max-width: 420px;
+            animation: modalPop 0.3s ease;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+
+        @keyframes modalPop {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal h1 {
+            font-size: 2rem;
+            font-weight: 300;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+            color: var(--color-neutral-900);
+        }
+
+        .modal h1 span { color: var(--color-primary); }
+
+        .modal .brand-symbol {
+            font-size: 1.5rem;
+            color: var(--color-primary);
+            margin: 0 4px;
+        }
+
+        .modal > p {
+            color: var(--color-neutral-500);
+            margin-bottom: 24px;
+            font-size: 0.9rem;
+        }
+
+        .rules {
+            text-align: left;
+            margin-bottom: 32px;
+        }
+
+        .rule {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--color-neutral-100);
+            color: var(--color-neutral-700);
+            font-size: 0.85rem;
+        }
+
+        .rule:last-child { border-bottom: none; }
+
+        .rule-icon {
+            width: 24px;
+            height: 24px;
+            background: var(--color-success);
+            color: white;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.7rem;
+            flex-shrink: 0;
+        }
+
+        .rule-icon.guest-a { background: var(--color-guest-a); }
+        .rule-icon.guest-b { background: var(--color-guest-b); }
+        .rule-icon.warn { background: var(--color-warning); color: white; }
+
+        .btn {
+            padding: 16px 48px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            background: var(--color-primary);
+            color: white;
+            transition: all 0.15s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(49, 19, 93, 0.3);
+            background: var(--color-primary-light);
+        }
+
+        /* End modal */
+        .end-stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin: 32px 0;
+        }
+
+        .end-stat-val {
+            font-size: 3rem;
+            font-weight: 300;
+            color: var(--color-primary);
+        }
+
+        .end-stat-lbl {
+            font-size: 0.65rem;
+            color: var(--color-neutral-500);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        /* Instructions hint */
+        .hint-bar {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--color-white);
+            padding: 10px 20px;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            color: var(--color-neutral-600);
+            border: 1px solid var(--color-neutral-200);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .hint-bar kbd {
+            background: var(--color-accent-light);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: inherit;
+            margin: 0 4px;
+            color: var(--color-primary);
+            font-weight: 500;
+        }
+
+        /* Overlap warning toast */
+        .overlap-toast {
+            position: fixed;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: var(--color-error);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 60;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 20px rgba(139, 64, 73, 0.3);
+        }
+
+        .overlap-toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Inefficient toast */
+        .inefficient-toast {
+            position: fixed;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: var(--color-warning);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 60;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 20px rgba(184, 134, 11, 0.3);
+        }
+
+        .inefficient-toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Perfect Match Modal */
+        .match-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(49, 19, 93, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 80;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .match-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .match-modal {
+            background: var(--color-white);
+            border-radius: 20px;
+            padding: 40px 48px;
+            text-align: center;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.25);
+            transform: scale(0.8);
+            transition: transform 0.3s ease;
+        }
+
+        .match-overlay.show .match-modal {
+            transform: scale(1);
+        }
+
+        .match-title {
+            font-size: 1.5rem;
+            font-weight: 300;
+            color: var(--color-success);
+            margin-bottom: 32px;
+            letter-spacing: -0.02em;
+        }
+
+        .match-guests {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+        }
+
+        .match-guest {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .match-avatar {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--color-neutral-200);
+        }
+
+        .match-guest-a .match-avatar {
+            border-color: var(--color-guest-a);
+            box-shadow: 0 0 20px rgba(49, 19, 93, 0.25);
+        }
+
+        .match-guest-b .match-avatar {
+            border-color: var(--color-guest-b);
+            box-shadow: 0 0 20px rgba(74, 124, 89, 0.25);
+        }
+
+        .match-name {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--color-neutral-900);
+        }
+
+        .match-nights {
+            font-size: 0.7rem;
+            color: var(--color-neutral-500);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .match-guest-a .match-nights {
+            color: var(--color-guest-a);
+        }
+
+        .match-guest-b .match-nights {
+            color: var(--color-guest-b);
+        }
+
+        .match-symbol {
+            font-size: 2.5rem;
+            color: var(--color-primary);
+            font-weight: 300;
+            animation: symbolPulse 1s ease-in-out infinite;
+        }
+
+        @keyframes symbolPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+        }
+
+        .match-subtitle {
+            margin-top: 24px;
+            font-size: 0.8rem;
+            color: var(--color-neutral-500);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            body {
+                padding: 12px;
+            }
+
+            .hud {
+                padding: 12px 16px;
+            }
+
+            .timer-num {
+                font-size: 1.8rem;
+            }
+
+            .score-display {
+                gap: 16px;
+            }
+
+            .score-num {
+                font-size: 1.25rem;
+            }
+
+            .game {
+                padding-top: 70px;
+                gap: 16px;
+            }
+
+            .listing-card {
+                padding: 16px;
+            }
+
+            .listing-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .listing-photo {
+                width: 48px;
+                height: 48px;
+            }
+
+            .listing-name {
+                font-size: 1rem;
+            }
+
+            .day-header {
+                font-size: 0.55rem;
+            }
+
+            .day-slot {
+                font-size: 0.6rem;
+            }
+
+            .day-slot .guest-initial {
+                width: 20px;
+                height: 20px;
+                font-size: 0.55rem;
+            }
+
+            /* Single column guest grid on mobile */
+            .guest-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .guest-card {
+                padding: 14px;
+            }
+
+            .guest-avatar {
+                width: 40px;
+                height: 40px;
+            }
+
+            .guest-name {
+                font-size: 0.9rem;
+            }
+
+            .guest-job {
+                font-size: 0.7rem;
+            }
+
+            .guest-nights {
+                font-size: 0.65rem;
+                padding: 3px 8px;
+            }
+
+            .sched-dot {
+                height: 24px;
+                font-size: 0.6rem;
+            }
+
+            .hint-bar {
+                display: none; /* Hide keyboard hints on mobile */
+            }
+
+            .modal {
+                padding: 32px 24px;
+                margin: 16px;
+                max-width: calc(100% - 32px);
+            }
+
+            .modal h1 {
+                font-size: 1.5rem;
+            }
+
+            .rule {
+                font-size: 0.8rem;
+            }
+
+            .btn {
+                padding: 14px 32px;
+                font-size: 0.85rem;
+            }
+
+            .end-stats {
+                gap: 24px;
+            }
+
+            .end-stat-val {
+                font-size: 2.25rem;
+            }
+
+            .match-modal {
+                padding: 28px 24px;
+                margin: 16px;
+            }
+
+            .match-title {
+                font-size: 1.2rem;
+                margin-bottom: 20px;
+            }
+
+            .match-avatar {
+                width: 56px;
+                height: 56px;
+            }
+
+            .match-guests {
+                gap: 16px;
+            }
+
+            .match-symbol {
+                font-size: 1.8rem;
+            }
+
+            .match-name {
+                font-size: 0.85rem;
+            }
+
+            .chain-indicator {
+                top: 65px;
+                font-size: 0.65rem;
+                padding: 4px 14px;
+            }
+
+            .overlap-toast,
+            .inefficient-toast {
+                top: 85px;
+                font-size: 0.75rem;
+                padding: 10px 18px;
+            }
+        }
+
+        /* Extra small devices */
+        @media (max-width: 400px) {
+            .hud {
+                padding: 10px 12px;
+            }
+
+            .timer-num {
+                font-size: 1.5rem;
+            }
+
+            .score-num {
+                font-size: 1rem;
+            }
+
+            .score-lbl {
+                font-size: 0.5rem;
+            }
+
+            .listing-card {
+                padding: 12px;
+            }
+
+            .listing-photo {
+                width: 40px;
+                height: 40px;
+            }
+
+            .listing-name {
+                font-size: 0.9rem;
+            }
+
+            .week-grid {
+                gap: 4px;
+            }
+
+            .day-slot {
+                font-size: 0.5rem;
+            }
+
+            .guest-card {
+                padding: 12px;
+            }
+
+            .guest-info {
+                gap: 10px;
+            }
+
+            .guest-avatar {
+                width: 36px;
+                height: 36px;
+            }
+
+            .sched-dot {
+                height: 22px;
+                font-size: 0.55rem;
+                border-radius: 4px;
+            }
+
+            .modal h1 {
+                font-size: 1.3rem;
+            }
+
+            .rules {
+                margin-bottom: 24px;
+            }
+
+            .rule {
+                font-size: 0.75rem;
+                padding: 8px 0;
+            }
+
+            .rule-icon {
+                width: 20px;
+                height: 20px;
+                font-size: 0.6rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- HUD -->
+    <div class="hud">
+        <div class="timer-display">
+            <span class="timer-num" id="timer">45</span>
+            <span class="timer-sec">sec</span>
+        </div>
+        <div class="score-display">
+            <div class="score-item">
+                <div class="score-num" id="matches">0</div>
+                <div class="score-lbl">Pairs</div>
+            </div>
+            <div class="score-item">
+                <div class="score-num" id="nights">0</div>
+                <div class="score-lbl">Nights</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="chain-indicator" id="chain">Streak x2</div>
+
+    <!-- Main Game -->
+    <div class="game">
+        <div class="listing-card">
+            <div class="listing-header">
+                <div class="listing-info">
+                    <img class="listing-photo" id="listingPhoto" src="" alt="Listing photo">
+                    <div class="listing-details">
+                        <span class="listing-name" id="listingName">Harlem Room</span>
+                        <span class="listing-location" id="listingLocation">New York, NY</span>
+                    </div>
+                </div>
+                <span class="listing-tag" id="listingTag">Match #1</span>
+            </div>
+            <div class="week-grid" id="weekGrid">
+                    <div class="day-header">Mon</div>
+                    <div class="day-header">Tue</div>
+                    <div class="day-header">Wed</div>
+                    <div class="day-header">Thu</div>
+                    <div class="day-header">Fri</div>
+                    <div class="day-header">Sat</div>
+                    <div class="day-header">Sun</div>
+            </div>
+            <div class="listing-progress">
+                    <span class="progress-lbl" id="progressLbl">Select 2 roommates</span>
+                    <div class="progress-track">
+                        <div class="progress-fill-a" id="progressFillA"></div>
+                        <div class="progress-fill-b" id="progressFillB"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="guests-area">
+            <div class="guests-header">
+                <span class="guests-title">Find Compatible Roommates</span>
+                <span class="guests-hint" id="guestHint">Select 2 guests that fill all 7 days</span>
+            </div>
+            <div class="guest-grid" id="guestGrid"></div>
+        </div>
+    </div>
+
+    <div class="hint-bar">
+        <kbd>Click</kbd> to select · Schedules must cover all 7 days · No overlaps allowed
+    </div>
+
+    <!-- Effects -->
+    <div class="penalty-flash" id="penaltyFlash"></div>
+    <div class="penalty-text" id="penaltyText">-5</div>
+    <div class="overlap-toast" id="overlapToast">Schedules overlap! Try a different pair</div>
+    <div class="inefficient-toast" id="inefficientToast">Not efficient! Days are missing</div>
+
+    <!-- Perfect Match Modal -->
+    <div class="match-overlay" id="matchOverlay">
+        <div class="match-modal">
+            <div class="match-title">Perfect Match!</div>
+            <div class="match-guests">
+                <div class="match-guest match-guest-a">
+                    <img class="match-avatar" id="matchAvatarA" src="" alt="">
+                    <div class="match-name" id="matchNameA"></div>
+                    <div class="match-nights" id="matchNightsA"></div>
+                </div>
+                <div class="match-symbol">⇌</div>
+                <div class="match-guest match-guest-b">
+                    <img class="match-avatar" id="matchAvatarB" src="" alt="">
+                    <div class="match-name" id="matchNameB"></div>
+                    <div class="match-nights" id="matchNightsB"></div>
+                </div>
+            </div>
+            <div class="match-subtitle">7 nights covered</div>
+        </div>
+    </div>
+
+    <!-- Start Overlay -->
+    <div class="overlay active" id="startOverlay">
+        <div class="modal">
+            <h1>Split<span class="brand-symbol">⇌</span>Lease</h1>
+            <p>Alternating Roommate Challenge</p>
+            <div class="rules">
+                <div class="rule">
+                    <span class="rule-icon guest-a">1</span>
+                    <span>Select the first roommate</span>
+                </div>
+                <div class="rule">
+                    <span class="rule-icon guest-b">2</span>
+                    <span>Select a compatible second roommate</span>
+                </div>
+                <div class="rule">
+                    <span class="rule-icon">✓</span>
+                    <span>Together they must fill all 7 days with no overlap</span>
+                </div>
+                <div class="rule">
+                    <span class="rule-icon warn">!</span>
+                    <span>Wrong pair = -5 seconds penalty</span>
+                </div>
+            </div>
+            <button class="btn" onclick="startGame()">Start Matching</button>
+        </div>
+    </div>
+
+    <!-- End Overlay -->
+    <div class="overlay" id="endOverlay">
+        <div class="modal">
+            <h1>Time's <span>Up!</span></h1>
+            <p>Great pairing skills</p>
+            <div class="end-stats">
+                <div>
+                    <div class="end-stat-val" id="finalMatches">0</div>
+                    <div class="end-stat-lbl">Pairs</div>
+                </div>
+                <div>
+                    <div class="end-stat-val" id="finalNights">0</div>
+                    <div class="end-stat-lbl">Nights</div>
+                </div>
+            </div>
+            <button class="btn" onclick="restartGame()">Try Again</button>
+        </div>
+    </div>
+
+    <script>
+        const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+        const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+        // Realistic guest photos from randomuser.me
+        const GUESTS = [
+            { name: "Tyler W.", job: "Director", img: "https://randomuser.me/api/portraits/men/32.jpg" },
+            { name: "Vince C.", job: "Engineer", img: "https://randomuser.me/api/portraits/men/44.jpg" },
+            { name: "Walaa M.", job: "Consultant", img: "https://randomuser.me/api/portraits/women/65.jpg" },
+            { name: "Steve Z.", job: "PM", img: "https://randomuser.me/api/portraits/men/52.jpg" },
+            { name: "Valerie F.", job: "Social Work", img: "https://randomuser.me/api/portraits/women/28.jpg" },
+            { name: "Sriram K.", job: "Finance", img: "https://randomuser.me/api/portraits/men/67.jpg" },
+            { name: "Tamycka D.", job: "Marketing", img: "https://randomuser.me/api/portraits/women/42.jpg" },
+            { name: "Theodore M.", job: "Creative", img: "https://randomuser.me/api/portraits/men/22.jpg" },
+            { name: "Susan B.", job: "Healthcare", img: "https://randomuser.me/api/portraits/women/55.jpg" },
+            { name: "William R.", job: "Legal", img: "https://randomuser.me/api/portraits/men/75.jpg" },
+            { name: "Maria G.", job: "Designer", img: "https://randomuser.me/api/portraits/women/33.jpg" },
+            { name: "James L.", job: "Analyst", img: "https://randomuser.me/api/portraits/men/18.jpg" },
+            { name: "Elena P.", job: "Writer", img: "https://randomuser.me/api/portraits/women/17.jpg" },
+            { name: "David K.", job: "Developer", img: "https://randomuser.me/api/portraits/men/36.jpg" },
+            { name: "Rachel N.", job: "Teacher", img: "https://randomuser.me/api/portraits/women/44.jpg" },
+            { name: "Michael S.", job: "Sales", img: "https://randomuser.me/api/portraits/men/29.jpg" },
+            { name: "Aisha K.", job: "Architect", img: "https://randomuser.me/api/portraits/women/68.jpg" },
+            { name: "Carlos R.", job: "Chef", img: "https://randomuser.me/api/portraits/men/56.jpg" },
+            { name: "Nina P.", job: "Nurse", img: "https://randomuser.me/api/portraits/women/22.jpg" },
+            { name: "Derek M.", job: "Lawyer", img: "https://randomuser.me/api/portraits/men/41.jpg" },
+        ];
+
+        // Listings with photos from picsum (interior/architecture photos)
+        const LISTINGS = [
+            { name: "Harlem Room", location: "Harlem, New York", img: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&h=400&fit=crop" },
+            { name: "Chelsea Studio", location: "Chelsea, New York", img: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=400&fit=crop" },
+            { name: "Brooklyn Apt", location: "Brooklyn, New York", img: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=400&fit=crop" },
+            { name: "UWS Suite", location: "Upper West Side, NY", img: "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&h=400&fit=crop" },
+            { name: "LES Loft", location: "Lower East Side, NY", img: "https://images.unsplash.com/photo-1536376072261-38c75010e6c9?w=800&h=400&fit=crop" },
+            { name: "Tribeca Space", location: "Tribeca, New York", img: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&h=400&fit=crop" },
+            { name: "SoHo Flat", location: "SoHo, New York", img: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&h=400&fit=crop" },
+            { name: "Murray Hill", location: "Murray Hill, NY", img: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&h=400&fit=crop" },
+            { name: "Astoria Place", location: "Astoria, Queens", img: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&h=400&fit=crop" },
+            { name: "DUMBO Loft", location: "DUMBO, Brooklyn", img: "https://images.unsplash.com/photo-1600573472550-8090b5e0745e?w=800&h=400&fit=crop" },
+            { name: "Gramercy Suite", location: "Gramercy, New York", img: "https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800&h=400&fit=crop" },
+            { name: "NoHo Studio", location: "NoHo, New York", img: "https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=800&h=400&fit=crop" },
+        ];
+
+        let state = {
+            time: 45,
+            matches: 0,
+            nights: 0,
+            matchNum: 1,
+            board: [],
+            guests: [],
+            selectedA: null,
+            selectedB: null,
+            chain: 0,
+            interval: null,
+            currentListing: null
+        };
+
+        // Generate a continuous schedule starting at 'start' with 'length' days
+        function makeContiguousSchedule(start, length) {
+            const sched = [];
+            for (let i = 0; i < length; i++) {
+                sched.push(start + i);
+            }
+            return sched;
+        }
+
+        // Generate a puzzle with one correct pair and wrong guests
+        function generatePuzzle() {
+            // Generate two complementary CONTINUOUS schedules that together fill all 7 days
+            // Each guest must have at least 3 nights, so split point must be 3 or 4
+            const splitPoint = 3 + Math.floor(Math.random() * 2); // 3 or 4
+
+            // Guest A: days 0 to splitPoint-1 (continuous)
+            // Guest B: days splitPoint to 6 (continuous)
+            const scheduleA = makeContiguousSchedule(0, splitPoint);
+            const scheduleB = makeContiguousSchedule(splitPoint, 7 - splitPoint);
+
+            // Shuffle available guest data
+            const shuffledGuests = [...GUESTS].sort(() => Math.random() - 0.5);
+
+            // Create the correct pair
+            const correctA = {
+                ...shuffledGuests[0],
+                id: 0,
+                schedule: scheduleA,
+                isCorrectPair: true
+            };
+
+            const correctB = {
+                ...shuffledGuests[1],
+                id: 1,
+                schedule: scheduleB,
+                isCorrectPair: true
+            };
+
+            // Create wrong guests (4 more guests with continuous but overlapping/incomplete schedules)
+            const wrongGuests = [];
+            for (let i = 0; i < 4; i++) {
+                const wrongSched = generateWrongSchedule(splitPoint);
+                wrongGuests.push({
+                    ...shuffledGuests[2 + i],
+                    id: 2 + i,
+                    schedule: wrongSched,
+                    isCorrectPair: false
+                });
+            }
+
+            // Combine and shuffle all guests
+            const allGuests = [correctA, correctB, ...wrongGuests];
+            allGuests.sort(() => Math.random() - 0.5);
+
+            // Reassign IDs after shuffle
+            allGuests.forEach((g, i) => g.id = i);
+
+            // Pick a random listing
+            const listing = LISTINGS[Math.floor(Math.random() * LISTINGS.length)];
+
+            return {
+                listing: listing,
+                guests: allGuests,
+                correctPair: [correctA, correctB]
+            };
+        }
+
+        // Generate a CONTINUOUS schedule that won't work perfectly with the correct pair
+        function generateWrongSchedule(splitPoint) {
+            const wrongOptions = [];
+
+            // Generate all possible 3-night and 4-night continuous blocks that cross the split
+            for (let len = 3; len <= 4; len++) {
+                for (let start = 0; start <= 7 - len; start++) {
+                    const end = start + len - 1;
+                    const crossesSplit = start < splitPoint && end >= splitPoint;
+                    if (crossesSplit) {
+                        wrongOptions.push(makeContiguousSchedule(start, len));
+                    }
+                }
+            }
+
+            // Also add some that don't cover enough days
+            if (splitPoint === 4) {
+                wrongOptions.push(makeContiguousSchedule(0, 3));
+            }
+            if (splitPoint === 3) {
+                wrongOptions.push(makeContiguousSchedule(4, 3));
+            }
+
+            return wrongOptions[Math.floor(Math.random() * wrongOptions.length)];
+        }
+
+        function startGame() {
+            document.getElementById('startOverlay').classList.remove('active');
+            init();
+        }
+
+        function restartGame() {
+            state.matches = 0;
+            state.nights = 0;
+            state.matchNum = 1;
+            state.chain = 0;
+            document.getElementById('endOverlay').classList.remove('active');
+            init();
+        }
+
+        function init() {
+            clearInterval(state.interval);
+            state.time = 45;
+            state.selectedA = null;
+            state.selectedB = null;
+            loadPuzzle();
+            render();
+            startTimer();
+        }
+
+        function startTimer() {
+            updateTimer();
+            state.interval = setInterval(() => {
+                state.time--;
+                updateTimer();
+                if (state.time <= 0) {
+                    clearInterval(state.interval);
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        function updateTimer() {
+            const el = document.getElementById('timer');
+            el.textContent = Math.max(0, state.time);
+            el.classList.remove('warning', 'danger');
+            if (state.time <= 5) el.classList.add('danger');
+            else if (state.time <= 10) el.classList.add('warning');
+        }
+
+        function endGame() {
+            document.getElementById('finalMatches').textContent = state.matches;
+            document.getElementById('finalNights').textContent = state.nights;
+            document.getElementById('endOverlay').classList.add('active');
+        }
+
+        function loadPuzzle() {
+            const puzzle = generatePuzzle();
+            state.currentListing = puzzle.listing;
+            state.board = Array(7).fill(null);
+            state.guests = puzzle.guests;
+            state.selectedA = null;
+            state.selectedB = null;
+        }
+
+        function render() {
+            renderCalendar();
+            renderGuests();
+            updateScores();
+            updateProgress();
+            updateChain();
+        }
+
+        function renderCalendar() {
+            const grid = document.getElementById('weekGrid');
+            grid.innerHTML = DAY_NAMES.map(d => `<div class="day-header">${d}</div>`).join('');
+
+            for (let i = 0; i < 7; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'day-slot open';
+                slot.dataset.day = i;
+
+                if (state.board[i] === 'a') {
+                    slot.classList.remove('open');
+                    slot.classList.add('booked-a');
+                    const guest = state.selectedA;
+                    slot.innerHTML = `<div class="guest-initial">${guest.name.charAt(0)}</div>`;
+                } else if (state.board[i] === 'b') {
+                    slot.classList.remove('open');
+                    slot.classList.add('booked-b');
+                    const guest = state.selectedB;
+                    slot.innerHTML = `<div class="guest-initial">${guest.name.charAt(0)}</div>`;
+                } else {
+                    slot.innerHTML = DAY_NAMES[i].charAt(0);
+                }
+
+                grid.appendChild(slot);
+            }
+
+            // Update listing info
+            document.getElementById('listingPhoto').src = state.currentListing.img;
+            document.getElementById('listingName').textContent = state.currentListing.name;
+            document.getElementById('listingLocation').textContent = state.currentListing.location;
+            document.getElementById('listingTag').textContent = `Match #${state.matchNum}`;
+        }
+
+        function renderGuests() {
+            const grid = document.getElementById('guestGrid');
+            grid.innerHTML = '';
+
+            state.guests.forEach(g => {
+                const nightCount = g.schedule.length;
+                const isSelectedA = state.selectedA && state.selectedA.id === g.id;
+                const isSelectedB = state.selectedB && state.selectedB.id === g.id;
+
+                const card = document.createElement('div');
+                card.className = 'guest-card';
+                if (isSelectedA) card.classList.add('selected-a');
+                if (isSelectedB) card.classList.add('selected-b');
+                card.dataset.id = g.id;
+
+                card.innerHTML = `
+                    <div class="selection-badge">${isSelectedA ? '1' : '2'}</div>
+                    <div class="guest-top">
+                        <div class="guest-info">
+                            <img class="guest-avatar" src="${g.img}" alt="${g.name}" loading="lazy">
+                            <div class="guest-details">
+                                <div class="guest-name">${g.name}</div>
+                                <div class="guest-job">${g.job}</div>
+                            </div>
+                        </div>
+                        <span class="guest-nights">${nightCount} nights</span>
+                    </div>
+                    <div class="guest-sched">
+                        ${DAYS.map((d, i) => `<div class="sched-dot ${g.schedule.includes(i) ? 'on' : 'off'}">${d}</div>`).join('')}
+                    </div>
+                `;
+
+                card.addEventListener('click', () => handleGuestClick(g, card));
+
+                card.addEventListener('mouseenter', () => {
+                    if (!isSelectedA && !isSelectedB) {
+                        highlightDays(g.schedule, state.selectedA ? 'b' : 'a');
+                    }
+                });
+                card.addEventListener('mouseleave', () => {
+                    clearHighlights();
+                });
+
+                grid.appendChild(card);
+            });
+
+            if (!state.selectedA) {
+                document.getElementById('guestHint').textContent = 'Select first roommate';
+            } else if (!state.selectedB) {
+                document.getElementById('guestHint').textContent = 'Select second roommate';
+            } else {
+                document.getElementById('guestHint').textContent = 'Checking match...';
+            }
+        }
+
+        function highlightDays(schedule, type) {
+            schedule.forEach(d => {
+                const slot = document.querySelector(`[data-day="${d}"]`);
+                if (slot && slot.classList.contains('open')) {
+                    slot.classList.add(`highlight-${type}`);
+                } else if (slot) {
+                    slot.classList.add('highlight-error');
+                }
+            });
+        }
+
+        function clearHighlights() {
+            document.querySelectorAll('.day-slot').forEach(slot => {
+                slot.classList.remove('highlight-a', 'highlight-b', 'highlight-error');
+            });
+        }
+
+        function handleGuestClick(guest, card) {
+            if (state.selectedA && state.selectedA.id === guest.id) {
+                state.selectedA = null;
+                state.board = Array(7).fill(null);
+                render();
+                return;
+            }
+            if (state.selectedB && state.selectedB.id === guest.id) {
+                state.selectedB = null;
+                state.board = Array(7).fill(null);
+                if (state.selectedA) {
+                    state.selectedA.schedule.forEach(d => state.board[d] = 'a');
+                }
+                render();
+                return;
+            }
+
+            if (!state.selectedA) {
+                state.selectedA = guest;
+                guest.schedule.forEach(d => state.board[d] = 'a');
+                render();
+            } else if (!state.selectedB) {
+                state.selectedB = guest;
+
+                const overlap = guest.schedule.some(d => state.board[d] === 'a');
+                if (overlap) {
+                    showOverlapToast();
+                    showPenalty();
+                    state.time -= 5;
+                    updateTimer();
+                    state.selectedB = null;
+                    state.chain = 0;
+
+                    if (state.time <= 0) {
+                        clearInterval(state.interval);
+                        endGame();
+                    }
+
+                    card.classList.add('wrong');
+                    setTimeout(() => card.classList.remove('wrong'), 400);
+                    return;
+                }
+
+                guest.schedule.forEach(d => state.board[d] = 'b');
+                render();
+
+                setTimeout(() => checkComplete(), 100);
+            }
+        }
+
+        function checkComplete() {
+            const allFilled = state.board.every(d => d !== null);
+
+            if (allFilled) {
+                state.matches++;
+                state.nights += 7;
+                state.chain++;
+                state.matchNum++;
+                showSuccess();
+
+                setTimeout(() => {
+                    loadPuzzle();
+                    render();
+                }, 1600);
+            } else {
+                showInefficientToast();
+                showPenalty();
+                state.time -= 5;
+                state.chain = 0;
+                updateTimer();
+
+                if (state.time <= 0) {
+                    clearInterval(state.interval);
+                    endGame();
+                    return;
+                }
+
+                state.selectedA = null;
+                state.selectedB = null;
+                state.board = Array(7).fill(null);
+                render();
+            }
+        }
+
+        function showInefficientToast() {
+            const toast = document.getElementById('inefficientToast');
+            toast.classList.remove('show');
+            void toast.offsetWidth;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+
+        function showOverlapToast() {
+            const toast = document.getElementById('overlapToast');
+            toast.classList.remove('show');
+            void toast.offsetWidth;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+
+        function showPenalty() {
+            const flash = document.getElementById('penaltyFlash');
+            const text = document.getElementById('penaltyText');
+
+            flash.classList.remove('show');
+            text.classList.remove('show');
+            void flash.offsetWidth;
+
+            flash.classList.add('show');
+            text.classList.add('show');
+        }
+
+        function showSuccess() {
+            const guestA = state.selectedA;
+            const guestB = state.selectedB;
+
+            document.getElementById('matchAvatarA').src = guestA.img;
+            document.getElementById('matchNameA').textContent = guestA.name;
+            document.getElementById('matchNightsA').textContent = `${guestA.schedule.length} nights`;
+
+            document.getElementById('matchAvatarB').src = guestB.img;
+            document.getElementById('matchNameB').textContent = guestB.name;
+            document.getElementById('matchNightsB').textContent = `${guestB.schedule.length} nights`;
+
+            const overlay = document.getElementById('matchOverlay');
+            overlay.classList.add('show');
+
+            setTimeout(() => {
+                overlay.classList.remove('show');
+            }, 1500);
+        }
+
+        function updateScores() {
+            document.getElementById('matches').textContent = state.matches;
+            document.getElementById('nights').textContent = state.nights;
+        }
+
+        function updateProgress() {
+            const filledA = state.board.filter(d => d === 'a').length;
+            const filledB = state.board.filter(d => d === 'b').length;
+
+            document.getElementById('progressFillA').style.width = `${(filledA/7)*100}%`;
+            document.getElementById('progressFillB').style.width = `${(filledB/7)*100}%`;
+
+            const total = filledA + filledB;
+            if (total === 0) {
+                document.getElementById('progressLbl').textContent = 'Select 2 roommates';
+            } else {
+                document.getElementById('progressLbl').textContent = `${total}/7 nights covered`;
+            }
+        }
+
+        function updateChain() {
+            const el = document.getElementById('chain');
+            if (state.chain >= 2) {
+                el.textContent = `Streak x${state.chain}`;
+                el.classList.add('show');
+            } else {
+                el.classList.remove('show');
+            }
+        }
+    </script>
+</body>
+</html>

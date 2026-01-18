@@ -1,0 +1,755 @@
+/**
+ * SignUpLoginModal CSS Module
+ *
+ * Extracted from inline styles for better performance and maintainability.
+ * CSS modules are parsed at build time and don't cause re-renders like inline styles.
+ */
+
+/* ============================================================================
+   Modal & Overlay
+   ============================================================================ */
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 10000;
+}
+
+.modal {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 400px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  position: relative;
+}
+
+.closeBtn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  transition: color 0.2s ease;
+  z-index: 10;
+}
+
+.closeBtn:hover {
+  color: #6b7280;
+}
+
+/* ============================================================================
+   Logo
+   ============================================================================ */
+
+.logoContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.logo {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
+/* ============================================================================
+   Header
+   ============================================================================ */
+
+.header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 8px 0;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.subtitleAccent {
+  color: #6366F1;
+  font-weight: 600;
+}
+
+/* ============================================================================
+   User Type Cards
+   ============================================================================ */
+
+.userTypeCard {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background-color: #f9fafb;
+}
+
+.userTypeCard:hover,
+.userTypeCardSelected {
+  border-color: #6366F1;
+  background-color: #EEF2FF;
+  box-shadow: 0 8px 30px rgba(99, 102, 241, 0.15);
+}
+
+.userTypeIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  background-color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6366F1;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.userTypeContent {
+  flex: 1;
+}
+
+.userTypeTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 2px;
+}
+
+.userTypeDesc {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* ============================================================================
+   OAuth Buttons
+   ============================================================================ */
+
+.oauthButtonsRow {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.linkedinBtn {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid #0a66c2;
+  background-color: #0a66c2;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: inherit;
+}
+
+.linkedinBtn:hover:not(:disabled) {
+  background-color: #004182;
+  box-shadow: 0 4px 12px rgba(10, 102, 194, 0.25);
+}
+
+.linkedinBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.linkedinIcon {
+  width: 20px;
+  height: 20px;
+  background-color: white;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #0a66c2;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.linkedinText {
+  text-align: left;
+}
+
+.linkedinPrimary {
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+}
+
+.linkedinSecondary {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  display: block;
+  margin-top: 2px;
+}
+
+.googleBtn {
+  flex: 1;
+  padding: 12px 16px;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1a1a1a;
+  font-family: inherit;
+}
+
+.googleBtn:hover:not(:disabled) {
+  background-color: #f3f4f6;
+  border-color: #d1d5db;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.googleBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* ============================================================================
+   LinkedIn Connected State
+   ============================================================================ */
+
+.linkedinConnected {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid #10B981;
+  background-color: rgba(16, 185, 129, 0.08);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.linkedinConnectedCheck {
+  width: 32px;
+  height: 32px;
+  background-color: #10B981;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.linkedinConnectedInfo {
+  flex: 1;
+}
+
+.linkedinConnectedName {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.linkedinConnectedEmail {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.linkedinConnectedChange {
+  font-size: 13px;
+  color: #6366F1;
+  cursor: pointer;
+  text-decoration: none;
+  font-weight: 500;
+  background: none;
+  border: none;
+  transition: opacity 0.2s ease;
+  font-family: inherit;
+}
+
+.linkedinConnectedChange:hover {
+  opacity: 0.8;
+}
+
+/* ============================================================================
+   Divider
+   ============================================================================ */
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 20px 0;
+}
+
+.dividerLine {
+  flex: 1;
+  height: 1px;
+  background-color: #e5e7eb;
+}
+
+.dividerText {
+  font-size: 13px;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+/* ============================================================================
+   Form Elements
+   ============================================================================ */
+
+.formRow {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.formGroup {
+  flex: 1;
+  margin-bottom: 16px;
+}
+
+.formGroupInRow {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #9ca3af;
+  margin-bottom: 6px;
+}
+
+.prefillBadge {
+  font-size: 11px;
+  color: #10B981;
+  margin-left: 6px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #1a1a1a;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+  outline: none;
+  box-sizing: border-box;
+  background-color: #f9fafb;
+  font-family: inherit;
+}
+
+.input:focus {
+  border-color: #6366F1;
+  background-color: white;
+}
+
+.inputError {
+  border-color: #dc2626;
+}
+
+.inputSuccess {
+  border-color: #10B981;
+}
+
+.inputPrefilled {
+  background-color: #f9fafb;
+  border-color: #e5e7eb;
+}
+
+.helperText {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
+/* ============================================================================
+   Select
+   ============================================================================ */
+
+.select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #1a1a1a;
+  outline: none;
+  box-sizing: border-box;
+  background-color: #f9fafb;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+  font-family: inherit;
+}
+
+.select:focus {
+  border-color: #6366F1;
+}
+
+/* ============================================================================
+   Password Field
+   ============================================================================ */
+
+.passwordWrapper {
+  position: relative;
+}
+
+.inputWithIcon {
+  padding-right: 44px;
+}
+
+.togglePasswordBtn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  transition: color 0.2s ease;
+}
+
+.togglePasswordBtn:hover {
+  color: #4b5563;
+}
+
+/* ============================================================================
+   Password Requirements
+   ============================================================================ */
+
+.passwordRequirements {
+  margin-top: 12px;
+  padding: 12px;
+  background-color: #f9fafb;
+  border-radius: 10px;
+}
+
+.requirement {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 6px;
+}
+
+.requirementLast {
+  margin-bottom: 0;
+}
+
+.requirementMet {
+  color: #10B981;
+}
+
+.requirementIcon {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ============================================================================
+   Buttons
+   ============================================================================ */
+
+.buttonPrimary {
+  width: 100%;
+  padding: 12px;
+  background-color: #6366F1;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+}
+
+.buttonPrimary:hover:not(:disabled) {
+  background-color: #4F46E5;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+}
+
+.buttonDisabled {
+  background-color: #e5e7eb;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.buttonSecondary {
+  width: 100%;
+  padding: 12px;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1a1a1a;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.buttonSecondary:hover:not(:disabled) {
+  background-color: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+/* ============================================================================
+   Back Button
+   ============================================================================ */
+
+.backBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  background: none;
+  border: none;
+  color: #6366F1;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 12px;
+  margin-top: 8px;
+  font-family: inherit;
+  transition: opacity 0.2s ease;
+}
+
+.backBtn:hover {
+  opacity: 0.8;
+}
+
+/* ============================================================================
+   Footer Link
+   ============================================================================ */
+
+.footerLink {
+  text-align: center;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.link {
+  color: #6366F1;
+  text-decoration: none;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-size: inherit;
+  font-weight: 500;
+  font-family: inherit;
+  transition: opacity 0.2s ease;
+}
+
+.link:hover {
+  opacity: 0.8;
+}
+
+.linkText {
+  text-align: center;
+  margin-top: 1rem;
+}
+
+/* ============================================================================
+   Legal Text
+   ============================================================================ */
+
+.termsText {
+  font-size: 12px;
+  color: #6b7280;
+  text-align: center;
+  margin-top: 16px;
+  line-height: 1.5;
+}
+
+.termsText a {
+  color: #6366F1;
+}
+
+/* ============================================================================
+   Success State
+   ============================================================================ */
+
+.successIcon {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(99, 102, 241, 0.1) 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  color: #10B981;
+}
+
+/* ============================================================================
+   Error Box
+   ============================================================================ */
+
+.errorBox {
+  padding: 12px;
+  background-color: #fee2e2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+
+.errorText {
+  font-size: 13px;
+  color: #dc2626;
+  margin: 0;
+}
+
+.inlineError {
+  font-size: 12px;
+  color: #dc2626;
+  margin-top: 6px;
+}
+
+/* ============================================================================
+   Date Inputs (Birthday)
+   ============================================================================ */
+
+.dateInputsRow {
+  display: flex;
+  gap: 8px;
+}
+
+.dateSelect {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 14px;
+  outline: none;
+  background-color: #f9fafb;
+  cursor: pointer;
+  font-family: inherit;
+  color: #1a1a1a;
+}
+
+.dateSelect:focus {
+  border-color: #6366F1;
+}
+
+/* ============================================================================
+   Section Label
+   ============================================================================ */
+
+.sectionLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: #9ca3af;
+  margin-bottom: 12px;
+}
+
+/* ============================================================================
+   Required Note
+   ============================================================================ */
+
+.requiredNote {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 16px;
+}
+
+/* ============================================================================
+   Header Icon (for confirmation views)
+   ============================================================================ */
+
+.headerIcon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(99, 102, 241, 0.1);
+  color: #6366F1;
+}
+
+.logoImage {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
+/* ============================================================================
+   Animations
+   ============================================================================ */
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

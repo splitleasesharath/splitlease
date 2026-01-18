@@ -8,9 +8,20 @@
   <link rel="icon" type="image/png" href="/assets/images/split-lease-purple-circle.png">
   <link rel="stylesheet" href="/src/styles/main.css">
 
-  <!-- Load environment config FIRST - required for inline scripts -->
+  <!-- Hotjar Tracking Code for split.lease -->
+  <script>
+    (function(h,o,t,j,a,r){
+        h.hj=h.hj||function(){(h.hj.q=h.hj.q||[]).push(arguments)};
+        h._hjSettings={hjid:6581463,hjsv:6};
+        a=o.getElementsByTagName('head')[0];
+        r=o.createElement('script');r.async=1;
+        r.src=t+h._hjSettings.hjid+j+h._hjSettings.hjsv;
+        a.appendChild(r);
+    })(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');
+  </script>
+
+  <!-- Load environment config - required for Google Maps -->
   <script type="module" src="/src/lib/config.js"></script>
-  <script type="module" src="/src/lib/hotjar.js"></script>
 
   <!-- Lottie for atom animation - PORTED FROM ORIGINAL -->
   <script src="https://unpkg.com/lottie-web@5.12.2/build/player/lottie.min.js"></script>
@@ -95,7 +106,7 @@
   </script>
 </head>
 <body>
-  <div id="search-page"></div>
+  <div id="root"></div>
 
   <script type="module" src="/src/search.jsx"></script>
 </body>

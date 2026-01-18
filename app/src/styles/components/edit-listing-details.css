@@ -1,0 +1,881 @@
+/**
+ * Edit Listing Details - Component Styles
+ * Design System for Split Lease Edit Listing Details Modal
+ * Prefixed with 'eld-' to avoid style conflicts
+ */
+
+/* Popup Overlay */
+.eld-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--spacing-xl, 24px);
+  overflow: hidden; /* Prevent overlay from scrolling - only popup body should scroll */
+  z-index: 10000; /* Above header (z-index: 9999) */
+}
+
+/* Popup Container */
+.eld-popup-container {
+  width: 100%;
+  max-width: 720px;
+  max-height: calc(100vh - 48px); /* Constrain height to viewport minus padding */
+  background: white;
+  border-radius: var(--radius-lg, 10px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  animation: eld-slideIn 300ms ease;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Prevent container from overflowing */
+}
+
+@keyframes eld-slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Popup Header */
+.eld-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-lg, 16px);
+  border-bottom: 1px solid var(--color-border, #E5E7EB);
+  flex-shrink: 0; /* Prevent header from shrinking */
+}
+
+.eld-popup-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-primary, #1F2937);
+  margin: 0;
+}
+
+.eld-popup-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm, 6px);
+  cursor: pointer;
+  font-size: 24px;
+  font-weight: 300;
+  color: #6B7280;
+  line-height: 1;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.eld-popup-close:hover {
+  background-color: #F3F4F6;
+  color: #1F2937;
+}
+
+/* Popup Subtitle */
+.eld-popup-subtitle {
+  padding: var(--spacing-sm, 8px) var(--spacing-lg, 16px) var(--spacing-md, 12px);
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text-secondary, #6B7280);
+  background: white;
+  flex-shrink: 0; /* Prevent subtitle from shrinking */
+}
+
+/* Popup Body */
+.eld-popup-body {
+  padding: var(--spacing-lg, 16px);
+  flex: 1; /* Take remaining space in flex container */
+  overflow-y: auto;
+  overscroll-behavior: contain; /* Prevent scroll chaining to parent elements */
+}
+
+/* Form Elements */
+.eld-form-field {
+  margin-bottom: var(--spacing-lg, 16px);
+}
+
+.eld-form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-primary, #1F2937);
+  margin-bottom: var(--spacing-xs, 4px);
+}
+
+.eld-form-input,
+.eld-form-textarea,
+.eld-form-select {
+  width: 100%;
+  padding: var(--spacing-sm, 8px) var(--spacing-md, 12px);
+  border: 1px solid var(--color-border, #E5E7EB);
+  border-radius: var(--radius-sm, 6px);
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--color-text-primary, #1F2937);
+  background-color: white;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.eld-form-input {
+  height: 40px;
+}
+
+.eld-form-textarea {
+  min-height: 120px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.eld-form-input:focus,
+.eld-form-textarea:focus,
+.eld-form-select:focus {
+  outline: none;
+  border-color: var(--color-primary, #4F46E5);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.eld-form-input::placeholder,
+.eld-form-textarea::placeholder {
+  color: var(--color-text-placeholder, #9CA3AF);
+}
+
+.eld-form-helper {
+  font-size: 12px;
+  color: var(--color-text-secondary, #6B7280);
+  margin-top: var(--spacing-xs, 4px);
+}
+
+/* Form Grid */
+.eld-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-md, 12px);
+}
+
+.eld-form-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-md, 12px);
+}
+
+@media (max-width: 640px) {
+  .eld-form-grid,
+  .eld-form-grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Collapsible Section */
+.eld-collapsible-section {
+  border: 1px solid var(--color-border, #E5E7EB);
+  border-radius: var(--radius-md, 8px);
+  margin-bottom: var(--spacing-md, 12px);
+  overflow: hidden;
+}
+
+.eld-collapsible-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md, 12px) var(--spacing-lg, 16px);
+  background-color: var(--color-background-light, #F7F8F9);
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.eld-collapsible-header:hover {
+  background-color: #EBEDEF;
+}
+
+.eld-collapsible-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm, 8px);
+}
+
+.eld-collapsible-header-left .eld-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary, #6B7280);
+}
+
+.eld-collapsible-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary, #1F2937);
+  margin: 0;
+}
+
+.eld-collapsible-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: var(--color-text-secondary, #6B7280);
+  transition: transform 200ms ease;
+}
+
+.eld-collapsible-toggle.expanded {
+  transform: rotate(180deg);
+}
+
+.eld-collapsible-content {
+  padding: var(--spacing-lg, 16px);
+  background-color: white;
+  border-top: 1px solid var(--color-border, #E5E7EB);
+}
+
+.eld-collapsible-content.collapsed {
+  display: none;
+}
+
+/* Button Group */
+.eld-button-group {
+  display: flex;
+  gap: var(--spacing-md, 12px);
+  justify-content: flex-end;
+  padding: var(--spacing-lg, 16px);
+  border-top: 1px solid var(--color-border, #E5E7EB);
+  flex-shrink: 0; /* Prevent button group from shrinking */
+  background: white; /* Ensure background when scrolling */
+}
+
+/* Buttons */
+.eld-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm, 8px);
+  padding: var(--spacing-sm, 8px) var(--spacing-xl, 24px);
+  height: 36px;
+  border-radius: 20px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 200ms ease;
+  border: none;
+}
+
+.eld-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.eld-btn-primary {
+  background-color: var(--color-primary, #321662);
+  color: white;
+}
+
+.eld-btn-primary:hover:not(:disabled) {
+  background-color: #271250;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.eld-btn-secondary {
+  background-color: transparent;
+  color: var(--color-primary, #4F46E5);
+  border: 1px solid var(--color-primary, #4F46E5);
+}
+
+.eld-btn-secondary:hover:not(:disabled) {
+  background-color: rgba(79, 70, 229, 0.05);
+}
+
+/* Checkbox Grid */
+.eld-checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-sm, 8px);
+}
+
+@media (max-width: 768px) {
+  .eld-checkbox-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .eld-checkbox-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.eld-checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm, 8px);
+  padding: var(--spacing-sm, 8px) var(--spacing-md, 12px);
+  background-color: var(--color-background-light, #F7F8F9);
+  border-radius: var(--radius-sm, 6px);
+  cursor: pointer;
+  transition: background-color 150ms ease;
+  font-size: 13px;
+}
+
+.eld-checkbox-item:hover {
+  background-color: #EBEDEF;
+}
+
+.eld-checkbox-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-primary, #321662);
+  cursor: pointer;
+}
+
+.eld-checkbox-item span {
+  flex: 1;
+  color: var(--color-text-primary, #1F2937);
+}
+
+/* Toast Notifications */
+.eld-toast {
+  position: fixed;
+  top: var(--spacing-xl, 24px);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 200px;
+  max-width: 400px;
+  padding: var(--spacing-md, 12px) var(--spacing-lg, 16px);
+  border-radius: var(--radius-md, 8px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  animation: eld-slideDown 200ms ease;
+  z-index: 10001; /* Above popup overlay */
+  background: white;
+}
+
+@keyframes eld-slideDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes eld-slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.eld-toast-success {
+  border-left: 4px solid var(--color-success, #059669);
+}
+
+.eld-toast-error {
+  border-left: 4px solid var(--color-error, #DC2626);
+}
+
+.eld-toast-info {
+  border-left: 4px solid var(--color-primary, #4F46E5);
+}
+
+.eld-toast-close {
+  position: absolute;
+  top: var(--spacing-sm, 8px);
+  right: var(--spacing-sm, 8px);
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary, #6B7280);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm, 6px);
+  transition: color 150ms ease;
+}
+
+.eld-toast-close:hover {
+  color: var(--color-text-primary, #1F2937);
+}
+
+.eld-toast-message {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary, #1F2937);
+  padding-right: var(--spacing-lg, 16px);
+}
+
+.eld-toast-submessage {
+  font-size: 12px;
+  color: var(--color-text-secondary, #6B7280);
+  margin-top: var(--spacing-xs, 4px);
+}
+
+/* Images Preview */
+.eld-images-preview {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-sm, 8px);
+  margin-bottom: var(--spacing-md, 12px);
+}
+
+@media (max-width: 480px) {
+  .eld-images-preview {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.eld-image-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm, 6px);
+  overflow: hidden;
+  background-color: var(--color-background-light, #F7F8F9);
+}
+
+.eld-image-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Empty State */
+.eld-empty-state {
+  text-align: center;
+  padding: var(--spacing-2xl, 32px);
+  color: var(--color-text-secondary, #6B7280);
+}
+
+.eld-empty-state svg {
+  width: 48px;
+  height: 48px;
+  margin-bottom: var(--spacing-md, 12px);
+  opacity: 0.5;
+}
+
+.eld-empty-state p {
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Current Value Display */
+.eld-current-value {
+  padding: var(--spacing-sm, 8px) var(--spacing-md, 12px);
+  background-color: var(--color-background-light, #F7F8F9);
+  border-radius: var(--radius-sm, 6px);
+  font-size: 13px;
+  color: var(--color-text-secondary, #6B7280);
+  margin-bottom: var(--spacing-sm, 8px);
+}
+
+.eld-current-value strong {
+  color: var(--color-text-primary, #1F2937);
+  font-weight: 500;
+}
+
+/* Add Rule Button */
+.eld-add-rule-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm, 8px);
+  padding: var(--spacing-sm, 8px) var(--spacing-md, 12px);
+  background: transparent;
+  border: 1px dashed var(--color-border, #E5E7EB);
+  border-radius: var(--radius-sm, 6px);
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--color-text-secondary, #6B7280);
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.eld-add-rule-btn:hover {
+  border-color: var(--color-primary, #321662);
+  color: var(--color-primary, #321662);
+}
+
+/* Label with Action (e.g., "generate with AI" link) */
+.eld-label-with-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-xs, 4px);
+}
+
+.eld-label-with-action .eld-form-label {
+  margin-bottom: 0;
+}
+
+/* Link-style Button */
+.eld-btn-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-primary, #321662);
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 150ms ease, opacity 150ms ease;
+}
+
+.eld-btn-link:hover:not(:disabled) {
+  color: #271250;
+  text-decoration: underline;
+}
+
+.eld-btn-link:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Photo Gallery with Drag and Drop */
+.eld-photo-gallery {
+  margin-bottom: var(--spacing-lg, 16px);
+}
+
+.eld-drag-hint {
+  font-size: 12px;
+  color: var(--color-text-secondary, #6B7280);
+  margin-bottom: var(--spacing-sm, 8px);
+}
+
+.eld-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-sm, 8px);
+}
+
+@media (max-width: 480px) {
+  .eld-photo-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.eld-photo-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: var(--radius-md, 8px);
+  overflow: hidden;
+  background-color: var(--color-background-light, #F7F8F9);
+  cursor: grab;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.eld-photo-item:active {
+  cursor: grabbing;
+}
+
+.eld-photo-item.dragging {
+  opacity: 0.5;
+  transform: scale(0.95);
+}
+
+.eld-photo-item.drag-over {
+  box-shadow: 0 0 0 2px var(--color-primary, #321662);
+  transform: scale(1.02);
+}
+
+.eld-photo-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.eld-photo-controls {
+  position: absolute;
+  top: var(--spacing-xs, 4px);
+  right: var(--spacing-xs, 4px);
+  display: flex;
+  gap: var(--spacing-xs, 4px);
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.eld-photo-item:hover .eld-photo-controls {
+  opacity: 1;
+}
+
+.eld-photo-delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: var(--radius-sm, 6px);
+  cursor: pointer;
+  color: var(--color-error, #DC2626);
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.eld-photo-delete:hover {
+  background: var(--color-error, #DC2626);
+  color: white;
+}
+
+.eld-photo-badge {
+  position: absolute;
+  bottom: var(--spacing-xs, 4px);
+  left: var(--spacing-xs, 4px);
+  padding: 2px 8px;
+  background: var(--color-primary, #321662);
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: var(--radius-sm, 6px);
+  text-transform: uppercase;
+}
+
+/* Upload Zone */
+.eld-photo-zone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  padding: var(--spacing-lg, 16px);
+  border: 2px dashed var(--color-border, #E5E7EB);
+  border-radius: var(--radius-md, 8px);
+  background-color: var(--color-background-light, #F7F8F9);
+  cursor: pointer;
+  transition: border-color 150ms ease, background-color 150ms ease;
+  margin-bottom: var(--spacing-md, 12px);
+}
+
+.eld-photo-zone:hover:not(.uploading) {
+  border-color: var(--color-primary, #321662);
+  background-color: rgba(49, 22, 98, 0.02);
+}
+
+.eld-photo-zone.uploading {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.eld-photo-zone-content {
+  text-align: center;
+  color: var(--color-text-secondary, #6B7280);
+}
+
+.eld-photo-zone-content svg {
+  margin-bottom: var(--spacing-sm, 8px);
+  color: var(--color-text-secondary, #6B7280);
+}
+
+.eld-photo-zone-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-primary, #1F2937);
+  margin: 0 0 var(--spacing-xs, 4px);
+}
+
+.eld-photo-zone-subtitle {
+  font-size: 12px;
+  color: var(--color-text-secondary, #6B7280);
+  margin: 0;
+}
+
+/* Upload Spinner */
+.eld-upload-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--color-border, #E5E7EB);
+  border-top-color: var(--color-primary, #321662);
+  border-radius: 50%;
+  animation: eld-spin 0.8s linear infinite;
+  margin: 0 auto var(--spacing-sm, 8px);
+}
+
+@keyframes eld-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Photo Count */
+.eld-photo-count {
+  font-size: 12px;
+  color: var(--color-text-secondary, #6B7280);
+  text-align: center;
+}
+
+/* ================================
+   Address Autocomplete Styles
+   ================================ */
+
+/* Address Section Container */
+.eld-address-section {
+  margin-bottom: var(--spacing-lg, 16px);
+}
+
+/* Address Note (private label) */
+.eld-address-note {
+  font-weight: 400;
+  font-size: 12px;
+  color: var(--color-text-secondary, #6B7280);
+}
+
+/* Address Input Wrapper (for positioning checkmark) */
+.eld-address-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* Address Input Field */
+.eld-address-input {
+  padding-right: 40px; /* Space for checkmark */
+}
+
+/* Address Valid State */
+.eld-address-input.eld-address-valid {
+  border-color: var(--color-success, #059669);
+}
+
+.eld-address-input.eld-address-valid:focus {
+  border-color: var(--color-success, #059669);
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+}
+
+/* Address Error State */
+.eld-address-input.eld-address-error {
+  border-color: var(--color-error, #DC2626);
+}
+
+.eld-address-input.eld-address-error:focus {
+  border-color: var(--color-error, #DC2626);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+/* Address Checkmark */
+.eld-address-checkmark {
+  position: absolute;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-success, #059669);
+  pointer-events: none;
+}
+
+/* Address Success Message */
+.eld-address-success {
+  font-size: 12px;
+  color: var(--color-success, #059669);
+  margin-top: var(--spacing-xs, 4px);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Address Error Message */
+.eld-address-error-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: var(--spacing-sm, 8px) var(--spacing-md, 12px);
+  background-color: rgba(220, 38, 38, 0.05);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  border-radius: var(--radius-sm, 6px);
+  margin-top: var(--spacing-sm, 8px);
+  color: var(--color-error, #DC2626);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.eld-address-error-message svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.eld-address-error-message span {
+  flex: 1;
+}
+
+/* Manual Entry Toggle Link */
+.eld-manual-toggle {
+  margin-top: var(--spacing-sm, 8px);
+  font-size: 13px;
+}
+
+/* Manual Address Fields Container */
+.eld-manual-fields {
+  margin-top: var(--spacing-md, 12px);
+  padding-top: var(--spacing-md, 12px);
+  border-top: 1px solid var(--color-border, #E5E7EB);
+}
+
+.eld-manual-fields-expanded {
+  background-color: var(--color-background-light, #F7F8F9);
+  padding: var(--spacing-md, 12px);
+  border-radius: var(--radius-sm, 6px);
+  border-top: none;
+}
+
+/* Manual Entry Hint */
+.eld-manual-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--color-text-secondary, #6B7280);
+  margin-bottom: var(--spacing-md, 12px);
+}
+
+.eld-manual-hint svg {
+  color: var(--color-primary, #321662);
+}
+
+/* Google Places Autocomplete Dropdown Override */
+.pac-container {
+  z-index: 10002 !important; /* Above modal overlay (10000) */
+  border-radius: var(--radius-sm, 6px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--color-border, #E5E7EB);
+  font-family: inherit;
+}
+
+.pac-item {
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.pac-item:hover {
+  background-color: var(--color-background-light, #F7F8F9);
+}
+
+.pac-item-selected {
+  background-color: var(--color-background-light, #F7F8F9);
+}
+
+.pac-icon {
+  margin-right: 8px;
+}
+
+.pac-item-query {
+  font-size: 14px;
+  color: var(--color-text-primary, #1F2937);
+}
+
+.pac-matched {
+  font-weight: 600;
+}

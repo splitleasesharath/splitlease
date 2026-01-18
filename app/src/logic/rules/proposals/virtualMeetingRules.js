@@ -16,15 +16,79 @@
 
 /**
  * Virtual Meeting State Enum
+ *
+ * IMPORTANT: State names are PERSPECTIVE-NEUTRAL
+ * - REQUESTED_BY_ME: Current user requested, waiting for other party's response
+ * - REQUESTED_BY_OTHER: Other party requested, current user should respond
+ *
+ * Legacy aliases are provided for backward compatibility with existing code.
  */
 export const VM_STATES = {
   NO_MEETING: 'no_meeting',
-  REQUESTED_BY_GUEST: 'requested_by_guest',
-  REQUESTED_BY_HOST: 'requested_by_host',
+  REQUESTED_BY_ME: 'requested_by_me',           // Current user requested
+  REQUESTED_BY_OTHER: 'requested_by_other',     // Other party requested
   BOOKED_AWAITING_CONFIRMATION: 'booked_awaiting_confirmation',
   CONFIRMED: 'confirmed',
-  DECLINED: 'declined'
+  DECLINED: 'declined',
+  EXPIRED: 'expired',                           // All suggested dates passed without booking
+  // Legacy aliases (for backward compatibility - will be removed in future)
+  REQUESTED_BY_GUEST: 'requested_by_me',        // Alias → REQUESTED_BY_ME
+  REQUESTED_BY_HOST: 'requested_by_other'       // Alias → REQUESTED_BY_OTHER
 };
+
+/**
+ * Parse suggested dates - handles both array and JSON string formats
+ * @param {Array|string} suggestedDates - Dates as array or JSON string
+ * @returns {Array} Array of date strings
+ */
+function parseSuggestedDates(suggestedDates) {
+  if (!suggestedDates) return [];
+
+  // If already an array, return as-is
+  if (Array.isArray(suggestedDates)) return suggestedDates;
+
+  // If it's a string, try to parse it as JSON
+  if (typeof suggestedDates === 'string') {
+    try {
+      const parsed = JSON.parse(suggestedDates);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  return [];
+}
+
+/**
+ * Check if all suggested dates have expired (are in the past)
+ *
+ * @param {Object} virtualMeeting - Virtual meeting object (normalized)
+ * @returns {boolean} True if all dates are expired
+ */
+export function areAllDatesExpired(virtualMeeting) {
+  if (!virtualMeeting) return false;
+
+  const now = new Date();
+  const bookedDate = virtualMeeting.bookedDate || virtualMeeting['booked date'];
+  const rawSuggestedDates = virtualMeeting.suggestedDates || virtualMeeting['suggested dates and times'];
+
+  // Parse suggested dates (handles JSON string or array)
+  const suggestedDates = parseSuggestedDates(rawSuggestedDates);
+
+  // If there's a booked date, check if it's in the past
+  if (bookedDate) {
+    return new Date(bookedDate) < now;
+  }
+
+  // If no suggested dates, not expired (just pending)
+  if (suggestedDates.length === 0) {
+    return false;
+  }
+
+  // Check if ALL suggested dates are in the past
+  return suggestedDates.every(dateStr => new Date(dateStr) < now);
+}
 
 /**
  * Determine the current state of a virtual meeting
@@ -54,13 +118,19 @@ export function getVirtualMeetingState(virtualMeeting, currentUserId) {
     return VM_STATES.BOOKED_AWAITING_CONFIRMATION;
   }
 
-  // State 2: VM requested but no booked date yet
-  if (virtualMeeting.requestedBy === currentUserId) {
-    return VM_STATES.REQUESTED_BY_GUEST;
+  // State 6: All suggested dates expired without booking
+  // Check AFTER booked states but BEFORE requested states
+  if (areAllDatesExpired(virtualMeeting)) {
+    return VM_STATES.EXPIRED;
   }
 
-  // Requested by host, guest needs to respond
-  return VM_STATES.REQUESTED_BY_HOST;
+  // State 2: VM requested but no booked date yet
+  if (virtualMeeting.requestedBy === currentUserId) {
+    return VM_STATES.REQUESTED_BY_ME;
+  }
+
+  // Other party requested, current user should respond
+  return VM_STATES.REQUESTED_BY_OTHER;
 }
 
 /**
@@ -76,6 +146,11 @@ export function canRequestNewMeeting(virtualMeeting) {
 
   // Can request new meeting if previous was declined
   if (virtualMeeting.meetingDeclined) {
+    return true;
+  }
+
+  // Can request new meeting if all dates expired
+  if (areAllDatesExpired(virtualMeeting)) {
     return true;
   }
 
@@ -196,6 +271,11 @@ export function getVMButtonText(virtualMeeting, currentUserId) {
     return 'Request Alternative Meeting';
   }
 
+  // Check for expired dates
+  if (areAllDatesExpired(virtualMeeting) && !virtualMeeting.bookedDate) {
+    return 'Request New Times';
+  }
+
   if (!virtualMeeting.bookedDate) {
     if (virtualMeeting.requestedBy === currentUserId) {
       return 'Meeting Requested';
@@ -229,6 +309,11 @@ export function getVMButtonStyle(virtualMeeting, currentUserId) {
 
   if (virtualMeeting.meetingDeclined) {
     return 'warning';
+  }
+
+  // Expired state - show warning/amber style to prompt action
+  if (areAllDatesExpired(virtualMeeting) && !virtualMeeting.bookedDate) {
+    return 'expired';
   }
 
   if (virtualMeeting.bookedDate && virtualMeeting.confirmedBySplitlease) {

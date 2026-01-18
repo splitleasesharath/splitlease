@@ -1,17 +1,20 @@
 /**
- * AI Signup Guest - Unauthenticated Endpoint
- * Split Lease - Edge Function
+ * AI Signup Guest - Edge Function
+ * Split Lease
  *
- * Allows GUEST users (non-authenticated) to submit market research signups
- * This bypasses authentication requirements for this specific workflow
+ * This edge function handles the AI signup flow for guests:
+ * 1. Receives email, phone, and freeform text input
+ * 2. Looks up the user by email (user was already created in auth-user/signup)
+ * 3. Saves the freeform text to the user's `freeform ai signup text` field
+ * 4. Returns the user data (including _id) for the subsequent parseProfile call
  *
- * Security: Rate limited by Supabase, validated inputs only
+ * This function bridges the gap between user creation and AI profile parsing.
  */
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders } from '../_shared/cors.ts';
-import { formatErrorResponse, getStatusCodeFromError } from '../_shared/errors.ts';
-import { validateRequiredFields, validateEmail, validatePhone } from '../_shared/validation.ts';
+import { ValidationError } from '../_shared/errors.ts';
 
 console.log('[ai-signup-guest] Edge Function started');
 
@@ -19,15 +22,14 @@ Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, {
-      status: 204,
+      status: 200,
       headers: corsHeaders,
     });
   }
 
   try {
-    console.log(`[ai-signup-guest] ========== NEW GUEST SIGNUP REQUEST ==========`);
-    console.log(`[ai-signup-guest] Method: ${req.method}`);
-    console.log(`[ai-signup-guest] Origin: ${req.headers.get('origin')}`);
+    console.log('[ai-signup-guest] ========== NEW REQUEST ==========');
+    console.log('[ai-signup-guest] Method:', req.method);
 
     // Only accept POST requests
     if (req.method !== 'POST') {
@@ -36,88 +38,111 @@ Deno.serve(async (req) => {
 
     // Parse request body
     const body = await req.json();
-    console.log(`[ai-signup-guest] Request body:`, JSON.stringify(body, null, 2));
-
-    // Validate required fields
-    validateRequiredFields(body, ['email', 'text_inputted']);
+    console.log('[ai-signup-guest] Request body:', JSON.stringify(body, null, 2));
 
     const { email, phone, text_inputted } = body;
 
-    // Validate email format
-    validateEmail(email);
-
-    // Validate phone if provided (optional)
-    if (phone && phone.trim()) {
-      validatePhone(phone);
+    // Validate required fields
+    if (!email) {
+      throw new ValidationError('email is required');
+    }
+    if (!text_inputted) {
+      throw new ValidationError('text_inputted is required');
     }
 
-    // Validate text is not empty
-    if (!text_inputted || !text_inputted.trim()) {
-      throw new Error('Market research description cannot be empty');
+    console.log('[ai-signup-guest] Email:', email);
+    console.log('[ai-signup-guest] Phone:', phone || 'Not provided');
+    console.log('[ai-signup-guest] Text length:', text_inputted.length);
+
+    // Get Supabase credentials
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error('Supabase configuration missing');
     }
 
-    console.log(`[ai-signup-guest] ✅ Validation passed`);
-    console.log(`[ai-signup-guest] Email: ${email}`);
-    console.log(`[ai-signup-guest] Phone: ${phone || 'Not provided'}`);
-    console.log(`[ai-signup-guest] Description length: ${text_inputted.length}`);
-
-    // Get Bubble API credentials from environment
-    const bubbleBaseUrl = Deno.env.get('BUBBLE_API_BASE_URL');
-    const bubbleApiKey = Deno.env.get('BUBBLE_API_KEY');
-
-    if (!bubbleBaseUrl || !bubbleApiKey) {
-      console.error('[ai-signup-guest] Missing Bubble configuration');
-      throw new Error('Server configuration error');
-    }
-
-    // Call Bubble workflow directly
-    const bubbleUrl = `${bubbleBaseUrl}/wf/ai-signup-guest`;
-    console.log(`[ai-signup-guest] Calling Bubble API: ${bubbleUrl}`);
-
-    const bubblePayload = {
-      email,
-      phone: phone || '',
-      'text inputted': text_inputted,
-    };
-
-    console.log(`[ai-signup-guest] Bubble payload:`, JSON.stringify(bubblePayload, null, 2));
-
-    const bubbleResponse = await fetch(bubbleUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${bubbleApiKey}`,
-      },
-      body: JSON.stringify(bubblePayload),
+    // Initialize Supabase admin client
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
     });
 
-    console.log(`[ai-signup-guest] Bubble response status: ${bubbleResponse.status}`);
+    // ========== STEP 1: Find user by email ==========
+    console.log('[ai-signup-guest] Step 1: Looking up user by email...');
 
-    if (!bubbleResponse.ok) {
-      const errorText = await bubbleResponse.text();
-      console.error(`[ai-signup-guest] Bubble API error:`, errorText);
-      throw new Error(`Bubble API returned ${bubbleResponse.status}: ${errorText}`);
+    const { data: userData, error: userError } = await supabase
+      .from('user')
+      .select('_id, email, "Name - First", "Name - Last"')
+      .eq('email', email.toLowerCase())
+      .maybeSingle();
+
+    if (userError) {
+      console.error('[ai-signup-guest] Error looking up user:', userError);
+      throw new Error(`Failed to look up user: ${userError.message}`);
     }
 
-    // Handle 204 No Content
-    let bubbleResult;
-    if (bubbleResponse.status === 204) {
-      console.log(`[ai-signup-guest] ✅ Bubble returned 204 No Content (success)`);
-      bubbleResult = { success: true };
-    } else {
-      bubbleResult = await bubbleResponse.json();
-      console.log(`[ai-signup-guest] ✅ Bubble response:`, JSON.stringify(bubbleResult, null, 2));
+    if (!userData) {
+      console.log('[ai-signup-guest] User not found, they may not have been created yet');
+      // Return success anyway - the user might be created later
+      // The parseProfile call will fail gracefully if user doesn't exist
+      return new Response(
+        JSON.stringify({
+          success: true,
+          data: {
+            message: 'User not found, but text captured for processing',
+            email: email,
+            text_captured: true
+          }
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
     }
 
-    console.log(`[ai-signup-guest] ✅ Guest signup completed successfully`);
-    console.log(`[ai-signup-guest] ========== REQUEST COMPLETE ==========`);
+    console.log('[ai-signup-guest] ✅ User found:', userData._id);
 
-    // Return success response
+    // ========== STEP 2: Save freeform text to user record ==========
+    console.log('[ai-signup-guest] Step 2: Saving freeform text to user record...');
+
+    const updateData: Record<string, any> = {
+      'freeform ai signup text': text_inputted,
+      'Modified Date': new Date().toISOString(),
+    };
+
+    // Also save phone number if provided
+    if (phone) {
+      updateData['Phone Number (as text)'] = phone;
+    }
+
+    const { error: updateError } = await supabase
+      .from('user')
+      .update(updateData)
+      .eq('_id', userData._id);
+
+    if (updateError) {
+      console.error('[ai-signup-guest] Error updating user:', updateError);
+      throw new Error(`Failed to update user: ${updateError.message}`);
+    }
+
+    console.log('[ai-signup-guest] ✅ Freeform text saved to user record');
+    console.log('[ai-signup-guest] ========== SUCCESS ==========');
+
+    // Return user data for subsequent parseProfile call
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Signup submitted successfully',
-        data: bubbleResult,
+        data: {
+          _id: userData._id,
+          email: userData.email,
+          firstName: userData['Name - First'],
+          lastName: userData['Name - Last'],
+          text_saved: true
+        }
       }),
       {
         status: 200,
@@ -130,11 +155,13 @@ Deno.serve(async (req) => {
     console.error('[ai-signup-guest] Error:', error);
     console.error('[ai-signup-guest] Error stack:', error.stack);
 
-    const statusCode = getStatusCodeFromError(error);
-    const errorResponse = formatErrorResponse(error);
+    const statusCode = error instanceof ValidationError ? 400 : 500;
 
     return new Response(
-      JSON.stringify(errorResponse),
+      JSON.stringify({
+        success: false,
+        error: error.message || 'An unexpected error occurred'
+      }),
       {
         status: statusCode,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

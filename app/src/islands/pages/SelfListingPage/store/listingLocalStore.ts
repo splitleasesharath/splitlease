@@ -214,6 +214,7 @@ class ListingLocalStore {
 
   /**
    * Manually save draft to localStorage
+   * Photos are stored as Supabase URLs (not data URLs), so we only save metadata
    */
   saveDraft(): boolean {
     try {
@@ -225,6 +226,18 @@ class ListingLocalStore {
           blockedDates: this.state.data.rules.blockedDates.map((d) =>
             d instanceof Date ? d.toISOString() : d
           ),
+        },
+        // Clean up photos - remove File objects (not serializable) and only keep URL/metadata
+        photos: {
+          ...this.state.data.photos,
+          photos: this.state.data.photos.photos.map((photo) => ({
+            id: photo.id,
+            url: photo.url,
+            caption: photo.caption,
+            displayOrder: photo.displayOrder,
+            storagePath: photo.storagePath,
+            // Exclude: file, isUploading, uploadError (transient state)
+          })),
         },
       };
 
@@ -256,8 +269,9 @@ class ListingLocalStore {
       return { success: false, errors: validationErrors };
     }
 
+    // Try to save staged data to localStorage for recovery purposes
+    // But don't fail submission if localStorage is full
     try {
-      // Save current data as staged
       const stagedData = {
         ...this.state.data,
         stagedAt: new Date().toISOString(),
@@ -267,18 +281,31 @@ class ListingLocalStore {
             d instanceof Date ? d.toISOString() : d
           ),
         },
+        // Clean up photos - only save URL/metadata, not transient state
+        photos: {
+          ...this.state.data.photos,
+          photos: this.state.data.photos.photos.map((photo) => ({
+            id: photo.id,
+            url: photo.url,
+            caption: photo.caption,
+            displayOrder: photo.displayOrder,
+            storagePath: photo.storagePath,
+          })),
+        },
       };
 
       localStorage.setItem(STORAGE_KEYS.STAGED, JSON.stringify(stagedData));
-      this.state.stagingStatus = 'staged';
-      this.state.errors = [];
       console.log('📦 ListingLocalStore: Data staged for submission');
-      this.notifyListeners();
-      return { success: true, errors: [] };
     } catch (error) {
-      console.error('❌ ListingLocalStore: Error staging data:', error);
-      return { success: false, errors: ['Failed to stage data for submission'] };
+      // localStorage quota exceeded - log but continue with submission
+      // The data is already in memory and can be submitted
+      console.warn('⚠️ ListingLocalStore: Could not stage to localStorage (quota exceeded), continuing with submission');
     }
+
+    this.state.stagingStatus = 'staged';
+    this.state.errors = [];
+    this.notifyListeners();
+    return { success: true, errors: [] };
   }
 
   /**
@@ -427,10 +454,8 @@ class ListingLocalStore {
       errors.push(`At least ${data.photos.minRequired} photos are required`);
     }
 
-    // Section 7: Review
-    if (!data.review.agreedToTerms) {
-      errors.push('You must agree to the terms and conditions');
-    }
+    // Note: agreedToTerms validation removed - terms acceptance is handled
+    // during signup/login flow in the SignUpLoginSharedIsland component
 
     return errors;
   }
