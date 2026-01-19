@@ -725,7 +725,7 @@ export default function Header({ autoShowLogin = false }) {
                               setShowAuthModal(true);
                             }}
                           >
-                            <span className="dropdown-title">Log in or sign up</span>
+                            <span className="dropdown-title">Sign up</span>
                           </a>
                         )}
                       </div>
@@ -890,7 +890,7 @@ export default function Header({ autoShowLogin = false }) {
                               setShowAuthModal(true);
                             }}
                           >
-                            <span className="dropdown-title">Log in or sign up</span>
+                            <span className="dropdown-title">Sign up</span>
                           </a>
                         )}
                       </div>
