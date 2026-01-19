@@ -1,6 +1,6 @@
 #!/usr/bin/env -S uv run
 # /// script
-# dependencies = ["python-dotenv", "pydantic", "psutil>=5.9.0", "google-genai"]
+# dependencies = ["python-dotenv", "pydantic", "psutil>=5.9.0", "google-genai", "tree-sitter>=0.23.0", "tree-sitter-javascript>=0.23.0"]
 # ///
 
 """
@@ -303,7 +303,11 @@ def main():
         if graph_result is None:
             logger.step("Running graph analysis (was skipped in audit)...")
             try:
-                dep_context = analyze_dependencies(args.target_path)
+                # CRITICAL: Resolve target_path relative to working_dir (project root)
+                # The orchestrator runs from adws/, but paths like "app/src/logic"
+                # must resolve relative to the project root, not adws/
+                absolute_target = working_dir / args.target_path
+                dep_context = analyze_dependencies(str(absolute_target))
                 simple_graph = build_simple_graph(dep_context)
                 graph_result = analyze_graph(simple_graph)
             except Exception as e:
@@ -472,7 +476,9 @@ def main():
             reverse_deps = {}
             if dep_context is None:
                 try:
-                    dep_context = analyze_dependencies(args.target_path)
+                    # Resolve target_path relative to working_dir (project root)
+                    absolute_target = working_dir / args.target_path
+                    dep_context = analyze_dependencies(str(absolute_target))
                     reverse_deps = dep_context.reverse_dependencies
                 except Exception:
                     pass  # Proceed without reverse deps
