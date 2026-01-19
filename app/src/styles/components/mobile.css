@@ -192,22 +192,9 @@
         font-size: 14px;
     }
 
-    /* Hero stats mobile layout - horizontal row like why-split-lease */
+    /* Hide hero stats on mobile */
     .hero-stats {
-        flex-direction: row;
-        flex-wrap: nowrap;
-        gap: 24px;
-        margin-top: 32px;
-        padding-top: 24px;
-        justify-content: center;
-    }
-
-    .stat-value {
-        font-size: 24px;
-    }
-
-    .stat-label {
-        font-size: 10px;
+        display: none;
     }
 
     /* Schedule selector wrapper mobile */
