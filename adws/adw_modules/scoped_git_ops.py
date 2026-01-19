@@ -91,6 +91,24 @@ class RefactorScope:
         if hasattr(chunk, 'file_path'):
             # Handle backtick-wrapped paths like `src/lib/auth.js`
             file_path = chunk.file_path.strip('`').strip()
+
+            # Validate that this looks like an actual file path
+            # Skip entries like "Multiple files across rules and workflows"
+            # Valid file paths should:
+            # 1. Contain a file extension (js, jsx, ts, tsx, py, etc.)
+            # 2. Not contain phrases that indicate it's not a single file
+            invalid_phrases = ['multiple', 'various', 'see below', 'see above', 'n/a']
+            lower_path = file_path.lower()
+
+            if any(phrase in lower_path for phrase in invalid_phrases):
+                return  # Skip non-file entries
+
+            # Must have a common file extension
+            has_extension = any(file_path.endswith(ext) for ext in
+                              ['.js', '.jsx', '.ts', '.tsx', '.py', '.json', '.md', '.css'])
+            if not has_extension:
+                return  # Skip entries without valid extension
+
             self.track_file(file_path)
 
     def get_relative_paths(self) -> List[str]:
