@@ -85,14 +85,20 @@
         display: none;
     }
 
+    /* Hide Sign Up button on mobile */
+    .nav-right a:last-child {
+        display: none !important;
+    }
+
     /* Mobile dropdown - simple list style */
     .dropdown-menu {
         position: fixed !important;
-        left: 10px !important;
-        right: 10px !important;
+        left: 50% !important;
+        right: auto !important;
+        transform: translateX(-50%) !important;
         top: 60px !important;
-        transform: none !important;
-        width: auto !important;
+        width: 200px !important;
+        max-width: 90vw;
         max-height: 70vh;
         overflow-y: auto;
         border-radius: 12px;
