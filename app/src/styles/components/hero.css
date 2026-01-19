@@ -486,10 +486,10 @@
     background: #31135D;
     color: white;
     border: 2px solid #31135D;
-    padding: 14px 32px;
-    font-size: 15px;
+    padding: 12px 24px;
+    font-size: 14px;
     font-weight: 600;
-    border-radius: 12px;
+    border-radius: 10px;
     cursor: pointer;
     transition: all 0.2s ease;
     text-decoration: none;

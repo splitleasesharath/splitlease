@@ -115,9 +115,6 @@ function Hero({ onExploreRentals, onMoreDetails }) {
           <button className="cta-button cta-primary" onClick={onExploreRentals}>
             Explore Rentals
           </button>
-          <button className="cta-button cta-secondary" onClick={onMoreDetails}>
-            More Details
-          </button>
         </div>
 
         <div className="hero-stats">

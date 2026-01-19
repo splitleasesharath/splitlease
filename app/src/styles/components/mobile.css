@@ -178,18 +178,18 @@
 
     /* Hero CTA buttons mobile layout */
     .hero-cta {
-        flex-direction: column;
+        flex-direction: row;
         align-items: center;
+        justify-content: center;
         gap: 12px;
     }
 
-    .cta-button.cta-primary,
-    .cta-button.cta-secondary {
-        width: 80%;
-        max-width: 280px;
+    .cta-button.cta-primary {
+        width: auto;
+        max-width: none;
         justify-content: center;
-        padding: 12px 24px;
-        font-size: 14px;
+        padding: 10px 20px;
+        font-size: 13px;
     }
 
     /* Hide hero stats on mobile */
@@ -219,16 +219,16 @@
 
     /* Hero Section Mobile Styles */
     .hero-section {
-        margin: 120px auto 2rem;
-        width: 90%;
+        margin: 80px auto 1rem;
+        width: 100%;
         max-width: 100%;
-        min-height: 420px;
-        padding: 0;
+        min-height: auto;
+        padding: 20px 1rem 2rem;
         position: relative;
-        overflow: hidden;
-        background: linear-gradient(to bottom, #E8E3F5 0%, #E8E3F5 35%, #ffffff 35%, #ffffff 100%);
-        border-radius: 20px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        overflow: visible;
+        background: white;
+        border-radius: 0;
+        box-shadow: none;
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
