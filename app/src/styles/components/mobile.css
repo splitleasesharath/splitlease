@@ -24,162 +24,51 @@
     }
 
     .hamburger-menu {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        width: 40px;
-        height: 40px;
-        background: transparent;
-        border: none;
-        cursor: pointer;
-        padding: 8px;
-        z-index: 1001;
-        position: relative;
+        display: none; /* Hide hamburger - using simplified nav instead */
     }
 
-    .hamburger-menu .hamburger-line {
-        width: 22px;
-        height: 2px;
-        background: #333;
-        border-radius: 2px;
-        transition: all 0.3s ease;
-        margin: 2px 0;
-    }
-
-    /* Hamburger to X animation */
-    .hamburger-menu.active .hamburger-line:nth-child(1) {
-        transform: translateY(6px) rotate(45deg);
-    }
-
-    .hamburger-menu.active .hamburger-line:nth-child(2) {
-        opacity: 0;
-    }
-
-    .hamburger-menu.active .hamburger-line:nth-child(3) {
-        transform: translateY(-6px) rotate(-45deg);
-    }
-
-    /* Mobile navigation - hidden by default, shown when hamburger is clicked */
+    /* Simplify navigation for mobile */
     .nav-center {
-        display: none;
-        position: fixed;
-        top: 60px;
-        left: 0;
-        right: 0;
-        background: white;
-        padding: 1rem;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-        flex-direction: column;
-        gap: 0;
-        z-index: 1000;
-        border-bottom-left-radius: 12px;
-        border-bottom-right-radius: 12px;
-        max-height: calc(100vh - 80px);
-        overflow-y: auto;
-    }
-
-    .nav-center.mobile-active {
         display: flex;
+        flex-direction: row;
+        gap: 0.5rem;
+        position: static;
+        background: transparent;
+        padding: 0;
+        box-shadow: none;
+        justify-content: center;
+        flex: 1;
+        margin: 0;
     }
 
     .nav-right {
-        display: none;
-    }
-
-    /* Mobile menu overlay */
-    .mobile-menu-overlay {
-        display: none;
-        position: fixed;
-        top: 60px;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 998;
-    }
-
-    .mobile-menu-overlay.active {
-        display: block;
-    }
-
-    /* Mobile auth section inside nav-center */
-    .mobile-auth-section {
         display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-        padding: 1rem;
-        border-top: 1px solid #eee;
-        margin-top: 0.5rem;
+        position: static;
+        background: transparent;
+        padding: 0;
+        box-shadow: none;
+        margin-right: 0;
     }
 
-    .mobile-auth-section a {
-        display: flex;
-        padding: 0.875rem 1rem;
-        border-radius: 8px;
-        justify-content: center;
-        font-weight: 500;
-        text-decoration: none;
-        font-size: 0.95rem;
-    }
-
-    .mobile-auth-section .mobile-sign-in {
-        background: #f5f5f5;
-        color: #333;
-    }
-
-    .mobile-auth-section .mobile-sign-up {
-        background: #4B47CE;
-        color: white;
-    }
-
-    /* Explore Rentals / Host Overview in mobile menu */
-    .mobile-explore-btn {
-        display: flex !important;
-        padding: 0.875rem 1rem;
-        background: #31135D;
-        color: white !important;
-        border-radius: 8px;
-        justify-content: center;
-        font-weight: 600;
-        text-decoration: none;
-        margin-bottom: 0.5rem;
+    .nav-right .divider,
+    .nav-right a:last-child {
+        display: none; /* Hide divider and Sign Up on mobile */
     }
 
     .explore-rentals-btn {
         display: none; /* Hide on mobile */
     }
 
-    /* Mobile dropdown accordion style */
+    /* Simplify dropdown buttons for mobile */
     .nav-dropdown {
-        width: 100%;
-        border-bottom: 1px solid #eee;
-    }
-
-    .nav-dropdown:last-child {
-        border-bottom: none;
+        width: auto;
     }
 
     .dropdown-trigger {
-        font-size: 1rem;
-        padding: 1rem;
-        width: 100%;
-        justify-content: space-between;
-        display: flex;
-        align-items: center;
-        background: transparent;
-        border: none;
-        color: #333;
-        font-weight: 500;
-    }
-
-    .dropdown-trigger .dropdown-arrow {
-        transition: transform 0.3s ease;
-    }
-
-    .nav-dropdown .dropdown-menu.active .dropdown-arrow,
-    .dropdown-trigger[aria-expanded="true"] .dropdown-arrow {
-        transform: rotate(180deg);
+        font-size: 0.9rem;
+        padding: 0.4rem 0.8rem;
+        width: auto;
+        justify-content: center;
     }
 
     /* Hide dropdown descriptions on mobile */
@@ -196,69 +85,23 @@
         display: none;
     }
 
-    /* Mobile dropdown menu - accordion style */
     .dropdown-menu {
-        position: static;
-        display: none;
-        width: 100%;
-        max-height: none;
-        overflow: visible;
-        box-shadow: none;
-        background: #f8f8f8;
-        border-radius: 0;
-        padding: 0;
-        margin: 0;
+        position: fixed;
+        left: 10px;
+        right: 10px;
+        top: auto;
+        transform: none;
+        width: auto;
+        max-height: 70vh;
+        overflow-y: auto;
     }
 
-    .dropdown-menu.active {
-        display: block;
-    }
-
-    /* Hide mega menu featured section on mobile */
-    .mega-menu-featured,
-    .menu-separator {
-        display: none;
-    }
-
-    .mega-menu-content {
-        flex-direction: column;
-        padding: 0;
-    }
-
-    .mega-menu-columns {
-        flex-direction: column;
-        padding: 0.5rem 0;
-    }
-
-    .menu-column {
-        padding: 0;
-    }
-
-    .menu-column-title {
-        display: none;
+    .nav-dropdown:hover .dropdown-menu {
+        margin-top: 0.5rem;
     }
 
     .dropdown-item {
-        padding: 0.75rem 1.25rem;
-        border-bottom: 1px solid #eee;
-    }
-
-    .dropdown-item:last-child {
-        border-bottom: none;
-    }
-
-    .dropdown-separator {
-        display: none;
-    }
-
-    .dropdown-cta {
-        padding: 0.75rem 1.25rem;
-        background: #4B47CE;
-        color: white !important;
-        margin: 0.5rem 1rem;
-        border-radius: 8px;
-        text-align: center;
-        display: block;
+        padding: 1rem;
     }
 
     /* Hide building illustrations on mobile */

@@ -570,28 +570,8 @@ export default function Header({ autoShowLogin = false }) {
           <span className="hamburger-line"></span>
         </button>
 
-        {/* Mobile Menu Overlay */}
-        {mobileMenuActive && (
-          <div
-            className="mobile-menu-overlay active"
-            onClick={() => setMobileMenuActive(false)}
-          />
-        )}
-
         {/* Center Navigation with Dropdowns */}
         <div className={`nav-center ${mobileMenuActive ? 'mobile-active' : ''}`}>
-          {/* Mobile: Explore Rentals / Host Overview button at top */}
-          {mobileMenuActive && (
-            currentUser && isHost() ? (
-              <a href={HOST_OVERVIEW_URL} className="mobile-explore-btn" onClick={() => setMobileMenuActive(false)}>
-                Host Overview
-              </a>
-            ) : (
-              <a href={SEARCH_URL} className="mobile-explore-btn" onClick={() => setMobileMenuActive(false)}>
-                Explore Rentals
-              </a>
-            )
-          )}
           {/* Host with Us Dropdown - Only show if not logged in OR if logged in as Host/Trial Host/Split Lease */}
           {(!currentUser || !userType || isHost()) && (
           <div className="nav-dropdown">
@@ -883,61 +863,9 @@ export default function Header({ autoShowLogin = false }) {
             </div>
           </div>
           )}
-
-          {/* Mobile: Auth buttons at bottom of menu */}
-          {mobileMenuActive && !currentUser && (
-            <div className="mobile-auth-section">
-              <a
-                href="#"
-                className="mobile-sign-in"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setMobileMenuActive(false);
-                  handleLoginClick();
-                }}
-              >
-                Sign In
-              </a>
-              <a
-                href="#"
-                className="mobile-sign-up"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setMobileMenuActive(false);
-                  handleSignupClick();
-                }}
-              >
-                Sign Up
-              </a>
-            </div>
-          )}
-
-          {/* Mobile: Logged in user actions */}
-          {mobileMenuActive && currentUser && (
-            <div className="mobile-auth-section">
-              <a
-                href="/profile"
-                className="mobile-sign-in"
-                onClick={() => setMobileMenuActive(false)}
-              >
-                My Profile
-              </a>
-              <a
-                href="#"
-                className="mobile-sign-in"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setMobileMenuActive(false);
-                  handleLogout();
-                }}
-              >
-                Sign Out
-              </a>
-            </div>
-          )}
         </div>
 
-        {/* Right Navigation - Auth Buttons (Desktop only) */}
+        {/* Right Navigation - Auth Buttons */}
         <div className={`nav-right ${mobileMenuActive ? 'mobile-active' : ''}`}>
           {/* Suggested Proposal Trigger - shows for guest users with pending proposals */}
           {/* Hidden on /guest-proposals page since suggestions are already shown in the list */}
