@@ -710,6 +710,24 @@ export default function Header({ autoShowLogin = false }) {
                         >
                           {hostMenuConfig.cta.label}
                         </a>
+
+                        {/* Mobile-only Auth Link - only show when not logged in */}
+                        {!currentUser && (
+                          <a
+                            href="#auth"
+                            className="dropdown-item mobile-auth-link"
+                            role="menuitem"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setActiveDropdown(null);
+                              setMobileMenuActive(false);
+                              setAuthModalInitialView('initial');
+                              setShowAuthModal(true);
+                            }}
+                          >
+                            <span className="dropdown-title">Log in or sign up</span>
+                          </a>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -857,6 +875,24 @@ export default function Header({ autoShowLogin = false }) {
                         >
                           {guestMenuConfig.cta.label}
                         </a>
+
+                        {/* Mobile-only Auth Link - only show when not logged in */}
+                        {!currentUser && (
+                          <a
+                            href="#auth"
+                            className="dropdown-item mobile-auth-link"
+                            role="menuitem"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setActiveDropdown(null);
+                              setMobileMenuActive(false);
+                              setAuthModalInitialView('initial');
+                              setShowAuthModal(true);
+                            }}
+                          >
+                            <span className="dropdown-title">Log in or sign up</span>
+                          </a>
+                        )}
                       </div>
                     </div>
                   </div>

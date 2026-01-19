@@ -180,6 +180,20 @@
         display: none !important;
     }
 
+    /* Show mobile auth link at bottom of dropdown */
+    .mobile-auth-link {
+        display: flex !important;
+        border-top: 1px solid #e5e7eb;
+        margin-top: 0.5rem;
+        padding-top: 0.75rem !important;
+        color: #4B47CE;
+        font-weight: 600;
+    }
+
+    .mobile-auth-link .dropdown-title {
+        color: #4B47CE;
+    }
+
     /* Hide building illustrations on mobile */
     .hero-illustration-left,
     .hero-illustration-right {
