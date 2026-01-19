@@ -187,19 +187,19 @@ function ScheduleSection() {
     {
       id: 'weeknight',
       label: 'Weeknights',
-      lottieUrl: 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800679546x885675666145660000/Days-of-the-week-lottie.json',
+      lottieUrl: '/assets/lotties/days-of-the-week.json',
       days: '2,3,4,5,6',
     },
     {
       id: 'weekend',
       label: 'Weekends',
-      lottieUrl: 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800745354x526611430283845360/weekend-lottie%20%281%29.json',
+      lottieUrl: '/assets/lotties/weekends.json',
       days: '6,7,1,2',
     },
     {
       id: 'fullweek',
       label: 'Full Week',
-      lottieUrl: 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800780466x583314971697148400/Weeks-of-the-month-lottie.json',
+      lottieUrl: '/assets/lotties/weeks-of-the-month.json',
       days: '1,2,3,4,5,6,7',
     },
   ];
