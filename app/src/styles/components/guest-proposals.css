@@ -2654,7 +2654,31 @@
 }
 
 .epc-detail-host {
-  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+}
+
+.epc-host-photo {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.epc-host-photo-placeholder {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: var(--gp-purple-primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 18px;
 }
 
 .epc-host-name {
@@ -3052,10 +3076,24 @@
 
   .epc-detail-host {
     width: 100%;
+    flex-direction: row;
+    align-items: center;
     text-align: left;
     margin-top: 10px;
     padding-top: 10px;
     border-top: 1px solid var(--gp-border-light);
+    gap: 12px;
+  }
+
+  .epc-host-photo,
+  .epc-host-photo-placeholder {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+  }
+
+  .epc-host-photo-placeholder {
+    font-size: 16px;
   }
 
   .epc-pricing-row {

@@ -1,0 +1,4412 @@
+{
+  "generated_at": "2026-01-17T16:40:33.239641",
+  "root_dir": "C:\\Users\\Split Lease\\Documents\\Split Lease - Dev\\app\\src\\lib",
+  "content_hash": "5e0d178af85f1aff39aa9a042ae19511ab06be54b15b0ccdf9624d646cd6dd1b",
+  "total_files": 50,
+  "total_exports": 416,
+  "total_imports": 144,
+  "parse_error_count": 0,
+  "symbol_table": {
+    "nycZipCodes.ts": [
+      {
+        "name": "NYC_ZIP_CODES",
+        "type": "declaration",
+        "line": 11,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "ALL_NYC_ZIP_CODES",
+        "type": "declaration",
+        "line": 78,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isNYCZipCode",
+        "type": "declaration",
+        "line": 90,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getBoroughForZipCode",
+        "type": "declaration",
+        "line": 97,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "NYC_BOUNDS",
+        "type": "declaration",
+        "line": 111,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "HUDSON_COUNTY_NAMES",
+        "type": "declaration",
+        "line": 121,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isHudsonCountyNJ",
+        "type": "declaration",
+        "line": 130,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isValidServiceArea",
+        "type": "declaration",
+        "line": 142,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "aiService.js": [
+      {
+        "name": "generateListingDescription",
+        "type": "declaration",
+        "line": 27,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "generateListingTitle",
+        "type": "declaration",
+        "line": 143,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "generateNeighborhoodDescription",
+        "type": "declaration",
+        "line": 210,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "extractListingDataFromDraft",
+        "type": "declaration",
+        "line": 252,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "auth.js": [
+      {
+        "name": "getUsernameFromCookies",
+        "type": "declaration",
+        "line": 76,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "checkSplitLeaseCookies",
+        "type": "declaration",
+        "line": 98,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "checkAuthStatus",
+        "type": "declaration",
+        "line": 132,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isSessionValid",
+        "type": "declaration",
+        "line": 228,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "clearAuthData",
+        "type": "declaration",
+        "line": 238,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getAuthToken",
+        "type": "declaration",
+        "line": 257,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "setAuthToken",
+        "type": "declaration",
+        "line": 266,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getSessionId",
+        "type": "declaration",
+        "line": 277,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "setSessionId",
+        "type": "declaration",
+        "line": 286,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getUserId",
+        "type": "declaration",
+        "line": 296,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getUserType",
+        "type": "declaration",
+        "line": 305,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "setUserType",
+        "type": "declaration",
+        "line": 314,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getCurrentUsername",
+        "type": "declaration",
+        "line": 329,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "storeCurrentUsername",
+        "type": "declaration",
+        "line": 342,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getStoredUsername",
+        "type": "declaration",
+        "line": 353,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getFirstName",
+        "type": "declaration",
+        "line": 368,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getAvatarUrl",
+        "type": "declaration",
+        "line": 376,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "redirectToLogin",
+        "type": "declaration",
+        "line": 390,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "redirectToAccountProfile",
+        "type": "declaration",
+        "line": 406,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "incrementAuthCheckAttempts",
+        "type": "declaration",
+        "line": 432,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getAuthCheckAttempts",
+        "type": "declaration",
+        "line": 442,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "hasExceededMaxAuthAttempts",
+        "type": "declaration",
+        "line": 451,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "resetAuthCheckAttempts",
+        "type": "declaration",
+        "line": 458,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "loginUser",
+        "type": "declaration",
+        "line": 477,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "signupUser",
+        "type": "declaration",
+        "line": 651,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "validateTokenAndFetchUser",
+        "type": "declaration",
+        "line": 871,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isProtectedPage",
+        "type": "declaration",
+        "line": 1056,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "logoutUser",
+        "type": "declaration",
+        "line": 1089,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "checkUrlForAuthError",
+        "type": "declaration",
+        "line": 1167,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "clearAuthErrorFromUrl",
+        "type": "declaration",
+        "line": 1192,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "requestPasswordReset",
+        "type": "declaration",
+        "line": 1211,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "updatePassword",
+        "type": "declaration",
+        "line": 1268,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "initiateLinkedInOAuth",
+        "type": "declaration",
+        "line": 1400,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "handleLinkedInOAuthCallback",
+        "type": "declaration",
+        "line": 1434,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "initiateLinkedInOAuthLogin",
+        "type": "declaration",
+        "line": 1535,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "handleLinkedInOAuthLoginCallback",
+        "type": "declaration",
+        "line": 1573,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "initiateGoogleOAuth",
+        "type": "declaration",
+        "line": 1692,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "handleGoogleOAuthCallback",
+        "type": "declaration",
+        "line": 1726,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "initiateGoogleOAuthLogin",
+        "type": "declaration",
+        "line": 1833,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "handleGoogleOAuthLoginCallback",
+        "type": "declaration",
+        "line": 1871,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "availabilityValidation.js": [
+      {
+        "name": "isContiguousSelection",
+        "type": "declaration",
+        "line": 26,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "calculateCheckInOutDays",
+        "type": "declaration",
+        "line": 87,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "validateScheduleSelection",
+        "type": "declaration",
+        "line": 153,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isDateBlocked",
+        "type": "declaration",
+        "line": 213,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isDateInRange",
+        "type": "declaration",
+        "line": 234,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "validateMoveInDate",
+        "type": "declaration",
+        "line": 263,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getBlockedDatesList",
+        "type": "declaration",
+        "line": 319,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "calculateNightsFromDays",
+        "type": "declaration",
+        "line": 341,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "bubbleAPI.js": [
+      {
+        "name": "triggerBubbleWorkflow",
+        "type": "declaration",
+        "line": 22,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "createListingInCode",
+        "type": "declaration",
+        "line": 38,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getListingById",
+        "type": "declaration",
+        "line": 83,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "uploadListingPhotos",
+        "type": "declaration",
+        "line": 129,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "submitListingFull",
+        "type": "declaration",
+        "line": 182,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "constants.js": [
+      {
+        "name": "AUTHORIZED_DOMAIN",
+        "type": "declaration",
+        "line": 13,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "BUBBLE_API_URL",
+        "type": "declaration",
+        "line": 14,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "SIGNUP_LOGIN_URL",
+        "type": "declaration",
+        "line": 15,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "SEARCH_URL",
+        "type": "declaration",
+        "line": 16,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "HOST_OVERVIEW_URL",
+        "type": "declaration",
+        "line": 17,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "VIEW_LISTING_URL",
+        "type": "declaration",
+        "line": 18,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "ACCOUNT_PROFILE_URL",
+        "type": "declaration",
+        "line": 19,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "FAQ_URL",
+        "type": "declaration",
+        "line": 20,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "REFERRAL_API_ENDPOINT",
+        "type": "declaration",
+        "line": 25,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "BUBBLE_MESSAGING_ENDPOINT",
+        "type": "declaration",
+        "line": 26,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "AI_SIGNUP_WORKFLOW_URL",
+        "type": "declaration",
+        "line": 27,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "LOTTIE_ANIMATIONS",
+        "type": "declaration",
+        "line": 41,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "DAYS",
+        "type": "declaration",
+        "line": 53,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "DAY_NAMES",
+        "type": "declaration",
+        "line": 63,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "DAY_ABBREVIATIONS",
+        "type": "declaration",
+        "line": 73,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "DAY_NUMBERS",
+        "type": "declaration",
+        "line": 77,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "SCHEDULE_PATTERNS",
+        "type": "declaration",
+        "line": 93,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "WEEK_PATTERNS",
+        "type": "declaration",
+        "line": 103,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "PRICE_TIERS",
+        "type": "declaration",
+        "line": 114,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "PRICE_FIELD_MAP",
+        "type": "declaration",
+        "line": 123,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "SORT_OPTIONS",
+        "type": "declaration",
+        "line": 136,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "SUPPORT_CONTACTS",
+        "type": "declaration",
+        "line": 167,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "SUPPORT_ACTIONS",
+        "type": "declaration",
+        "line": 174,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "AUTH_STORAGE_KEYS",
+        "type": "declaration",
+        "line": 185,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "SESSION_VALIDATION",
+        "type": "declaration",
+        "line": 194,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "IFRAME_LOADER_CONFIG",
+        "type": "declaration",
+        "line": 202,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "INTENT_SCORES",
+        "type": "declaration",
+        "line": 212,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "ANIMATION_TIMING",
+        "type": "declaration",
+        "line": 222,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "LISTING_CONFIG",
+        "type": "declaration",
+        "line": 235,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "PROPERTY_IDS",
+        "type": "declaration",
+        "line": 247,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "DATABASE",
+        "type": "declaration",
+        "line": 258,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "COLORS",
+        "type": "declaration",
+        "line": 288,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "ENVIRONMENTS",
+        "type": "declaration",
+        "line": 307,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "ENVIRONMENT_CONFIG",
+        "type": "declaration",
+        "line": 313,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "TOAST_CONFIG",
+        "type": "declaration",
+        "line": 323,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "VALIDATION",
+        "type": "declaration",
+        "line": 337,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "ARIA_LABELS",
+        "type": "declaration",
+        "line": 350,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "DEFAULTS",
+        "type": "declaration",
+        "line": 362,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "BOROUGH_MAP_CONFIG",
+        "type": "declaration",
+        "line": 379,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getBoroughMapConfig",
+        "type": "declaration",
+        "line": 422,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "SIDEBAR_CONFIG",
+        "type": "declaration",
+        "line": 435,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "ctaConfig.js": [
+      {
+        "name": "CTA_ROUTES",
+        "type": "declaration",
+        "line": 23,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "fetchCTAConfig",
+        "type": "declaration",
+        "line": 198,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getCTAConfig",
+        "type": "declaration",
+        "line": 248,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "buildCTADestination",
+        "type": "declaration",
+        "line": 259,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "clearCTAConfigCache",
+        "type": "declaration",
+        "line": 282,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "dataLookups.js": [
+      {
+        "name": "initializeLookups",
+        "type": "declaration",
+        "line": 61,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getNeighborhoodName",
+        "type": "declaration",
+        "line": 387,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getBoroughName",
+        "type": "declaration",
+        "line": 403,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getPropertyTypeLabel",
+        "type": "declaration",
+        "line": 419,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getAmenity",
+        "type": "declaration",
+        "line": 445,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getAmenities",
+        "type": "declaration",
+        "line": 462,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getSafetyFeature",
+        "type": "declaration",
+        "line": 472,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getSafetyFeatures",
+        "type": "declaration",
+        "line": 489,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getHouseRule",
+        "type": "declaration",
+        "line": 499,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getHouseRules",
+        "type": "declaration",
+        "line": 516,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getParkingOption",
+        "type": "declaration",
+        "line": 526,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getCancellationPolicy",
+        "type": "declaration",
+        "line": 543,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getAllCancellationPolicies",
+        "type": "declaration",
+        "line": 559,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getStorageOption",
+        "type": "declaration",
+        "line": 572,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getGuestCancellationReasons",
+        "type": "declaration",
+        "line": 589,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getHostRejectionReasons",
+        "type": "declaration",
+        "line": 606,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "fetchNeighborhoodName",
+        "type": "declaration",
+        "line": 628,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "fetchBoroughName",
+        "type": "declaration",
+        "line": 661,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "refreshLookups",
+        "type": "declaration",
+        "line": 696,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getCacheStats",
+        "type": "declaration",
+        "line": 716,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isInitialized",
+        "type": "declaration",
+        "line": 737,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "dayUtils.js": [
+      {
+        "name": "isValidDaysArray",
+        "type": "declaration",
+        "line": 16,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "DAY_NAMES",
+        "type": "declaration",
+        "line": 24,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "DAY_LETTERS",
+        "type": "declaration",
+        "line": 31,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "DAY_ABBREV",
+        "type": "declaration",
+        "line": 36,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getDayName",
+        "type": "declaration",
+        "line": 43,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getShortDayName",
+        "type": "declaration",
+        "line": 55,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "emailTemplateRenderer.js": [
+      {
+        "name": "renderGeneralEmailTemplate",
+        "type": "declaration",
+        "line": 25,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "renderGeneralEmailPlainText",
+        "type": "declaration",
+        "line": 158,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "informationalTextsFetcher.js": [
+      {
+        "name": "fetchInformationalTexts",
+        "type": "declaration",
+        "line": 28,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "listingDataFetcher.js": [
+      {
+        "name": "fetchListingComplete",
+        "type": "declaration",
+        "line": 59,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getListingIdFromUrl",
+        "type": "declaration",
+        "line": 374,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getNightlyPrice",
+        "type": "declaration",
+        "line": 429,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "fetchListingBasic",
+        "type": "declaration",
+        "line": 458,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "fetchZatPriceConfiguration",
+        "type": "declaration",
+        "line": 505,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "listingService.js": [
+      {
+        "name": "createListing",
+        "type": "declaration",
+        "line": 115,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "updateListing",
+        "type": "declaration",
+        "line": 807,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getListingById",
+        "type": "declaration",
+        "line": 1020,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "saveDraft",
+        "type": "declaration",
+        "line": 1062,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "mapDatabaseToFormData",
+        "type": "declaration",
+        "line": 1138,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "logger.js": [
+      {
+        "name": "logger",
+        "type": "declaration",
+        "line": 28,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "mapUtils.js": [
+      {
+        "name": "fitBoundsToMarkers",
+        "type": "declaration",
+        "line": 16,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "calculateMapCenter",
+        "type": "declaration",
+        "line": 46,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "createMarkerIcon",
+        "type": "declaration",
+        "line": 79,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "createPriceLabel",
+        "type": "declaration",
+        "line": 95,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isValidCoordinates",
+        "type": "declaration",
+        "line": 109,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isGoogleMapsLoaded",
+        "type": "declaration",
+        "line": 130,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "waitForGoogleMaps",
+        "type": "declaration",
+        "line": 141,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "navigation.js": [
+      {
+        "name": "goToListing",
+        "type": "declaration",
+        "line": 18,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getListingUrl",
+        "type": "declaration",
+        "line": 38,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getListingUrlWithProposalContext",
+        "type": "declaration",
+        "line": 54,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "goToProposals",
+        "type": "declaration",
+        "line": 83,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "goToSearch",
+        "type": "declaration",
+        "line": 99,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getSearchUrl",
+        "type": "declaration",
+        "line": 121,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "goToProfile",
+        "type": "declaration",
+        "line": 139,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "goToSelfListing",
+        "type": "declaration",
+        "line": 147,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "goToHelpCenter",
+        "type": "declaration",
+        "line": 159,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "goToListingDashboard",
+        "type": "declaration",
+        "line": 171,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "goToHostOverview",
+        "type": "declaration",
+        "line": 182,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "goToFavorites",
+        "type": "declaration",
+        "line": 189,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "goToRentalApplication",
+        "type": "declaration",
+        "line": 202,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "goToFaq",
+        "type": "declaration",
+        "line": 228,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "goToPolicies",
+        "type": "declaration",
+        "line": 235,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "goToListWithUs",
+        "type": "declaration",
+        "line": 242,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "goToAboutUs",
+        "type": "declaration",
+        "line": 249,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "goToCareers",
+        "type": "declaration",
+        "line": 256,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "goToWhySplitLease",
+        "type": "declaration",
+        "line": 263,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "goToHome",
+        "type": "declaration",
+        "line": 270,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "goToGuestSuccess",
+        "type": "declaration",
+        "line": 277,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "goToHostSuccess",
+        "type": "declaration",
+        "line": 284,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "routeExists",
+        "type": "declaration",
+        "line": 293,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getRouteInfo",
+        "type": "declaration",
+        "line": 302,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isProtectedPage",
+        "type": "declaration",
+        "line": 310,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getProtectedRoutes",
+        "type": "declaration",
+        "line": 319,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getPublicRoutes",
+        "type": "declaration",
+        "line": 327,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "routes",
+        "type": "named",
+        "line": 332,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getBasePath",
+        "type": "named",
+        "line": 332,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "findRouteForUrl",
+        "type": "named",
+        "line": 332,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "oauthCallbackHandler.js": [
+      {
+        "name": "processOAuthLoginCallback",
+        "type": "declaration",
+        "line": 53,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isOAuthCallbackProcessed",
+        "type": "declaration",
+        "line": 153,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getOAuthCallbackResult",
+        "type": "declaration",
+        "line": 161,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isPendingOAuthCallback",
+        "type": "declaration",
+        "line": 170,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "photoUpload.js": [
+      {
+        "name": "uploadPhoto",
+        "type": "declaration",
+        "line": 77,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "uploadPhotos",
+        "type": "declaration",
+        "line": 154,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "deletePhoto",
+        "type": "declaration",
+        "line": 207,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isStorageUrl",
+        "type": "declaration",
+        "line": 229,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isDataUrl",
+        "type": "declaration",
+        "line": 240,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "priceCalculations.js": [
+      {
+        "name": "calculate4WeekRent",
+        "type": "declaration",
+        "line": 16,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "calculateReservationTotal",
+        "type": "declaration",
+        "line": 28,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getNightlyPriceForNights",
+        "type": "declaration",
+        "line": 40,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "formatPrice",
+        "type": "re-export",
+        "line": 68,
+        "source_file": "./formatters/priceFormatter.js",
+        "original_name": "formatPriceOrZero"
+      },
+      {
+        "name": "calculatePricingBreakdown",
+        "type": "declaration",
+        "line": 77,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isValidForPricing",
+        "type": "declaration",
+        "line": 110,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getPriceDisplayMessage",
+        "type": "declaration",
+        "line": 119,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "proposalDataFetcher.js": [
+      {
+        "name": "getUserIdFromUrl",
+        "type": "declaration",
+        "line": 19,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "fetchUserById",
+        "type": "declaration",
+        "line": 49,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "fetchProposalsByGuest",
+        "type": "declaration",
+        "line": 89,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "fetchLastProposalDefaults",
+        "type": "declaration",
+        "line": 142,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "loadProposalDetails",
+        "type": "declaration",
+        "line": 189,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "sanitize.js": [
+      {
+        "name": "sanitizeText",
+        "type": "declaration",
+        "line": 18,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "sanitizeSearchQuery",
+        "type": "declaration",
+        "line": 71,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "sanitizeNeighborhoodSearch",
+        "type": "declaration",
+        "line": 84,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "escapeHtml",
+        "type": "declaration",
+        "line": 97,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "sanitizeUrlParam",
+        "type": "declaration",
+        "line": 120,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isValidEmail",
+        "type": "declaration",
+        "line": 160,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isValidPhone",
+        "type": "declaration",
+        "line": 176,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "sanitizeListingId",
+        "type": "declaration",
+        "line": 193,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "checkRateLimit",
+        "type": "declaration",
+        "line": 223,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "cleanupRateLimits",
+        "type": "declaration",
+        "line": 250,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "secureStorage.js": [
+      {
+        "name": "setAuthToken",
+        "type": "declaration",
+        "line": 50,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getAuthToken",
+        "type": "declaration",
+        "line": 59,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "setSessionId",
+        "type": "declaration",
+        "line": 67,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getSessionId",
+        "type": "declaration",
+        "line": 76,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "setRefreshData",
+        "type": "declaration",
+        "line": 84,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getRefreshData",
+        "type": "declaration",
+        "line": 93,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "clearSecureStorage",
+        "type": "declaration",
+        "line": 101,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "setAuthState",
+        "type": "declaration",
+        "line": 112,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getAuthState",
+        "type": "declaration",
+        "line": 125,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getUserId",
+        "type": "declaration",
+        "line": 133,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "setUserType",
+        "type": "declaration",
+        "line": 141,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getUserType",
+        "type": "declaration",
+        "line": 151,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "setFirstName",
+        "type": "declaration",
+        "line": 159,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getFirstName",
+        "type": "declaration",
+        "line": 169,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "setAvatarUrl",
+        "type": "declaration",
+        "line": 177,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getAvatarUrl",
+        "type": "declaration",
+        "line": 187,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "setSessionValid",
+        "type": "declaration",
+        "line": 195,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getSessionValid",
+        "type": "declaration",
+        "line": 203,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "clearAllAuthData",
+        "type": "declaration",
+        "line": 211,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "hasValidTokens",
+        "type": "declaration",
+        "line": 256,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "migrateFromLegacyStorage",
+        "type": "declaration",
+        "line": 267,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "setLinkedInOAuthUserType",
+        "type": "declaration",
+        "line": 304,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getLinkedInOAuthUserType",
+        "type": "declaration",
+        "line": 314,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "clearLinkedInOAuthUserType",
+        "type": "declaration",
+        "line": 321,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "setLinkedInOAuthLoginFlow",
+        "type": "declaration",
+        "line": 330,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getLinkedInOAuthLoginFlow",
+        "type": "declaration",
+        "line": 342,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "clearLinkedInOAuthLoginFlow",
+        "type": "declaration",
+        "line": 349,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "setGoogleOAuthUserType",
+        "type": "declaration",
+        "line": 357,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getGoogleOAuthUserType",
+        "type": "declaration",
+        "line": 367,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "clearGoogleOAuthUserType",
+        "type": "declaration",
+        "line": 374,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "setGoogleOAuthLoginFlow",
+        "type": "declaration",
+        "line": 383,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getGoogleOAuthLoginFlow",
+        "type": "declaration",
+        "line": 395,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "clearGoogleOAuthLoginFlow",
+        "type": "declaration",
+        "line": 402,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "__DEV__",
+        "type": "declaration",
+        "line": 409,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "slackService.js": [
+      {
+        "name": "sendFaqInquiry",
+        "type": "declaration",
+        "line": 26,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "supabase.js": [
+      {
+        "name": "supabase",
+        "type": "declaration",
+        "line": 10,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "supabaseUtils.js": [
+      {
+        "name": "parseJsonArray",
+        "type": "re-export",
+        "line": 21,
+        "source_file": "../logic/processors/listing/parseJsonArrayField.js",
+        "original_name": "parseJsonArrayFieldOptional"
+      },
+      {
+        "name": "fetchPhotoUrls",
+        "type": "declaration",
+        "line": 28,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "fetchHostData",
+        "type": "declaration",
+        "line": 77,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "extractPhotos",
+        "type": "declaration",
+        "line": 131,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "parseAmenities",
+        "type": "declaration",
+        "line": 191,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "timing.js": [
+      {
+        "name": "delay",
+        "type": "declaration",
+        "line": 11,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "toastService.js": [
+      {
+        "name": "ToastType",
+        "type": "declaration",
+        "line": 9,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "showToast",
+        "type": "declaration",
+        "line": 22,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "subscribeToToasts",
+        "type": "declaration",
+        "line": 31,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "toast",
+        "type": "declaration",
+        "line": 37,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "urlParams.js": [
+      {
+        "name": "parseUrlToFilters",
+        "type": "declaration",
+        "line": 23,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "serializeFiltersToUrl",
+        "type": "declaration",
+        "line": 68,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "updateUrlParams",
+        "type": "declaration",
+        "line": 106,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "watchUrlChanges",
+        "type": "declaration",
+        "line": 142,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "hasUrlFilters",
+        "type": "declaration",
+        "line": 175,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "clearUrlParams",
+        "type": "declaration",
+        "line": 185,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getShareableUrl",
+        "type": "declaration",
+        "line": 196,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "workflowClient.js": [
+      {
+        "name": "triggerWorkflow",
+        "type": "declaration",
+        "line": 60,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getWorkflowStatus",
+        "type": "declaration",
+        "line": 96,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "waitForWorkflow",
+        "type": "declaration",
+        "line": 135,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "triggerWorkflowAsync",
+        "type": "declaration",
+        "line": 176,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "auth\\cookies.js": [
+      {
+        "name": "getUsernameFromCookies",
+        "type": "declaration",
+        "line": 16,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "checkSplitLeaseCookies",
+        "type": "declaration",
+        "line": 38,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getCurrentUsername",
+        "type": "declaration",
+        "line": 62,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "storeCurrentUsername",
+        "type": "declaration",
+        "line": 75,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getStoredUsername",
+        "type": "declaration",
+        "line": 86,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "auth\\index.js": [
+      {
+        "name": "getUsernameFromCookies",
+        "type": "re-export",
+        "line": 12,
+        "source_file": "./cookies.js",
+        "original_name": null
+      },
+      {
+        "name": "checkSplitLeaseCookies",
+        "type": "re-export",
+        "line": 12,
+        "source_file": "./cookies.js",
+        "original_name": null
+      },
+      {
+        "name": "getCurrentUsername",
+        "type": "re-export",
+        "line": 12,
+        "source_file": "./cookies.js",
+        "original_name": null
+      },
+      {
+        "name": "storeCurrentUsername",
+        "type": "re-export",
+        "line": 12,
+        "source_file": "./cookies.js",
+        "original_name": null
+      },
+      {
+        "name": "getStoredUsername",
+        "type": "re-export",
+        "line": 12,
+        "source_file": "./cookies.js",
+        "original_name": null
+      },
+      {
+        "name": "checkAuthStatus",
+        "type": "re-export",
+        "line": 21,
+        "source_file": "./tokenValidation.js",
+        "original_name": null
+      },
+      {
+        "name": "validateTokenAndFetchUser",
+        "type": "re-export",
+        "line": 21,
+        "source_file": "./tokenValidation.js",
+        "original_name": null
+      },
+      {
+        "name": "isProtectedPage",
+        "type": "re-export",
+        "line": 21,
+        "source_file": "./tokenValidation.js",
+        "original_name": null
+      },
+      {
+        "name": "getAuthToken",
+        "type": "re-export",
+        "line": 21,
+        "source_file": "./tokenValidation.js",
+        "original_name": null
+      },
+      {
+        "name": "setAuthToken",
+        "type": "re-export",
+        "line": 21,
+        "source_file": "./tokenValidation.js",
+        "original_name": null
+      },
+      {
+        "name": "getSessionId",
+        "type": "re-export",
+        "line": 21,
+        "source_file": "./tokenValidation.js",
+        "original_name": null
+      },
+      {
+        "name": "setSessionId",
+        "type": "re-export",
+        "line": 21,
+        "source_file": "./tokenValidation.js",
+        "original_name": null
+      },
+      {
+        "name": "getIsUserLoggedIn",
+        "type": "re-export",
+        "line": 21,
+        "source_file": "./tokenValidation.js",
+        "original_name": null
+      },
+      {
+        "name": "setIsUserLoggedIn",
+        "type": "re-export",
+        "line": 21,
+        "source_file": "./tokenValidation.js",
+        "original_name": null
+      },
+      {
+        "name": "isSessionValid",
+        "type": "re-export",
+        "line": 34,
+        "source_file": "./session.js",
+        "original_name": null
+      },
+      {
+        "name": "clearAuthData",
+        "type": "re-export",
+        "line": 34,
+        "source_file": "./session.js",
+        "original_name": null
+      },
+      {
+        "name": "getUserId",
+        "type": "re-export",
+        "line": 34,
+        "source_file": "./session.js",
+        "original_name": null
+      },
+      {
+        "name": "getUserType",
+        "type": "re-export",
+        "line": 34,
+        "source_file": "./session.js",
+        "original_name": null
+      },
+      {
+        "name": "setUserType",
+        "type": "re-export",
+        "line": 34,
+        "source_file": "./session.js",
+        "original_name": null
+      },
+      {
+        "name": "getFirstName",
+        "type": "re-export",
+        "line": 34,
+        "source_file": "./session.js",
+        "original_name": null
+      },
+      {
+        "name": "getAvatarUrl",
+        "type": "re-export",
+        "line": 34,
+        "source_file": "./session.js",
+        "original_name": null
+      },
+      {
+        "name": "incrementAuthCheckAttempts",
+        "type": "re-export",
+        "line": 34,
+        "source_file": "./session.js",
+        "original_name": null
+      },
+      {
+        "name": "getAuthCheckAttempts",
+        "type": "re-export",
+        "line": 34,
+        "source_file": "./session.js",
+        "original_name": null
+      },
+      {
+        "name": "hasExceededMaxAuthAttempts",
+        "type": "re-export",
+        "line": 34,
+        "source_file": "./session.js",
+        "original_name": null
+      },
+      {
+        "name": "resetAuthCheckAttempts",
+        "type": "re-export",
+        "line": 34,
+        "source_file": "./session.js",
+        "original_name": null
+      },
+      {
+        "name": "loginUser",
+        "type": "re-export",
+        "line": 49,
+        "source_file": "./login.js",
+        "original_name": null
+      },
+      {
+        "name": "redirectToLogin",
+        "type": "re-export",
+        "line": 49,
+        "source_file": "./login.js",
+        "original_name": null
+      },
+      {
+        "name": "redirectToAccountProfile",
+        "type": "re-export",
+        "line": 49,
+        "source_file": "./login.js",
+        "original_name": null
+      },
+      {
+        "name": "initiateLinkedInOAuthLogin",
+        "type": "re-export",
+        "line": 49,
+        "source_file": "./login.js",
+        "original_name": null
+      },
+      {
+        "name": "handleLinkedInOAuthLoginCallback",
+        "type": "re-export",
+        "line": 49,
+        "source_file": "./login.js",
+        "original_name": null
+      },
+      {
+        "name": "checkUrlForAuthError",
+        "type": "re-export",
+        "line": 49,
+        "source_file": "./login.js",
+        "original_name": null
+      },
+      {
+        "name": "clearAuthErrorFromUrl",
+        "type": "re-export",
+        "line": 49,
+        "source_file": "./login.js",
+        "original_name": null
+      },
+      {
+        "name": "signupUser",
+        "type": "re-export",
+        "line": 60,
+        "source_file": "./signup.js",
+        "original_name": null
+      },
+      {
+        "name": "initiateLinkedInOAuth",
+        "type": "re-export",
+        "line": 60,
+        "source_file": "./signup.js",
+        "original_name": null
+      },
+      {
+        "name": "handleLinkedInOAuthCallback",
+        "type": "re-export",
+        "line": 60,
+        "source_file": "./signup.js",
+        "original_name": null
+      },
+      {
+        "name": "logoutUser",
+        "type": "re-export",
+        "line": 67,
+        "source_file": "./logout.js",
+        "original_name": null
+      },
+      {
+        "name": "requestPasswordReset",
+        "type": "re-export",
+        "line": 72,
+        "source_file": "./passwordReset.js",
+        "original_name": null
+      },
+      {
+        "name": "updatePassword",
+        "type": "re-export",
+        "line": 72,
+        "source_file": "./passwordReset.js",
+        "original_name": null
+      }
+    ],
+    "auth\\login.js": [
+      {
+        "name": "loginUser",
+        "type": "declaration",
+        "line": 37,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "redirectToLogin",
+        "type": "declaration",
+        "line": 202,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "redirectToAccountProfile",
+        "type": "declaration",
+        "line": 219,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "initiateLinkedInOAuthLogin",
+        "type": "declaration",
+        "line": 245,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "handleLinkedInOAuthLoginCallback",
+        "type": "declaration",
+        "line": 283,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "checkUrlForAuthError",
+        "type": "declaration",
+        "line": 403,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "clearAuthErrorFromUrl",
+        "type": "declaration",
+        "line": 428,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "auth\\logout.js": [
+      {
+        "name": "logoutUser",
+        "type": "declaration",
+        "line": 24,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "auth\\passwordReset.js": [
+      {
+        "name": "requestPasswordReset",
+        "type": "declaration",
+        "line": 28,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "updatePassword",
+        "type": "declaration",
+        "line": 85,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "auth\\session.js": [
+      {
+        "name": "incrementAuthCheckAttempts",
+        "type": "declaration",
+        "line": 30,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getAuthCheckAttempts",
+        "type": "declaration",
+        "line": 40,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "hasExceededMaxAuthAttempts",
+        "type": "declaration",
+        "line": 49,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "resetAuthCheckAttempts",
+        "type": "declaration",
+        "line": 56,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isSessionValid",
+        "type": "declaration",
+        "line": 70,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "clearAuthData",
+        "type": "declaration",
+        "line": 80,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getUserId",
+        "type": "declaration",
+        "line": 97,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getUserType",
+        "type": "declaration",
+        "line": 106,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "setUserType",
+        "type": "declaration",
+        "line": 115,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getFirstName",
+        "type": "declaration",
+        "line": 125,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getAvatarUrl",
+        "type": "declaration",
+        "line": 133,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "auth\\signup.js": [
+      {
+        "name": "signupUser",
+        "type": "declaration",
+        "line": 41,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "initiateLinkedInOAuth",
+        "type": "declaration",
+        "line": 257,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "handleLinkedInOAuthCallback",
+        "type": "declaration",
+        "line": 291,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "auth\\tokenValidation.js": [
+      {
+        "name": "getIsUserLoggedIn",
+        "type": "declaration",
+        "line": 34,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "setIsUserLoggedIn",
+        "type": "declaration",
+        "line": 42,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getAuthToken",
+        "type": "declaration",
+        "line": 57,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "setAuthToken",
+        "type": "declaration",
+        "line": 66,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getSessionId",
+        "type": "declaration",
+        "line": 77,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "setSessionId",
+        "type": "declaration",
+        "line": 86,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "checkAuthStatus",
+        "type": "declaration",
+        "line": 107,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "validateTokenAndFetchUser",
+        "type": "declaration",
+        "line": 208,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isProtectedPage",
+        "type": "declaration",
+        "line": 393,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "constants\\proposalStages.js": [
+      {
+        "name": "*",
+        "type": "re-export",
+        "line": 9,
+        "source_file": "../../logic/constants/proposalStages.js",
+        "original_name": null
+      }
+    ],
+    "constants\\proposalStatuses.js": [
+      {
+        "name": "*",
+        "type": "re-export",
+        "line": 8,
+        "source_file": "../../logic/constants/proposalStatuses.js",
+        "original_name": null
+      }
+    ],
+    "formatters\\priceFormatter.js": [
+      {
+        "name": "formatPrice",
+        "type": "declaration",
+        "line": 9,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "formatPricePerNight",
+        "type": "declaration",
+        "line": 27,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "formatPriceWithCents",
+        "type": "declaration",
+        "line": 28,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "formatPriceOrZero",
+        "type": "declaration",
+        "line": 29,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "proposals\\dataTransformers.js": [
+      {
+        "name": "transformUserData",
+        "type": "declaration",
+        "line": 18,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "transformListingData",
+        "type": "declaration",
+        "line": 37,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "transformHostData",
+        "type": "declaration",
+        "line": 73,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "transformGuestData",
+        "type": "declaration",
+        "line": 95,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "transformVirtualMeetingData",
+        "type": "declaration",
+        "line": 117,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "transformProposalData",
+        "type": "declaration",
+        "line": 141,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getProposalDisplayText",
+        "type": "declaration",
+        "line": 200,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "formatPrice",
+        "type": "re-export",
+        "line": 210,
+        "source_file": "../formatters/priceFormatter.js",
+        "original_name": "formatPriceWithCents"
+      },
+      {
+        "name": "formatDate",
+        "type": "declaration",
+        "line": 218,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "proposals\\statusButtonConfig.js": [
+      {
+        "name": "fetchStatusConfigurations",
+        "type": "declaration",
+        "line": 30,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getStatusConfigByDisplay",
+        "type": "declaration",
+        "line": 93,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getGuestAction1Label",
+        "type": "declaration",
+        "line": 114,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getGuestAction2Label",
+        "type": "declaration",
+        "line": 130,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getStatusSortOrder",
+        "type": "declaration",
+        "line": 147,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isTerminalStatusFromConfig",
+        "type": "declaration",
+        "line": 161,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isSuggestedProposalFromConfig",
+        "type": "declaration",
+        "line": 172,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "needsRentalAppFromConfig",
+        "type": "declaration",
+        "line": 185,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "shouldHideVirtualMeetingButton",
+        "type": "declaration",
+        "line": 208,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getButtonConfigForProposal",
+        "type": "declaration",
+        "line": 236,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "clearStatusConfigCache",
+        "type": "declaration",
+        "line": 456,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isStatusConfigCacheReady",
+        "type": "declaration",
+        "line": 467,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "proposals\\urlParser.js": [
+      {
+        "name": "cleanLegacyUserIdFromUrl",
+        "type": "declaration",
+        "line": 24,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getUserIdFromSession",
+        "type": "declaration",
+        "line": 74,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getProposalIdFromQuery",
+        "type": "declaration",
+        "line": 91,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "updateUrlWithProposal",
+        "type": "declaration",
+        "line": 109,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "parseProposalPageUrl",
+        "type": "declaration",
+        "line": 121,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "proposals\\userProposalQueries.js": [
+      {
+        "name": "fetchUserWithProposalList",
+        "type": "declaration",
+        "line": 23,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "extractProposalIds",
+        "type": "declaration",
+        "line": 62,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "fetchProposalsByIds",
+        "type": "declaration",
+        "line": 81,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "fetchUserProposalsFromUrl",
+        "type": "declaration",
+        "line": 534,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "scheduleSelector\\dayHelpers.js": [
+      {
+        "name": "DAY_NAMES",
+        "type": "named",
+        "line": 10,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "DAY_LETTERS",
+        "type": "named",
+        "line": 10,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "DAY_ABBREV",
+        "type": "named",
+        "line": 10,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "createDay",
+        "type": "declaration",
+        "line": 17,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "sortDays",
+        "type": "declaration",
+        "line": 38,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getNextDay",
+        "type": "declaration",
+        "line": 45,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getPreviousDay",
+        "type": "declaration",
+        "line": 53,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "dayToNumber",
+        "type": "declaration",
+        "line": 61,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "createAllDays",
+        "type": "declaration",
+        "line": 66,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "createNight",
+        "type": "declaration",
+        "line": 76,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "createNightsFromDays",
+        "type": "declaration",
+        "line": 100,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getUnusedNights",
+        "type": "declaration",
+        "line": 117,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getNotSelectedDays",
+        "type": "declaration",
+        "line": 125,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isDayInRange",
+        "type": "declaration",
+        "line": 133,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "scheduleSelector\\nightCalculations.js": [
+      {
+        "name": "calculateNightsFromDays",
+        "type": "declaration",
+        "line": 6,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "calculateCheckInCheckOut",
+        "type": "declaration",
+        "line": 34,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "handleSundayTransition",
+        "type": "declaration",
+        "line": 79,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "calculateUnusedNights",
+        "type": "declaration",
+        "line": 101,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "calculateStartEndNightNumbers",
+        "type": "declaration",
+        "line": 108,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "calculateDaysAsNumbers",
+        "type": "declaration",
+        "line": 123,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "calculateSelectedNightsAsNumbers",
+        "type": "declaration",
+        "line": 130,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "countSelectedNights",
+        "type": "declaration",
+        "line": 137,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "scheduleSelector\\priceCalculations.js": [
+      {
+        "name": "calculatePrice",
+        "type": "declaration",
+        "line": 33,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "scheduleSelector\\validators.js": [
+      {
+        "name": "validateDaySelection",
+        "type": "declaration",
+        "line": 6,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "validateDayRemoval",
+        "type": "declaration",
+        "line": 47,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isContiguous",
+        "type": "declaration",
+        "line": 74,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "validateSchedule",
+        "type": "declaration",
+        "line": 127,
+        "source_file": null,
+        "original_name": null
+      }
+    ]
+  },
+  "dependency_graph": {
+    "aiService.js": [
+      {
+        "name": "supabase",
+        "type": "named",
+        "source": "./supabase",
+        "resolved_path": "supabase.js",
+        "line": 8,
+        "alias": null
+      }
+    ],
+    "auth.js": [
+      {
+        "name": "AUTH_STORAGE_KEYS",
+        "type": "named",
+        "source": "./constants.js",
+        "resolved_path": "constants.js",
+        "line": 18,
+        "alias": null
+      },
+      {
+        "name": "SESSION_VALIDATION",
+        "type": "named",
+        "source": "./constants.js",
+        "resolved_path": "constants.js",
+        "line": 18,
+        "alias": null
+      },
+      {
+        "name": "SIGNUP_LOGIN_URL",
+        "type": "named",
+        "source": "./constants.js",
+        "resolved_path": "constants.js",
+        "line": 18,
+        "alias": null
+      },
+      {
+        "name": "ACCOUNT_PROFILE_URL",
+        "type": "named",
+        "source": "./constants.js",
+        "resolved_path": "constants.js",
+        "line": 18,
+        "alias": null
+      },
+      {
+        "name": "supabase",
+        "type": "named",
+        "source": "./supabase.js",
+        "resolved_path": "supabase.js",
+        "line": 24,
+        "alias": null
+      },
+      {
+        "name": "logger",
+        "type": "named",
+        "source": "./logger.js",
+        "resolved_path": "logger.js",
+        "line": 25,
+        "alias": null
+      },
+      {
+        "name": "delay",
+        "type": "named",
+        "source": "./timing.js",
+        "resolved_path": "timing.js",
+        "line": 26,
+        "alias": null
+      },
+      {
+        "name": "setAuthToken",
+        "type": "named",
+        "source": "./secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 27,
+        "alias": "setSecureAuthToken"
+      },
+      {
+        "name": "getAuthToken",
+        "type": "named",
+        "source": "./secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 27,
+        "alias": "getSecureAuthToken"
+      },
+      {
+        "name": "setSessionId",
+        "type": "named",
+        "source": "./secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 27,
+        "alias": "setSecureSessionId"
+      },
+      {
+        "name": "getSessionId",
+        "type": "named",
+        "source": "./secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 27,
+        "alias": "getSecureSessionId"
+      },
+      {
+        "name": "setAuthState",
+        "type": "named",
+        "source": "./secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 27,
+        "alias": null
+      },
+      {
+        "name": "getAuthState",
+        "type": "named",
+        "source": "./secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 27,
+        "alias": null
+      },
+      {
+        "name": "getUserId",
+        "type": "named",
+        "source": "./secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 27,
+        "alias": "getPublicUserId"
+      },
+      {
+        "name": "setUserType",
+        "type": "named",
+        "source": "./secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 27,
+        "alias": "setSecureUserType"
+      },
+      {
+        "name": "getUserType",
+        "type": "named",
+        "source": "./secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 27,
+        "alias": "getSecureUserType"
+      },
+      {
+        "name": "clearAllAuthData",
+        "type": "named",
+        "source": "./secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 27,
+        "alias": null
+      },
+      {
+        "name": "hasValidTokens",
+        "type": "named",
+        "source": "./secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 27,
+        "alias": null
+      },
+      {
+        "name": "migrateFromLegacyStorage",
+        "type": "named",
+        "source": "./secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 27,
+        "alias": null
+      },
+      {
+        "name": "getFirstName",
+        "type": "named",
+        "source": "./secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 27,
+        "alias": "getSecureFirstName"
+      },
+      {
+        "name": "getAvatarUrl",
+        "type": "named",
+        "source": "./secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 27,
+        "alias": "getSecureAvatarUrl"
+      },
+      {
+        "name": "setFirstName",
+        "type": "named",
+        "source": "./secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 27,
+        "alias": "setSecureFirstName"
+      },
+      {
+        "name": "setAvatarUrl",
+        "type": "named",
+        "source": "./secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 27,
+        "alias": "setSecureAvatarUrl"
+      },
+      {
+        "name": "setLinkedInOAuthUserType",
+        "type": "named",
+        "source": "./secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 27,
+        "alias": null
+      },
+      {
+        "name": "getLinkedInOAuthUserType",
+        "type": "named",
+        "source": "./secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 27,
+        "alias": null
+      },
+      {
+        "name": "clearLinkedInOAuthUserType",
+        "type": "named",
+        "source": "./secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 27,
+        "alias": null
+      },
+      {
+        "name": "setLinkedInOAuthLoginFlow",
+        "type": "named",
+        "source": "./secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 27,
+        "alias": null
+      },
+      {
+        "name": "getLinkedInOAuthLoginFlow",
+        "type": "named",
+        "source": "./secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 27,
+        "alias": null
+      },
+      {
+        "name": "clearLinkedInOAuthLoginFlow",
+        "type": "named",
+        "source": "./secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 27,
+        "alias": null
+      },
+      {
+        "name": "setGoogleOAuthUserType",
+        "type": "named",
+        "source": "./secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 27,
+        "alias": null
+      },
+      {
+        "name": "getGoogleOAuthUserType",
+        "type": "named",
+        "source": "./secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 27,
+        "alias": null
+      },
+      {
+        "name": "clearGoogleOAuthUserType",
+        "type": "named",
+        "source": "./secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 27,
+        "alias": null
+      },
+      {
+        "name": "setGoogleOAuthLoginFlow",
+        "type": "named",
+        "source": "./secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 27,
+        "alias": null
+      },
+      {
+        "name": "getGoogleOAuthLoginFlow",
+        "type": "named",
+        "source": "./secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 27,
+        "alias": null
+      },
+      {
+        "name": "clearGoogleOAuthLoginFlow",
+        "type": "named",
+        "source": "./secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 27,
+        "alias": null
+      }
+    ],
+    "availabilityValidation.js": [
+      {
+        "name": "DAY_NAMES",
+        "type": "named",
+        "source": "./constants.js",
+        "resolved_path": "constants.js",
+        "line": 10,
+        "alias": null
+      }
+    ],
+    "bubbleAPI.js": [
+      {
+        "name": "supabase",
+        "type": "named",
+        "source": "./supabase.js",
+        "resolved_path": "supabase.js",
+        "line": 13,
+        "alias": null
+      }
+    ],
+    "ctaConfig.js": [
+      {
+        "name": "supabase",
+        "type": "named",
+        "source": "./supabase.js",
+        "resolved_path": "supabase.js",
+        "line": 16,
+        "alias": null
+      }
+    ],
+    "dataLookups.js": [
+      {
+        "name": "supabase",
+        "type": "named",
+        "source": "./supabase.js",
+        "resolved_path": "supabase.js",
+        "line": 16,
+        "alias": null
+      },
+      {
+        "name": "DATABASE",
+        "type": "named",
+        "source": "./constants.js",
+        "resolved_path": "constants.js",
+        "line": 17,
+        "alias": null
+      }
+    ],
+    "informationalTextsFetcher.js": [
+      {
+        "name": "supabase",
+        "type": "named",
+        "source": "./supabase.js",
+        "resolved_path": "supabase.js",
+        "line": 11,
+        "alias": null
+      }
+    ],
+    "listingDataFetcher.js": [
+      {
+        "name": "supabase",
+        "type": "named",
+        "source": "./supabase.js",
+        "resolved_path": "supabase.js",
+        "line": 11,
+        "alias": null
+      },
+      {
+        "name": "getNeighborhoodName",
+        "type": "named",
+        "source": "./dataLookups.js",
+        "resolved_path": "dataLookups.js",
+        "line": 12,
+        "alias": null
+      },
+      {
+        "name": "getBoroughName",
+        "type": "named",
+        "source": "./dataLookups.js",
+        "resolved_path": "dataLookups.js",
+        "line": 12,
+        "alias": null
+      },
+      {
+        "name": "getPropertyTypeLabel",
+        "type": "named",
+        "source": "./dataLookups.js",
+        "resolved_path": "dataLookups.js",
+        "line": 12,
+        "alias": null
+      },
+      {
+        "name": "getAmenities",
+        "type": "named",
+        "source": "./dataLookups.js",
+        "resolved_path": "dataLookups.js",
+        "line": 12,
+        "alias": null
+      },
+      {
+        "name": "getSafetyFeatures",
+        "type": "named",
+        "source": "./dataLookups.js",
+        "resolved_path": "dataLookups.js",
+        "line": 12,
+        "alias": null
+      },
+      {
+        "name": "getHouseRules",
+        "type": "named",
+        "source": "./dataLookups.js",
+        "resolved_path": "dataLookups.js",
+        "line": 12,
+        "alias": null
+      },
+      {
+        "name": "getParkingOption",
+        "type": "named",
+        "source": "./dataLookups.js",
+        "resolved_path": "dataLookups.js",
+        "line": 12,
+        "alias": null
+      },
+      {
+        "name": "getCancellationPolicy",
+        "type": "named",
+        "source": "./dataLookups.js",
+        "resolved_path": "dataLookups.js",
+        "line": 12,
+        "alias": null
+      },
+      {
+        "name": "getStorageOption",
+        "type": "named",
+        "source": "./dataLookups.js",
+        "resolved_path": "dataLookups.js",
+        "line": 12,
+        "alias": null
+      }
+    ],
+    "listingService.js": [
+      {
+        "name": "supabase",
+        "type": "named",
+        "source": "./supabase.js",
+        "resolved_path": "supabase.js",
+        "line": 10,
+        "alias": null
+      },
+      {
+        "name": "getUserId",
+        "type": "named",
+        "source": "./secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 11,
+        "alias": null
+      },
+      {
+        "name": "uploadPhotos",
+        "type": "named",
+        "source": "./photoUpload.js",
+        "resolved_path": "photoUpload.js",
+        "line": 12,
+        "alias": null
+      },
+      {
+        "name": "logger",
+        "type": "named",
+        "source": "./logger.js",
+        "resolved_path": "logger.js",
+        "line": 13,
+        "alias": null
+      }
+    ],
+    "mapUtils.js": [
+      {
+        "name": "getBoroughMapConfig",
+        "type": "named",
+        "source": "./constants.js",
+        "resolved_path": "constants.js",
+        "line": 9,
+        "alias": null
+      }
+    ],
+    "navigation.js": [
+      {
+        "name": "routes",
+        "type": "named",
+        "source": "../routes.config.js",
+        "resolved_path": "C:\\Users\\Split Lease\\Documents\\Split Lease - Dev\\app\\src\\routes.config.js",
+        "line": 10,
+        "alias": null
+      },
+      {
+        "name": "getBasePath",
+        "type": "named",
+        "source": "../routes.config.js",
+        "resolved_path": "C:\\Users\\Split Lease\\Documents\\Split Lease - Dev\\app\\src\\routes.config.js",
+        "line": 10,
+        "alias": null
+      },
+      {
+        "name": "findRouteForUrl",
+        "type": "named",
+        "source": "../routes.config.js",
+        "resolved_path": "C:\\Users\\Split Lease\\Documents\\Split Lease - Dev\\app\\src\\routes.config.js",
+        "line": 10,
+        "alias": null
+      }
+    ],
+    "oauthCallbackHandler.js": [
+      {
+        "name": "getLinkedInOAuthLoginFlow",
+        "type": "named",
+        "source": "./secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 19,
+        "alias": null
+      },
+      {
+        "name": "clearLinkedInOAuthLoginFlow",
+        "type": "named",
+        "source": "./secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 19,
+        "alias": null
+      },
+      {
+        "name": "getGoogleOAuthLoginFlow",
+        "type": "named",
+        "source": "./secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 19,
+        "alias": null
+      },
+      {
+        "name": "clearGoogleOAuthLoginFlow",
+        "type": "named",
+        "source": "./secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 19,
+        "alias": null
+      },
+      {
+        "name": "handleLinkedInOAuthLoginCallback",
+        "type": "named",
+        "source": "./auth.js",
+        "resolved_path": "auth.js",
+        "line": 25,
+        "alias": null
+      },
+      {
+        "name": "handleGoogleOAuthLoginCallback",
+        "type": "named",
+        "source": "./auth.js",
+        "resolved_path": "auth.js",
+        "line": 25,
+        "alias": null
+      }
+    ],
+    "photoUpload.js": [
+      {
+        "name": "supabase",
+        "type": "named",
+        "source": "./supabase.js",
+        "resolved_path": "supabase.js",
+        "line": 11,
+        "alias": null
+      }
+    ],
+    "proposalDataFetcher.js": [
+      {
+        "name": "supabase",
+        "type": "named",
+        "source": "./supabase.js",
+        "resolved_path": "supabase.js",
+        "line": 8,
+        "alias": null
+      }
+    ],
+    "supabase.js": [
+      {
+        "name": "createClient",
+        "type": "named",
+        "source": "@supabase/supabase-js",
+        "resolved_path": null,
+        "line": 1,
+        "alias": null
+      }
+    ],
+    "supabaseUtils.js": [
+      {
+        "name": "supabase",
+        "type": "named",
+        "source": "./supabase.js",
+        "resolved_path": "supabase.js",
+        "line": 10,
+        "alias": null
+      },
+      {
+        "name": "DATABASE",
+        "type": "named",
+        "source": "./constants.js",
+        "resolved_path": "constants.js",
+        "line": 11,
+        "alias": null
+      },
+      {
+        "name": "logger",
+        "type": "named",
+        "source": "./logger.js",
+        "resolved_path": "logger.js",
+        "line": 12,
+        "alias": null
+      }
+    ],
+    "urlParams.js": [
+      {
+        "name": "DEFAULTS",
+        "type": "named",
+        "source": "./constants.js",
+        "resolved_path": "constants.js",
+        "line": 16,
+        "alias": null
+      },
+      {
+        "name": "sanitizeUrlParam",
+        "type": "named",
+        "source": "./sanitize.js",
+        "resolved_path": "sanitize.js",
+        "line": 17,
+        "alias": null
+      }
+    ],
+    "workflowClient.js": [
+      {
+        "name": "supabase",
+        "type": "named",
+        "source": "./supabase",
+        "resolved_path": "supabase.js",
+        "line": 11,
+        "alias": null
+      }
+    ],
+    "auth\\login.js": [
+      {
+        "name": "supabase",
+        "type": "named",
+        "source": "../supabase.js",
+        "resolved_path": "supabase.js",
+        "line": 6,
+        "alias": null
+      },
+      {
+        "name": "SIGNUP_LOGIN_URL",
+        "type": "named",
+        "source": "../constants.js",
+        "resolved_path": "constants.js",
+        "line": 7,
+        "alias": null
+      },
+      {
+        "name": "ACCOUNT_PROFILE_URL",
+        "type": "named",
+        "source": "../constants.js",
+        "resolved_path": "constants.js",
+        "line": 7,
+        "alias": null
+      },
+      {
+        "name": "setAuthToken",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 8,
+        "alias": "setSecureAuthToken"
+      },
+      {
+        "name": "setSessionId",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 8,
+        "alias": "setSecureSessionId"
+      },
+      {
+        "name": "setAuthState",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 8,
+        "alias": null
+      },
+      {
+        "name": "setUserType",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 8,
+        "alias": "setSecureUserType"
+      },
+      {
+        "name": "setLinkedInOAuthLoginFlow",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 8,
+        "alias": null
+      },
+      {
+        "name": "getLinkedInOAuthLoginFlow",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 8,
+        "alias": null
+      },
+      {
+        "name": "clearLinkedInOAuthLoginFlow",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 8,
+        "alias": null
+      },
+      {
+        "name": "clearLinkedInOAuthUserType",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 8,
+        "alias": null
+      },
+      {
+        "name": "setIsUserLoggedIn",
+        "type": "named",
+        "source": "./tokenValidation.js",
+        "resolved_path": "auth\\tokenValidation.js",
+        "line": 18,
+        "alias": null
+      },
+      {
+        "name": "setUserType",
+        "type": "named",
+        "source": "./session.js",
+        "resolved_path": "auth\\session.js",
+        "line": 19,
+        "alias": null
+      },
+      {
+        "name": "getSessionId",
+        "type": "named",
+        "source": "./tokenValidation.js",
+        "resolved_path": "auth\\tokenValidation.js",
+        "line": 20,
+        "alias": null
+      }
+    ],
+    "auth\\logout.js": [
+      {
+        "name": "supabase",
+        "type": "named",
+        "source": "../supabase.js",
+        "resolved_path": "supabase.js",
+        "line": 6,
+        "alias": null
+      },
+      {
+        "name": "getAuthToken",
+        "type": "named",
+        "source": "./tokenValidation.js",
+        "resolved_path": "auth\\tokenValidation.js",
+        "line": 7,
+        "alias": null
+      },
+      {
+        "name": "clearAuthData",
+        "type": "named",
+        "source": "./session.js",
+        "resolved_path": "auth\\session.js",
+        "line": 8,
+        "alias": null
+      }
+    ],
+    "auth\\passwordReset.js": [
+      {
+        "name": "supabase",
+        "type": "named",
+        "source": "../supabase.js",
+        "resolved_path": "supabase.js",
+        "line": 6,
+        "alias": null
+      },
+      {
+        "name": "setAuthToken",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 7,
+        "alias": "setSecureAuthToken"
+      },
+      {
+        "name": "setSessionId",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 7,
+        "alias": "setSecureSessionId"
+      },
+      {
+        "name": "setAuthState",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 7,
+        "alias": null
+      },
+      {
+        "name": "setUserType",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 7,
+        "alias": "setSecureUserType"
+      },
+      {
+        "name": "setIsUserLoggedIn",
+        "type": "named",
+        "source": "./tokenValidation.js",
+        "resolved_path": "auth\\tokenValidation.js",
+        "line": 13,
+        "alias": null
+      }
+    ],
+    "auth\\session.js": [
+      {
+        "name": "SESSION_VALIDATION",
+        "type": "named",
+        "source": "../constants.js",
+        "resolved_path": "constants.js",
+        "line": 6,
+        "alias": null
+      },
+      {
+        "name": "getAuthState",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 7,
+        "alias": null
+      },
+      {
+        "name": "clearAllAuthData",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 7,
+        "alias": null
+      },
+      {
+        "name": "getUserId",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 7,
+        "alias": "getPublicUserId"
+      },
+      {
+        "name": "getUserType",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 7,
+        "alias": "getSecureUserType"
+      },
+      {
+        "name": "setUserType",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 7,
+        "alias": "setSecureUserType"
+      },
+      {
+        "name": "getFirstName",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 7,
+        "alias": "getSecureFirstName"
+      },
+      {
+        "name": "getAvatarUrl",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 7,
+        "alias": "getSecureAvatarUrl"
+      }
+    ],
+    "auth\\signup.js": [
+      {
+        "name": "supabase",
+        "type": "named",
+        "source": "../supabase.js",
+        "resolved_path": "supabase.js",
+        "line": 6,
+        "alias": null
+      },
+      {
+        "name": "setAuthToken",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 7,
+        "alias": "setSecureAuthToken"
+      },
+      {
+        "name": "setSessionId",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 7,
+        "alias": "setSecureSessionId"
+      },
+      {
+        "name": "setAuthState",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 7,
+        "alias": null
+      },
+      {
+        "name": "setLinkedInOAuthUserType",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 7,
+        "alias": null
+      },
+      {
+        "name": "getLinkedInOAuthUserType",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 7,
+        "alias": null
+      },
+      {
+        "name": "clearLinkedInOAuthUserType",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 7,
+        "alias": null
+      },
+      {
+        "name": "setIsUserLoggedIn",
+        "type": "named",
+        "source": "./tokenValidation.js",
+        "resolved_path": "auth\\tokenValidation.js",
+        "line": 15,
+        "alias": null
+      },
+      {
+        "name": "setUserType",
+        "type": "named",
+        "source": "./session.js",
+        "resolved_path": "auth\\session.js",
+        "line": 16,
+        "alias": null
+      }
+    ],
+    "auth\\tokenValidation.js": [
+      {
+        "name": "supabase",
+        "type": "named",
+        "source": "../supabase.js",
+        "resolved_path": "supabase.js",
+        "line": 6,
+        "alias": null
+      },
+      {
+        "name": "checkSplitLeaseCookies",
+        "type": "named",
+        "source": "./cookies.js",
+        "resolved_path": "auth\\cookies.js",
+        "line": 7,
+        "alias": null
+      },
+      {
+        "name": "getAuthToken",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 8,
+        "alias": "getSecureAuthToken"
+      },
+      {
+        "name": "getSessionId",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 8,
+        "alias": "getSecureSessionId"
+      },
+      {
+        "name": "setAuthToken",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 8,
+        "alias": "setSecureAuthToken"
+      },
+      {
+        "name": "setSessionId",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 8,
+        "alias": "setSecureSessionId"
+      },
+      {
+        "name": "setAuthState",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 8,
+        "alias": null
+      },
+      {
+        "name": "getAuthState",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 8,
+        "alias": null
+      },
+      {
+        "name": "getUserType",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 8,
+        "alias": "getSecureUserType"
+      },
+      {
+        "name": "setUserType",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 8,
+        "alias": "setSecureUserType"
+      },
+      {
+        "name": "clearAllAuthData",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 8,
+        "alias": null
+      },
+      {
+        "name": "hasValidTokens",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 8,
+        "alias": null
+      },
+      {
+        "name": "migrateFromLegacyStorage",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 8,
+        "alias": null
+      },
+      {
+        "name": "setFirstName",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 8,
+        "alias": "setSecureFirstName"
+      },
+      {
+        "name": "setAvatarUrl",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 8,
+        "alias": "setSecureAvatarUrl"
+      }
+    ],
+    "proposals\\statusButtonConfig.js": [
+      {
+        "name": "supabase",
+        "type": "named",
+        "source": "../supabase.js",
+        "resolved_path": "supabase.js",
+        "line": 16,
+        "alias": null
+      },
+      {
+        "name": "PROPOSAL_STATUSES",
+        "type": "named",
+        "source": "../constants/proposalStatuses.js",
+        "resolved_path": "constants\\proposalStatuses.js",
+        "line": 17,
+        "alias": null
+      },
+      {
+        "name": "getStatusConfig",
+        "type": "named",
+        "source": "../constants/proposalStatuses.js",
+        "resolved_path": "constants\\proposalStatuses.js",
+        "line": 17,
+        "alias": null
+      }
+    ],
+    "proposals\\urlParser.js": [
+      {
+        "name": "getSessionId",
+        "type": "named",
+        "source": "../secureStorage.js",
+        "resolved_path": "secureStorage.js",
+        "line": 16,
+        "alias": null
+      }
+    ],
+    "proposals\\userProposalQueries.js": [
+      {
+        "name": "supabase",
+        "type": "named",
+        "source": "../supabase.js",
+        "resolved_path": "supabase.js",
+        "line": 14,
+        "alias": null
+      },
+      {
+        "name": "getUserIdFromSession",
+        "type": "named",
+        "source": "./urlParser.js",
+        "resolved_path": "proposals\\urlParser.js",
+        "line": 15,
+        "alias": null
+      },
+      {
+        "name": "getProposalIdFromQuery",
+        "type": "named",
+        "source": "./urlParser.js",
+        "resolved_path": "proposals\\urlParser.js",
+        "line": 15,
+        "alias": null
+      }
+    ],
+    "scheduleSelector\\dayHelpers.js": [
+      {
+        "name": "DAY_NAMES",
+        "type": "named",
+        "source": "../dayUtils.js",
+        "resolved_path": "dayUtils.js",
+        "line": 9,
+        "alias": null
+      },
+      {
+        "name": "DAY_LETTERS",
+        "type": "named",
+        "source": "../dayUtils.js",
+        "resolved_path": "dayUtils.js",
+        "line": 9,
+        "alias": null
+      },
+      {
+        "name": "DAY_ABBREV",
+        "type": "named",
+        "source": "../dayUtils.js",
+        "resolved_path": "dayUtils.js",
+        "line": 9,
+        "alias": null
+      }
+    ],
+    "scheduleSelector\\nightCalculations.js": [
+      {
+        "name": "sortDays",
+        "type": "named",
+        "source": "./dayHelpers.js",
+        "resolved_path": "scheduleSelector\\dayHelpers.js",
+        "line": 1,
+        "alias": null
+      },
+      {
+        "name": "getNextDay",
+        "type": "named",
+        "source": "./dayHelpers.js",
+        "resolved_path": "scheduleSelector\\dayHelpers.js",
+        "line": 1,
+        "alias": null
+      },
+      {
+        "name": "createNight",
+        "type": "named",
+        "source": "./dayHelpers.js",
+        "resolved_path": "scheduleSelector\\dayHelpers.js",
+        "line": 1,
+        "alias": null
+      }
+    ],
+    "scheduleSelector\\validators.js": [
+      {
+        "name": "sortDays",
+        "type": "named",
+        "source": "./dayHelpers.js",
+        "resolved_path": "scheduleSelector\\dayHelpers.js",
+        "line": 1,
+        "alias": null
+      }
+    ]
+  },
+  "reverse_dependencies": {
+    "supabase.js": [
+      "aiService.js",
+      "auth.js",
+      "bubbleAPI.js",
+      "ctaConfig.js",
+      "dataLookups.js",
+      "informationalTextsFetcher.js",
+      "listingDataFetcher.js",
+      "listingService.js",
+      "photoUpload.js",
+      "proposalDataFetcher.js",
+      "supabaseUtils.js",
+      "workflowClient.js",
+      "auth\\login.js",
+      "auth\\logout.js",
+      "auth\\passwordReset.js",
+      "auth\\signup.js",
+      "auth\\tokenValidation.js",
+      "proposals\\statusButtonConfig.js",
+      "proposals\\userProposalQueries.js"
+    ],
+    "constants.js": [
+      "auth.js",
+      "auth.js",
+      "auth.js",
+      "auth.js",
+      "availabilityValidation.js",
+      "dataLookups.js",
+      "mapUtils.js",
+      "supabaseUtils.js",
+      "urlParams.js",
+      "auth\\login.js",
+      "auth\\login.js",
+      "auth\\session.js"
+    ],
+    "logger.js": [
+      "auth.js",
+      "listingService.js",
+      "supabaseUtils.js"
+    ],
+    "timing.js": [
+      "auth.js"
+    ],
+    "secureStorage.js": [
+      "auth.js",
+      "auth.js",
+      "auth.js",
+      "auth.js",
+      "auth.js",
+      "auth.js",
+      "auth.js",
+      "auth.js",
+      "auth.js",
+      "auth.js",
+      "auth.js",
+      "auth.js",
+      "auth.js",
+      "auth.js",
+      "auth.js",
+      "auth.js",
+      "auth.js",
+      "auth.js",
+      "auth.js",
+      "auth.js",
+      "auth.js",
+      "auth.js",
+      "auth.js",
+      "auth.js",
+      "auth.js",
+      "auth.js",
+      "auth.js",
+      "auth.js",
+      "listingService.js",
+      "oauthCallbackHandler.js",
+      "oauthCallbackHandler.js",
+      "oauthCallbackHandler.js",
+      "oauthCallbackHandler.js",
+      "auth\\login.js",
+      "auth\\login.js",
+      "auth\\login.js",
+      "auth\\login.js",
+      "auth\\login.js",
+      "auth\\login.js",
+      "auth\\login.js",
+      "auth\\login.js",
+      "auth\\passwordReset.js",
+      "auth\\passwordReset.js",
+      "auth\\passwordReset.js",
+      "auth\\passwordReset.js",
+      "auth\\session.js",
+      "auth\\session.js",
+      "auth\\session.js",
+      "auth\\session.js",
+      "auth\\session.js",
+      "auth\\session.js",
+      "auth\\session.js",
+      "auth\\signup.js",
+      "auth\\signup.js",
+      "auth\\signup.js",
+      "auth\\signup.js",
+      "auth\\signup.js",
+      "auth\\signup.js",
+      "auth\\tokenValidation.js",
+      "auth\\tokenValidation.js",
+      "auth\\tokenValidation.js",
+      "auth\\tokenValidation.js",
+      "auth\\tokenValidation.js",
+      "auth\\tokenValidation.js",
+      "auth\\tokenValidation.js",
+      "auth\\tokenValidation.js",
+      "auth\\tokenValidation.js",
+      "auth\\tokenValidation.js",
+      "auth\\tokenValidation.js",
+      "auth\\tokenValidation.js",
+      "auth\\tokenValidation.js",
+      "proposals\\urlParser.js"
+    ],
+    "dataLookups.js": [
+      "listingDataFetcher.js",
+      "listingDataFetcher.js",
+      "listingDataFetcher.js",
+      "listingDataFetcher.js",
+      "listingDataFetcher.js",
+      "listingDataFetcher.js",
+      "listingDataFetcher.js",
+      "listingDataFetcher.js",
+      "listingDataFetcher.js"
+    ],
+    "photoUpload.js": [
+      "listingService.js"
+    ],
+    "C:\\Users\\Split Lease\\Documents\\Split Lease - Dev\\app\\src\\routes.config.js": [
+      "navigation.js",
+      "navigation.js",
+      "navigation.js"
+    ],
+    "auth.js": [
+      "oauthCallbackHandler.js",
+      "oauthCallbackHandler.js"
+    ],
+    "sanitize.js": [
+      "urlParams.js"
+    ],
+    "auth\\tokenValidation.js": [
+      "auth\\login.js",
+      "auth\\login.js",
+      "auth\\logout.js",
+      "auth\\passwordReset.js",
+      "auth\\signup.js"
+    ],
+    "auth\\session.js": [
+      "auth\\login.js",
+      "auth\\logout.js",
+      "auth\\signup.js"
+    ],
+    "auth\\cookies.js": [
+      "auth\\tokenValidation.js"
+    ],
+    "constants\\proposalStatuses.js": [
+      "proposals\\statusButtonConfig.js",
+      "proposals\\statusButtonConfig.js"
+    ],
+    "proposals\\urlParser.js": [
+      "proposals\\userProposalQueries.js",
+      "proposals\\userProposalQueries.js"
+    ],
+    "dayUtils.js": [
+      "scheduleSelector\\dayHelpers.js",
+      "scheduleSelector\\dayHelpers.js",
+      "scheduleSelector\\dayHelpers.js"
+    ],
+    "scheduleSelector\\dayHelpers.js": [
+      "scheduleSelector\\nightCalculations.js",
+      "scheduleSelector\\nightCalculations.js",
+      "scheduleSelector\\nightCalculations.js",
+      "scheduleSelector\\validators.js"
+    ]
+  }
+}

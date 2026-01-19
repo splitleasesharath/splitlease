@@ -13,7 +13,7 @@
  * - Rules never perform actions - they only provide verdicts
  */
 
-import { PROPOSAL_STATUSES, isTerminalStatus, isCompletedStatus, getActionsForStatus } from '../../constants/proposalStatuses.js';
+import { PROPOSAL_STATUSES, isTerminalStatus, isCompletedStatus, getActionsForStatus, isSuggestedProposal } from '../../constants/proposalStatuses.js';
 import { getGuestCancellationReasons } from '../../../lib/dataLookups.js';
 
 /**
@@ -348,16 +348,8 @@ export function needsRentalApplicationSubmission(proposal) {
   return false;
 }
 
-/**
- * Check if this is a Split Lease suggested proposal
- * @param {Object} proposal - Proposal object
- * @returns {boolean} True if suggested by Split Lease
- */
-export function isSLSuggestedProposal(proposal) {
-  if (!proposal) return false;
-  const status = proposal.status || proposal.Status;
-  return status?.includes('Submitted for guest by Split Lease');
-}
+// Re-export isSuggestedProposal for backward compatibility
+export { isSuggestedProposal as isSLSuggestedProposal };
 
 /**
  * Check if guest can confirm a Split Lease suggested proposal

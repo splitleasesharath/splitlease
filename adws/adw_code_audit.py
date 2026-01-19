@@ -1,13 +1,17 @@
 #!/usr/bin/env -S uv run
 # /// script
-# dependencies = ["python-dotenv", "pydantic", "psutil>=5.9.0", "google-genai"]
+# dependencies = ["python-dotenv", "pydantic", "psutil>=5.9.0", "google-genai", "tree-sitter>=0.23.0", "tree-sitter-javascript>=0.23.0", "tree-sitter-typescript>=0.23.0"]
 # ///
 
 """
-ADW Code Audit - Codebase Auditor with Page Tracing
+ADW Code Audit - Codebase Auditor with Page Tracing and Dependency Analysis
 
 Uses Opus to audit a directory and generate a chunk-based refactoring plan
-grouped by affected page.
+grouped by affected page. Integrates AST-based dependency analysis to provide:
+- High impact summary for LLM context (~100 lines vs 32K)
+- Transitive reduction for cleaner dependency graphs
+- Cycle detection for atomic refactoring units
+- Topological levels for correct refactoring order
 
 Usage: uv run adw_code_audit.py [target_path] [--audit-type general|performance|security]
 
@@ -20,16 +24,88 @@ import sys
 import os
 from datetime import datetime
 from pathlib import Path
+from typing import Optional, Tuple
 
 # Add adws to path for imports
 sys.path.insert(0, str(Path(__file__).parent))
 
 from adw_modules.agent import prompt_claude_code
 from adw_modules.data_types import AgentPromptRequest
+from adw_modules.ast_dependency_analyzer import analyze_dependencies
+from adw_modules.graph_algorithms import (
+    analyze_graph,
+    build_simple_graph,
+    GraphAnalysisResult,
+)
+from adw_modules.high_impact_summary import HighImpactSummary
 
 
-def run_code_audit_and_plan(target_path: str, audit_type: str, working_dir: Path) -> str:
-    """Use Opus to audit directory and create refactoring plan grouped by page."""
+def run_dependency_analysis(target_path: str, working_dir: Path) -> Tuple[Optional[GraphAnalysisResult], str]:
+    """Run AST dependency analysis and graph algorithms.
+
+    Args:
+        target_path: Directory to analyze (relative to working_dir)
+        working_dir: Project root directory
+
+    Returns:
+        Tuple of (GraphAnalysisResult, high_impact_summary_text)
+        Returns (None, "") if analysis fails
+    """
+    try:
+        # CRITICAL: Resolve target_path relative to working_dir (project root)
+        # The script runs from adws/, but paths like "app/src/logic"
+        # must resolve relative to the project root, not adws/
+        absolute_target = working_dir / target_path
+        print(f"  [AST] Analyzing dependencies in {absolute_target}...")
+
+        # Step 1: AST analysis
+        dep_context = analyze_dependencies(str(absolute_target))
+
+        # Step 2: Build simplified graph for algorithms
+        simple_graph = build_simple_graph(dep_context)
+
+        # Step 3: Run graph algorithms (transitive reduction, cycle detection, topological levels)
+        graph_result = analyze_graph(simple_graph)
+
+        # Step 4: Generate condensed summary
+        summary = HighImpactSummary.from_dependency_context(
+            dep_context,
+            graph_result.cycles,
+            graph_result.topological_levels,
+            graph_result.edge_reduction_pct
+        )
+
+        # Log insights
+        print(f"  [Graph] Transitive reduction: {graph_result.edge_reduction_pct:.0%} edges removed")
+        print(f"  [Graph] Cycles detected: {graph_result.cycle_count}")
+        print(f"  [Graph] Topological levels: {graph_result.level_count}")
+        print(f"  [Graph] Files analyzed: {dep_context.total_files}")
+
+        return graph_result, summary.to_prompt_context()
+
+    except Exception as e:
+        print(f"  [AST] Warning: Dependency analysis failed: {e}")
+        print(f"  [AST] Proceeding without dependency context")
+        return None, ""
+
+
+def run_code_audit_and_plan(
+    target_path: str,
+    audit_type: str,
+    working_dir: Path,
+    skip_dependency_analysis: bool = False
+) -> Tuple[str, Optional[GraphAnalysisResult]]:
+    """Use Opus to audit directory and create refactoring plan grouped by page.
+
+    Args:
+        target_path: Path to audit
+        audit_type: Type of audit (general, performance, security)
+        working_dir: Working directory
+        skip_dependency_analysis: If True, skip AST analysis (faster but less context)
+
+    Returns:
+        Tuple of (plan_file_path, GraphAnalysisResult)
+    """
     print(f"\n{'='*60}")
     print(f"PHASE: CODE AUDIT ({audit_type.upper()}) & PLAN CREATION")
     print(f"{'='*60}")
@@ -39,6 +115,13 @@ def run_code_audit_and_plan(target_path: str, audit_type: str, working_dir: Path
     plan_file = f"adws/adw_plans/{timestamp}_code_refactor_plan.md"
     agent_dir = f"adws/agents/code_audit_{timestamp}"
 
+    # NEW: Pre-compute dependencies with graph algorithms
+    graph_result = None
+    high_impact_summary = ""
+
+    if not skip_dependency_analysis:
+        graph_result, high_impact_summary = run_dependency_analysis(target_path, working_dir)
+
     # Load prompt from template
     prompt_template_path = Path(__file__).parent / "prompts" / "code_audit_opus.txt"
     if prompt_template_path.exists():
@@ -47,7 +130,8 @@ def run_code_audit_and_plan(target_path: str, audit_type: str, working_dir: Path
             target_path=target_path,
             audit_type=audit_type,
             timestamp=timestamp,
-            date=datetime.now().strftime('%Y-%m-%d')
+            date=datetime.now().strftime('%Y-%m-%d'),
+            high_impact_summary=high_impact_summary  # NEW: Inject dependency context
         )
     else:
         # Fallback to hardcoded prompt if file not found
@@ -120,7 +204,7 @@ Group chunks by affected page group.
         else:
             sys.exit(1)
 
-    return str(plan_path.relative_to(working_dir))
+    return str(plan_path.relative_to(working_dir)), graph_result
 
 
 def main():
@@ -128,6 +212,8 @@ def main():
     parser.add_argument("target_path", help="Path to audit")
     parser.add_argument("--audit-type", default="general",
                         help="Type of audit (default: general)")
+    parser.add_argument("--skip-deps", action="store_true",
+                        help="Skip dependency analysis (faster but less context)")
 
     args = parser.parse_args()
 
@@ -135,15 +221,29 @@ def main():
     working_dir = Path.cwd()
 
     try:
-        plan_file = run_code_audit_and_plan(args.target_path, args.audit_type, working_dir)
+        plan_file, graph_result = run_code_audit_and_plan(
+            args.target_path,
+            args.audit_type,
+            working_dir,
+            skip_dependency_analysis=args.skip_deps
+        )
         print(f"\n{'='*60}")
         print("CODE AUDIT COMPLETE")
         print(f"{'='*60}")
         print(f"Plan: {plan_file}")
+
+        if graph_result:
+            print(f"\nGraph Analysis:")
+            print(f"  - Edge reduction: {graph_result.edge_reduction_pct:.0%}")
+            print(f"  - Cycles detected: {graph_result.cycle_count}")
+            print(f"  - Topological levels: {graph_result.level_count}")
+
         print(f"\nNext step:")
         print(f"  uv run adw_code_implement_orchestrator.py {plan_file}")
     except Exception as e:
         print(f"Error during audit: {e}")
+        import traceback
+        traceback.print_exc()
         sys.exit(1)
 
 

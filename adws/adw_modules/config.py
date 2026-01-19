@@ -71,3 +71,108 @@ SCREENSHOT_SUBDIR = "validation_screenshots"
 
 # Screenshot format
 SCREENSHOT_FORMAT = "png"
+
+# ============================================================================
+# MODEL CONFIGURATION (PHASE-SPECIFIC)
+# ============================================================================
+# Each phase of the ADW pipeline can use a different model.
+# Environment variables override these defaults.
+#
+# Model IDs:
+#   - "opus" -> claude-opus-4-5-20251101 (Claude Opus 4.5)
+#   - "sonnet" -> claude-sonnet-4-20250514 (Claude Sonnet 4)
+#   - "haiku" -> claude-haiku (fast, cheap)
+#
+# For Gemini (when ADW_PROVIDER=gemini):
+#   - Maps "opus" -> GEMINI_HEAVY_MODEL env var
+#   - Maps "sonnet" -> GEMINI_BASE_MODEL env var
+
+import os
+from typing import Literal, Dict, Any
+
+# Type alias for model names
+ModelName = Literal["opus", "sonnet", "haiku"]
+
+# Phase-specific model configuration
+# These are the DEFAULT models for each phase - can be overridden via environment
+_PHASE_MODEL_DEFAULTS: Dict[str, ModelName] = {
+    "audit": "opus",           # Code analysis and planning - needs reasoning
+    "implementation": "opus",  # Code writing - needs precision
+    "review": "opus",          # Code review - needs thoroughness
+    "validation": "opus",      # Visual/test validation - needs accuracy
+    "classification": "opus",  # Task classification
+    "documentation": "opus",   # Documentation generation
+}
+
+
+def get_phase_model(phase: str) -> ModelName:
+    """Get the model to use for a specific ADW phase.
+
+    Checks environment variable first, then falls back to default.
+
+    Environment variables (case-insensitive):
+        ADW_AUDIT_MODEL=opus
+        ADW_IMPLEMENTATION_MODEL=sonnet
+        ADW_REVIEW_MODEL=opus
+        ADW_VALIDATION_MODEL=sonnet
+        ADW_CLASSIFICATION_MODEL=sonnet
+        ADW_DOCUMENTATION_MODEL=opus
+
+    Args:
+        phase: One of "audit", "implementation", "review", "validation",
+               "classification", "documentation"
+
+    Returns:
+        Model name ("opus", "sonnet", or "haiku")
+
+    Example:
+        >>> get_phase_model("audit")
+        "opus"
+        >>> os.environ["ADW_AUDIT_MODEL"] = "sonnet"
+        >>> get_phase_model("audit")
+        "sonnet"
+    """
+    # Check environment variable override
+    env_key = f"ADW_{phase.upper()}_MODEL"
+    env_value = os.getenv(env_key, "").lower()
+
+    if env_value in ("opus", "sonnet", "haiku"):
+        return env_value  # type: ignore
+
+    # Fall back to configured default
+    return _PHASE_MODEL_DEFAULTS.get(phase, "opus")
+
+
+def set_phase_model_default(phase: str, model: ModelName) -> None:
+    """Set the default model for a phase (runtime configuration).
+
+    This changes the in-memory default. To persist, use environment variables.
+
+    Args:
+        phase: One of "audit", "implementation", "review", "validation"
+        model: Model name ("opus", "sonnet", or "haiku")
+    """
+    _PHASE_MODEL_DEFAULTS[phase] = model
+
+
+def get_all_phase_models() -> Dict[str, ModelName]:
+    """Get the effective model for all phases (including env overrides).
+
+    Returns:
+        Dictionary of phase -> effective model
+    """
+    return {
+        phase: get_phase_model(phase)
+        for phase in _PHASE_MODEL_DEFAULTS.keys()
+    }
+
+
+def print_model_config() -> None:
+    """Print current model configuration for debugging."""
+    print("\n=== ADW Model Configuration ===")
+    for phase, model in get_all_phase_models().items():
+        env_key = f"ADW_{phase.upper()}_MODEL"
+        env_value = os.getenv(env_key, "")
+        source = f"(env: {env_key})" if env_value else "(default)"
+        print(f"  {phase:20s}: {model:8s} {source}")
+    print("================================\n")

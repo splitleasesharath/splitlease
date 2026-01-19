@@ -76,17 +76,35 @@ function _convertDayValueToName(dayValue) {
 }
 
 /**
- * Get the first and last selected day range from proposal
- * Derives directly from Days Selected to ensure consistency with displayed day badges
- * Uses wrap-around logic for schedules spanning Saturday-Sunday boundary
+ * Get the check-in to checkout day range from proposal
  *
- * Note: Database stores 0-indexed days (0=Sunday through 6=Saturday)
+ * Priority order:
+ * 1. Use explicit check in/out day fields if available (most reliable)
+ * 2. Fall back to deriving from Days Selected array
+ *
+ * Days Selected represents the range from check-in to checkout (inclusive).
+ * Check-in = first day, Checkout = last day in the selection.
  *
  * @param {Object} proposal - Proposal object
- * @returns {string|null} "Monday to Saturday" format or null if unavailable
+ * @returns {string|null} "Monday to Friday" format (check-in day to checkout day) or null if unavailable
  */
 function getCheckInOutRange(proposal) {
-  // Always derive from Days Selected to match the displayed day badges
+  // Priority 1: Use explicit check-in/check-out day fields if available
+  const checkInDay = proposal['check in day'] || proposal['hc check in day'];
+  const checkOutDay = proposal['check out day'] || proposal['hc check out day'];
+
+  if (checkInDay != null && checkOutDay != null) {
+    const checkInIndex = typeof checkInDay === 'number' ? checkInDay : parseInt(checkInDay, 10);
+    const checkOutIndex = typeof checkOutDay === 'number' ? checkOutDay : parseInt(checkOutDay, 10);
+
+    if (!isNaN(checkInIndex) && !isNaN(checkOutIndex) &&
+        checkInIndex >= 0 && checkInIndex <= 6 &&
+        checkOutIndex >= 0 && checkOutIndex <= 6) {
+      return `${DAY_NAMES[checkInIndex]} to ${DAY_NAMES[checkOutIndex]}`;
+    }
+  }
+
+  // Priority 2: Derive from Days Selected array
   let daysSelected = proposal['Days Selected'] || proposal.hcDaysSelected || [];
 
   // Parse if it's a JSON string
@@ -124,46 +142,34 @@ function getCheckInOutRange(proposal) {
 
   const sorted = [...dayIndices].sort((a, b) => a - b);
 
-  // Handle wrap-around case (e.g., Fri, Sat, Sun, Mon = [0, 1, 5, 6])
-  const hasZero = sorted.includes(0);
-  const hasSix = sorted.includes(6);
+  // Handle wrap-around case (e.g., Fri, Sat, Sun, Mon = [5, 6, 0, 1])
+  const hasLowNumbers = sorted.some(d => d <= 2); // Sun, Mon, Tue
+  const hasHighNumbers = sorted.some(d => d >= 4); // Thu, Fri, Sat
 
-  if (hasZero && hasSix) {
+  if (hasLowNumbers && hasHighNumbers && sorted.length < 7) {
     // Find gap to determine actual start/end
     let gapIndex = -1;
     for (let i = 1; i < sorted.length; i++) {
-      if (sorted[i] !== sorted[i - 1] + 1) {
+      if (sorted[i] - sorted[i - 1] > 1) {
         gapIndex = i;
         break;
       }
     }
 
     if (gapIndex !== -1) {
-      // Wrapped selection: first day is after the gap, last day is before the gap
-      const firstDayIndex = sorted[gapIndex]; // First day after gap (e.g., Friday = 5)
-      const lastDayIndex = sorted[gapIndex - 1]; // Last day before gap (e.g., Monday = 1)
+      // Wrapped selection: check-in is after the gap, checkout is before the gap
+      const checkInDayIndex = sorted[gapIndex];
+      const checkOutDayIndex = sorted[gapIndex - 1];
 
-      const checkInName = DAY_NAMES[firstDayIndex];
-      const checkOutName = DAY_NAMES[lastDayIndex];
-
-      if (checkInName && checkOutName) {
-        return `${checkInName} to ${checkOutName}`;
-      }
+      return `${DAY_NAMES[checkInDayIndex]} to ${DAY_NAMES[checkOutDayIndex]}`;
     }
   }
 
-  // Standard case: first selected day to last selected day
-  const firstDayIndex = sorted[0];
-  const lastDayIndex = sorted[sorted.length - 1];
+  // Standard case (no wrap-around): check-in is first day, checkout is last day
+  const checkInDayIndex = sorted[0];
+  const checkOutDayIndex = sorted[sorted.length - 1];
 
-  const checkInName = DAY_NAMES[firstDayIndex];
-  const checkOutName = DAY_NAMES[lastDayIndex];
-
-  if (checkInName && checkOutName) {
-    return `${checkInName} to ${checkOutName}`;
-  }
-
-  return null;
+  return `${DAY_NAMES[checkInDayIndex]} to ${DAY_NAMES[checkOutDayIndex]}`;
 }
 
 /**

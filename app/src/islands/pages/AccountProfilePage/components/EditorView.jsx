@@ -46,7 +46,9 @@ export default function EditorView({
   // Rental application props (guest-only)
   rentalApplicationStatus = 'not_started',
   rentalApplicationProgress = 0,
-  onOpenRentalWizard
+  onOpenRentalWizard,
+  // Email verification state
+  isVerifyingEmail = false
 }) {
   return (
     <>
@@ -96,11 +98,14 @@ export default function EditorView({
       {/* Trust & Verification - Always shown */}
       <TrustVerificationCard
         verifications={verifications}
+        emailAddress={profileData?.email || profileData?.['Email'] || ''}
+        phoneNumber={profileData?.['Phone Number (as text)'] || ''}
         onVerifyEmail={onVerifyEmail}
         onVerifyPhone={onVerifyPhone}
         onVerifyGovId={onVerifyGovId}
         onConnectLinkedIn={onConnectLinkedIn}
         onEditPhone={onEditPhone}
+        isVerifyingEmail={isVerifyingEmail}
       />
 
       {/* Guest-only: Reasons to Host Me */}

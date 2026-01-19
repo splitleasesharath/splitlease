@@ -592,9 +592,10 @@
 
 /* Form group label with info */
 .form-group .label-with-info {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   margin-bottom: 10px;
+  width: fit-content;
 }
 
 .value-display {
@@ -1178,6 +1179,8 @@
   overflow: hidden;
   background: linear-gradient(to bottom, #f9fafb, #f3f4f6);
   flex-shrink: 0;
+  /* Enforce horizontal aspect ratio to prevent vertical images from stretching card */
+  aspect-ratio: 4 / 3;
 }
 
 .review-listing-images img {

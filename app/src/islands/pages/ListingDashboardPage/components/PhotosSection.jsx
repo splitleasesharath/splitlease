@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useListingDashboard } from '../context/ListingDashboardContext';
 
 // Icons
 const StarIcon = ({ filled }) => (
@@ -72,7 +73,22 @@ const PHOTO_TYPES = [
   'Other',
 ];
 
-export default function PhotosSection({ listing, onAddPhotos, onDeletePhoto, onSetCover, onReorderPhotos }) {
+export default function PhotosSection() {
+  // Get data and handlers from context (migrated from props pattern)
+  const {
+    listing,
+    handleEditSection,
+    handleSetCoverPhoto,
+    handleDeletePhoto,
+    handleReorderPhotos,
+  } = useListingDashboard();
+
+  // Map context handlers to component's expected interface
+  const onAddPhotos = () => handleEditSection('photos');
+  const onDeletePhoto = handleDeletePhoto;
+  const onSetCover = handleSetCoverPhoto;
+  const onReorderPhotos = handleReorderPhotos;
+
   const photos = listing?.photos || [];
 
   // Drag and drop state
@@ -114,8 +130,8 @@ export default function PhotosSection({ listing, onAddPhotos, onDeletePhoto, onS
     }
 
     // Call the reorder handler
-    if (onReorderPhotos) {
-      onReorderPhotos(draggedIndex, dropIndex);
+    if (handleReorderPhotos) {
+      handleReorderPhotos(draggedIndex, dropIndex);
     }
 
     setDraggedIndex(null);
@@ -153,7 +169,7 @@ export default function PhotosSection({ listing, onAddPhotos, onDeletePhoto, onS
         <h2 className="listing-dashboard-section__title">Photos</h2>
         <button
           className="listing-dashboard-section__add-btn"
-          onClick={onAddPhotos}
+          onClick={() => handleEditSection('photos')}
         >
           Add Photos
         </button>
@@ -221,14 +237,14 @@ export default function PhotosSection({ listing, onAddPhotos, onDeletePhoto, onS
                 <div className="listing-dashboard-photos__actions">
                   <button
                     className={`listing-dashboard-photos__star-btn ${(photo.isCover || index === 0) ? 'listing-dashboard-photos__star-btn--active' : ''}`}
-                    onClick={() => onSetCover?.(photo.id)}
+                    onClick={() => handleSetCoverPhoto?.(photo.id)}
                     title={(photo.isCover || index === 0) ? 'Current cover photo' : 'Set as cover photo'}
                   >
                     <StarIcon filled={photo.isCover || index === 0} />
                   </button>
                   <button
                     className="listing-dashboard-photos__delete-btn"
-                    onClick={() => onDeletePhoto?.(photo.id)}
+                    onClick={() => handleDeletePhoto?.(photo.id)}
                     title="Delete photo"
                   >
                     <TrashIcon />
@@ -265,7 +281,7 @@ export default function PhotosSection({ listing, onAddPhotos, onDeletePhoto, onS
               <polyline points="21,15 16,10 5,21"/>
             </svg>
             <p>No photos uploaded yet.</p>
-            <button onClick={onAddPhotos}>Add your first photo</button>
+            <button onClick={() => handleEditSection('photos')}>Add your first photo</button>
           </div>
         )}
       </div>

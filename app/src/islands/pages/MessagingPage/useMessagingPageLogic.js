@@ -5,7 +5,7 @@
  *
  * Responsibilities:
  * - Authentication check (redirect if not logged in)
- * - Fetch threads on mount via Edge Function
+ * - Fetch threads on mount via Edge Function (bypasses RLS for legacy auth)
  * - URL parameter sync (?thread=THREAD_ID)
  * - Fetch messages when thread selected
  * - Message sending handler
@@ -349,34 +349,81 @@ export function useMessagingPageLogic() {
 
   /**
    * Fetch all threads for the authenticated user
-   * Direct Supabase query - no Edge Function needed for reads
+   * Supports both modern Supabase auth (JWT) and legacy auth (user_id in payload)
    */
   async function fetchThreads() {
+    console.log('[fetchThreads] Starting thread fetch via Edge Function...');
     try {
       setIsLoading(true);
       setError(null);
 
-      // Get user's Bubble ID from multiple sources (state may not be set yet due to async setState)
-      let bubbleId = user?.bubbleId;
+      // Check for Supabase session (modern auth)
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
 
-      if (!bubbleId) {
-        // Try secure storage first (works for legacy auth users)
-        bubbleId = getUserId();
+      console.log('[fetchThreads] Auth state:', {
+        hasSupabaseSession: !!accessToken,
+        hasLegacyUserId: !!getUserId(),
+      });
+
+      // Build request headers - include Authorization only if we have a token
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
       }
 
-      if (!bubbleId) {
-        // Fallback to Supabase session metadata
-        const { data: { session } } = await supabase.auth.getSession();
-        bubbleId = session?.user?.user_metadata?.user_id;
+      // Build payload - include user_id for legacy auth fallback
+      const payload = {};
+      if (!accessToken) {
+        // No Supabase session - use legacy auth via user_id
+        const legacyUserId = getUserId();
+        if (legacyUserId) {
+          payload.user_id = legacyUserId;
+          console.log('[fetchThreads] Using legacy auth with user_id:', legacyUserId);
+        } else {
+          throw new Error('Not authenticated. Please log in again.');
+        }
       }
 
-      if (!bubbleId) {
-        throw new Error('User ID not available');
+      // Make the API call
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const response = await fetch(`${supabaseUrl}/functions/v1/messages`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          action: 'get_threads',
+          payload
+        }),
+      });
+
+      console.log('[fetchThreads] Response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[fetchThreads] Error response:', errorText);
+        throw new Error(`Failed to fetch threads: ${response.status}`);
       }
 
-      await fetchThreadsWithBubbleId(bubbleId);
+      const data = await response.json();
+
+      console.log('[fetchThreads] Edge Function response:', {
+        success: data?.success,
+        threadCount: data?.data?.threads?.length || 0,
+        error: data?.error
+      });
+
+      if (!data?.success) {
+        throw new Error(data?.error || 'Failed to fetch threads');
+      }
+
+      const fetchedThreads = data.data?.threads || [];
+      console.log('[fetchThreads] Found', fetchedThreads.length, 'threads');
+
+      setThreads(fetchedThreads);
     } catch (err) {
-      console.error('Error fetching threads:', err);
+      console.error('[fetchThreads] Error:', err);
       setError(err.message || 'Failed to load conversations');
     } finally {
       setIsLoading(false);
@@ -384,192 +431,51 @@ export function useMessagingPageLogic() {
   }
 
   /**
-   * Fetch threads with a known Bubble ID
-   */
-  async function fetchThreadsWithBubbleId(bubbleId) {
-    // Step 1: Query threads where user is host or guest
-    const { data: threads, error: threadsError } = await supabase
-      .from('thread')
-      .select(`
-        _id,
-        "Modified Date",
-        "-Host User",
-        "-Guest User",
-        "Listing",
-        "~Last Message",
-        "Thread Subject"
-      `)
-      .or(`"-Host User".eq.${bubbleId},"-Guest User".eq.${bubbleId}`)
-      .order('"Modified Date"', { ascending: false });
-
-    if (threadsError) {
-      throw new Error(`Failed to fetch threads: ${threadsError.message}`);
-    }
-
-    if (!threads || threads.length === 0) {
-      setThreads([]);
-      return;
-    }
-
-    // Step 2: Collect contact IDs and listing IDs for batch lookup
-    const contactIds = new Set();
-    const listingIds = new Set();
-
-    threads.forEach(thread => {
-      const hostId = thread['-Host User'];
-      const guestId = thread['-Guest User'];
-      const contactId = hostId === bubbleId ? guestId : hostId;
-      if (contactId) contactIds.add(contactId);
-      if (thread['Listing']) listingIds.add(thread['Listing']);
-    });
-
-    // Step 3: Batch fetch contact user data
-    let contactMap = {};
-    if (contactIds.size > 0) {
-      const { data: contacts } = await supabase
-        .from('user')
-        .select('_id, "Name - First", "Name - Last", "Profile Photo"')
-        .in('_id', Array.from(contactIds));
-
-      if (contacts) {
-        contactMap = contacts.reduce((acc, contact) => {
-          acc[contact._id] = {
-            name: `${contact['Name - First'] || ''} ${contact['Name - Last'] || ''}`.trim() || 'Unknown User',
-            avatar: contact['Profile Photo'],
-          };
-          return acc;
-        }, {});
-      }
-    }
-
-    // Step 4: Batch fetch listing data
-    let listingMap = {};
-    if (listingIds.size > 0) {
-      const { data: listings } = await supabase
-        .from('listing')
-        .select('_id, Name')
-        .in('_id', Array.from(listingIds));
-
-      if (listings) {
-        listingMap = listings.reduce((acc, listing) => {
-          acc[listing._id] = listing.Name || 'Unnamed Property';
-          return acc;
-        }, {});
-      }
-    }
-
-    // Step 5: Fetch unread message counts per thread
-    // The "Unread Users" column is a JSONB array of user IDs who haven't read the message
-    const threadIds = threads.map(t => t._id);
-    let unreadCountMap = {};
-    if (threadIds.length > 0) {
-      const { data: unreadData, error: unreadError } = await supabase
-        .from('_message')
-        .select('"Associated Thread/Conversation"')
-        .in('"Associated Thread/Conversation"', threadIds)
-        .contains('"Unread Users"', JSON.stringify([bubbleId]));
-
-      if (!unreadError && unreadData) {
-        // Count messages per thread
-        unreadCountMap = unreadData.reduce((acc, msg) => {
-          const threadId = msg['Associated Thread/Conversation'];
-          acc[threadId] = (acc[threadId] || 0) + 1;
-          return acc;
-        }, {});
-      }
-    }
-
-    // Step 6: Transform threads to UI format
-    const transformedThreads = threads.map(thread => {
-      const hostId = thread['-Host User'];
-      const guestId = thread['-Guest User'];
-      const contactId = hostId === bubbleId ? guestId : hostId;
-      const contact = contactId ? contactMap[contactId] : null;
-
-      // Format the last modified time
-      const modifiedDate = thread['Modified Date'] ? new Date(thread['Modified Date']) : new Date();
-      const now = new Date();
-      const diffMs = now.getTime() - modifiedDate.getTime();
-      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-      let lastMessageTime;
-      if (diffDays === 0) {
-        lastMessageTime = modifiedDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-      } else if (diffDays === 1) {
-        lastMessageTime = 'Yesterday';
-      } else if (diffDays < 7) {
-        lastMessageTime = modifiedDate.toLocaleDateString('en-US', { weekday: 'short' });
-      } else {
-        lastMessageTime = modifiedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      }
-
-      return {
-        _id: thread._id,
-        '-Host User': hostId,      // Preserve for CTA role detection
-        '-Guest User': guestId,    // Preserve for CTA role detection
-        contact_name: contact?.name || 'Split Lease',
-        contact_avatar: contact?.avatar,
-        property_name: thread['Listing'] ? listingMap[thread['Listing']] : undefined,
-        last_message_preview: thread['~Last Message'] || 'No messages yet',
-        last_message_time: lastMessageTime,
-        unread_count: unreadCountMap[thread._id] || 0,
-        is_with_splitbot: false,
-      };
-    });
-
-    setThreads(transformedThreads);
-  }
-
-  /**
    * Fetch messages for a specific thread
-   * Uses supabase.functions.invoke() for automatic token refresh
+   * Supports both modern Supabase auth (JWT) and legacy auth (user_id in payload)
    */
   async function fetchMessages(threadId) {
     try {
       setIsLoadingMessages(true);
 
-      // Get fresh session and ensure token is valid
+      // Check for Supabase session (modern auth)
       const { data: sessionData } = await supabase.auth.getSession();
-      console.log('[fetchMessages] Session state:', {
-        hasSession: !!sessionData?.session,
-        hasAccessToken: !!sessionData?.session?.access_token,
-        tokenLength: sessionData?.session?.access_token?.length,
-        userId: sessionData?.session?.user?.id,
+      const accessToken = sessionData?.session?.access_token;
+
+      console.log('[fetchMessages] Auth state:', {
+        hasSupabaseSession: !!accessToken,
+        hasLegacyUserId: !!getUserId(),
       });
 
-      // If no session, try to refresh
-      if (!sessionData?.session?.access_token) {
-        console.log('[fetchMessages] No session, attempting refresh...');
-        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-        if (refreshError || !refreshData?.session) {
-          console.error('[fetchMessages] Session refresh failed:', refreshError);
+      // Build request headers - include Authorization only if we have a token
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
+
+      // Build payload - include user_id for legacy auth fallback
+      const payload = { thread_id: threadId };
+      if (!accessToken) {
+        // No Supabase session - use legacy auth via user_id
+        const legacyUserId = getUserId();
+        if (legacyUserId) {
+          payload.user_id = legacyUserId;
+          console.log('[fetchMessages] Using legacy auth with user_id:', legacyUserId);
+        } else {
           throw new Error('Not authenticated. Please log in again.');
         }
-        console.log('[fetchMessages] Session refreshed successfully');
       }
 
-      // Get the current access token for explicit header passing
-      const { data: currentSession } = await supabase.auth.getSession();
-      const accessToken = currentSession?.session?.access_token;
-      console.log('[fetchMessages] Making function call with token:', !!accessToken);
-      console.log('[fetchMessages] Token preview:', accessToken ? `${accessToken.substring(0, 20)}...` : 'none');
-
-      if (!accessToken) {
-        throw new Error('No access token available. Please log in again.');
-      }
-
-      // Use direct fetch to ensure headers are sent correctly
-      // The SDK's functions.invoke() can sometimes have header merging issues
+      // Make the API call
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const response = await fetch(`${supabaseUrl}/functions/v1/messages`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-        },
+        headers,
         body: JSON.stringify({
           action: 'get_messages',
-          payload: { thread_id: threadId }
+          payload
         }),
       });
 
@@ -600,7 +506,7 @@ export function useMessagingPageLogic() {
   /**
    * Send a new message
    * After sending, Realtime will deliver the message to all subscribers
-   * Uses supabase.functions.invoke() for automatic token refresh
+   * Supports both modern Supabase auth (JWT) and legacy auth (user_id in payload)
    */
   async function sendMessage() {
     if (!messageInput.trim() || !selectedThread || isSending) return;
@@ -614,28 +520,42 @@ export function useMessagingPageLogic() {
         clearTimeout(typingTimeoutRef.current);
       }
 
-      // Get the current access token for explicit header passing
-      const { data: currentSession } = await supabase.auth.getSession();
-      const accessToken = currentSession?.session?.access_token;
+      // Check for Supabase session (modern auth)
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
 
-      if (!accessToken) {
-        throw new Error('No access token available. Please log in again.');
+      // Build request headers - include Authorization only if we have a token
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
       }
 
-      // Use direct fetch to ensure headers are sent correctly
+      // Build payload - include user_id for legacy auth fallback
+      const payload = {
+        thread_id: selectedThread._id,
+        message_body: messageInput.trim(),
+      };
+      if (!accessToken) {
+        // No Supabase session - use legacy auth via user_id
+        const legacyUserId = getUserId();
+        if (legacyUserId) {
+          payload.user_id = legacyUserId;
+          console.log('[sendMessage] Using legacy auth with user_id:', legacyUserId);
+        } else {
+          throw new Error('No access token available. Please log in again.');
+        }
+      }
+
+      // Make the API call
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const response = await fetch(`${supabaseUrl}/functions/v1/messages`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-        },
+        headers,
         body: JSON.stringify({
           action: 'send_message',
-          payload: {
-            thread_id: selectedThread._id,
-            message_body: messageInput.trim(),
-          },
+          payload,
         }),
       });
 
@@ -872,6 +792,7 @@ export function useMessagingPageLogic() {
 
   /**
    * Internal thread selection (does not update URL, used by effect)
+   * Also marks the thread as read in local state
    */
   function handleThreadSelectInternal(thread) {
     setSelectedThread(thread);
@@ -881,11 +802,21 @@ export function useMessagingPageLogic() {
     setListingData(null);
     setIsOtherUserTyping(false);
     setTypingUserName(null);
+
+    // Mark thread as read in local state (backend will mark messages as read)
+    setThreads(prevThreads =>
+      prevThreads.map(t =>
+        t._id === thread._id ? { ...t, unread_count: 0 } : t
+      )
+    );
+
     fetchMessages(thread._id);
   }
 
   /**
    * Handle thread selection from user interaction
+   * Also marks the thread as read by setting unread_count to 0 locally
+   * (backend marks messages as read when fetchMessages is called)
    */
   const handleThreadSelect = useCallback((thread) => {
     setSelectedThread(thread);
@@ -895,6 +826,13 @@ export function useMessagingPageLogic() {
     setListingData(null);
     setIsOtherUserTyping(false);
     setTypingUserName(null);
+
+    // Mark thread as read in local state (backend will mark messages as read)
+    setThreads(prevThreads =>
+      prevThreads.map(t =>
+        t._id === thread._id ? { ...t, unread_count: 0 } : t
+      )
+    );
 
     // Update URL
     const params = new URLSearchParams(window.location.search);

@@ -126,6 +126,24 @@
   transform: translateX(2px);
 }
 
+/* Secondary CTA button (outline style for Review & Edit) */
+.rental-app-card__cta--secondary {
+  background: transparent;
+  color: var(--sl-primary, #5B21B6);
+  border: 1.5px solid var(--sl-primary, #5B21B6);
+  padding: 8px 14px;
+  font-size: 13px;
+}
+
+.rental-app-card__cta--secondary:hover {
+  background: var(--sl-primary-soft, #F3F0FF);
+  transform: translateY(-1px);
+}
+
+.rental-app-card__cta--secondary svg {
+  margin-right: 4px;
+}
+
 /* Success state */
 .rental-app-card--success .profile-card-header {
   border-bottom: none;
@@ -189,5 +207,11 @@
     flex-direction: column;
     align-items: center;
     text-align: center;
+  }
+
+  .rental-app-card__success .rental-app-card__cta--secondary {
+    width: 100%;
+    justify-content: center;
+    margin-top: 12px;
   }
 }

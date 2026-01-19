@@ -43,7 +43,7 @@ export default function ThreadSidebar({
 
       {/* Search Bar - Upwork style with rounded input */}
       <div className="sidebar-search">
-        <div className="sidebar-search__box">
+        <div className="sidebar-search__input-wrapper">
           <svg className="sidebar-search__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="11" cy="11" r="8" />
             <path d="M21 21l-4.35-4.35" />
@@ -62,8 +62,8 @@ export default function ThreadSidebar({
           aria-label="Filter conversations"
           title="Filter"
         >
-          <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" stroke="#5E6D55" />
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />
           </svg>
         </button>
       </div>

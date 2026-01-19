@@ -158,13 +158,15 @@ export async function createListing(formData) {
 
   logger.debug('[ListingService] ✅ Generated listing _id:', generatedId);
 
-  // Step 2: Process photos - they should already be uploaded to Supabase Storage
-  // The Section6Photos component now uploads directly, so we just format them here
+  // Step 2: Process photos
+  // Photos may come with:
+  // - http/https URLs: Already uploaded to Supabase Storage (just format them)
+  // - blob URLs + file property: Need upload to Supabase Storage (SelfListingPageV2 flow)
   let uploadedPhotos = [];
   if (formData.photos?.photos?.length > 0) {
     logger.debug('[ListingService] Processing photos...');
 
-    // Check if photos already have Supabase URLs (uploaded during form editing)
+    // Check if photos already have permanent URLs (uploaded during form editing)
     const allPhotosHaveUrls = formData.photos.photos.every(
       (p) => p.url && (p.url.startsWith('http://') || p.url.startsWith('https://'))
     );
@@ -184,8 +186,9 @@ export async function createListing(formData) {
         toggleMainPhoto: i === 0
       }));
     } else {
-      // Legacy path: Some photos may still need uploading (shouldn't happen with new flow)
-      logger.debug('[ListingService] Uploading remaining photos to Supabase Storage...');
+      // Photos have blob URLs - need to upload to Supabase Storage
+      // Requires photo.file (File object) to be present for upload
+      logger.debug('[ListingService] Uploading photos to Supabase Storage...');
       try {
         uploadedPhotos = await uploadPhotos(formData.photos.photos, generatedId);
         logger.debug('[ListingService] ✅ Photos uploaded:', uploadedPhotos.length);
@@ -454,15 +457,16 @@ async function triggerMockupProposalIfFirstListing(userId, listingId) {
   // Get the Supabase URL from environment or config
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
-  // Call the listing edge function with createMockupProposal action
+  // Call the proposal edge function with create_mockup action
+  // Note: Mockup creation was moved from listing to proposal edge function
   // Uses hostUserId and hostEmail variables set above (from legacy table or Supabase Auth)
-  const response = await fetch(`${supabaseUrl}/functions/v1/listing`, {
+  const response = await fetch(`${supabaseUrl}/functions/v1/proposal`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      action: 'createMockupProposal',
+      action: 'create_mockup',
       payload: {
         listingId: listingId,
         hostUserId: hostUserId,

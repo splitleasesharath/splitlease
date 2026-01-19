@@ -2,6 +2,15 @@
 
 Audit the codebase at: {target_path}
 
+{high_impact_summary}
+
+## Refactoring Guidelines Based on Dependencies
+- Files marked CRITICAL (30+ dependents) should NOT be modified unless absolutely necessary
+- Prefer modifying leaf files (0 dependents) when possible
+- Files in CIRCULAR IMPORTS must be refactored together as a single atomic unit
+- Follow topological levels: Level 0 first, then Level 1, etc.
+- For HIGH impact files, ensure all dependent files are updated in the same batch
+
 **Your Task:**
 
 1. **Scan all files** in {target_path} recursively.
@@ -62,3 +71,20 @@ Audit Type: {audit_type}
 4. **MANDATORY: Each chunk MUST have TWO complete code blocks (Current vs Refactored)**.
 5. **Line numbers must be accurate**.
 6. **Include affected pages in EACH chunk metadata**.
+
+## OUTPUT FORMAT REQUIREMENTS
+
+You MUST format each chunk exactly as follows:
+
+```
+## Chunk N of M
+- **Files**: `path/to/file1.js`, `path/to/file2.js`
+- **Rationale**: Why these files are grouped together
+- **Approach**: How to refactor them
+```
+
+IMPORTANT:
+- Use exact file paths from the codebase (shown in dependency analysis above)
+- Each file path MUST be wrapped in backticks
+- Files in CIRCULAR IMPORTS must be in the SAME chunk
+- Do NOT include files not mentioned in the dependency analysis

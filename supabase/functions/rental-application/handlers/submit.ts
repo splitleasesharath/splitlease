@@ -252,12 +252,26 @@ export async function handleSubmit(
   // UPDATE USER RECORD WITH RENTAL APPLICATION REF
   // ================================================
 
+  // Build user update data - includes Job Title sync if provided
+  const userUpdateData: Record<string, unknown> = {
+    'Rental Application': rentalAppId,
+    'Modified Date': now,
+  };
+
+  // Sync Job Title to user table if provided in rental application
+  // For employees: use their jobTitle field
+  // For business owners: use "Business Owner" as the job title
+  if (input.jobTitle && input.jobTitle.trim()) {
+    userUpdateData['Job Title'] = input.jobTitle.trim();
+    console.log(`[RentalApp:submit] Syncing Job Title to user: ${input.jobTitle.trim()}`);
+  } else if (input.employmentStatus === 'business-owner') {
+    userUpdateData['Job Title'] = 'Business Owner';
+    console.log(`[RentalApp:submit] Syncing Job Title to user: Business Owner (from employment status)`);
+  }
+
   const { error: userUpdateError } = await supabase
     .from('user')
-    .update({
-      'Rental Application': rentalAppId,
-      'Modified Date': now,
-    })
+    .update(userUpdateData)
     .eq('_id', bubbleUserId);
 
   if (userUpdateError) {

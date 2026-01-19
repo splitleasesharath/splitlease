@@ -52,3 +52,13 @@ export function getShortDayName(dayIndex) {
   const name = getDayName(dayIndex);
   return name === 'Unknown' ? '???' : name.slice(0, 3);
 }
+
+/**
+ * Calculate days until target day of week
+ * @.claude\plans\Deprecated\Context\Option Sets\ZEP - Curation Parameters(OS).md {number} fromDay - Current day (0-6)
+ * @.claude\plans\Deprecated\Context\Option Sets\ZEP - Curation Parameters(OS).md {number} toDay - Target day (0-6)
+ * @returns {number} Days until target (0-6)
+ */
+export function daysUntilDayOfWeek(fromDay, toDay) {
+  return (toDay - fromDay + 7) % 7
+}

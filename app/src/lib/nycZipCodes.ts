@@ -124,6 +124,24 @@ export const HUDSON_COUNTY_NAMES = [
 ];
 
 /**
+ * NYC Borough to County name mapping
+ * Google Places returns these as administrative_area_level_2
+ * Used as fallback when zip code is not available
+ */
+export const NYC_COUNTY_NAMES: Record<string, string> = {
+  'new york county': 'Manhattan',
+  'new york': 'Manhattan',
+  'kings county': 'Brooklyn',
+  'kings': 'Brooklyn',
+  'queens county': 'Queens',
+  'queens': 'Queens',
+  'bronx county': 'Bronx',
+  'bronx': 'Bronx',
+  'richmond county': 'Staten Island',
+  'richmond': 'Staten Island',
+};
+
+/**
  * Check if an address is in Hudson County, NJ by state and county name
  * Used as fallback when no zip code is available (e.g., highway addresses)
  */
@@ -136,8 +154,30 @@ export function isHudsonCountyNJ(state: string, county: string): boolean {
 }
 
 /**
+ * Check if a county name corresponds to an NYC borough
+ * Used as fallback when Google Places doesn't return a zip code
+ */
+export function isNYCCounty(state: string, county: string): boolean {
+  if (state !== 'NY' && state !== 'New York') {
+    return false;
+  }
+  const normalizedCounty = county.toLowerCase().trim();
+  return normalizedCounty in NYC_COUNTY_NAMES;
+}
+
+/**
+ * Get borough name from county name
+ * Returns null if county is not an NYC borough
+ */
+export function getBoroughFromCounty(county: string): string | null {
+  const normalizedCounty = county.toLowerCase().trim();
+  return NYC_COUNTY_NAMES[normalizedCounty] || null;
+}
+
+/**
  * Check if an address is valid for the service area
  * Accepts NYC zip codes OR Hudson County, NJ addresses (by zip or county name)
+ * Also accepts NYC addresses by county name when zip code is not available
  */
 export function isValidServiceArea(zipCode: string, state?: string, county?: string): boolean {
   // First check by zip code
@@ -145,8 +185,14 @@ export function isValidServiceArea(zipCode: string, state?: string, county?: str
     return true;
   }
 
-  // Fallback: check if it's Hudson County, NJ by county name
+  // Fallback: check if it's an NYC borough by county name
   // This handles cases where Google Places doesn't return a zip code
+  // (e.g., "269-01 76th Avenue, Queens, NY" may not include zip)
+  if (state && county && isNYCCounty(state, county)) {
+    return true;
+  }
+
+  // Fallback: check if it's Hudson County, NJ by county name
   if (state && county && isHudsonCountyNJ(state, county)) {
     return true;
   }

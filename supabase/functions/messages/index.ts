@@ -7,9 +7,10 @@
  * Supported Actions:
  * - send_message: Send a message in a thread (requires auth)
  * - get_messages: Get messages for a specific thread (requires auth)
+ * - get_threads: Get all threads for authenticated user (requires auth)
  * - send_guest_inquiry: Contact host without auth (name/email required)
  *
- * NOTE: get_threads was removed - frontend now queries Supabase directly
+ * NOTE: get_threads uses service role to bypass RLS (supports legacy auth)
  *
  * FP ARCHITECTURE:
  * - Pure functions for validation, routing, and response formatting
@@ -35,7 +36,6 @@ import {
   formatCorsResponse,
   CorsPreflightSignal,
   AuthenticatedUser,
-  extractAuthToken,
 } from "../_shared/fp/orchestration.ts";
 import { createErrorLog, addError, setUserId, setAction, ErrorLog } from "../_shared/fp/errorLog.ts";
 import { reportErrorLog } from "../_shared/slack.ts";
@@ -43,6 +43,7 @@ import { reportErrorLog } from "../_shared/slack.ts";
 // Import handlers
 import { handleSendMessage } from './handlers/sendMessage.ts';
 import { handleGetMessages } from './handlers/getMessages.ts';
+import { handleGetThreads } from './handlers/getThreads.ts';
 import { handleSendGuestInquiry } from './handlers/sendGuestInquiry.ts';
 import { handleCreateProposalThread } from './handlers/createProposalThread.ts';
 
@@ -50,7 +51,7 @@ import { handleCreateProposalThread } from './handlers/createProposalThread.ts';
 // Configuration (Immutable)
 // ─────────────────────────────────────────────────────────────
 
-const ALLOWED_ACTIONS = ['send_message', 'get_messages', 'send_guest_inquiry', 'create_proposal_thread'] as const;
+const ALLOWED_ACTIONS = ['send_message', 'get_messages', 'get_threads', 'send_guest_inquiry', 'create_proposal_thread'] as const;
 
 // Actions that don't require authentication
 // - send_guest_inquiry: Public form submission
@@ -63,6 +64,7 @@ type Action = typeof ALLOWED_ACTIONS[number];
 const handlers: Readonly<Record<Action, Function>> = {
   send_message: handleSendMessage,
   get_messages: handleGetMessages,
+  get_threads: handleGetThreads,
   send_guest_inquiry: handleSendGuestInquiry,
   create_proposal_thread: handleCreateProposalThread,
 };
@@ -72,46 +74,83 @@ const handlers: Readonly<Record<Action, Function>> = {
 // ─────────────────────────────────────────────────────────────
 
 /**
- * Authenticate user from request headers
+ * Authenticate user from request headers OR payload (legacy auth fallback)
+ *
+ * Supports two authentication methods:
+ * 1. Supabase JWT token in Authorization header (modern auth)
+ * 2. user_id in payload (legacy auth for users who logged in before Supabase migration)
+ *
  * Returns Result with user or error
  */
 const authenticateUser = async (
   headers: Headers,
   supabaseUrl: string,
   supabaseAnonKey: string,
-  requireAuth: boolean
+  supabaseServiceKey: string,
+  requireAuth: boolean,
+  payload: Record<string, unknown>
 ): Promise<Result<AuthenticatedUser | null, AuthenticationError>> => {
   // Public actions don't require auth
   if (!requireAuth) {
     return ok(null);
   }
 
-  // DEBUG: Log all headers to diagnose auth issues
-  console.log('[messages] DEBUG: Checking Authorization header...');
+  // Try Method 1: JWT token in Authorization header (modern auth)
+  // Pattern: Create Supabase client with Authorization header, then call getUser()
+  // This is the proven pattern used by proposal and other functions
   const authHeader = headers.get('Authorization');
-  console.log('[messages] DEBUG: Authorization header present:', !!authHeader);
-  console.log('[messages] DEBUG: Authorization header length:', authHeader?.length ?? 0);
+  console.log('[messages] DEBUG: Authorization header present:', !!authHeader, 'length:', authHeader?.length ?? 0);
 
-  // Extract auth token
-  const tokenResult = extractAuthToken(headers);
-  if (!tokenResult.ok) {
-    console.log('[messages] DEBUG: Token extraction failed:', tokenResult.error.message);
-    return tokenResult;
+  if (authHeader) {
+
+    // Create auth client with the Authorization header embedded
+    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    // getUser() without token parameter - uses the embedded Authorization header
+    const { data: { user: authUser }, error: authError } = await authClient.auth.getUser();
+
+    if (!authError && authUser) {
+      console.log('[messages] ✅ Authenticated via Supabase JWT');
+      return ok({ id: authUser.id, email: authUser.email ?? "" });
+    }
+
+    console.log('[messages] DEBUG: JWT auth failed:', authError?.message);
+  } else {
+    console.log('[messages] DEBUG: No Authorization header, checking for legacy auth...');
   }
 
-  // Validate token with Supabase Auth
-  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-    global: { headers: { Authorization: tokenResult.value } },
-    auth: { persistSession: false },
-  });
+  // Try Method 2: user_id in payload (legacy auth)
+  const userId = payload.user_id as string | undefined;
+  if (userId) {
+    console.log('[messages] DEBUG: Found user_id in payload, trying legacy auth lookup...');
 
-  const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+    // Use service role to bypass RLS for user lookup
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { persistSession: false },
+    });
 
-  if (authError || !authUser) {
-    return err(new AuthenticationError("Invalid or expired authentication token"));
+    // Verify user exists in database by _id (Bubble ID)
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from('user')
+      .select('_id, email')
+      .eq('_id', userId)
+      .maybeSingle();
+
+    if (userData && !userError) {
+      console.log('[messages] ✅ Authenticated via legacy auth (user_id lookup)');
+      return ok({
+        id: userData._id,
+        email: userData.email ?? ""
+      });
+    }
+
+    console.log('[messages] DEBUG: Legacy auth lookup failed:', userError?.message || 'User not found');
   }
 
-  return ok({ id: authUser.id, email: authUser.email ?? "" });
+  // Both methods failed
+  return err(new AuthenticationError("Invalid or expired authentication token. Please log in again."));
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -173,6 +212,7 @@ Deno.serve(async (req) => {
 
     // ─────────────────────────────────────────────────────────
     // Step 4: Authenticate user (side effect boundary)
+    // Supports both JWT auth (modern) and user_id in payload (legacy)
     // ─────────────────────────────────────────────────────────
 
     const requireAuth = !isPublicAction(PUBLIC_ACTIONS, action);
@@ -180,7 +220,9 @@ Deno.serve(async (req) => {
       headers,
       config.supabaseUrl,
       config.supabaseAnonKey,
-      requireAuth
+      config.supabaseServiceKey,
+      requireAuth,
+      payload
     );
 
     if (!authResult.ok) {
@@ -258,6 +300,10 @@ async function executeHandler(
       return handler(supabaseAdmin, payload, user!);
 
     case 'get_messages':
+      // User is guaranteed non-null for auth-required actions
+      return handler(supabaseAdmin, payload, user!);
+
+    case 'get_threads':
       // User is guaranteed non-null for auth-required actions
       return handler(supabaseAdmin, payload, user!);
 

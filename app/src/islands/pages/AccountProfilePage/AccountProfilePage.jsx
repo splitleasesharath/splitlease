@@ -22,7 +22,7 @@ import PublicView from './components/PublicView.jsx';
 import FixedSaveBar from './components/shared/FixedSaveBar.jsx';
 import ReferralBanner from './components/ReferralBanner.jsx';
 import ReferralModal from './components/ReferralModal.jsx';
-import RentalApplicationWizardModal from './components/RentalApplicationWizardModal/RentalApplicationWizardModal.jsx';
+import RentalApplicationWizardModal from '../../shared/RentalApplicationWizardModal/RentalApplicationWizardModal.jsx';
 import './AccountProfilePage.css';
 
 // ============================================================================
@@ -164,6 +164,8 @@ export default function AccountProfilePage() {
                 rentalApplicationStatus={logic.rentalApplicationStatus}
                 rentalApplicationProgress={logic.rentalApplicationProgress}
                 onOpenRentalWizard={logic.handleOpenRentalWizard}
+                // Email verification state
+                isVerifyingEmail={logic.isVerifyingEmail}
               />
             ) : (
               <PublicView

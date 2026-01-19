@@ -107,7 +107,7 @@ const MOCK_PROPOSALS = [
 
 // Legacy modals (still used)
 import ProposalDetailsModal from './ProposalDetailsModal.jsx';
-import { HostEditingProposal } from '../../shared/HostEditingProposal/index.js';
+import { HostEditingProposal } from '../../shared/HostEditingProposal/HostEditingProposal.jsx';
 import VirtualMeetingManager from '../../shared/VirtualMeetingManager/VirtualMeetingManager.jsx';
 
 // ============================================================================

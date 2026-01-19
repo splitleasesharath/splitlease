@@ -6,8 +6,10 @@
  * - create: Create a new listing
  * - get: Get listing details
  * - submit: Full listing submission with all form data
- * - createMockupProposal: Create mockup proposal for a listing
  * - delete: Delete a listing
+ *
+ * Note: createMockupProposal was moved to the proposal edge function
+ * (action: "create_mockup") to consolidate all proposal creation logic.
  *
  * NO FALLBACK PRINCIPLE: All errors fail fast without fallback logic
  *
@@ -19,7 +21,6 @@
  */
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
   ValidationError,
   AuthenticationError,
@@ -47,17 +48,16 @@ import { reportErrorLog } from "../_shared/slack.ts";
 import { handleCreate } from "./handlers/create.ts";
 import { handleGet } from "./handlers/get.ts";
 import { handleSubmit } from "./handlers/submit.ts";
-import { handleCreateMockupProposal } from "./handlers/createMockupProposal.ts";
 import { handleDelete } from "./handlers/delete.ts";
 
 // ─────────────────────────────────────────────────────────────
 // Configuration (Immutable)
 // ─────────────────────────────────────────────────────────────
 
-const ALLOWED_ACTIONS = ["create", "get", "submit", "createMockupProposal", "delete"] as const;
+const ALLOWED_ACTIONS = ["create", "get", "submit", "delete"] as const;
 
 // All listing actions are public (auth handled by Bubble workflow)
-const PUBLIC_ACTIONS: ReadonlySet<string> = new Set(["create", "get", "createMockupProposal", "delete"]);
+const PUBLIC_ACTIONS: ReadonlySet<string> = new Set(["create", "get", "delete"]);
 
 type Action = typeof ALLOWED_ACTIONS[number];
 
@@ -66,7 +66,6 @@ const handlers: Readonly<Record<Action, Function>> = {
   create: handleCreate,
   get: handleGet,
   submit: handleSubmit,
-  createMockupProposal: handleCreateMockupProposal,
   delete: handleDelete,
 };
 
@@ -93,11 +92,11 @@ interface SupabaseOnlyConfig {
 }
 
 // Actions that only need Supabase config (no Bubble API calls)
-const SUPABASE_ONLY_ACTIONS: ReadonlySet<string> = new Set(["createMockupProposal", "delete"]);
+const SUPABASE_ONLY_ACTIONS: ReadonlySet<string> = new Set(["delete"]);
 
 /**
  * Get configuration based on action requirements
- * - createMockupProposal: Only needs Supabase
+ * - delete: Only needs Supabase
  * - All others: Need both Supabase and Bubble
  */
 const getConfigForAction = (action: string): Result<FullListingConfig | SupabaseOnlyConfig, Error> => {
@@ -254,17 +253,6 @@ async function executeHandler(
 
     case "submit":
       return handler(payload);
-
-    case "createMockupProposal": {
-      // Create Supabase client for mockup proposal handler
-      const supabase = createClient(config.supabaseUrl, config.supabaseServiceKey);
-      await handler(supabase, payload as {
-        listingId: string;
-        hostUserId: string;
-        hostEmail: string;
-      });
-      return { success: true, message: "Mockup proposal creation initiated" };
-    }
 
     case "delete":
       return handler(payload);

@@ -42,13 +42,21 @@ const VERIFICATION_ITEMS = [
 
 export default function TrustVerificationCard({
   verifications = {},
+  emailAddress = '',
+  phoneNumber = '',
   onVerifyEmail,
   onVerifyPhone,
   onVerifyGovId,
   onConnectLinkedIn,
   onEditPhone,
-  readOnly = false
+  readOnly = false,
+  isVerifyingEmail = false
 }) {
+  // Map display values for items that show user data
+  const displayValues = {
+    email: emailAddress,
+    phone: phoneNumber
+  };
   // Map handlers
   const handlers = {
     email: onVerifyEmail,
@@ -107,6 +115,12 @@ export default function TrustVerificationCard({
                 </div>
                 <div className="verification-info">
                   <span className="verification-title">{item.title}</span>
+                  {/* Show the actual value (email/phone) if available */}
+                  {displayValues[item.key] && (
+                    <span className="verification-value">
+                      {displayValues[item.key]}
+                    </span>
+                  )}
                   {isVerified ? (
                     <span className="verification-status verification-status--verified">
                       <CheckCircle size={14} />
@@ -138,8 +152,9 @@ export default function TrustVerificationCard({
                     type="button"
                     className="verification-btn"
                     onClick={handleVerify}
+                    disabled={item.key === 'email' && isVerifyingEmail}
                   >
-                    {item.verifyLabel}
+                    {item.key === 'email' && isVerifyingEmail ? 'Sending...' : item.verifyLabel}
                   </button>
                 )}
               </div>
