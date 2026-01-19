@@ -85,29 +85,42 @@ class RefactorScope:
     def track_from_chunk(self, chunk: "ChunkData") -> None:
         """Track files from a chunk's file_path attribute.
 
+        Handles multiple files specified in formats like:
+        - Single file: `file.js`
+        - Multiple files: `file1.js`, `file2.js`
+        - Multiple with backticks: `file1.js`, `file2.js`
+
         Args:
             chunk: ChunkData object with file_path
         """
-        if hasattr(chunk, 'file_path'):
-            # Handle backtick-wrapped paths like `src/lib/auth.js`
-            file_path = chunk.file_path.strip('`').strip()
+        if not hasattr(chunk, 'file_path'):
+            return
 
-            # Validate that this looks like an actual file path
-            # Skip entries like "Multiple files across rules and workflows"
-            # Valid file paths should:
-            # 1. Contain a file extension (js, jsx, ts, tsx, py, etc.)
-            # 2. Not contain phrases that indicate it's not a single file
-            invalid_phrases = ['multiple', 'various', 'see below', 'see above', 'n/a']
-            lower_path = file_path.lower()
+        raw_path = chunk.file_path
 
-            if any(phrase in lower_path for phrase in invalid_phrases):
-                return  # Skip non-file entries
+        # Check for invalid phrases first (before splitting)
+        invalid_phrases = ['multiple', 'various', 'see below', 'see above', 'n/a']
+        if any(phrase in raw_path.lower() for phrase in invalid_phrases):
+            return  # Skip non-file entries
+
+        # Split on common separators: `, ` (comma-space) or `\`, \`` (backtick patterns)
+        # Example: "`file1.js`, `file2.js`" -> ["file1.js", "file2.js"]
+        import re
+        # Split on `, ` or `\`, \`` patterns
+        parts = re.split(r'`,\s*`|,\s*', raw_path)
+
+        for part in parts:
+            # Clean up backticks and whitespace
+            file_path = part.strip('`').strip()
+
+            if not file_path:
+                continue
 
             # Must have a common file extension
             has_extension = any(file_path.endswith(ext) for ext in
                               ['.js', '.jsx', '.ts', '.tsx', '.py', '.json', '.md', '.css'])
             if not has_extension:
-                return  # Skip entries without valid extension
+                continue  # Skip entries without valid extension
 
             self.track_file(file_path)
 
