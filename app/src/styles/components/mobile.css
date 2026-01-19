@@ -90,38 +90,47 @@
         display: none !important;
     }
 
-    /* Ensure nav-dropdown has proper stacking context */
-    .nav-dropdown {
-        position: relative;
-        z-index: 99999;
-    }
-
-    /* Mobile dropdown - simple list style */
+    /* Mobile dropdown - fixed positioning to escape stacking context */
     .dropdown-menu {
-        position: absolute !important;
-        left: 0 !important;
-        right: auto !important;
+        position: fixed !important;
+        top: 60px !important; /* Below the fixed header */
         transform: none !important;
-        top: 100% !important;
         width: auto !important;
         min-width: 140px !important;
         max-width: 180px !important;
         max-height: 70vh;
         overflow-y: auto;
         border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
         background: white;
-        z-index: 99999 !important;
+        z-index: 100000 !important; /* Above header's 9999 */
         /* Override desktop hidden state */
         opacity: 0 !important;
         visibility: hidden !important;
         pointer-events: none;
     }
 
+    /* Position Host dropdown on left-center */
+    .dropdown-menu-host {
+        left: 25% !important;
+        right: auto !important;
+    }
+
+    /* Position Guest dropdown on right-center */
+    .dropdown-menu-guest {
+        left: auto !important;
+        right: 25% !important;
+    }
+
     .dropdown-menu.active {
         opacity: 1 !important;
         visibility: visible !important;
         pointer-events: auto;
+    }
+
+    /* Hide the arrow pointer on mobile (doesn't align with fixed positioning) */
+    .dropdown-menu::before {
+        display: none !important;
     }
 
     .nav-dropdown:hover .dropdown-menu {
