@@ -40,21 +40,26 @@ from adw_modules.graph_algorithms import (
 from adw_modules.high_impact_summary import HighImpactSummary
 
 
-def run_dependency_analysis(target_path: str) -> Tuple[Optional[GraphAnalysisResult], str]:
+def run_dependency_analysis(target_path: str, working_dir: Path) -> Tuple[Optional[GraphAnalysisResult], str]:
     """Run AST dependency analysis and graph algorithms.
 
     Args:
-        target_path: Directory to analyze
+        target_path: Directory to analyze (relative to working_dir)
+        working_dir: Project root directory
 
     Returns:
         Tuple of (GraphAnalysisResult, high_impact_summary_text)
         Returns (None, "") if analysis fails
     """
     try:
-        print(f"  [AST] Analyzing dependencies in {target_path}...")
+        # CRITICAL: Resolve target_path relative to working_dir (project root)
+        # The script runs from adws/, but paths like "app/src/logic"
+        # must resolve relative to the project root, not adws/
+        absolute_target = working_dir / target_path
+        print(f"  [AST] Analyzing dependencies in {absolute_target}...")
 
         # Step 1: AST analysis
-        dep_context = analyze_dependencies(target_path)
+        dep_context = analyze_dependencies(str(absolute_target))
 
         # Step 2: Build simplified graph for algorithms
         simple_graph = build_simple_graph(dep_context)
@@ -115,7 +120,7 @@ def run_code_audit_and_plan(
     high_impact_summary = ""
 
     if not skip_dependency_analysis:
-        graph_result, high_impact_summary = run_dependency_analysis(target_path)
+        graph_result, high_impact_summary = run_dependency_analysis(target_path, working_dir)
 
     # Load prompt from template
     prompt_template_path = Path(__file__).parent / "prompts" / "code_audit_opus.txt"
