@@ -104,6 +104,7 @@
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
         background: white;
         z-index: 100000 !important; /* Above header's 9999 */
+        padding: 0 !important; /* Remove all internal padding */
         /* Override desktop hidden state */
         opacity: 0 !important;
         visibility: hidden !important;
@@ -145,7 +146,7 @@
 
     .mega-menu-content {
         flex-direction: column;
-        padding: 0.25rem 0;
+        padding: 0 !important;
     }
 
     .mega-menu-columns {
@@ -163,7 +164,7 @@
     }
 
     .dropdown-item {
-        padding: 0.5rem 0.75rem;
+        padding: 0.4rem 0.6rem !important;
         border-bottom: 1px solid #f0f0f0;
         font-size: 0.85rem;
     }
@@ -184,8 +185,8 @@
     .mobile-auth-link {
         display: flex !important;
         border-top: 1px solid #e5e7eb;
-        margin-top: 0;
-        padding: 0.5rem 0.75rem !important;
+        margin: 0 !important;
+        padding: 0.4rem 0.6rem !important;
         color: #4B47CE;
         font-weight: 600;
     }
