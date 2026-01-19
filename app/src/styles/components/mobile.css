@@ -184,9 +184,8 @@
     .mobile-auth-link {
         display: flex !important;
         border-top: 1px solid #e5e7eb;
-        margin-top: 0.25rem;
-        padding-top: 0.5rem !important;
-        padding-bottom: 0.4rem !important;
+        margin-top: 0;
+        padding: 0.4rem 0.875rem !important;
         color: #4B47CE;
         font-weight: 600;
     }
