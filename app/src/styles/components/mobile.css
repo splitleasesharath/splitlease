@@ -118,6 +118,11 @@
         box-shadow: 0 4px 12px rgba(49, 19, 93, 0.12);
     }
 
+    /* Hide location labels on avatars for mobile */
+    .floating-avatar .notification-badge {
+        display: none !important;
+    }
+
     /* Hide avatars 5 and 6 on mobile - keep 4 around edges */
     .avatar-5,
     .avatar-6 {
