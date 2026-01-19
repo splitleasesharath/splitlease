@@ -379,12 +379,11 @@ function FeaturedSpacesSection() {
     init();
   }, []);
 
-  // Fetch Manhattan listings
+  // Fetch featured listings (any borough, prioritizing those with photos)
   const fetchFeaturedListings = useCallback(async () => {
-    if (!manhattanId) return;
-
     setIsLoadingListings(true);
     try {
+      // Query for complete, active listings - fetch extra to filter for those with photos
       const query = supabase
         .from('listing')
         .select(`
@@ -399,10 +398,10 @@ function FeaturedSpacesSection() {
           "Days Available (List of Days)"
         `)
         .eq('"Complete"', true)
-        .eq('"Location - Borough"', manhattanId)
         .or('"Active".eq.true,"Active".is.null')
         .or('"Location - Address".not.is.null,"Location - slightly different address".not.is.null')
-        .limit(3);
+        .not('"Features - Photos"', 'is', null)
+        .limit(20);
 
       const { data: listings, error } = await query;
 
@@ -429,27 +428,48 @@ function FeaturedSpacesSection() {
         ? await fetchPhotoUrls(legacyPhotoIds)
         : {};
 
-      const transformedListings = listings.map(listing => {
+      // Helper to extract photo URL from a listing
+      const extractPhotoUrl = (listing) => {
         const photos = parseJsonArray(listing['Features - Photos']);
         const firstPhoto = photos?.[0];
 
-        let photoUrl = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&h=400&fit=crop';
         if (typeof firstPhoto === 'object' && firstPhoto !== null) {
           // New embedded format: photo is an object with url/Photo field
           let url = firstPhoto.url || firstPhoto.Photo || '';
           if (url.startsWith('//')) url = 'https:' + url;
-          if (url) photoUrl = url;
+          return url || null;
         } else if (typeof firstPhoto === 'string') {
           // String format: could be a direct URL or a legacy ID
           if (firstPhoto.startsWith('http://') || firstPhoto.startsWith('https://') || firstPhoto.startsWith('//')) {
-            // Direct URL
-            photoUrl = firstPhoto.startsWith('//') ? 'https:' + firstPhoto : firstPhoto;
+            return firstPhoto.startsWith('//') ? 'https:' + firstPhoto : firstPhoto;
           } else if (photoMap[firstPhoto]) {
-            // Legacy ID - look up in photoMap
-            photoUrl = photoMap[firstPhoto];
+            return photoMap[firstPhoto];
           }
         }
+        return null;
+      };
 
+      // Prefer listings with valid photos, but fall back to listings without if needed
+      const listingsWithPhotoInfo = listings.map(listing => ({
+        listing,
+        photoUrl: extractPhotoUrl(listing)
+      }));
+
+      // Separate listings with and without photos
+      const withPhotos = listingsWithPhotoInfo.filter(({ photoUrl }) => photoUrl !== null);
+      const withoutPhotos = listingsWithPhotoInfo.filter(({ photoUrl }) => photoUrl === null);
+
+      // Take up to 3: prioritize those with photos, fill remainder with those without
+      const selectedListings = [...withPhotos, ...withoutPhotos].slice(0, 3);
+
+      // Different fallback images for visual variety when photos are missing
+      const fallbackImages = [
+        'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&h=400&fit=crop',
+        'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&h=400&fit=crop',
+        'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop',
+      ];
+
+      const transformedListings = selectedListings.map(({ listing, photoUrl }, index) => {
         const neighborhoodName = getNeighborhoodName(listing['Location - Hood']);
         const boroughName = getBoroughName(listing['Location - Borough']);
         const location = [neighborhoodName, boroughName].filter(Boolean).join(', ') || 'New York, NY';
@@ -460,7 +480,7 @@ function FeaturedSpacesSection() {
           id: listing._id,
           title: listing['Name'] || 'NYC Space',
           location,
-          image: photoUrl,
+          image: photoUrl || fallbackImages[index % fallbackImages.length],
           bedrooms: listing['Features - Qty Bedrooms'] || 0,
           bathrooms: listing['Features - Qty Bathrooms'] || 0,
           availableDays,
@@ -474,7 +494,7 @@ function FeaturedSpacesSection() {
     } finally {
       setIsLoadingListings(false);
     }
-  }, [manhattanId]);
+  }, []);
 
   useEffect(() => {
     fetchFeaturedListings();
