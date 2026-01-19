@@ -110,9 +110,55 @@
         display: none !important;
     }
 
-    /* Hide floating avatars on mobile */
+    /* Show floating avatars on mobile - repositioned around edges like why-split-lease */
     .floating-avatar {
+        display: block !important;
+        z-index: 3;
+        border-width: 3px;
+        box-shadow: 0 4px 12px rgba(49, 19, 93, 0.12);
+    }
+
+    /* Hide avatars 5 and 6 on mobile - keep 4 around edges */
+    .avatar-5,
+    .avatar-6 {
         display: none !important;
+    }
+
+    /* Reposition 4 avatars around the content edges */
+    .avatar-1 {
+        width: 52px !important;
+        height: 52px !important;
+        top: auto !important;
+        bottom: 25% !important;
+        right: 2% !important;
+        left: auto !important;
+    }
+
+    .avatar-2 {
+        width: 48px !important;
+        height: 48px !important;
+        top: 18% !important;
+        left: 2% !important;
+        right: auto !important;
+        bottom: auto !important;
+    }
+
+    .avatar-3 {
+        width: 52px !important;
+        height: 52px !important;
+        top: auto !important;
+        bottom: 10% !important;
+        right: auto !important;
+        left: 2% !important;
+    }
+
+    .avatar-4 {
+        width: 48px !important;
+        height: 48px !important;
+        top: 15% !important;
+        right: 2% !important;
+        left: auto !important;
+        bottom: auto !important;
     }
 
     /* Hero container adjustments for mobile */
