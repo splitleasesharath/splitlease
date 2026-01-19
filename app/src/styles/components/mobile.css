@@ -145,7 +145,7 @@
 
     .mega-menu-content {
         flex-direction: column;
-        padding: 0.5rem 0;
+        padding: 0.25rem 0;
     }
 
     .mega-menu-columns {
@@ -163,7 +163,7 @@
     }
 
     .dropdown-item {
-        padding: 0.6rem 0.875rem;
+        padding: 0.5rem 0.75rem;
         border-bottom: 1px solid #f0f0f0;
         font-size: 0.85rem;
     }
@@ -185,7 +185,7 @@
         display: flex !important;
         border-top: 1px solid #e5e7eb;
         margin-top: 0;
-        padding: 0.4rem 0.875rem !important;
+        padding: 0.5rem 0.75rem !important;
         color: #4B47CE;
         font-weight: 600;
     }
