@@ -198,7 +198,7 @@ function ScheduleSection() {
     },
     {
       id: 'fullweek',
-      label: 'Full Week',
+      label: 'Weeks of the Month',
       lottieUrl: '/assets/lotties/weeks-of-the-month.json',
       days: '1,2,3,4,5,6,7',
     },
