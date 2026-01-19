@@ -25,6 +25,12 @@
  * - accept_all_suggestions: Batch accept all pending suggestions
  * - reuse_previous: Copy suggestions from a previous house manual
  *
+ * GUEST VIEWER (Visit Reviewer House Manual):
+ * - get_visit_manual: Fetch house manual for guest viewing (requires auth)
+ * - validate_access_token: Validate magic link access token
+ * - track_engagement: Track guest engagement (link_saw, map_saw, narration_heard)
+ * - submit_review: Submit guest review with structured ratings
+ *
  * FP ARCHITECTURE:
  * - Pure functions for validation, routing, and response formatting
  * - Immutable data structures
@@ -53,6 +59,11 @@ import { handleIgnoreSuggestion } from "./handlers/ignoreSuggestion.ts";
 import { handleCombineSuggestion } from "./handlers/combineSuggestion.ts";
 import { handleAcceptAllSuggestions } from "./handlers/acceptAllSuggestions.ts";
 import { handleReusePrevious } from "./handlers/reusePrevious.ts";
+// Guest Viewer (Visit Reviewer) handlers
+import { handleGetVisitManual } from "./handlers/getVisitManual.ts";
+import { handleValidateAccessToken } from "./handlers/validateAccessToken.ts";
+import { handleTrackEngagement } from "./handlers/trackEngagement.ts";
+import { handleSubmitReview } from "./handlers/submitReview.ts";
 
 // ─────────────────────────────────────────────────────────────
 // Configuration (Immutable)
@@ -73,6 +84,11 @@ const ALLOWED_ACTIONS = [
   "combine_suggestion",
   "accept_all_suggestions",
   "reuse_previous",
+  // Guest Viewer (Visit Reviewer) actions
+  "get_visit_manual",
+  "validate_access_token",
+  "track_engagement",
+  "submit_review",
 ] as const;
 
 type Action = typeof ALLOWED_ACTIONS[number];
@@ -93,6 +109,11 @@ const handlers: Readonly<Record<Action, Function>> = {
   combine_suggestion: handleCombineSuggestion,
   accept_all_suggestions: handleAcceptAllSuggestions,
   reuse_previous: handleReusePrevious,
+  // Guest Viewer (Visit Reviewer) handlers
+  get_visit_manual: handleGetVisitManual,
+  validate_access_token: handleValidateAccessToken,
+  track_engagement: handleTrackEngagement,
+  submit_review: handleSubmitReview,
 };
 
 // ─────────────────────────────────────────────────────────────
