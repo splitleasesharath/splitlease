@@ -85,23 +85,70 @@
         display: none;
     }
 
+    /* Mobile dropdown - simple list style */
     .dropdown-menu {
         position: fixed;
         left: 10px;
         right: 10px;
-        top: auto;
+        top: 60px;
         transform: none;
         width: auto;
         max-height: 70vh;
         overflow-y: auto;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
     }
 
     .nav-dropdown:hover .dropdown-menu {
-        margin-top: 0.5rem;
+        margin-top: 0;
+    }
+
+    /* Hide mega menu featured section on mobile */
+    .mega-menu-featured,
+    .menu-separator {
+        display: none;
+    }
+
+    .mega-menu-content {
+        flex-direction: column;
+        padding: 0.5rem 0;
+    }
+
+    .mega-menu-columns {
+        flex-direction: column;
+        padding: 0;
+        gap: 0;
+    }
+
+    .menu-column {
+        padding: 0;
+    }
+
+    .menu-column-title {
+        display: none;
     }
 
     .dropdown-item {
-        padding: 1rem;
+        padding: 0.875rem 1.25rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .dropdown-item:last-child {
+        border-bottom: none;
+    }
+
+    .dropdown-separator {
+        display: none;
+    }
+
+    .dropdown-cta {
+        margin: 0.75rem 1rem;
+        padding: 0.75rem 1rem;
+        background: #4B47CE;
+        color: white !important;
+        border-radius: 8px;
+        text-align: center;
+        display: block;
     }
 
     /* Hide building illustrations on mobile */
