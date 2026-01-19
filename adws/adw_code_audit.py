@@ -1,6 +1,6 @@
 #!/usr/bin/env -S uv run
 # /// script
-# dependencies = ["python-dotenv", "pydantic", "psutil>=5.9.0", "google-genai", "tree-sitter>=0.23.0", "tree-sitter-javascript>=0.23.0"]
+# dependencies = ["python-dotenv", "pydantic", "psutil>=5.9.0", "google-genai", "tree-sitter>=0.23.0", "tree-sitter-javascript>=0.23.0", "tree-sitter-typescript>=0.23.0"]
 # ///
 
 """

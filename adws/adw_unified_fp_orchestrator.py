@@ -1,6 +1,6 @@
 #!/usr/bin/env -S uv run
 # /// script
-# dependencies = ["python-dotenv", "pydantic", "psutil>=5.9.0", "google-genai", "tree-sitter>=0.23.0", "tree-sitter-javascript>=0.23.0"]
+# dependencies = ["python-dotenv", "pydantic", "psutil>=5.9.0", "google-genai", "tree-sitter>=0.23.0", "tree-sitter-javascript>=0.23.0", "tree-sitter-typescript>=0.23.0"]
 # ///
 
 """
@@ -396,7 +396,9 @@ def main():
 
         # Create scoped tracker for files modified during refactoring
         # This allows us to reset ONLY refactored files on failure, preserving pipeline fixes
-        refactor_scope = create_refactor_scope(working_dir)
+        # Pass target_path as base_path so chunk paths get properly resolved
+        # (chunks use relative paths like "constants/proposalStatuses.js")
+        refactor_scope = create_refactor_scope(working_dir, base_path=args.target_path)
 
         logger.step(f"Processing {total_chunks} chunks...")
 

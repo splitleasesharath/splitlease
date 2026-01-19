@@ -23,17 +23,18 @@ class RefactorScope:
     """Tracks files modified during refactoring for scoped reset.
 
     Usage:
-        scope = RefactorScope(working_dir=Path.cwd())
+        scope = RefactorScope(working_dir=Path.cwd(), base_path="app/src/logic")
 
-        # During implementation
-        scope.track_file("app/src/lib/auth.js")
-        scope.track_file("app/src/lib/utils.js")
+        # During implementation - paths are relative to base_path
+        scope.track_file("calculators/pricing.js")  # Becomes app/src/logic/calculators/pricing.js
+        scope.track_file("rules/auth.js")           # Becomes app/src/logic/rules/auth.js
 
         # On failure, only reset tracked files
         scope.reset_scoped()  # Preserves pipeline fixes!
     """
 
     working_dir: Path = field(default_factory=Path.cwd)
+    base_path: str = field(default="")  # Base path to prepend to relative file paths
     modified_files: Set[str] = field(default_factory=set)
     _original_content: dict = field(default_factory=dict, repr=False)
 
@@ -41,12 +42,25 @@ class RefactorScope:
         """Add a file to the refactor scope and cache its original content.
 
         Args:
-            file_path: Path to the file (relative or absolute)
+            file_path: Path to the file (relative or absolute).
+                       Relative paths are resolved against base_path if set,
+                       otherwise against working_dir.
         """
         # Normalize to absolute path
         if Path(file_path).is_absolute():
             abs_path = Path(file_path)
         else:
+            # If base_path is set and file_path doesn't start with it, prepend base_path
+            # This handles chunk file_paths like "constants/proposalStatuses.js"
+            # when base_path is "app/src/logic"
+            if self.base_path:
+                file_path_normalized = file_path.replace('\\', '/')
+                base_normalized = self.base_path.replace('\\', '/')
+
+                # Only prepend if file_path doesn't already include base_path
+                if not file_path_normalized.startswith(base_normalized):
+                    file_path = f"{base_normalized}/{file_path_normalized}"
+
             abs_path = (self.working_dir / file_path).resolve()
 
         str_path = str(abs_path)
@@ -236,13 +250,15 @@ class RefactorScope:
         )
 
 
-def create_refactor_scope(working_dir: Path) -> RefactorScope:
+def create_refactor_scope(working_dir: Path, base_path: str = "") -> RefactorScope:
     """Factory function to create a RefactorScope.
 
     Args:
         working_dir: Project root directory
+        base_path: Optional base path to prepend to relative file paths
+                   (e.g., "app/src/logic" for logic refactoring)
 
     Returns:
         New RefactorScope instance
     """
-    return RefactorScope(working_dir=working_dir)
+    return RefactorScope(working_dir=working_dir, base_path=base_path)
