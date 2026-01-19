@@ -435,11 +435,19 @@ function FeaturedSpacesSection() {
 
         let photoUrl = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&h=400&fit=crop';
         if (typeof firstPhoto === 'object' && firstPhoto !== null) {
+          // New embedded format: photo is an object with url/Photo field
           let url = firstPhoto.url || firstPhoto.Photo || '';
           if (url.startsWith('//')) url = 'https:' + url;
           if (url) photoUrl = url;
-        } else if (typeof firstPhoto === 'string' && photoMap[firstPhoto]) {
-          photoUrl = photoMap[firstPhoto];
+        } else if (typeof firstPhoto === 'string') {
+          // String format: could be a direct URL or a legacy ID
+          if (firstPhoto.startsWith('http://') || firstPhoto.startsWith('https://') || firstPhoto.startsWith('//')) {
+            // Direct URL
+            photoUrl = firstPhoto.startsWith('//') ? 'https:' + firstPhoto : firstPhoto;
+          } else if (photoMap[firstPhoto]) {
+            // Legacy ID - look up in photoMap
+            photoUrl = photoMap[firstPhoto];
+          }
         }
 
         const neighborhoodName = getNeighborhoodName(listing['Location - Hood']);
