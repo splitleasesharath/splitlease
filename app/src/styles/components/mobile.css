@@ -90,6 +90,12 @@
         display: none !important;
     }
 
+    /* Ensure nav-dropdown has proper stacking context */
+    .nav-dropdown {
+        position: relative;
+        z-index: 99999;
+    }
+
     /* Mobile dropdown - simple list style */
     .dropdown-menu {
         position: absolute !important;
