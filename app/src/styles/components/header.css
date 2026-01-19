@@ -89,6 +89,13 @@
     display: inline;
 }
 
+/* Hide mobile-only elements on desktop */
+.mobile-auth-section,
+.mobile-explore-btn,
+.mobile-menu-overlay {
+    display: none;
+}
+
 /* Dropdown Navigation */
 .nav-dropdown {
     position: relative;
