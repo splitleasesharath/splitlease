@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-01-18T10:25:12.352261",
+  "generated_at": "2026-01-19T00:36:17.163737",
   "root_dir": "C:\\Users\\Split Lease\\Documents\\Split Lease\\app\\src\\logic",
-  "content_hash": "20b20aad99a46e4d35ef488cdf7dfcc92de6c1ece78fdaa7946428ec08002c29",
-  "total_files": 65,
-  "total_exports": 179,
-  "total_imports": 43,
+  "content_hash": "0002e26dddc51e1df52a14becdfdb0e52cd9bbf1dad857ed51b65e57f0e43bf2",
+  "total_files": 68,
+  "total_exports": 185,
+  "total_imports": 49,
   "parse_error_count": 0,
   "symbol_table": {
     "calculators\\pricing\\calculateFourWeekRent.js": [
@@ -20,7 +20,7 @@
       {
         "name": "calculateGuestFacingPrice",
         "type": "declaration",
-        "line": 33,
+        "line": 35,
         "source_file": null,
         "original_name": null
       }
@@ -108,7 +108,7 @@
       {
         "name": "calculateNextAvailableCheckIn",
         "type": "declaration",
-        "line": 27,
+        "line": 29,
         "source_file": null,
         "original_name": null
       }
@@ -126,7 +126,7 @@
       {
         "name": "getNextOccurrenceOfDay",
         "type": "declaration",
-        "line": 8,
+        "line": 10,
         "source_file": null,
         "original_name": null
       }
@@ -144,7 +144,16 @@
       {
         "name": "shiftMoveInDateIfPast",
         "type": "declaration",
-        "line": 35,
+        "line": 37,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "constants\\pricingConstants.js": [
+      {
+        "name": "PRICING_CONSTANTS",
+        "type": "declaration",
+        "line": 5,
         "source_file": null,
         "original_name": null
       }
@@ -358,6 +367,50 @@
         "original_name": null
       }
     ],
+    "constants\\searchConstants.js": [
+      {
+        "name": "PRICE_TIERS",
+        "type": "declaration",
+        "line": 1,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "VALID_PRICE_TIERS",
+        "type": "declaration",
+        "line": 9,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "SORT_OPTIONS",
+        "type": "declaration",
+        "line": 11,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "VALID_SORT_OPTIONS",
+        "type": "declaration",
+        "line": 18,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "WEEK_PATTERNS",
+        "type": "declaration",
+        "line": 20,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "VALID_WEEK_PATTERNS",
+        "type": "declaration",
+        "line": 27,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
     "processors\\display\\formatHostName.js": [
       {
         "name": "formatHostName",
@@ -392,9 +445,9 @@
         "original_name": null
       }
     ],
-    "processors\\proposal\\processProposalTerms.js": [
+    "processors\\proposal\\processProposalData.js": [
       {
-        "name": "processProposalTerms",
+        "name": "processProposalData",
         "type": "declaration",
         "line": 36,
         "source_file": null,
@@ -403,72 +456,65 @@
     ],
     "processors\\proposals\\processProposalData.js": [
       {
-        "name": "processUserData",
+        "name": "processListingData",
         "type": "declaration",
         "line": 18,
         "source_file": null,
         "original_name": null
       },
       {
-        "name": "processListingData",
-        "type": "declaration",
-        "line": 46,
-        "source_file": null,
-        "original_name": null
-      },
-      {
         "name": "processHostData",
         "type": "declaration",
-        "line": 81,
+        "line": 53,
         "source_file": null,
         "original_name": null
       },
       {
         "name": "processVirtualMeetingData",
         "type": "declaration",
-        "line": 106,
+        "line": 78,
         "source_file": null,
         "original_name": null
       },
       {
         "name": "processProposalData",
         "type": "declaration",
-        "line": 133,
+        "line": 105,
         "source_file": null,
         "original_name": null
       },
       {
         "name": "getProposalDisplayText",
         "type": "declaration",
-        "line": 219,
+        "line": 191,
         "source_file": null,
         "original_name": null
       },
       {
         "name": "formatPrice",
-        "type": "re-export",
-        "line": 229,
-        "source_file": "../../../lib/formatters/priceFormatter.js",
-        "original_name": "formatPriceWithCents"
+        "type": "declaration",
+        "line": 206,
+        "source_file": null,
+        "original_name": null
       },
       {
         "name": "formatDate",
         "type": "declaration",
-        "line": 236,
+        "line": 224,
         "source_file": null,
         "original_name": null
       },
       {
         "name": "formatDateTime",
         "type": "declaration",
-        "line": 255,
+        "line": 243,
         "source_file": null,
         "original_name": null
       },
       {
         "name": "getEffectiveTerms",
         "type": "declaration",
-        "line": 279,
+        "line": 267,
         "source_file": null,
         "original_name": null
       }
@@ -597,7 +643,7 @@
       {
         "name": "processUserData",
         "type": "declaration",
-        "line": 30,
+        "line": 23,
         "source_file": null,
         "original_name": null
       }
@@ -679,6 +725,15 @@
         "name": "determineProposalStage",
         "type": "declaration",
         "line": 26,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "rules\\proposals\\proposalButtonRules.js": [
+      {
+        "name": "computeProposalButtonStates",
+        "type": "declaration",
+        "line": 8,
         "source_file": null,
         "original_name": null
       }
@@ -805,31 +860,22 @@
       },
       {
         "name": "isSLSuggestedProposal",
-        "type": "declaration",
-        "line": 356,
+        "type": "named",
+        "line": 352,
         "source_file": null,
-        "original_name": null
+        "original_name": "isSuggestedProposal"
       },
       {
         "name": "canConfirmSuggestedProposal",
         "type": "declaration",
-        "line": 368,
+        "line": 360,
         "source_file": null,
         "original_name": null
       },
       {
         "name": "getNextStatusAfterConfirmation",
         "type": "declaration",
-        "line": 381,
-        "source_file": null,
-        "original_name": null
-      }
-    ],
-    "rules\\proposals\\useProposalButtonStates.js": [
-      {
-        "name": "useProposalButtonStates",
-        "type": "declaration",
-        "line": 25,
+        "line": 373,
         "source_file": null,
         "original_name": null
       }
@@ -1078,7 +1124,7 @@
       {
         "name": "isValidPriceTier",
         "type": "declaration",
-        "line": 20,
+        "line": 22,
         "source_file": null,
         "original_name": null
       }
@@ -1087,7 +1133,7 @@
       {
         "name": "isValidSortOption",
         "type": "declaration",
-        "line": 20,
+        "line": 22,
         "source_file": null,
         "original_name": null
       }
@@ -1096,7 +1142,7 @@
       {
         "name": "isValidWeekPattern",
         "type": "declaration",
-        "line": 20,
+        "line": 22,
         "source_file": null,
         "original_name": null
       }
@@ -1164,6 +1210,15 @@
         "original_name": null
       }
     ],
+    "workflows\\booking\\cancelProposalWorkflow.js": [
+      {
+        "name": "cancelProposalWorkflow",
+        "type": "declaration",
+        "line": 38,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
     "workflows\\booking\\loadProposalDetailsWorkflow.js": [
       {
         "name": "loadProposalDetailsWorkflow",
@@ -1177,35 +1232,28 @@
       {
         "name": "determineCancellationCondition",
         "type": "declaration",
-        "line": 37,
+        "line": 31,
         "source_file": null,
         "original_name": null
       },
       {
         "name": "executeCancelProposal",
         "type": "declaration",
-        "line": 101,
+        "line": 95,
         "source_file": null,
         "original_name": null
       },
       {
         "name": "cancelProposalFromCompareTerms",
         "type": "declaration",
-        "line": 144,
-        "source_file": null,
-        "original_name": null
-      },
-      {
-        "name": "cancelProposalWorkflow",
-        "type": "declaration",
-        "line": 187,
+        "line": 138,
         "source_file": null,
         "original_name": null
       },
       {
         "name": "executeDeleteProposal",
         "type": "declaration",
-        "line": 334,
+        "line": 152,
         "source_file": null,
         "original_name": null
       }
@@ -1376,7 +1424,7 @@
       {
         "name": "validateMoveInDateWorkflow",
         "type": "declaration",
-        "line": 37,
+        "line": 36,
         "source_file": null,
         "original_name": null
       }
@@ -1385,13 +1433,23 @@
       {
         "name": "validateScheduleWorkflow",
         "type": "declaration",
-        "line": 37,
+        "line": 36,
         "source_file": null,
         "original_name": null
       }
     ]
   },
   "dependency_graph": {
+    "calculators\\pricing\\calculateGuestFacingPrice.js": [
+      {
+        "name": "PRICING_CONSTANTS",
+        "type": "named",
+        "source": "../../constants/pricingConstants.js",
+        "resolved_path": "constants\\pricingConstants.js",
+        "line": 33,
+        "alias": null
+      }
+    ],
     "calculators\\pricing\\calculatePricingBreakdown.js": [
       {
         "name": "getNightlyRateByFrequency",
@@ -1428,7 +1486,37 @@
         "alias": null
       }
     ],
-    "processors\\proposal\\processProposalTerms.js": [
+    "calculators\\scheduling\\calculateNextAvailableCheckIn.js": [
+      {
+        "name": "daysUntilDayOfWeek",
+        "type": "named",
+        "source": "../../../lib/dayUtils.js",
+        "resolved_path": "C:\\Users\\Split Lease\\Documents\\Split Lease\\app\\src\\lib\\dayUtils.js",
+        "line": 1,
+        "alias": null
+      }
+    ],
+    "calculators\\scheduling\\getNextOccurrenceOfDay.js": [
+      {
+        "name": "daysUntilDayOfWeek",
+        "type": "named",
+        "source": "../../../lib/dayUtils.js",
+        "resolved_path": "C:\\Users\\Split Lease\\Documents\\Split Lease\\app\\src\\lib\\dayUtils.js",
+        "line": 1,
+        "alias": null
+      }
+    ],
+    "calculators\\scheduling\\shiftMoveInDateIfPast.js": [
+      {
+        "name": "daysUntilDayOfWeek",
+        "type": "named",
+        "source": "../../../lib/dayUtils.js",
+        "resolved_path": "C:\\Users\\Split Lease\\Documents\\Split Lease\\app\\src\\lib\\dayUtils.js",
+        "line": 1,
+        "alias": null
+      }
+    ],
+    "processors\\proposal\\processProposalData.js": [
       {
         "name": "PROPOSAL_STATUSES",
         "type": "named",
@@ -1512,6 +1600,24 @@
         "alias": null
       }
     ],
+    "rules\\proposals\\proposalButtonRules.js": [
+      {
+        "name": "getStatusConfig",
+        "type": "named",
+        "source": "../../../config/proposalStatusConfig.js",
+        "resolved_path": "C:\\Users\\Split Lease\\Documents\\Split Lease\\app\\src\\config\\proposalStatusConfig.js",
+        "line": 1,
+        "alias": null
+      },
+      {
+        "name": "PROPOSAL_STATUS",
+        "type": "named",
+        "source": "../../../config/proposalStatusConfig.js",
+        "resolved_path": "C:\\Users\\Split Lease\\Documents\\Split Lease\\app\\src\\config\\proposalStatusConfig.js",
+        "line": 1,
+        "alias": null
+      }
+    ],
     "rules\\proposals\\proposalRules.js": [
       {
         "name": "PROPOSAL_STATUSES",
@@ -1546,37 +1652,19 @@
         "alias": null
       },
       {
+        "name": "isSuggestedProposal",
+        "type": "named",
+        "source": "../../constants/proposalStatuses.js",
+        "resolved_path": "constants\\proposalStatuses.js",
+        "line": 16,
+        "alias": null
+      },
+      {
         "name": "getGuestCancellationReasons",
         "type": "named",
         "source": "../../../lib/dataLookups.js",
         "resolved_path": "C:\\Users\\Split Lease\\Documents\\Split Lease\\app\\src\\lib\\dataLookups.js",
         "line": 17,
-        "alias": null
-      }
-    ],
-    "rules\\proposals\\useProposalButtonStates.js": [
-      {
-        "name": "useMemo",
-        "type": "named",
-        "source": "react",
-        "resolved_path": null,
-        "line": 11,
-        "alias": null
-      },
-      {
-        "name": "getStatusConfig",
-        "type": "named",
-        "source": "../../../config/proposalStatusConfig.js",
-        "resolved_path": "C:\\Users\\Split Lease\\Documents\\Split Lease\\app\\src\\config\\proposalStatusConfig.js",
-        "line": 12,
-        "alias": null
-      },
-      {
-        "name": "PROPOSAL_STATUS",
-        "type": "named",
-        "source": "../../../config/proposalStatusConfig.js",
-        "resolved_path": "C:\\Users\\Split Lease\\Documents\\Split Lease\\app\\src\\config\\proposalStatusConfig.js",
-        "line": 12,
         "alias": null
       }
     ],
@@ -1590,6 +1678,36 @@
         "alias": null
       }
     ],
+    "rules\\search\\isValidPriceTier.js": [
+      {
+        "name": "VALID_PRICE_TIERS",
+        "type": "named",
+        "source": "../../constants/searchConstants.js",
+        "resolved_path": "constants\\searchConstants.js",
+        "line": 1,
+        "alias": null
+      }
+    ],
+    "rules\\search\\isValidSortOption.js": [
+      {
+        "name": "VALID_SORT_OPTIONS",
+        "type": "named",
+        "source": "../../constants/searchConstants.js",
+        "resolved_path": "constants\\searchConstants.js",
+        "line": 1,
+        "alias": null
+      }
+    ],
+    "rules\\search\\isValidWeekPattern.js": [
+      {
+        "name": "VALID_WEEK_PATTERNS",
+        "type": "named",
+        "source": "../../constants/searchConstants.js",
+        "resolved_path": "constants\\searchConstants.js",
+        "line": 1,
+        "alias": null
+      }
+    ],
     "workflows\\booking\\acceptProposalWorkflow.js": [
       {
         "name": "PROPOSAL_STATUSES",
@@ -1600,13 +1718,23 @@
         "alias": null
       }
     ],
+    "workflows\\booking\\cancelProposalWorkflow.js": [
+      {
+        "name": "PROPOSAL_STATUSES",
+        "type": "named",
+        "source": "../../constants/proposalStatuses.js",
+        "resolved_path": "constants\\proposalStatuses.js",
+        "line": 36,
+        "alias": null
+      }
+    ],
     "workflows\\proposals\\cancelProposalWorkflow.js": [
       {
         "name": "supabase",
         "type": "named",
         "source": "../../../lib/supabase.js",
         "resolved_path": "C:\\Users\\Split Lease\\Documents\\Split Lease\\app\\src\\lib\\supabase.js",
-        "line": 27,
+        "line": 21,
         "alias": null
       },
       {
@@ -1614,7 +1742,7 @@
         "type": "named",
         "source": "../../rules/proposals/proposalRules.js",
         "resolved_path": "rules\\proposals\\proposalRules.js",
-        "line": 28,
+        "line": 22,
         "alias": null
       },
       {
@@ -1622,7 +1750,7 @@
         "type": "named",
         "source": "../../rules/proposals/proposalRules.js",
         "resolved_path": "rules\\proposals\\proposalRules.js",
-        "line": 28,
+        "line": 22,
         "alias": null
       },
       {
@@ -1630,7 +1758,7 @@
         "type": "named",
         "source": "../../constants/proposalStatuses.js",
         "resolved_path": "constants\\proposalStatuses.js",
-        "line": 29,
+        "line": 23,
         "alias": null
       }
     ],
@@ -1744,14 +1872,6 @@
         "resolved_path": "calculators\\scheduling\\calculateCheckInOutDays.js",
         "line": 3,
         "alias": null
-      },
-      {
-        "name": "DAY_NAMES",
-        "type": "named",
-        "source": "../../../lib/dayUtils.js",
-        "resolved_path": "C:\\Users\\Split Lease\\Documents\\Split Lease\\app\\src\\lib\\dayUtils.js",
-        "line": 4,
-        "alias": null
       }
     ],
     "workflows\\scheduling\\validateScheduleWorkflow.js": [
@@ -1762,18 +1882,13 @@
         "resolved_path": "rules\\scheduling\\isScheduleContiguous.js",
         "line": 1,
         "alias": null
-      },
-      {
-        "name": "DAY_NAMES",
-        "type": "named",
-        "source": "../../../lib/dayUtils.js",
-        "resolved_path": "C:\\Users\\Split Lease\\Documents\\Split Lease\\app\\src\\lib\\dayUtils.js",
-        "line": 2,
-        "alias": null
       }
     ]
   },
   "reverse_dependencies": {
+    "constants\\pricingConstants.js": [
+      "calculators\\pricing\\calculateGuestFacingPrice.js"
+    ],
     "calculators\\pricing\\getNightlyRateByFrequency.js": [
       "calculators\\pricing\\calculatePricingBreakdown.js"
     ],
@@ -1786,9 +1901,14 @@
     "C:\\Users\\Split Lease\\Documents\\Split Lease\\app\\src\\lib\\constants.js": [
       "calculators\\scheduling\\calculateCheckInOutDays.js"
     ],
+    "C:\\Users\\Split Lease\\Documents\\Split Lease\\app\\src\\lib\\dayUtils.js": [
+      "calculators\\scheduling\\calculateNextAvailableCheckIn.js",
+      "calculators\\scheduling\\getNextOccurrenceOfDay.js",
+      "calculators\\scheduling\\shiftMoveInDateIfPast.js"
+    ],
     "constants\\proposalStatuses.js": [
-      "processors\\proposal\\processProposalTerms.js",
-      "processors\\proposal\\processProposalTerms.js",
+      "processors\\proposal\\processProposalData.js",
+      "processors\\proposal\\processProposalData.js",
       "rules\\proposals\\canAcceptProposal.js",
       "rules\\proposals\\canCancelProposal.js",
       "rules\\proposals\\canCancelProposal.js",
@@ -1799,7 +1919,9 @@
       "rules\\proposals\\proposalRules.js",
       "rules\\proposals\\proposalRules.js",
       "rules\\proposals\\proposalRules.js",
+      "rules\\proposals\\proposalRules.js",
       "workflows\\booking\\acceptProposalWorkflow.js",
+      "workflows\\booking\\cancelProposalWorkflow.js",
       "workflows\\proposals\\cancelProposalWorkflow.js",
       "workflows\\proposals\\counterofferWorkflow.js"
     ],
@@ -1807,12 +1929,17 @@
       "processors\\reviews\\reviewAdapter.js",
       "rules\\reviews\\reviewValidation.js"
     ],
+    "C:\\Users\\Split Lease\\Documents\\Split Lease\\app\\src\\config\\proposalStatusConfig.js": [
+      "rules\\proposals\\proposalButtonRules.js",
+      "rules\\proposals\\proposalButtonRules.js"
+    ],
     "C:\\Users\\Split Lease\\Documents\\Split Lease\\app\\src\\lib\\dataLookups.js": [
       "rules\\proposals\\proposalRules.js"
     ],
-    "C:\\Users\\Split Lease\\Documents\\Split Lease\\app\\src\\config\\proposalStatusConfig.js": [
-      "rules\\proposals\\useProposalButtonStates.js",
-      "rules\\proposals\\useProposalButtonStates.js"
+    "constants\\searchConstants.js": [
+      "rules\\search\\isValidPriceTier.js",
+      "rules\\search\\isValidSortOption.js",
+      "rules\\search\\isValidWeekPattern.js"
     ],
     "C:\\Users\\Split Lease\\Documents\\Split Lease\\app\\src\\lib\\supabase.js": [
       "workflows\\proposals\\cancelProposalWorkflow.js",
@@ -1844,10 +1971,6 @@
     ],
     "calculators\\scheduling\\calculateCheckInOutDays.js": [
       "workflows\\scheduling\\validateMoveInDateWorkflow.js"
-    ],
-    "C:\\Users\\Split Lease\\Documents\\Split Lease\\app\\src\\lib\\dayUtils.js": [
-      "workflows\\scheduling\\validateMoveInDateWorkflow.js",
-      "workflows\\scheduling\\validateScheduleWorkflow.js"
     ],
     "rules\\scheduling\\isScheduleContiguous.js": [
       "workflows\\scheduling\\validateScheduleWorkflow.js"

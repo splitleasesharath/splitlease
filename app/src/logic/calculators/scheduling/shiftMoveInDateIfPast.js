@@ -1,3 +1,5 @@
+import { daysUntilDayOfWeek } from '../../../lib/dayUtils.js'
+
 /**
  * Shift a move-in date forward if it has passed.
  * Preserves the day-of-week from the original date.
@@ -53,7 +55,7 @@ export function shiftMoveInDateIfPast({ previousMoveInDate, minDate }) {
   const targetDayOfWeek = previousDate.getDay();
   const minDayOfWeek = minDateObj.getDay();
 
-  const daysToAdd = (targetDayOfWeek - minDayOfWeek + 7) % 7;
+  const daysToAdd = daysUntilDayOfWeek(minDayOfWeek, targetDayOfWeek);
   if (daysToAdd === 0) {
     // Already on the right day
     return minDateObj.toISOString().split('T')[0];

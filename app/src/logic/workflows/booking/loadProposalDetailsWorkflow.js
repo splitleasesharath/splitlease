@@ -103,7 +103,7 @@ export async function loadProposalDetailsWorkflow({
       // Process user if processor provided
       if (processUserData) {
         try {
-          processedGuest = processUserData({ rawUser: guestData })
+          processedGuest = processUserData(guestData)
         } catch (err) {
           console.warn('Warning: Failed to process guest data:', err.message)
         }
@@ -138,7 +138,7 @@ export async function loadProposalDetailsWorkflow({
       // Process user if processor provided
       if (processUserData) {
         try {
-          processedHost = processUserData({ rawUser: hostData })
+          processedHost = processUserData(hostData)
         } catch (err) {
           console.warn('Warning: Failed to process host data:', err.message)
         }

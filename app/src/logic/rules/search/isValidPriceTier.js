@@ -1,3 +1,5 @@
+import { VALID_PRICE_TIERS } from '../../constants/searchConstants.js';
+
 /**
  * Check if price tier filter value is valid.
  *
@@ -25,7 +27,5 @@ export function isValidPriceTier({ priceTier }) {
     )
   }
 
-  const validTiers = ['under-200', '200-350', '350-500', '500-plus', 'all']
-
-  return validTiers.includes(priceTier)
+  return VALID_PRICE_TIERS.includes(priceTier)
 }
