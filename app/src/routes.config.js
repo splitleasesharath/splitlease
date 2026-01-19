@@ -337,6 +337,17 @@ export const routes = [
     hasDynamicSegment: false
   },
 
+  // ===== VISIT MANUAL (GUEST-FACING) =====
+  {
+    path: '/visit-manual',
+    file: 'visit-manual.html',
+    aliases: ['/visit-manual.html'],
+    protected: false,
+    cloudflareInternal: true,
+    internalName: 'visit-manual-view',
+    hasDynamicSegment: false
+  },
+
   // ===== TRIAL HOST SIGNUP =====
   {
     path: '/signup-trial-host',
