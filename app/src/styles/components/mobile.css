@@ -164,7 +164,7 @@
     }
 
     .dropdown-item {
-        padding: 0.4rem 0.6rem !important;
+        padding: 0.5rem 0.75rem !important;
         border-bottom: 1px solid #f0f0f0;
         font-size: 0.85rem;
     }
@@ -186,7 +186,7 @@
         display: flex !important;
         border-top: 1px solid #e5e7eb;
         margin: 0 !important;
-        padding: 0.4rem 0.6rem !important;
+        padding: 0.5rem 0.75rem !important;
         color: #4B47CE;
         font-weight: 600;
     }
