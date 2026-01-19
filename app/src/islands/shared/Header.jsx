@@ -583,6 +583,7 @@ export default function Header({ autoShowLogin = false }) {
               aria-haspopup="true"
               onClick={(e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 toggleDropdown('host');
               }}
               onKeyDown={(e) => handleDropdownKeyDown(e, 'host')}
@@ -729,6 +730,7 @@ export default function Header({ autoShowLogin = false }) {
               aria-haspopup="true"
               onClick={(e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 toggleDropdown('stay');
               }}
               onKeyDown={(e) => handleDropdownKeyDown(e, 'stay')}
