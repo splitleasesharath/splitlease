@@ -123,11 +123,26 @@ def parse_chunks(content: str) -> List[ChunkData]:
         chunk_title = header_match.group(2).strip()
 
         # Try multiple file patterns: **File:**, **Files:**, **Affected Files:**
-        file_match = re.search(r'\*\*(?:Affected )?Files?:\*\*\s+(.+)', section)
+        # First, try single-line pattern: **File:** `path/to/file.js`
+        file_match = re.search(r'\*\*File:\*\*\s+`?([^`\n]+)`?', section)
 
         # Also try to extract from **File**: format (with colon after asterisks)
         if not file_match:
             file_match = re.search(r'\*\*File\*\*:\s+`?([^`\n]+)`?', section)
+
+        # Try multi-line **Files:** format with bullet list
+        # **Files:**
+        # - `file1.js` (line 72)
+        # - `file2.js` (line 61)
+        if not file_match:
+            files_match = re.search(r'\*\*Files:\*\*\s*\n((?:[-*]\s*`[^`]+`[^\n]*\n?)+)', section)
+            if files_match:
+                # Extract all file paths from bullet list
+                bullet_content = files_match.group(1)
+                file_paths = re.findall(r'[-*]\s*`([^`]+)`', bullet_content)
+                if file_paths:
+                    # Join with comma for multi-file tracking
+                    file_match = type('Match', (), {'group': lambda self, n: ', '.join(file_paths)})()
 
         # Try to find file path from the **Issue**: or **Current Code** sections
         if not file_match:
