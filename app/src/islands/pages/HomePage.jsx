@@ -433,19 +433,13 @@ function FeaturedSpacesSection() {
         const photos = parseJsonArray(listing['Features - Photos']);
         const firstPhoto = photos?.[0];
 
-        console.log('[FeaturedSpaces] Listing:', listing['Name'], 'Photos:', photos?.length, 'First photo type:', typeof firstPhoto, 'First photo:', firstPhoto);
-
         let photoUrl = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&h=400&fit=crop';
         if (typeof firstPhoto === 'object' && firstPhoto !== null) {
           let url = firstPhoto.url || firstPhoto.Photo || '';
-          console.log('[FeaturedSpaces] Object photo - url:', url);
           if (url.startsWith('//')) url = 'https:' + url;
           if (url) photoUrl = url;
-        } else if (typeof firstPhoto === 'string') {
-          console.log('[FeaturedSpaces] String photo ID:', firstPhoto, 'Mapped URL:', photoMap[firstPhoto]);
-          if (photoMap[firstPhoto]) {
-            photoUrl = photoMap[firstPhoto];
-          }
+        } else if (typeof firstPhoto === 'string' && photoMap[firstPhoto]) {
+          photoUrl = photoMap[firstPhoto];
         }
 
         const neighborhoodName = getNeighborhoodName(listing['Location - Hood']);

@@ -570,79 +570,8 @@ export default function Header({ autoShowLogin = false }) {
           <span className="hamburger-line"></span>
         </button>
 
-        {/* Center Navigation with Dropdowns - includes nav-right on mobile */}
+        {/* Center Navigation with Dropdowns */}
         <div className={`nav-center ${mobileMenuActive ? 'mobile-active' : ''}`}>
-          {/* Mobile-only: Auth section at top of menu */}
-          <div className={`nav-right mobile-menu-auth ${mobileMenuActive ? 'mobile-active' : ''}`}>
-            {/* Suggested Proposal Trigger - shows for guest users with pending proposals */}
-            {currentUser && isGuest() && pendingProposalCount > 0 && window.location.pathname !== '/guest-proposals' && (
-              <HeaderSuggestedProposalTrigger
-                onClick={handleSuggestedTriggerClick}
-                isActive={showSuggestedPopup}
-                proposalCount={pendingProposalCount}
-              />
-            )}
-
-            {currentUser && currentUser.firstName ? (
-              <LoggedInAvatar
-                user={{
-                  id: currentUser.userId || currentUser.id || '',
-                  name: `${currentUser.firstName} ${currentUser.lastName || ''}`.trim(),
-                  email: currentUser.email || '',
-                  userType: (() => {
-                    if (!userType) return 'GUEST';
-                    if (userType === 'Host' || userType === 'A Host (I have a space available to rent)' || userType === 'Split Lease') return 'HOST';
-                    if (userType === 'Trial Host') return 'TRIAL_HOST';
-                    if (userType === 'Guest' || userType === 'A Guest (I would like to rent a space)') return 'GUEST';
-                    if (userType.includes('Host') && !userType.includes('Trial')) return 'HOST';
-                    if (userType.includes('Trial')) return 'TRIAL_HOST';
-                    return 'GUEST';
-                  })(),
-                  avatarUrl: currentUser.profilePhoto?.startsWith('//')
-                    ? `https:${currentUser.profilePhoto}`
-                    : currentUser.profilePhoto,
-                  proposalsCount: currentUser.proposalsCount || 0,
-                  listingsCount: currentUser.listingsCount || 0,
-                  virtualMeetingsCount: currentUser.virtualMeetingsCount || 0,
-                  houseManualsCount: currentUser.houseManualsCount || 0,
-                  leasesCount: currentUser.leasesCount || 0,
-                  favoritesCount: currentUser.favoritesCount || 0,
-                  unreadMessagesCount: currentUser.unreadMessagesCount || 0,
-                }}
-                currentPath={window.location.pathname}
-                onNavigate={(path) => {
-                  setMobileMenuActive(false);
-                  window.location.href = path;
-                }}
-                onLogout={handleLogout}
-              />
-            ) : (
-              <>
-                <a
-                  href="#"
-                  className="nav-link"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setMobileMenuActive(false);
-                    handleLoginClick();
-                  }}
-                >
-                  Sign In
-                </a>
-                <a
-                  href="#"
-                  className="nav-link"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setMobileMenuActive(false);
-                    handleSignupClick();
-                  }}
-                >
-                  Sign Up
-                </a>
-              </>
-            )}
-          </div>
           {/* Host with Us Dropdown - Only show if not logged in OR if logged in as Host/Trial Host/Split Lease */}
           {(!currentUser || !userType || isHost()) && (
           <div className="nav-dropdown">
