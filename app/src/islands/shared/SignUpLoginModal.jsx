@@ -861,7 +861,12 @@ export default function SignUpLoginModal({
       if (initialView === 'login') {
         setCurrentView(VIEWS.LOGIN);
       } else if (initialView === 'signup' || initialView === 'signup-step1') {
-        setCurrentView(VIEWS.USER_TYPE);
+        // If defaultUserType is provided, skip user type selection and go directly to identity form
+        if (defaultUserType) {
+          setCurrentView(VIEWS.IDENTITY);
+        } else {
+          setCurrentView(VIEWS.USER_TYPE);
+        }
       } else if (initialView === 'signup-step2' || initialView === 'identity') {
         setCurrentView(VIEWS.IDENTITY);
       } else {
