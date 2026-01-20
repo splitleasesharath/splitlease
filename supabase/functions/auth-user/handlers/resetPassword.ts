@@ -6,8 +6,9 @@
  * 1. Validate email in payload
  * 2. Check if user exists in auth.users - if not, check public.user (legacy)
  * 3. For legacy users: create auth.users entry first, then send reset
- * 4. Call Supabase Auth resetPasswordForEmail
- * 5. Return success (always - don't reveal if email exists)
+ * 4. Generate password reset link via admin.generateLink (no built-in email)
+ * 5. Send branded email via send-email Edge Function using Security 2 template
+ * 6. Return success (always - don't reveal if email exists)
  *
  * SECURITY: Always returns success to prevent email enumeration
  * Uses Supabase Auth natively - no Bubble dependency
@@ -169,36 +170,111 @@ export async function handleRequestPasswordReset(
       debugInfo.steps.push('user_exists_in_auth');
     }
 
-    // ========== STEP 4: Send password reset email ==========
-    console.log('[reset-password] Step 4: Sending password reset email via Supabase Auth...');
-    debugInfo.steps.push('sending_reset_email');
+    // ========== STEP 4: Generate password reset link (without sending built-in email) ==========
+    console.log('[reset-password] Step 4: Generating password reset link via admin.generateLink...');
+    debugInfo.steps.push('generating_reset_link');
 
-    const { data: resetData, error: resetError } = await supabaseAdmin.auth.resetPasswordForEmail(
-      emailLower,
-      { redirectTo: resetRedirectUrl }
-    );
+    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'recovery',
+      email: emailLower,
+      options: {
+        redirectTo: resetRedirectUrl
+      }
+    });
 
-    if (resetError) {
-      console.error('[reset-password] ❌ RESET EMAIL ERROR:', JSON.stringify({
-        message: resetError.message,
-        status: resetError.status,
-        code: resetError.code,
-        name: resetError.name,
-        stack: resetError.stack
+    if (linkError) {
+      console.error('[reset-password] ❌ GENERATE LINK ERROR:', JSON.stringify({
+        message: linkError.message,
+        status: linkError.status,
+        code: linkError.code
       }, null, 2));
-      debugInfo.resetEmailError = {
-        message: resetError.message,
-        status: resetError.status,
-        code: resetError.code
+      debugInfo.generateLinkError = {
+        message: linkError.message,
+        status: linkError.status,
+        code: linkError.code
       };
-      debugInfo.steps.push('reset_email_failed');
+      debugInfo.steps.push('generate_link_failed');
       debugInfo.emailSent = false;
     } else {
-      console.log('[reset-password] ✅ Password reset email sent successfully');
-      console.log('[reset-password] Reset response data:', JSON.stringify(resetData, null, 2));
-      debugInfo.resetEmailResponse = resetData;
-      debugInfo.steps.push('reset_email_sent');
-      debugInfo.emailSent = true;
+      const resetLink = linkData.properties?.action_link;
+      console.log('[reset-password] ✅ Reset link generated successfully');
+      console.log('[reset-password] Link properties:', JSON.stringify(linkData.properties, null, 2));
+      debugInfo.linkGenerated = true;
+      debugInfo.steps.push('link_generated');
+
+      // ========== STEP 5: Send branded email via send-email Edge Function ==========
+      console.log('[reset-password] Step 5: Sending branded email via send-email function...');
+      debugInfo.steps.push('sending_branded_email');
+
+      // Security 2 template ID
+      const SECURITY_TEMPLATE_ID = '1757433099447x202755280527849400';
+
+      // Get user's first name for personalization (check auth.users metadata first, then linkData)
+      let firstName = '';
+      if (existingAuthUser?.user_metadata?.first_name) {
+        firstName = existingAuthUser.user_metadata.first_name;
+      } else if (linkData.user?.user_metadata?.first_name) {
+        firstName = linkData.user.user_metadata.first_name;
+      }
+      debugInfo.firstName = firstName || '(not found)';
+
+      // Prepare template variables for Security 2 template
+      const templateVariables: Record<string, string> = {
+        toemail: emailLower,
+        fromemail: 'security@splitlease.com',
+        fromname: 'Split Lease Security',
+        subject: 'Reset Your Password',
+        preheadertext: 'Follow the link below to reset your Split Lease password.',
+        title: 'Password Reset Request',
+        bodytext: firstName
+          ? `Hi ${firstName}, we received a request to reset your password. If you didn't make this request, you can safely ignore this email.`
+          : `We received a request to reset your password. If you didn't make this request, you can safely ignore this email.`,
+        bannertext1: 'WHAT TO DO',
+        bannertext2: 'Click the button below to create a new password.',
+        bannertext3: 'This link expires in 24 hours.',
+        buttontext: 'Reset Password',
+        buttonurl: resetLink || '',
+        footermessage: 'If you didn\'t request this, please ignore this email or contact support if you have concerns.'
+      };
+
+      try {
+        // Call the send-email Edge Function
+        const sendEmailResponse = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseServiceKey}`
+          },
+          body: JSON.stringify({
+            action: 'send',
+            payload: {
+              template_id: SECURITY_TEMPLATE_ID,
+              to_email: emailLower,
+              variables: templateVariables
+            }
+          })
+        });
+
+        const sendEmailResult = await sendEmailResponse.json();
+
+        if (!sendEmailResponse.ok) {
+          console.error('[reset-password] ❌ SEND EMAIL ERROR:', JSON.stringify(sendEmailResult, null, 2));
+          debugInfo.sendEmailError = sendEmailResult;
+          debugInfo.steps.push('send_email_failed');
+          debugInfo.emailSent = false;
+        } else {
+          console.log('[reset-password] ✅ Branded password reset email sent successfully');
+          console.log('[reset-password] Send email result:', JSON.stringify(sendEmailResult, null, 2));
+          debugInfo.sendEmailResult = sendEmailResult;
+          debugInfo.steps.push('branded_email_sent');
+          debugInfo.emailSent = true;
+        }
+      } catch (sendErr: any) {
+        console.error('[reset-password] ❌ Exception sending email:', sendErr.message);
+        debugInfo.sendEmailException = sendErr.message;
+        debugInfo.steps.push('send_email_exception');
+        debugInfo.emailSent = false;
+      }
     }
 
     console.log('[reset-password] ========== REQUEST COMPLETE ==========');
