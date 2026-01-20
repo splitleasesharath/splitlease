@@ -192,10 +192,10 @@
    CONTENT SECTION
    ============================================ */
 .favorites-card__content {
-  padding: 12px;
+  padding: 8px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 /* ============================================
@@ -204,11 +204,11 @@
 .favorites-card__location {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   font-size: 13px;
   font-weight: 500;
   color: var(--favorites-purple, #6B4EE6);
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .favorites-card__location svg {
@@ -219,7 +219,7 @@
    TITLE
    ============================================ */
 .favorites-card__title {
-  margin: 0 0 6px 0;
+  margin: 0 0 4px 0;
   font-size: 16px;
   font-weight: 600;
   color: var(--favorites-text-dark, #1a1a2e);
@@ -236,8 +236,8 @@
 .favorites-card__host {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: 6px;
+  margin-bottom: 4px;
 }
 
 .favorites-card__host-avatar {
@@ -290,7 +290,7 @@
   gap: 12px;
   font-size: 13px;
   color: var(--favorites-text-medium, #64748B);
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 /* ============================================
@@ -300,8 +300,8 @@
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  padding-top: 8px;
-  margin-top: 2px;
+  padding-top: 6px;
+  margin-top: 0;
   border-top: 1px solid #f1f5f9;
 }
 
@@ -376,7 +376,7 @@
   }
 
   .favorites-card__content {
-    padding: 10px;
+    padding: 8px;
   }
 
   .favorites-card__title {
