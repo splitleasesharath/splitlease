@@ -85,6 +85,8 @@
   transform: none !important;
   left: auto !important;
   padding: 8px 0;
+  /* CRITICAL: Override mobile.css pointer-events: none which blocks clicks on mobile */
+  pointer-events: auto !important;
 }
 
 @keyframes dropdownFadeIn {
@@ -214,6 +216,8 @@
     border: 1px solid #E5E5E5 !important;
     border-radius: 12px !important;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
+    /* CRITICAL: Override mobile.css pointer-events: none */
+    pointer-events: auto !important;
   }
 
   @keyframes dropdownFadeIn {

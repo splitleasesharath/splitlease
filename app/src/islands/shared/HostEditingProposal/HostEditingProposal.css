@@ -490,31 +490,47 @@
 }
 
 /* ========================================
-   Icons
+   Icons - Updated per POPUP_REPLICATION_PROTOCOL.md
    ======================================== */
 
 .hep-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: none;
+  background: transparent;
   border: none;
   cursor: pointer;
-  padding: 4px;
+  padding: 0;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.hep-icon:hover {
+  background-color: #F7F2FA;
 }
 
 .hep-icon-edit {
-  color: var(--hep-primary-purple);
-  width: 30px;
-  height: 30px;
-  border-radius: 4px;
+  width: 32px;
+  height: 32px;
+  color: #31135D;
+}
+
+.hep-icon-edit svg {
+  width: 18px;
+  height: 18px;
 }
 
 .hep-icon-close {
-  color: var(--hep-primary-purple);
+  width: 32px;
+  height: 32px;
+  color: #49454F;
+}
+
+.hep-icon-close svg {
   width: 20px;
   height: 20px;
-  border-radius: 4px;
+  stroke: currentColor;
+  stroke-width: 2;
 }
 
 .hep-icon-reject {
@@ -523,7 +539,7 @@
 
 .hep-header-actions {
   display: flex;
-  gap: 8px;
+  gap: 4px;
 }
 
 /* ========================================
@@ -948,6 +964,7 @@
 
 /* ========================================
    Primary Actions (Side by Side Layout)
+   Fixed footer on mobile to prevent overlap
    ======================================== */
 
 .hep-primary-actions {
@@ -957,6 +974,8 @@
   align-items: center;
   margin-top: 24px;
   padding: 16px 0;
+  background-color: #FFFFFF;
+  flex-shrink: 0;
 }
 
 /* Reject outline button - Red outlined only per protocol */
@@ -1218,6 +1237,7 @@
    - Screen width < 480px triggers slide-up mode per protocol
    - Border radius: 24px 24px 0 0
    - Grab handle visible
+   - Fixed footer with safe-area padding
    ======================================== */
 @media (max-width: 480px) {
   .hep-grab-handle {
@@ -1227,11 +1247,15 @@
   .hep-container {
     border-radius: 24px 24px 0 0;
     max-height: 90vh;
-    padding: 0 16px 20px;
+    padding: 0 16px 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
 
   .hep-section-header {
     padding: 12px 0 16px;
+    flex-shrink: 0;
   }
 
   .hep-title-main {
@@ -1239,13 +1263,45 @@
     font-weight: 500;
   }
 
+  /* Scrollable content area */
+  .hep-description,
+  .hep-collapsible,
+  .hep-animate-collapse,
+  .hep-breakdown-container {
+    flex-shrink: 0;
+  }
+
+  /* Primary actions - fixed at bottom with safe area */
   .hep-primary-actions {
-    padding: 12px 0 8px;
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 16px 0;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    margin-top: auto;
+    margin-left: -16px;
+    margin-right: -16px;
+    padding-left: 16px;
+    padding-right: 16px;
     gap: 10px;
+    border-top: 1px solid #E7E0EC;
+    background-color: #FFFFFF;
+    flex-direction: column-reverse;
   }
 
   .hep-primary-actions .hep-btn {
-    font-size: 13px;
-    height: 42px;
+    width: 100%;
+    font-size: 14px;
+    height: 44px;
+  }
+
+  .hep-primary-actions .hep-btn-reject-outline {
+    width: 100%;
+  }
+
+  .hep-primary-actions .hep-btn-primary-large {
+    width: 100%;
+    flex: none;
   }
 }
