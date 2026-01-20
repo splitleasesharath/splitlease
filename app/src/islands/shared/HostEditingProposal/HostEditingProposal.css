@@ -1,7 +1,12 @@
 /**
  * Host Editing Proposal Styles
  *
- * Design tokens aligned with Split Lease brand
+ * Updated to follow POPUP_REPLICATION_PROTOCOL.md design system.
+ * Features:
+ * - Monochromatic purple color scheme (no green/yellow)
+ * - Pill-shaped buttons (100px radius)
+ * - Protocol typography and spacing
+ *
  * Primary Purple: #31135D
  */
 
@@ -114,11 +119,12 @@
    Buttons
    ======================================== */
 
+/* Buttons - Updated per POPUP_REPLICATION_PROTOCOL.md */
 .hep-btn {
-  border-radius: 20px;
+  border-radius: 100px; /* Pill-shaped per protocol */
   cursor: pointer;
-  transition: box-shadow 200ms ease;
-  font-family: var(--hep-font-sans);
+  transition: all 0.2s ease;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -131,36 +137,38 @@
   cursor: not-allowed;
 }
 
+/* Primary button - Protocol purple */
 .hep-btn-primary {
-  background-color: var(--hep-primary-purple);
-  color: var(--hep-primary-white);
-  font-weight: 700;
-  font-size: 18px;
-  border: 2px solid var(--hep-primary-purple);
+  background-color: #31135D;
+  color: #FFFFFF;
+  font-weight: 600;
+  font-size: 14px;
+  border: none;
   height: 44px;
   padding: 0 24px;
   min-width: fit-content;
   white-space: nowrap;
-  word-spacing: 1px;
-  letter-spacing: -1px;
 }
 
 .hep-btn-primary:hover:not(:disabled) {
-  box-shadow: 0 4px 12px rgba(49, 19, 93, 0.3);
+  background-color: #4A2F7C;
+  box-shadow: 0 4px 12px rgba(49, 19, 93, 0.2);
 }
 
+/* Secondary button - Outlined style per protocol */
 .hep-btn-secondary {
   background-color: transparent;
-  color: var(--hep-primary-purple);
-  font-weight: 400;
-  font-size: 18px;
-  border: 1px solid var(--hep-primary-purple);
+  color: #31135D;
+  font-weight: 600;
+  font-size: 14px;
+  border: 1px solid #E7E0EC;
   height: 44px;
   padding: 0 24px;
 }
 
 .hep-btn-secondary:hover:not(:disabled) {
-  background-color: rgba(49, 19, 93, 0.05);
+  background-color: #F7F2FA;
+  border-color: #31135D;
 }
 
 .hep-btn-destructive {
@@ -563,14 +571,15 @@
   background-color: rgba(49, 19, 93, 0.05);
 }
 
+/* Changed row indicator - uses protocol purple instead of yellow */
 .hep-breakdown-row-changed {
-  background-color: rgba(255, 193, 7, 0.15);
-  border-left: 3px solid #ffc107;
+  background-color: rgba(49, 19, 93, 0.08);
+  border-left: 3px solid #31135D;
 }
 
 .hep-breakdown-row-changed .hep-breakdown-row-value {
   font-weight: 700;
-  color: var(--hep-primary-purple);
+  color: #31135D;
 }
 
 .hep-original-value {
@@ -582,24 +591,26 @@
   margin-top: 2px;
 }
 
+/* Changes indicator - uses protocol purple instead of yellow */
 .hep-changes-indicator {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
   margin-bottom: 12px;
-  background-color: rgba(255, 193, 7, 0.1);
-  border: 1px solid #ffc107;
-  border-radius: 4px;
+  background-color: #F7F2FA;
+  border: 1px solid #31135D;
+  border-radius: 8px;
 }
 
+/* Changes badge - uses protocol purple instead of yellow */
 .hep-changes-badge {
-  background-color: #ffc107;
-  color: var(--hep-text-dark);
+  background-color: #31135D;
+  color: #FFFFFF;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: 100px; /* Pill-shaped per protocol */
   text-transform: uppercase;
 }
 
@@ -799,9 +810,10 @@
   color: var(--hep-text-primary);
 }
 
+/* Total highlight - uses protocol purple instead of green */
 .hep-reject-detail-total {
   font-size: 16px;
-  color: var(--hep-primary-green);
+  color: #31135D;
 }
 
 /* ========================================
@@ -921,11 +933,12 @@
   padding: 16px 0;
 }
 
+/* Reject outline button - Red outlined only per protocol */
 .hep-btn-reject-outline {
   background-color: transparent;
-  border: 1px solid var(--hep-reject-red);
-  color: var(--hep-reject-red);
-  font-weight: 500;
+  border: 1px solid #DC3545;
+  color: #DC3545;
+  font-weight: 600;
   font-size: 14px;
   height: 44px;
   padding: 0 20px;
@@ -933,24 +946,25 @@
 }
 
 .hep-btn-reject-outline:hover:not(:disabled) {
-  background-color: rgba(200, 35, 51, 0.05);
+  background-color: rgba(220, 53, 69, 0.08);
 }
 
+/* Large primary button for main actions - per protocol */
 .hep-btn-primary-large {
   flex: 1;
   max-width: none;
   min-width: 0;
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 600;
   height: 48px;
   padding: 0 32px;
-  box-shadow: 0 2px 8px rgba(49, 19, 93, 0.2);
+  background-color: #31135D;
+  color: #FFFFFF;
 }
 
 .hep-btn-primary-large:hover:not(:disabled) {
-  box-shadow: 0 4px 16px rgba(49, 19, 93, 0.35);
-  transform: translateY(-1px);
-  transition: all 200ms ease;
+  background-color: #4A2F7C;
+  box-shadow: 0 4px 12px rgba(49, 19, 93, 0.2);
 }
 
 /* ========================================
@@ -1044,8 +1058,9 @@
   font-weight: 600;
 }
 
+/* Check-in highlight - uses protocol purple instead of green */
 .hss-summary-value.hss-checkin {
-  color: #28a745;
+  color: #31135D;
 }
 
 .hss-summary-value.hss-checkout {
