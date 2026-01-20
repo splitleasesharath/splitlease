@@ -306,6 +306,11 @@
 .menu-column:nth-child(1) .menu-column-title { transition-delay: 0.1s; }
 .menu-column:nth-child(2) .menu-column-title { transition-delay: 0.15s; }
 
+/* Hide mobile auth link on desktop */
+.mobile-auth-link {
+    display: none;
+}
+
 /* Menu Items */
 .dropdown-item {
     display: flex;
@@ -563,6 +568,11 @@
 }
 
 /* User Dropdown Styles */
+.user-dropdown .dropdown-menu {
+    min-width: auto;
+    width: max-content;
+}
+
 .user-dropdown .user-trigger {
     display: flex;
     align-items: center;

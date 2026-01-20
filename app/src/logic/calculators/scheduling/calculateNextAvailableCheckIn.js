@@ -1,3 +1,5 @@
+import { daysUntilDayOfWeek } from '../../../lib/dayUtils.js'
+
 /**
  * Calculate the next available check-in date based on selected day-of-week and minimum date.
  * Smart default calculation for move-in dates.
@@ -58,7 +60,7 @@ export function calculateNextAvailableCheckIn({ selectedDayIndices, minDate }) {
   const minDayOfWeek = minDateObj.getDay()
 
   // Calculate days to add to get to the next occurrence of the first selected day
-  const daysToAdd = (firstDayOfWeek - minDayOfWeek + 7) % 7
+  const daysToAdd = daysUntilDayOfWeek(minDayOfWeek, firstDayOfWeek)
 
   // If daysToAdd is 0, we're already on the right day
   if (daysToAdd === 0) {

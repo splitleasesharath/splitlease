@@ -1,6 +1,6 @@
 # Careers Page - Quick Reference
 
-**GENERATED**: 2025-12-11
+**GENERATED**: 2026-01-20
 **PAGE_URL**: `/careers` or `/careers.html`
 **ENTRY_POINT**: `app/src/careers.jsx`
 
@@ -813,5 +813,5 @@ The "Start with our interactive game" link now opens a modal containing the Sche
 ---
 
 **VERSION**: 2.0
-**LAST_UPDATED**: 2025-12-11
+**LAST_UPDATED**: 2026-01-20
 **STATUS**: Comprehensive documentation of Careers page (updated to reflect current implementation)

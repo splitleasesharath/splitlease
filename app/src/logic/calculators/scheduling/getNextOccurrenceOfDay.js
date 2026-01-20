@@ -1,3 +1,5 @@
+import { daysUntilDayOfWeek } from '../../../lib/dayUtils.js'
+
 /**
  * Calculate the next occurrence of a specific day-of-week on or after a starting date.
  * 
@@ -7,7 +9,7 @@
  */
 export function getNextOccurrenceOfDay(startDate, targetDayOfWeek) {
   const startDay = startDate.getDay();
-  const daysToAdd = (targetDayOfWeek - startDay + 7) % 7;
+  const daysToAdd = daysUntilDayOfWeek(startDay, targetDayOfWeek);
   
   const resultDate = new Date(startDate);
   resultDate.setDate(startDate.getDate() + daysToAdd);

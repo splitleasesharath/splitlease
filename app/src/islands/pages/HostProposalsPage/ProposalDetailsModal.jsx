@@ -2,6 +2,13 @@
  * ProposalDetailsModal Component
  *
  * Slide-in modal showing full proposal details with actions.
+ *
+ * Updated to follow POPUP_REPLICATION_PROTOCOL.md design system.
+ * Features:
+ * - Monochromatic purple color scheme (no green/yellow)
+ * - Mobile bottom sheet behavior with grab handle (< 768px)
+ * - Pill-shaped buttons (100px radius)
+ * - Protocol-compliant status indicators using purple shades
  */
 
 import { useState } from 'react';
@@ -360,6 +367,9 @@ export default function ProposalDetailsModal({
     <>
       <div className={`modal-backdrop ${isOpen ? 'active' : ''}`} onClick={onClose} />
       <div className={`proposal-modal ${isOpen ? 'open' : ''}`}>
+        {/* Mobile grab handle - visible only on mobile per POPUP_REPLICATION_PROTOCOL.md */}
+        <div className="proposal-modal-grab-handle" aria-hidden="true" />
+
         {/* Close Button */}
         <button className="modal-close" onClick={onClose}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -626,7 +636,7 @@ export default function ProposalDetailsModal({
                     <div className={`progress-step ${getStepClass(progress.proposalSubmitted)}`}>
                       <div
                         className="step-circle"
-                        style={isHighlighted('proposalSubmitted') ? { backgroundColor: '#065F46' } : undefined}
+                        style={isHighlighted('proposalSubmitted') ? { backgroundColor: '#31135D' } : undefined}
                       ></div>
                     </div>
                     <div className={`progress-line ${getLineClass(progress.proposalSubmitted, progress.rentalApp)}`}></div>
@@ -635,7 +645,7 @@ export default function ProposalDetailsModal({
                     <div className={`progress-step ${getStepClass(progress.rentalApp)}`}>
                       <div
                         className="step-circle"
-                        style={isHighlighted('rentalApp') ? { backgroundColor: '#065F46' } : undefined}
+                        style={isHighlighted('rentalApp') ? { backgroundColor: '#31135D' } : undefined}
                       ></div>
                     </div>
                     <div className={`progress-line ${getLineClass(progress.rentalApp, progress.hostReview)}`}></div>
@@ -644,7 +654,7 @@ export default function ProposalDetailsModal({
                     <div className={`progress-step ${getStepClass(progress.hostReview)}`}>
                       <div
                         className="step-circle"
-                        style={isHighlighted('hostReview') ? { backgroundColor: '#065F46' } : undefined}
+                        style={isHighlighted('hostReview') ? { backgroundColor: '#31135D' } : undefined}
                       ></div>
                     </div>
                     <div className={`progress-line ${getLineClass(progress.hostReview, progress.leaseDocs)}`}></div>
@@ -653,7 +663,7 @@ export default function ProposalDetailsModal({
                     <div className={`progress-step ${getStepClass(progress.leaseDocs)}`}>
                       <div
                         className="step-circle"
-                        style={isHighlighted('leaseDocs') ? { backgroundColor: '#065F46' } : undefined}
+                        style={isHighlighted('leaseDocs') ? { backgroundColor: '#31135D' } : undefined}
                       ></div>
                     </div>
                     <div className={`progress-line ${getLineClass(progress.leaseDocs, progress.initialPayment)}`}></div>
@@ -662,7 +672,7 @@ export default function ProposalDetailsModal({
                     <div className={`progress-step ${getStepClass(progress.initialPayment)}`}>
                       <div
                         className="step-circle"
-                        style={isHighlighted('initialPayment') ? { backgroundColor: '#065F46' } : undefined}
+                        style={isHighlighted('initialPayment') ? { backgroundColor: '#31135D' } : undefined}
                       ></div>
                     </div>
                   </div>
@@ -692,14 +702,15 @@ export default function ProposalDetailsModal({
                 </div>
 
                 {/* Status Box - Shows host-appropriate status message */}
-                {/* Green for: accepted OR awaiting rental app (positive action state) */}
-                {/* Yellow for: other pending states */}
-                {/* Red for: cancelled/rejected */}
+                {/* Per POPUP_REPLICATION_PROTOCOL.md: Monochromatic purple - NO GREEN, NO YELLOW */}
+                {/* Purple (#F7F2FA bg, #31135D border) for: accepted OR awaiting rental app (positive action state) */}
+                {/* Light purple (#F7F2FA bg, #79747E border) for: other pending states */}
+                {/* Red for: cancelled/rejected (allowed per protocol for danger states) */}
                 <div
                   className="status-box"
                   style={{
-                    backgroundColor: isCancelled ? '#FEE2E2' : ((isAccepted || isAwaitingRentalApp) ? '#D1FAE5' : '#FEF3C7'),
-                    borderColor: isCancelled ? '#991B1B' : ((isAccepted || isAwaitingRentalApp) ? '#065F46' : '#924026')
+                    backgroundColor: isCancelled ? '#FEE2E2' : '#F7F2FA',
+                    borderColor: isCancelled ? '#991B1B' : ((isAccepted || isAwaitingRentalApp) ? '#31135D' : '#79747E')
                   }}
                 >
                   {isCancelled ? (
@@ -711,21 +722,21 @@ export default function ProposalDetailsModal({
                     </>
                   ) : isAccepted ? (
                     <>
-                      <svg width="20" height="20" viewBox="0 0 20 20" fill="#065F46">
+                      <svg width="20" height="20" viewBox="0 0 20 20" fill="#31135D">
                         <path d="M10 0C4.48 0 0 4.48 0 10C0 15.52 4.48 20 10 20C15.52 20 20 15.52 20 10C20 4.48 15.52 0 10 0ZM8 15L3 10L4.41 8.59L8 12.17L15.59 4.58L17 6L8 15Z"/>
                       </svg>
                       <span>Status: {statusConfig.label || 'Accepted'} - Lease Documents will be sent via HelloSign</span>
                     </>
                   ) : isAwaitingRentalApp ? (
                     <>
-                      <svg width="20" height="20" viewBox="0 0 20 20" fill="#065F46">
+                      <svg width="20" height="20" viewBox="0 0 20 20" fill="#31135D">
                         <path d="M10 0C4.48 0 0 4.48 0 10C0 15.52 4.48 20 10 20C15.52 20 20 15.52 20 10C20 4.48 15.52 0 10 0ZM8 15L3 10L4.41 8.59L8 12.17L15.59 4.58L17 6L8 15Z"/>
                       </svg>
                       <span>Status: {getHostStatusMessage(statusConfig, rentalAppSubmitted)}</span>
                     </>
                   ) : (
                     <>
-                      <svg width="20" height="20" viewBox="0 0 20 20" fill="#924026">
+                      <svg width="20" height="20" viewBox="0 0 20 20" fill="#79747E">
                         <path d="M10 0C4.48 0 0 4.48 0 10C0 15.52 4.48 20 10 20C15.52 20 20 15.52 20 10C20 4.48 15.52 0 10 0ZM11 15H9V13H11V15ZM11 11H9V5H11V11Z"/>
                       </svg>
                       <span>Status: {getHostStatusMessage(statusConfig, rentalAppSubmitted)}</span>

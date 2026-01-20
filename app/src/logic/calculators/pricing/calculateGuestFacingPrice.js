@@ -30,6 +30,8 @@
  * const fullWeekPrice = calculateGuestFacingPrice({ hostNightlyRate: 100, nightsCount: 7 })
  * // => 102.35 (per night, with 13% discount + 17% markup)
  */
+import { PRICING_CONSTANTS } from '../../constants/pricingConstants.js';
+
 export function calculateGuestFacingPrice({ hostNightlyRate, nightsCount }) {
   // No Fallback: Strict validation
   if (
@@ -56,14 +58,16 @@ export function calculateGuestFacingPrice({ hostNightlyRate, nightsCount }) {
   // Step 1: Calculate base price (host rate × nights)
   const basePrice = hostNightlyRate * nightsCount
 
-  // Step 2: Apply full-time discount (only for 7 nights, 13% discount)
-  const fullTimeDiscount = nightsCount === 7 ? basePrice * 0.13 : 0
+  // Step 2: Apply full-time discount (only for 7 nights)
+  const fullTimeDiscount = nightsCount === PRICING_CONSTANTS.FULL_TIME_NIGHTS_THRESHOLD
+    ? basePrice * PRICING_CONSTANTS.FULL_TIME_DISCOUNT_RATE
+    : 0;
 
   // Step 3: Price after discounts
-  const priceAfterDiscounts = basePrice - fullTimeDiscount
+  const priceAfterDiscounts = basePrice - fullTimeDiscount;
 
-  // Step 4: Apply site markup (17%)
-  const siteMarkup = priceAfterDiscounts * 0.17
+  // Step 4: Apply site markup
+  const siteMarkup = priceAfterDiscounts * PRICING_CONSTANTS.SITE_MARKUP_RATE;
 
   // Step 5: Calculate total price
   const totalPrice = basePrice - fullTimeDiscount + siteMarkup

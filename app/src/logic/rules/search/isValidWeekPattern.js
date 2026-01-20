@@ -1,3 +1,5 @@
+import { VALID_WEEK_PATTERNS } from '../../constants/searchConstants.js';
+
 /**
  * Check if week pattern filter value is valid.
  *
@@ -25,7 +27,5 @@ export function isValidWeekPattern({ weekPattern }) {
     )
   }
 
-  const validPatterns = ['every-week', 'one-on-off', 'two-on-off', 'one-three-off']
-
-  return validPatterns.includes(weekPattern)
+  return VALID_WEEK_PATTERNS.includes(weekPattern)
 }

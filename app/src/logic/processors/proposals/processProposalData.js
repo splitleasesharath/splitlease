@@ -11,34 +11,6 @@
  */
 
 /**
- * Transform raw user data from Bubble.io format
- * @param {Object} rawUser - Raw user object from Supabase
- * @returns {Object} Transformed user object
- */
-export function processUserData(rawUser) {
-  if (!rawUser) {
-    throw new Error('processUserData: User data is required');
-  }
-
-  if (!rawUser._id) {
-    throw new Error('processUserData: User ID (_id) is required');
-  }
-
-  return {
-    id: rawUser._id,
-    firstName: rawUser['Name - First'] || null,
-    lastName: rawUser['Name - Last'] || null,
-    fullName: rawUser['Name - Full'] || null,
-    profilePhoto: rawUser['Profile Photo'] || null,
-    bio: rawUser['About Me / Bio'] || null,
-    linkedInVerified: rawUser['Verify - Linked In ID'] || false,
-    phoneVerified: rawUser['Verify - Phone'] || false,
-    userVerified: rawUser['user verified?'] || false,
-    proposalsList: rawUser['Proposals List'] || []
-  };
-}
-
-/**
  * Transform raw listing data from Bubble.io format
  * @param {Object} rawListing - Raw listing object from Supabase
  * @returns {Object} Transformed listing object

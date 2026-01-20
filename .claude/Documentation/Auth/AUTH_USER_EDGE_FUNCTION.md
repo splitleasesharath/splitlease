@@ -1,6 +1,6 @@
 # Auth-User Edge Function - Quick Reference
 
-**GENERATED**: 2025-12-11
+**GENERATED**: 2026-01-20
 **VERSION**: 1.0.0
 **STATUS**: Production
 **RUNTIME**: Deno 2 (Supabase Edge Functions)
@@ -245,7 +245,7 @@ POST /functions/v1/auth-user
     "message": "If an account with that email exists, a password reset link has been sent.",
     "_debug": {
       "email": "user@example.com",
-      "timestamp": "2025-12-11T10:30:00.000Z",
+      "timestamp": "2026-01-20T10:30:00.000Z",
       "steps": ["checking_auth_users", "reset_email_sent"],
       "emailSent": true
     }
@@ -428,5 +428,5 @@ supabase functions logs auth-user --follow
 ---
 
 **DOCUMENT_VERSION**: 1.0.0
-**LAST_UPDATED**: 2025-12-11
+**LAST_UPDATED**: 2026-01-20
 **AUTHOR**: Claude Code

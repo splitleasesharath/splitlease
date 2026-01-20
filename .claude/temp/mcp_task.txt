@@ -1,0 +1,29 @@
+TASK: Query Supabase dev database to investigate proposal data for host rodtesthost@test.com
+
+CONTEXT:
+- Need to find why Leo DiCaprio's guest data isn't showing in proposals
+- Leo's expected ID: 1697550315775x613621430341750000
+- Host email: rodtesthost@test.com
+
+MCP SERVER TO USE: supabase-dev
+
+OPERATIONS REQUIRED:
+
+1. Query user table to find host ID:
+   SELECT id, email, "Name" FROM "user" WHERE email = 'rodtesthost@test.com'
+
+2. Using the host ID from step 1, query listing table:
+   SELECT id, "Name", Host FROM listing WHERE Host = '<host_id_from_step_1>'
+
+3. Using listing IDs from step 2, query proposal table:
+   SELECT id, Guest, Listing, "Created Date", Status FROM proposal WHERE Listing IN (<listing_ids_from_step_2>)
+
+4. For each proposal found, show:
+   - Proposal ID
+   - Guest ID (the actual value)
+   - Listing ID
+   - Any other relevant fields
+
+GOAL: Determine if proposals exist, what Guest IDs they contain, and whether any match Leo's ID (1697550315775x613621430341750000)
+
+Please execute these queries and return the complete results.

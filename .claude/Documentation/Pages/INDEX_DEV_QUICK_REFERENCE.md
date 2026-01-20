@@ -1,6 +1,6 @@
 # Index Dev Page - Quick Reference Guide
 
-**GENERATED**: 2025-12-11
+**GENERATED**: 2026-01-20
 **PAGE_TYPE**: Development Landing Page (Variant of Home Page)
 **ENTRY_POINT**: `app/src/main.jsx`
 **COMPONENT**: `app/src/islands/pages/HomePage.jsx`
@@ -561,5 +561,5 @@ The `devOnly: true` flag in `routes.config.js` ensures this page is:
 ---
 
 **DOCUMENT_VERSION**: 1.0
-**LAST_UPDATED**: 2025-12-11
+**LAST_UPDATED**: 2026-01-20
 **STATUS**: Complete Quick Reference

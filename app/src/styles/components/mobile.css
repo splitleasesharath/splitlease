@@ -85,23 +85,115 @@
         display: none;
     }
 
-    .dropdown-menu {
-        position: fixed;
-        left: 10px;
-        right: 10px;
-        top: auto;
-        transform: none;
-        width: auto;
+    /* Hide Sign Up button on mobile */
+    .nav-right a:last-child {
+        display: none !important;
+    }
+
+    /* Mobile dropdown - fixed positioning to escape stacking context */
+    /* IMPORTANT: Scope to navigation dropdowns only, NOT LoggedInAvatar dropdown */
+    .nav-dropdown .dropdown-menu {
+        position: fixed !important;
+        top: 60px !important; /* Below the fixed header */
+        transform: none !important;
+        width: auto !important;
+        min-width: 140px !important;
+        max-width: 180px !important;
         max-height: 70vh;
         overflow-y: auto;
+        border-radius: 8px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        background: white;
+        z-index: 100000 !important; /* Above header's 9999 */
+        padding: 0 !important; /* Remove all internal padding */
+        /* Override desktop hidden state */
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none;
+    }
+
+    /* Position Host dropdown on left-center */
+    .nav-dropdown .dropdown-menu-host {
+        left: 25% !important;
+        right: auto !important;
+    }
+
+    /* Position Guest dropdown on right-center */
+    .nav-dropdown .dropdown-menu-guest {
+        left: auto !important;
+        right: 25% !important;
+    }
+
+    .nav-dropdown .dropdown-menu.active {
+        opacity: 1 !important;
+        visibility: visible !important;
+        pointer-events: auto;
+    }
+
+    /* Hide the arrow pointer on mobile (doesn't align with fixed positioning) */
+    .nav-dropdown .dropdown-menu::before {
+        display: none !important;
     }
 
     .nav-dropdown:hover .dropdown-menu {
-        margin-top: 0.5rem;
+        margin-top: 0;
+    }
+
+    /* Hide mega menu featured section on mobile */
+    .mega-menu-featured,
+    .menu-separator {
+        display: none;
+    }
+
+    .mega-menu-content {
+        flex-direction: column;
+        padding: 0 !important;
+    }
+
+    .mega-menu-columns {
+        flex-direction: column;
+        padding: 0;
+        gap: 0;
+    }
+
+    .menu-column {
+        padding: 0;
+    }
+
+    .menu-column-title {
+        display: none;
     }
 
     .dropdown-item {
-        padding: 1rem;
+        padding: 0.6rem 1.2rem !important;
+        border-bottom: 1px solid #f0f0f0;
+        font-size: 0.85rem;
+    }
+
+    .dropdown-item:last-child {
+        border-bottom: none;
+    }
+
+    .dropdown-separator {
+        display: none;
+    }
+
+    .dropdown-cta {
+        display: none !important;
+    }
+
+    /* Show mobile auth link at bottom of dropdown */
+    .mobile-auth-link {
+        display: flex !important;
+        border-top: 1px solid #e5e7eb;
+        margin: 0 !important;
+        padding: 0.6rem 1.2rem !important;
+        color: #4B47CE;
+        font-weight: 600;
+    }
+
+    .mobile-auth-link .dropdown-title {
+        color: #4B47CE;
     }
 
     /* Hide building illustrations on mobile */
@@ -110,9 +202,60 @@
         display: none !important;
     }
 
-    /* Hide floating avatars on mobile */
+    /* Show floating avatars on mobile - repositioned around edges like why-split-lease */
     .floating-avatar {
+        display: block !important;
+        z-index: 3;
+        border-width: 3px;
+        box-shadow: 0 4px 12px rgba(49, 19, 93, 0.12);
+    }
+
+    /* Hide location labels on avatars for mobile */
+    .floating-avatar .notification-badge {
         display: none !important;
+    }
+
+    /* Hide avatars 5 and 6 on mobile - keep 4 around edges */
+    .avatar-5,
+    .avatar-6 {
+        display: none !important;
+    }
+
+    /* Reposition 4 avatars around the content edges */
+    .avatar-1 {
+        width: 52px !important;
+        height: 52px !important;
+        top: auto !important;
+        bottom: 25% !important;
+        right: 2% !important;
+        left: auto !important;
+    }
+
+    .avatar-2 {
+        width: 48px !important;
+        height: 48px !important;
+        top: 18% !important;
+        left: 2% !important;
+        right: auto !important;
+        bottom: auto !important;
+    }
+
+    .avatar-3 {
+        width: 52px !important;
+        height: 52px !important;
+        top: auto !important;
+        bottom: 10% !important;
+        right: auto !important;
+        left: 2% !important;
+    }
+
+    .avatar-4 {
+        width: 48px !important;
+        height: 48px !important;
+        top: 15% !important;
+        right: 2% !important;
+        left: auto !important;
+        bottom: auto !important;
     }
 
     /* Hero container adjustments for mobile */
@@ -132,34 +275,23 @@
 
     /* Hero CTA buttons mobile layout */
     .hero-cta {
-        flex-direction: column;
+        flex-direction: row;
         align-items: center;
+        justify-content: center;
         gap: 12px;
     }
 
-    .cta-button.cta-primary,
-    .cta-button.cta-secondary {
-        width: 80%;
-        max-width: 280px;
+    .cta-button.cta-primary {
+        width: auto;
+        max-width: none;
         justify-content: center;
-        padding: 12px 24px;
-        font-size: 14px;
+        padding: 10px 20px;
+        font-size: 13px;
     }
 
-    /* Hero stats mobile layout */
+    /* Hide hero stats on mobile */
     .hero-stats {
-        flex-direction: column;
-        gap: 24px;
-        margin-top: 32px;
-        padding-top: 24px;
-    }
-
-    .stat-value {
-        font-size: 24px;
-    }
-
-    .stat-label {
-        font-size: 12px;
+        display: none;
     }
 
     /* Schedule selector wrapper mobile */
@@ -184,16 +316,16 @@
 
     /* Hero Section Mobile Styles */
     .hero-section {
-        margin: 120px auto 2rem;
-        width: 90%;
+        margin: 80px auto 1rem;
+        width: 100%;
         max-width: 100%;
-        min-height: 420px;
-        padding: 0;
+        min-height: auto;
+        padding: 20px 1rem 2rem;
         position: relative;
-        overflow: hidden;
-        background: linear-gradient(to bottom, #E8E3F5 0%, #E8E3F5 35%, #ffffff 35%, #ffffff 100%);
-        border-radius: 20px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        overflow: visible;
+        background: white;
+        border-radius: 0;
+        box-shadow: none;
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
@@ -293,15 +425,21 @@
     }
 
     .hero-title {
-        font-size: 1.4rem;
-        line-height: 1.25;
-        margin-bottom: 1rem;
+        font-size: 1.75rem;
+        line-height: 1.2;
+        margin-bottom: 0.75rem;
         text-align: center;
-        font-weight: 700;
+        font-weight: 800;
         color: #111827;
-        letter-spacing: -0.01em;
-        padding: 0 0.5rem;
+        letter-spacing: -0.5px;
+        padding: 0 1rem;
         order: 1;
+    }
+
+    .hero-title .savings {
+        font-size: 1.5rem;
+        display: block;
+        margin-top: 0.25rem;
     }
 
     .hero-title .mobile-break {
@@ -310,13 +448,13 @@
     }
 
     .hero-subtitle {
-        font-size: 0.9rem;
+        font-size: 0.95rem;
         line-height: 1.5;
         margin-bottom: 1.5rem;
         text-align: center;
         color: #6b7280;
         font-weight: 400;
-        padding: 0 1.5rem;
+        padding: 0 1rem;
         order: 2;
     }
 

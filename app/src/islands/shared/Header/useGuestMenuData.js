@@ -310,7 +310,7 @@ export function useGuestMenuData(userId, isAuthenticated) {
 
         // Count leases where user is guest
         supabase
-          .from('Booking - Lease')
+          .from('bookings_leases')
           .select('_id', { count: 'exact', head: true })
           .eq('Guest', userId)
       ]);

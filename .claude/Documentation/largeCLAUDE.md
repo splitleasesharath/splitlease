@@ -483,7 +483,7 @@ Split Lease/
 │
 ├── supabase/                               # Backend
 │   ├── config.toml                         # Supabase local config
-│   └── functions/                          # Edge Functions (Deno 2) - 11 functions
+│   └── functions/                          # Edge Functions (Deno 2) - 29 functions
 │       ├── _shared/                        # Shared utilities (10 files)
 │       │   ├── cors.ts                     # CORS headers
 │       │   ├── errors.ts                   # Custom error classes
@@ -720,22 +720,51 @@ Split Lease/
                                │
                                ↓
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                    SUPABASE EDGE FUNCTIONS (11 functions)                │
+│                    SUPABASE EDGE FUNCTIONS (29 functions)                │
 ├─────────────────────────────────────────────────────────────────────────┤
 │  POST /functions/v1/{function}                                           │
 │  Body: { "action": "...", "payload": {...} }                            │
 │                                                                          │
-│  auth-user/        → Supabase Auth (login/signup/reset)                 │
-│  bubble-proxy/     → Proxies Bubble API calls                           │
-│  listing/          → Listing CRUD with Supabase                         │
-│  proposal/         → Proposal operations with Bubble sync               │
-│  ai-gateway/       → OpenAI completions (streaming + non-streaming)     │
-│  ai-signup-guest/  → AI-powered guest signup                            │
-│  ai-parse-profile/ → AI profile parsing                                 │
-│  bubble_sync/      → Bubble↔Supabase bidirectional sync                 │
-│  communications/   → Communication handling                              │
-│  pricing/          → Pricing calculations                                │
-│  slack/            → Slack notifications                                 │
+│  CORE FUNCTIONS                                                          │
+│  auth-user/           → Supabase Auth (login/signup/reset/magic-link)   │
+│  listing/             → Listing CRUD with atomic Bubble sync            │
+│  proposal/            → Proposal CRUD with queue-based sync             │
+│  messages/            → Real-time messaging threads                      │
+│                                                                          │
+│  AI-POWERED                                                              │
+│  ai-gateway/          → OpenAI proxy with prompt templating             │
+│  ai-signup-guest/     → AI-powered guest signup                         │
+│  ai-parse-profile/    → Queue-based AI profile parsing                  │
+│  house-manual/        → AI-powered house manual extraction              │
+│                                                                          │
+│  BUBBLE INTEGRATION                                                      │
+│  bubble-proxy/        → Proxies Bubble API calls                        │
+│  bubble_sync/         → Queue processor for Supabase→Bubble sync        │
+│                                                                          │
+│  BOOKING FEATURES                                                        │
+│  date-change-request/ → Lease date changes with throttling              │
+│  rental-application/  → Rental application processing                   │
+│  guest-payment-records/ → Guest payment schedule generation             │
+│  host-payment-records/  → Host payment schedule generation              │
+│  virtual-meeting/     → Virtual meeting scheduling                       │
+│  cohost-request/      → Co-host request management                      │
+│  cohost-request-slack-callback/ → Slack interactive callbacks           │
+│                                                                          │
+│  WORKFLOW ORCHESTRATION                                                  │
+│  workflow-enqueue/    → Workflow definition queueing                    │
+│  workflow-orchestrator/ → Sequential step execution via pgmq            │
+│  reminder-scheduler/  → Reminder system with webhooks                   │
+│                                                                          │
+│  NOTIFICATIONS                                                           │
+│  send-email/          → SendGrid proxy with templates                   │
+│  send-sms/            → Twilio proxy for SMS delivery                   │
+│  slack/               → Slack notifications                              │
+│                                                                          │
+│  UTILITIES                                                               │
+│  qr-generator/        → QR code generation (PNG binary)                 │
+│  pricing/             → Pricing calculations (placeholder)              │
+│  communications/      → Communication handling (placeholder)            │
+│  query-leo/           → Debug utility for mockup queries                │
 └──────────────────────────────┬──────────────────────────────────────────┘
                                │
               ┌────────────────┴────────────────┐
@@ -832,21 +861,35 @@ function ViewSplitLeasePage() {
 | [Auth/SIGNUP_FLOW.md](./Auth/SIGNUP_FLOW.md) | Guest/host signup flow |
 | [Auth/AUTH_USER_EDGE_FUNCTION.md](./Auth/AUTH_USER_EDGE_FUNCTION.md) | Auth Edge Function details |
 
-#### Backend - EDGE Functions (12 files)
+#### Backend - EDGE Functions (26 files)
 | File | Description |
 |------|-------------|
-| [Backend(EDGE - Functions)/README.md](./Backend(EDGE%20-%20Functions)/README.md) | Edge functions overview |
+| [Backend(EDGE - Functions)/README.md](./Backend(EDGE%20-%20Functions)/README.md) | Edge functions overview (29 functions) |
 | [Backend(EDGE - Functions)/QUICK_REFERENCE.md](./Backend(EDGE%20-%20Functions)/QUICK_REFERENCE.md) | Quick reference |
 | [Backend(EDGE - Functions)/SEQUENCE_DIAGRAMS.md](./Backend(EDGE%20-%20Functions)/SEQUENCE_DIAGRAMS.md) | Sequence diagrams |
+| [Backend(EDGE - Functions)/AI_GATEWAY.md](./Backend(EDGE%20-%20Functions)/AI_GATEWAY.md) | AI gateway function |
+| [Backend(EDGE - Functions)/AI_SIGNUP_GUEST.md](./Backend(EDGE%20-%20Functions)/AI_SIGNUP_GUEST.md) | AI signup guest function |
 | [Backend(EDGE - Functions)/AUTH_USER.md](./Backend(EDGE%20-%20Functions)/AUTH_USER.md) | Auth user function |
 | [Backend(EDGE - Functions)/BUBBLE_PROXY.md](./Backend(EDGE%20-%20Functions)/BUBBLE_PROXY.md) | Bubble proxy function |
 | [Backend(EDGE - Functions)/BUBBLE_SYNC.md](./Backend(EDGE%20-%20Functions)/BUBBLE_SYNC.md) | Bubble sync function |
-| [Backend(EDGE - Functions)/AI_GATEWAY.md](./Backend(EDGE%20-%20Functions)/AI_GATEWAY.md) | AI gateway function |
-| [Backend(EDGE - Functions)/AI_SIGNUP_GUEST.md](./Backend(EDGE%20-%20Functions)/AI_SIGNUP_GUEST.md) | AI signup guest function |
+| [Backend(EDGE - Functions)/COHOST_REQUEST.md](./Backend(EDGE%20-%20Functions)/COHOST_REQUEST.md) | Co-host request management |
+| [Backend(EDGE - Functions)/COHOST_REQUEST_SLACK_CALLBACK.md](./Backend(EDGE%20-%20Functions)/COHOST_REQUEST_SLACK_CALLBACK.md) | Slack interactive callbacks |
+| [Backend(EDGE - Functions)/DATE_CHANGE_REQUEST.md](./Backend(EDGE%20-%20Functions)/DATE_CHANGE_REQUEST.md) | Date change with throttling |
+| [Backend(EDGE - Functions)/GUEST_PAYMENT_RECORDS.md](./Backend(EDGE%20-%20Functions)/GUEST_PAYMENT_RECORDS.md) | Guest payment schedules |
+| [Backend(EDGE - Functions)/HOST_PAYMENT_RECORDS.md](./Backend(EDGE%20-%20Functions)/HOST_PAYMENT_RECORDS.md) | Host payment schedules |
+| [Backend(EDGE - Functions)/HOUSE_MANUAL.md](./Backend(EDGE%20-%20Functions)/HOUSE_MANUAL.md) | AI-powered house manual |
 | [Backend(EDGE - Functions)/LISTING.md](./Backend(EDGE%20-%20Functions)/LISTING.md) | Listing function |
+| [Backend(EDGE - Functions)/MESSAGES.md](./Backend(EDGE%20-%20Functions)/MESSAGES.md) | Real-time messaging |
 | [Backend(EDGE - Functions)/PROPOSAL.md](./Backend(EDGE%20-%20Functions)/PROPOSAL.md) | Proposal function |
-| [Backend(EDGE - Functions)/SLACK.md](./Backend(EDGE%20-%20Functions)/SLACK.md) | Slack function |
+| [Backend(EDGE - Functions)/QR_GENERATOR.md](./Backend(EDGE%20-%20Functions)/QR_GENERATOR.md) | QR code generation |
+| [Backend(EDGE - Functions)/REMINDER_SCHEDULER.md](./Backend(EDGE%20-%20Functions)/REMINDER_SCHEDULER.md) | Reminder system |
+| [Backend(EDGE - Functions)/RENTAL_APPLICATION.md](./Backend(EDGE%20-%20Functions)/RENTAL_APPLICATION.md) | Rental application |
+| [Backend(EDGE - Functions)/SEND_EMAIL.md](./Backend(EDGE%20-%20Functions)/SEND_EMAIL.md) | SendGrid email delivery |
+| [Backend(EDGE - Functions)/SEND_SMS.md](./Backend(EDGE%20-%20Functions)/SEND_SMS.md) | Twilio SMS delivery |
 | [Backend(EDGE - Functions)/SHARED_UTILITIES.md](./Backend(EDGE%20-%20Functions)/SHARED_UTILITIES.md) | Shared utilities |
+| [Backend(EDGE - Functions)/SLACK.md](./Backend(EDGE%20-%20Functions)/SLACK.md) | Slack function |
+| [Backend(EDGE - Functions)/VIRTUAL_MEETING.md](./Backend(EDGE%20-%20Functions)/VIRTUAL_MEETING.md) | Virtual meeting scheduling |
+| [Backend(EDGE - Functions)/WORKFLOW_SYSTEM.md](./Backend(EDGE%20-%20Functions)/WORKFLOW_SYSTEM.md) | Workflow orchestration |
 
 #### Database (4 files)
 | File | Description |
@@ -969,11 +1012,11 @@ SLACK_WEBHOOK_ACQUISITION, SLACK_WEBHOOK_GENERAL
 | Modal Components | 13 |
 | Logic Layer Files | 55+ |
 | Library Utilities | 32 |
-| Edge Functions | 11 |
+| Edge Functions | 29 |
 | Shared Edge Utilities | 10 |
 | CSS Files | 40+ |
-| Documentation Files (in .claude/Documentation/) | 46 |
+| Documentation Files (in .claude/Documentation/) | 63 |
 
 ---
 
-**VERSION**: 7.1 | **UPDATED**: 2025-12-11
+**VERSION**: 8.0 | **UPDATED**: 2026-01-20

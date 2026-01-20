@@ -1,6 +1,6 @@
 # Routing & Redirection Guide
 
-**Created**: 2025-12-04
+**Created**: 2026-01-20
 **Status**: AUTHORITATIVE REFERENCE
 **Scope**: All routing changes in Split Lease application
 **Keywords**: routing, redirects, pages, navigation, cloudflare, vite, _internal, 308, clean URLs
@@ -580,5 +580,5 @@ routing, routes, redirects, _redirects, _routes.json, cloudflare, pages, functio
 ---
 
 **Document Version**: 1.0
-**Last Updated**: 2025-12-04
+**Last Updated**: 2026-01-20
 **Maintainer**: Development Team

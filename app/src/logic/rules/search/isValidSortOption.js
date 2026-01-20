@@ -1,3 +1,5 @@
+import { VALID_SORT_OPTIONS } from '../../constants/searchConstants.js';
+
 /**
  * Check if sort option value is valid.
  *
@@ -25,7 +27,5 @@ export function isValidSortOption({ sortBy }) {
     )
   }
 
-  const validOptions = ['recommended', 'price-low', 'most-viewed', 'recent']
-
-  return validOptions.includes(sortBy)
+  return VALID_SORT_OPTIONS.includes(sortBy)
 }
