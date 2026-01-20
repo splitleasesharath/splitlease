@@ -7,6 +7,7 @@
 
 import React from 'react';
 import { ExternalLink, ArrowLeft, Save, Loader2 } from 'lucide-react';
+import { useToast } from '../../../../shared/Toast.jsx';
 
 export default function FixedSaveBar({
   onPreview,
@@ -15,10 +16,25 @@ export default function FixedSaveBar({
   disabled = false,
   previewMode = false
 }) {
+  const { showToast } = useToast();
+
   const handleSave = async () => {
     if (saving || disabled) return;
     const result = await onSave();
-    // Toast notification handled by parent
+
+    if (result?.success) {
+      showToast({
+        title: 'Profile saved',
+        content: 'Your changes have been saved successfully.',
+        type: 'success'
+      });
+    } else {
+      showToast({
+        title: 'Save failed',
+        content: result?.error || 'Unable to save changes. Please try again.',
+        type: 'error'
+      });
+    }
   };
 
   // Preview mode: Show exit preview button only

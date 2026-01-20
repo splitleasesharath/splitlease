@@ -465,6 +465,10 @@ export function useCreateSuggestedProposalLogic() {
   }, [guestSearchResults.length, selectedGuest]);
 
   const handleGuestSelect = useCallback(async (guest) => {
+    console.log('[PREFILL DEBUG] handleGuestSelect called with full guest object:', guest);
+    console.log('[PREFILL DEBUG] Guest _id:', guest._id);
+    console.log('[PREFILL DEBUG] Guest email:', guest.email);
+
     setSelectedGuest(guest);
     setGuestSearchTerm('');
     setGuestSearchResults([]);
@@ -477,10 +481,12 @@ export function useCreateSuggestedProposalLogic() {
     }
 
     // Prefill from guest's most recent proposal across ALL listings
-    const { data: mostRecentProposal } = await getUserMostRecentProposal(guest._id);
+    console.log('[PREFILL DEBUG] About to call getUserMostRecentProposal for guest:', guest._id);
+    const { data: mostRecentProposal, error: prefillError } = await getUserMostRecentProposal(guest._id);
+    console.log('[PREFILL DEBUG] Result:', { mostRecentProposal, prefillError });
 
     if (mostRecentProposal) {
-      console.log('[CreateSuggestedProposal] Prefilling from most recent proposal:', mostRecentProposal._id);
+      console.log('[PREFILL DEBUG] Prefilling from proposal:', mostRecentProposal._id);
 
       // Prefill days selected (0-indexed, no conversion needed)
       const daysSelected = mostRecentProposal['Days Selected'];
