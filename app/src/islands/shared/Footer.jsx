@@ -113,7 +113,7 @@ export default function Footer() {
             <a href="/faq?section=travelers&question=1692211080963x751695924087252700">About Periodic Tenancy</a>
             <a href="/about-us">About the Team</a>
             <a href="/careers">Careers at Split Lease</a>
-            <a href="/help-center">Blog</a>
+            <a href="/help-center/knowledge-base">Blog</a>
           </div>
 
           {/* For Hosts Column - hidden for logged-in guests */}

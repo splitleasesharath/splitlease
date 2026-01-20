@@ -1022,6 +1022,80 @@
     font-weight: 500;
 }
 
+/* V26 Stacked Map Trigger Button in Sidebar */
+.listing-price-sidebar .sidebar-map-trigger {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    margin-top: 12px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1.5px solid rgba(0, 0, 0, 0.12);
+    cursor: pointer;
+    font-family: inherit;
+    text-align: left;
+    overflow: hidden;
+    /* Map background */
+    background: url('https://tile.openstreetmap.org/15/9654/12312.png') center/cover;
+    transition: all 0.2s ease;
+}
+
+/* Frosted glass overlay */
+.listing-price-sidebar .sidebar-map-trigger::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.55);
+    transition: background 0.2s ease;
+    border-radius: inherit;
+}
+
+.listing-price-sidebar .sidebar-map-trigger:hover::before {
+    background: rgba(255, 255, 255, 0.45);
+}
+
+.listing-price-sidebar .sidebar-map-trigger:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Top label - "View on Map" */
+.listing-price-sidebar .sidebar-map-trigger .map-trigger-label {
+    position: relative;
+    z-index: 1;
+    font-size: 9px;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.55);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Location name with arrow */
+.listing-price-sidebar .sidebar-map-trigger .map-trigger-location {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a1a2e;
+    margin-top: 1px;
+}
+
+.listing-price-sidebar .sidebar-map-trigger .map-trigger-arrow {
+    opacity: 0.8;
+    stroke: #1a1a2e;
+    transition: all 0.2s ease;
+}
+
+.listing-price-sidebar .sidebar-map-trigger:hover .map-trigger-arrow {
+    opacity: 1;
+    transform: translateX(2px);
+}
+
 /* Legacy listing-info (for compatibility) */
 .listing-info {
     flex: 0 1 auto;
@@ -1030,42 +1104,53 @@
     gap: 0.25rem;
 }
 
-/* Location Pill Button - Clickable to zoom map */
+/* Location Pill Button - V26 Stacked Labels Style */
 .listing-card .listing-location-pill {
+    position: relative;
     display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px 6px 10px !important;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 8px 14px !important;
     margin-bottom: 6px;
-    background: #f3f0f7 !important;
-    border: 1px solid #e0dbe6 !important;
-    border-radius: 100px !important;
+    border-radius: 10px !important;
+    border: 1.5px solid rgba(0, 0, 0, 0.12) !important;
     cursor: pointer;
     transition: all 0.2s ease;
     font-family: inherit;
-    font-size: 12px;
-    color: var(--primary-purple, #31135d);
-    font-weight: 500;
-    white-space: nowrap;
     max-width: fit-content;
+    overflow: hidden;
+    /* Map background */
+    background: url('https://tile.openstreetmap.org/15/9654/12312.png') center/cover !important;
+}
+
+/* Frosted glass overlay */
+.listing-card .listing-location-pill::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.55);
+    transition: background 0.2s ease;
+    border-radius: inherit;
+}
+
+.listing-card .listing-location-pill:hover::before {
+    background: rgba(255, 255, 255, 0.45);
 }
 
 .listing-card .listing-location-pill:hover {
-    background: var(--primary-purple, #31135d) !important;
-    border-color: var(--primary-purple, #31135d) !important;
-    color: white;
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(49, 19, 93, 0.25);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .listing-card .listing-location-pill:active {
     transform: translateY(0);
-    box-shadow: 0 1px 4px rgba(49, 19, 93, 0.2);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Focus state for keyboard navigation */
 .listing-card .listing-location-pill:focus {
-    outline: 2px solid var(--primary-purple, #31135d);
+    outline: 2px solid #1a1a2e;
     outline-offset: 2px;
 }
 
@@ -1074,35 +1159,37 @@
     outline: none;
 }
 
-/* Location pin icon */
-.listing-card .listing-location-pill .location-pin-icon {
-    width: 14px;
-    height: 14px;
-    flex-shrink: 0;
-    color: var(--primary-purple, #31135d);
-    transition: color 0.2s ease;
+/* Top label - "View on Map" */
+.listing-card .listing-location-pill .location-label {
+    position: relative;
+    z-index: 1;
+    font-size: 10px;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.55);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-.listing-card .listing-location-pill:hover .location-pin-icon {
-    color: white;
-}
-
-/* Location text */
-.listing-card .listing-location-pill .location-text {
-    font-size: 12px;
-    color: inherit;
-    overflow: hidden;
-    text-overflow: ellipsis;
+/* Location name with arrow */
+.listing-card .listing-location-pill .location-name {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a2e;
 }
 
 /* Arrow icon */
 .listing-card .listing-location-pill .location-arrow-icon {
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
     flex-shrink: 0;
-    opacity: 0.7;
+    opacity: 0.8;
     transition: all 0.2s ease;
-    stroke: currentColor;
+    stroke: #1a1a2e;
 }
 
 .listing-card .listing-location-pill:hover .location-arrow-icon {
@@ -1423,21 +1510,25 @@
         color: #1a1a1a;
     }
 
-    /* Location pill on mobile */
+    /* Location pill on mobile - V26 Stacked Labels */
     .listing-card .listing-location-pill {
-        padding: 5px 10px 5px 8px !important;
+        padding: 6px 12px !important;
         margin-bottom: 4px;
-        font-size: 11px;
+        border-radius: 8px !important;
     }
 
-    .listing-card .listing-location-pill .location-pin-icon {
-        width: 12px;
-        height: 12px;
+    .listing-card .listing-location-pill .location-label {
+        font-size: 9px;
+    }
+
+    .listing-card .listing-location-pill .location-name {
+        font-size: 13px;
+        gap: 4px;
     }
 
     .listing-card .listing-location-pill .location-arrow-icon {
-        width: 10px;
-        height: 10px;
+        width: 9px;
+        height: 9px;
     }
 
     /* Meta section as inline details text */
