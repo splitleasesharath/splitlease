@@ -3,9 +3,8 @@
    Clean, polished vertical card layout
    ======================================== */
 
-/* Import shared styles */
-@import '../../../styles/components/search-page.css';
-@import '../../../styles/components/listings.css';
+/* Only import toast styles - removed listings.css and search-page.css
+   to prevent style conflicts with FavoritesCard.css */
 @import '../../../styles/components/toast.css';
 
 /* ============================================
@@ -218,42 +217,68 @@
 }
 
 /* ============================================
-   LOADING SKELETON
+   LOADING SKELETON - VERTICAL CARD LAYOUT
+   Matches the FavoritesCard vertical design
    ============================================ */
-.loading-skeleton {
+.favorites-page .loading-skeleton {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 20px;
   padding: 24px;
 }
 
-.skeleton-card {
+.favorites-page .skeleton-card {
   background: white;
-  border-radius: 16px;
+  border-radius: 12px;
   overflow: hidden;
-  border: 1px solid var(--favorites-border, #E8ECF0);
+  border: 1px solid #e5e7eb;
+  /* VERTICAL layout - image on top, content below */
+  display: flex;
+  flex-direction: column;
 }
 
-.skeleton-image {
-  height: 200px;
+.favorites-page .skeleton-image {
+  /* Match FavoritesCard photo height */
+  height: 180px;
+  width: 100%;
   background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
 
-.skeleton-content {
-  padding: 16px;
+.favorites-page .skeleton-content {
+  /* Match FavoritesCard content padding */
+  padding: 6px 8px 8px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 6px;
 }
 
-.skeleton-line {
-  height: 14px;
+.favorites-page .skeleton-line {
+  height: 12px;
   background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: 4px;
+}
+
+.favorites-page .skeleton-line:first-child {
+  width: 40%;
+}
+
+.favorites-page .skeleton-line:nth-child(2) {
+  width: 80%;
+  height: 14px;
+}
+
+.favorites-page .skeleton-line:nth-child(3) {
+  width: 60%;
+}
+
+.favorites-page .skeleton-line:last-child {
+  width: 30%;
+  height: 16px;
+  margin-top: 4px;
 }
 
 @keyframes shimmer {
@@ -423,10 +448,14 @@
   }
 
   /* Loading skeleton mobile */
-  .loading-skeleton {
+  .favorites-page .loading-skeleton {
     grid-template-columns: 1fr;
     padding: 16px;
     gap: 16px;
+  }
+
+  .favorites-page .skeleton-image {
+    height: 160px;
   }
 
   /* Toast mobile */

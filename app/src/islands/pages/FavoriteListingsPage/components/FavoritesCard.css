@@ -1,5 +1,7 @@
 /* FavoritesCard - Clean minimal design */
+/* Using .favorites-page scoping for higher specificity */
 
+.favorites-page .favorites-card,
 .favorites-card {
   background: #fff;
   border-radius: 12px;
@@ -9,6 +11,7 @@
   transition: box-shadow 0.2s, transform 0.2s;
 }
 
+.favorites-page .favorites-card:hover,
 .favorites-card:hover {
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   transform: translateY(-2px);
@@ -129,7 +132,8 @@
   color: #fff;
 }
 
-/* Content - TIGHT spacing */
+/* Content - TIGHT spacing with high specificity */
+.favorites-page .favorites-card__content,
 .favorites-card__content {
   padding: 6px 8px 8px;
 }

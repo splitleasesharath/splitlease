@@ -281,10 +281,7 @@ export function useAccountProfilePageLogic() {
     { value: '', label: 'Select transportation...' },
     { value: 'car', label: 'Car' },
     { value: 'public_transit', label: 'Public Transit' },
-    { value: 'bicycle', label: 'Bicycle' },
-    { value: 'walking', label: 'Walking' },
-    { value: 'rideshare', label: 'Rideshare (Uber/Lyft)' },
-    { value: 'other', label: 'Other' }
+    { value: 'plane', label: 'Plane' }
   ]);
 
   // UI state
