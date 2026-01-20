@@ -30,6 +30,7 @@ export default function EditorView({
   onFieldChange,
   onDayToggle,
   onChipToggle,
+  onTransportToggle,
   onVerifyEmail,
   onVerifyPhone,
   onVerifyGovId,
@@ -87,12 +88,12 @@ export default function EditorView({
         />
       )}
 
-      {/* Guest-only: Transport */}
+      {/* Guest-only: Transport (multi-select) */}
       {!isHostUser && (
         <TransportCard
-          transportationType={formData.transportationType}
+          transportationTypes={formData.transportationTypes}
           transportationOptions={transportationOptions}
-          onFieldChange={onFieldChange}
+          onTransportToggle={onTransportToggle}
         />
       )}
 

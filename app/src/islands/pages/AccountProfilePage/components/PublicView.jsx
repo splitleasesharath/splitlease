@@ -44,7 +44,17 @@ export default function PublicView({
   const needForSpace = profileData?.['need for Space'] || '';
   const specialNeeds = profileData?.['special needs'] || '';
   const selectedDays = dayNamesToIndices(profileData?.['Recent Days Selected'] || []);
-  const transportationType = profileData?.['Transportation'] || '';
+
+  // Parse transportation medium - handle both legacy string and new array format
+  const rawTransport = profileData?.['transportation medium'];
+  let transportationTypes = [];
+  if (Array.isArray(rawTransport)) {
+    transportationTypes = rawTransport;
+  } else if (rawTransport && typeof rawTransport === 'string') {
+    // Legacy: single string value - convert to array
+    transportationTypes = [rawTransport];
+  }
+
   const goodGuestReasons = profileData?.['Good Guest Reasons'] || [];
   const storageItems = profileData?.['storage'] || [];
   const firstName = profileData?.['Name - First'] || 'this guest';
@@ -91,10 +101,10 @@ export default function PublicView({
         />
       )}
 
-      {/* Guest-only: Transport */}
-      {!isHostUser && transportationType && (
+      {/* Guest-only: Transport (multi-select) */}
+      {!isHostUser && transportationTypes.length > 0 && (
         <TransportCard
-          transportationType={transportationType}
+          transportationTypes={transportationTypes}
           transportationOptions={transportationOptions}
           readOnly={true}
         />

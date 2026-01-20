@@ -147,6 +147,7 @@ export default function AccountProfilePage() {
                 onFieldChange={logic.handleFieldChange}
                 onDayToggle={logic.handleDayToggle}
                 onChipToggle={logic.handleChipToggle}
+                onTransportToggle={logic.handleTransportToggle}
                 onVerifyEmail={logic.handleVerifyEmail}
                 onVerifyPhone={logic.handleVerifyPhone}
                 onVerifyGovId={logic.handleVerifyGovId}
