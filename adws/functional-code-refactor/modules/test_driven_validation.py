@@ -174,16 +174,20 @@ def generate_test_suite_for_chunk(
         )
 
     if _is_magic_number_extraction(current, refactored):
+        # Use the correct import path for the actual file being tested
+        constants_import_path = _resolve_import_path(chunk.file_path, working_dir, from_test_temp=True)
         suite.add_passing_test(
             name="constants_exported",
-            code=_generate_constants_test(refactored)
+            code=_generate_constants_test(refactored, constants_import_path)
         )
 
     if _is_function_signature_change(current, refactored):
         # The function should still work with old inputs
+        # Use the correct import path for the actual file being tested
+        compat_import_path = _resolve_import_path(chunk.file_path, working_dir, from_test_temp=True)
         suite.add_passing_test(
             name="backward_compatible",
-            code=_generate_backward_compat_test(func_names, current)
+            code=_generate_backward_compat_test(func_names, current, compat_import_path)
         )
 
     # Always add a basic syntax/parse test
@@ -507,21 +511,28 @@ process.exit(0);
 """
 
 
-def _generate_constants_test(refactored: str) -> str:
-    """Generate a test that verifies constants are exported."""
+def _generate_constants_test(refactored: str, import_path: str = None) -> str:
+    """Generate a test that verifies constants are exported.
+
+    Args:
+        refactored: The refactored source code
+        import_path: Import path relative to app/.test_temp/ (should start with ../src/)
+    """
     # Find constant names
     const_names = re.findall(r'export\s+const\s+([A-Z_]+)\s*=', refactored)
     if not const_names:
         const_names = ['SOME_CONSTANT']
 
     const_imports = ', '.join(const_names[:3])  # Limit to 3
+    # Use provided import_path or a default
+    actual_path = import_path if import_path else '../src/lib/constants.js'
 
     return f"""
 // Test: Constants should be exported
 // This test verifies that magic numbers were extracted to named constants
 
 try {{
-    const module = await import('./lib/constants.js');
+    const module = await import('{actual_path}');
     console.log('Constants module loaded');
     process.exit(0);
 }} catch (e) {{
@@ -531,9 +542,17 @@ try {{
 """
 
 
-def _generate_backward_compat_test(func_names: List[str], current: str) -> str:
-    """Generate a test for backward compatibility."""
+def _generate_backward_compat_test(func_names: List[str], current: str, import_path: str = None) -> str:
+    """Generate a test for backward compatibility.
+
+    Args:
+        func_names: List of function names in the module
+        current: Current source code
+        import_path: Import path relative to app/.test_temp/ (should start with ../src/)
+    """
     func_name = func_names[0] if func_names else "unknownFunction"
+    # Use provided import_path or a default
+    actual_path = import_path if import_path else '../src/lib/scheduleSelector/priceCalculations.js'
 
     return f"""
 // Test: Function should still be callable
@@ -541,7 +560,7 @@ def _generate_backward_compat_test(func_names: List[str], current: str) -> str:
 
 try {{
     // Just verify the module loads without error
-    const module = await import('./lib/scheduleSelector/priceCalculations.js');
+    const module = await import('{actual_path}');
     console.log('Module loaded successfully');
     process.exit(0);
 }} catch (e) {{
