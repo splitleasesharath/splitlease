@@ -68,15 +68,31 @@
 
 /* Responsive: Single column on tablet/mobile */
 @media (max-width: 900px) {
+  .account-profile-page {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+
   .account-profile-container {
     grid-template-columns: 1fr;
     padding: 16px;
     padding-top: 100px;
     gap: 24px;
+    max-width: 100%;
+    overflow-x: hidden;
+    box-sizing: border-box;
   }
 
   .account-profile-feed {
     padding-bottom: 120px;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .profile-card {
+    max-width: 100%;
+    overflow-x: hidden;
+    box-sizing: border-box;
   }
 }
 
