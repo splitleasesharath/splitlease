@@ -2960,10 +2960,9 @@ export default function SearchPage() {
               selectedBorough={selectedBorough}
               selectedNightsCount={selectedNightsCount}
               onMarkerClick={(listing) => {
-                logger.debug('Marker clicked:', listing.title);
-                // Close mobile map and scroll to listing
-                setMobileMapVisible(false);
-                setTimeout(() => scrollToListingCard(listing), 300);
+                logger.debug('[Mobile Map] Marker clicked:', listing.title);
+                // Let GoogleMap component handle showing the listing card overlay
+                // Do NOT close the mobile map - user stays in map view
               }}
               onMessageClick={(listing) => {
                 logger.debug('[SearchPage] Mobile map card message clicked for:', listing?.id);
