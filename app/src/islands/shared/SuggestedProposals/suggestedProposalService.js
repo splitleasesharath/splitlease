@@ -71,18 +71,19 @@ export async function fetchSuggestedProposals(userId) {
     );
 
     // Step 5: Fetch negotiation summaries if available
+    // Note: Column name uses Bubble convention with space and capital P
     const proposalIdsForSummaries = enrichedProposals.map(p => p._id);
     const { data: summariesData } = await supabase
       .from('negotiationsummary')
       .select('*')
-      .in('proposal_associated', proposalIdsForSummaries)
-      .order('Created Date', { ascending: false });
+      .in('"Proposal associated"', proposalIdsForSummaries)
+      .order('"Created Date"', { ascending: false });
 
     // Attach summaries to proposals
     if (summariesData && summariesData.length > 0) {
       const summaryMap = {};
       summariesData.forEach(summary => {
-        const proposalId = summary.proposal_associated;
+        const proposalId = summary['Proposal associated'];
         if (!summaryMap[proposalId]) {
           summaryMap[proposalId] = [];
         }
@@ -294,18 +295,19 @@ export async function fetchPendingConfirmationProposals(userId) {
     );
 
     // Step 5: Fetch negotiation summaries if available
+    // Note: Column name uses Bubble convention with space and capital P
     const proposalIdsForSummaries = enrichedProposals.map(p => p._id);
     const { data: summariesData } = await supabase
       .from('negotiationsummary')
       .select('*')
-      .in('proposal_associated', proposalIdsForSummaries)
-      .order('Created Date', { ascending: false });
+      .in('"Proposal associated"', proposalIdsForSummaries)
+      .order('"Created Date"', { ascending: false });
 
     // Attach summaries to proposals
     if (summariesData && summariesData.length > 0) {
       const summaryMap = {};
       summariesData.forEach(summary => {
-        const proposalId = summary.proposal_associated;
+        const proposalId = summary['Proposal associated'];
         if (!summaryMap[proposalId]) {
           summaryMap[proposalId] = [];
         }
