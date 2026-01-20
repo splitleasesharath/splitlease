@@ -153,13 +153,20 @@
 
 /* ============================================================================
    FORM SECTIONS
+   - Spacing Scale: 8px, 16px, 24px (consistent vertical rhythm)
+   - Section gap: 8px between first section and second
    ============================================================================ */
 .import-listing-section {
   width: 100%;
-  padding: 16px 20px;
+  padding: 16px 20px 8px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+/* Add consistent spacing between sections */
+.import-listing-section + .import-listing-section {
+  padding-top: 8px;
 }
 
 .import-listing-label {
@@ -223,13 +230,14 @@
    - Background: #F7F2FA
    - Border: 1px solid #E7E0EC
    - Icon: Solid purple circle with white exclamation
+   - Equal margin top/bottom for visual balance
    ============================================================================ */
 .import-listing-info {
   display: flex;
   gap: 12px;
   align-items: flex-start;
   padding: 12px;
-  margin: 0 20px 16px;
+  margin: 16px 20px;
   background: #F7F2FA;
   border: 1px solid #E7E0EC;
   border-radius: 8px;
@@ -264,6 +272,7 @@
 /* ============================================================================
    FOOTER / BUTTON SECTION
    - Fixed at bottom (flex-shrink: 0)
+   - Padding matches header (16px) for visual balance
    ============================================================================ */
 .import-listing-footer {
   flex-shrink: 0;
@@ -271,6 +280,11 @@
   padding: 16px 20px;
   background-color: #FFFFFF;
   border-top: 1px solid #E7E0EC;
+}
+
+/* Remove excess spacing from body when footer is present */
+.import-listing-body:has(+ .import-listing-footer) .import-listing-info {
+  margin-bottom: 0;
 }
 
 /* ============================================================================
@@ -392,14 +406,20 @@
   }
 
   .import-listing-section {
-    padding: 12px 16px;
+    padding: 12px 16px 8px;
   }
 
   .import-listing-info {
-    margin: 0 16px 12px;
+    margin: 12px 16px;
   }
 
+  /* Mobile footer: extra bottom padding for safe area */
   .import-listing-footer {
-    padding: 12px 16px 24px;
+    padding: 12px 16px 20px;
+  }
+
+  /* Remove excess spacing from body when footer is present (mobile) */
+  .import-listing-body:has(+ .import-listing-footer) .import-listing-info {
+    margin-bottom: 0;
   }
 }
