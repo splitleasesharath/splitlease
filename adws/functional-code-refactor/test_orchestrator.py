@@ -37,8 +37,9 @@ def test_audit(target_path: str):
     print("="*60)
 
     # Run from project root so plan file is created at correct location
-    project_root = Path(__file__).parent.parent
-    cmd = ["uv", "run", "adws/adw_code_audit.py", target_path]
+    # Path: functional-code-refactor/test_orchestrator.py → functional-code-refactor → adws → project root
+    project_root = Path(__file__).parent.parent.parent
+    cmd = ["uv", "run", "adws/functional-code-refactor/code_audit.py", target_path]
     print(f"Running: {' '.join(cmd)}\n")
 
     subprocess.run(cmd, cwd=project_root)
@@ -51,7 +52,7 @@ def test_chunks(plan_file: str):
     print("="*60)
 
     sys.path.insert(0, str(Path(__file__).parent))
-    from adw_modules.chunk_parser import extract_page_groups
+    from modules.chunk_parser import extract_page_groups
 
     plan_path = Path(plan_file)
     if not plan_path.exists():
@@ -77,8 +78,8 @@ def test_implement(plan_file: str, chunk_number: int = None):
     print("="*60)
 
     sys.path.insert(0, str(Path(__file__).parent))
-    from adw_modules.chunk_parser import extract_page_groups
-    from adw_unified_fp_orchestrator import implement_chunks_with_gemini
+    from modules.chunk_parser import extract_page_groups
+    from orchestrator import implement_chunks_with_gemini
 
     plan_path = Path(plan_file)
     if not plan_path.exists():
@@ -130,9 +131,9 @@ def test_visual(page_path: str, use_claude: bool = False):
     print("="*60)
 
     sys.path.insert(0, str(Path(__file__).parent))
-    from adw_modules.visual_regression import check_visual_parity
-    from adw_modules.dev_server import DevServerManager
-    from adw_modules.page_classifier import get_page_info, get_mcp_sessions_for_page
+    from modules.visual_regression import check_visual_parity
+    from modules.dev_server import DevServerManager
+    from modules.page_classifier import get_page_info, get_mcp_sessions_for_page
     import logging
 
     if use_claude:
@@ -192,7 +193,7 @@ def test_dev_server():
     print("="*60)
 
     sys.path.insert(0, str(Path(__file__).parent))
-    from adw_modules.dev_server import DevServerManager
+    from modules.dev_server import DevServerManager
     import logging
     import time
 
@@ -238,7 +239,7 @@ def test_full(target_path: str):
     print("TESTING: Full Orchestrator (--limit 1)")
     print("="*60)
 
-    cmd = ["uv", "run", "adw_unified_fp_orchestrator.py", target_path, "--limit", "1"]
+    cmd = ["uv", "run", "orchestrator.py", target_path, "--limit", "1"]
     print(f"Running: {' '.join(cmd)}\n")
 
     subprocess.run(cmd, cwd=Path(__file__).parent)

@@ -40,49 +40,49 @@ from typing import List, Optional, Dict
 # Add adws to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from adw_modules.agent import prompt_claude_code
-from adw_modules.data_types import AgentPromptRequest
-from adw_modules.run_logger import create_run_logger, RunLogger
-from adw_modules.dev_server import DevServerManager
-from adw_modules.visual_regression import check_visual_parity
-from adw_modules.page_classifier import (
+from modules.agent import prompt_claude_code
+from modules.data_types import AgentPromptRequest
+from modules.run_logger import create_run_logger, RunLogger
+from modules.dev_server import DevServerManager
+from modules.visual_regression import check_visual_parity
+from modules.page_classifier import (
     ALL_PAGES,
     get_page_info,
     get_mcp_sessions_for_page,
 )
-from adw_modules.concurrent_parity import (
+from modules.concurrent_parity import (
     create_parity_check_plan,
     get_capture_config,
     LIVE_BASE_URL,
     DEV_BASE_URL,
 )
-from adw_modules.chunk_parser import extract_page_groups, ChunkData
-from adw_modules.graph_algorithms import (
+from modules.chunk_parser import extract_page_groups, ChunkData
+from modules.graph_algorithms import (
     GraphAnalysisResult,
     build_simple_graph,
     analyze_graph,
 )
-from adw_modules.topology_sort import (
+from modules.topology_sort import (
     topology_sort_chunks_with_graph,
     TopologySortResult,
     get_chunk_level_stats,
 )
-from adw_modules.deferred_validation import (
+from modules.deferred_validation import (
     ValidationBatch,
     ValidationResult,
     OrchestrationResult,
     run_deferred_validation,
 )
-from adw_modules.ast_dependency_analyzer import analyze_dependencies
-from adw_modules.scoped_git_ops import RefactorScope, create_refactor_scope
-from adw_modules.test_driven_validation import (
+from modules.ast_dependency_analyzer import analyze_dependencies
+from modules.scoped_git_ops import RefactorScope, create_refactor_scope
+from modules.test_driven_validation import (
     generate_test_suite_for_chunk,
     run_tests_until_predictable,
     run_tests_before_refactor,
     run_tests_after_refactor,
     TestSuite,
 )
-from adw_code_audit import run_code_audit_and_plan
+from code_audit import run_code_audit_and_plan
 
 
 def _cleanup_browser_processes(logger: RunLogger, silent: bool = False) -> None:
@@ -248,10 +248,11 @@ def main():
 
     args = parser.parse_args()
 
-    # CRITICAL: working_dir must be the PROJECT ROOT (Split Lease - Dev), not adws/
-    # This allows Gemini agent to access files in app/, Documentation/, etc.
+    # CRITICAL: working_dir must be the PROJECT ROOT (Split Lease), not adws/
+    # This allows agents to access files in app/, Documentation/, etc.
+    # Path: functional-code-refactor/orchestrator.py → functional-code-refactor → adws → project root
     script_dir = Path(__file__).parent.resolve()
-    working_dir = script_dir.parent  # Project root: Split Lease - Dev
+    working_dir = script_dir.parent.parent  # Project root: Split Lease
 
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
     logger = create_run_logger("unified_fp_refactor", timestamp, working_dir)
@@ -492,7 +493,7 @@ def main():
                     reverse_deps
                 )
             else:
-                from adw_modules.deferred_validation import create_validation_batch_from_chunks
+                from modules.deferred_validation import create_validation_batch_from_chunks
                 validation_batch = create_validation_batch_from_chunks(
                     chunks_to_process,
                     reverse_deps

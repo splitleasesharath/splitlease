@@ -29,15 +29,15 @@ from typing import Optional, Tuple
 # Add adws to path for imports
 sys.path.insert(0, str(Path(__file__).parent))
 
-from adw_modules.agent import prompt_claude_code
-from adw_modules.data_types import AgentPromptRequest
-from adw_modules.ast_dependency_analyzer import analyze_dependencies
-from adw_modules.graph_algorithms import (
+from modules.agent import prompt_claude_code
+from modules.data_types import AgentPromptRequest
+from modules.ast_dependency_analyzer import analyze_dependencies
+from modules.graph_algorithms import (
     analyze_graph,
     build_simple_graph,
     GraphAnalysisResult,
 )
-from adw_modules.high_impact_summary import HighImpactSummary
+from modules.high_impact_summary import HighImpactSummary
 
 
 def run_dependency_analysis(target_path: str, working_dir: Path) -> Tuple[Optional[GraphAnalysisResult], str]:
