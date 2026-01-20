@@ -223,15 +223,24 @@ export async function searchGuests(searchTerm) {
 
 /**
  * Get existing proposals for a user on a specific listing
+ * Returns proposals with prefill fields, ordered by most recent first
  */
 export async function getUserProposalsForListing(userId, listingId) {
   try {
     const { data, error } = await supabase
       .from('proposal')
-      .select('_id, Status')
+      .select(`
+        _id,
+        Status,
+        "Days Selected",
+        "Reservation Span (Weeks)",
+        "Move in range start",
+        "Created Date"
+      `)
       .eq('Guest', userId)
       .eq('Listing', listingId)
-      .neq('Deleted', true);
+      .neq('Deleted', true)
+      .order('"Created Date"', { ascending: false });
 
     if (error) throw error;
     return { data: data || [], error: null };

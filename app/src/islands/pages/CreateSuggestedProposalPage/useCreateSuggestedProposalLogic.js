@@ -44,6 +44,27 @@ const MOVE_IN_RANGE_OPTIONS = [
   { value: 30, label: '1 month' }
 ];
 
+// Standard reservation span weeks that map directly to dropdown options
+const STANDARD_RESERVATION_SPANS = [6, 7, 8, 9, 10, 12, 13, 16, 17, 20, 22, 26, 52];
+
+/**
+ * Map numeric weeks to reservation span dropdown value
+ * @param {number} weeks - Number of weeks from proposal
+ * @returns {{ reservationSpan: string, customWeeks: number|null }}
+ */
+function mapWeeksToReservationSpan(weeks) {
+  if (!weeks || weeks <= 0) {
+    return { reservationSpan: '', customWeeks: null };
+  }
+
+  if (STANDARD_RESERVATION_SPANS.includes(weeks)) {
+    return { reservationSpan: String(weeks), customWeeks: null };
+  }
+
+  // Non-standard value: use custom option
+  return { reservationSpan: 'custom', customWeeks: weeks };
+}
+
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
@@ -450,8 +471,44 @@ export function useCreateSuggestedProposalLogic() {
 
     // Check for existing proposals
     if (selectedListing) {
-      const { data } = await getUserProposalsForListing(guest._id, selectedListing._id);
-      setExistingProposalsCount(data?.length || 0);
+      const { data: proposals } = await getUserProposalsForListing(guest._id, selectedListing._id);
+      setExistingProposalsCount(proposals?.length || 0);
+
+      // Prefill from most recent proposal if exists
+      if (proposals && proposals.length > 0) {
+        const mostRecentProposal = proposals[0]; // Already sorted by Created Date desc
+
+        // Prefill days selected (0-indexed, no conversion needed)
+        const daysSelected = mostRecentProposal['Days Selected'];
+        if (Array.isArray(daysSelected) && daysSelected.length > 0) {
+          setSelectedDays(daysSelected);
+        }
+
+        // Prefill reservation span
+        const weeksValue = mostRecentProposal['Reservation Span (Weeks)'];
+        if (weeksValue && weeksValue > 0) {
+          const { reservationSpan: spanValue, customWeeks: customValue } = mapWeeksToReservationSpan(weeksValue);
+          setReservationSpan(spanValue);
+          if (customValue !== null) {
+            setCustomWeeks(customValue);
+          }
+        }
+
+        // Prefill move-in date (ensure not in the past)
+        const moveInStart = mostRecentProposal['Move in range start'];
+        if (moveInStart) {
+          const proposalDate = new Date(moveInStart);
+          const tomorrow = new Date();
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          tomorrow.setHours(0, 0, 0, 0);
+
+          // Use proposal date if in future, otherwise use tomorrow
+          if (proposalDate >= tomorrow) {
+            setMoveInDate(proposalDate.toISOString().split('T')[0]);
+          }
+          // If past date, leave default (tomorrow) in place
+        }
+      }
     }
 
     // Pre-fill guest profile fields if available
