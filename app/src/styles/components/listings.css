@@ -336,7 +336,7 @@
    All cards now have images (real or placeholder), so horizontal
    layout should always apply. */
 
-/* Image Section - Left 40%, dynamic height to match card */
+/* Image Section - Left 40%, height follows text column */
 .listing-images {
     position: relative;
     width: 40%;
@@ -348,7 +348,12 @@
     align-self: stretch;
 }
 
+/* Image is absolutely positioned to decouple from layout flow */
+/* This prevents the image's natural dimensions from affecting card height */
 .listing-images img {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
