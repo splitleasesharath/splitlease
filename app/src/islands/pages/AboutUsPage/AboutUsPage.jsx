@@ -63,14 +63,14 @@ function TeamSkeleton() {
 }
 
 /**
- * Hero carousel avatar component
+ * Hero carousel avatar component (no names - just photos)
  */
-function HeroAvatar({ member, index }) {
+function HeroAvatar({ member }) {
   const [imageError, setImageError] = useState(false);
   const imageUrl = formatImageUrl(member.image);
 
   return (
-    <div className="hero-carousel-avatar" style={{ animationDelay: `${index * 0.1}s` }}>
+    <div className="hero-carousel-avatar">
       <div className="hero-avatar-image" style={imageError ? { backgroundColor: '#4B47CE' } : {}}>
         {!imageError && (
           <img
@@ -80,7 +80,6 @@ function HeroAvatar({ member, index }) {
           />
         )}
       </div>
-      <span className="hero-avatar-name">{member.name.split(' ')[0]}</span>
     </div>
   );
 }
