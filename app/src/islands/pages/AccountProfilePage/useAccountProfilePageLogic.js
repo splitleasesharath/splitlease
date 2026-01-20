@@ -484,7 +484,7 @@ export function useAccountProfilePageLogic() {
       setProfileData(userData);
 
       // Initialize form data from profile
-      // Database columns use 'Name - First', 'Name - Last' naming convention
+      // Database columns use Bubble.io naming conventions
       // Date of Birth is stored as timestamp, convert to YYYY-MM-DD for date input
       const dobTimestamp = userData['Date of Birth'];
       const dateOfBirth = dobTimestamp ? dobTimestamp.split('T')[0] : '';
@@ -492,15 +492,15 @@ export function useAccountProfilePageLogic() {
       setFormData({
         firstName: userData['Name - First'] || '',
         lastName: userData['Name - Last'] || '',
-        jobTitle: userData['Job Title'] || '',
+        jobTitle: '', // Job Title column does not exist in database
         dateOfBirth,
         bio: userData['About Me / Bio'] || '',
         needForSpace: userData['need for Space'] || '',
         specialNeeds: userData['special needs'] || '',
         selectedDays: dayNamesToIndices(userData['Recent Days Selected'] || []),
-        transportationType: userData['Transportation'] || '',
-        goodGuestReasons: userData['Good Guest Reasons'] || [],
-        storageItems: userData['storage'] || []
+        transportationType: userData['transportation medium'] || '',
+        goodGuestReasons: userData['Reasons to Host me'] || [],
+        storageItems: userData['About - Commonly Stored Items'] || []
       });
 
       return userData;
@@ -936,20 +936,20 @@ export function useAccountProfilePageLogic() {
         ? new Date(formData.dateOfBirth + 'T00:00:00Z').toISOString()
         : null;
 
-      // Database columns use 'Name - First', 'Name - Last', 'Name - Full' naming convention
+      // Database columns use Bubble.io naming conventions
+      // Note: 'Job Title' column does not exist - removed from update
       const updateData = {
         'Name - First': firstName,
         'Name - Last': lastName,
         'Name - Full': fullName,
-        'Job Title': formData.jobTitle.trim(),
         'Date of Birth': dateOfBirthISO,
         'About Me / Bio': formData.bio.trim(),
         'need for Space': formData.needForSpace.trim(),
         'special needs': formData.specialNeeds.trim(),
         'Recent Days Selected': indicesToDayNames(formData.selectedDays),
-        'Transportation': formData.transportationType,
-        'Good Guest Reasons': formData.goodGuestReasons,
-        'storage': formData.storageItems,
+        'transportation medium': formData.transportationType,
+        'Reasons to Host me': formData.goodGuestReasons,
+        'About - Commonly Stored Items': formData.storageItems,
         'Modified Date': new Date().toISOString()
       };
 
@@ -980,7 +980,7 @@ export function useAccountProfilePageLogic() {
    */
   const handleCancel = useCallback(() => {
     if (profileData) {
-      // Database columns use 'Name - First', 'Name - Last' naming convention
+      // Database columns use Bubble.io naming conventions
       // Date of Birth stored as timestamp, convert to YYYY-MM-DD
       const dobTimestamp = profileData['Date of Birth'];
       const dateOfBirth = dobTimestamp ? dobTimestamp.split('T')[0] : '';
@@ -988,15 +988,15 @@ export function useAccountProfilePageLogic() {
       setFormData({
         firstName: profileData['Name - First'] || '',
         lastName: profileData['Name - Last'] || '',
-        jobTitle: profileData['Job Title'] || '',
+        jobTitle: '', // Job Title column does not exist in database
         dateOfBirth,
         bio: profileData['About Me / Bio'] || '',
         needForSpace: profileData['need for Space'] || '',
         specialNeeds: profileData['special needs'] || '',
         selectedDays: dayNamesToIndices(profileData['Recent Days Selected'] || []),
-        transportationType: profileData['Transportation'] || '',
-        goodGuestReasons: profileData['Good Guest Reasons'] || [],
-        storageItems: profileData['storage'] || []
+        transportationType: profileData['transportation medium'] || '',
+        goodGuestReasons: profileData['Reasons to Host me'] || [],
+        storageItems: profileData['About - Commonly Stored Items'] || []
       });
       setFormErrors({});
       setIsDirty(false);
