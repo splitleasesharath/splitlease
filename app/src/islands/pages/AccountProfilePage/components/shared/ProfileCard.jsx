@@ -9,6 +9,7 @@
 import React from 'react';
 
 export default function ProfileCard({
+  id,
   title,
   subtitle,
   children,
@@ -16,7 +17,7 @@ export default function ProfileCard({
   headerAction = null
 }) {
   return (
-    <div className={`profile-card ${className}`}>
+    <div id={id} className={`profile-card ${className}`}>
       <div className="profile-card-header">
         <div>
           <h2 className="profile-card-title">{title}</h2>

@@ -797,6 +797,49 @@ export function useAccountProfilePageLogic() {
   }, [isAuthenticated, profileUserId, fetchProfileData]);
 
   // ============================================================================
+  // RENTAL APPLICATION URL NAVIGATION (Guest-only)
+  // ============================================================================
+
+  /**
+   * Handle rental application deep link from messaging page or other CTAs
+   * Detects ?section=rental-application&openRentalApp=true URL params
+   * Auto-opens the wizard modal and scrolls to the section
+   */
+  useEffect(() => {
+    // Only process for guests viewing their own profile after loading completes
+    if (loading || !isEditorView || isHostUser) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const section = params.get('section');
+    const openRentalApp = params.get('openRentalApp');
+
+    // Only process rental application navigation
+    if (section !== 'rental-application') return;
+
+    console.log('[rental-app-navigation] Processing rental application deep link');
+
+    // Clean URL to prevent re-processing on state changes
+    const url = new URL(window.location.href);
+    url.searchParams.delete('section');
+    url.searchParams.delete('openRentalApp');
+    window.history.replaceState({}, '', url.toString());
+
+    // Scroll to the rental application section
+    // Use setTimeout to ensure DOM has rendered after state updates
+    setTimeout(() => {
+      const rentalAppSection = document.getElementById('rental-application-section');
+      if (rentalAppSection) {
+        rentalAppSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+
+      // Auto-open the wizard modal if requested
+      if (openRentalApp === 'true') {
+        setShowRentalWizardModal(true);
+      }
+    }, 100);
+  }, [loading, isEditorView, isHostUser]);
+
+  // ============================================================================
   // FORM HANDLERS
   // ============================================================================
 
