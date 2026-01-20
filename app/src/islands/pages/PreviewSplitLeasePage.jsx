@@ -825,7 +825,48 @@ export default function PreviewSplitLeasePage() {
     // Update the local listing state with the new data
     // Note: Don't close the modal here - let EditListingDetails handle closing
     // after showing the success toast
-    setListing(prev => ({ ...prev, ...updatedListing }));
+
+    // Transform Features - Photos back to the photos format used by the UI
+    // The DB returns raw JSON array but the page expects {Photo, ...} objects
+    let transformedPhotos = null;
+    if (updatedListing['Features - Photos']) {
+      const rawPhotos = typeof updatedListing['Features - Photos'] === 'string'
+        ? JSON.parse(updatedListing['Features - Photos'])
+        : updatedListing['Features - Photos'];
+
+      if (Array.isArray(rawPhotos)) {
+        transformedPhotos = rawPhotos.map((photo, index) => {
+          // Handle both object format {Photo: url} and string URLs
+          if (typeof photo === 'object' && photo !== null) {
+            return {
+              _id: photo.id || `photo_${index}`,
+              Photo: photo.Photo || photo.url || '',
+              'Photo (thumbnail)': photo['Photo (thumbnail)'] || photo.Photo || photo.url || '',
+              toggleMainPhoto: photo.toggleMainPhoto ?? (index === 0),
+              SortOrder: photo.SortOrder ?? index,
+              Caption: photo.caption || photo.Caption || ''
+            };
+          } else {
+            // String URL format
+            return {
+              _id: `photo_${index}`,
+              Photo: photo,
+              'Photo (thumbnail)': photo,
+              toggleMainPhoto: index === 0,
+              SortOrder: index,
+              Caption: ''
+            };
+          }
+        });
+      }
+    }
+
+    setListing(prev => ({
+      ...prev,
+      ...updatedListing,
+      // Use transformed photos if available, otherwise keep previous
+      ...(transformedPhotos && { photos: transformedPhotos })
+    }));
   };
 
   const handleUpdateListing = async (id, updates) => {
