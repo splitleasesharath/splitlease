@@ -1939,30 +1939,13 @@ export default function ViewSplitLeasePage() {
         {/* RIGHT COLUMN - BOOKING WIDGET (hidden on mobile) */}
         <div className={`${styles.bookingWidget} ${isMobile ? styles.hiddenMobile : ''}`}>
           {/* Price Display */}
-          <div className={styles.bookingPriceDisplay} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className={styles.bookingPriceDisplay}>
             <div className={styles.bookingPriceAmount}>
               {pricingBreakdown?.valid && pricingBreakdown?.pricePerNight
                 ? `$${Number.isInteger(pricingBreakdown.pricePerNight) ? pricingBreakdown.pricePerNight : pricingBreakdown.pricePerNight.toFixed(2)}`
                 : 'Select Days'}
               <span className={styles.bookingPriceUnit}>/night</span>
             </div>
-            <FavoriteButton
-              listingId={listing?._id}
-              userId={loggedInUserData?.userId}
-              initialFavorited={isFavorited}
-              onToggle={(newState) => {
-                setIsFavorited(newState);
-                const displayName = listing?.name || 'Listing';
-                if (newState) {
-                  showToast(`${displayName} added to favorites`, 'success');
-                } else {
-                  showToast(`${displayName} removed from favorites`, 'info');
-                }
-              }}
-              onRequireAuth={() => setShowAuthModal(true)}
-              size="large"
-              variant="inline"
-            />
           </div>
 
           {/* Move-in Date */}
@@ -2008,7 +1991,7 @@ export default function ViewSplitLeasePage() {
           </div>
 
           {/* Strict Mode */}
-          <div className={styles.bookingStrictMode}>
+          <div className={styles.bookingCheckboxWrapper}>
             <input
               type="checkbox"
               checked={strictMode}
@@ -2054,36 +2037,6 @@ export default function ViewSplitLeasePage() {
                 onPriceChange={handlePriceChange}
                 showPricing={false}
               />
-
-              {/* Listing's weekly pattern info + custom schedule option */}
-              <div className={styles.bookingScheduleInfo}>
-                <span>This listing is </span>
-                <strong className={styles.bookingScheduleHighlight}>
-                  {listing?.['Weeks offered'] || 'Every week'}
-                </strong>
-                <span>. </span>
-                <button
-                  onClick={() => setShowCustomScheduleInput(!showCustomScheduleInput)}
-                  className={styles.bookingCustomScheduleToggle}
-                >
-                  {showCustomScheduleInput ? 'Hide custom schedule' : 'Click here if you want to specify another recurrent schedule'}
-                </button>
-              </div>
-
-              {/* Custom schedule freeform input */}
-              {showCustomScheduleInput && (
-                <div className={styles.bookingCustomScheduleInput}>
-                  <textarea
-                    value={customScheduleDescription}
-                    onChange={(e) => setCustomScheduleDescription(e.target.value)}
-                    placeholder="Describe your preferred schedule pattern in detail (e.g., 'I need the space every other week starting January 15th' or 'Weekdays only for the first month, then full weeks')"
-                    className={styles.bookingTextarea}
-                  />
-                  <p className={styles.bookingCustomScheduleHelp}>
-                    The host will review your custom schedule request and may adjust the proposal accordingly.
-                  </p>
-                </div>
-              )}
             </div>
           )}
 
@@ -2570,36 +2523,6 @@ export default function ViewSplitLeasePage() {
                       onPriceChange={handlePriceChange}
                       showPricing={false}
                     />
-
-                    {/* Listing's weekly pattern info + custom schedule option (Mobile) */}
-                    <div className={styles.mobileBookingScheduleInfo}>
-                      <span>This listing is </span>
-                      <strong className={styles.mobileBookingScheduleHighlight}>
-                        {listing?.['Weeks offered'] || 'Every week'}
-                      </strong>
-                      <span>. </span>
-                      <button
-                        onClick={() => setShowCustomScheduleInput(!showCustomScheduleInput)}
-                        className={styles.mobileBookingCustomScheduleToggle}
-                      >
-                        {showCustomScheduleInput ? 'Hide custom schedule' : 'Click here if you want to specify another recurrent schedule'}
-                      </button>
-                    </div>
-
-                    {/* Custom schedule freeform input (Mobile) */}
-                    {showCustomScheduleInput && (
-                      <div className={styles.mobileBookingCustomScheduleInput}>
-                        <textarea
-                          value={customScheduleDescription}
-                          onChange={(e) => setCustomScheduleDescription(e.target.value)}
-                          placeholder="Describe your preferred schedule pattern in detail..."
-                          className={styles.mobileBookingTextarea}
-                        />
-                        <p className={styles.mobileBookingCustomScheduleHelp}>
-                          The host will review your custom schedule request.
-                        </p>
-                      </div>
-                    )}
                   </div>
                 )}
 

@@ -54,7 +54,7 @@ export default function ListingScheduleSelector({
   return (
     <div className="listing-schedule-selector">
       <div className="selector-header">
-        <h3>Schedule</h3>
+        <h3>Weekly Schedule</h3>
         <p className="selector-description">
           Choose consecutive days for your stay
         </p>
