@@ -453,7 +453,7 @@
 
 .hep-editing-terms {
   width: 100%;
-  padding: 16px 0;
+  padding: 16px 0 8px;
 }
 
 .hep-proposal-row {
@@ -1001,7 +1001,7 @@
   justify-content: center;
   align-items: center;
   margin-top: 16px;
-  padding: 16px 0;
+  padding: 16px 0 8px;
   border-top: 1px solid #E7E0EC;
 }
 
@@ -1166,7 +1166,7 @@
 
 .hep-animate-collapse {
   overflow: hidden;
-  transition: max-height 300ms ease, opacity 300ms ease, overflow 0ms 300ms;
+  transition: max-height 300ms ease, opacity 300ms ease;
 }
 
 .hep-animate-collapse.collapsed {
@@ -1175,10 +1175,9 @@
 }
 
 .hep-animate-collapse.expanded {
-  max-height: 2000px;
+  max-height: none;
   opacity: 1;
   overflow: visible;
-  transition: max-height 300ms ease, opacity 300ms ease, overflow 0ms 0ms;
 }
 
 /* ========================================
