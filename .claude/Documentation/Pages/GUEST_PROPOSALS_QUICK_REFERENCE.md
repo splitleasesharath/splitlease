@@ -1,6 +1,6 @@
 # Guest Proposals Page - Quick Reference
 
-**GENERATED**: 2025-12-11
+**GENERATED**: 2026-01-20
 **PAGE_URL**: `/guest-proposals` or `/guest-proposals?proposal={proposalId}`
 **ENTRY_POINT**: `app/src/guest-proposals.jsx`
 
@@ -850,7 +850,7 @@ Banner configurations in ProposalCard.jsx:
 ---
 
 **VERSION**: 4.0
-**LAST_UPDATED**: 2025-12-11
+**LAST_UPDATED**: 2026-01-20
 **STATUS**: Session-based authentication with two-step auth pattern and database-driven button config
 **MAJOR_CHANGES**:
 - Added VirtualMeetingManager component (replaces separate VM modals)

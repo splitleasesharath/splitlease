@@ -1,6 +1,6 @@
 # Listing Dashboard Page - Quick Reference
 
-**GENERATED**: 2025-12-11
+**GENERATED**: 2026-01-20
 **PAGE_URL**: `/listing-dashboard?id={listingId}`
 **ENTRY_POINT**: `app/src/listing-dashboard.jsx`
 
@@ -853,5 +853,5 @@ The page uses inline SVG icons:
 ---
 
 **VERSION**: 2.0
-**LAST_UPDATED**: 2025-12-11
+**LAST_UPDATED**: 2026-01-20
 **STATUS**: Production (fetches from Supabase, dual-table support: listing_trial and listing)

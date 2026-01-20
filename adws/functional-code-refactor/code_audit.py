@@ -29,33 +29,33 @@ from typing import Optional, Tuple
 # Add adws to path for imports
 sys.path.insert(0, str(Path(__file__).parent))
 
-from adw_modules.agent import prompt_claude_code
-from adw_modules.data_types import AgentPromptRequest
-from adw_modules.ast_dependency_analyzer import analyze_dependencies
-from adw_modules.graph_algorithms import (
+from modules.agent import prompt_claude_code
+from modules.data_types import AgentPromptRequest
+from modules.ast_dependency_analyzer import analyze_dependencies
+from modules.graph_algorithms import (
     analyze_graph,
     build_simple_graph,
     GraphAnalysisResult,
 )
-from adw_modules.high_impact_summary import HighImpactSummary
+from modules.high_impact_summary import HighImpactSummary
 
 
-def run_dependency_analysis(target_path: str, working_dir: Path) -> Tuple[Optional[GraphAnalysisResult], str]:
+def run_dependency_analysis(target_path: str, project_root: Path) -> Tuple[Optional[GraphAnalysisResult], str]:
     """Run AST dependency analysis and graph algorithms.
 
     Args:
-        target_path: Directory to analyze (relative to working_dir)
-        working_dir: Project root directory
+        target_path: Directory to analyze (relative to project_root)
+        project_root: Project root directory
 
     Returns:
         Tuple of (GraphAnalysisResult, high_impact_summary_text)
         Returns (None, "") if analysis fails
     """
     try:
-        # CRITICAL: Resolve target_path relative to working_dir (project root)
+        # CRITICAL: Resolve target_path relative to project_root (project root)
         # The script runs from adws/, but paths like "app/src/logic"
         # must resolve relative to the project root, not adws/
-        absolute_target = working_dir / target_path
+        absolute_target = project_root / target_path
         print(f"  [AST] Analyzing dependencies in {absolute_target}...")
 
         # Step 1: AST analysis
@@ -92,7 +92,8 @@ def run_dependency_analysis(target_path: str, working_dir: Path) -> Tuple[Option
 def run_code_audit_and_plan(
     target_path: str,
     audit_type: str,
-    working_dir: Path,
+    project_root: Path,
+    adws_dir: Path = None,
     skip_dependency_analysis: bool = False
 ) -> Tuple[str, Optional[GraphAnalysisResult]]:
     """Use Opus to audit directory and create refactoring plan grouped by page.
@@ -100,12 +101,16 @@ def run_code_audit_and_plan(
     Args:
         target_path: Path to audit
         audit_type: Type of audit (general, performance, security)
-        working_dir: Working directory
+        project_root: Project root directory (for file operations)
+        adws_dir: adws/ directory (Claude's working directory). If None, uses project_root/adws
         skip_dependency_analysis: If True, skip AST analysis (faster but less context)
 
     Returns:
         Tuple of (plan_file_path, GraphAnalysisResult)
     """
+    # Default adws_dir to project_root/adws if not provided
+    if adws_dir is None:
+        adws_dir = project_root / "adws"
     print(f"\n{'='*60}")
     print(f"PHASE: CODE AUDIT ({audit_type.upper()}) & PLAN CREATION")
     print(f"{'='*60}")
@@ -120,14 +125,18 @@ def run_code_audit_and_plan(
     high_impact_summary = ""
 
     if not skip_dependency_analysis:
-        graph_result, high_impact_summary = run_dependency_analysis(target_path, working_dir)
+        graph_result, high_impact_summary = run_dependency_analysis(target_path, project_root)
+
+    # Since Claude runs from adws/, paths need to be relative from there
+    # Prefix with ../ to reach project root
+    target_path_from_adws = f"../{target_path}"
 
     # Load prompt from template
     prompt_template_path = Path(__file__).parent / "prompts" / "code_audit_opus.txt"
     if prompt_template_path.exists():
         prompt_template = prompt_template_path.read_text(encoding='utf-8')
         prompt = prompt_template.format(
-            target_path=target_path,
+            target_path=target_path_from_adws,  # Path relative from adws/
             audit_type=audit_type,
             timestamp=timestamp,
             date=datetime.now().strftime('%Y-%m-%d'),
@@ -136,13 +145,13 @@ def run_code_audit_and_plan(
     else:
         # Fallback to hardcoded prompt if file not found
         prompt = f"""/ralph-loop:ralph-loop
-Audit the codebase at: {target_path}
+Audit the codebase at: {target_path_from_adws}
 Create a chunk-based refactoring plan at: {plan_file}
 Group chunks by affected page group.
 """
         # Run Opus session
-    output_file = working_dir / agent_dir / "raw_output.jsonl"
-    (working_dir / agent_dir).mkdir(parents=True, exist_ok=True)
+    output_file = project_root / agent_dir / "raw_output.jsonl"
+    (project_root / agent_dir).mkdir(parents=True, exist_ok=True)
 
     print(f"\nStarting Claude Opus audit agent...")
     print(f"Target: {target_path}")
@@ -164,7 +173,7 @@ Group chunks by affected page group.
             agent_name="opus_auditor",
             model="opus",
             output_file=str(output_file),
-            working_dir=str(working_dir),
+            working_dir=str(adws_dir),  # Claude runs from adws/ for separate context/memory
             dangerously_skip_permissions=True
         )
 
@@ -191,20 +200,20 @@ Group chunks by affected page group.
     print(f"\nAudit completed successfully")
 
     # Verify plan was created
-    plan_path = working_dir / plan_file
+    plan_path = project_root / plan_file
     if not plan_path.exists():
         # Sometimes it might be created in a different location or not at all if Claude failed to follow instructions
         print(f"Plan file not found at: {plan_path}")
         # Search for it just in case
         print("Searching for plan file...")
-        possible_plans = list(working_dir.glob(f"**/*{timestamp}_code_refactor_plan.md"))
+        possible_plans = list(project_root.glob(f"**/*{timestamp}_code_refactor_plan.md"))
         if possible_plans:
             plan_path = possible_plans[0]
             print(f"Found plan at: {plan_path}")
         else:
             sys.exit(1)
 
-    return str(plan_path.relative_to(working_dir)), graph_result
+    return str(plan_path.relative_to(project_root)), graph_result
 
 
 def main():
@@ -218,13 +227,13 @@ def main():
     args = parser.parse_args()
 
     # Use current directory as working dir
-    working_dir = Path.cwd()
+    project_root = Path.cwd()
 
     try:
         plan_file, graph_result = run_code_audit_and_plan(
             args.target_path,
             args.audit_type,
-            working_dir,
+            project_root,
             skip_dependency_analysis=args.skip_deps
         )
         print(f"\n{'='*60}")

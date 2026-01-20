@@ -1,6 +1,6 @@
 # Option Sets - Detailed Reference
 
-> **Source of Truth** | Generated: 2025-12-01 | Verified against live Supabase
+> **Source of Truth** | Generated: 2026-01-20 | Verified against live Supabase
 > **See also**: [DATABASE_OPTION_SETS_QUICK_REFERENCE.md](./DATABASE_OPTION_SETS_QUICK_REFERENCE.md) | [DATABASE_TABLES_DETAILED.md](./DATABASE_TABLES_DETAILED.md)
 
 ---
@@ -910,4 +910,4 @@ CREATE POLICY "Public read access" ON os_new_category FOR SELECT USING (true);
 
 ---
 
-*Last verified: 2025-12-01 against live Supabase database*
+*Last verified: 2026-01-20 against live Supabase database*

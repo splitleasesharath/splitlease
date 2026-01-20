@@ -40,49 +40,49 @@ from typing import List, Optional, Dict
 # Add adws to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from adw_modules.agent import prompt_claude_code
-from adw_modules.data_types import AgentPromptRequest
-from adw_modules.run_logger import create_run_logger, RunLogger
-from adw_modules.dev_server import DevServerManager
-from adw_modules.visual_regression import check_visual_parity
-from adw_modules.page_classifier import (
+from modules.agent import prompt_claude_code
+from modules.data_types import AgentPromptRequest
+from modules.run_logger import create_run_logger, RunLogger
+from modules.dev_server import DevServerManager
+from modules.visual_regression import check_visual_parity
+from modules.page_classifier import (
     ALL_PAGES,
     get_page_info,
     get_mcp_sessions_for_page,
 )
-from adw_modules.concurrent_parity import (
+from modules.concurrent_parity import (
     create_parity_check_plan,
     get_capture_config,
     LIVE_BASE_URL,
     DEV_BASE_URL,
 )
-from adw_modules.chunk_parser import extract_page_groups, ChunkData
-from adw_modules.graph_algorithms import (
+from modules.chunk_parser import extract_page_groups, ChunkData
+from modules.graph_algorithms import (
     GraphAnalysisResult,
     build_simple_graph,
     analyze_graph,
 )
-from adw_modules.topology_sort import (
+from modules.topology_sort import (
     topology_sort_chunks_with_graph,
     TopologySortResult,
     get_chunk_level_stats,
 )
-from adw_modules.deferred_validation import (
+from modules.deferred_validation import (
     ValidationBatch,
     ValidationResult,
     OrchestrationResult,
     run_deferred_validation,
 )
-from adw_modules.ast_dependency_analyzer import analyze_dependencies
-from adw_modules.scoped_git_ops import RefactorScope, create_refactor_scope
-from adw_modules.test_driven_validation import (
+from modules.ast_dependency_analyzer import analyze_dependencies
+from modules.scoped_git_ops import RefactorScope, create_refactor_scope
+from modules.test_driven_validation import (
     generate_test_suite_for_chunk,
     run_tests_until_predictable,
     run_tests_before_refactor,
     run_tests_after_refactor,
     TestSuite,
 )
-from adw_code_audit import run_code_audit_and_plan
+from code_audit import run_code_audit_and_plan
 
 
 def _cleanup_browser_processes(logger: RunLogger, silent: bool = False) -> None:
@@ -154,7 +154,8 @@ def _cleanup_browser_processes(logger: RunLogger, silent: bool = False) -> None:
 
 def implement_chunk_syntax_only(
     chunk: ChunkData,
-    working_dir: Path,
+    project_root: Path,
+    adws_dir: Path,
     logger: RunLogger
 ) -> bool:
     """Implement a single chunk with syntax validation only (no build check).
@@ -165,7 +166,8 @@ def implement_chunk_syntax_only(
 
     Args:
         chunk: ChunkData to implement
-        working_dir: Project working directory
+        project_root: Project root directory (for file operations)
+        adws_dir: adws/ directory (Claude's working directory for context/memory)
         logger: RunLogger for output
 
     Returns:
@@ -173,10 +175,14 @@ def implement_chunk_syntax_only(
     """
     logger.log(f"    Implementing chunk {chunk.number}: {chunk.title}")
 
+    # File paths need to be relative from adws/ (Claude's working dir)
+    # So we prefix with ../ to get back to project root
+    file_path_from_adws = f"../{chunk.file_path}"
+
     prompt = f"""Implement ONLY chunk {chunk.number} from the refactoring plan.
 
 **Chunk Details:**
-- File: {chunk.file_path}
+- File: {file_path_from_adws}
 - Line: {chunk.line_number}
 - Title: {chunk.title}
 
@@ -191,7 +197,7 @@ def implement_chunk_syntax_only(
 ```
 
 **Instructions:**
-1. Read the file: {chunk.file_path}
+1. Read the file: {file_path_from_adws}
 2. Locate the current code.
 3. **BEFORE writing**: Validate the refactored code has valid JavaScript/JSX syntax:
    - Check for balanced braces, brackets, and parentheses
@@ -205,7 +211,7 @@ def implement_chunk_syntax_only(
 
 **CRITICAL**: If you detect ANY syntax issues in the refactored code, STOP and report the error instead of writing broken code.
 """
-    agent_dir = working_dir / "adws" / "agents" / "implementation" / f"chunk_{chunk.number}"
+    agent_dir = project_root / "adws" / "agents" / "implementation" / f"chunk_{chunk.number}"
     agent_dir.mkdir(parents=True, exist_ok=True)
     output_file = agent_dir / "raw_output.jsonl"
 
@@ -215,7 +221,7 @@ def implement_chunk_syntax_only(
         agent_name="chunk_implementor",
         model="sonnet",
         output_file=str(output_file),
-        working_dir=str(working_dir),
+        working_dir=str(adws_dir),  # Claude runs from adws/ for separate context/memory
         dangerously_skip_permissions=True
     )
 
@@ -248,13 +254,16 @@ def main():
 
     args = parser.parse_args()
 
-    # CRITICAL: working_dir must be the PROJECT ROOT (Split Lease - Dev), not adws/
-    # This allows Gemini agent to access files in app/, Documentation/, etc.
+    # Directory structure:
+    # - project_root: Split Lease directory (for file operations, git, dev server)
+    # - adws_dir: adws/ directory (where Claude runs for separate context/memory)
+    # Path: functional-code-refactor/orchestrator.py → functional-code-refactor → adws → project root
     script_dir = Path(__file__).parent.resolve()
-    working_dir = script_dir.parent  # Project root: Split Lease - Dev
+    adws_dir = script_dir.parent  # adws/ - Claude's working directory
+    project_root = adws_dir.parent  # Project root: Split Lease
 
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-    logger = create_run_logger("unified_fp_refactor", timestamp, working_dir)
+    logger = create_run_logger("unified_fp_refactor", timestamp, project_root)
 
     # Track timing and metrics for OrchestrationResult
     start_time = time.time()
@@ -282,9 +291,10 @@ def main():
         plan_file_relative, graph_result = run_code_audit_and_plan(
             args.target_path,
             args.audit_type,
-            working_dir
+            project_root,
+            adws_dir
         )
-        plan_file = working_dir / plan_file_relative
+        plan_file = project_root / plan_file_relative
 
         if not plan_file.exists():
             logger.phase_complete("PHASE 1: CODE AUDIT", success=False, error="Plan file not created")
@@ -303,10 +313,10 @@ def main():
         if graph_result is None:
             logger.step("Running graph analysis (was skipped in audit)...")
             try:
-                # CRITICAL: Resolve target_path relative to working_dir (project root)
+                # CRITICAL: Resolve target_path relative to project_root (project root)
                 # The orchestrator runs from adws/, but paths like "app/src/logic"
                 # must resolve relative to the project root, not adws/
-                absolute_target = working_dir / args.target_path
+                absolute_target = project_root / args.target_path
                 dep_context = analyze_dependencies(str(absolute_target))
                 simple_graph = build_simple_graph(dep_context)
                 graph_result = analyze_graph(simple_graph)
@@ -363,12 +373,12 @@ def main():
         phase_start = time.time()
         logger.phase_start("PHASE 3: SETTING UP DEV SERVER")
 
-        if (working_dir / "app").exists():
-            app_dir = working_dir / "app"
-        elif (working_dir.parent / "app").exists():
-            app_dir = working_dir.parent / "app"
+        if (project_root / "app").exists():
+            app_dir = project_root / "app"
+        elif (project_root.parent / "app").exists():
+            app_dir = project_root.parent / "app"
         else:
-            app_dir = working_dir
+            app_dir = project_root
 
         dev_logger = logging.getLogger("dev_server")
         dev_logger.setLevel(logging.INFO)
@@ -398,7 +408,7 @@ def main():
         # This allows us to reset ONLY refactored files on failure, preserving pipeline fixes
         # Pass target_path as base_path so chunk paths get properly resolved
         # (chunks use relative paths like "constants/proposalStatuses.js")
-        refactor_scope = create_refactor_scope(working_dir, base_path=args.target_path)
+        refactor_scope = create_refactor_scope(project_root, base_path=args.target_path)
 
         logger.step(f"Processing {total_chunks} chunks...")
 
@@ -416,7 +426,7 @@ def main():
                     # Track file in refactor scope BEFORE implementation
                     refactor_scope.track_from_chunk(chunk)
 
-                    success = implement_chunk_syntax_only(chunk, working_dir, logger)
+                    success = implement_chunk_syntax_only(chunk, project_root, adws_dir, logger)
                     if not success:
                         logger.log(f"  [FAIL] Syntax error in chunk {chunk.number}, aborting...")
                         implementation_failed = True
@@ -431,7 +441,7 @@ def main():
                 # Track file in refactor scope BEFORE implementation
                 refactor_scope.track_from_chunk(chunk)
 
-                success = implement_chunk_syntax_only(chunk, working_dir, logger)
+                success = implement_chunk_syntax_only(chunk, project_root, adws_dir, logger)
                 if not success:
                     logger.log(f"  [FAIL] Syntax error in chunk {chunk.number}, aborting...")
                     implementation_failed = True
@@ -478,8 +488,8 @@ def main():
             reverse_deps = {}
             if dep_context is None:
                 try:
-                    # Resolve target_path relative to working_dir (project root)
-                    absolute_target = working_dir / args.target_path
+                    # Resolve target_path relative to project_root (project root)
+                    absolute_target = project_root / args.target_path
                     dep_context = analyze_dependencies(str(absolute_target))
                     reverse_deps = dep_context.reverse_dependencies
                 except Exception:
@@ -492,7 +502,7 @@ def main():
                     reverse_deps
                 )
             else:
-                from adw_modules.deferred_validation import create_validation_batch_from_chunks
+                from modules.deferred_validation import create_validation_batch_from_chunks
                 validation_batch = create_validation_batch_from_chunks(
                     chunks_to_process,
                     reverse_deps
@@ -501,7 +511,7 @@ def main():
             # Run deferred validation
             validation_result = run_deferred_validation(
                 validation_batch,
-                working_dir,
+                project_root,
                 logger,
                 skip_visual=args.skip_visual
             )
@@ -523,8 +533,8 @@ def main():
                     f"Cycles: {graph_result.cycle_count}\n" if graph_result else ""
                 )
 
-                subprocess.run(["git", "add", "."], cwd=working_dir, check=False)
-                subprocess.run(["git", "commit", "-m", commit_msg.strip()], cwd=working_dir, check=False)
+                subprocess.run(["git", "add", "."], cwd=project_root, check=False)
+                subprocess.run(["git", "commit", "-m", commit_msg.strip()], cwd=project_root, check=False)
 
                 logger.phase_complete("PHASE 5: DEFERRED VALIDATION", success=True)
                 run_success = True

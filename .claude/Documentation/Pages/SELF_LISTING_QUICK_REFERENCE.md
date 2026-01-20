@@ -1,6 +1,6 @@
 # Self Listing Page - Quick Reference Guide
 
-**GENERATED**: 2025-12-11
+**GENERATED**: 2026-01-20
 **URL**: /self-listing
 **ENTRY_POINT**: `app/src/self-listing.jsx`
 **HTML_PAGE**: `app/public/self-listing.html`
@@ -1338,5 +1338,5 @@ console.log(getDebugSummary());
 ---
 
 **DOCUMENT_VERSION**: 2.0
-**LAST_UPDATED**: 2025-12-11
+**LAST_UPDATED**: 2026-01-20
 **STATUS**: Complete Quick Reference Guide - Updated to reflect current implementation
