@@ -898,6 +898,15 @@
   background: var(--sl-primary-soft);
 }
 
+.verification-btn--success {
+  background: var(--sl-success, #22c55e);
+  cursor: default;
+}
+
+.verification-btn--success:hover {
+  opacity: 1;
+}
+
 /* ============================================================================
    VIDEO INTRO CARD
    ============================================================================ */

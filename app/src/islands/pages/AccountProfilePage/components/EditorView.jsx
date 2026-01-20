@@ -48,7 +48,8 @@ export default function EditorView({
   rentalApplicationProgress = 0,
   onOpenRentalWizard,
   // Email verification state
-  isVerifyingEmail = false
+  isVerifyingEmail = false,
+  verificationEmailSent = false
 }) {
   return (
     <>
@@ -106,6 +107,7 @@ export default function EditorView({
         onConnectLinkedIn={onConnectLinkedIn}
         onEditPhone={onEditPhone}
         isVerifyingEmail={isVerifyingEmail}
+        verificationEmailSent={verificationEmailSent}
       />
 
       {/* Guest-only: Reasons to Host Me */}

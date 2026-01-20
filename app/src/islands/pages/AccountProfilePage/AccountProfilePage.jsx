@@ -166,6 +166,7 @@ export default function AccountProfilePage() {
                 onOpenRentalWizard={logic.handleOpenRentalWizard}
                 // Email verification state
                 isVerifyingEmail={logic.isVerifyingEmail}
+                verificationEmailSent={logic.verificationEmailSent}
               />
             ) : (
               <PublicView
