@@ -930,7 +930,7 @@
     align-items: center;
     gap: 0.375rem;
     padding: 8px 14px;
-    background: #10b981;
+    background: #4B47CE;
     color: white;
     border: none;
     border-radius: 6px;
@@ -942,7 +942,7 @@
 }
 
 .listing-host-section .view-proposal-btn:hover {
-    background: #047857;
+    background: #3d3ab8;
     transform: translateY(-1px);
 }
 
@@ -1104,53 +1104,42 @@
     gap: 0.25rem;
 }
 
-/* Location Pill Button - V26 Stacked Labels Style */
+/* Location Pill Button - Clickable to zoom map */
 .listing-card .listing-location-pill {
-    position: relative;
     display: inline-flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
-    padding: 8px 14px !important;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px 6px 10px !important;
     margin-bottom: 6px;
-    border-radius: 10px !important;
-    border: 1.5px solid rgba(0, 0, 0, 0.12) !important;
+    background: #f3f0f7 !important;
+    border: 1px solid #e0dbe6 !important;
+    border-radius: 100px !important;
     cursor: pointer;
     transition: all 0.2s ease;
     font-family: inherit;
+    font-size: 12px;
+    color: var(--primary-purple, #31135d);
+    font-weight: 500;
+    white-space: nowrap;
     max-width: fit-content;
-    overflow: hidden;
-    /* Map background */
-    background: url('https://tile.openstreetmap.org/15/9654/12312.png') center/cover !important;
-}
-
-/* Frosted glass overlay */
-.listing-card .listing-location-pill::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: rgba(255, 255, 255, 0.55);
-    transition: background 0.2s ease;
-    border-radius: inherit;
-}
-
-.listing-card .listing-location-pill:hover::before {
-    background: rgba(255, 255, 255, 0.45);
 }
 
 .listing-card .listing-location-pill:hover {
+    background: var(--primary-purple, #31135d) !important;
+    border-color: var(--primary-purple, #31135d) !important;
+    color: white;
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 8px rgba(49, 19, 93, 0.25);
 }
 
 .listing-card .listing-location-pill:active {
     transform: translateY(0);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 4px rgba(49, 19, 93, 0.2);
 }
 
 /* Focus state for keyboard navigation */
 .listing-card .listing-location-pill:focus {
-    outline: 2px solid #1a1a2e;
+    outline: 2px solid var(--primary-purple, #31135d);
     outline-offset: 2px;
 }
 
@@ -1159,37 +1148,35 @@
     outline: none;
 }
 
-/* Top label - "View on Map" */
-.listing-card .listing-location-pill .location-label {
-    position: relative;
-    z-index: 1;
-    font-size: 10px;
-    font-weight: 500;
-    color: rgba(0, 0, 0, 0.55);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+/* Location pin icon */
+.listing-card .listing-location-pill .location-pin-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    color: var(--primary-purple, #31135d);
+    transition: color 0.2s ease;
 }
 
-/* Location name with arrow */
-.listing-card .listing-location-pill .location-name {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 14px;
-    font-weight: 600;
-    color: #1a1a2e;
+.listing-card .listing-location-pill:hover .location-pin-icon {
+    color: white;
+}
+
+/* Location text */
+.listing-card .listing-location-pill .location-text {
+    font-size: 12px;
+    color: inherit;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Arrow icon */
 .listing-card .listing-location-pill .location-arrow-icon {
-    width: 10px;
-    height: 10px;
+    width: 12px;
+    height: 12px;
     flex-shrink: 0;
-    opacity: 0.8;
+    opacity: 0.7;
     transition: all 0.2s ease;
-    stroke: #1a1a2e;
+    stroke: currentColor;
 }
 
 .listing-card .listing-location-pill:hover .location-arrow-icon {
@@ -1510,25 +1497,25 @@
         color: #1a1a1a;
     }
 
-    /* Location pill on mobile - V26 Stacked Labels */
+    /* Location pill on mobile */
     .listing-card .listing-location-pill {
-        padding: 6px 12px !important;
+        padding: 5px 10px 5px 8px !important;
         margin-bottom: 4px;
-        border-radius: 8px !important;
-    }
-
-    .listing-card .listing-location-pill .location-label {
-        font-size: 9px;
-    }
-
-    .listing-card .listing-location-pill .location-name {
-        font-size: 13px;
         gap: 4px;
     }
 
+    .listing-card .listing-location-pill .location-pin-icon {
+        width: 12px;
+        height: 12px;
+    }
+
+    .listing-card .listing-location-pill .location-text {
+        font-size: 11px;
+    }
+
     .listing-card .listing-location-pill .location-arrow-icon {
-        width: 9px;
-        height: 9px;
+        width: 10px;
+        height: 10px;
     }
 
     /* Meta section as inline details text */
