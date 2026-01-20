@@ -227,18 +227,20 @@
   box-shadow: 0 4px 12px rgba(200, 35, 51, 0.3);
 }
 
+/* Cancel/Secondary button - Outlined style per protocol */
 .hep-btn-cancel {
   background-color: transparent;
-  border: 1px solid var(--hep-text-tertiary);
-  color: var(--hep-text-tertiary);
-  font-weight: 400;
+  border: 2px solid #E7E0EC;
+  color: #49454F;
+  font-weight: 600;
   font-size: 14px;
-  height: 32px;
-  padding: 0 16px;
+  height: 44px;
+  padding: 0 24px;
 }
 
 .hep-btn-cancel:hover:not(:disabled) {
-  background-color: rgba(0, 0, 0, 0.02);
+  background-color: #F7F2FA;
+  border-color: #31135D;
 }
 
 .hep-btn-reject {
@@ -988,15 +990,19 @@
 }
 
 /* ========================================
-   Actions Row
+   Actions Row (Edit State)
+   Per protocol: matches footer button styling
    ======================================== */
 
 .hep-actions-row {
   display: flex;
+  flex-direction: row;
   gap: 12px;
   justify-content: center;
-  margin-top: 24px;
+  align-items: center;
+  margin-top: 16px;
   padding: 16px 0;
+  border-top: 1px solid #E7E0EC;
 }
 
 /* ========================================
