@@ -1,137 +1,246 @@
 /* ==========================================================================
    SPLIT LEASE - ABOUT US PAGE STYLES
+   Follows WhySplitLeasePage design patterns
    ========================================================================== */
-
-/* CSS Variables for About Us Page */
-.about-us-main {
-  --about-header-bg: #5A1868;
-  --about-accent-purple: #800080;
-  --about-team-name-color: #31135D;
-  --about-image-placeholder: #4B47CE;
-  --about-primary-text: #000000;
-  --about-secondary-text: #222222;
-  --about-body-bg: #FFFFFF;
-  --about-section-bg-light: #F0F8FF;
-  --about-border-gray: #6B6B6B;
-  --about-font-family: 'Inter', 'Nunito Sans', 'Avenir Next LT Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --about-container-max-width: 1200px;
-  --about-section-padding: 80px 20px;
-  --about-section-padding-mobile: 50px 16px;
-}
 
 /* Container */
 .about-container {
-  max-width: var(--about-container-max-width);
+  max-width: 1200px;
   margin: 0 auto;
   padding: 0 20px;
+  position: relative;
+  z-index: 2;
 }
 
 /* ==========================================================================
-   HERO / MISSION STATEMENT SECTION
+   HERO / MISSION STATEMENT SECTION - White with Floating Elements
+   Pattern: hero-identity from WhySplitLeasePage
    ========================================================================== */
 
 .about-hero-section {
-  background-color: var(--about-body-bg);
-  padding: 80px 20px;
-  text-align: center;
+  background: white;
+  padding: 100px 48px;
+  padding-top: 180px; /* 80px for fixed header + 100px spacing */
+  margin: 0;
+  position: relative;
+  overflow: hidden;
+  min-height: 400px;
+}
+
+/* Subtle gradient accents in background */
+.about-hero-section::before {
+  content: '';
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(49, 19, 93, 0.06) 0%, rgba(74, 29, 133, 0.03) 100%);
+  filter: blur(60px);
+  top: -100px;
+  right: 5%;
+  z-index: 0;
+}
+
+.about-hero-section::after {
+  content: '';
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(138, 92, 246, 0.05) 0%, rgba(49, 19, 93, 0.02) 100%);
+  filter: blur(50px);
+  bottom: -80px;
+  left: 10%;
+  z-index: 0;
 }
 
 .about-mission-statement {
-  font-family: var(--about-font-family);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
   font-weight: 700;
-  font-size: 36px;
-  color: var(--about-primary-text);
-  line-height: 1.3;
-  letter-spacing: 0;
-  max-width: 800px;
+  font-size: 56px;
+  color: #111827;
+  line-height: 1.1;
+  letter-spacing: -1px;
+  max-width: 900px;
   margin: 0 auto;
+  text-align: center;
+  position: relative;
+  z-index: 2;
 }
 
 /* ==========================================================================
-   STORY SECTION
+   STORY SECTION - Light Gray with Gradient Blobs
+   Pattern 5: how-it-works from WhySplitLeasePage
    ========================================================================== */
 
 .about-story-section {
-  background-color: var(--about-body-bg);
-  padding: var(--about-section-padding);
+  background: #f7f8f9;
+  padding: 100px 32px;
+  margin: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Gradient blobs */
+.about-story-section::before {
+  content: '';
+  position: absolute;
+  width: 450px;
+  height: 450px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(49, 19, 93, 0.10) 0%, rgba(74, 29, 133, 0.05) 100%);
+  filter: blur(70px);
+  top: -150px;
+  left: 10%;
+  z-index: 0;
+}
+
+.about-story-section::after {
+  content: '';
+  position: absolute;
+  width: 380px;
+  height: 380px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(138, 92, 246, 0.08) 0%, rgba(49, 19, 93, 0.04) 100%);
+  filter: blur(70px);
+  bottom: -140px;
+  right: 12%;
+  z-index: 0;
 }
 
 .about-section-heading {
-  font-family: var(--about-font-family);
-  font-weight: 600;
-  font-size: 28px;
-  color: var(--about-secondary-text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 42px;
+  color: #111827;
   text-align: center;
-  margin-bottom: 40px;
-  word-spacing: 1px;
-  line-height: 1;
+  margin-bottom: 48px;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+  position: relative;
+  z-index: 2;
 }
 
 .about-story-content {
   max-width: 800px;
   margin: 0 auto;
+  background: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 16px;
+  padding: 48px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  position: relative;
+  z-index: 2;
 }
 
 .about-story-text {
-  font-family: var(--about-font-family);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
   font-weight: 400;
-  font-size: 20px;
-  color: var(--about-primary-text);
-  line-height: 1.3;
-  letter-spacing: -0.5px;
+  font-size: 18px;
+  color: #4B5563;
+  line-height: 1.7;
   margin-bottom: 24px;
 }
 
 .about-story-text.about-highlight strong {
-  color: var(--about-accent-purple);
+  color: #31135D;
+  font-weight: 700;
 }
 
 .about-story-text.about-standalone {
   margin-top: 32px;
   margin-bottom: 32px;
+  font-size: 24px;
+  text-align: center;
+  color: #31135D;
 }
 
 .about-pain-points {
-  margin: 24px 0;
-  padding-left: 24px;
+  margin: 32px 0;
+  padding: 24px 32px;
   list-style: none;
+  background: #F9FAFB;
+  border-radius: 12px;
+  border-left: 4px solid #31135D;
 }
 
 .about-pain-points li {
-  font-family: var(--about-font-family);
-  font-weight: 400;
-  font-size: 20px;
-  color: var(--about-primary-text);
-  line-height: 1.3;
-  letter-spacing: -0.5px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  color: #374151;
+  line-height: 1.6;
   margin-bottom: 12px;
   position: relative;
+  padding-left: 24px;
+}
+
+.about-pain-points li:last-child {
+  margin-bottom: 0;
 }
 
 .about-pain-points li::before {
-  content: "\2022";
+  content: "";
   position: absolute;
-  left: -20px;
-  color: var(--about-primary-text);
+  left: 0;
+  top: 8px;
+  width: 8px;
+  height: 8px;
+  background: #31135D;
+  border-radius: 50%;
 }
 
 /* ==========================================================================
-   TEAM SECTION
+   TEAM SECTION - White with Outlined Bubbles
+   Pattern 3: featured-spaces from WhySplitLeasePage
    ========================================================================== */
 
 .about-team-section {
-  background-color: var(--about-section-bg-light);
-  padding: var(--about-section-padding);
+  background: white;
+  padding: 100px 32px;
+  margin: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Outlined bubble decorations */
+.about-team-section::before {
+  content: '';
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  border-radius: 50%;
+  border: 3px solid #31135D;
+  opacity: 0.08;
+  top: -120px;
+  left: -120px;
+  z-index: 0;
+}
+
+.about-team-section::after {
+  content: '';
+  position: absolute;
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  border: 3px solid #31135D;
+  opacity: 0.08;
+  bottom: -90px;
+  right: 10%;
+  z-index: 0;
 }
 
 .about-section-heading-large {
-  font-family: var(--about-font-family);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
   font-weight: 700;
-  font-size: 36px;
-  color: var(--about-primary-text);
+  font-size: 42px;
+  color: #111827;
   text-align: center;
-  line-height: 1.3;
-  margin-bottom: 60px;
+  line-height: 1.2;
+  margin-bottom: 64px;
+  letter-spacing: -0.5px;
+  position: relative;
+  z-index: 2;
 }
 
 .about-team-grid {
@@ -139,6 +248,8 @@
   grid-template-columns: repeat(4, 1fr);
   gap: 40px;
   justify-items: center;
+  position: relative;
+  z-index: 2;
 }
 
 .about-team-card {
@@ -146,22 +257,43 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  cursor: pointer;
-  transition: transform 0.2s ease;
-  min-height: 302px;
+  background: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 16px;
+  padding: 32px 24px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  width: 100%;
+  max-width: 260px;
 }
 
-.about-team-card:hover {
-  transform: translateY(-5px);
+.about-team-card.clickable {
+  cursor: pointer;
+}
+
+.about-team-card:not(.clickable) {
+  cursor: default;
+}
+
+.about-team-card.clickable:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 32px rgba(49, 19, 93, 0.15);
+  border-color: #31135D;
+}
+
+.about-team-card:not(.clickable):hover {
+  transform: none;
 }
 
 .about-team-image {
-  width: 144px;
-  height: 144px;
-  border-radius: 100%;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
   overflow: hidden;
-  background-color: var(--about-image-placeholder);
+  background: linear-gradient(135deg, #31135D 0%, #5B21B6 100%);
   margin-bottom: 20px;
+  box-shadow: 0 8px 24px rgba(49, 19, 93, 0.2);
+  border: 4px solid white;
 }
 
 .about-team-image img {
@@ -171,39 +303,70 @@
 }
 
 .about-team-name {
-  font-family: var(--about-font-family);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
   font-weight: 700;
-  font-size: 24px;
-  color: var(--about-team-name-color);
+  font-size: 20px;
+  color: #111827;
   line-height: 1.3;
-  letter-spacing: -0.5px;
   margin-bottom: 8px;
 }
 
 .about-team-title {
-  font-family: var(--about-font-family);
-  font-weight: 400;
-  font-size: 18px;
-  color: var(--about-team-name-color);
-  line-height: 1.3;
-  letter-spacing: -0.5px;
-  max-width: 175px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: #31135D;
+  line-height: 1.4;
+  max-width: 180px;
   margin: 0;
 }
 
 /* ==========================================================================
-   FEATURES SECTION
+   FEATURES SECTION - Light Gray with Purple Circle Accents
+   Pattern 2: why-exist-section from WhySplitLeasePage
    ========================================================================== */
 
 .about-features-section {
-  background-color: var(--about-section-bg-light);
-  padding: var(--about-section-padding);
+  background: #f7f8f9;
+  padding: 100px 32px;
+  margin: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Circle accent decorations */
+.about-features-section::before {
+  content: '';
+  position: absolute;
+  width: 350px;
+  height: 350px;
+  border-radius: 50%;
+  background: #31135D;
+  opacity: 0.04;
+  top: -100px;
+  right: 10%;
+  z-index: 0;
+}
+
+.about-features-section::after {
+  content: '';
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: #31135D;
+  opacity: 0.06;
+  bottom: 50px;
+  left: 8%;
+  z-index: 0;
 }
 
 .about-features-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 40px;
+  gap: 32px;
+  position: relative;
+  z-index: 2;
 }
 
 .about-feature-card {
@@ -211,36 +374,55 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: 20px;
+  background: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 16px;
+  padding: 40px 32px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.about-feature-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 32px rgba(49, 19, 93, 0.15);
+  border-color: #31135D;
 }
 
 .about-feature-icon {
-  color: #4B47CE;
+  width: 72px;
+  height: 72px;
+  background: linear-gradient(135deg, #31135D 0%, #4A2F7C 50%, #5B21B6 100%);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin-bottom: 24px;
+  box-shadow: 0 8px 24px rgba(49, 19, 93, 0.25);
 }
 
 .about-feature-icon svg {
-  width: 64px;
-  height: 64px;
+  width: 36px;
+  height: 36px;
+  stroke: white;
+  stroke-width: 2;
 }
 
 .about-feature-title {
-  font-family: var(--about-font-family);
-  font-weight: 400;
-  font-size: 24px;
-  color: var(--about-primary-text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 22px;
+  color: #111827;
   line-height: 1.3;
-  letter-spacing: -0.5px;
   margin-bottom: 16px;
 }
 
 .about-feature-description {
-  font-family: var(--about-font-family);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
   font-weight: 400;
-  font-size: 16px;
-  color: var(--about-primary-text);
-  line-height: 1.5;
-  max-width: 300px;
+  font-size: 15px;
+  color: #6B7280;
+  line-height: 1.7;
+  max-width: 280px;
   margin: 0;
 }
 
@@ -248,71 +430,103 @@
    RESPONSIVE STYLES
    ========================================================================== */
 
-/* Tablet - 954px and below */
-@media (max-width: 954px) {
-  .about-team-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-/* Tablet Small - 760px and below */
-@media (max-width: 760px) {
-  .about-mission-statement {
-    font-size: 30px;
-  }
-
-  .about-section-heading-large {
-    font-size: 30px;
-  }
-}
-
-/* Mobile - 700px and below */
-@media (max-width: 700px) {
-  .about-team-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .about-features-grid {
-    grid-template-columns: 1fr;
-    gap: 30px;
-  }
-
+@media (max-width: 968px) {
   .about-hero-section {
-    padding: 50px 20px;
+    padding: 60px 20px;
+    padding-top: 120px;
+    min-height: auto;
+  }
+
+  .about-mission-statement {
+    font-size: 36px;
+    padding: 0 16px;
   }
 
   .about-story-section,
   .about-team-section,
   .about-features-section {
-    padding: var(--about-section-padding-mobile);
+    padding: 60px 24px;
   }
 
-  .about-section-heading {
-    font-size: 24px;
-    margin-bottom: 30px;
+  .about-section-heading,
+  .about-section-heading-large {
+    font-size: 32px;
+    margin-bottom: 40px;
   }
 
-  .about-story-text {
-    font-size: 18px;
+  .about-story-content {
+    padding: 32px 24px;
   }
 
-  .about-pain-points li {
-    font-size: 18px;
+  .about-team-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+
+  .about-features-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
   }
 }
 
-/* Mobile Small - 530px and below */
-@media (max-width: 530px) {
-  .about-team-grid {
-    grid-template-columns: 1fr;
+@media (max-width: 640px) {
+  .about-hero-section {
+    padding: 40px 16px;
+    padding-top: 100px;
   }
 
   .about-mission-statement {
-    font-size: 26px;
+    font-size: 28px;
   }
 
+  .about-section-heading,
   .about-section-heading-large {
-    font-size: 26px;
+    font-size: 28px;
+  }
+
+  .about-story-text {
+    font-size: 16px;
+  }
+
+  .about-story-text.about-standalone {
+    font-size: 20px;
+  }
+
+  .about-pain-points {
+    padding: 20px 24px;
+  }
+
+  .about-pain-points li {
+    font-size: 15px;
+  }
+
+  .about-team-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .about-team-card {
+    max-width: 100%;
+    padding: 24px 20px;
+  }
+
+  .about-feature-card {
+    padding: 32px 24px;
+  }
+
+  .about-feature-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 14px;
+  }
+
+  .about-feature-icon svg {
+    width: 32px;
+    height: 32px;
+  }
+
+  .about-feature-title {
+    font-size: 20px;
   }
 }
 
@@ -326,33 +540,35 @@
 
 .about-team-skeleton:hover {
   transform: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border-color: #E5E7EB;
 }
 
 .skeleton-pulse {
-  background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
   background-size: 200% 100%;
-  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  animation: skeleton-shimmer 1.5s infinite;
 }
 
 .skeleton-text {
-  height: 24px;
+  height: 20px;
   width: 120px;
-  border-radius: 4px;
+  border-radius: 6px;
   margin-bottom: 8px;
 }
 
 .skeleton-text-small {
-  height: 18px;
+  height: 14px;
   width: 100px;
   border-radius: 4px;
 }
 
-@keyframes skeleton-pulse {
+@keyframes skeleton-shimmer {
   0% {
-    background-position: 200% 0;
+    background-position: -200% 0;
   }
   100% {
-    background-position: -200% 0;
+    background-position: 200% 0;
   }
 }
 
@@ -361,28 +577,39 @@
 .about-team-empty {
   grid-column: 1 / -1;
   text-align: center;
-  color: var(--about-secondary-text);
+  color: #6B7280;
   font-size: 16px;
-  padding: 40px 20px;
-}
-
-/* Clickable team card cursor */
-.about-team-card.clickable {
-  cursor: pointer;
-}
-
-.about-team-card:not(.clickable) {
-  cursor: default;
-}
-
-.about-team-card:not(.clickable):hover {
-  transform: none;
+  padding: 60px 20px;
+  background: #F9FAFB;
+  border-radius: 16px;
+  border: 2px dashed #E5E7EB;
 }
 
 /* ==========================================================================
-   UTILITY CLASSES
+   ACCESSIBILITY
    ========================================================================== */
 
+.about-team-card.clickable:focus {
+  outline: 2px solid #31135D;
+  outline-offset: 3px;
+}
+
+.about-feature-card:focus-within {
+  outline: 2px solid #31135D;
+  outline-offset: 3px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .about-team-card,
+  .about-feature-card,
+  .skeleton-pulse {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* Screen reader only */
 .about-sr-only {
   position: absolute;
   width: 1px;
