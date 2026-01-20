@@ -2,66 +2,52 @@
  * Notification Settings Modal
  * Modal wrapper for NotificationSettingsIsland
  * Workflow: T:Notifications is clicked (Workflow 49)
+ *
+ * Updated to follow POPUP_REPLICATION_PROTOCOL.md design system.
+ * Features:
+ * - Monochromatic purple color scheme (no green/yellow)
+ * - Mobile bottom sheet behavior (< 480px)
+ * - Feather icons (stroke-only)
+ * - Pill-shaped buttons (100px radius)
  */
 
 import { useEffect } from 'react';
 import NotificationSettingsIsland from '../shared/NotificationSettingsIsland/NotificationSettingsIsland.jsx';
+import './NotificationSettingsModal.css';
 
-// Inline styles for modal (compatible with pages not using Tailwind CSS)
-const styles = {
-  overlay: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1000,
-    padding: '20px',
-  },
-  modal: {
-    backgroundColor: '#ffffff',
-    borderRadius: '15px',
-    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
-    maxWidth: '450px',
-    width: '100%',
-    maxHeight: '728px',
-    overflow: 'auto',
-  },
-  header: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '20px 24px',
-    borderBottom: '1px solid #e5e5e5',
-    position: 'sticky',
-    top: 0,
-    backgroundColor: '#ffffff',
-    zIndex: 1,
-  },
-  title: {
-    fontSize: '20px',
-    fontWeight: '600',
-    color: '#333333',
-    margin: 0,
-  },
-  closeButton: {
-    background: 'none',
-    border: 'none',
-    fontSize: '24px',
-    cursor: 'pointer',
-    color: '#999999',
-    padding: '0',
-    lineHeight: 1,
-    transition: 'color 0.2s',
-  },
-  body: {
-    padding: '16px 24px 24px',
-  },
-};
+// Bell icon (Feather style)
+function BellIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+      <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+    </svg>
+  );
+}
+
+// Close icon (Feather style)
+function CloseIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <line x1="18" y1="6" x2="6" y2="18"></line>
+      <line x1="6" y1="6" x2="18" y2="18"></line>
+    </svg>
+  );
+}
 
 export default function NotificationSettingsModal({ isOpen, userId, onClose }) {
   // Handle backdrop click
@@ -82,27 +68,60 @@ export default function NotificationSettingsModal({ isOpen, userId, onClose }) {
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isOpen, onClose]);
 
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
-    <div style={styles.overlay} onClick={handleOverlayClick}>
-      <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+    <div
+      className="notification-modal-overlay"
+      onClick={handleOverlayClick}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="notification-modal-title"
+    >
+      <div className="notification-modal" onClick={(e) => e.stopPropagation()}>
+        {/* Mobile grab handle - visible only on mobile */}
+        <div className="notification-modal-grab-handle" aria-hidden="true" />
+
         {/* Header */}
-        <div style={styles.header}>
-          <h3 style={styles.title}>Notification Settings</h3>
+        <header className="notification-modal-header">
+          <div className="notification-modal-header-content">
+            <div className="notification-modal-header-top">
+              <span className="notification-modal-icon" aria-hidden="true">
+                <BellIcon />
+              </span>
+              <h2 id="notification-modal-title" className="notification-modal-title">
+                Notification Settings
+              </h2>
+            </div>
+            <p className="notification-modal-subtitle">
+              Manage how you receive updates about your listings and bookings.
+            </p>
+          </div>
           <button
-            style={styles.closeButton}
+            className="notification-modal-close"
             onClick={onClose}
             aria-label="Close modal"
-            onMouseOver={(e) => e.target.style.color = '#666666'}
-            onMouseOut={(e) => e.target.style.color = '#999999'}
+            type="button"
           >
-            &times;
+            <CloseIcon />
           </button>
-        </div>
+        </header>
 
         {/* Body - Shared Island Component */}
-        <div style={styles.body}>
+        <div className="notification-modal-body">
           <NotificationSettingsIsland userId={userId} />
         </div>
       </div>
