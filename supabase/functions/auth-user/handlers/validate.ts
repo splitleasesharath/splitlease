@@ -66,7 +66,7 @@ export async function handleValidate(
     let userError = null;
 
     // Note: "Account - Host / Landlord" column was removed - user._id is now used directly as host reference
-    const userSelectFields = '_id, bubble_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current", "email as text", "email", "About Me / Bio", "need for Space", "special needs", "Proposals List", "Rental Application", is_usability_tester, "Phone Number - Primary"';
+    const userSelectFields = '_id, bubble_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current", "email as text", "email", "About Me / Bio", "need for Space", "special needs", "Proposals List", "Rental Application", "is usability tester", "Phone Number - Primary"';
 
     // First attempt: query by _id (Bubble-style ID)
     console.log(`[validate] Attempting to find user by _id: ${user_id}`);
@@ -190,7 +190,7 @@ export async function handleValidate(
       // Rental application submission status for hiding CTA in success modal
       hasSubmittedRentalApp: hasSubmittedRentalApp,
       // Usability testing flag - determines who sees mobile testing popup
-      isUsabilityTester: userData.is_usability_tester ?? false,
+      isUsabilityTester: userData['is usability tester'] ?? false,
       // Phone number for SMS magic link pre-fill
       phoneNumber: userData['Phone Number - Primary'] || null
     };
