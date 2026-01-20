@@ -139,9 +139,9 @@ def test_visual(page_path: str, use_claude: bool = False):
     if use_claude:
         print("Using Claude (not Gemini) for visual check")
 
-    # Setup dev server
-    working_dir = Path.cwd()
-    app_dir = working_dir / "app"
+    # Setup dev server - calculate project root from script location
+    project_root = Path(__file__).parent.parent.parent
+    app_dir = project_root / "app"
 
     dev_logger = logging.getLogger("dev_server")
     dev_logger.setLevel(logging.INFO)
@@ -197,8 +197,9 @@ def test_dev_server():
     import logging
     import time
 
-    working_dir = Path.cwd()
-    app_dir = working_dir / "app"
+    # Calculate project root from script location (functional-code-refactor → adws → project)
+    project_root = Path(__file__).parent.parent.parent
+    app_dir = project_root / "app"
 
     dev_logger = logging.getLogger("dev_server")
     dev_logger.setLevel(logging.INFO)
