@@ -22,6 +22,7 @@ export default function Header({ autoShowLogin = false }) {
   const [showAuthModal, setShowAuthModal] = useState(autoShowLogin);
   const [authModalInitialView, setAuthModalInitialView] = useState('initial'); // 'initial', 'login', 'signup'
   const [prefillEmail, setPrefillEmail] = useState(null); // Email to prefill in signup form (from OAuth user not found)
+  const [defaultUserType, setDefaultUserType] = useState(null); // 'host' or 'guest' for pre-selecting user type
 
   // User Authentication State
   // CRITICAL: Initialize with cached data synchronously to prevent flickering
@@ -408,6 +409,14 @@ export default function Header({ autoShowLogin = false }) {
 
   // Handle signup modal - open signup popup
   const handleSignupClick = () => {
+    setDefaultUserType(null); // Clear any pre-selected user type
+    setAuthModalInitialView('signup');
+    setShowAuthModal(true);
+  };
+
+  // Handle host signup - open signup popup with host type pre-selected
+  const handleHostSignupClick = () => {
+    setDefaultUserType('host');
     setAuthModalInitialView('signup');
     setShowAuthModal(true);
   };
@@ -416,6 +425,7 @@ export default function Header({ autoShowLogin = false }) {
   const handleAuthModalClose = () => {
     setShowAuthModal(false);
     setPrefillEmail(null); // Clear prefilled email when modal closes
+    setDefaultUserType(null); // Clear pre-selected user type when modal closes
   };
 
   // Handle successful authentication
@@ -613,7 +623,7 @@ export default function Header({ autoShowLogin = false }) {
             >
               {/* Mega Menu Layout */}
               {(() => {
-                const hostMenuConfig = getHostMenuConfig(hostMenuState, handleSignupClick);
+                const hostMenuConfig = getHostMenuConfig(hostMenuState, handleHostSignupClick);
                 const featured = hostMenuConfig.featured;
 
                 return (
@@ -710,24 +720,6 @@ export default function Header({ autoShowLogin = false }) {
                         >
                           {hostMenuConfig.cta.label}
                         </a>
-
-                        {/* Mobile-only Auth Link - only show when not logged in */}
-                        {!currentUser && (
-                          <a
-                            href="#auth"
-                            className="dropdown-item mobile-auth-link"
-                            role="menuitem"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              setActiveDropdown(null);
-                              setMobileMenuActive(false);
-                              setAuthModalInitialView('initial');
-                              setShowAuthModal(true);
-                            }}
-                          >
-                            <span className="dropdown-title">Sign up</span>
-                          </a>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -999,6 +991,7 @@ export default function Header({ autoShowLogin = false }) {
         onAuthSuccess={handleAuthSuccess}
         disableClose={autoShowLogin && isProtectedPage()}
         prefillEmail={prefillEmail}
+        defaultUserType={defaultUserType}
       />
 
       {/* CreateDuplicateListingModal */}
