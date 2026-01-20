@@ -361,6 +361,64 @@
     border-radius: 16px 0 0 16px;
 }
 
+/* ============================================================================
+   PREVIEW SPLIT LEASE PAGE - Form Input Styling
+   Matches ViewSplitLeasePage booking widget color scheme
+   ============================================================================ */
+
+.preview-date-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid #E5E7EB;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 500;
+    color: #111827;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.preview-date-input:hover {
+    border-color: #31135d;
+    box-shadow: 0 4px 6px rgba(49, 19, 93, 0.1);
+}
+
+.preview-date-input:focus {
+    border-color: #31135d;
+    box-shadow: 0 0 0 4px rgba(49, 19, 93, 0.15);
+    transform: translateY(-1px);
+    outline: none;
+}
+
+.preview-select-input {
+    width: 100%;
+    padding: 10px 12px;
+    padding-right: 40px;
+    border: 2px solid #E5E7EB;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 500;
+    color: #111827;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    appearance: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.preview-select-input:hover {
+    border-color: #31135d;
+    box-shadow: 0 4px 6px rgba(49, 19, 93, 0.1);
+}
+
+.preview-select-input:focus {
+    border-color: #31135d;
+    box-shadow: 0 0 0 4px rgba(49, 19, 93, 0.15);
+    outline: none;
+}
+
 /* Image Navigation Buttons (Carousel) */
 .image-nav {
     position: absolute;
