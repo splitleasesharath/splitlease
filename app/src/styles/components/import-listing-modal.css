@@ -1,7 +1,10 @@
 /* Import Listing Modal Styles */
-/* Converted from Bubble.io element to match Split Lease styling */
+/* Updated to follow POPUP_REPLICATION_PROTOCOL.md */
+/* Color Scheme: Monochromatic Purple - NO GREEN, NO YELLOW */
 
-/* Modal Overlay */
+/* ============================================================================
+   MODAL OVERLAY
+   ============================================================================ */
 .import-listing-modal-overlay {
   position: fixed;
   top: 0;
@@ -22,18 +25,23 @@
   to { opacity: 1; }
 }
 
-/* Modal Container */
+/* ============================================================================
+   MODAL CONTAINER
+   - Flexbox layout with fixed Header/Footer and scrollable Body
+   - Max-height: 92vh per protocol
+   ============================================================================ */
 .import-listing-modal-container {
   background-color: #FFFFFF;
-  border: 1px solid #6B6B6B;
-  border-radius: 10px;
+  border-radius: 16px;
   width: 90%;
-  max-width: 500px;
+  max-width: 480px;
+  max-height: 92vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  animation: slideIn 0.3s ease;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
+  overflow: hidden;
 }
 
 @keyframes slideIn {
@@ -47,27 +55,65 @@
   }
 }
 
-/* Header Section */
-.import-listing-header {
-  width: 100%;
-  border-bottom: 1px solid #000000;
-  padding: 20px;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+/* ============================================================================
+   MOBILE GRAB HANDLE
+   - 36x4px centered bar for mobile bottom sheet
+   ============================================================================ */
+.import-listing-grab-handle {
+  display: none;
+  width: 36px;
+  height: 4px;
+  background: #E7E0EC;
+  border-radius: 2px;
+  margin: 8px auto 0;
 }
 
-.import-listing-header-top {
+/* ============================================================================
+   HEADER SECTION
+   - Reduced height (25% from legacy per protocol)
+   - Icon and Title aligned via flex: center
+   ============================================================================ */
+.import-listing-header {
+  flex-shrink: 0;
+  width: 100%;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #E7E0EC;
+}
+
+.import-listing-header-content {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
+.import-listing-icon {
+  width: 24px;
+  height: 24px;
+  color: #31135D;
+  flex-shrink: 0;
+}
+
+.import-listing-icon svg {
+  width: 24px;
+  height: 24px;
+  stroke: #31135D;
+  stroke-width: 2;
+  fill: none;
+}
+
+.import-listing-title {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: #1C1B1F;
+  margin: 0;
+}
+
 .import-listing-close-btn {
-  position: absolute;
-  top: 20px;
-  right: 20px;
   width: 32px;
   height: 32px;
   background: transparent;
@@ -77,157 +123,187 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
-  font-size: 28px;
-  color: #000000;
-  line-height: 1;
+  border-radius: 8px;
+  color: #49454F;
   transition: background-color 0.2s ease;
+  flex-shrink: 0;
 }
 
 .import-listing-close-btn:hover {
-  background-color: #f0f0f0;
+  background-color: #F7F2FA;
 }
 
-.import-listing-icon {
-  font-size: 24px;
-  line-height: 1;
+.import-listing-close-btn svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  stroke-width: 2;
 }
 
-.import-listing-title {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 18px;
-  font-weight: 500;
-  line-height: 1.6;
-  color: #000000;
-  margin: 0;
+/* ============================================================================
+   MODAL BODY (SCROLLABLE)
+   - overflow-y: auto for scrolling
+   - flex-grow: 1 to fill available space
+   ============================================================================ */
+.import-listing-body {
+  flex-grow: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
-/* Form Sections */
+/* ============================================================================
+   FORM SECTIONS
+   ============================================================================ */
 .import-listing-section {
   width: 100%;
-  padding: 20px;
+  padding: 16px 20px;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  border-bottom: 1px dotted #6B6B6B;
 }
 
 .import-listing-label {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 14px;
   font-weight: 500;
-  color: #000000;
+  color: #1C1B1F;
   margin: 0;
 }
 
 .import-listing-input {
   width: 100%;
-  height: 40px;
-  padding: 8px 12px;
-  font-family: 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  height: 44px;
+  padding: 10px 14px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 14px;
-  color: #3D3D3D;
+  color: #1C1B1F;
   background: #FFFFFF;
-  border: 1px solid #4B47CE;
-  border-radius: 4px;
+  border: 1px solid #E7E0EC;
+  border-radius: 8px;
   transition: all 0.2s ease;
 }
 
 .import-listing-input::placeholder {
-  color: #B5B5B5;
+  color: #79747E;
 }
 
 .import-listing-input:focus {
   outline: none;
-  border-color: #4B47CE;
-  box-shadow: 0 0 0 2px rgba(75, 71, 206, 0.2);
+  border-color: #31135D;
+  box-shadow: 0 0 0 2px rgba(49, 19, 93, 0.15);
 }
 
 .import-listing-input:disabled {
-  background-color: #f5f5f5;
+  background-color: #F7F2FA;
   cursor: not-allowed;
   opacity: 0.6;
 }
 
 .import-listing-input.input-error {
-  border-color: #ef4444;
+  border-color: #DC3545;
 }
 
 .error-message {
   display: block;
-  color: #ef4444;
+  color: #DC3545;
   font-size: 12px;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .import-listing-helper {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 12px;
-  color: #999999;
+  color: #79747E;
   margin: 0;
   line-height: 1.4;
 }
 
-/* Info Box */
+/* ============================================================================
+   INFO BANNER
+   - Background: #F7F2FA
+   - Border: 1px solid #E7E0EC
+   - Icon: Solid purple circle with white exclamation
+   ============================================================================ */
 .import-listing-info {
   display: flex;
   gap: 12px;
   align-items: flex-start;
-  padding: 20px;
-  background: #f3f0ff;
-  border-bottom: 1px dotted #6B6B6B;
+  padding: 12px;
+  margin: 0 20px 16px;
+  background: #F7F2FA;
+  border: 1px solid #E7E0EC;
+  border-radius: 8px;
 }
 
 .info-icon {
-  font-size: 20px;
+  width: 24px;
+  height: 24px;
+  background: #31135D;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+}
+
+.info-icon svg {
+  width: 14px;
+  height: 14px;
+  stroke: #FFFFFF;
+  stroke-width: 2.5;
 }
 
 .import-listing-info-text {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 14px;
-  color: #000000;
+  font-size: 13px;
+  color: #49454F;
   margin: 0;
-  line-height: 1.35;
+  line-height: 1.45;
 }
 
-/* Button Section */
-.import-listing-buttons {
+/* ============================================================================
+   FOOTER / BUTTON SECTION
+   - Fixed at bottom (flex-shrink: 0)
+   ============================================================================ */
+.import-listing-footer {
+  flex-shrink: 0;
   width: 100%;
-  min-height: 54px;
-  background-color: #F7F8F9;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 12px 20px;
-  border-bottom-left-radius: 10px;
-  border-bottom-right-radius: 10px;
+  padding: 16px 20px;
+  background-color: #FFFFFF;
+  border-top: 1px solid #E7E0EC;
 }
 
+/* ============================================================================
+   BUTTON VARIANTS
+   - Radius: 100px (pill-shaped) per protocol
+   - Primary: Background #31135D, Text White
+   ============================================================================ */
 .import-listing-btn {
-  min-width: 150px;
-  height: 36px;
-  padding: 0 20px;
-  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 16px;
-  font-weight: 500;
-  letter-spacing: -0.25px;
-  border: none;
-  border-radius: 20px;
+  width: 100%;
+  height: 44px;
+  padding: 0 24px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  border: 2px solid transparent;
+  border-radius: 100px;
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .import-listing-btn-primary {
-  color: #FCFAFF;
-  background-color: #31133D;
+  color: #FFFFFF;
+  background-color: #31135D;
 }
 
 .import-listing-btn-primary:hover:not(:disabled) {
-  background-color: #3d1a4a;
-  box-shadow: 0 2px 8px rgba(49, 19, 61, 0.3);
+  background-color: #4A2F7C;
+  box-shadow: 0 4px 12px rgba(49, 19, 93, 0.2);
 }
 
 .import-listing-btn-primary:active:not(:disabled) {
@@ -239,14 +315,24 @@
   cursor: not-allowed;
 }
 
-/* Responsive Design */
-@media (max-width: 700px) {
-  .import-listing-btn {
-    font-size: 13px;
-    min-width: 110px;
-    padding: 0 16px;
-  }
+/* Loading spinner for button */
+.import-listing-btn .spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #FFFFFF;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
 
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================================================
+   RESPONSIVE - TABLET
+   ============================================================================ */
+@media (max-width: 700px) {
   .import-listing-title {
     font-size: 16px;
   }
@@ -256,25 +342,64 @@
   }
 }
 
-/* Mobile Optimization */
+/* ============================================================================
+   RESPONSIVE - MOBILE BOTTOM SHEET
+   - Screen width < 480px triggers slide-up mode per protocol
+   - Border radius: 24px 24px 0 0
+   - Grab handle visible
+   ============================================================================ */
 @media (max-width: 480px) {
   .import-listing-modal-overlay {
-    padding: 10px;
+    align-items: flex-end;
+    padding: 0;
   }
 
-  .import-listing-header,
+  .import-listing-modal-container {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 24px 24px 0 0;
+    max-height: 90vh;
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .import-listing-grab-handle {
+    display: block;
+  }
+
+  .import-listing-header {
+    padding: 12px 16px 16px;
+  }
+
+  .import-listing-title {
+    font-size: 18px;
+    font-weight: 400;
+  }
+
+  .import-listing-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
   .import-listing-section {
-    padding: 16px;
-  }
-
-  .import-listing-buttons {
-    flex-direction: column;
-    gap: 8px;
     padding: 12px 16px;
   }
 
-  .import-listing-btn {
-    width: 100%;
-    min-width: unset;
+  .import-listing-info {
+    margin: 0 16px 12px;
+  }
+
+  .import-listing-footer {
+    padding: 12px 16px 24px;
   }
 }
