@@ -485,7 +485,12 @@ export function HostEditingProposal({
       {/* Header - hidden in reject-only mode */}
       {!isRejectOnlyMode && (
         <div className="hep-section-header">
-          <h2 className="hep-title-main">Review Proposal Terms</h2>
+          <div className="hep-header-content">
+            <h2 className="hep-title-main">Review Proposal Terms</h2>
+            <div className="hep-description hep-header-subtext">
+              Reviewing proposal from <strong>{guestName}</strong> for <strong>{listingTitle}</strong>
+            </div>
+          </div>
           <div className="hep-header-actions">
             <button
               type="button"
@@ -514,12 +519,6 @@ export function HostEditingProposal({
 
       {/* Scrollable Body */}
       <div className="hep-body">
-        {/* Guest Info - hidden in reject-only mode */}
-        {!isRejectOnlyMode && (
-          <div className="hep-description hep-mb-16">
-            Reviewing proposal from <strong>{guestName}</strong> for <strong>{listingTitle}</strong>
-          </div>
-        )}
 
         {/* Collapsible Edit Section - hidden in reject-only mode */}
         {!isRejectOnlyMode && (
