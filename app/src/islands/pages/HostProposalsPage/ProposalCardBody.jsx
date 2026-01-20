@@ -71,7 +71,8 @@ function hasGuestCounteroffer(proposal) {
  */
 export function ProposalCardBody({ proposal, handlers = {} }) {
   const guest = proposal?.guest || proposal?.user || {};
-  const daysSelected = proposal?.days_selected || proposal?.Days_Selected || [];
+  // Use nights_selected for the pill display (hosts see nights, not days)
+  const nightsSelected = proposal?.nights_selected || proposal?.['Nights Selected (Nights list)'] || [];
   const declined = isDeclined(proposal);
   const showCompareTerms = hasGuestCounteroffer(proposal);
 
@@ -102,9 +103,10 @@ export function ProposalCardBody({ proposal, handlers = {} }) {
       {/* Info Grid - Always shown */}
       <InfoGrid proposal={proposal} />
 
-      {/* Day Pills - Always shown (CSS hides on mobile) */}
+      {/* Night Pills - Always shown (CSS hides on mobile) */}
+      {/* Hosts see nights (when guest sleeps), not days (when guest is present) */}
       {!declined && (
-        <DayPillsRow daysSelected={daysSelected} />
+        <DayPillsRow nightsSelected={nightsSelected} />
       )}
 
       {/* Pricing - Always shown */}
