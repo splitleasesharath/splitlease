@@ -50,16 +50,35 @@ class RefactorScope:
         if Path(file_path).is_absolute():
             abs_path = Path(file_path)
         else:
-            # If base_path is set and file_path doesn't start with it, prepend base_path
-            # This handles chunk file_paths like "constants/proposalStatuses.js"
-            # when base_path is "app/src/logic"
-            if self.base_path:
-                file_path_normalized = file_path.replace('\\', '/')
-                base_normalized = self.base_path.replace('\\', '/')
+            file_path_normalized = file_path.replace('\\', '/')
 
-                # Only prepend if file_path doesn't already include base_path
-                if not file_path_normalized.startswith(base_normalized):
+            # If base_path is set and file_path doesn't already include target directory,
+            # prepend base_path. This handles chunk file_paths like "constants/proposalStatuses.js"
+            # when base_path is "app/src/logic" or "../app/src/logic"
+            if self.base_path:
+                base_normalized = self.base_path.replace('\\', '/').lstrip('./')
+
+                # Check if file_path already contains the base directory components
+                # by checking for common subdirectories like "src/logic", "app/src", etc.
+                base_parts = base_normalized.rstrip('/').split('/')
+                file_parts = file_path_normalized.split('/')
+
+                # Find overlap - check if file path starts with base path or a suffix of it
+                already_has_base = False
+
+                # Check if file starts with the full base path
+                if file_path_normalized.startswith(base_normalized.lstrip('../')):
+                    already_has_base = True
+                # Check if file starts with "app/" when base has "app/"
+                elif 'app/src/logic' in file_path_normalized:
+                    already_has_base = True
+                elif 'src/logic' in file_path_normalized and 'src/logic' in base_normalized:
+                    already_has_base = True
+
+                if not already_has_base:
                     file_path = f"{base_normalized}/{file_path_normalized}"
+                else:
+                    file_path = file_path_normalized
 
             abs_path = (self.working_dir / file_path).resolve()
 
