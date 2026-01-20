@@ -304,7 +304,7 @@
    BREADCRUMB NAVIGATION
    =================================== */
 .hc-breadcrumb {
-  padding: 20px 0;
+  padding: 16px 0;
   font-size: 14px;
   color: var(--hc-text-tertiary);
   display: flex;
@@ -341,14 +341,14 @@
    ARTICLE LIST (Category Pages)
    =================================== */
 .hc-article-section {
-  margin-bottom: 48px;
+  margin-bottom: 40px;
 }
 
 .hc-article-section h2 {
   color: var(--hc-brand-primary);
   font-size: 24px;
-  margin-bottom: 20px;
-  padding-bottom: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
   border-bottom: 2px solid var(--hc-info-bg);
 }
 
@@ -433,8 +433,9 @@
    ARTICLE HEADER
    =================================== */
 .hc-article-header {
-  margin-bottom: 32px;
-  padding-bottom: 24px;
+  margin-top: 8px;
+  margin-bottom: 28px;
+  padding-bottom: 20px;
   border-bottom: 1px solid var(--hc-border-light);
 }
 
