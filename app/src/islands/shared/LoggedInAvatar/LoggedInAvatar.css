@@ -199,14 +199,21 @@
 }
 
 /* Responsive adjustments - Scoped to LoggedInAvatar only */
+/* IMPORTANT: Must use !important to override global mobile.css rules */
 @media (max-width: 768px) {
   .logged-in-avatar .dropdown-menu {
-    position: fixed;
-    top: 60px;
-    right: 10px;
-    left: auto;
-    width: calc(100vw - 20px);
-    max-width: 300px;
+    position: fixed !important;
+    top: 60px !important;
+    right: 10px !important;
+    left: auto !important;
+    width: calc(100vw - 20px) !important;
+    min-width: unset !important;
+    max-width: 300px !important;
+    padding: 8px 0 !important;
+    background-color: #FFFFFF !important;
+    border: 1px solid #E5E5E5 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
   }
 
   @keyframes dropdownFadeIn {
