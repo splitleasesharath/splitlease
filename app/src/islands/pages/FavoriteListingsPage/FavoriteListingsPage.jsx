@@ -6,6 +6,8 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
+import Header from '../../shared/Header.jsx';
+import Footer from '../../shared/Footer.jsx';
 import GoogleMap from '../../shared/GoogleMap.jsx';
 import AuthAwareSearchScheduleSelector from '../../shared/AuthAwareSearchScheduleSelector.jsx';
 import ContactHostMessaging from '../../shared/ContactHostMessaging.jsx';
@@ -927,8 +929,12 @@ const FavoriteListingsPage = () => {
 
   // Render
   return (
-    <div className="favorites-page">
-      {/* Toast Notification */}
+    <>
+      {/* Standard Site Header */}
+      <Header />
+
+      <div className="favorites-page">
+        {/* Toast Notification */}
       {toast.show && (
         <div className={`toast toast-${toast.type} show`}>
           <span className="toast-icon">
@@ -1420,7 +1426,11 @@ const FavoriteListingsPage = () => {
           </button>
         </div>
       )}
-    </div>
+      </div>
+
+      {/* Standard Site Footer */}
+      <Footer />
+    </>
   );
 };
 

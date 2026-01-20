@@ -14,8 +14,8 @@
 .favorites-page {
   padding-top: 0 !important;
   margin: 0;
-  height: 100vh;
-  width: 100vw;
+  min-height: calc(100vh - 80px); /* Account for header height */
+  width: 100%;
   overflow: visible;
   background: var(--favorites-bg, #FAFBFC);
 }
@@ -62,7 +62,7 @@
   max-width: 1400px;
   margin: 0 auto;
   padding: 24px;
-  min-height: calc(100vh - 160px);
+  min-height: auto;
 }
 
 .favorites-page .listings-column {
@@ -74,8 +74,8 @@
   width: 400px !important;
   flex-shrink: 0;
   position: sticky;
-  top: 88px;
-  height: calc(100vh - 112px);
+  top: 100px; /* Account for header height */
+  height: calc(100vh - 130px);
   background: white;
   border-radius: 16px;
   overflow: hidden;
@@ -211,10 +211,10 @@
 
 /* ============================================
    MAP HEADER STYLING
+   Hide the inline map header since we now use the shared Header component
    ============================================ */
 .favorites-page .map-header {
-  background: white;
-  border-bottom: 1px solid var(--favorites-border, #E8ECF0);
+  display: none;
 }
 
 /* ============================================
@@ -343,28 +343,16 @@
     display: none;
   }
 
-  /* ROW 1: Header row - fixed at top */
+  /* ROW 1: Header row - now hidden since using shared Header component */
   .favorites-page .mobile-header-row {
-    justify-content: flex-start;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 100;
-    background: white;
-    border-bottom: 1px solid var(--favorites-border, #E8ECF0);
-  }
-
-  .favorites-page .mobile-header-row .explore-rentals-btn {
-    flex: 1;
-    max-width: none;
+    display: none;
   }
 
   /* ROW 2: Map Button Row - fixed below header */
   .favorites-page .mobile-map-row {
     display: flex;
     position: fixed;
-    top: 65px;
+    top: 60px; /* Below shared Header */
     left: 0;
     right: 0;
     z-index: 99;
@@ -399,7 +387,7 @@
   .favorites-page .mobile-schedule-selector {
     display: block;
     position: fixed;
-    top: 115px;
+    top: 110px; /* Below shared Header (60px) + Map row (50px) */
     left: 0;
     right: 0;
     z-index: 98;
@@ -408,9 +396,9 @@
     border-bottom: 1px solid var(--favorites-border, #E8ECF0);
   }
 
-  /* Adjust listings column padding for all 3 fixed rows */
+  /* Adjust listings column padding for fixed rows (shared Header handled separately) */
   .favorites-page .listings-column {
-    padding-top: 165px; /* Header (65px) + Map row (50px) + Schedule selector (50px) */
+    padding-top: 160px; /* Map row (50px) + Schedule selector (50px) + buffer */
   }
 
   /* Page Title Section mobile */
