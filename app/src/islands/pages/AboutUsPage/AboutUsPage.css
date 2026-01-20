@@ -505,7 +505,7 @@
 
   .hero-carousel-track {
     gap: 24px;
-    animation-duration: 20s;
+    animation-duration: 35s;
   }
 
   .hero-avatar-image {
@@ -593,7 +593,7 @@
   /* Carousel extra small adjustments */
   .hero-carousel-track {
     gap: 20px;
-    animation-duration: 18s;
+    animation-duration: 30s;
   }
 
   .hero-avatar-image {
