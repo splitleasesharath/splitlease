@@ -181,7 +181,7 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
 
         // 5. Count leases for this user (as guest or host)
         supabase
-          .from('Booking - Lease')
+          .from('bookings_leases')
           .select('_id', { count: 'exact', head: true })
           .or(`Guest.eq.${userId},"Created By".eq.${userId}`),
 

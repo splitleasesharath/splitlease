@@ -278,7 +278,7 @@ export function useHostMenuData(userId, isAuthenticated) {
 
         // Count leases where user is host
         supabase
-          .from('Booking - Lease')
+          .from('bookings_leases')
           .select('_id', { count: 'exact', head: true })
           .eq('Created By', userId)
       ]);
