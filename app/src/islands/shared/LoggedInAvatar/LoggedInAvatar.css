@@ -132,10 +132,9 @@
   background-color: #CAC8C8;
 }
 
-/* Active menu item (current page) */
+/* Active menu item (current page) - hidden from menu */
 .logged-in-avatar .menu-item.active {
-  border-left: 3px solid #FF6B35;
-  padding-left: 12px;
+  display: none;
 }
 
 /* Menu Icon (Emoji) - Scoped to LoggedInAvatar only */
