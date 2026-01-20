@@ -1466,8 +1466,8 @@ export default function PreviewSplitLeasePage() {
         >
           {/* Preview Mode Indicator */}
           <div style={{
-            background: 'linear-gradient(135deg, #DCFCE7 0%, #BBF7D0 100%)',
-            border: '1px solid #22C55E',
+            background: 'linear-gradient(135deg, #f8f9ff 0%, #faf5ff 100%)',
+            border: '1px solid #e9d5ff',
             borderRadius: '8px',
             padding: '10px 12px',
             marginBottom: '16px',
@@ -1480,25 +1480,26 @@ export default function PreviewSplitLeasePage() {
               height="16"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#16A34A"
+              stroke="#7C3AED"
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
             >
-              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
             </svg>
-            <span style={{ fontSize: '12px', fontWeight: '600', color: '#166534' }}>
-              Host View - Your Compensation
+            <span style={{ fontSize: '12px', fontWeight: '600', color: '#5B21B6' }}>
+              Host Preview - Guest View
             </span>
           </div>
 
           {/* Host Rate Display - Single Price */}
           <div style={{
-            background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+            background: 'linear-gradient(135deg, #f8f9ff 0%, #faf5ff 100%)',
             padding: '12px',
             borderRadius: '12px',
             marginBottom: '16px',
-            border: '1px solid #86efac'
+            border: '1px solid #e9d5ff'
           }}>
             {/* Show Weekly or Monthly rate if rental type is Weekly/Monthly */}
             {listing?.['rental type'] === 'Weekly' && listing?.['💰Weekly Host Rate'] ? (
@@ -1506,7 +1507,10 @@ export default function PreviewSplitLeasePage() {
                 <div style={{
                   fontSize: '32px',
                   fontWeight: '800',
-                  color: '#166534',
+                  background: 'linear-gradient(135deg, #31135d 0%, #31135d 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
                   letterSpacing: '-1px',
                   display: 'inline-block'
                 }}>
@@ -1514,7 +1518,9 @@ export default function PreviewSplitLeasePage() {
                   <span style={{
                     fontSize: '16px',
                     color: '#6B7280',
-                    fontWeight: '500'
+                    fontWeight: '500',
+                    background: 'none',
+                    WebkitTextFillColor: '#6B7280'
                   }}>/week</span>
                 </div>
                 <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '4px' }}>
@@ -1526,7 +1532,10 @@ export default function PreviewSplitLeasePage() {
                 <div style={{
                   fontSize: '32px',
                   fontWeight: '800',
-                  color: '#166534',
+                  background: 'linear-gradient(135deg, #31135d 0%, #31135d 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
                   letterSpacing: '-1px',
                   display: 'inline-block'
                 }}>
@@ -1534,7 +1543,9 @@ export default function PreviewSplitLeasePage() {
                   <span style={{
                     fontSize: '16px',
                     color: '#6B7280',
-                    fontWeight: '500'
+                    fontWeight: '500',
+                    background: 'none',
+                    WebkitTextFillColor: '#6B7280'
                   }}>/month</span>
                 </div>
                 <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '4px' }}>
@@ -1546,7 +1557,10 @@ export default function PreviewSplitLeasePage() {
                 <div style={{
                   fontSize: '32px',
                   fontWeight: '800',
-                  color: '#166534',
+                  background: 'linear-gradient(135deg, #31135d 0%, #31135d 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
                   letterSpacing: '-1px',
                   display: 'inline-block'
                 }}>
@@ -1559,7 +1573,9 @@ export default function PreviewSplitLeasePage() {
                   <span style={{
                     fontSize: '16px',
                     color: '#6B7280',
-                    fontWeight: '500'
+                    fontWeight: '500',
+                    background: 'none',
+                    WebkitTextFillColor: '#6B7280'
                   }}>/night</span>
                 </div>
                 <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '4px' }}>
@@ -1673,9 +1689,9 @@ export default function PreviewSplitLeasePage() {
           <div style={{
             marginBottom: '12px',
             padding: '12px',
-            background: 'linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%)',
+            background: 'linear-gradient(135deg, #f9fafb 0%, #ffffff 100%)',
             borderRadius: '10px',
-            border: '1px solid #86efac'
+            border: '1px solid #E5E7EB'
           }}>
             <div style={{
               display: 'flex',
@@ -1685,7 +1701,7 @@ export default function PreviewSplitLeasePage() {
               marginBottom: '8px'
             }}>
               <span style={{ color: '#111827', fontWeight: '500' }}>4-Week Compensation</span>
-              <span style={{ color: '#166534', fontWeight: '700', fontSize: '16px' }}>
+              <span style={{ color: '#111827', fontWeight: '700', fontSize: '16px' }}>
                 {(() => {
                   if (listing?.['rental type'] === 'Weekly' && listing?.['💰Weekly Host Rate']) {
                     return formatPrice(listing['💰Weekly Host Rate'] * 4);
@@ -1718,7 +1734,10 @@ export default function PreviewSplitLeasePage() {
             <span style={{
               fontSize: '28px',
               fontWeight: '800',
-              color: '#166534'
+              background: 'linear-gradient(135deg, #31135d 0%, #31135d 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text'
             }}>
               {(() => {
                 if (listing?.['rental type'] === 'Weekly' && listing?.['💰Weekly Host Rate']) {

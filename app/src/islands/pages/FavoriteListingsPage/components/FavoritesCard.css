@@ -192,7 +192,7 @@
    CONTENT SECTION
    ============================================ */
 .favorites-card__content {
-  padding: 2px 4px;
+  padding: 0;
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -208,7 +208,9 @@
   font-size: 13px;
   font-weight: 500;
   color: var(--favorites-purple, #6B4EE6);
-  margin-bottom: 0;
+  margin: 0;
+  padding: 0;
+  line-height: 1.1;
 }
 
 .favorites-card__location svg {
@@ -220,10 +222,11 @@
    ============================================ */
 .favorites-card__title {
   margin: 0;
+  padding: 0;
   font-size: 15px;
   font-weight: 600;
   color: var(--favorites-text-dark, #1a1a2e);
-  line-height: 1.25;
+  line-height: 1.1;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -236,13 +239,15 @@
 .favorites-card__host {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 0;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  line-height: 1.1;
 }
 
 .favorites-card__host-avatar {
-  width: 28px;
-  height: 28px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
@@ -287,10 +292,12 @@
 .favorites-card__details {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   font-size: 12px;
   color: var(--favorites-text-medium, #64748B);
-  margin-bottom: 0;
+  margin: 0;
+  padding: 0;
+  line-height: 1.1;
 }
 
 /* ============================================
@@ -376,7 +383,7 @@
   }
 
   .favorites-card__content {
-    padding: 2px 4px;
+    padding: 0;
   }
 
   .favorites-card__title {
