@@ -75,14 +75,26 @@
   padding: 16px;
   border-radius: 16px;
   max-height: 92vh;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  overflow: hidden;
 }
 
 .hep-container *,
 .hep-container *::before,
 .hep-container *::after {
   box-sizing: border-box;
+}
+
+/* ========================================
+   Scrollable Body
+   - Fills available space and scrolls
+   - Allows footer to stay fixed at bottom
+   ======================================== */
+
+.hep-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 16px;
 }
 
 /* ========================================
@@ -1263,23 +1275,21 @@
     font-weight: 500;
   }
 
-  /* Scrollable content area */
-  .hep-description,
-  .hep-collapsible,
-  .hep-animate-collapse,
-  .hep-breakdown-container {
-    flex-shrink: 0;
+  /* Scrollable body */
+  .hep-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 8px;
   }
 
   /* Primary actions - fixed at bottom with safe area */
   .hep-primary-actions {
-    position: sticky;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    flex-shrink: 0;
     padding: 16px 0;
     padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-    margin-top: auto;
+    margin-top: 0;
     margin-left: -16px;
     margin-right: -16px;
     padding-left: 16px;
