@@ -1283,9 +1283,33 @@
   gap: 16px;
 }
 
+/* Mobile: Horizontal scrolling carousel for listings */
 @media (max-width: 600px) {
   .listings-grid {
-    grid-template-columns: 1fr;
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    gap: 12px;
+    padding-bottom: 8px;
+    margin: 0 -16px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .listings-grid::-webkit-scrollbar {
+    display: none;
+  }
+  .listings-grid {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .listings-grid .listing-item {
+    flex: 0 0 140px;
+    min-width: 140px;
+    scroll-snap-align: start;
   }
 }
 
