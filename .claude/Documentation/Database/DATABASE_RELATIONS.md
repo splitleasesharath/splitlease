@@ -1,6 +1,6 @@
 # Split Lease Database Relations Documentation
 
-> **Generated**: 2025-11-27 (Updated with verification)
+> **Generated**: 2026-01-20 (Updated with verification)
 > **Source**: Bubble.io migrated data in Supabase
 > **Primary Key Pattern**: All Bubble tables use `_id` (text) with format `{timestamp}x{random_number}`
 > **Verification Status**: All relationships verified by querying actual data samples
@@ -707,7 +707,7 @@ WHERE bs.listing = 'YOUR_LISTING_ID';
 
 ## Verification Summary
 
-All relationships documented above were verified on **2025-11-27** by:
+All relationships documented above were verified on **2026-01-20** by:
 1. Sampling actual data from each table
 2. Checking that FK values exist in the referenced target tables
 3. Documenting any orphaned references or missing target records
