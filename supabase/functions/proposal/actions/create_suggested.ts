@@ -42,6 +42,7 @@ import {
   updateThreadLastMessage,
   getUserProfile,
   getListingName,
+  generateBubbleId,
 } from "../../_shared/messagingHelpers.ts";
 import {
   getCTAForProposalStatus,
@@ -591,6 +592,45 @@ export async function handleCreateSuggested(
 
           if (aiGuestSummary) {
             console.log(`[proposal:create_suggested] AI summary generated successfully`);
+
+            // ================================================
+            // PERSIST AI SUMMARY TO negotiationsummary TABLE
+            // ================================================
+            // The frontend (SuggestedProposalPopup) queries this table to display
+            // the "Why This Listing?" explanation to the guest
+            try {
+              const summaryId = await generateBubbleId(supabase);
+              const now = new Date().toISOString();
+
+              const { error: summaryInsertError } = await supabase
+                .from('negotiationsummary')
+                .insert({
+                  _id: summaryId,
+                  "Proposal associated": proposalId,
+                  "Created By": input.guestId,
+                  "Created Date": now,
+                  "Modified Date": now,
+                  // Use lowercase 'summary' - this is the field the frontend expects
+                  // PostgREST normalizes column names, so this should work whether
+                  // the actual column is 'summary', 'Summary', or 'Summary Text'
+                  summary: aiGuestSummary,
+                });
+
+              if (summaryInsertError) {
+                console.error(`[proposal:create_suggested] Failed to persist AI summary:`, {
+                  code: summaryInsertError.code,
+                  message: summaryInsertError.message,
+                  details: summaryInsertError.details,
+                  hint: summaryInsertError.hint,
+                });
+                // Non-blocking: Summary display is secondary to proposal creation
+              } else {
+                console.log(`[proposal:create_suggested] AI summary persisted to negotiationsummary: ${summaryId}`);
+              }
+            } catch (persistError) {
+              console.error(`[proposal:create_suggested] Exception persisting AI summary:`, persistError);
+              // Non-blocking: Continue with proposal creation
+            }
           } else {
             console.log(`[proposal:create_suggested] AI summary returned null, using default message`);
           }
