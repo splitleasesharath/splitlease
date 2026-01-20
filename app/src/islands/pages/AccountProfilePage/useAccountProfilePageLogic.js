@@ -481,7 +481,22 @@ export function useAccountProfilePageLogic() {
         throw new Error('User not found');
       }
 
-      setProfileData(userData);
+      // Fetch job title from linked rental application (if exists)
+      let jobTitle = '';
+      const rentalAppId = userData['Rental Application'];
+      if (rentalAppId) {
+        const { data: rentalAppData } = await supabase
+          .from('rentalapplication')
+          .select('"job title"')
+          .eq('_id', rentalAppId)
+          .single();
+
+        if (rentalAppData) {
+          jobTitle = rentalAppData['job title'] || '';
+        }
+      }
+
+      setProfileData({ ...userData, _jobTitle: jobTitle, _rentalAppId: rentalAppId });
 
       // Initialize form data from profile
       // Database columns use Bubble.io naming conventions
@@ -502,7 +517,7 @@ export function useAccountProfilePageLogic() {
       setFormData({
         firstName: userData['Name - First'] || '',
         lastName: userData['Name - Last'] || '',
-        jobTitle: '', // Job Title column does not exist in database
+        jobTitle,
         dateOfBirth,
         bio: userData['About Me / Bio'] || '',
         needForSpace: userData['need for Space'] || '',
@@ -1069,6 +1084,20 @@ export function useAccountProfilePageLogic() {
         throw updateError;
       }
 
+      // Save job title to rental application table (if user has one)
+      const rentalAppId = profileData?._rentalAppId;
+      if (rentalAppId && formData.jobTitle !== undefined) {
+        const { error: rentalAppError } = await supabase
+          .from('rentalapplication')
+          .update({ 'job title': formData.jobTitle.trim() })
+          .eq('_id', rentalAppId);
+
+        if (rentalAppError) {
+          console.error('Error saving job title to rental application:', rentalAppError);
+          // Don't throw - user data was saved successfully, job title is secondary
+        }
+      }
+
       // Refresh profile data
       await fetchProfileData(profileUserId);
       setIsDirty(false);
@@ -1104,7 +1133,7 @@ export function useAccountProfilePageLogic() {
       setFormData({
         firstName: profileData['Name - First'] || '',
         lastName: profileData['Name - Last'] || '',
-        jobTitle: '', // Job Title column does not exist in database
+        jobTitle: profileData._jobTitle || '', // Job title stored in linked rental application
         dateOfBirth,
         bio: profileData['About Me / Bio'] || '',
         needForSpace: profileData['need for Space'] || '',
