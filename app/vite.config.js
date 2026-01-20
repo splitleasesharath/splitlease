@@ -217,6 +217,7 @@ export default defineConfig({
   publicDir: 'public', // Enable public directory serving for static assets
   server: {
     host: true, // Listen on all addresses (127.0.0.1 and localhost)
+    port: 3000, // Match Supabase Auth Site URL for local development
     // Proxy /api routes to handle Cloudflare Pages Functions locally
     // Note: FAQ inquiries now use Supabase Edge Functions (slack function)
     // This proxy is for any remaining Cloudflare Pages Functions

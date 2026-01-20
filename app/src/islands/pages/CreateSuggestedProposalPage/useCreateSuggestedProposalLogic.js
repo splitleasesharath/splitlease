@@ -18,6 +18,7 @@ import {
   getDefaultGuests,
   getListingPhotos,
   getUserProposalsForListing,
+  getUserMostRecentProposal,
   createSuggestedProposal
 } from './suggestedProposalService.js';
 
@@ -469,45 +470,47 @@ export function useCreateSuggestedProposalLogic() {
     setGuestSearchResults([]);
     setIsGuestConfirmed(false);
 
-    // Check for existing proposals
+    // Check for existing proposals on THIS listing (for warning display)
     if (selectedListing) {
-      const { data: proposals } = await getUserProposalsForListing(guest._id, selectedListing._id);
-      setExistingProposalsCount(proposals?.length || 0);
+      const { data: listingProposals } = await getUserProposalsForListing(guest._id, selectedListing._id);
+      setExistingProposalsCount(listingProposals?.length || 0);
+    }
 
-      // Prefill from most recent proposal if exists
-      if (proposals && proposals.length > 0) {
-        const mostRecentProposal = proposals[0]; // Already sorted by Created Date desc
+    // Prefill from guest's most recent proposal across ALL listings
+    const { data: mostRecentProposal } = await getUserMostRecentProposal(guest._id);
 
-        // Prefill days selected (0-indexed, no conversion needed)
-        const daysSelected = mostRecentProposal['Days Selected'];
-        if (Array.isArray(daysSelected) && daysSelected.length > 0) {
-          setSelectedDays(daysSelected);
+    if (mostRecentProposal) {
+      console.log('[CreateSuggestedProposal] Prefilling from most recent proposal:', mostRecentProposal._id);
+
+      // Prefill days selected (0-indexed, no conversion needed)
+      const daysSelected = mostRecentProposal['Days Selected'];
+      if (Array.isArray(daysSelected) && daysSelected.length > 0) {
+        setSelectedDays(daysSelected);
+      }
+
+      // Prefill reservation span
+      const weeksValue = mostRecentProposal['Reservation Span (Weeks)'];
+      if (weeksValue && weeksValue > 0) {
+        const { reservationSpan: spanValue, customWeeks: customValue } = mapWeeksToReservationSpan(weeksValue);
+        setReservationSpan(spanValue);
+        if (customValue !== null) {
+          setCustomWeeks(customValue);
         }
+      }
 
-        // Prefill reservation span
-        const weeksValue = mostRecentProposal['Reservation Span (Weeks)'];
-        if (weeksValue && weeksValue > 0) {
-          const { reservationSpan: spanValue, customWeeks: customValue } = mapWeeksToReservationSpan(weeksValue);
-          setReservationSpan(spanValue);
-          if (customValue !== null) {
-            setCustomWeeks(customValue);
-          }
+      // Prefill move-in date (ensure not in the past)
+      const moveInStart = mostRecentProposal['Move in range start'];
+      if (moveInStart) {
+        const proposalDate = new Date(moveInStart);
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+
+        // Use proposal date if in future, otherwise use tomorrow
+        if (proposalDate >= tomorrow) {
+          setMoveInDate(proposalDate.toISOString().split('T')[0]);
         }
-
-        // Prefill move-in date (ensure not in the past)
-        const moveInStart = mostRecentProposal['Move in range start'];
-        if (moveInStart) {
-          const proposalDate = new Date(moveInStart);
-          const tomorrow = new Date();
-          tomorrow.setDate(tomorrow.getDate() + 1);
-          tomorrow.setHours(0, 0, 0, 0);
-
-          // Use proposal date if in future, otherwise use tomorrow
-          if (proposalDate >= tomorrow) {
-            setMoveInDate(proposalDate.toISOString().split('T')[0]);
-          }
-          // If past date, leave default (tomorrow) in place
-        }
+        // If past date, leave default (tomorrow) in place
       }
     }
 

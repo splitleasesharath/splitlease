@@ -250,6 +250,35 @@ export async function getUserProposalsForListing(userId, listingId) {
   }
 }
 
+/**
+ * Get the most recent proposal for a user across ALL listings
+ * Used for prefilling form fields when creating new proposals
+ */
+export async function getUserMostRecentProposal(userId) {
+  try {
+    const { data, error } = await supabase
+      .from('proposal')
+      .select(`
+        _id,
+        Status,
+        "Days Selected",
+        "Reservation Span (Weeks)",
+        "Move in range start",
+        "Created Date"
+      `)
+      .eq('Guest', userId)
+      .neq('Deleted', true)
+      .order('"Created Date"', { ascending: false })
+      .limit(1);
+
+    if (error) throw error;
+    return { data: data?.[0] || null, error: null };
+  } catch (error) {
+    console.error('[suggestedProposalService] getUserMostRecentProposal error:', error);
+    return { data: null, error: error.message };
+  }
+}
+
 // ============================================================================
 // PROPOSAL CREATION
 // ============================================================================
