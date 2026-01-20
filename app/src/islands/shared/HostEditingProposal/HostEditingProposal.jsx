@@ -479,6 +479,9 @@ export function HostEditingProposal({
 
   return (
     <div className="hep-container">
+      {/* Mobile Grab Handle - per POPUP_REPLICATION_PROTOCOL.md */}
+      <div className="hep-grab-handle" aria-hidden="true" />
+
       {/* Header - hidden in reject-only mode */}
       {!isRejectOnlyMode && (
         <div className="hep-section-header">

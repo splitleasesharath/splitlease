@@ -5,9 +5,16 @@
  * Features:
  * - Monochromatic purple color scheme (no green/yellow)
  * - Pill-shaped buttons (100px radius)
- * - Protocol typography and spacing
+ * - Mobile bottom-sheet behavior (<480px)
+ * - Protocol grab handle (36x4px, #E7E0EC)
+ * - Inter font family for buttons
  *
- * Primary Purple: #31135D
+ * Color Tokens:
+ * - Primary: #31135D
+ * - Hover: #4A2F7C
+ * - Light BG: #F7F2FA
+ * - Border: #E7E0EC
+ * - Danger: #DC3545 (outlined only)
  */
 
 /* ========================================
@@ -39,6 +46,21 @@
 }
 
 /* ========================================
+   Mobile Grab Handle
+   - 36x4px centered bar for mobile bottom sheet
+   - Hidden on desktop, visible on mobile (<480px)
+   ======================================== */
+.hep-grab-handle {
+  display: none;
+  width: 36px;
+  height: 4px;
+  background: #E7E0EC;
+  border-radius: 2px;
+  margin: 8px auto 0;
+  flex-shrink: 0;
+}
+
+/* ========================================
    Base Container
    ======================================== */
 
@@ -51,6 +73,10 @@
   font-family: var(--hep-font-sans);
   box-sizing: border-box;
   padding: 16px;
+  border-radius: 16px;
+  max-height: 92vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .hep-container *,
@@ -1184,5 +1210,42 @@
 
   .hep-popup-actions .hep-btn {
     width: 100%;
+  }
+}
+
+/* ========================================
+   RESPONSIVE - MOBILE BOTTOM SHEET
+   - Screen width < 480px triggers slide-up mode per protocol
+   - Border radius: 24px 24px 0 0
+   - Grab handle visible
+   ======================================== */
+@media (max-width: 480px) {
+  .hep-grab-handle {
+    display: block;
+  }
+
+  .hep-container {
+    border-radius: 24px 24px 0 0;
+    max-height: 90vh;
+    padding: 0 16px 20px;
+  }
+
+  .hep-section-header {
+    padding: 12px 0 16px;
+  }
+
+  .hep-title-main {
+    font-size: 18px;
+    font-weight: 500;
+  }
+
+  .hep-primary-actions {
+    padding: 12px 0 8px;
+    gap: 10px;
+  }
+
+  .hep-primary-actions .hep-btn {
+    font-size: 13px;
+    height: 42px;
   }
 }

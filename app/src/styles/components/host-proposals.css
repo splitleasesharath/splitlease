@@ -1264,6 +1264,7 @@
 
 /* ========================================
    HOST EDITING PROPOSAL OVERLAY
+   Per POPUP_REPLICATION_PROTOCOL.md design system
    ======================================== */
 
 .editing-proposal-overlay {
@@ -1277,27 +1278,73 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-lg);
+  padding: 20px;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .editing-proposal-container {
-  background-color: var(--bg-white);
-  border-radius: var(--rounded-2xl);
+  background-color: #FFFFFF;
+  border-radius: 16px;
   max-width: 520px;
-  width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: var(--shadow-lg);
+  width: 90%;
+  max-height: 92vh;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@media (max-width: 768px) {
+@keyframes slideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ========================================
+   MOBILE BOTTOM SHEET - Per Protocol (<480px)
+   ======================================== */
+@media (max-width: 480px) {
   .editing-proposal-overlay {
+    align-items: flex-end;
     padding: 0;
   }
 
   .editing-proposal-container {
+    width: 100%;
     max-width: 100%;
-    max-height: 100vh;
-    border-radius: 0;
+    border-radius: 24px 24px 0 0;
+    max-height: 90vh;
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+}
+
+@media (max-width: 768px) and (min-width: 481px) {
+  .editing-proposal-overlay {
+    padding: 16px;
+  }
+
+  .editing-proposal-container {
+    max-width: 100%;
+    width: 100%;
   }
 }
