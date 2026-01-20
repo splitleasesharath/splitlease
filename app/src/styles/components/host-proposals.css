@@ -523,6 +523,8 @@
 
 /* ========================================
    PROPOSAL MODAL
+   Updated to follow POPUP_REPLICATION_PROTOCOL.md
+   Color Scheme: Monochromatic Purple - NO GREEN, NO YELLOW
    ======================================== */
 
 .proposal-modal {
@@ -532,8 +534,8 @@
   width: 100%;
   max-width: 650px;
   height: 100vh;
-  background-color: var(--bg-white);
-  box-shadow: var(--shadow-lg);
+  background-color: #FFFFFF;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
   z-index: var(--z-modal);
   display: flex;
   flex-direction: column;
@@ -545,11 +547,21 @@
   right: 0;
 }
 
-/* Close Button */
+/* Mobile grab handle - visible only on mobile */
+.proposal-modal-grab-handle {
+  display: none;
+  width: 36px;
+  height: 4px;
+  background: #E7E0EC;
+  border-radius: 2px;
+  margin: 8px auto 0;
+}
+
+/* Close Button - Updated per protocol */
 .modal-close {
   position: absolute;
-  top: var(--spacing-lg);
-  right: var(--spacing-lg);
+  top: 16px;
+  right: 16px;
   width: 32px;
   height: 32px;
   display: flex;
@@ -558,14 +570,21 @@
   background: transparent;
   border: none;
   cursor: pointer;
-  color: var(--text-gray);
-  border-radius: 50%;
-  transition: background-color var(--transition-base);
+  color: #49454F;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
   z-index: 10;
 }
 
 .modal-close:hover {
-  background-color: var(--bg-light);
+  background-color: #F7F2FA;
+}
+
+.modal-close svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  stroke-width: 2;
 }
 
 /* Modal Content */
@@ -650,11 +669,11 @@
   font-weight: 700;
 }
 
-/* Collapsible Sections */
+/* Collapsible Sections - Updated per protocol */
 .collapsible-section {
-  border: 1px solid var(--border-color);
-  border-radius: var(--rounded-lg);
-  margin-bottom: var(--spacing-lg);
+  border: 1px solid #E7E0EC;
+  border-radius: 12px;
+  margin-bottom: 16px;
   overflow: hidden;
 }
 
@@ -663,22 +682,24 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--spacing-lg);
+  padding: 16px;
   background: transparent;
   border: none;
   cursor: pointer;
-  font-size: var(--text-base);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
   font-weight: 600;
-  color: var(--text-dark);
-  transition: background-color var(--transition-base);
+  color: #1C1B1F;
+  transition: background-color 0.2s ease;
 }
 
 .section-header:hover {
-  background-color: var(--bg-light);
+  background-color: #F7F2FA;
 }
 
 .chevron {
-  transition: transform var(--transition-base);
+  transition: transform 0.2s ease;
+  color: #49454F;
 }
 
 .chevron.open {
@@ -686,7 +707,7 @@
 }
 
 .section-content {
-  padding: 0 var(--spacing-lg) var(--spacing-lg);
+  padding: 0 16px 16px;
 }
 
 /* Guest Details */
@@ -721,19 +742,21 @@
 }
 
 .send-message-btn {
-  background-color: var(--primary-purple);
-  color: white;
-  padding: var(--spacing-xs) var(--spacing-lg);
-  border-radius: var(--rounded-sm);
-  font-size: var(--text-sm);
-  font-weight: 500;
+  background-color: #31135D;
+  color: #FFFFFF;
+  padding: 8px 20px;
+  border-radius: 100px; /* Pill-shaped per protocol */
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
   border: none;
   cursor: pointer;
-  transition: background-color var(--transition-base);
+  transition: all 0.2s ease;
 }
 
 .send-message-btn:hover {
-  background-color: var(--primary-purple-hover);
+  background-color: #4A2F7C;
+  box-shadow: 0 4px 12px rgba(49, 19, 93, 0.2);
 }
 
 .guest-bio {
@@ -767,8 +790,9 @@
   color: var(--text-light-gray);
 }
 
+/* Verified status - uses protocol purple instead of green */
 .verification-item.verified .verification-status {
-  color: #065F46;
+  color: #31135D;
 }
 
 /* Status Content */
@@ -976,83 +1000,95 @@
   border-color: var(--primary-purple);
 }
 
+/* Virtual Meeting Buttons - Pill-shaped per protocol */
 .choose-meeting-btn,
 .request-meeting-btn {
-  background-color: var(--primary-purple);
-  color: white;
-  padding: var(--spacing-sm) var(--spacing-2xl);
-  border-radius: var(--rounded-sm);
-  font-size: var(--text-base);
-  font-weight: 500;
+  background-color: #31135D;
+  color: #FFFFFF;
+  padding: 10px 24px;
+  border-radius: 100px; /* Pill-shaped per protocol */
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
   border: none;
   cursor: pointer;
-  transition: background-color var(--transition-base);
+  transition: all 0.2s ease;
 }
 
 .choose-meeting-btn:hover,
 .request-meeting-btn:hover {
-  background-color: var(--primary-purple-hover);
+  background-color: #4A2F7C;
+  box-shadow: 0 4px 12px rgba(49, 19, 93, 0.2);
 }
 
-/* Action Buttons */
+/* Action Buttons - Updated per POPUP_REPLICATION_PROTOCOL.md */
 .modal-actions {
   display: flex;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-lg);
-  background-color: var(--bg-light);
-  border-top: 1px solid var(--border-color);
+  gap: 12px;
+  padding: 16px 20px;
+  background-color: #FFFFFF;
+  border-top: 1px solid #E7E0EC;
 }
 
 .action-btn {
   flex: 1;
-  padding: var(--spacing-sm) var(--spacing-lg);
-  border-radius: var(--rounded-sm);
-  font-size: var(--text-base);
-  font-weight: 500;
+  height: 44px;
+  padding: 0 24px;
+  border-radius: 100px; /* Pill-shaped per protocol */
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all var(--transition-base);
+  transition: all 0.2s ease;
 }
 
+/* Reject/Decline - Outlined danger (red outline only, no fill) */
 .action-btn.reject {
   background-color: transparent;
-  color: #991B1B;
-  border: 1px solid #991B1B;
+  color: #DC3545;
+  border: 1px solid #DC3545;
 }
 
 .action-btn.reject:hover {
-  background-color: #FEE2E2;
+  background-color: rgba(220, 53, 69, 0.08);
 }
 
+/* Accept - Primary purple (replaces green per protocol) */
 .action-btn.accept {
-  background-color: #065F46;
-  color: white;
+  background-color: #31135D;
+  color: #FFFFFF;
   border: none;
 }
 
 .action-btn.accept:hover {
-  background-color: #047857;
+  background-color: #4A2F7C;
+  box-shadow: 0 4px 12px rgba(49, 19, 93, 0.2);
 }
 
+/* Modify/Primary - Primary purple */
 .action-btn.modify,
 .action-btn.primary {
-  background-color: var(--primary-purple);
-  color: white;
+  background-color: #31135D;
+  color: #FFFFFF;
   border: none;
 }
 
 .action-btn.modify:hover,
 .action-btn.primary:hover {
-  background-color: var(--primary-purple-hover);
+  background-color: #4A2F7C;
+  box-shadow: 0 4px 12px rgba(49, 19, 93, 0.2);
 }
 
+/* Secondary - Outlined style */
 .action-btn.secondary {
-  background-color: #6B7280;
-  color: white;
-  border: none;
+  background-color: transparent;
+  color: #31135D;
+  border: 1px solid #E7E0EC;
 }
 
 .action-btn.secondary:hover {
-  background-color: #4b5563;
+  background-color: #F7F2FA;
+  border-color: #31135D;
 }
 
 /* ========================================
@@ -1094,14 +1130,14 @@
   }
 
   .proposal-modal {
-    /* Slide-up sheet style on mobile */
+    /* Slide-up sheet style on mobile per POPUP_REPLICATION_PROTOCOL.md */
     max-width: 100%;
     right: 0; /* No horizontal slide */
     bottom: 0;
     top: auto; /* Override desktop top: 0 */
     height: 90vh; /* Leave some space at top */
     height: 90dvh; /* Modern dynamic viewport height */
-    border-radius: 16px 16px 0 0; /* Rounded top corners */
+    border-radius: 24px 24px 0 0; /* Rounded top corners - protocol spec */
     transform: translateY(100%); /* Start off-screen at bottom */
     transition: transform var(--transition-slow);
     /* Ensure proper flex column layout on mobile */
@@ -1111,6 +1147,11 @@
 
   .proposal-modal.open {
     transform: translateY(0); /* Slide up into view */
+  }
+
+  /* Show grab handle on mobile */
+  .proposal-modal-grab-handle {
+    display: block;
   }
 
   /* Close button styling for mobile slide-up sheet */
