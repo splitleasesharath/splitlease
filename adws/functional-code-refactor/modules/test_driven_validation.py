@@ -159,7 +159,8 @@ def generate_test_suite_for_chunk(
     # Generate tests based on the type of change
     for func_name in func_names:
         # Test 1: Import test (should always pass if export exists)
-        import_path = _resolve_import_path(chunk.file_path, working_dir)
+        # Tests run from app/.test_temp/ so need from_test_temp=True
+        import_path = _resolve_import_path(chunk.file_path, working_dir, from_test_temp=True)
         suite.add_passing_test(
             name=f"import_{func_name}",
             code=_generate_import_test(func_name, import_path)
@@ -406,22 +407,36 @@ def _extract_function_names(code: str) -> List[str]:
     return list(set(names))
 
 
-def _resolve_import_path(file_path: str, working_dir: Path) -> str:
-    """Convert file path to a relative import path."""
+def _resolve_import_path(file_path: str, working_dir: Path, from_test_temp: bool = False) -> str:
+    """Convert file path to a relative import path.
+
+    Args:
+        file_path: The file path to convert
+        working_dir: Project root directory
+        from_test_temp: If True, generates path relative to app/.test_temp/
+                       If False, generates path relative to app/
+    """
     # Remove backticks if present
     file_path = file_path.strip('`').strip()
 
     # Convert Windows paths
     file_path = file_path.replace('\\', '/')
 
-    # Handle src/ prefix
-    if file_path.startswith('src/'):
-        return './' + file_path[4:]  # Remove 'src/'
-
-    if file_path.startswith('app/src/'):
-        return './' + file_path[8:]  # Remove 'app/src/'
-
-    return './' + file_path
+    # Handle src/ prefix - tests run from app/.test_temp/ so need ../src/
+    if from_test_temp:
+        if file_path.startswith('src/'):
+            return '../' + file_path  # ../src/logic/...
+        if file_path.startswith('app/src/'):
+            return '../' + file_path[4:]  # Remove 'app/' -> ../src/logic/...
+        # If no src prefix, assume it's relative to app/src
+        return '../src/' + file_path
+    else:
+        # Legacy behavior for backward compatibility
+        if file_path.startswith('src/'):
+            return './' + file_path[4:]  # Remove 'src/'
+        if file_path.startswith('app/src/'):
+            return './' + file_path[8:]  # Remove 'app/src/'
+        return './' + file_path
 
 
 def _is_console_log_removal(current: str, refactored: str) -> bool:
@@ -445,8 +460,14 @@ def _is_function_signature_change(current: str, refactored: str) -> bool:
     return current_sigs != refactored_sigs
 
 
-def _generate_import_test(func_name: str, import_path: str) -> str:
-    """Generate a test that verifies the function can be imported."""
+def _generate_import_test(func_name: str, import_path: str, from_test_temp: bool = True) -> str:
+    """Generate a test that verifies the function can be imported.
+
+    Args:
+        func_name: Name of the function to import
+        import_path: The import path (should be relative to app/.test_temp/ if from_test_temp)
+        from_test_temp: Whether the test runs from app/.test_temp/
+    """
     return f"""
 // Test: Can import {func_name}
 import {{ {func_name} }} from '{import_path}';
@@ -531,8 +552,12 @@ try {{
 
 
 def _generate_parse_test(file_path: str, working_dir: Path) -> str:
-    """Generate a test that verifies the file parses correctly."""
-    import_path = _resolve_import_path(file_path, working_dir)
+    """Generate a test that verifies the file parses correctly.
+
+    Tests are written to app/.test_temp/ so imports need ../src/ prefix.
+    """
+    # Use from_test_temp=True since tests run from app/.test_temp/
+    import_path = _resolve_import_path(file_path, working_dir, from_test_temp=True)
 
     return f"""
 // Test: File should parse without syntax errors
