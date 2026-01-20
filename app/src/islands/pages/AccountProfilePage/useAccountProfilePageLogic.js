@@ -265,7 +265,7 @@ export function useAccountProfilePageLogic() {
     needForSpace: '',
     specialNeeds: '',
     selectedDays: [], // 0-indexed day indices
-    transportationType: '',
+    transportationTypes: [], // Array of transport method values (multi-select)
     goodGuestReasons: [], // Array of IDs
     storageItems: [] // Array of IDs
   });
@@ -489,6 +489,16 @@ export function useAccountProfilePageLogic() {
       const dobTimestamp = userData['Date of Birth'];
       const dateOfBirth = dobTimestamp ? dobTimestamp.split('T')[0] : '';
 
+      // Parse transportation medium - handle both legacy string and new array format
+      const rawTransport = userData['transportation medium'];
+      let transportationTypes = [];
+      if (Array.isArray(rawTransport)) {
+        transportationTypes = rawTransport;
+      } else if (rawTransport && typeof rawTransport === 'string') {
+        // Legacy: single string value - convert to array
+        transportationTypes = [rawTransport];
+      }
+
       setFormData({
         firstName: userData['Name - First'] || '',
         lastName: userData['Name - Last'] || '',
@@ -498,7 +508,7 @@ export function useAccountProfilePageLogic() {
         needForSpace: userData['need for Space'] || '',
         specialNeeds: userData['special needs'] || '',
         selectedDays: dayNamesToIndices(userData['Recent Days Selected'] || []),
-        transportationType: userData['transportation medium'] || '',
+        transportationTypes,
         goodGuestReasons: userData['Reasons to Host me'] || [],
         storageItems: userData['About - Commonly Stored Items'] || []
       });
@@ -880,15 +890,112 @@ export function useAccountProfilePageLogic() {
 
   /**
    * Handle chip selection toggle (for reasons and storage items)
+   * AUTOSAVE: Immediately saves to database and shows toast notification
+   *
+   * @param {string} field - 'goodGuestReasons' or 'storageItems'
+   * @param {string} id - The ID of the item being toggled
    */
-  const handleChipToggle = useCallback((field, id) => {
-    setFormData(prev => {
-      const currentItems = prev[field];
-      const newItems = currentItems.includes(id)
-        ? currentItems.filter(i => i !== id)
-        : [...currentItems, id];
+  const handleChipToggle = useCallback(async (field, id) => {
+    // Determine if we're adding or removing
+    const currentItems = formData[field];
+    const isRemoving = currentItems.includes(id);
+    const newItems = isRemoving
+      ? currentItems.filter(i => i !== id)
+      : [...currentItems, id];
 
-      return { ...prev, [field]: newItems };
+    // Update local state immediately for responsive UI
+    setFormData(prev => ({
+      ...prev,
+      [field]: newItems
+    }));
+    setIsDirty(true);
+
+    // Get the item name for the toast notification
+    let itemName = '';
+    if (field === 'goodGuestReasons') {
+      const reason = goodGuestReasonsList.find(r => r._id === id);
+      itemName = reason?.name || 'Reason';
+    } else if (field === 'storageItems') {
+      const item = storageItemsList.find(i => i._id === id);
+      itemName = item?.Name || 'Item';
+    }
+
+    // Map field name to database column
+    const dbColumn = field === 'goodGuestReasons'
+      ? 'Reasons to Host me'
+      : 'About - Commonly Stored Items';
+
+    // Autosave to database
+    if (!profileUserId) {
+      console.error('[handleChipToggle] Cannot autosave: no user ID');
+      return;
+    }
+
+    try {
+      const { error: updateError } = await supabase
+        .from('user')
+        .update({
+          [dbColumn]: newItems,
+          'Modified Date': new Date().toISOString()
+        })
+        .eq('_id', profileUserId);
+
+      if (updateError) {
+        console.error('[handleChipToggle] Autosave error:', updateError);
+        // Revert local state on error
+        setFormData(prev => ({
+          ...prev,
+          [field]: currentItems
+        }));
+        if (window.showToast) {
+          window.showToast({
+            title: 'Save Failed',
+            content: `Could not save "${itemName}". Please try again.`,
+            type: 'error',
+            duration: 3000
+          });
+        }
+        return;
+      }
+
+      // Show success toast
+      if (window.showToast) {
+        const action = isRemoving ? 'Removed' : 'Added';
+        window.showToast({
+          title: `${action}: ${itemName}`,
+          type: 'success',
+          duration: 2000
+        });
+      }
+    } catch (err) {
+      console.error('[handleChipToggle] Unexpected error:', err);
+      // Revert local state on error
+      setFormData(prev => ({
+        ...prev,
+        [field]: currentItems
+      }));
+      if (window.showToast) {
+        window.showToast({
+          title: 'Save Failed',
+          content: 'An unexpected error occurred. Please try again.',
+          type: 'error',
+          duration: 3000
+        });
+      }
+    }
+  }, [formData, goodGuestReasonsList, storageItemsList, profileUserId]);
+
+  /**
+   * Handle transportation method toggle (multi-select)
+   */
+  const handleTransportToggle = useCallback((transportValue) => {
+    setFormData(prev => {
+      const currentTypes = prev.transportationTypes;
+      const newTypes = currentTypes.includes(transportValue)
+        ? currentTypes.filter(t => t !== transportValue)
+        : [...currentTypes, transportValue];
+
+      return { ...prev, transportationTypes: newTypes };
     });
     setIsDirty(true);
   }, []);
@@ -947,7 +1054,7 @@ export function useAccountProfilePageLogic() {
         'need for Space': formData.needForSpace.trim(),
         'special needs': formData.specialNeeds.trim(),
         'Recent Days Selected': indicesToDayNames(formData.selectedDays),
-        'transportation medium': formData.transportationType,
+        'transportation medium': formData.transportationTypes, // Now an array
         'Reasons to Host me': formData.goodGuestReasons,
         'About - Commonly Stored Items': formData.storageItems,
         'Modified Date': new Date().toISOString()
@@ -985,6 +1092,15 @@ export function useAccountProfilePageLogic() {
       const dobTimestamp = profileData['Date of Birth'];
       const dateOfBirth = dobTimestamp ? dobTimestamp.split('T')[0] : '';
 
+      // Parse transportation medium - handle both legacy string and new array format
+      const rawTransport = profileData['transportation medium'];
+      let transportationTypes = [];
+      if (Array.isArray(rawTransport)) {
+        transportationTypes = rawTransport;
+      } else if (rawTransport && typeof rawTransport === 'string') {
+        transportationTypes = [rawTransport];
+      }
+
       setFormData({
         firstName: profileData['Name - First'] || '',
         lastName: profileData['Name - Last'] || '',
@@ -994,7 +1110,7 @@ export function useAccountProfilePageLogic() {
         needForSpace: profileData['need for Space'] || '',
         specialNeeds: profileData['special needs'] || '',
         selectedDays: dayNamesToIndices(profileData['Recent Days Selected'] || []),
-        transportationType: profileData['transportation medium'] || '',
+        transportationTypes,
         goodGuestReasons: profileData['Reasons to Host me'] || [],
         storageItems: profileData['About - Commonly Stored Items'] || []
       });
@@ -1373,6 +1489,7 @@ export function useAccountProfilePageLogic() {
     handleFieldChange,
     handleDayToggle,
     handleChipToggle,
+    handleTransportToggle,
 
     // Save/Cancel
     handleSave,
