@@ -583,6 +583,7 @@ export default function Header({ autoShowLogin = false }) {
               aria-haspopup="true"
               onClick={(e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 toggleDropdown('host');
               }}
               onKeyDown={(e) => handleDropdownKeyDown(e, 'host')}
@@ -606,7 +607,7 @@ export default function Header({ autoShowLogin = false }) {
               </svg>
             </a>
             <div
-              className={`dropdown-menu ${activeDropdown === 'host' ? 'active' : ''}`}
+              className={`dropdown-menu dropdown-menu-host ${activeDropdown === 'host' ? 'active' : ''}`}
               role="menu"
               aria-label="Host with Us menu"
             >
@@ -709,6 +710,24 @@ export default function Header({ autoShowLogin = false }) {
                         >
                           {hostMenuConfig.cta.label}
                         </a>
+
+                        {/* Mobile-only Auth Link - only show when not logged in */}
+                        {!currentUser && (
+                          <a
+                            href="#auth"
+                            className="dropdown-item mobile-auth-link"
+                            role="menuitem"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setActiveDropdown(null);
+                              setMobileMenuActive(false);
+                              setAuthModalInitialView('initial');
+                              setShowAuthModal(true);
+                            }}
+                          >
+                            <span className="dropdown-title">Sign up</span>
+                          </a>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -729,6 +748,7 @@ export default function Header({ autoShowLogin = false }) {
               aria-haspopup="true"
               onClick={(e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 toggleDropdown('stay');
               }}
               onKeyDown={(e) => handleDropdownKeyDown(e, 'stay')}
@@ -752,7 +772,7 @@ export default function Header({ autoShowLogin = false }) {
               </svg>
             </a>
             <div
-              className={`dropdown-menu ${activeDropdown === 'stay' ? 'active' : ''}`}
+              className={`dropdown-menu dropdown-menu-guest ${activeDropdown === 'stay' ? 'active' : ''}`}
               role="menu"
               aria-label="Stay with Us menu"
             >
@@ -855,6 +875,24 @@ export default function Header({ autoShowLogin = false }) {
                         >
                           {guestMenuConfig.cta.label}
                         </a>
+
+                        {/* Mobile-only Auth Link - only show when not logged in */}
+                        {!currentUser && (
+                          <a
+                            href="#auth"
+                            className="dropdown-item mobile-auth-link"
+                            role="menuitem"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setActiveDropdown(null);
+                              setMobileMenuActive(false);
+                              setAuthModalInitialView('initial');
+                              setShowAuthModal(true);
+                            }}
+                          >
+                            <span className="dropdown-title">Sign up</span>
+                          </a>
+                        )}
                       </div>
                     </div>
                   </div>

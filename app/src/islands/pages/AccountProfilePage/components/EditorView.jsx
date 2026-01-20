@@ -46,7 +46,9 @@ export default function EditorView({
   // Rental application props (guest-only)
   rentalApplicationStatus = 'not_started',
   rentalApplicationProgress = 0,
-  onOpenRentalWizard
+  onOpenRentalWizard,
+  // Email verification state
+  isVerifyingEmail = false
 }) {
   return (
     <>
@@ -103,6 +105,7 @@ export default function EditorView({
         onVerifyGovId={onVerifyGovId}
         onConnectLinkedIn={onConnectLinkedIn}
         onEditPhone={onEditPhone}
+        isVerifyingEmail={isVerifyingEmail}
       />
 
       {/* Guest-only: Reasons to Host Me */}

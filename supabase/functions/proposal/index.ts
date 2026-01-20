@@ -35,7 +35,7 @@ Deno.serve(async (req: Request) => {
     console.log(`[proposal] Action: ${action}`);
 
     // Validate action
-    const validActions = ['create', 'update', 'get', 'suggest', 'create_suggested'];
+    const validActions = ['create', 'update', 'get', 'suggest', 'create_suggested', 'create_mockup'];
     if (!validActions.includes(action)) {
       return new Response(
         JSON.stringify({ success: false, error: `Invalid action: ${action}` }),
@@ -123,6 +123,17 @@ Deno.serve(async (req: Request) => {
         // No authentication required - internal tool only
         // Access control is handled by route protection (/_internal/* paths)
         result = await handleCreateSuggested(payload, supabase);
+        break;
+      }
+
+      case 'create_mockup': {
+        console.log('[proposal] Loading create_mockup handler...');
+        const { handleCreateMockup } = await import("./actions/create_mockup.ts");
+        console.log('[proposal] Create_mockup handler loaded');
+
+        // No authentication required - internal service call only
+        // Access control via service role key from listing edge function
+        result = await handleCreateMockup(payload, supabase);
         break;
       }
 

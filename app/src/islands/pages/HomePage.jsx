@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import SearchScheduleSelector from '../shared/SearchScheduleSelector.jsx';
-import AiSignupMarketReport from '../shared/AiSignupMarketReport';
+import AiSignupMarketReport from '../shared/AiSignupMarketReport/AiSignupMarketReport.jsx';
 import LocalJourneySection from './LocalJourneySection.jsx';
 import { checkAuthStatus } from '../../lib/auth.js';
 import { supabase } from '../../lib/supabase.js';
@@ -115,9 +115,6 @@ function Hero({ onExploreRentals, onMoreDetails }) {
           <button className="cta-button cta-primary" onClick={onExploreRentals}>
             Explore Rentals
           </button>
-          <button className="cta-button cta-secondary" onClick={onMoreDetails}>
-            More Details
-          </button>
         </div>
 
         <div className="hero-stats">
@@ -190,19 +187,19 @@ function ScheduleSection() {
     {
       id: 'weeknight',
       label: 'Weeknights',
-      lottieUrl: 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800679546x885675666145660000/Days-of-the-week-lottie.json',
+      lottieUrl: '/assets/lotties/days-of-the-week.json',
       days: '2,3,4,5,6',
     },
     {
       id: 'weekend',
       label: 'Weekends',
-      lottieUrl: 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800745354x526611430283845360/weekend-lottie%20%281%29.json',
+      lottieUrl: '/assets/lotties/weekends.json',
       days: '6,7,1,2',
     },
     {
       id: 'fullweek',
-      label: 'Full Week',
-      lottieUrl: 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800780466x583314971697148400/Weeks-of-the-month-lottie.json',
+      label: 'Weeks of the Month',
+      lottieUrl: '/assets/lotties/weeks-of-the-month.json',
       days: '1,2,3,4,5,6,7',
     },
   ];
@@ -382,12 +379,11 @@ function FeaturedSpacesSection() {
     init();
   }, []);
 
-  // Fetch Manhattan listings
+  // Fetch featured listings (any borough, prioritizing those with photos)
   const fetchFeaturedListings = useCallback(async () => {
-    if (!manhattanId) return;
-
     setIsLoadingListings(true);
     try {
+      // Query for complete, active listings - fetch extra to filter for those with photos
       const query = supabase
         .from('listing')
         .select(`
@@ -402,10 +398,10 @@ function FeaturedSpacesSection() {
           "Days Available (List of Days)"
         `)
         .eq('"Complete"', true)
-        .eq('"Location - Borough"', manhattanId)
         .or('"Active".eq.true,"Active".is.null')
         .or('"Location - Address".not.is.null,"Location - slightly different address".not.is.null')
-        .limit(3);
+        .not('"Features - Photos"', 'is', null)
+        .limit(20);
 
       const { data: listings, error } = await query;
 
@@ -432,19 +428,48 @@ function FeaturedSpacesSection() {
         ? await fetchPhotoUrls(legacyPhotoIds)
         : {};
 
-      const transformedListings = listings.map(listing => {
+      // Helper to extract photo URL from a listing
+      const extractPhotoUrl = (listing) => {
         const photos = parseJsonArray(listing['Features - Photos']);
         const firstPhoto = photos?.[0];
 
-        let photoUrl = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&h=400&fit=crop';
         if (typeof firstPhoto === 'object' && firstPhoto !== null) {
+          // New embedded format: photo is an object with url/Photo field
           let url = firstPhoto.url || firstPhoto.Photo || '';
           if (url.startsWith('//')) url = 'https:' + url;
-          if (url) photoUrl = url;
-        } else if (typeof firstPhoto === 'string' && photoMap[firstPhoto]) {
-          photoUrl = photoMap[firstPhoto];
+          return url || null;
+        } else if (typeof firstPhoto === 'string') {
+          // String format: could be a direct URL or a legacy ID
+          if (firstPhoto.startsWith('http://') || firstPhoto.startsWith('https://') || firstPhoto.startsWith('//')) {
+            return firstPhoto.startsWith('//') ? 'https:' + firstPhoto : firstPhoto;
+          } else if (photoMap[firstPhoto]) {
+            return photoMap[firstPhoto];
+          }
         }
+        return null;
+      };
 
+      // Prefer listings with valid photos, but fall back to listings without if needed
+      const listingsWithPhotoInfo = listings.map(listing => ({
+        listing,
+        photoUrl: extractPhotoUrl(listing)
+      }));
+
+      // Separate listings with and without photos
+      const withPhotos = listingsWithPhotoInfo.filter(({ photoUrl }) => photoUrl !== null);
+      const withoutPhotos = listingsWithPhotoInfo.filter(({ photoUrl }) => photoUrl === null);
+
+      // Take up to 3: prioritize those with photos, fill remainder with those without
+      const selectedListings = [...withPhotos, ...withoutPhotos].slice(0, 3);
+
+      // Different fallback images for visual variety when photos are missing
+      const fallbackImages = [
+        'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&h=400&fit=crop',
+        'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&h=400&fit=crop',
+        'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop',
+      ];
+
+      const transformedListings = selectedListings.map(({ listing, photoUrl }, index) => {
         const neighborhoodName = getNeighborhoodName(listing['Location - Hood']);
         const boroughName = getBoroughName(listing['Location - Borough']);
         const location = [neighborhoodName, boroughName].filter(Boolean).join(', ') || 'New York, NY';
@@ -455,7 +480,7 @@ function FeaturedSpacesSection() {
           id: listing._id,
           title: listing['Name'] || 'NYC Space',
           location,
-          image: photoUrl,
+          image: photoUrl || fallbackImages[index % fallbackImages.length],
           bedrooms: listing['Features - Qty Bedrooms'] || 0,
           bathrooms: listing['Features - Qty Bathrooms'] || 0,
           availableDays,
@@ -469,7 +494,7 @@ function FeaturedSpacesSection() {
     } finally {
       setIsLoadingListings(false);
     }
-  }, [manhattanId]);
+  }, []);
 
   useEffect(() => {
     fetchFeaturedListings();

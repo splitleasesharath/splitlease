@@ -2,27 +2,25 @@ import { useState, useEffect } from 'react';
 import Header from '../../shared/Header';
 import Footer from '../../shared/Footer';
 import { EditListingDetails } from '../../shared/EditListingDetails/EditListingDetails';
-import ScheduleCohost from '../../shared/ScheduleCohost';
-import ImportListingReviewsModal from '../../shared/ImportListingReviewsModal';
-import AIImportAssistantModal from '../../shared/AIImportAssistantModal';
+import ScheduleCohost from '../../shared/ScheduleCohost/ScheduleCohost.jsx';
+import ImportListingReviewsModal from '../../shared/ImportListingReviewsModal/ImportListingReviewsModal.jsx';
+import AIImportAssistantModal from '../../shared/AIImportAssistantModal/AIImportAssistantModal.jsx';
 import ReferralModal from '../AccountProfilePage/components/ReferralModal';
 import { ListingDashboardProvider, useListingDashboard } from './context/ListingDashboardContext';
-import {
-  NavigationHeader,
-  ActionCardGrid,
-  AlertBanner,
-  SecondaryActions,
-  PropertyInfoSection,
-  DetailsSection,
-  AmenitiesSection,
-  DescriptionSection,
-  PricingSection,
-  PricingEditSection,
-  RulesSection,
-  AvailabilitySection,
-  PhotosSection,
-  CancellationPolicySection,
-} from './components';
+import NavigationHeader from './components/NavigationHeader.jsx';
+import ActionCardGrid from './components/ActionCardGrid.jsx';
+import AlertBanner from './components/AlertBanner.jsx';
+import SecondaryActions from './components/SecondaryActions.jsx';
+import PropertyInfoSection from './components/PropertyInfoSection.jsx';
+import DetailsSection from './components/DetailsSection.jsx';
+import AmenitiesSection from './components/AmenitiesSection.jsx';
+import DescriptionSection from './components/DescriptionSection.jsx';
+import PricingSection from './components/PricingSection.jsx';
+import PricingEditSection from './components/PricingEditSection.jsx';
+import RulesSection from './components/RulesSection.jsx';
+import AvailabilitySection from './components/AvailabilitySection.jsx';
+import PhotosSection from './components/PhotosSection.jsx';
+import CancellationPolicySection from './components/CancellationPolicySection.jsx';
 import '../../../styles/components/listing-dashboard.css';
 import '../AccountProfilePage/AccountProfilePage.css'; // For ReferralModal styles
 

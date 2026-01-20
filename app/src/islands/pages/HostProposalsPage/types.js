@@ -452,3 +452,210 @@ export function getCheckInOutFromNights(nightsSelected) {
     checkOutDay: dayNames[checkOutIndex] || ''
   };
 }
+
+/* ========================================
+   V7 SECTION GROUPING FUNCTIONS
+   ======================================== */
+
+/**
+ * Section identifiers for V7 proposal grouping
+ * @typedef {'actionNeeded' | 'inProgress' | 'closed'} ProposalSectionKey
+ */
+
+/**
+ * Statuses that require host action
+ * New proposals, host review, or guest counteroffers
+ */
+const ACTION_NEEDED_STATUSES = [
+  'proposal_submitted',
+  'host_review'
+];
+
+/**
+ * Statuses that indicate in-progress negotiations/lease process
+ */
+const IN_PROGRESS_STATUSES = [
+  'accepted',
+  'host_counteroffer',
+  'lease_documents_sent',
+  'lease_documents_signatures',
+  'lease_signed'
+];
+
+/**
+ * Statuses that indicate closed/terminal proposals
+ */
+const CLOSED_STATUSES = [
+  'cancelled_by_guest',
+  'rejected_by_host',
+  'cancelled_by_splitlease',
+  'payment_submitted'
+];
+
+/**
+ * Get the status key from a proposal's status field
+ * Handles both string and object status formats
+ *
+ * @param {Object} proposal - The proposal object
+ * @returns {string} The status key
+ */
+function getProposalStatusKey(proposal) {
+  const status = proposal?.status;
+  if (!status) return '';
+  if (typeof status === 'string') return status;
+  return status.id || status._id || status.key || '';
+}
+
+/**
+ * Check if a proposal has a guest counteroffer
+ * This is determined by having a guest_counteroffer field or
+ * the most recent counteroffer being from the guest
+ *
+ * @param {Object} proposal - The proposal object
+ * @returns {boolean} True if guest has counteroffered
+ */
+function hasGuestCounteroffer(proposal) {
+  // Check for explicit guest counteroffer flag or field
+  if (proposal?.has_guest_counteroffer) return true;
+  if (proposal?.guest_counteroffer) return true;
+
+  // Check if last_modified_by is 'guest' and status is still negotiation phase
+  const statusKey = getProposalStatusKey(proposal);
+  if (
+    proposal?.last_modified_by === 'guest' &&
+    (statusKey === 'host_review' || statusKey === 'proposal_submitted')
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Group proposals into V7 sections: Action Needed, In Progress, Closed
+ *
+ * @param {Array} proposals - Array of proposal objects
+ * @returns {{ actionNeeded: Array, inProgress: Array, closed: Array }} Grouped proposals
+ */
+export function groupProposalsBySection(proposals) {
+  const result = {
+    actionNeeded: [],
+    inProgress: [],
+    closed: []
+  };
+
+  if (!Array.isArray(proposals)) return result;
+
+  for (const proposal of proposals) {
+    const statusKey = getProposalStatusKey(proposal);
+
+    // Guest counteroffers always go to Action Needed
+    if (hasGuestCounteroffer(proposal)) {
+      result.actionNeeded.push(proposal);
+      continue;
+    }
+
+    // Check status categories
+    if (ACTION_NEEDED_STATUSES.includes(statusKey)) {
+      result.actionNeeded.push(proposal);
+    } else if (IN_PROGRESS_STATUSES.includes(statusKey)) {
+      result.inProgress.push(proposal);
+    } else if (CLOSED_STATUSES.includes(statusKey)) {
+      result.closed.push(proposal);
+    } else {
+      // Unknown status - default to in progress
+      result.inProgress.push(proposal);
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Get the card styling variant based on proposal status
+ * Used for CSS class selection
+ *
+ * @param {Object} proposal - The proposal object
+ * @returns {'action-needed' | 'accepted' | 'counteroffer' | 'declined' | 'default'} Card variant
+ */
+export function getCardVariant(proposal) {
+  const statusKey = getProposalStatusKey(proposal);
+
+  // Guest counteroffer - yellow/warning
+  if (hasGuestCounteroffer(proposal)) {
+    return 'counteroffer';
+  }
+
+  // Action needed statuses - purple
+  if (ACTION_NEEDED_STATUSES.includes(statusKey)) {
+    return 'action-needed';
+  }
+
+  // Accepted/in-progress - green
+  if (statusKey === 'accepted' || statusKey.startsWith('lease_')) {
+    return 'accepted';
+  }
+
+  // Host counteroffer - default (waiting on guest)
+  if (statusKey === 'host_counteroffer') {
+    return 'default';
+  }
+
+  // Declined/cancelled - red
+  if (CLOSED_STATUSES.includes(statusKey) && statusKey !== 'payment_submitted') {
+    return 'declined';
+  }
+
+  return 'default';
+}
+
+/**
+ * Get the status tag configuration for display in card header
+ *
+ * @param {Object} proposal - The proposal object
+ * @returns {{ text: string, variant: string }} Status tag config
+ */
+export function getStatusTagConfig(proposal) {
+  const statusKey = getProposalStatusKey(proposal);
+
+  // Guest counteroffer
+  if (hasGuestCounteroffer(proposal)) {
+    return { text: 'Guest Counter', variant: 'counteroffer' };
+  }
+
+  // Map status to display config
+  const statusMap = {
+    proposal_submitted: { text: 'Review', variant: 'attention' },
+    host_review: { text: 'Review', variant: 'attention' },
+    host_counteroffer: { text: 'Your Counter', variant: 'default' },
+    accepted: { text: 'Accepted', variant: 'success' },
+    lease_documents_sent: { text: 'Lease Sent', variant: 'success' },
+    lease_documents_signatures: { text: 'Awaiting Signatures', variant: 'success' },
+    lease_signed: { text: 'Lease Signed', variant: 'success' },
+    payment_submitted: { text: 'Active', variant: 'success' },
+    cancelled_by_guest: { text: 'Cancelled', variant: 'declined' },
+    rejected_by_host: { text: 'Declined', variant: 'declined' },
+    cancelled_by_splitlease: { text: 'Cancelled', variant: 'declined' }
+  };
+
+  return statusMap[statusKey] || { text: 'Pending', variant: 'default' };
+}
+
+/**
+ * Check if a proposal is new (submitted recently)
+ * Used to show "New" badge
+ *
+ * @param {Object} proposal - The proposal object
+ * @param {number} hoursThreshold - Hours to consider as "new" (default: 48)
+ * @returns {boolean} True if proposal is new
+ */
+export function isNewProposal(proposal, hoursThreshold = 48) {
+  const createdAt = proposal?.created_at || proposal?.Created_Date || proposal?.createdAt;
+  if (!createdAt) return false;
+
+  const createdDate = new Date(createdAt);
+  const now = new Date();
+  const hoursDiff = (now - createdDate) / (1000 * 60 * 60);
+
+  return hoursDiff <= hoursThreshold;
+}

@@ -1,0 +1,2015 @@
+{
+  "generated_at": "2026-01-18T20:49:20.081246",
+  "root_dir": "C:\\Users\\Split Lease\\Documents\\Split Lease\\app\\src\\logic",
+  "content_hash": "c9af9b9a42d4d1f6a08f95d19392f5c6351467244ea7a821c775ed6151b53d9b",
+  "total_files": 68,
+  "total_exports": 185,
+  "total_imports": 53,
+  "parse_error_count": 0,
+  "symbol_table": {
+    "calculators\\pricing\\calculateFourWeekRent.js": [
+      {
+        "name": "calculateFourWeekRent",
+        "type": "declaration",
+        "line": 20,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "calculators\\pricing\\calculateGuestFacingPrice.js": [
+      {
+        "name": "calculateGuestFacingPrice",
+        "type": "declaration",
+        "line": 35,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "calculators\\pricing\\calculatePricingBreakdown.js": [
+      {
+        "name": "calculatePricingBreakdown",
+        "type": "declaration",
+        "line": 29,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "calculators\\pricing\\calculateReservationTotal.js": [
+      {
+        "name": "calculateReservationTotal",
+        "type": "declaration",
+        "line": 20,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "calculators\\pricing\\getNightlyRateByFrequency.js": [
+      {
+        "name": "getNightlyRateByFrequency",
+        "type": "declaration",
+        "line": 26,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "calculators\\reminders\\calculateNextSendTime.js": [
+      {
+        "name": "calculateNextSendTime",
+        "type": "declaration",
+        "line": 19,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "calculateTimeUntilSend",
+        "type": "declaration",
+        "line": 47,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "calculators\\reviews\\calculateFormCompletion.js": [
+      {
+        "name": "calculateFormCompletion",
+        "type": "declaration",
+        "line": 12,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "calculators\\reviews\\calculateReviewScore.js": [
+      {
+        "name": "calculateReviewScore",
+        "type": "declaration",
+        "line": 18,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "calculators\\scheduling\\calculateCheckInOutDays.js": [
+      {
+        "name": "calculateCheckInOutDays",
+        "type": "declaration",
+        "line": 27,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "calculators\\scheduling\\calculateCheckInOutFromDays.js": [
+      {
+        "name": "calculateCheckInOutFromDays",
+        "type": "declaration",
+        "line": 8,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "calculators\\scheduling\\calculateNextAvailableCheckIn.js": [
+      {
+        "name": "calculateNextAvailableCheckIn",
+        "type": "declaration",
+        "line": 29,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "calculators\\scheduling\\calculateNightsFromDays.js": [
+      {
+        "name": "calculateNightsFromDays",
+        "type": "declaration",
+        "line": 19,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "calculators\\scheduling\\getNextOccurrenceOfDay.js": [
+      {
+        "name": "getNextOccurrenceOfDay",
+        "type": "declaration",
+        "line": 10,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "calculators\\scheduling\\isContiguousSelection.js": [
+      {
+        "name": "isContiguousSelection",
+        "type": "declaration",
+        "line": 8,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "calculators\\scheduling\\shiftMoveInDateIfPast.js": [
+      {
+        "name": "shiftMoveInDateIfPast",
+        "type": "declaration",
+        "line": 37,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "constants\\pricingConstants.js": [
+      {
+        "name": "PRICING_CONSTANTS",
+        "type": "declaration",
+        "line": 5,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "constants\\proposalStages.js": [
+      {
+        "name": "PROPOSAL_STAGES",
+        "type": "declaration",
+        "line": 16,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getStageById",
+        "type": "declaration",
+        "line": 72,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getStageByName",
+        "type": "declaration",
+        "line": 84,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getStageProgress",
+        "type": "declaration",
+        "line": 100,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getCompletedStages",
+        "type": "declaration",
+        "line": 121,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getRemainingStages",
+        "type": "declaration",
+        "line": 133,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isStageCompleted",
+        "type": "declaration",
+        "line": 146,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isCurrentStage",
+        "type": "declaration",
+        "line": 159,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isStagePending",
+        "type": "declaration",
+        "line": 172,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getPreviousStage",
+        "type": "declaration",
+        "line": 184,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getNextStage",
+        "type": "declaration",
+        "line": 196,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "formatStageDisplay",
+        "type": "declaration",
+        "line": 209,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getAllStagesFormatted",
+        "type": "declaration",
+        "line": 241,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "constants\\proposalStatuses.js": [
+      {
+        "name": "PROPOSAL_STATUSES",
+        "type": "declaration",
+        "line": 15,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getStatusConfig",
+        "type": "declaration",
+        "line": 240,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getStageFromStatus",
+        "type": "declaration",
+        "line": 274,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getUsualOrder",
+        "type": "declaration",
+        "line": 284,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "shouldShowStatusBanner",
+        "type": "declaration",
+        "line": 295,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getActionsForStatus",
+        "type": "declaration",
+        "line": 310,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isActiveStatus",
+        "type": "declaration",
+        "line": 320,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isTerminalStatus",
+        "type": "declaration",
+        "line": 330,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isCompletedStatus",
+        "type": "declaration",
+        "line": 341,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isSuggestedProposal",
+        "type": "declaration",
+        "line": 351,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getStatusesByColor",
+        "type": "declaration",
+        "line": 361,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getStatusesByStage",
+        "type": "declaration",
+        "line": 370,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isPendingConfirmationProposal",
+        "type": "declaration",
+        "line": 380,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "constants\\reviewCategories.js": [
+      {
+        "name": "REVIEW_CATEGORY_COUNT",
+        "type": "declaration",
+        "line": 6,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "REVIEW_CATEGORIES",
+        "type": "declaration",
+        "line": 8,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "RATING_SCALE_LABELS",
+        "type": "declaration",
+        "line": 71,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "constants\\searchConstants.js": [
+      {
+        "name": "PRICE_TIERS",
+        "type": "declaration",
+        "line": 1,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "VALID_PRICE_TIERS",
+        "type": "declaration",
+        "line": 9,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "SORT_OPTIONS",
+        "type": "declaration",
+        "line": 11,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "VALID_SORT_OPTIONS",
+        "type": "declaration",
+        "line": 18,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "WEEK_PATTERNS",
+        "type": "declaration",
+        "line": 20,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "VALID_WEEK_PATTERNS",
+        "type": "declaration",
+        "line": 27,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "processors\\display\\formatHostName.js": [
+      {
+        "name": "formatHostName",
+        "type": "declaration",
+        "line": 22,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "processors\\listing\\extractListingCoordinates.js": [
+      {
+        "name": "extractListingCoordinates",
+        "type": "declaration",
+        "line": 26,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "processors\\listing\\parseJsonArrayField.js": [
+      {
+        "name": "parseJsonArrayField",
+        "type": "declaration",
+        "line": 40,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "parseJsonArrayFieldOptional",
+        "type": "declaration",
+        "line": 110,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "processors\\proposal\\processProposalData.js": [
+      {
+        "name": "processProposalData",
+        "type": "declaration",
+        "line": 36,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "processors\\proposals\\processProposalData.js": [
+      {
+        "name": "processListingData",
+        "type": "declaration",
+        "line": 18,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "processHostData",
+        "type": "declaration",
+        "line": 53,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "processVirtualMeetingData",
+        "type": "declaration",
+        "line": 78,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "processProposalData",
+        "type": "declaration",
+        "line": 105,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getProposalDisplayText",
+        "type": "declaration",
+        "line": 191,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "formatPrice",
+        "type": "declaration",
+        "line": 206,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "formatDate",
+        "type": "declaration",
+        "line": 224,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "formatDateTime",
+        "type": "declaration",
+        "line": 243,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getEffectiveTerms",
+        "type": "declaration",
+        "line": 267,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "processors\\reminders\\reminderAdapter.js": [
+      {
+        "name": "adaptReminderForSubmission",
+        "type": "declaration",
+        "line": 22,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "adaptReminderFromDatabase",
+        "type": "declaration",
+        "line": 48,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "adaptRemindersFromDatabase",
+        "type": "declaration",
+        "line": 86,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "adaptReminderUpdateForSubmission",
+        "type": "declaration",
+        "line": 102,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "processors\\reminders\\reminderFormatter.js": [
+      {
+        "name": "formatScheduledTime",
+        "type": "declaration",
+        "line": 52,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "formatRelativeTime",
+        "type": "declaration",
+        "line": 85,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "formatReminderType",
+        "type": "declaration",
+        "line": 131,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getReminderTypeOptions",
+        "type": "declaration",
+        "line": 140,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "formatReminderStatus",
+        "type": "declaration",
+        "line": 155,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "formatDeliveryStatus",
+        "type": "declaration",
+        "line": 166,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "formatNotificationChannels",
+        "type": "declaration",
+        "line": 182,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "truncateMessage",
+        "type": "declaration",
+        "line": 206,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "processors\\reviews\\reviewAdapter.js": [
+      {
+        "name": "createEmptyRatings",
+        "type": "declaration",
+        "line": 13,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "adaptReviewForSubmission",
+        "type": "declaration",
+        "line": 35,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "adaptReviewFromApi",
+        "type": "declaration",
+        "line": 70,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "processors\\user\\processProfilePhotoUrl.js": [
+      {
+        "name": "processProfilePhotoUrl",
+        "type": "declaration",
+        "line": 22,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "processors\\user\\processUserData.js": [
+      {
+        "name": "processUserData",
+        "type": "declaration",
+        "line": 23,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "processors\\user\\processUserDisplayName.js": [
+      {
+        "name": "processUserDisplayName",
+        "type": "declaration",
+        "line": 24,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "processors\\user\\processUserInitials.js": [
+      {
+        "name": "processUserInitials",
+        "type": "declaration",
+        "line": 22,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "rules\\auth\\isProtectedPage.js": [
+      {
+        "name": "isProtectedPage",
+        "type": "declaration",
+        "line": 21,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "rules\\auth\\isSessionValid.js": [
+      {
+        "name": "isSessionValid",
+        "type": "declaration",
+        "line": 18,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "rules\\pricing\\isValidDayCountForPricing.js": [
+      {
+        "name": "isValidDayCountForPricing",
+        "type": "declaration",
+        "line": 19,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "rules\\proposals\\canAcceptProposal.js": [
+      {
+        "name": "canAcceptProposal",
+        "type": "declaration",
+        "line": 27,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "rules\\proposals\\canCancelProposal.js": [
+      {
+        "name": "canCancelProposal",
+        "type": "declaration",
+        "line": 27,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "rules\\proposals\\canEditProposal.js": [
+      {
+        "name": "canEditProposal",
+        "type": "declaration",
+        "line": 23,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "rules\\proposals\\determineProposalStage.js": [
+      {
+        "name": "determineProposalStage",
+        "type": "declaration",
+        "line": 26,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "rules\\proposals\\proposalButtonRules.js": [
+      {
+        "name": "computeProposalButtonStates",
+        "type": "declaration",
+        "line": 8,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "rules\\proposals\\proposalRules.js": [
+      {
+        "name": "canCancelProposal",
+        "type": "declaration",
+        "line": 26,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "canModifyProposal",
+        "type": "declaration",
+        "line": 63,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "hasReviewableCounteroffer",
+        "type": "declaration",
+        "line": 80,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "canAcceptCounteroffer",
+        "type": "declaration",
+        "line": 99,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "canDeclineCounteroffer",
+        "type": "declaration",
+        "line": 109,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "canSubmitRentalApplication",
+        "type": "declaration",
+        "line": 119,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "canReviewDocuments",
+        "type": "declaration",
+        "line": 135,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "canRequestVirtualMeeting",
+        "type": "declaration",
+        "line": 152,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "canSendMessage",
+        "type": "declaration",
+        "line": 174,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isProposalActive",
+        "type": "declaration",
+        "line": 191,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isProposalCancelled",
+        "type": "declaration",
+        "line": 207,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isProposalRejected",
+        "type": "declaration",
+        "line": 226,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isLeaseActivated",
+        "type": "declaration",
+        "line": 242,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "requiresSpecialCancellationConfirmation",
+        "type": "declaration",
+        "line": 259,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getCancelButtonText",
+        "type": "declaration",
+        "line": 276,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getCancellationReasonOptions",
+        "type": "declaration",
+        "line": 298,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "needsRentalApplicationSubmission",
+        "type": "declaration",
+        "line": 330,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isSLSuggestedProposal",
+        "type": "named",
+        "line": 362,
+        "source_file": null,
+        "original_name": "isSuggestedProposal"
+      },
+      {
+        "name": "canConfirmSuggestedProposal",
+        "type": "declaration",
+        "line": 370,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getNextStatusAfterConfirmation",
+        "type": "declaration",
+        "line": 383,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "rules\\proposals\\virtualMeetingRules.js": [
+      {
+        "name": "VM_STATES",
+        "type": "declaration",
+        "line": 26,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "areAllDatesExpired",
+        "type": "declaration",
+        "line": 69,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getVirtualMeetingState",
+        "type": "declaration",
+        "line": 100,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "canRequestNewMeeting",
+        "type": "declaration",
+        "line": 142,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "canRespondToMeeting",
+        "type": "declaration",
+        "line": 167,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isVMButtonDisabled",
+        "type": "declaration",
+        "line": 187,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "canJoinMeeting",
+        "type": "declaration",
+        "line": 210,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "canViewMeetingDetails",
+        "type": "declaration",
+        "line": 228,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "canCancelVMRequest",
+        "type": "declaration",
+        "line": 243,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getVMButtonText",
+        "type": "declaration",
+        "line": 265,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getVMButtonStyle",
+        "type": "declaration",
+        "line": 305,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getVMStateInfo",
+        "type": "declaration",
+        "line": 337,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "rules\\reminders\\reminderScheduling.js": [
+      {
+        "name": "isValidScheduleTime",
+        "type": "declaration",
+        "line": 18,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "canScheduleReminder",
+        "type": "declaration",
+        "line": 46,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "requiresFallbackContact",
+        "type": "declaration",
+        "line": 86,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isReminderDue",
+        "type": "declaration",
+        "line": 110,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isDelivered",
+        "type": "declaration",
+        "line": 138,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "hasDeliveryFailed",
+        "type": "declaration",
+        "line": 149,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "rules\\reminders\\reminderValidation.js": [
+      {
+        "name": "canCreateReminder",
+        "type": "declaration",
+        "line": 14,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "canUpdateReminder",
+        "type": "declaration",
+        "line": 31,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "canDeleteReminder",
+        "type": "declaration",
+        "line": 49,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "canSubmitReminder",
+        "type": "declaration",
+        "line": 76,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isValidReminderMessage",
+        "type": "declaration",
+        "line": 113,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "canEditReminder",
+        "type": "declaration",
+        "line": 129,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "rules\\reviews\\reviewValidation.js": [
+      {
+        "name": "isReviewComplete",
+        "type": "declaration",
+        "line": 15,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "isValidRating",
+        "type": "declaration",
+        "line": 36,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "canSubmitReview",
+        "type": "declaration",
+        "line": 48,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "hasExistingReview",
+        "type": "declaration",
+        "line": 63,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "rules\\scheduling\\isDateBlocked.js": [
+      {
+        "name": "isDateBlocked",
+        "type": "declaration",
+        "line": 22,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "rules\\scheduling\\isDateInRange.js": [
+      {
+        "name": "isDateInRange",
+        "type": "declaration",
+        "line": 25,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "rules\\scheduling\\isScheduleContiguous.js": [
+      {
+        "name": "isScheduleContiguous",
+        "type": "declaration",
+        "line": 27,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "rules\\search\\hasListingPhotos.js": [
+      {
+        "name": "hasListingPhotos",
+        "type": "declaration",
+        "line": 20,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "rules\\search\\isValidPriceTier.js": [
+      {
+        "name": "isValidPriceTier",
+        "type": "declaration",
+        "line": 22,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "rules\\search\\isValidSortOption.js": [
+      {
+        "name": "isValidSortOption",
+        "type": "declaration",
+        "line": 22,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "rules\\search\\isValidWeekPattern.js": [
+      {
+        "name": "isValidWeekPattern",
+        "type": "declaration",
+        "line": 22,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "rules\\users\\hasProfilePhoto.js": [
+      {
+        "name": "hasProfilePhoto",
+        "type": "declaration",
+        "line": 19,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "rules\\users\\isGuest.js": [
+      {
+        "name": "isGuest",
+        "type": "declaration",
+        "line": 23,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "rules\\users\\isHost.js": [
+      {
+        "name": "isHost",
+        "type": "declaration",
+        "line": 24,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "rules\\users\\shouldShowFullName.js": [
+      {
+        "name": "shouldShowFullName",
+        "type": "declaration",
+        "line": 21,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "workflows\\auth\\checkAuthStatusWorkflow.js": [
+      {
+        "name": "checkAuthStatusWorkflow",
+        "type": "declaration",
+        "line": 29,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "workflows\\auth\\validateTokenWorkflow.js": [
+      {
+        "name": "validateTokenWorkflow",
+        "type": "declaration",
+        "line": 36,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "workflows\\booking\\acceptProposalWorkflow.js": [
+      {
+        "name": "acceptProposalWorkflow",
+        "type": "declaration",
+        "line": 27,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "workflows\\booking\\cancelProposalWorkflow.js": [
+      {
+        "name": "cancelProposalWorkflow",
+        "type": "declaration",
+        "line": 38,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "workflows\\booking\\loadProposalDetailsWorkflow.js": [
+      {
+        "name": "loadProposalDetailsWorkflow",
+        "type": "declaration",
+        "line": 40,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "workflows\\proposals\\cancelProposalWorkflow.js": [
+      {
+        "name": "determineCancellationCondition",
+        "type": "declaration",
+        "line": 31,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "executeCancelProposal",
+        "type": "declaration",
+        "line": 95,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "cancelProposalFromCompareTerms",
+        "type": "declaration",
+        "line": 138,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "executeDeleteProposal",
+        "type": "declaration",
+        "line": 152,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "workflows\\proposals\\counterofferWorkflow.js": [
+      {
+        "name": "acceptCounteroffer",
+        "type": "declaration",
+        "line": 29,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "declineCounteroffer",
+        "type": "declaration",
+        "line": 86,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getTermsComparison",
+        "type": "declaration",
+        "line": 123,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "workflows\\proposals\\navigationWorkflow.js": [
+      {
+        "name": "navigateToListing",
+        "type": "declaration",
+        "line": 15,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "navigateToMessaging",
+        "type": "declaration",
+        "line": 34,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "navigateToRentalApplication",
+        "type": "declaration",
+        "line": 64,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "navigateToDocumentReview",
+        "type": "declaration",
+        "line": 81,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "navigateToLeaseDocuments",
+        "type": "declaration",
+        "line": 98,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "navigateToHouseManual",
+        "type": "declaration",
+        "line": 115,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "navigateToSearch",
+        "type": "declaration",
+        "line": 130,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "openExternalLink",
+        "type": "declaration",
+        "line": 141,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "updateUrlWithProposal",
+        "type": "declaration",
+        "line": 156,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "getProposalIdFromUrl",
+        "type": "declaration",
+        "line": 173,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "workflows\\proposals\\virtualMeetingWorkflow.js": [
+      {
+        "name": "requestVirtualMeeting",
+        "type": "declaration",
+        "line": 24,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "requestAlternativeMeeting",
+        "type": "declaration",
+        "line": 79,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "respondToVirtualMeeting",
+        "type": "declaration",
+        "line": 107,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "declineVirtualMeeting",
+        "type": "declaration",
+        "line": 140,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "cancelVirtualMeetingRequest",
+        "type": "declaration",
+        "line": 173,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "fetchVirtualMeetingByProposalId",
+        "type": "declaration",
+        "line": 205,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "workflows\\reminders\\reminderWorkflow.js": [
+      {
+        "name": "createReminderWorkflow",
+        "type": "declaration",
+        "line": 20,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "updateReminderWorkflow",
+        "type": "declaration",
+        "line": 84,
+        "source_file": null,
+        "original_name": null
+      },
+      {
+        "name": "deleteReminderWorkflow",
+        "type": "declaration",
+        "line": 133,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "workflows\\scheduling\\validateMoveInDateWorkflow.js": [
+      {
+        "name": "validateMoveInDateWorkflow",
+        "type": "declaration",
+        "line": 36,
+        "source_file": null,
+        "original_name": null
+      }
+    ],
+    "workflows\\scheduling\\validateScheduleWorkflow.js": [
+      {
+        "name": "validateScheduleWorkflow",
+        "type": "declaration",
+        "line": 36,
+        "source_file": null,
+        "original_name": null
+      }
+    ]
+  },
+  "dependency_graph": {
+    "calculators\\pricing\\calculateGuestFacingPrice.js": [
+      {
+        "name": "PRICING_CONSTANTS",
+        "type": "named",
+        "source": "../../constants/pricingConstants.js",
+        "resolved_path": "constants\\pricingConstants.js",
+        "line": 33,
+        "alias": null
+      }
+    ],
+    "calculators\\pricing\\calculatePricingBreakdown.js": [
+      {
+        "name": "getNightlyRateByFrequency",
+        "type": "named",
+        "source": "./getNightlyRateByFrequency.js",
+        "resolved_path": "calculators\\pricing\\getNightlyRateByFrequency.js",
+        "line": 1,
+        "alias": null
+      },
+      {
+        "name": "calculateFourWeekRent",
+        "type": "named",
+        "source": "./calculateFourWeekRent.js",
+        "resolved_path": "calculators\\pricing\\calculateFourWeekRent.js",
+        "line": 2,
+        "alias": null
+      },
+      {
+        "name": "calculateReservationTotal",
+        "type": "named",
+        "source": "./calculateReservationTotal.js",
+        "resolved_path": "calculators\\pricing\\calculateReservationTotal.js",
+        "line": 3,
+        "alias": null
+      }
+    ],
+    "calculators\\scheduling\\calculateCheckInOutDays.js": [
+      {
+        "name": "DAY_NAMES",
+        "type": "named",
+        "source": "../../../lib/constants.js",
+        "resolved_path": "C:\\Users\\Split Lease\\Documents\\Split Lease\\app\\src\\lib\\constants.js",
+        "line": 1,
+        "alias": null
+      }
+    ],
+    "calculators\\scheduling\\calculateNextAvailableCheckIn.js": [
+      {
+        "name": "daysUntilDayOfWeek",
+        "type": "named",
+        "source": "../../../lib/dayUtils.js",
+        "resolved_path": "C:\\Users\\Split Lease\\Documents\\Split Lease\\app\\src\\lib\\dayUtils.js",
+        "line": 1,
+        "alias": null
+      }
+    ],
+    "calculators\\scheduling\\getNextOccurrenceOfDay.js": [
+      {
+        "name": "daysUntilDayOfWeek",
+        "type": "named",
+        "source": "../../../lib/dayUtils.js",
+        "resolved_path": "C:\\Users\\Split Lease\\Documents\\Split Lease\\app\\src\\lib\\dayUtils.js",
+        "line": 1,
+        "alias": null
+      }
+    ],
+    "calculators\\scheduling\\shiftMoveInDateIfPast.js": [
+      {
+        "name": "daysUntilDayOfWeek",
+        "type": "named",
+        "source": "../../../lib/dayUtils.js",
+        "resolved_path": "C:\\Users\\Split Lease\\Documents\\Split Lease\\app\\src\\lib\\dayUtils.js",
+        "line": 1,
+        "alias": null
+      }
+    ],
+    "processors\\proposal\\processProposalData.js": [
+      {
+        "name": "PROPOSAL_STATUSES",
+        "type": "named",
+        "source": "../../constants/proposalStatuses.js",
+        "resolved_path": "constants\\proposalStatuses.js",
+        "line": 34,
+        "alias": null
+      },
+      {
+        "name": "getUsualOrder",
+        "type": "named",
+        "source": "../../constants/proposalStatuses.js",
+        "resolved_path": "constants\\proposalStatuses.js",
+        "line": 34,
+        "alias": null
+      }
+    ],
+    "processors\\reviews\\reviewAdapter.js": [
+      {
+        "name": "REVIEW_CATEGORIES",
+        "type": "named",
+        "source": "../../constants/reviewCategories.js",
+        "resolved_path": "constants\\reviewCategories.js",
+        "line": 6,
+        "alias": null
+      }
+    ],
+    "rules\\proposals\\canAcceptProposal.js": [
+      {
+        "name": "PROPOSAL_STATUSES",
+        "type": "named",
+        "source": "../../constants/proposalStatuses.js",
+        "resolved_path": "constants\\proposalStatuses.js",
+        "line": 25,
+        "alias": null
+      }
+    ],
+    "rules\\proposals\\canCancelProposal.js": [
+      {
+        "name": "isTerminalStatus",
+        "type": "named",
+        "source": "../../constants/proposalStatuses.js",
+        "resolved_path": "constants\\proposalStatuses.js",
+        "line": 25,
+        "alias": null
+      },
+      {
+        "name": "isCompletedStatus",
+        "type": "named",
+        "source": "../../constants/proposalStatuses.js",
+        "resolved_path": "constants\\proposalStatuses.js",
+        "line": 25,
+        "alias": null
+      }
+    ],
+    "rules\\proposals\\canEditProposal.js": [
+      {
+        "name": "getActionsForStatus",
+        "type": "named",
+        "source": "../../constants/proposalStatuses.js",
+        "resolved_path": "constants\\proposalStatuses.js",
+        "line": 21,
+        "alias": null
+      }
+    ],
+    "rules\\proposals\\determineProposalStage.js": [
+      {
+        "name": "getStageFromStatus",
+        "type": "named",
+        "source": "../../constants/proposalStatuses.js",
+        "resolved_path": "constants\\proposalStatuses.js",
+        "line": 24,
+        "alias": null
+      },
+      {
+        "name": "isTerminalStatus",
+        "type": "named",
+        "source": "../../constants/proposalStatuses.js",
+        "resolved_path": "constants\\proposalStatuses.js",
+        "line": 24,
+        "alias": null
+      }
+    ],
+    "rules\\proposals\\proposalButtonRules.js": [
+      {
+        "name": "getStatusConfig",
+        "type": "named",
+        "source": "../../../config/proposalStatusConfig.js",
+        "resolved_path": "C:\\Users\\Split Lease\\Documents\\Split Lease\\app\\src\\config\\proposalStatusConfig.js",
+        "line": 1,
+        "alias": null
+      },
+      {
+        "name": "PROPOSAL_STATUS",
+        "type": "named",
+        "source": "../../../config/proposalStatusConfig.js",
+        "resolved_path": "C:\\Users\\Split Lease\\Documents\\Split Lease\\app\\src\\config\\proposalStatusConfig.js",
+        "line": 1,
+        "alias": null
+      }
+    ],
+    "rules\\proposals\\proposalRules.js": [
+      {
+        "name": "PROPOSAL_STATUSES",
+        "type": "named",
+        "source": "../../constants/proposalStatuses.js",
+        "resolved_path": "constants\\proposalStatuses.js",
+        "line": 16,
+        "alias": null
+      },
+      {
+        "name": "isTerminalStatus",
+        "type": "named",
+        "source": "../../constants/proposalStatuses.js",
+        "resolved_path": "constants\\proposalStatuses.js",
+        "line": 16,
+        "alias": null
+      },
+      {
+        "name": "isCompletedStatus",
+        "type": "named",
+        "source": "../../constants/proposalStatuses.js",
+        "resolved_path": "constants\\proposalStatuses.js",
+        "line": 16,
+        "alias": null
+      },
+      {
+        "name": "getActionsForStatus",
+        "type": "named",
+        "source": "../../constants/proposalStatuses.js",
+        "resolved_path": "constants\\proposalStatuses.js",
+        "line": 16,
+        "alias": null
+      },
+      {
+        "name": "getGuestCancellationReasons",
+        "type": "named",
+        "source": "../../../lib/dataLookups.js",
+        "resolved_path": "C:\\Users\\Split Lease\\Documents\\Split Lease\\app\\src\\lib\\dataLookups.js",
+        "line": 17,
+        "alias": null
+      },
+      {
+        "name": "PROPOSAL_STATUSES",
+        "type": "named",
+        "source": "../../constants/proposalStatuses.js",
+        "resolved_path": "constants\\proposalStatuses.js",
+        "line": 352,
+        "alias": null
+      },
+      {
+        "name": "isTerminalStatus",
+        "type": "named",
+        "source": "../../constants/proposalStatuses.js",
+        "resolved_path": "constants\\proposalStatuses.js",
+        "line": 352,
+        "alias": null
+      },
+      {
+        "name": "isCompletedStatus",
+        "type": "named",
+        "source": "../../constants/proposalStatuses.js",
+        "resolved_path": "constants\\proposalStatuses.js",
+        "line": 352,
+        "alias": null
+      },
+      {
+        "name": "getActionsForStatus",
+        "type": "named",
+        "source": "../../constants/proposalStatuses.js",
+        "resolved_path": "constants\\proposalStatuses.js",
+        "line": 352,
+        "alias": null
+      },
+      {
+        "name": "isSuggestedProposal",
+        "type": "named",
+        "source": "../../constants/proposalStatuses.js",
+        "resolved_path": "constants\\proposalStatuses.js",
+        "line": 352,
+        "alias": null
+      }
+    ],
+    "rules\\reviews\\reviewValidation.js": [
+      {
+        "name": "REVIEW_CATEGORY_COUNT",
+        "type": "named",
+        "source": "../../constants/reviewCategories.js",
+        "resolved_path": "constants\\reviewCategories.js",
+        "line": 6,
+        "alias": null
+      }
+    ],
+    "rules\\search\\isValidPriceTier.js": [
+      {
+        "name": "VALID_PRICE_TIERS",
+        "type": "named",
+        "source": "../../constants/searchConstants.js",
+        "resolved_path": "constants\\searchConstants.js",
+        "line": 1,
+        "alias": null
+      }
+    ],
+    "rules\\search\\isValidSortOption.js": [
+      {
+        "name": "VALID_SORT_OPTIONS",
+        "type": "named",
+        "source": "../../constants/searchConstants.js",
+        "resolved_path": "constants\\searchConstants.js",
+        "line": 1,
+        "alias": null
+      }
+    ],
+    "rules\\search\\isValidWeekPattern.js": [
+      {
+        "name": "VALID_WEEK_PATTERNS",
+        "type": "named",
+        "source": "../../constants/searchConstants.js",
+        "resolved_path": "constants\\searchConstants.js",
+        "line": 1,
+        "alias": null
+      }
+    ],
+    "workflows\\booking\\acceptProposalWorkflow.js": [
+      {
+        "name": "PROPOSAL_STATUSES",
+        "type": "named",
+        "source": "../../constants/proposalStatuses.js",
+        "resolved_path": "constants\\proposalStatuses.js",
+        "line": 25,
+        "alias": null
+      }
+    ],
+    "workflows\\booking\\cancelProposalWorkflow.js": [
+      {
+        "name": "PROPOSAL_STATUSES",
+        "type": "named",
+        "source": "../../constants/proposalStatuses.js",
+        "resolved_path": "constants\\proposalStatuses.js",
+        "line": 36,
+        "alias": null
+      }
+    ],
+    "workflows\\proposals\\cancelProposalWorkflow.js": [
+      {
+        "name": "supabase",
+        "type": "named",
+        "source": "../../../lib/supabase.js",
+        "resolved_path": "C:\\Users\\Split Lease\\Documents\\Split Lease\\app\\src\\lib\\supabase.js",
+        "line": 21,
+        "alias": null
+      },
+      {
+        "name": "canCancelProposal",
+        "type": "named",
+        "source": "../../rules/proposals/proposalRules.js",
+        "resolved_path": "rules\\proposals\\proposalRules.js",
+        "line": 22,
+        "alias": null
+      },
+      {
+        "name": "requiresSpecialCancellationConfirmation",
+        "type": "named",
+        "source": "../../rules/proposals/proposalRules.js",
+        "resolved_path": "rules\\proposals\\proposalRules.js",
+        "line": 22,
+        "alias": null
+      },
+      {
+        "name": "PROPOSAL_STATUSES",
+        "type": "named",
+        "source": "../../constants/proposalStatuses.js",
+        "resolved_path": "constants\\proposalStatuses.js",
+        "line": 23,
+        "alias": null
+      }
+    ],
+    "workflows\\proposals\\counterofferWorkflow.js": [
+      {
+        "name": "supabase",
+        "type": "named",
+        "source": "../../../lib/supabase.js",
+        "resolved_path": "C:\\Users\\Split Lease\\Documents\\Split Lease\\app\\src\\lib\\supabase.js",
+        "line": 18,
+        "alias": null
+      },
+      {
+        "name": "hasReviewableCounteroffer",
+        "type": "named",
+        "source": "../../rules/proposals/proposalRules.js",
+        "resolved_path": "rules\\proposals\\proposalRules.js",
+        "line": 19,
+        "alias": null
+      },
+      {
+        "name": "PROPOSAL_STATUSES",
+        "type": "named",
+        "source": "../../constants/proposalStatuses.js",
+        "resolved_path": "constants\\proposalStatuses.js",
+        "line": 20,
+        "alias": null
+      }
+    ],
+    "workflows\\proposals\\virtualMeetingWorkflow.js": [
+      {
+        "name": "supabase",
+        "type": "named",
+        "source": "../../../lib/supabase.js",
+        "resolved_path": "C:\\Users\\Split Lease\\Documents\\Split Lease\\app\\src\\lib\\supabase.js",
+        "line": 14,
+        "alias": null
+      }
+    ],
+    "workflows\\reminders\\reminderWorkflow.js": [
+      {
+        "name": "canCreateReminder",
+        "type": "named",
+        "source": "../../rules/reminders/reminderValidation.js",
+        "resolved_path": "rules\\reminders\\reminderValidation.js",
+        "line": 6,
+        "alias": null
+      },
+      {
+        "name": "canUpdateReminder",
+        "type": "named",
+        "source": "../../rules/reminders/reminderValidation.js",
+        "resolved_path": "rules\\reminders\\reminderValidation.js",
+        "line": 6,
+        "alias": null
+      },
+      {
+        "name": "canDeleteReminder",
+        "type": "named",
+        "source": "../../rules/reminders/reminderValidation.js",
+        "resolved_path": "rules\\reminders\\reminderValidation.js",
+        "line": 6,
+        "alias": null
+      },
+      {
+        "name": "canScheduleReminder",
+        "type": "named",
+        "source": "../../rules/reminders/reminderScheduling.js",
+        "resolved_path": "rules\\reminders\\reminderScheduling.js",
+        "line": 7,
+        "alias": null
+      },
+      {
+        "name": "adaptReminderForSubmission",
+        "type": "named",
+        "source": "../../processors/reminders/reminderAdapter.js",
+        "resolved_path": "processors\\reminders\\reminderAdapter.js",
+        "line": 8,
+        "alias": null
+      },
+      {
+        "name": "adaptReminderUpdateForSubmission",
+        "type": "named",
+        "source": "../../processors/reminders/reminderAdapter.js",
+        "resolved_path": "processors\\reminders\\reminderAdapter.js",
+        "line": 8,
+        "alias": null
+      }
+    ],
+    "workflows\\scheduling\\validateMoveInDateWorkflow.js": [
+      {
+        "name": "isDateInRange",
+        "type": "named",
+        "source": "../../rules/scheduling/isDateInRange.js",
+        "resolved_path": "rules\\scheduling\\isDateInRange.js",
+        "line": 1,
+        "alias": null
+      },
+      {
+        "name": "isDateBlocked",
+        "type": "named",
+        "source": "../../rules/scheduling/isDateBlocked.js",
+        "resolved_path": "rules\\scheduling\\isDateBlocked.js",
+        "line": 2,
+        "alias": null
+      },
+      {
+        "name": "calculateCheckInOutDays",
+        "type": "named",
+        "source": "../../calculators/scheduling/calculateCheckInOutDays.js",
+        "resolved_path": "calculators\\scheduling\\calculateCheckInOutDays.js",
+        "line": 3,
+        "alias": null
+      }
+    ],
+    "workflows\\scheduling\\validateScheduleWorkflow.js": [
+      {
+        "name": "isScheduleContiguous",
+        "type": "named",
+        "source": "../../rules/scheduling/isScheduleContiguous.js",
+        "resolved_path": "rules\\scheduling\\isScheduleContiguous.js",
+        "line": 1,
+        "alias": null
+      }
+    ]
+  },
+  "reverse_dependencies": {
+    "constants\\pricingConstants.js": [
+      "calculators\\pricing\\calculateGuestFacingPrice.js"
+    ],
+    "calculators\\pricing\\getNightlyRateByFrequency.js": [
+      "calculators\\pricing\\calculatePricingBreakdown.js"
+    ],
+    "calculators\\pricing\\calculateFourWeekRent.js": [
+      "calculators\\pricing\\calculatePricingBreakdown.js"
+    ],
+    "calculators\\pricing\\calculateReservationTotal.js": [
+      "calculators\\pricing\\calculatePricingBreakdown.js"
+    ],
+    "C:\\Users\\Split Lease\\Documents\\Split Lease\\app\\src\\lib\\constants.js": [
+      "calculators\\scheduling\\calculateCheckInOutDays.js"
+    ],
+    "C:\\Users\\Split Lease\\Documents\\Split Lease\\app\\src\\lib\\dayUtils.js": [
+      "calculators\\scheduling\\calculateNextAvailableCheckIn.js",
+      "calculators\\scheduling\\getNextOccurrenceOfDay.js",
+      "calculators\\scheduling\\shiftMoveInDateIfPast.js"
+    ],
+    "constants\\proposalStatuses.js": [
+      "processors\\proposal\\processProposalData.js",
+      "processors\\proposal\\processProposalData.js",
+      "rules\\proposals\\canAcceptProposal.js",
+      "rules\\proposals\\canCancelProposal.js",
+      "rules\\proposals\\canCancelProposal.js",
+      "rules\\proposals\\canEditProposal.js",
+      "rules\\proposals\\determineProposalStage.js",
+      "rules\\proposals\\determineProposalStage.js",
+      "rules\\proposals\\proposalRules.js",
+      "rules\\proposals\\proposalRules.js",
+      "rules\\proposals\\proposalRules.js",
+      "rules\\proposals\\proposalRules.js",
+      "rules\\proposals\\proposalRules.js",
+      "rules\\proposals\\proposalRules.js",
+      "rules\\proposals\\proposalRules.js",
+      "rules\\proposals\\proposalRules.js",
+      "rules\\proposals\\proposalRules.js",
+      "workflows\\booking\\acceptProposalWorkflow.js",
+      "workflows\\booking\\cancelProposalWorkflow.js",
+      "workflows\\proposals\\cancelProposalWorkflow.js",
+      "workflows\\proposals\\counterofferWorkflow.js"
+    ],
+    "constants\\reviewCategories.js": [
+      "processors\\reviews\\reviewAdapter.js",
+      "rules\\reviews\\reviewValidation.js"
+    ],
+    "C:\\Users\\Split Lease\\Documents\\Split Lease\\app\\src\\config\\proposalStatusConfig.js": [
+      "rules\\proposals\\proposalButtonRules.js",
+      "rules\\proposals\\proposalButtonRules.js"
+    ],
+    "C:\\Users\\Split Lease\\Documents\\Split Lease\\app\\src\\lib\\dataLookups.js": [
+      "rules\\proposals\\proposalRules.js"
+    ],
+    "constants\\searchConstants.js": [
+      "rules\\search\\isValidPriceTier.js",
+      "rules\\search\\isValidSortOption.js",
+      "rules\\search\\isValidWeekPattern.js"
+    ],
+    "C:\\Users\\Split Lease\\Documents\\Split Lease\\app\\src\\lib\\supabase.js": [
+      "workflows\\proposals\\cancelProposalWorkflow.js",
+      "workflows\\proposals\\counterofferWorkflow.js",
+      "workflows\\proposals\\virtualMeetingWorkflow.js"
+    ],
+    "rules\\proposals\\proposalRules.js": [
+      "workflows\\proposals\\cancelProposalWorkflow.js",
+      "workflows\\proposals\\cancelProposalWorkflow.js",
+      "workflows\\proposals\\counterofferWorkflow.js"
+    ],
+    "rules\\reminders\\reminderValidation.js": [
+      "workflows\\reminders\\reminderWorkflow.js",
+      "workflows\\reminders\\reminderWorkflow.js",
+      "workflows\\reminders\\reminderWorkflow.js"
+    ],
+    "rules\\reminders\\reminderScheduling.js": [
+      "workflows\\reminders\\reminderWorkflow.js"
+    ],
+    "processors\\reminders\\reminderAdapter.js": [
+      "workflows\\reminders\\reminderWorkflow.js",
+      "workflows\\reminders\\reminderWorkflow.js"
+    ],
+    "rules\\scheduling\\isDateInRange.js": [
+      "workflows\\scheduling\\validateMoveInDateWorkflow.js"
+    ],
+    "rules\\scheduling\\isDateBlocked.js": [
+      "workflows\\scheduling\\validateMoveInDateWorkflow.js"
+    ],
+    "calculators\\scheduling\\calculateCheckInOutDays.js": [
+      "workflows\\scheduling\\validateMoveInDateWorkflow.js"
+    ],
+    "rules\\scheduling\\isScheduleContiguous.js": [
+      "workflows\\scheduling\\validateScheduleWorkflow.js"
+    ]
+  }
+}

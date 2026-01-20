@@ -2,6 +2,12 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import HostOverviewPage from './islands/pages/HostOverviewPage/HostOverviewPage.jsx';
 import { ErrorBoundary } from './islands/shared/ErrorBoundary';
+
+// Import CSS so Vite bundles it (required for production build)
+import './styles/main.css';
+
+// Import config to set window.ENV before Google Maps loads
+import './lib/config.js';
 import { checkAuthStatus } from './lib/auth.js';
 
 // Import CSS for the host-overview page

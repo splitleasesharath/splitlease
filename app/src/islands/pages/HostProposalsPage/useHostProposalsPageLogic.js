@@ -18,18 +18,140 @@ import { isHost } from '../../../logic/rules/users/isHost.js';
 import { getAllHouseRules } from '../../shared/EditListingDetails/services/houseRulesService.js';
 import { getVMStateInfo, VM_STATES } from '../../../logic/rules/proposals/virtualMeetingRules.js';
 
+// ============================================================================
+// DATA NORMALIZERS
+// ============================================================================
+// These functions transform Bubble-format field names to camelCase for V7 components
+
+/**
+ * Normalize listing data from Bubble format to V7 component format
+ * @param {Object} listing - Raw listing from database
+ * @returns {Object} Normalized listing
+ */
+function normalizeListing(listing) {
+  if (!listing) return null;
+  return {
+    ...listing,
+    // Keep original fields for backwards compatibility
+    // Add normalized aliases for V7 components
+    title: listing.Name || listing.title || listing.name || 'Unnamed Listing',
+    name: listing.Name || listing.title || listing.name || 'Unnamed Listing',
+    thumbnail: listing['Cover Photo'] || listing.thumbnail || listing.cover_photo || null,
+    neighborhood: listing.Neighborhood || listing.neighborhood || null,
+    address: listing['Full Address'] || listing.address || listing.full_address || null,
+    bedrooms: listing['Bedrooms (number)'] || listing.bedrooms || 0,
+    bathrooms: listing['Bathrooms (number)'] || listing.bathrooms || 0,
+    monthly_rate: listing['Monthly Rate'] || listing.monthly_rate || 0
+  };
+}
+
+/**
+ * Normalize guest data from Bubble format to V7 component format
+ * @param {Object} guest - Raw guest from database
+ * @returns {Object} Normalized guest
+ */
+function normalizeGuest(guest) {
+  if (!guest) return null;
+
+  // Determine verification status from Bubble fields
+  // "user verified?" is the main verification flag
+  // "Selfie with ID" indicates ID verification was completed
+  // "Verify - Linked In ID" indicates work/LinkedIn verification
+  const isUserVerified = guest['user verified?'] || guest.id_verified || false;
+  const hasIdVerification = !!(guest['Selfie with ID'] || guest.id_verified);
+  const hasWorkVerification = !!(guest['Verify - Linked In ID'] || guest.work_verified);
+
+  return {
+    ...guest,
+    // Add normalized aliases for V7 components
+    name: guest['Name - Full'] || guest.name || guest.full_name || 'Guest',
+    full_name: guest['Name - Full'] || guest.full_name || guest.name || 'Guest',
+    first_name: guest['Name - First'] || guest.first_name || guest.firstName || 'Guest',
+    profilePhoto: guest['Profile Photo'] || guest.profilePhoto || guest.profile_photo || null,
+    avatar: guest['Profile Photo'] || guest.profilePhoto || guest.avatar || null,
+    bio: guest['About Me / Bio'] || guest.Bio || guest.bio || guest.about || null,
+    id_verified: hasIdVerification || isUserVerified,
+    work_verified: hasWorkVerification,
+    is_verified: isUserVerified,
+    review_count: guest['Review Count'] || guest.review_count || 0,
+    created_at: guest['Created Date'] || guest.created_at || null
+  };
+}
+
+/**
+ * Normalize proposal data from Bubble format to V7 component format
+ * @param {Object} proposal - Raw proposal from database
+ * @param {Object} normalizedGuest - Already normalized guest data
+ * @returns {Object} Normalized proposal
+ */
+function normalizeProposal(proposal, normalizedGuest = null) {
+  if (!proposal) return null;
+
+  // Status normalization - handle both string and object formats
+  const rawStatus = proposal.Status || proposal.status || '';
+  const status = typeof rawStatus === 'string' ? rawStatus.toLowerCase().replace(/\s+/g, '_') : rawStatus;
+
+  return {
+    ...proposal,
+    // Add normalized aliases for V7 components
+    status: status,
+
+    // Guest info (use normalized guest if provided, otherwise normalize inline)
+    guest: normalizedGuest || normalizeGuest(proposal.guest),
+
+    // Dates
+    start_date: proposal['Move in range start'] || proposal.start_date || null,
+    end_date: proposal['Move-out'] || proposal.end_date || null,
+    move_in_range_start: proposal['Move in range start'] || proposal.move_in_range_start || null,
+    move_in_range_end: proposal['Move in range end'] || proposal.move_in_range_end || null,
+    created_at: proposal['Created Date'] || proposal.created_at || null,
+
+    // Days/Schedule
+    days_selected: proposal['Days Selected'] || proposal.days_selected || [],
+    days_per_week: proposal['Days Selected'] || proposal.days_per_week || [],
+    nights_selected: proposal['Nights Selected (Nights list)'] || proposal.nights_selected || [],
+    nights_per_week: proposal['nights per week (num)'] || proposal.nights_per_week || 0,
+    check_in_day: proposal['check in day'] || proposal.check_in_day || null,
+    check_out_day: proposal['check out day'] || proposal.check_out_day || null,
+
+    // Duration
+    duration_weeks: proposal['Reservation Span (Weeks)'] || proposal.duration_weeks || proposal.total_weeks || 0,
+    duration_months: proposal['Reservation Span'] || proposal.duration_months || 0,
+
+    // Pricing - prioritize host compensation fields
+    nightly_rate: proposal['proposal nightly price'] || proposal.nightly_rate || 0,
+    total_price: proposal['Total Compensation (proposal - host)'] || proposal['host compensation'] || proposal.total_price || 0,
+    host_compensation: proposal['host compensation'] || proposal['Total Compensation (proposal - host)'] || proposal.host_compensation || 0,
+    four_week_rent: proposal['4 week rent'] || proposal.four_week_rent || 0,
+    four_week_compensation: proposal['4 week compensation'] || proposal.four_week_compensation || 0,
+    cleaning_fee: proposal['cleaning fee'] || proposal.cleaning_fee || 0,
+    damage_deposit: proposal['damage deposit'] || proposal.damage_deposit || 0,
+
+    // Guest info/message
+    comment: proposal.Comment || proposal.comment || null,
+    need_for_space: proposal['need for space'] || proposal.need_for_space || null,
+    about_yourself: proposal.about_yourself || null,
+
+    // Guest counteroffer detection
+    last_modified_by: proposal['last_modified_by'] || proposal.last_modified_by || null,
+    has_guest_counteroffer: proposal.has_guest_counteroffer || false
+  };
+}
+
 /**
  * Hook for Host Proposals Page business logic
+ * @param {Object} options - Hook options
+ * @param {boolean} options.skipAuth - Skip authentication check (for demo mode)
  */
-export function useHostProposalsPageLogic() {
+export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
   // ============================================================================
   // AUTH STATE
   // ============================================================================
   const [authState, setAuthState] = useState({
-    isChecking: true,
-    isAuthenticated: false,
+    isChecking: !skipAuth,
+    isAuthenticated: skipAuth,
     shouldRedirect: false,
-    userType: null
+    userType: skipAuth ? 'host' : null
   });
 
   // ============================================================================
@@ -58,6 +180,11 @@ export function useHostProposalsPageLogic() {
   const [error, setError] = useState(null);
 
   // ============================================================================
+  // PROPOSAL COUNTS STATE (for pill selector badges)
+  // ============================================================================
+  const [proposalCountsByListing, setProposalCountsByListing] = useState({});
+
+  // ============================================================================
   // REFERENCE DATA STATE
   // ============================================================================
   const [allHouseRules, setAllHouseRules] = useState([]);
@@ -66,6 +193,12 @@ export function useHostProposalsPageLogic() {
   // AUTH CHECK
   // ============================================================================
   useEffect(() => {
+    // Skip auth check in demo mode
+    if (skipAuth) {
+      setIsLoading(false);
+      return;
+    }
+
     async function checkAuth() {
       try {
         const isLoggedIn = await checkAuthStatus();
@@ -231,17 +364,22 @@ export function useHostProposalsPageLogic() {
 
         // Calculate stats per listing
         const statsMap = {};
+        const countsMap = {}; // Simple count map for UI
         (proposalStats || []).forEach(p => {
           const listingId = p.Listing;
           if (!statsMap[listingId]) {
             statsMap[listingId] = { count: 0, mostRecent: null };
           }
           statsMap[listingId].count++;
+          countsMap[listingId] = (countsMap[listingId] || 0) + 1;
           const createdDate = new Date(p['Created Date']);
           if (!statsMap[listingId].mostRecent || createdDate > statsMap[listingId].mostRecent) {
             statsMap[listingId].mostRecent = createdDate;
           }
         });
+
+        // Store proposal counts for pill selector badges
+        setProposalCountsByListing(countsMap);
 
         // Sort listings: most recent proposal first, then by proposal count
         const sortedListings = [...listingsResult].sort((a, b) => {
@@ -269,36 +407,17 @@ export function useHostProposalsPageLogic() {
           sortedListings.map(l => ({ id: l._id || l.id, name: l.Name, proposals: statsMap[l._id || l.id]?.count || 0 }))
         );
 
-        setListings(sortedListings);
+        // Normalize listings for V7 components
+        const normalizedListings = sortedListings.map(normalizeListing);
+        setListings(normalizedListings);
 
-        // Check for URL parameters to pre-select listing and/or proposal
+        // Check for listingId URL parameter to pre-select a specific listing
         const urlParams = new URLSearchParams(window.location.search);
         const preselectedListingId = urlParams.get('listingId');
-        const preselectedProposalId = urlParams.get('proposalId');
 
-        let listingToSelect = sortedListings[0];
-
-        // If proposalId is provided, find which listing it belongs to
-        if (preselectedProposalId) {
-          // Query the proposal directly to find its listing
-          const { data: proposalData } = await supabase
-            .from('proposal')
-            .select('Listing')
-            .eq('_id', preselectedProposalId)
-            .single();
-
-          if (proposalData?.Listing) {
-            const matchedListing = sortedListings.find(l =>
-              (l._id || l.id) === proposalData.Listing
-            );
-            if (matchedListing) {
-              listingToSelect = matchedListing;
-              console.log('[useHostProposalsPageLogic] Found listing for proposal:', proposalData.Listing);
-            }
-          }
-        } else if (preselectedListingId) {
-          // No proposalId, but listingId was provided
-          const matchedListing = sortedListings.find(l =>
+        let listingToSelect = normalizedListings[0];
+        if (preselectedListingId) {
+          const matchedListing = normalizedListings.find(l =>
             (l._id || l.id) === preselectedListingId
           );
           if (matchedListing) {
@@ -312,20 +431,6 @@ export function useHostProposalsPageLogic() {
         // Fetch proposals for the selected listing
         const proposalsResult = await fetchProposalsForListing(listingToSelect._id || listingToSelect.id);
         setProposals(proposalsResult);
-
-        // If proposalId is in URL, auto-open the proposal details modal
-        if (preselectedProposalId && proposalsResult.length > 0) {
-          const matchedProposal = proposalsResult.find(p =>
-            (p._id || p.id) === preselectedProposalId
-          );
-          if (matchedProposal) {
-            console.log('[useHostProposalsPageLogic] Auto-opening proposal from URL:', preselectedProposalId);
-            setSelectedProposal(matchedProposal);
-            setIsModalOpen(true);
-          } else {
-            console.warn('[useHostProposalsPageLogic] Proposal not found in current listing:', preselectedProposalId);
-          }
-        }
       } else {
         setListings([]);
         setProposals([]);
@@ -406,15 +511,13 @@ export function useHostProposalsPageLogic() {
           "4 week compensation",
           "cleaning fee",
           "damage deposit",
-          "rental type",
           "Guest email",
           "need for space",
           "about_yourself",
           "Comment",
           "Created Date",
           "Modified Date",
-          "virtual meeting",
-          custom_schedule_description
+          "virtual meeting"
         `)
         .eq('Listing', listingId)
         .neq('Deleted', true)
@@ -432,18 +535,33 @@ export function useHostProposalsPageLogic() {
         const guestIds = [...new Set(proposals.map(p => p.Guest).filter(Boolean))];
 
         if (guestIds.length > 0) {
-          const { data: guests } = await supabase
+          console.log('[useHostProposalsPageLogic] Fetching guest data for IDs:', guestIds);
+
+          const { data: guests, error: guestError } = await supabase
             .from('user')
-            .select('_id, "Name - Full", "Name - First", "Name - Last", email, "Profile Photo"')
+            .select('_id, "Name - Full", "Name - First", "Name - Last", email, "Profile Photo", "About Me / Bio", "user verified?", "Verify - Linked In ID", "Verify - Phone", "Selfie with ID", "Created Date"')
             .in('_id', guestIds);
+
+          if (guestError) {
+            console.error('[useHostProposalsPageLogic] Error fetching guests:', guestError);
+          }
+
+          console.log('[useHostProposalsPageLogic] Raw guest data:', guests);
 
           const guestMap = {};
           guests?.forEach(g => { guestMap[g._id] = g; });
 
-          // Attach guest data to each proposal
+          // Attach normalized guest data to each proposal
           proposals.forEach(p => {
             if (p.Guest && guestMap[p.Guest]) {
-              p.guest = guestMap[p.Guest];
+              const normalized = normalizeGuest(guestMap[p.Guest]);
+              console.log('[useHostProposalsPageLogic] Normalized guest:', {
+                name: normalized.name,
+                bio: normalized.bio ? normalized.bio.substring(0, 30) + '...' : 'NO BIO',
+                id_verified: normalized.id_verified,
+                work_verified: normalized.work_verified
+              });
+              p.guest = normalized;
             }
           });
         }
@@ -487,7 +605,9 @@ export function useHostProposalsPageLogic() {
         }
       }
 
-      return proposals || [];
+      // Normalize all proposals for V7 components
+      const normalizedProposals = (proposals || []).map(p => normalizeProposal(p, p.guest));
+      return normalizedProposals;
     } catch (err) {
       console.error('Failed to fetch proposals:', err);
       return [];
@@ -500,8 +620,20 @@ export function useHostProposalsPageLogic() {
 
   /**
    * Handle listing selection change
+   * Accepts either a listing object or a listing ID
    */
-  const handleListingChange = useCallback(async (listing) => {
+  const handleListingChange = useCallback(async (listingOrId) => {
+    // Support both listing object and listing ID
+    let listing = listingOrId;
+    if (typeof listingOrId === 'string') {
+      // Find the listing from the current listings array
+      listing = listings.find(l => (l._id || l.id) === listingOrId);
+      if (!listing) {
+        console.warn('[useHostProposalsPageLogic] Listing not found:', listingOrId);
+        return;
+      }
+    }
+
     setSelectedListing(listing);
     setIsLoading(true);
 
@@ -514,7 +646,7 @@ export function useHostProposalsPageLogic() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [listings]);
 
   /**
    * Handle proposal card click - open modal
@@ -860,6 +992,9 @@ export function useHostProposalsPageLogic() {
     // UI state
     isLoading,
     error,
+
+    // Proposal counts for pill selector
+    proposalCountsByListing,
 
     // Handlers
     handleListingChange,
