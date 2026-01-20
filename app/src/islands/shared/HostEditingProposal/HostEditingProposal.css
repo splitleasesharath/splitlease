@@ -1000,37 +1000,36 @@
 }
 
 /* ========================================
-   Primary Actions (Side by Side Layout)
-   Fixed footer on mobile to prevent overlap
-   Per protocol: border-top separates footer from body
+   Primary Actions (Footer)
+   Per protocol: 16px 20px padding, centered buttons
+   border-top separates footer from body
    ======================================== */
 
 .hep-primary-actions {
   display: flex;
-  gap: 16px;
-  justify-content: space-between;
+  flex-direction: row;
+  gap: 12px;
+  justify-content: center;
   align-items: center;
   margin-top: 0;
-  padding: 16px 0;
+  padding: 16px 20px;
   background-color: #FFFFFF;
   flex-shrink: 0;
   border-top: 1px solid #E7E0EC;
   margin-left: -16px;
   margin-right: -16px;
-  padding-left: 16px;
-  padding-right: 16px;
 }
 
 /* Reject outline button - Red outlined only per protocol */
 .hep-btn-reject-outline {
   background-color: transparent;
-  border: 1px solid #DC3545;
+  border: 2px solid #DC3545;
   color: #DC3545;
   font-weight: 600;
   font-size: 14px;
   height: 44px;
-  padding: 0 20px;
-  flex-shrink: 0;
+  padding: 0 24px;
+  min-width: 140px;
 }
 
 .hep-btn-reject-outline:hover:not(:disabled) {
@@ -1042,10 +1041,10 @@
   flex: 1;
   max-width: none;
   min-width: 0;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
-  height: 48px;
-  padding: 0 32px;
+  height: 44px;
+  padding: 0 24px;
   background-color: #31135D;
   color: #FFFFFF;
 }
@@ -1260,21 +1259,7 @@
   }
 
   .hep-title-main {
-    font-size: 22px;
-  }
-
-  .hep-primary-actions {
-    flex-direction: column-reverse;
-    gap: 12px;
-  }
-
-  .hep-primary-actions .hep-btn-primary-large {
-    width: 100%;
-    flex: none;
-  }
-
-  .hep-primary-actions .hep-btn-reject-outline {
-    width: 100%;
+    font-size: 18px;
   }
 }
 
@@ -1354,6 +1339,7 @@
   /* Primary actions - fixed at bottom with safe area */
   .hep-primary-actions {
     flex-shrink: 0;
+    flex-direction: column-reverse;
     padding: 12px 16px;
     padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
     margin-top: 0;
@@ -1362,17 +1348,18 @@
     gap: 10px;
     border-top: 1px solid #E7E0EC;
     background-color: #FFFFFF;
-    flex-direction: column-reverse;
   }
 
   .hep-primary-actions .hep-btn {
     width: 100%;
     font-size: 14px;
     height: 44px;
+    min-width: unset;
   }
 
   .hep-primary-actions .hep-btn-reject-outline {
     width: 100%;
+    min-width: unset;
   }
 
   .hep-primary-actions .hep-btn-primary-large {
