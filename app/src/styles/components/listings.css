@@ -1104,23 +1104,20 @@
     gap: 0.25rem;
 }
 
-/* Location Pill Button - V5 Map Background Pill Style */
+/* Location Pill Button - V26 Stacked Labels Style */
 .listing-card .listing-location-pill {
     position: relative;
     display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 14px !important;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 8px 14px !important;
     margin-bottom: 6px;
-    border-radius: 20px !important;
-    border: 1.5px solid rgba(0, 0, 0, 0.15) !important;
+    border-radius: 10px !important;
+    border: 1.5px solid rgba(0, 0, 0, 0.12) !important;
     cursor: pointer;
     transition: all 0.2s ease;
     font-family: inherit;
-    font-size: 13px;
-    color: #1a1a2e;
-    font-weight: 600;
-    white-space: nowrap;
     max-width: fit-content;
     overflow: hidden;
     /* Map background */
@@ -1162,32 +1159,31 @@
     outline: none;
 }
 
-/* Location pin icon - ensure it's above the overlay */
-.listing-card .listing-location-pill .location-pin-icon {
+/* Top label - "View on Map" */
+.listing-card .listing-location-pill .location-label {
     position: relative;
     z-index: 1;
-    width: 12px;
-    height: 12px;
-    flex-shrink: 0;
-    fill: #1a1a2e;
-    transition: fill 0.2s ease;
+    font-size: 10px;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.55);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-/* Location text - ensure it's above the overlay */
-.listing-card .listing-location-pill .location-text {
+/* Location name with arrow */
+.listing-card .listing-location-pill .location-name {
     position: relative;
     z-index: 1;
-    font-size: 13px;
-    color: #1a1a2e;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
     font-weight: 600;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    color: #1a1a2e;
 }
 
-/* Arrow icon - ensure it's above the overlay */
+/* Arrow icon */
 .listing-card .listing-location-pill .location-arrow-icon {
-    position: relative;
-    z-index: 1;
     width: 10px;
     height: 10px;
     flex-shrink: 0;
@@ -1514,16 +1510,20 @@
         color: #1a1a1a;
     }
 
-    /* Location pill on mobile - V5 Map Background Pill */
+    /* Location pill on mobile - V26 Stacked Labels */
     .listing-card .listing-location-pill {
-        padding: 5px 12px !important;
+        padding: 6px 12px !important;
         margin-bottom: 4px;
-        font-size: 12px;
+        border-radius: 8px !important;
     }
 
-    .listing-card .listing-location-pill .location-pin-icon {
-        width: 10px;
-        height: 10px;
+    .listing-card .listing-location-pill .location-label {
+        font-size: 9px;
+    }
+
+    .listing-card .listing-location-pill .location-name {
+        font-size: 13px;
+        gap: 4px;
     }
 
     .listing-card .listing-location-pill .location-arrow-icon {

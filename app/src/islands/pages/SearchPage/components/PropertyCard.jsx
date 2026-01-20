@@ -208,14 +208,14 @@ export function PropertyCard({ listing, onLocationClick, onOpenContactModal, onO
                 }
               }}
             >
-              <svg className="location-pin-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
-              </svg>
-              <span className="location-text">{listing.location}</span>
-              <svg className="location-arrow-icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="5" y1="12" x2="19" y2="12" />
-                <polyline points="12 5 19 12 12 19" />
-              </svg>
+              <span className="location-label">View on Map</span>
+              <span className="location-name">
+                {listing.location}
+                <svg className="location-arrow-icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                  <polyline points="12 5 19 12 12 19" />
+                </svg>
+              </span>
             </button>
             <h3 className="listing-title">{listing.title}</h3>
           </div>
@@ -336,27 +336,6 @@ export function PropertyCard({ listing, onLocationClick, onOpenContactModal, onO
             <div className="price-starting">Starting at<span>${parseFloat(startingPrice).toFixed(2)}/night</span></div>
           )}
           <div className={`availability-note ${availabilityInfo.className}`}>{availabilityInfo.text.split('\n').map((line, i) => i === 0 ? line : <><br key={i}/>{line}</>)}</div>
-          {/* V26 Stacked Map Button */}
-          <button
-            type="button"
-            className="sidebar-map-trigger"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              if (onLocationClick) {
-                onLocationClick(listing);
-              }
-            }}
-          >
-            <span className="map-trigger-label">View on Map</span>
-            <span className="map-trigger-location">
-              {listing.location}
-              <svg className="map-trigger-arrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="5" y1="12" x2="19" y2="12" />
-                <polyline points="12 5 19 12 12 19" />
-              </svg>
-            </span>
-          </button>
         </div>
       </div>
     </a>
