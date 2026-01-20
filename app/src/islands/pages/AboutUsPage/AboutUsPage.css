@@ -121,7 +121,7 @@
 .hero-carousel-track {
   display: flex;
   gap: 32px;
-  animation: carousel-scroll 25s linear infinite;
+  animation: carousel-scroll 45s linear infinite;
   width: max-content;
 }
 

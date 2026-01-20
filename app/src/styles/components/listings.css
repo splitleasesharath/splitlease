@@ -1030,42 +1030,56 @@
     gap: 0.25rem;
 }
 
-/* Location Pill Button - Clickable to zoom map */
+/* Location Pill Button - V5 Map Background Pill Style */
 .listing-card .listing-location-pill {
+    position: relative;
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 6px 12px 6px 10px !important;
+    padding: 6px 14px !important;
     margin-bottom: 6px;
-    background: #f3f0f7 !important;
-    border: 1px solid #e0dbe6 !important;
-    border-radius: 100px !important;
+    border-radius: 20px !important;
+    border: 1.5px solid rgba(0, 0, 0, 0.15) !important;
     cursor: pointer;
     transition: all 0.2s ease;
     font-family: inherit;
-    font-size: 12px;
-    color: var(--primary-purple, #31135d);
-    font-weight: 500;
+    font-size: 13px;
+    color: #1a1a2e;
+    font-weight: 600;
     white-space: nowrap;
     max-width: fit-content;
+    overflow: hidden;
+    /* Map background */
+    background: url('https://tile.openstreetmap.org/15/9654/12312.png') center/cover !important;
+}
+
+/* Frosted glass overlay */
+.listing-card .listing-location-pill::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.55);
+    transition: background 0.2s ease;
+    border-radius: inherit;
+}
+
+.listing-card .listing-location-pill:hover::before {
+    background: rgba(255, 255, 255, 0.45);
 }
 
 .listing-card .listing-location-pill:hover {
-    background: var(--primary-purple, #31135d) !important;
-    border-color: var(--primary-purple, #31135d) !important;
-    color: white;
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(49, 19, 93, 0.25);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .listing-card .listing-location-pill:active {
     transform: translateY(0);
-    box-shadow: 0 1px 4px rgba(49, 19, 93, 0.2);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Focus state for keyboard navigation */
 .listing-card .listing-location-pill:focus {
-    outline: 2px solid var(--primary-purple, #31135d);
+    outline: 2px solid #1a1a2e;
     outline-offset: 2px;
 }
 
@@ -1074,35 +1088,38 @@
     outline: none;
 }
 
-/* Location pin icon */
+/* Location pin icon - ensure it's above the overlay */
 .listing-card .listing-location-pill .location-pin-icon {
-    width: 14px;
-    height: 14px;
+    position: relative;
+    z-index: 1;
+    width: 12px;
+    height: 12px;
     flex-shrink: 0;
-    color: var(--primary-purple, #31135d);
-    transition: color 0.2s ease;
+    fill: #1a1a2e;
+    transition: fill 0.2s ease;
 }
 
-.listing-card .listing-location-pill:hover .location-pin-icon {
-    color: white;
-}
-
-/* Location text */
+/* Location text - ensure it's above the overlay */
 .listing-card .listing-location-pill .location-text {
-    font-size: 12px;
-    color: inherit;
+    position: relative;
+    z-index: 1;
+    font-size: 13px;
+    color: #1a1a2e;
+    font-weight: 600;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-/* Arrow icon */
+/* Arrow icon - ensure it's above the overlay */
 .listing-card .listing-location-pill .location-arrow-icon {
-    width: 12px;
-    height: 12px;
+    position: relative;
+    z-index: 1;
+    width: 10px;
+    height: 10px;
     flex-shrink: 0;
-    opacity: 0.7;
+    opacity: 0.8;
     transition: all 0.2s ease;
-    stroke: currentColor;
+    stroke: #1a1a2e;
 }
 
 .listing-card .listing-location-pill:hover .location-arrow-icon {
@@ -1423,21 +1440,21 @@
         color: #1a1a1a;
     }
 
-    /* Location pill on mobile */
+    /* Location pill on mobile - V5 Map Background Pill */
     .listing-card .listing-location-pill {
-        padding: 5px 10px 5px 8px !important;
+        padding: 5px 12px !important;
         margin-bottom: 4px;
-        font-size: 11px;
+        font-size: 12px;
     }
 
     .listing-card .listing-location-pill .location-pin-icon {
-        width: 12px;
-        height: 12px;
+        width: 10px;
+        height: 10px;
     }
 
     .listing-card .listing-location-pill .location-arrow-icon {
-        width: 10px;
-        height: 10px;
+        width: 9px;
+        height: 9px;
     }
 
     /* Meta section as inline details text */
