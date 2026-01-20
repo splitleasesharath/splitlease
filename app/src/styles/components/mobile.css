@@ -91,7 +91,8 @@
     }
 
     /* Mobile dropdown - fixed positioning to escape stacking context */
-    .dropdown-menu {
+    /* IMPORTANT: Scope to navigation dropdowns only, NOT LoggedInAvatar dropdown */
+    .nav-dropdown .dropdown-menu {
         position: fixed !important;
         top: 60px !important; /* Below the fixed header */
         transform: none !important;
@@ -112,25 +113,25 @@
     }
 
     /* Position Host dropdown on left-center */
-    .dropdown-menu-host {
+    .nav-dropdown .dropdown-menu-host {
         left: 25% !important;
         right: auto !important;
     }
 
     /* Position Guest dropdown on right-center */
-    .dropdown-menu-guest {
+    .nav-dropdown .dropdown-menu-guest {
         left: auto !important;
         right: 25% !important;
     }
 
-    .dropdown-menu.active {
+    .nav-dropdown .dropdown-menu.active {
         opacity: 1 !important;
         visibility: visible !important;
         pointer-events: auto;
     }
 
     /* Hide the arrow pointer on mobile (doesn't align with fixed positioning) */
-    .dropdown-menu::before {
+    .nav-dropdown .dropdown-menu::before {
         display: none !important;
     }
 
