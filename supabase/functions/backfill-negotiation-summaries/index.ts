@@ -14,7 +14,7 @@
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeaders, handleCors } from "../_shared/cors.ts";
+import { corsHeaders } from "../_shared/cors.ts";
 
 const SPLITBOT_USER_ID = "1634177189464x117577733821174320";
 
@@ -30,7 +30,7 @@ interface BackfillResult {
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
-    return handleCors(req);
+    return new Response(null, { status: 200, headers: corsHeaders });
   }
 
   try {
@@ -48,10 +48,10 @@ Deno.serve(async (req) => {
     // Step 1: Find all suggested proposals (status contains "Split Lease")
     const { data: suggestedProposals, error: proposalError } = await supabase
       .from("proposal")
-      .select("_id, Status, Guest, Listing, \"Created Date\"")
-      .like("Status", "%Split Lease%")
-      .eq("Deleted", false)
-      .order("Created Date", { ascending: false });
+      .select('_id, "Status", "Guest", "Listing", "Created Date"')
+      .like('"Status"', "%Split Lease%")
+      .eq('"Deleted"', false)
+      .order('"Created Date"', { ascending: false });
 
     if (proposalError) {
       throw new Error(`Failed to fetch proposals: ${proposalError.message}`);
@@ -75,8 +75,8 @@ Deno.serve(async (req) => {
     const proposalIds = suggestedProposals.map(p => p._id);
     const { data: existingSummaries, error: summaryError } = await supabase
       .from("negotiationsummary")
-      .select("\"Proposal associated\"")
-      .in("Proposal associated", proposalIds);
+      .select('"Proposal associated"')
+      .in('"Proposal associated"', proposalIds);
 
     if (summaryError) {
       console.warn(`[backfill] Warning: Could not check existing summaries: ${summaryError.message}`);
@@ -113,11 +113,12 @@ Deno.serve(async (req) => {
         }
 
         // Find the thread for this proposal
+        // Note: Bubble column names with special chars need quoted in .eq()
         const { data: thread, error: threadError } = await supabase
           .from("thread")
-          .select("_id, \"-Guest User\"")
-          .eq("Proposal", proposal._id)
-          .single();
+          .select('_id, "-Guest User"')
+          .eq('"Proposal"', proposal._id)
+          .maybeSingle();
 
         if (threadError || !thread) {
           result.status = "skipped_no_thread";
@@ -130,15 +131,16 @@ Deno.serve(async (req) => {
         result.threadId = thread._id;
 
         // Find the first SplitBot message in this thread (the AI summary)
+        // Note: Bubble column names with special chars need quoted in .eq()
         const { data: splitBotMessage, error: messageError } = await supabase
           .from("_message")
-          .select("_id, \"Message Body\", \"Created Date\"")
-          .eq("Associated Thread/Conversation", thread._id)
-          .eq("-Originator User", SPLITBOT_USER_ID)
-          .eq("is Split Bot", true)
-          .order("Created Date", { ascending: true })
+          .select('_id, "Message Body", "Created Date"')
+          .eq('"Associated Thread/Conversation"', thread._id)
+          .eq('"-Originator User"', SPLITBOT_USER_ID)
+          .eq('"is Split Bot"', true)
+          .order('"Created Date"', { ascending: true })
           .limit(1)
-          .single();
+          .maybeSingle();
 
         if (messageError || !splitBotMessage) {
           result.status = "skipped_no_message";
