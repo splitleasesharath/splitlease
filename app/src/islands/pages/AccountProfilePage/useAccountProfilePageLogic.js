@@ -876,6 +876,9 @@ export function useAccountProfilePageLogic() {
     }
 
     if (!validateForm()) {
+      if (window.showToast) {
+        window.showToast({ title: 'Validation error', content: 'Please fix the errors before saving.', type: 'error' });
+      }
       return { success: false, error: 'Please fix validation errors' };
     }
 
@@ -924,10 +927,21 @@ export function useAccountProfilePageLogic() {
       setIsDirty(false);
       setSaving(false);
 
+      // Show success toast
+      if (window.showToast) {
+        window.showToast({ title: 'Profile saved!', content: 'Your changes have been saved successfully.', type: 'success' });
+      }
+
       return { success: true };
     } catch (err) {
       console.error('Error saving profile:', err);
       setSaving(false);
+
+      // Show error toast
+      if (window.showToast) {
+        window.showToast({ title: 'Save failed', content: err.message || 'Please try again.', type: 'error' });
+      }
+
       return { success: false, error: err.message };
     }
   }, [isEditorView, profileUserId, formData, validateForm, fetchProfileData]);
