@@ -68,6 +68,9 @@ const PUBLIC_PROMPTS: ReadonlySet<string> = new Set([
   "neighborhood-description",
   "parse-call-transcription",
   "echo-test",
+  "negotiation-summary-suggested",
+  "negotiation-summary-counteroffer",
+  "negotiation-summary-host",
 ]);
 
 type Action = typeof ALLOWED_ACTIONS[number];
