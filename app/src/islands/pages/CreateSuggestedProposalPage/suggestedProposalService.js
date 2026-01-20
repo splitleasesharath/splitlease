@@ -253,26 +253,54 @@ export async function getUserProposalsForListing(userId, listingId) {
 /**
  * Get the most recent proposal for a user across ALL listings
  * Used for prefilling form fields when creating new proposals
+ *
+ * Note: Uses Edge Function with service role to bypass RLS,
+ * since hosts need to query other users' proposals for prefill.
  */
 export async function getUserMostRecentProposal(userId) {
+  console.log('[PREFILL DEBUG] getUserMostRecentProposal called with userId:', userId);
   try {
-    const { data, error } = await supabase
-      .from('proposal')
-      .select(`
-        _id,
-        Status,
-        "Days Selected",
-        "Reservation Span (Weeks)",
-        "Move in range start",
-        "Created Date"
-      `)
-      .eq('Guest', userId)
-      .neq('Deleted', true)
-      .order('"Created Date"', { ascending: false })
-      .limit(1);
+    const { data: { session } } = await supabase.auth.getSession();
 
-    if (error) throw error;
-    return { data: data?.[0] || null, error: null };
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/proposal`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'get_prefill_data',
+          payload: { guestId: userId }
+        })
+      }
+    );
+
+    const result = await response.json();
+    console.log('[PREFILL DEBUG] Edge Function result:', result);
+
+    if (!response.ok || result.error) {
+      throw new Error(result.error || result.message || 'Failed to fetch prefill data');
+    }
+
+    // Transform Edge Function response to match expected format
+    const prefillData = result.data;
+    if (!prefillData) {
+      return { data: null, error: null };
+    }
+
+    // Map to the format expected by the hook
+    const mappedData = {
+      _id: prefillData._id,
+      'Days Selected': prefillData.daysSelected,
+      'Reservation Span (Weeks)': prefillData.reservationSpanWeeks,
+      'Move in range start': prefillData.moveInRangeStart,
+    };
+
+    console.log('[PREFILL DEBUG] Mapped prefill data:', mappedData);
+
+    return { data: mappedData, error: null };
   } catch (error) {
     console.error('[suggestedProposalService] getUserMostRecentProposal error:', error);
     return { data: null, error: error.message };

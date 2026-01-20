@@ -35,7 +35,7 @@ Deno.serve(async (req: Request) => {
     console.log(`[proposal] Action: ${action}`);
 
     // Validate action
-    const validActions = ['create', 'update', 'get', 'suggest', 'create_suggested', 'create_mockup'];
+    const validActions = ['create', 'update', 'get', 'suggest', 'create_suggested', 'create_mockup', 'get_prefill_data'];
     if (!validActions.includes(action)) {
       return new Response(
         JSON.stringify({ success: false, error: `Invalid action: ${action}` }),
@@ -134,6 +134,17 @@ Deno.serve(async (req: Request) => {
         // No authentication required - internal service call only
         // Access control via service role key from listing edge function
         result = await handleCreateMockup(payload, supabase);
+        break;
+      }
+
+      case 'get_prefill_data': {
+        console.log('[proposal] Loading get_prefill_data handler...');
+        const { handleGetPrefillData } = await import("./actions/get_prefill_data.ts");
+        console.log('[proposal] Get_prefill_data handler loaded');
+
+        // No authentication required - internal tool only
+        // Service role bypasses RLS so hosts can query other users' proposals
+        result = await handleGetPrefillData(payload, supabase);
         break;
       }
 
