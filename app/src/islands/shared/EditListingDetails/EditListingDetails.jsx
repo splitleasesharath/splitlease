@@ -20,14 +20,13 @@ import {
   SPACE_TYPES,
   KITCHEN_TYPES,
   STORAGE_TYPES,
-  PARKING_OPTIONS,
   BEDROOM_OPTIONS,
   BED_OPTIONS,
   BATHROOM_OPTIONS,
   GUEST_OPTIONS,
   BOROUGH_OPTIONS
 } from './constants';
-import { getAllCancellationPolicies } from '../../../lib/dataLookups';
+import { getAllCancellationPolicies, getAllParkingOptions } from '../../../lib/dataLookups';
 import '../../../styles/components/edit-listing-details.css';
 
 /**
@@ -636,8 +635,8 @@ export function EditListingDetails({ listing, editSection, focusField, onClose, 
               onChange={(e) => handleInputChange('Features - Parking type', e.target.value)}
             >
               <option value="">Select parking</option>
-              {PARKING_OPTIONS.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              {getAllParkingOptions().map(opt => (
+                <option key={opt.id} value={opt.id}>{opt.label}</option>
               ))}
             </select>
           </div>
