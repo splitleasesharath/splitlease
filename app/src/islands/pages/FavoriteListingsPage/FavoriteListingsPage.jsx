@@ -16,6 +16,7 @@ import CreateProposalFlowV2, { clearProposalDraft } from '../../shared/CreatePro
 import ProposalSuccessModal from '../../modals/ProposalSuccessModal.jsx';
 import SignUpLoginModal from '../../shared/SignUpLoginModal.jsx';
 import EmptyState from './components/EmptyState';
+import FavoritesCard from './components/FavoritesCard.jsx';
 import { getFavoritedListingIds, removeFromFavorites } from './favoritesApi';
 import { checkAuthStatus, validateTokenAndFetchUser, getSessionId } from '../../../lib/auth/tokenValidation.js';
 import { logoutUser } from '../../../lib/auth/logout.js';
@@ -65,7 +66,7 @@ async function fetchInformationalTexts() {
 }
 
 /**
- * ListingsGrid - Grid of property cards
+ * ListingsGrid - Grid of favorites cards (new vertical design)
  * Note: On favorites page, all listings are favorited by definition
  * @param {Map} proposalsByListingId - Map of listing ID to proposal object
  * @param {Function} onCreateProposal - Handler to open inline proposal creation modal
@@ -73,31 +74,37 @@ async function fetchInformationalTexts() {
  */
 function ListingsGrid({ listings, onOpenContactModal, onOpenInfoModal, mapRef, isLoggedIn, onToggleFavorite, userId, proposalsByListingId, onCreateProposal, onPhotoClick }) {
   return (
-    <div className="listings-container">
+    <div className="favorites-grid">
       {listings.map((listing) => {
         const proposalForListing = proposalsByListingId?.get(listing.id) || null;
         return (
-          <PropertyCard
+          <FavoritesCard
             key={listing.id}
             listing={listing}
-            onLocationClick={(listing) => {
-              if (mapRef.current) {
-                mapRef.current.zoomToListing(listing.id);
-              }
-            }}
             onOpenContactModal={onOpenContactModal}
-            onOpenInfoModal={onOpenInfoModal}
             isLoggedIn={isLoggedIn}
-            isFavorited={true}
             onToggleFavorite={onToggleFavorite}
             userId={userId}
             proposalForListing={proposalForListing}
             onOpenCreateProposalModal={onCreateProposal}
             onPhotoClick={onPhotoClick}
-            variant="favorites"
           />
         );
       })}
+    </div>
+  );
+}
+
+/**
+ * PageTitleSection - Page header with title and count badge
+ */
+function PageTitleSection({ count }) {
+  return (
+    <div className="favorites-page__title-section">
+      <div className="favorites-page__title-row">
+        <h1 className="favorites-page__title">My Favorites</h1>
+        <span className="favorites-page__count-badge">{count} saved</span>
+      </div>
     </div>
   );
 }
@@ -1043,10 +1050,8 @@ const FavoriteListingsPage = () => {
             </div>
           </div>
 
-          {/* Listings count */}
-          <div className="listings-count">
-            <strong>{listings.length} favorite{listings.length !== 1 ? 's' : ''}</strong>
-          </div>
+          {/* Page Title Section */}
+          <PageTitleSection count={listings.length} />
 
           {/* Listings content */}
           <div className="listings-content">
@@ -1058,7 +1063,6 @@ const FavoriteListingsPage = () => {
 
             {!isLoading && !error && listings.length === 0 && (
               <EmptyState
-                message="You don't have any favorite listings yet. We invite you to search listings and submit proposals with the weekly schedule you have in mind"
                 ctaText="Explore Rentals"
                 ctaLink="/search"
               />

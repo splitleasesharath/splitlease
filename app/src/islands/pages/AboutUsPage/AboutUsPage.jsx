@@ -62,6 +62,28 @@ function TeamSkeleton() {
   );
 }
 
+/**
+ * Hero carousel avatar component (no names - just photos)
+ */
+function HeroAvatar({ member }) {
+  const [imageError, setImageError] = useState(false);
+  const imageUrl = formatImageUrl(member.image);
+
+  return (
+    <div className="hero-carousel-avatar">
+      <div className="hero-avatar-image" style={imageError ? { backgroundColor: '#4B47CE' } : {}}>
+        {!imageError && (
+          <img
+            src={imageUrl}
+            alt={member.name}
+            onError={() => setImageError(true)}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function AboutUsPage() {
   const [teamMembers, setTeamMembers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -112,12 +134,52 @@ export default function AboutUsPage() {
       <Header />
 
       <main className="about-us-main">
-        {/* Section 1: Mission Statement Hero */}
+        {/* Section 1: Mission Statement Hero with Team Carousel */}
         <section className="about-hero-section">
           <div className="about-container">
+            <div className="hero-badge">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+              <span>MEET OUR TEAM</span>
+            </div>
+
             <h1 className="about-mission-statement">
-              Our Mission is to Make Repeat Travel Flexible, Fast and Affordable
+              Our Mission is to Make Repeat Travel <span className="highlight">Flexible</span>, <span className="highlight">Fast</span> and <span className="highlight">Affordable</span>
             </h1>
+
+            <p className="hero-subtitle">
+              We're a team of multilocals who built Split Lease because we were living the need. Now we're making flexible housing accessible to everyone.
+            </p>
+
+            {/* Team Avatar Carousel */}
+            {!isLoading && teamMembers.length > 0 && (
+              <div className="hero-carousel-container">
+                <div className="hero-carousel-track">
+                  {/* First set of avatars */}
+                  {teamMembers.map((member, index) => (
+                    <HeroAvatar key={`first-${member.id}`} member={member} index={index} />
+                  ))}
+                  {/* Duplicate set for seamless loop */}
+                  {teamMembers.map((member, index) => (
+                    <HeroAvatar key={`second-${member.id}`} member={member} index={index} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* CTA Button */}
+            <div className="hero-cta">
+              <a href="#team" className="cta-primary">
+                Meet the Team
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </a>
+            </div>
           </div>
         </section>
 
@@ -158,7 +220,7 @@ export default function AboutUsPage() {
         </section>
 
         {/* Section 3: Meet the Team */}
-        <section className="about-team-section">
+        <section id="team" className="about-team-section">
           <div className="about-container">
             <h2 className="about-section-heading-large">Meet the Team Empowering Multi-Locality</h2>
 

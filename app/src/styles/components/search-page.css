@@ -774,6 +774,30 @@
   text-overflow: ellipsis;
 }
 
+/* Neighborhood Search Filter inside Popup - override defaults */
+.filter-popup-group--full-width .neighborhood-search-group {
+  min-width: 100%;
+  max-width: 100%;
+}
+
+.filter-popup-group--full-width .neighborhood-search-group > label {
+  display: none; /* Hide duplicate label since popup has its own */
+}
+
+.filter-popup-group--full-width .neighborhood-search-dropdown {
+  position: relative;
+  top: 0;
+  margin-top: 0.5rem;
+  max-height: 200px;
+  box-shadow: none;
+  border: 1px solid #e5e5e5;
+}
+
+.filter-popup-group--full-width .neighborhood-chips-row {
+  max-height: 100px;
+  overflow-y: auto;
+}
+
 .filter-popup-footer {
   padding: 16px 20px;
   border-top: 1px solid #f3f4f6;
@@ -1127,6 +1151,233 @@
   margin-right: 0.5rem;
   cursor: pointer;
   accent-color: var(--secondary-purple, #6D31C2);
+}
+
+/* ============================================================================
+   Compact Neighborhood Search Filter (New)
+   ============================================================================ */
+
+.inline-filters .neighborhood-search-group {
+  position: relative;
+  min-width: 200px;
+  max-width: 280px;
+  z-index: 100;
+}
+
+.inline-filters .neighborhood-search-group:focus-within {
+  z-index: 1000;
+}
+
+.neighborhood-search-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.neighborhood-search-input {
+  width: 100%;
+  padding: 0.625rem 2rem 0.625rem 0.75rem;
+  font-size: 0.875rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  color: #374151;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.neighborhood-search-input:hover {
+  border-color: #9ca3af;
+}
+
+.neighborhood-search-input:focus {
+  outline: none;
+  border-color: var(--secondary-purple, #6D31C2);
+  box-shadow: 0 0 0 3px rgba(109, 49, 194, 0.1);
+}
+
+.neighborhood-search-input::placeholder {
+  color: #9ca3af;
+}
+
+.neighborhood-clear-btn {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background: #e5e7eb;
+  border-radius: 50%;
+  font-size: 14px;
+  line-height: 1;
+  color: #6b7280;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.neighborhood-clear-btn:hover {
+  background: #d1d5db;
+  color: #374151;
+}
+
+/* Compact chips row below the input */
+.neighborhood-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-top: 0.5rem;
+}
+
+.neighborhood-chip-compact {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  background: var(--secondary-purple, #6D31C2);
+  color: white;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.neighborhood-chip-compact button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  color: white;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.neighborhood-chip-compact button:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+/* Add more button (+ icon) */
+.neighborhood-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 2px dashed #d1d5db;
+  background: white;
+  border-radius: 9999px;
+  font-size: 18px;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.neighborhood-add-btn:hover {
+  border-color: var(--secondary-purple, #6D31C2);
+  color: var(--secondary-purple, #6D31C2);
+  background: #f5f3ff;
+}
+
+/* Search dropdown results */
+.neighborhood-search-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 320px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 9999;
+}
+
+/* Search input inside dropdown (when adding more) */
+.neighborhood-dropdown-search {
+  padding: 0.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  background: white;
+}
+
+.neighborhood-dropdown-search .neighborhood-search-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+}
+
+.neighborhood-search-option {
+  display: block;
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border: none;
+  background: transparent;
+  text-align: left;
+  font-size: 0.875rem;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.neighborhood-search-option:hover {
+  background: #f5f3ff;
+}
+
+.neighborhood-search-option:focus {
+  outline: none;
+  background: #ede9fe;
+}
+
+.neighborhood-search-empty {
+  padding: 0.75rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.neighborhood-search-more {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  background: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+  text-align: center;
+}
+
+/* Mobile adjustments for compact search filter */
+@media (max-width: 768px) {
+  .inline-filters .neighborhood-search-group {
+    width: 100%;
+    max-width: 100%;
+    min-width: 100%;
+  }
+
+  .neighborhood-search-dropdown {
+    max-height: 240px;
+  }
+
+  .neighborhood-chips-row {
+    max-height: 80px;
+    overflow-y: auto;
+  }
 }
 
 /* Results Header with Listings Count and Sort */

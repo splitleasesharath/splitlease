@@ -1,9 +1,346 @@
 /**
- * EmptyState Styles
- * Displayed when user has no favorite listings
- * Matches SearchPage styling
+ * EmptyState Styles - Enhanced Design
+ * Features floating animations and quick tips section
  */
 
+/* ============================================
+   CONTAINER
+   ============================================ */
+.favorites-empty {
+  background: white;
+  border-radius: 24px;
+  padding: 60px 48px;
+  text-align: center;
+  max-width: 520px;
+  width: 100%;
+  margin: 24px auto;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* ============================================
+   ILLUSTRATION
+   ============================================ */
+.favorites-empty__illustration {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  margin: 0 auto 28px;
+}
+
+.favorites-empty__bg {
+  width: 140px;
+  height: 140px;
+  background: linear-gradient(135deg, var(--favorites-purple-light, #F0EBFF) 0%, #E5DCFF 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.favorites-empty__heart {
+  width: 64px;
+  height: 64px;
+  color: var(--favorites-purple, #6B4EE6);
+  opacity: 0.8;
+}
+
+/* Floating Cards */
+.favorites-empty__float {
+  position: absolute;
+  width: 48px;
+  height: 36px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.favorites-empty__float svg {
+  width: 18px;
+  height: 18px;
+  color: #cbd5e1;
+}
+
+.favorites-empty__float--1 {
+  top: -8px;
+  right: -12px;
+  animation: float1 3s ease-in-out infinite;
+}
+
+.favorites-empty__float--2 {
+  bottom: 4px;
+  left: -16px;
+  animation: float2 3s ease-in-out infinite 0.5s;
+}
+
+@keyframes float1 {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes float2 {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+/* ============================================
+   TITLE & TEXT
+   ============================================ */
+.favorites-empty__title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--favorites-text-dark, #1a1a2e);
+  margin: 0 0 10px;
+}
+
+.favorites-empty__text {
+  font-size: 15px;
+  color: var(--favorites-text-medium, #64748B);
+  line-height: 1.6;
+  max-width: 360px;
+  margin: 0 auto 28px;
+}
+
+/* ============================================
+   ACTIONS
+   ============================================ */
+.favorites-empty__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.favorites-empty__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 32px;
+  background: var(--favorites-purple, #6B4EE6);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.favorites-empty__cta:hover {
+  background: var(--favorites-purple-dark, #5A3ED5);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(107, 78, 230, 0.35);
+}
+
+.favorites-empty__cta svg {
+  flex-shrink: 0;
+}
+
+.favorites-empty__link {
+  font-size: 14px;
+  color: var(--favorites-purple, #6B4EE6);
+  text-decoration: none;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.favorites-empty__link:hover {
+  color: var(--favorites-purple-dark, #5A3ED5);
+}
+
+.favorites-empty__link svg {
+  flex-shrink: 0;
+}
+
+/* ============================================
+   QUICK TIPS
+   ============================================ */
+.favorites-empty__tips {
+  margin-top: 36px;
+  padding-top: 28px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.favorites-empty__tips-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--favorites-text-light, #94A3B8);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 16px;
+}
+
+.favorites-empty__tips-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+}
+
+.favorites-empty__tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--favorites-bg, #FAFBFC);
+  border-radius: 10px;
+}
+
+.favorites-empty__tip-icon {
+  width: 32px;
+  height: 32px;
+  background: white;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.favorites-empty__tip-icon svg {
+  width: 16px;
+  height: 16px;
+  color: var(--favorites-purple, #6B4EE6);
+}
+
+.favorites-empty__tip-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.favorites-empty__tip-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--favorites-text-dark, #1a1a2e);
+  margin-bottom: 2px;
+}
+
+.favorites-empty__tip-desc {
+  font-size: 13px;
+  color: var(--favorites-text-medium, #64748B);
+  line-height: 1.4;
+}
+
+/* ============================================
+   RESPONSIVE - TABLET
+   ============================================ */
+@media (max-width: 768px) {
+  .favorites-empty {
+    padding: 40px 24px;
+    border-radius: 16px;
+    margin: 16px;
+    max-width: none;
+  }
+
+  .favorites-empty__illustration {
+    width: 120px;
+    height: 120px;
+    margin-bottom: 24px;
+  }
+
+  .favorites-empty__bg {
+    width: 120px;
+    height: 120px;
+  }
+
+  .favorites-empty__heart {
+    width: 48px;
+    height: 48px;
+  }
+
+  .favorites-empty__float {
+    width: 40px;
+    height: 30px;
+  }
+
+  .favorites-empty__float svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .favorites-empty__title {
+    font-size: 20px;
+  }
+
+  .favorites-empty__text {
+    font-size: 14px;
+  }
+
+  .favorites-empty__cta {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .favorites-empty__tips {
+    margin-top: 28px;
+    padding-top: 24px;
+  }
+}
+
+/* ============================================
+   RESPONSIVE - MOBILE
+   ============================================ */
+@media (max-width: 480px) {
+  .favorites-empty {
+    padding: 32px 20px;
+  }
+
+  .favorites-empty__illustration {
+    width: 100px;
+    height: 100px;
+  }
+
+  .favorites-empty__bg {
+    width: 100px;
+    height: 100px;
+  }
+
+  .favorites-empty__heart {
+    width: 40px;
+    height: 40px;
+  }
+
+  .favorites-empty__float--1 {
+    right: -8px;
+  }
+
+  .favorites-empty__float--2 {
+    left: -12px;
+  }
+
+  .favorites-empty__tip {
+    padding: 10px 12px;
+  }
+
+  .favorites-empty__tip-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .favorites-empty__tip-icon svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .favorites-empty__tip-title {
+    font-size: 13px;
+  }
+
+  .favorites-empty__tip-desc {
+    font-size: 12px;
+  }
+}
+
+/* ============================================
+   LEGACY SUPPORT (old class names)
+   Keep for backwards compatibility
+   ============================================ */
 .empty-state {
   display: flex;
   align-items: center;
@@ -21,7 +358,6 @@
   gap: 1.5rem;
 }
 
-/* Icon */
 .empty-state-icon {
   width: 64px;
   height: 64px;
@@ -29,7 +365,6 @@
   stroke-width: 1.5;
 }
 
-/* Message Text */
 .empty-state-message {
   font-size: 0.9375rem;
   font-weight: 400;
@@ -38,13 +373,12 @@
   margin: 0;
 }
 
-/* CTA Button */
 .empty-state-cta {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.875rem 1.75rem;
-  background: #5b21b6;
+  background: var(--favorites-purple, #6B4EE6);
   color: white;
   border: none;
   border-radius: 8px;
@@ -52,37 +386,9 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  min-width: auto;
 }
 
 .empty-state-cta:hover {
-  background: #4c1d95;
+  background: var(--favorites-purple-dark, #5A3ED5);
   transform: translateY(-1px);
-}
-
-.empty-state-cta:active {
-  background: #4c1d95;
-  transform: translateY(0);
-}
-
-/* Responsive: Mobile (< 768px) */
-@media (max-width: 768px) {
-  .empty-state {
-    min-height: 300px;
-    padding: 2rem 1rem;
-  }
-
-  .empty-state-content {
-    max-width: 100%;
-  }
-
-  .empty-state-message {
-    font-size: 0.875rem;
-  }
-
-  .empty-state-cta {
-    width: auto;
-    font-size: 0.875rem;
-    padding: 0.75rem 1.5rem;
-  }
 }

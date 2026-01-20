@@ -35,7 +35,7 @@ import ProposalSuccessModal from '../modals/ProposalSuccessModal.jsx';
 import { fetchInformationalTexts } from '../../lib/informationalTextsFetcher.js';
 import CompactScheduleIndicator from './SearchPage/components/CompactScheduleIndicator.jsx';
 import MobileFilterBar from './SearchPage/components/MobileFilterBar.jsx';
-import { NeighborhoodCheckboxList, NeighborhoodDropdownFilter } from './SearchPage/components/NeighborhoodFilters.jsx';
+import { NeighborhoodSearchFilter, NeighborhoodCheckboxList, NeighborhoodDropdownFilter } from './SearchPage/components/NeighborhoodFilters.jsx';
 import PropertyCard from '../shared/ListingCard/PropertyCard.jsx';
 import UsabilityPopup from '../shared/UsabilityPopup/UsabilityPopup.jsx';
 
@@ -2488,33 +2488,17 @@ export default function SearchPage() {
                 </select>
               </div>
 
-              {/* Row 2: Neighborhoods - spans full width */}
+              {/* Row 2: Neighborhoods - compact search */}
               <div className="filter-popup-group filter-popup-group--full-width">
                 <label className="filter-popup-label">Neighborhoods</label>
-                <div className="filter-popup-neighborhoods">
-                  {neighborhoods.length === 0 ? (
-                    <div className="neighborhood-list-empty">Loading neighborhoods...</div>
-                  ) : (
-                    <div className="neighborhood-checkbox-grid">
-                      {neighborhoods.map(neighborhood => (
-                        <label key={neighborhood.id} className="neighborhood-checkbox-item-popup">
-                          <input
-                            type="checkbox"
-                            checked={selectedNeighborhoods.includes(neighborhood.id)}
-                            onChange={() => {
-                              if (selectedNeighborhoods.includes(neighborhood.id)) {
-                                setSelectedNeighborhoods(selectedNeighborhoods.filter(id => id !== neighborhood.id));
-                              } else {
-                                setSelectedNeighborhoods([...selectedNeighborhoods, neighborhood.id]);
-                              }
-                            }}
-                          />
-                          <span>{neighborhood.name}</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <NeighborhoodSearchFilter
+                  neighborhoods={neighborhoods}
+                  selectedNeighborhoods={selectedNeighborhoods}
+                  onNeighborhoodsChange={setSelectedNeighborhoods}
+                  neighborhoodSearch={neighborhoodSearch}
+                  onNeighborhoodSearchChange={setNeighborhoodSearch}
+                  searchInputId="neighborhoodSearchPopup"
+                />
               </div>
 
             </div>
@@ -2546,8 +2530,8 @@ export default function SearchPage() {
               </button>
             )}
 
-            {/* Neighborhood Multi-Select - Checkbox list */}
-            <NeighborhoodDropdownFilter
+            {/* Neighborhood Search Filter - Compact autocomplete */}
+            <NeighborhoodSearchFilter
               neighborhoods={neighborhoods}
               selectedNeighborhoods={selectedNeighborhoods}
               onNeighborhoodsChange={setSelectedNeighborhoods}
@@ -2693,7 +2677,7 @@ export default function SearchPage() {
                       onOpenInfoModal={handleOpenInfoModal}
                       mapRef={mapRef}
                       isLoggedIn={isLoggedIn}
-                      userId={currentUser?.id}
+                      userId={authUserId}
                       favoritedListingIds={favoritedListingIds}
                       onToggleFavorite={handleToggleFavorite}
                       onRequireAuth={() => {
@@ -2721,7 +2705,7 @@ export default function SearchPage() {
                 onOpenInfoModal={handleOpenInfoModal}
                 mapRef={mapRef}
                 isLoggedIn={isLoggedIn}
-                userId={currentUser?.id}
+                userId={authUserId}
                 favoritedListingIds={favoritedListingIds}
                 onToggleFavorite={handleToggleFavorite}
                 onRequireAuth={() => {
@@ -2844,7 +2828,7 @@ export default function SearchPage() {
             isLoggedIn={isLoggedIn}
             favoritedListingIds={favoritedListingIds}
             onToggleFavorite={handleToggleFavorite}
-            userId={currentUser?.id}
+            userId={authUserId}
             onRequireAuth={() => {
               setAuthModalView('signup');
               setIsAuthModalOpen(true);
@@ -2961,10 +2945,9 @@ export default function SearchPage() {
               selectedBorough={selectedBorough}
               selectedNightsCount={selectedNightsCount}
               onMarkerClick={(listing) => {
-                logger.debug('Marker clicked:', listing.title);
-                // Close mobile map and scroll to listing
-                setMobileMapVisible(false);
-                setTimeout(() => scrollToListingCard(listing), 300);
+                logger.debug('[Mobile Map] Marker clicked:', listing.title);
+                // Let GoogleMap component handle showing the listing card overlay
+                // Do NOT close the mobile map - user stays in map view
               }}
               onMessageClick={(listing) => {
                 logger.debug('[SearchPage] Mobile map card message clicked for:', listing?.id);
@@ -2974,7 +2957,7 @@ export default function SearchPage() {
               isLoggedIn={isLoggedIn}
               favoritedListingIds={favoritedListingIds}
               onToggleFavorite={handleToggleFavorite}
-              userId={currentUser?.id}
+              userId={authUserId}
               onRequireAuth={() => {
                 setAuthModalView('signup');
                 setIsAuthModalOpen(true);

@@ -1,143 +1,332 @@
 /* ==========================================================================
    SPLIT LEASE - ABOUT US PAGE STYLES
+   Follows Careers Page design patterns with enhanced hero
    ========================================================================== */
 
-/* CSS Variables for About Us Page */
-.about-us-main {
-  --about-header-bg: #5A1868;
-  --about-accent-purple: #800080;
-  --about-team-name-color: #31135D;
-  --about-image-placeholder: #4B47CE;
-  --about-primary-text: #000000;
-  --about-secondary-text: #222222;
-  --about-body-bg: #FFFFFF;
-  --about-section-bg-light: #F0F8FF;
-  --about-border-gray: #6B6B6B;
-  --about-font-family: 'Inter', 'Nunito Sans', 'Avenir Next LT Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --about-container-max-width: 1200px;
-  --about-section-padding: 80px 20px;
-  --about-section-padding-mobile: 50px 16px;
+/* Premium Gradient Variables */
+:root {
+  --gradient-purple-blue: linear-gradient(135deg, #31135D 0%, #4A2F7C 50%, #5B21B6 100%);
+  --gradient-purple-pink: linear-gradient(135deg, #31135D 0%, #6B21A8 50%, #A855F7 100%);
+  --brand-purple: #31135D;
 }
 
 /* Container */
 .about-container {
-  max-width: var(--about-container-max-width);
+  max-width: 1000px;
   margin: 0 auto;
   padding: 0 20px;
+  position: relative;
+  z-index: 2;
 }
 
 /* ==========================================================================
    HERO / MISSION STATEMENT SECTION
+   Pattern: Enhanced hero with team carousel
    ========================================================================== */
 
 .about-hero-section {
-  background-color: var(--about-body-bg);
-  padding: 80px 20px;
+  background: white;
+  padding: 100px 48px 80px;
+  padding-top: 180px; /* 80px for fixed header + 100px spacing */
+  margin: 0;
+  position: relative;
+  overflow: hidden;
+  min-height: 600px;
   text-align: center;
+}
+
+/* Hero Badge */
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  background: rgba(49, 19, 93, 0.08);
+  border: 1px solid rgba(49, 19, 93, 0.2);
+  border-radius: 500px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #31135D;
+  margin-bottom: 24px;
+}
+
+.hero-badge svg {
+  width: 16px;
+  height: 16px;
 }
 
 .about-mission-statement {
-  font-family: var(--about-font-family);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
   font-weight: 700;
-  font-size: 36px;
-  color: var(--about-primary-text);
-  line-height: 1.3;
-  letter-spacing: 0;
-  max-width: 800px;
-  margin: 0 auto;
+  font-size: 56px;
+  color: #111827;
+  line-height: 1.2;
+  letter-spacing: -1px;
+  max-width: 900px;
+  margin: 0 auto 24px;
+  text-align: center;
+  position: relative;
+  z-index: 2;
+}
+
+.about-mission-statement .highlight {
+  color: #31135D;
+}
+
+/* Hero Subtitle */
+.hero-subtitle {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+  font-size: 20px;
+  color: #6B7280;
+  max-width: 700px;
+  margin: 0 auto 48px;
+  line-height: 1.7;
+  font-weight: 400;
+  text-align: center;
 }
 
 /* ==========================================================================
-   STORY SECTION
+   HERO TEAM CAROUSEL
+   ========================================================================== */
+
+.hero-carousel-container {
+  width: 100%;
+  overflow: hidden;
+  margin: 48px 0;
+  position: relative;
+}
+
+/* Gradient fade edges */
+.hero-carousel-container::before,
+.hero-carousel-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 80px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.hero-carousel-container::before {
+  left: 0;
+  background: linear-gradient(to right, white, transparent);
+}
+
+.hero-carousel-container::after {
+  right: 0;
+  background: linear-gradient(to left, white, transparent);
+}
+
+.hero-carousel-track {
+  display: flex;
+  gap: 32px;
+  animation: carousel-scroll 45s linear infinite;
+  width: max-content;
+}
+
+.hero-carousel-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes carousel-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.hero-carousel-avatar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+
+.hero-carousel-avatar:hover {
+  transform: scale(1.1);
+}
+
+.hero-avatar-image {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--gradient-purple-blue);
+  box-shadow: 0 4px 16px rgba(49, 19, 93, 0.2);
+  border: 3px solid white;
+  transition: all 0.3s ease;
+}
+
+.hero-carousel-avatar:hover .hero-avatar-image {
+  box-shadow: 0 8px 24px rgba(49, 19, 93, 0.3);
+  border-color: #31135D;
+}
+
+.hero-avatar-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hero-avatar-name {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+}
+
+/* Hero CTA Button */
+.hero-cta {
+  margin-top: 40px;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+}
+
+.cta-primary {
+  padding: 16px 40px;
+  background: var(--gradient-purple-blue);
+  color: white;
+  border-radius: 500px;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: none;
+  cursor: pointer;
+}
+
+.cta-primary:hover {
+  background: var(--gradient-purple-pink);
+  box-shadow: 0 8px 24px rgba(49, 19, 93, 0.4);
+  transform: translateY(-2px);
+}
+
+.cta-primary svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ==========================================================================
+   STORY SECTION - Light Gray Background
+   Pattern: content-section.alt-bg from Careers page
    ========================================================================== */
 
 .about-story-section {
-  background-color: var(--about-body-bg);
-  padding: var(--about-section-padding);
+  background: #f7f8f9;
+  padding: 80px 32px;
+  margin: 0;
+  position: relative;
 }
 
 .about-section-heading {
-  font-family: var(--about-font-family);
-  font-weight: 600;
-  font-size: 28px;
-  color: var(--about-secondary-text);
-  text-align: center;
-  margin-bottom: 40px;
-  word-spacing: 1px;
-  line-height: 1;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 40px;
+  color: #111827;
+  line-height: 1.2;
+  margin-bottom: 16px;
+  text-align: left;
 }
 
 .about-story-content {
-  max-width: 800px;
-  margin: 0 auto;
+  max-width: 100%;
+  margin: 0;
 }
 
 .about-story-text {
-  font-family: var(--about-font-family);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
   font-weight: 400;
-  font-size: 20px;
-  color: var(--about-primary-text);
-  line-height: 1.3;
-  letter-spacing: -0.5px;
+  font-size: 18px;
+  color: #6B7280;
+  line-height: 1.7;
   margin-bottom: 24px;
 }
 
 .about-story-text.about-highlight strong {
-  color: var(--about-accent-purple);
+  color: #31135D;
+  font-weight: 700;
 }
 
 .about-story-text.about-standalone {
   margin-top: 32px;
   margin-bottom: 32px;
+  font-size: 24px;
+  text-align: center;
+  color: #31135D;
 }
 
 .about-pain-points {
-  margin: 24px 0;
-  padding-left: 24px;
+  margin: 32px 0;
+  padding: 24px 32px;
   list-style: none;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #E5E7EB;
 }
 
 .about-pain-points li {
-  font-family: var(--about-font-family);
-  font-weight: 400;
-  font-size: 20px;
-  color: var(--about-primary-text);
-  line-height: 1.3;
-  letter-spacing: -0.5px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  color: #374151;
+  line-height: 1.6;
   margin-bottom: 12px;
   position: relative;
+  padding-left: 24px;
+}
+
+.about-pain-points li:last-child {
+  margin-bottom: 0;
 }
 
 .about-pain-points li::before {
-  content: "\2022";
+  content: "";
   position: absolute;
-  left: -20px;
-  color: var(--about-primary-text);
+  left: 0;
+  top: 8px;
+  width: 8px;
+  height: 8px;
+  background: var(--gradient-purple-blue);
+  border-radius: 50%;
 }
 
 /* ==========================================================================
-   TEAM SECTION
+   TEAM SECTION - White Background
+   Pattern: content-section from Careers page
    ========================================================================== */
 
 .about-team-section {
-  background-color: var(--about-section-bg-light);
-  padding: var(--about-section-padding);
+  background: white;
+  padding: 80px 32px;
+  margin: 0;
+  position: relative;
 }
 
 .about-section-heading-large {
-  font-family: var(--about-font-family);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
   font-weight: 700;
-  font-size: 36px;
-  color: var(--about-primary-text);
+  font-size: 40px;
+  color: #111827;
   text-align: center;
-  line-height: 1.3;
-  margin-bottom: 60px;
+  line-height: 1.2;
+  margin-bottom: 48px;
 }
 
 .about-team-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 40px;
+  gap: 32px;
   justify-items: center;
 }
 
@@ -146,22 +335,42 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  cursor: pointer;
-  transition: transform 0.2s ease;
-  min-height: 302px;
+  background: white;
+  border: 2px solid #E5E7EB;
+  border-radius: 16px;
+  padding: 32px 24px;
+  transition: all 0.2s ease;
+  width: 100%;
+  max-width: 260px;
 }
 
-.about-team-card:hover {
-  transform: translateY(-5px);
+.about-team-card.clickable {
+  cursor: pointer;
+}
+
+.about-team-card:not(.clickable) {
+  cursor: default;
+}
+
+.about-team-card.clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(49, 19, 93, 0.1);
+  border-color: #31135D;
+}
+
+.about-team-card:not(.clickable):hover {
+  transform: none;
 }
 
 .about-team-image {
-  width: 144px;
-  height: 144px;
-  border-radius: 100%;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
   overflow: hidden;
-  background-color: var(--about-image-placeholder);
+  background: var(--gradient-purple-blue);
   margin-bottom: 20px;
+  box-shadow: 0 8px 24px rgba(49, 19, 93, 0.2);
+  border: 4px solid white;
 }
 
 .about-team-image img {
@@ -171,76 +380,88 @@
 }
 
 .about-team-name {
-  font-family: var(--about-font-family);
-  font-weight: 700;
-  font-size: 24px;
-  color: var(--about-team-name-color);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 18px;
+  color: #111827;
   line-height: 1.3;
-  letter-spacing: -0.5px;
   margin-bottom: 8px;
 }
 
 .about-team-title {
-  font-family: var(--about-font-family);
-  font-weight: 400;
-  font-size: 18px;
-  color: var(--about-team-name-color);
-  line-height: 1.3;
-  letter-spacing: -0.5px;
-  max-width: 175px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: #6B7280;
+  line-height: 1.4;
+  max-width: 180px;
   margin: 0;
 }
 
 /* ==========================================================================
-   FEATURES SECTION
+   FEATURES SECTION - Light Gray Background
+   Pattern: values-grid from Careers page
    ========================================================================== */
 
 .about-features-section {
-  background-color: var(--about-section-bg-light);
-  padding: var(--about-section-padding);
+  background: #f7f8f9;
+  padding: 80px 32px;
+  margin: 0;
+  position: relative;
 }
 
 .about-features-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 40px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 32px;
+  margin-top: 48px;
 }
 
 .about-feature-card {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
-  padding: 20px;
+  align-items: flex-start;
+  text-align: left;
+  background: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 16px;
+  padding: 32px;
+  transition: all 0.2s ease;
+}
+
+.about-feature-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(49, 19, 93, 0.1);
+  border-color: #31135D;
 }
 
 .about-feature-icon {
-  color: #4B47CE;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
+  color: #31135D;
 }
 
 .about-feature-icon svg {
-  width: 64px;
-  height: 64px;
+  width: 40px;
+  height: 40px;
+  stroke: #31135D;
+  stroke-width: 2;
 }
 
 .about-feature-title {
-  font-family: var(--about-font-family);
-  font-weight: 400;
-  font-size: 24px;
-  color: var(--about-primary-text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 18px;
+  color: #111827;
   line-height: 1.3;
-  letter-spacing: -0.5px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .about-feature-description {
-  font-family: var(--about-font-family);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
   font-weight: 400;
-  font-size: 16px;
-  color: var(--about-primary-text);
-  line-height: 1.5;
-  max-width: 300px;
+  font-size: 15px;
+  color: #6B7280;
+  line-height: 1.6;
   margin: 0;
 }
 
@@ -248,71 +469,179 @@
    RESPONSIVE STYLES
    ========================================================================== */
 
-/* Tablet - 954px and below */
-@media (max-width: 954px) {
-  .about-team-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-/* Tablet Small - 760px and below */
-@media (max-width: 760px) {
-  .about-mission-statement {
-    font-size: 30px;
-  }
-
-  .about-section-heading-large {
-    font-size: 30px;
-  }
-}
-
-/* Mobile - 700px and below */
-@media (max-width: 700px) {
-  .about-team-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .about-features-grid {
-    grid-template-columns: 1fr;
-    gap: 30px;
-  }
-
+@media (max-width: 768px) {
   .about-hero-section {
-    padding: 50px 20px;
+    padding: 60px 20px 50px;
+    padding-top: 120px;
+    min-height: auto;
+  }
+
+  .hero-badge {
+    font-size: 12px;
+    padding: 6px 16px;
+  }
+
+  .about-mission-statement {
+    font-size: 32px;
+    line-height: 1.3;
+    padding: 0 8px;
+  }
+
+  .hero-subtitle {
+    font-size: 16px;
+    padding: 0 8px;
+    margin-bottom: 32px;
+  }
+
+  /* Carousel mobile adjustments */
+  .hero-carousel-container {
+    margin: 32px 0;
+  }
+
+  .hero-carousel-container::before,
+  .hero-carousel-container::after {
+    width: 40px;
+  }
+
+  .hero-carousel-track {
+    gap: 24px;
+    animation-duration: 35s;
+  }
+
+  .hero-avatar-image {
+    width: 64px;
+    height: 64px;
+    border-width: 2px;
+  }
+
+  .hero-avatar-name {
+    font-size: 12px;
+  }
+
+  .hero-cta {
+    margin-top: 24px;
+  }
+
+  .cta-primary {
+    padding: 14px 28px;
+    font-size: 15px;
   }
 
   .about-story-section,
   .about-team-section,
   .about-features-section {
-    padding: var(--about-section-padding-mobile);
+    padding: 50px 20px;
   }
 
-  .about-section-heading {
-    font-size: 24px;
-    margin-bottom: 30px;
+  .about-section-heading,
+  .about-section-heading-large {
+    font-size: 28px;
+    line-height: 1.3;
   }
 
   .about-story-text {
-    font-size: 18px;
+    font-size: 15px;
+  }
+
+  .about-story-text.about-standalone {
+    font-size: 20px;
+  }
+
+  .about-pain-points {
+    padding: 20px 24px;
   }
 
   .about-pain-points li {
-    font-size: 18px;
+    font-size: 15px;
+  }
+
+  .about-team-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+
+  .about-team-card {
+    max-width: 100%;
+    padding: 24px 20px;
+  }
+
+  .about-team-image {
+    width: 100px;
+    height: 100px;
+  }
+
+  .about-features-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .about-feature-card {
+    padding: 24px;
   }
 }
 
-/* Mobile Small - 530px and below */
-@media (max-width: 530px) {
+/* Extra small devices */
+@media (max-width: 480px) {
+  .about-mission-statement {
+    font-size: 28px;
+  }
+
+  .hero-subtitle {
+    font-size: 15px;
+  }
+
+  /* Carousel extra small adjustments */
+  .hero-carousel-track {
+    gap: 20px;
+    animation-duration: 30s;
+  }
+
+  .hero-avatar-image {
+    width: 56px;
+    height: 56px;
+  }
+
+  .hero-avatar-name {
+    font-size: 11px;
+  }
+
+  .cta-primary {
+    padding: 12px 24px;
+    font-size: 14px;
+  }
+
+  .about-section-heading,
+  .about-section-heading-large {
+    font-size: 24px;
+  }
+
   .about-team-grid {
     grid-template-columns: 1fr;
+    gap: 16px;
   }
 
-  .about-mission-statement {
-    font-size: 26px;
+  .about-team-card {
+    padding: 20px 16px;
   }
 
-  .about-section-heading-large {
-    font-size: 26px;
+  .about-team-image {
+    width: 88px;
+    height: 88px;
+  }
+
+  .about-team-name {
+    font-size: 16px;
+  }
+
+  .about-team-title {
+    font-size: 13px;
+  }
+}
+
+/* Reduced motion - disable carousel animation */
+@media (prefers-reduced-motion: reduce) {
+  .hero-carousel-track {
+    animation: none;
   }
 }
 
@@ -326,33 +655,35 @@
 
 .about-team-skeleton:hover {
   transform: none;
+  box-shadow: none;
+  border-color: #E5E7EB;
 }
 
 .skeleton-pulse {
-  background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
   background-size: 200% 100%;
-  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  animation: skeleton-shimmer 1.5s infinite;
 }
 
 .skeleton-text {
-  height: 24px;
+  height: 20px;
   width: 120px;
-  border-radius: 4px;
+  border-radius: 6px;
   margin-bottom: 8px;
 }
 
 .skeleton-text-small {
-  height: 18px;
+  height: 14px;
   width: 100px;
   border-radius: 4px;
 }
 
-@keyframes skeleton-pulse {
+@keyframes skeleton-shimmer {
   0% {
-    background-position: 200% 0;
+    background-position: -200% 0;
   }
   100% {
-    background-position: -200% 0;
+    background-position: 200% 0;
   }
 }
 
@@ -361,28 +692,39 @@
 .about-team-empty {
   grid-column: 1 / -1;
   text-align: center;
-  color: var(--about-secondary-text);
+  color: #6B7280;
   font-size: 16px;
-  padding: 40px 20px;
-}
-
-/* Clickable team card cursor */
-.about-team-card.clickable {
-  cursor: pointer;
-}
-
-.about-team-card:not(.clickable) {
-  cursor: default;
-}
-
-.about-team-card:not(.clickable):hover {
-  transform: none;
+  padding: 60px 20px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #E5E7EB;
 }
 
 /* ==========================================================================
-   UTILITY CLASSES
+   ACCESSIBILITY
    ========================================================================== */
 
+.about-team-card.clickable:focus {
+  outline: 2px solid #31135D;
+  outline-offset: 3px;
+}
+
+.about-feature-card:focus-within {
+  outline: 2px solid #31135D;
+  outline-offset: 3px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .about-team-card,
+  .about-feature-card,
+  .skeleton-pulse {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* Screen reader only */
 .about-sr-only {
   position: absolute;
   width: 1px;
