@@ -336,6 +336,27 @@ export function PropertyCard({ listing, onLocationClick, onOpenContactModal, onO
             <div className="price-starting">Starting at<span>${parseFloat(startingPrice).toFixed(2)}/night</span></div>
           )}
           <div className={`availability-note ${availabilityInfo.className}`}>{availabilityInfo.text.split('\n').map((line, i) => i === 0 ? line : <><br key={i}/>{line}</>)}</div>
+          {/* V26 Stacked Map Button */}
+          <button
+            type="button"
+            className="sidebar-map-trigger"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (onLocationClick) {
+                onLocationClick(listing);
+              }
+            }}
+          >
+            <span className="map-trigger-label">View on Map</span>
+            <span className="map-trigger-location">
+              {listing.location}
+              <svg className="map-trigger-arrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
+              </svg>
+            </span>
+          </button>
         </div>
       </div>
     </a>
