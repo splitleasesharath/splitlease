@@ -1,35 +1,23 @@
-/**
- * FavoritesCard Styles
- * Polished vertical card design for the favorites page
- */
+/* FavoritesCard - Clean minimal design */
 
-/* ============================================
-   CARD CONTAINER
-   ============================================ */
 .favorites-card {
-  display: flex;
-  flex-direction: column;
-  background: var(--favorites-card-bg, #ffffff);
-  border-radius: 16px;
+  background: #fff;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-  transition: box-shadow 0.3s ease, transform 0.3s ease;
+  border: 1px solid #e5e7eb;
   cursor: pointer;
-  border: 1px solid var(--favorites-border, #E8ECF0);
+  transition: box-shadow 0.2s, transform 0.2s;
 }
 
 .favorites-card:hover {
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
 }
 
-/* ============================================
-   PHOTO SECTION
-   ============================================ */
+/* Photo */
 .favorites-card__photo {
   position: relative;
-  height: 200px;
-  overflow: hidden;
+  height: 180px;
   background: #f3f4f6;
 }
 
@@ -37,11 +25,6 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s ease;
-}
-
-.favorites-card:hover .favorites-card__image {
-  transform: scale(1.03);
 }
 
 .favorites-card__placeholder {
@@ -50,62 +33,38 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #e5e7eb;
   color: #9ca3af;
 }
 
-/* ============================================
-   STATUS BADGES
-   ============================================ */
+/* Badge */
 .favorites-card__badge {
   position: absolute;
-  top: 12px;
-  left: 12px;
-  padding: 6px 10px;
-  border-radius: 6px;
+  top: 8px;
+  left: 8px;
+  padding: 4px 8px;
+  border-radius: 4px;
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: white;
-  z-index: 2;
+  color: #fff;
 }
 
 .favorites-card__badge--proposal {
-  background: var(--favorites-purple-gradient, linear-gradient(135deg, #6B4EE6 0%, #8B6CF5 100%));
+  background: linear-gradient(135deg, #6B4EE6, #8B6CF5);
 }
 
 .favorites-card__badge--new {
-  background: var(--favorites-success, #10B981);
+  background: #10B981;
 }
 
-/* ============================================
-   FAVORITE BUTTON
-   ============================================ */
+/* Favorite button */
 .favorites-card__favorite {
   position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 2;
+  top: 8px;
+  right: 8px;
 }
 
-/* Override the shared FavoriteButton colors for favorites page */
-.favorites-card__favorite .favorite-button-shared {
-  background: white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-.favorites-card__favorite .favorite-button-shared:hover {
-  transform: scale(1.1);
-}
-
-.favorites-card__favorite .favorite-button-shared.favorited {
-  color: var(--favorites-heart, #FF6B5B);
-}
-
-/* ============================================
-   PHOTO NAVIGATION
-   ============================================ */
+/* Nav arrows */
 .favorites-card__nav {
   position: absolute;
   top: 0;
@@ -115,9 +74,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 8px;
+  padding: 0 6px;
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.2s;
   pointer-events: none;
 }
 
@@ -127,309 +86,191 @@
 }
 
 .favorites-card__nav-btn {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255,255,255,0.9);
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
   color: #374151;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
-.favorites-card__nav-btn:hover {
-  background: white;
-  transform: scale(1.1);
-}
-
-/* ============================================
-   PHOTO DOTS
-   ============================================ */
+/* Photo dots */
 .favorites-card__dots {
   position: absolute;
-  bottom: 12px;
+  bottom: 8px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: 6px;
-  align-items: center;
-  z-index: 2;
+  gap: 4px;
 }
 
 .favorites-card__dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(255,255,255,0.5);
   border: none;
   padding: 0;
   cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.favorites-card__dot:hover {
-  background: rgba(255, 255, 255, 0.8);
 }
 
 .favorites-card__dot--active {
-  background: white;
-  width: 18px;
+  background: #fff;
+  width: 16px;
   border-radius: 3px;
 }
 
 .favorites-card__dot-more {
   font-size: 10px;
-  color: white;
-  font-weight: 500;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  color: #fff;
 }
 
-/* ============================================
-   CONTENT SECTION
-   ============================================ */
+/* Content - TIGHT spacing */
 .favorites-card__content {
-  padding: 1px 2px 2px 2px;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
+  padding: 6px 8px 8px;
 }
 
-/* ============================================
-   LOCATION
-   ============================================ */
 .favorites-card__location {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
-  color: var(--favorites-purple, #6B4EE6);
-  margin: 0;
-  padding: 0;
-  line-height: 1.1;
+  color: #6B4EE6;
 }
 
-.favorites-card__location svg {
-  flex-shrink: 0;
-}
-
-/* ============================================
-   TITLE
-   ============================================ */
 .favorites-card__title {
-  margin: 0;
-  padding: 0;
-  font-size: 15px;
+  margin: 2px 0;
+  font-size: 14px;
   font-weight: 600;
-  color: var(--favorites-text-dark, #1a1a2e);
-  line-height: 1.1;
+  color: #1f2937;
+  line-height: 1.2;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-/* ============================================
-   HOST INFO
-   ============================================ */
 .favorites-card__host {
   display: flex;
   align-items: center;
   gap: 4px;
-  margin: 0;
-  padding: 0;
-  line-height: 1.1;
+  margin: 2px 0;
 }
 
 .favorites-card__host-avatar {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   object-fit: cover;
-  flex-shrink: 0;
 }
 
 .favorites-card__host-avatar--placeholder {
-  background: var(--favorites-purple-gradient, linear-gradient(135deg, #6B4EE6 0%, #8B6CF5 100%));
-  color: white;
+  background: linear-gradient(135deg, #6B4EE6, #8B6CF5);
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 600;
 }
 
 .favorites-card__host-name {
-  font-size: 13px;
-  color: var(--favorites-text-medium, #64748B);
+  font-size: 12px;
+  color: #6b7280;
 }
 
 .favorites-card__host-name strong {
-  color: var(--favorites-text-dark, #1a1a2e);
+  color: #1f2937;
   font-weight: 500;
 }
 
 .favorites-card__verified {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  color: var(--favorites-success, #10B981);
+  gap: 2px;
+  font-size: 10px;
+  color: #10B981;
   font-weight: 500;
 }
 
-.favorites-card__verified svg {
-  flex-shrink: 0;
-}
-
-/* ============================================
-   DETAILS - with bullet separators (mockup spec)
-   ============================================ */
 .favorites-card__details {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: var(--favorites-text-medium, #64748B);
-  margin: 0;
-  padding: 0;
-  line-height: 1.1;
+  font-size: 11px;
+  color: #6b7280;
+  margin: 2px 0;
 }
 
-/* ============================================
-   PRICING - Inline with action button (mockup spec)
-   ============================================ */
+/* Pricing row */
 .favorites-card__pricing {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
-  padding-top: 0;
-  margin-top: 0;
-  border-top: none;
+  margin-top: 4px;
 }
 
 .favorites-card__price-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 0;
 }
 
 .favorites-card__price-label {
-  font-size: 12px;
-  color: var(--favorites-text-medium, #64748B);
+  font-size: 10px;
+  color: #6b7280;
 }
 
 .favorites-card__price {
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 700;
-  color: var(--favorites-text-dark, #1a1a2e);
+  color: #1f2937;
 }
 
 .favorites-card__price-period {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 400;
-  color: var(--favorites-text-medium, #64748B);
+  color: #6b7280;
 }
 
-/* ============================================
-   ACTION BUTTONS - Inline in pricing row
-   ============================================ */
+/* Buttons */
 .favorites-card__btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 10px 18px;
-  border-radius: 10px;
-  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
   border: none;
-  white-space: nowrap;
+  transition: all 0.2s;
 }
 
 .favorites-card__btn--primary {
-  background: var(--favorites-purple, #6B4EE6);
-  color: white;
+  background: #6B4EE6;
+  color: #fff;
 }
 
 .favorites-card__btn--primary:hover {
-  background: var(--favorites-purple-dark, #5A3ED5);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(107, 78, 230, 0.3);
+  background: #5a3ed5;
 }
 
 .favorites-card__btn--secondary {
-  background: var(--favorites-purple-light, #F0EBFF);
-  color: var(--favorites-purple, #6B4EE6);
+  background: #f0ebff;
+  color: #6B4EE6;
 }
 
 .favorites-card__btn--secondary:hover {
-  background: #E5DCFF;
-  transform: translateY(-1px);
+  background: #e5dcff;
 }
 
-/* ============================================
-   RESPONSIVE - MOBILE
-   ============================================ */
+/* Mobile */
 @media (max-width: 768px) {
-  .favorites-card__photo {
-    height: 180px;
-  }
-
-  .favorites-card__content {
-    padding: 1px 2px 2px 2px;
-  }
-
-  .favorites-card__title {
-    font-size: 14px;
-  }
-
-  .favorites-card__price {
-    font-size: 18px;
-  }
-
-  .favorites-card__btn {
-    padding: 10px 16px;
-    font-size: 13px;
-  }
-
-  /* Always show navigation arrows on mobile (no hover) */
-  .favorites-card__nav {
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  .favorites-card__nav-btn {
-    width: 28px;
-    height: 28px;
-  }
-}
-
-/* ============================================
-   SMALL SCREENS
-   ============================================ */
-@media (max-width: 480px) {
   .favorites-card__photo {
     height: 160px;
   }
 
-  .favorites-card__host-avatar {
-    width: 18px;
-    height: 18px;
-    font-size: 9px;
-  }
-
-  .favorites-card__host-name {
-    font-size: 12px;
-  }
-
-  .favorites-card__details {
-    font-size: 12px;
+  .favorites-card__nav {
+    opacity: 1;
+    pointer-events: auto;
   }
 }
