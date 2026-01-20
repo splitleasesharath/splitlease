@@ -451,6 +451,8 @@ export default function LoggedInAvatar({
             currentTarget: e.currentTarget.tagName,
             eventPhase: e.eventPhase,
           });
+          // Close messaging panel when opening dropdown menu
+          if (showMessagingPanel) setShowMessagingPanel(false);
           setIsOpen(!isOpen);
         }}
         aria-label="Toggle user menu"
