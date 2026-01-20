@@ -1,6 +1,7 @@
 import { getNightlyRateByFrequency } from './getNightlyRateByFrequency.js'
 import { calculateFourWeekRent } from './calculateFourWeekRent.js'
 import { calculateReservationTotal } from './calculateReservationTotal.js'
+import { validateNumber } from '../../validators/pricingValidators.js'
 
 /**
  * Calculate complete pricing breakdown for a listing rental.
@@ -34,17 +35,8 @@ export function calculatePricingBreakdown({ listing, nightsPerWeek, reservationW
     )
   }
 
-  if (typeof nightsPerWeek !== 'number' || isNaN(nightsPerWeek)) {
-    throw new Error(
-      `calculatePricingBreakdown: nightsPerWeek must be a number, got ${typeof nightsPerWeek}`
-    )
-  }
-
-  if (typeof reservationWeeks !== 'number' || isNaN(reservationWeeks)) {
-    throw new Error(
-      `calculatePricingBreakdown: reservationWeeks must be a number, got ${typeof reservationWeeks}`
-    )
-  }
+  validateNumber(nightsPerWeek, 'nightsPerWeek', 'calculatePricingBreakdown')
+  validateNumber(reservationWeeks, 'reservationWeeks', 'calculatePricingBreakdown')
 
   // Get nightly rate (throws if not found)
   const nightlyPrice = getNightlyRateByFrequency({
