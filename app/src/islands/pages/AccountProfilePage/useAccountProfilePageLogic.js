@@ -498,9 +498,9 @@ export function useAccountProfilePageLogic() {
         needForSpace: userData['need for Space'] || '',
         specialNeeds: userData['special needs'] || '',
         selectedDays: dayNamesToIndices(userData['Recent Days Selected'] || []),
-        transportationType: userData['Transportation'] || '',
-        goodGuestReasons: userData['Good Guest Reasons'] || [],
-        storageItems: userData['storage'] || []
+        transportationType: userData['transportation medium'] || '',
+        goodGuestReasons: userData['Reasons to Host me'] || [],
+        storageItems: userData['About - Commonly Stored Items'] || []
       });
 
       return userData;
@@ -907,9 +907,9 @@ export function useAccountProfilePageLogic() {
         'need for Space': formData.needForSpace.trim(),
         'special needs': formData.specialNeeds.trim(),
         'Recent Days Selected': indicesToDayNames(formData.selectedDays),
-        'Transportation': formData.transportationType,
-        'Good Guest Reasons': formData.goodGuestReasons,
-        'storage': formData.storageItems,
+        'transportation medium': formData.transportationType,
+        'Reasons to Host me': formData.goodGuestReasons,
+        'About - Commonly Stored Items': formData.storageItems,
         'Modified Date': new Date().toISOString()
       };
 
@@ -965,9 +965,9 @@ export function useAccountProfilePageLogic() {
         needForSpace: profileData['need for Space'] || '',
         specialNeeds: profileData['special needs'] || '',
         selectedDays: dayNamesToIndices(profileData['Recent Days Selected'] || []),
-        transportationType: profileData['Transportation'] || '',
-        goodGuestReasons: profileData['Good Guest Reasons'] || [],
-        storageItems: profileData['storage'] || []
+        transportationType: profileData['transportation medium'] || '',
+        goodGuestReasons: profileData['Reasons to Host me'] || [],
+        storageItems: profileData['About - Commonly Stored Items'] || []
       });
       setFormErrors({});
       setIsDirty(false);
