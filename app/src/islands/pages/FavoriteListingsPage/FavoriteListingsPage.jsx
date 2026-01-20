@@ -18,7 +18,6 @@ import CreateProposalFlowV2, { clearProposalDraft } from '../../shared/CreatePro
 import ProposalSuccessModal from '../../modals/ProposalSuccessModal.jsx';
 import SignUpLoginModal from '../../shared/SignUpLoginModal.jsx';
 import EmptyState from './components/EmptyState';
-import FavoritesCard from './components/FavoritesCard.jsx';
 import FavoritesCardV2 from './components/FavoritesCardV2.jsx';
 import { getFavoritedListingIds, removeFromFavorites } from './favoritesApi';
 import { checkAuthStatus, validateTokenAndFetchUser, getSessionId } from '../../../lib/auth/tokenValidation.js';
@@ -69,37 +68,7 @@ async function fetchInformationalTexts() {
 }
 
 /**
- * ListingsGrid - Grid of favorites cards (new vertical design)
- * Note: On favorites page, all listings are favorited by definition
- * @param {Map} proposalsByListingId - Map of listing ID to proposal object
- * @param {Function} onCreateProposal - Handler to open inline proposal creation modal
- * @param {Function} onPhotoClick - Handler to open fullscreen photo gallery
- */
-function ListingsGrid({ listings, onOpenContactModal, onOpenInfoModal, mapRef, isLoggedIn, onToggleFavorite, userId, proposalsByListingId, onCreateProposal, onPhotoClick }) {
-  return (
-    <div className="favorites-grid">
-      {listings.map((listing) => {
-        const proposalForListing = proposalsByListingId?.get(listing.id) || null;
-        return (
-          <FavoritesCard
-            key={listing.id}
-            listing={listing}
-            onOpenContactModal={onOpenContactModal}
-            isLoggedIn={isLoggedIn}
-            onToggleFavorite={onToggleFavorite}
-            userId={userId}
-            proposalForListing={proposalForListing}
-            onOpenCreateProposalModal={onCreateProposal}
-            onPhotoClick={onPhotoClick}
-          />
-        );
-      })}
-    </div>
-  );
-}
-
-/**
- * ListingsGridV2 - Grid using the new V2 card with pure inline styles
+ * ListingsGridV2 - Grid using pure inline styles (no CSS conflicts)
  */
 function ListingsGridV2({ listings, onOpenContactModal, isLoggedIn, onToggleFavorite, userId, proposalsByListingId, onCreateProposal, onPhotoClick }) {
   return (
@@ -107,7 +76,7 @@ function ListingsGridV2({ listings, onOpenContactModal, isLoggedIn, onToggleFavo
       display: 'grid',
       gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
       gap: '20px',
-      padding: '24px',
+      padding: '0',
     }}>
       {listings.map((listing) => {
         const proposalForListing = proposalsByListingId?.get(listing.id) || null;
@@ -1107,43 +1076,16 @@ const FavoriteListingsPage = () => {
             )}
 
             {!isLoading && !error && listings.length > 0 && (
-              <>
-                {/* V2 Cards - Pure inline styles (no CSS conflicts) */}
-                <div style={{ padding: '16px 24px 0', borderBottom: '1px solid #e5e7eb', marginBottom: '8px' }}>
-                  <h2 style={{ fontSize: '16px', fontWeight: '600', color: '#1f2937', margin: '0 0 16px' }}>
-                    V2 Cards (Inline Styles)
-                  </h2>
-                </div>
-                <ListingsGridV2
-                  listings={listings}
-                  onOpenContactModal={handleOpenContactModal}
-                  isLoggedIn={isLoggedIn}
-                  onToggleFavorite={handleToggleFavorite}
-                  userId={userId}
-                  proposalsByListingId={proposalsByListingId}
-                  onCreateProposal={handleOpenProposalModal}
-                  onPhotoClick={handlePhotoGalleryOpen}
-                />
-
-                {/* Original Cards - CSS-based */}
-                <div style={{ padding: '16px 24px 0', borderBottom: '1px solid #e5e7eb', marginBottom: '8px' }}>
-                  <h2 style={{ fontSize: '16px', fontWeight: '600', color: '#1f2937', margin: '0 0 16px' }}>
-                    Original Cards (CSS-based)
-                  </h2>
-                </div>
-                <ListingsGrid
-                  listings={listings}
-                  onOpenContactModal={handleOpenContactModal}
-                  onOpenInfoModal={handleOpenInfoModal}
-                  mapRef={mapRef}
-                  isLoggedIn={isLoggedIn}
-                  onToggleFavorite={handleToggleFavorite}
-                  userId={userId}
-                  proposalsByListingId={proposalsByListingId}
-                  onCreateProposal={handleOpenProposalModal}
-                  onPhotoClick={handlePhotoGalleryOpen}
-                />
-              </>
+              <ListingsGridV2
+                listings={listings}
+                onOpenContactModal={handleOpenContactModal}
+                isLoggedIn={isLoggedIn}
+                onToggleFavorite={handleToggleFavorite}
+                userId={userId}
+                proposalsByListingId={proposalsByListingId}
+                onCreateProposal={handleOpenProposalModal}
+                onPhotoClick={handlePhotoGalleryOpen}
+              />
             )}
           </div>
         </section>
