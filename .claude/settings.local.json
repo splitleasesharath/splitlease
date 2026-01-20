@@ -31,7 +31,8 @@
       "Skill(slack-webhook:*)",
       "Bash(timeout:*)",
       "Bash(ping:*)",
-      "Bash(bun run lint)"
+      "Bash(bun run lint)",
+      "Bash(start:*)"
     ],
     "deny": [],
     "ask": []

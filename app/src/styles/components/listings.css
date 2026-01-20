@@ -302,7 +302,8 @@
     flex-direction: row;
     align-items: stretch;
     min-height: 200px;
-    max-height: 280px;
+    /* Removed max-height - text content now dictates card height */
+    /* Image matches via align-self: stretch + object-fit: cover */
     height: auto;
     position: relative;
 }
