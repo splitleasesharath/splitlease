@@ -2,7 +2,7 @@
 
 > Split Lease Project - Full Directory Tree
 >
-> **Last Updated**: 2025-12-11
+> **Last Updated**: 2026-01-20
 
 ---
 
@@ -457,8 +457,8 @@ Split Lease/
 │
 ├── supabase/                               # Backend
 │   ├── config.toml                         # Supabase local config
-│   └── functions/                          # Edge Functions (Deno 2) - 11 functions
-│       ├── _shared/                        # Shared utilities (10 files)
+│   └── functions/                          # Edge Functions (Deno 2) - 29 functions
+│       ├── _shared/                        # Shared utilities (15+ files)
 │       │   ├── cors.ts                     # CORS headers
 │       │   ├── errors.ts                   # Custom error classes
 │       │   ├── validation.ts               # Input validation
@@ -468,9 +468,14 @@ Split Lease/
 │       │   ├── queueSync.ts                # Queue sync utilities
 │       │   ├── jsonUtils.ts                # JSON helpers
 │       │   ├── openai.ts                   # OpenAI wrapper
-│       │   └── slack.ts                    # Slack integration
+│       │   ├── slack.ts                    # Slack integration
+│       │   ├── result.ts                   # Result type (FP error handling)
+│       │   ├── orchestration.ts            # FP orchestration utilities
+│       │   ├── errorLog.ts                 # ErrorLog system
+│       │   └── junctionHelpers.ts          # Junction table helpers
 │       │
-│       ├── auth-user/                      # Authentication
+│       ├── # CORE FUNCTIONS
+│       ├── auth-user/                      # Authentication (9 actions)
 │       │   ├── index.ts                    # Router
 │       │   └── handlers/
 │       │       ├── login.ts                # Supabase Auth login
@@ -478,34 +483,28 @@ Split Lease/
 │       │       ├── logout.ts               # Logout handler
 │       │       ├── validate.ts             # Token validation
 │       │       ├── resetPassword.ts        # Password reset
-│       │       └── updatePassword.ts       # Password update
+│       │       ├── updatePassword.ts       # Password update
+│       │       ├── generateMagicLink.ts    # Magic link generation
+│       │       ├── oauthSignup.ts          # OAuth signup
+│       │       └── oauthLogin.ts           # OAuth login
 │       │
-│       ├── bubble-proxy/                   # Bubble API proxy
-│       │   ├── index.ts                    # Router
-│       │   └── handlers/
-│       │       ├── favorites.ts            # Toggle favorites
-│       │       ├── getFavorites.ts         # Get user favorites
-│       │       ├── messaging.ts            # Send messages
-│       │       ├── photos.ts               # Upload photos
-│       │       ├── referral.ts             # Submit referrals
-│       │       ├── listingSync.ts          # Listing sync
-│       │       ├── parseProfile.ts         # Profile parsing
-│       │       └── aiInquiry.ts            # AI inquiry handling
-│       │
-│       ├── listing/                        # Listing operations
+│       ├── listing/                        # Listing operations (4 actions)
 │       │   ├── index.ts                    # Router
 │       │   └── handlers/
 │       │       ├── create.ts               # Create listing
 │       │       ├── get.ts                  # Get listing
-│       │       └── submit.ts               # Submit listing
+│       │       ├── submit.ts               # Submit listing
+│       │       └── delete.ts               # Delete listing
 │       │
-│       ├── proposal/                       # Proposal operations
+│       ├── proposal/                       # Proposal operations (6 actions)
 │       │   ├── index.ts                    # Router
 │       │   ├── actions/
 │       │   │   ├── create.ts               # Create proposal
 │       │   │   ├── get.ts                  # Get proposal
 │       │   │   ├── update.ts               # Update proposal
-│       │   │   └── suggest.ts              # Suggest proposal
+│       │   │   ├── suggest.ts              # Suggest proposal
+│       │   │   ├── createSuggested.ts      # Create suggested proposal
+│       │   │   └── createMockup.ts         # Create mockup proposal
 │       │   └── lib/
 │       │       ├── calculations.ts         # Price calculations
 │       │       ├── dayConversion.ts        # Day index conversion
@@ -514,6 +513,16 @@ Split Lease/
 │       │       ├── types.ts                # Type definitions
 │       │       └── bubbleSyncQueue.ts      # Bubble sync queue
 │       │
+│       ├── messages/                       # Real-time messaging (5 actions)
+│       │   ├── index.ts                    # Router
+│       │   └── handlers/
+│       │       ├── sendMessage.ts          # Send message
+│       │       ├── getMessages.ts          # Get messages
+│       │       ├── getThreads.ts           # Get threads
+│       │       ├── sendGuestInquiry.ts     # Guest inquiry (public)
+│       │       └── createProposalThread.ts # Create proposal thread
+│       │
+│       ├── # AI-POWERED FUNCTIONS
 │       ├── ai-gateway/                     # AI completions
 │       │   ├── index.ts                    # Router
 │       │   ├── handlers/
@@ -526,7 +535,36 @@ Split Lease/
 │       │       ├── listing-title.ts        # Listing titles
 │       │       └── proposal-summary.ts     # Proposal summaries
 │       │
-│       ├── bubble_sync/                    # Bubble<->Supabase sync
+│       ├── ai-signup-guest/                # AI-powered guest signup
+│       │   └── index.ts                    # Main handler
+│       │
+│       ├── ai-parse-profile/               # Queue-based AI profile parsing
+│       │   └── index.ts                    # Main handler (queue, process, process_batch)
+│       │
+│       ├── house-manual/                   # AI-powered house manual (6 actions)
+│       │   ├── index.ts                    # Router
+│       │   └── handlers/
+│       │       ├── parseText.ts            # Parse text input
+│       │       ├── transcribeAudio.ts      # Whisper transcription
+│       │       ├── extractWifi.ts          # Vision API WiFi extraction
+│       │       ├── parseDocument.ts        # PDF parsing
+│       │       ├── parseGoogleDoc.ts       # Google Doc parsing
+│       │       └── initiateCall.ts         # Twilio call initiation
+│       │
+│       ├── # BUBBLE INTEGRATION
+│       ├── bubble-proxy/                   # Bubble API proxy
+│       │   ├── index.ts                    # Router
+│       │   └── handlers/
+│       │       ├── favorites.ts            # Toggle favorites
+│       │       ├── getFavorites.ts         # Get user favorites
+│       │       ├── messaging.ts            # Send messages
+│       │       ├── photos.ts               # Upload photos
+│       │       ├── referral.ts             # Submit referrals
+│       │       ├── listingSync.ts          # Listing sync
+│       │       ├── parseProfile.ts         # Profile parsing
+│       │       └── aiInquiry.ts            # AI inquiry handling
+│       │
+│       ├── bubble_sync/                    # Queue processor for sync
 │       │   ├── index.ts                    # Router
 │       │   ├── handlers/
 │       │   │   ├── buildRequest.ts         # Build sync request
@@ -546,20 +584,97 @@ Split Lease/
 │       │       ├── transformer.ts          # Data transformer
 │       │       └── queueManager.ts         # Queue management
 │       │
-│       ├── communications/                 # Communications
-│       │   └── index.ts                    # Router
+│       ├── # BOOKING FEATURES
+│       ├── date-change-request/            # Lease date changes (8 actions)
+│       │   ├── index.ts                    # Router
+│       │   └── handlers/
+│       │       ├── create.ts               # Create request
+│       │       ├── get.ts                  # Get request
+│       │       ├── accept.ts               # Accept request
+│       │       ├── decline.ts              # Decline request
+│       │       ├── cancel.ts               # Cancel request
+│       │       ├── getThrottleStatus.ts    # Throttle status
+│       │       ├── applyHardBlock.ts       # Apply hard block
+│       │       └── updateWarningPref.ts    # Warning preference
 │       │
-│       ├── pricing/                        # Pricing calculations
-│       │   └── index.ts                    # Router
+│       ├── rental-application/             # Rental application (3 actions)
+│       │   ├── index.ts                    # Router
+│       │   └── handlers/
+│       │       ├── submit.ts               # Submit application
+│       │       ├── get.ts                  # Get application
+│       │       └── upload.ts               # Upload documents
+│       │
+│       ├── guest-payment-records/          # Guest payment schedules
+│       │   ├── index.ts                    # Router
+│       │   └── handlers/generate.ts        # Generate schedule
+│       │
+│       ├── host-payment-records/           # Host payment schedules
+│       │   ├── index.ts                    # Router
+│       │   └── handlers/generate.ts        # Generate schedule
+│       │
+│       ├── virtual-meeting/                # Virtual meeting scheduling (6 actions)
+│       │   ├── index.ts                    # Router
+│       │   └── handlers/
+│       │       ├── create.ts               # Create meeting
+│       │       ├── delete.ts               # Delete meeting
+│       │       ├── accept.ts               # Accept meeting
+│       │       ├── decline.ts              # Decline meeting
+│       │       ├── sendCalendarInvite.ts   # Send calendar invite
+│       │       └── notifyParticipants.ts   # Notify participants
+│       │
+│       ├── cohost-request/                 # Co-host request management (3 actions)
+│       │   ├── index.ts                    # Router
+│       │   └── handlers/
+│       │       ├── create.ts               # Create request
+│       │       ├── rate.ts                 # Rate co-host
+│       │       └── notifyHost.ts           # Notify host
+│       │
+│       ├── cohost-request-slack-callback/  # Slack interactive callbacks
+│       │   └── index.ts                    # Main handler (block_actions, view_submission)
+│       │
+│       ├── # WORKFLOW ORCHESTRATION
+│       ├── workflow-enqueue/               # Workflow definition queueing
+│       │   └── index.ts                    # Main handler (enqueue, status, health)
+│       │
+│       ├── workflow-orchestrator/          # Sequential step execution via pgmq
+│       │   └── index.ts                    # Main handler (hollow orchestrator)
+│       │
+│       ├── reminder-scheduler/             # Reminder system (9 actions)
+│       │   ├── index.ts                    # Router
+│       │   └── handlers/
+│       │       ├── create.ts               # Create reminder
+│       │       ├── update.ts               # Update reminder
+│       │       ├── get.ts                  # Get reminder
+│       │       ├── getByVisit.ts           # Get by visit (guest view)
+│       │       ├── delete.ts               # Delete reminder
+│       │       ├── processPending.ts       # Process pending (cron)
+│       │       ├── webhookSendgrid.ts      # SendGrid webhook
+│       │       └── webhookTwilio.ts        # Twilio webhook
+│       │
+│       ├── # NOTIFICATIONS
+│       ├── send-email/                     # SendGrid email delivery
+│       │   ├── index.ts                    # Router
+│       │   └── handlers/send.ts            # Send email
+│       │
+│       ├── send-sms/                       # Twilio SMS delivery
+│       │   └── index.ts                    # Main handler (send, health)
 │       │
 │       ├── slack/                          # Slack notifications
-│       │   └── index.ts                    # Main handler
+│       │   └── index.ts                    # Main handler (faq_inquiry, diagnose)
 │       │
-│       ├── ai-signup-guest/                # AI-powered guest signup
-│       │   └── index.ts                    # Main handler
+│       ├── # UTILITIES
+│       ├── qr-generator/                   # QR code generation (PNG binary)
+│       │   ├── index.ts                    # Router
+│       │   └── handlers/generate.ts        # Generate QR code
 │       │
-│       └── ai-parse-profile/               # AI profile parsing
-│           └── index.ts                    # Main handler
+│       ├── communications/                 # Communications (placeholder)
+│       │   └── index.ts                    # Health check only
+│       │
+│       ├── pricing/                        # Pricing calculations (placeholder)
+│       │   └── index.ts                    # Health check only
+│       │
+│       └── query-leo/                      # Debug utility
+│           └── index.ts                    # Mockup query helper
 │
 ├── .claude/                                # Claude Code configuration
 │   ├── CLAUDE.md                           # Main project instructions
@@ -590,19 +705,33 @@ Split Lease/
 │       │   ├── SIGNUP_FLOW.md
 │       │   └── AUTH_USER_EDGE_FUNCTION.md
 │       │
-│       ├── Backend(EDGE - Functions)/      # Edge function docs
-│       │   ├── README.md
+│       ├── Backend(EDGE - Functions)/      # Edge function docs (26 files)
+│       │   ├── README.md                   # Overview of 29 functions
 │       │   ├── QUICK_REFERENCE.md
 │       │   ├── SEQUENCE_DIAGRAMS.md
+│       │   ├── AI_GATEWAY.md
+│       │   ├── AI_SIGNUP_GUEST.md
 │       │   ├── AUTH_USER.md
 │       │   ├── BUBBLE_PROXY.md
 │       │   ├── BUBBLE_SYNC.md
-│       │   ├── AI_GATEWAY.md
-│       │   ├── AI_SIGNUP_GUEST.md
+│       │   ├── COHOST_REQUEST.md
+│       │   ├── COHOST_REQUEST_SLACK_CALLBACK.md
+│       │   ├── DATE_CHANGE_REQUEST.md
+│       │   ├── GUEST_PAYMENT_RECORDS.md
+│       │   ├── HOST_PAYMENT_RECORDS.md
+│       │   ├── HOUSE_MANUAL.md
 │       │   ├── LISTING.md
+│       │   ├── MESSAGES.md
 │       │   ├── PROPOSAL.md
+│       │   ├── QR_GENERATOR.md
+│       │   ├── REMINDER_SCHEDULER.md
+│       │   ├── RENTAL_APPLICATION.md
+│       │   ├── SEND_EMAIL.md
+│       │   ├── SEND_SMS.md
+│       │   ├── SHARED_UTILITIES.md
 │       │   ├── SLACK.md
-│       │   └── SHARED_UTILITIES.md
+│       │   ├── VIRTUAL_MEETING.md
+│       │   └── WORKFLOW_SYSTEM.md
 │       │
 │       ├── Database/                       # Database docs
 │       │   ├── REFERENCE_TABLES_FK_FIELDS.md
@@ -653,12 +782,12 @@ Split Lease/
 |----------|-------|
 | HTML Entry Points | 31 |
 | JSX Entry Points | 29 |
-| Page Components | 25+ |
-| Shared Components | 50+ |
-| Modal Components | 13 |
-| Logic Layer Files | 55+ |
+| Page Components | 31+ |
+| Shared Components | 80+ |
+| Modal Components | 12 |
+| Logic Layer Files | 67+ |
 | Library Utilities | 32 |
-| Edge Functions | 11 |
-| Shared Edge Utilities | 10 |
+| Edge Functions | 29 |
+| Shared Edge Utilities | 15+ |
 | CSS Files | 40+ |
-| Documentation Files | 100+ |
+| Documentation Files | 63 |
