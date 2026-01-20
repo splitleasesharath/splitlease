@@ -1933,3 +1933,597 @@
     height: 120px;
   }
 }
+
+/* ============================================================================
+   COMPREHENSIVE MOBILE RESPONSIVE ENHANCEMENTS
+   ============================================================================ */
+
+/* Medium Mobile (max-width: 600px) - Form and card adjustments */
+@media (max-width: 600px) {
+  /* Profile Cards - Reduced padding on mobile */
+  .profile-card {
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .profile-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .profile-card-title {
+    font-size: 16px;
+  }
+
+  /* Form inputs - Larger touch targets */
+  .profile-form-input,
+  .profile-form-select {
+    height: 48px;
+    font-size: 16px; /* Prevents iOS zoom on focus */
+    padding: 14px 16px;
+  }
+
+  .profile-form-textarea {
+    min-height: 100px;
+    font-size: 16px;
+  }
+
+  .profile-form-label {
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+
+  /* Verification items - Stack on mobile */
+  .verification-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px 0;
+  }
+
+  .verification-item-left {
+    width: 100%;
+  }
+
+  .verification-item-right {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .verification-btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .verification-icon-container {
+    width: 40px;
+    height: 40px;
+  }
+
+  .verification-icon-container svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .verification-title {
+    font-size: 13px;
+  }
+
+  .verification-value {
+    font-size: 12px;
+  }
+
+  /* Settings items - Better touch targets */
+  .settings-item {
+    padding: 14px 0;
+  }
+
+  .settings-item:hover {
+    margin: 0 -16px;
+    padding: 14px 16px;
+  }
+
+  .settings-item-text {
+    font-size: 13px;
+  }
+
+  /* Day selector pills - Compact for mobile */
+  .day-selector-pills {
+    gap: 6px;
+  }
+
+  .day-pill {
+    height: 32px;
+    padding: 0 12px;
+    font-size: 13px;
+    border-radius: 16px;
+  }
+
+  /* Selectable chips - Wrap better */
+  .chip-container {
+    gap: 6px;
+  }
+
+  .selectable-chip {
+    height: 30px;
+    padding: 0 10px;
+    font-size: 12px;
+    border-radius: 15px;
+  }
+
+  /* Sidebar adjustments */
+  .sidebar-profile-info {
+    padding: 10px 16px 16px;
+  }
+
+  .sidebar-profile-name {
+    font-size: 20px;
+  }
+
+  .sidebar-profile-title {
+    font-size: 13px;
+  }
+
+  .profile-strength-section {
+    padding: 0 16px 16px;
+  }
+
+  .sidebar-next-actions {
+    padding: 12px 16px 16px;
+  }
+
+  .sidebar-stats {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .sidebar-stat-value {
+    font-size: 18px;
+  }
+
+  .sidebar-stat-label {
+    font-size: 11px;
+  }
+
+  /* Public day pills - Smaller on mobile */
+  .public-day-pill {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+  }
+
+  .public-schedule-label {
+    font-size: 0.85rem;
+    margin-bottom: 10px;
+  }
+
+  .public-transport-badge {
+    padding: 10px 16px;
+    font-size: 0.9rem;
+    gap: 8px;
+  }
+
+  /* Reasons tags */
+  .public-reasons-grid {
+    gap: 8px;
+  }
+
+  .public-reason-tag {
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    gap: 6px;
+  }
+
+  /* Storage items */
+  .public-item-tag {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+  }
+}
+
+/* Small Mobile (max-width: 480px) - Compact layout */
+@media (max-width: 480px) {
+  /* Container - Tighter padding */
+  .account-profile-container {
+    padding: 12px;
+    padding-top: 90px;
+    gap: 16px;
+  }
+
+  .account-profile-feed {
+    gap: 16px;
+    padding-bottom: 100px;
+  }
+
+  /* Profile Cards - Even more compact */
+  .profile-card {
+    padding: 14px;
+    border-radius: 10px;
+  }
+
+  .profile-card:hover {
+    transform: none; /* Disable hover lift on touch devices */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .profile-card-title {
+    font-size: 15px;
+  }
+
+  /* Cover photo - Shorter on small screens */
+  .cover-photo-container {
+    height: 100px;
+  }
+
+  /* Avatar - Smaller on mobile */
+  .profile-avatar-container {
+    margin-top: -48px;
+  }
+
+  .profile-avatar-wrapper {
+    width: 96px;
+    height: 96px;
+  }
+
+  .profile-avatar-image,
+  .profile-avatar-placeholder {
+    width: 96px;
+    height: 96px;
+    border-width: 3px;
+  }
+
+  .profile-avatar-placeholder svg {
+    width: 36px;
+    height: 36px;
+  }
+
+  .profile-avatar-initial {
+    font-size: 36px;
+  }
+
+  .profile-avatar-edit-badge {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    min-height: 30px;
+    max-width: 30px;
+    max-height: 30px;
+    bottom: 2px;
+    right: 2px;
+  }
+
+  .profile-avatar-edit-badge svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* Form groups - Tighter spacing */
+  .profile-form-group {
+    margin-bottom: 12px;
+  }
+
+  /* Verification items - Full stack layout */
+  .verification-item-left {
+    gap: 12px;
+  }
+
+  .verification-info {
+    gap: 1px;
+  }
+
+  /* Next action cards - More compact */
+  .next-action-card {
+    padding: 10px 14px;
+    gap: 10px;
+    border-radius: 10px;
+  }
+
+  .next-action-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .next-action-text {
+    font-size: 13px;
+  }
+
+  .next-action-badge {
+    font-size: 11px;
+    padding: 2px 6px;
+  }
+
+  /* Video upload dropzone */
+  .video-upload-dropzone {
+    padding: 24px 16px;
+    border-radius: 10px;
+  }
+
+  .video-upload-icon {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 10px;
+  }
+
+  .video-upload-text {
+    font-size: 13px;
+  }
+
+  .video-upload-hint {
+    font-size: 11px;
+  }
+
+  /* Public view bio */
+  .public-bio-text {
+    font-size: 0.95rem;
+    line-height: 1.65;
+  }
+
+  /* Public day selector - Even smaller */
+  .public-day-selector {
+    gap: 6px;
+  }
+
+  .public-day-pill {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    font-size: 0.7rem;
+  }
+
+  /* Referral banner - Stacked layout */
+  .referral-banner {
+    padding: 14px 16px;
+    border-radius: 12px;
+  }
+
+  .referral-banner-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .referral-banner-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .referral-banner-text strong {
+    font-size: 14px;
+  }
+
+  .referral-banner-text span {
+    font-size: 12px;
+  }
+
+  .referral-banner-btn {
+    padding: 10px 14px;
+    font-size: 13px;
+    border-radius: 10px;
+  }
+
+  /* Referral modal - Full-width on small screens */
+  .referral-modal-overlay {
+    padding: 12px;
+  }
+
+  .referral-modal {
+    padding: 16px;
+    border-radius: 14px;
+  }
+
+  .referral-modal-header h2 {
+    font-size: 18px;
+  }
+
+  .referral-modal-subtitle {
+    font-size: 13px;
+    margin: 10px 0 16px;
+  }
+
+  .referral-share-link {
+    flex-direction: column;
+  }
+
+  .referral-share-link input {
+    width: 100%;
+  }
+
+  .referral-share-link button {
+    width: 100%;
+  }
+
+  /* Listings grid on mobile - Smaller cards */
+  .listings-grid .listing-item {
+    flex: 0 0 130px;
+    min-width: 130px;
+  }
+
+  .listing-item-photo {
+    height: 100px;
+  }
+
+  .listing-item-details {
+    padding: 10px;
+  }
+
+  .listing-item-name {
+    font-size: 13px;
+    margin-bottom: 2px;
+  }
+
+  .listing-item-location {
+    font-size: 11px;
+    margin-bottom: 6px;
+  }
+
+  .listing-item-meta {
+    font-size: 11px;
+  }
+
+  /* Loading and error states */
+  .profile-loading,
+  .profile-error {
+    min-height: 300px;
+    padding: 20px;
+  }
+
+  .profile-error-icon {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 12px;
+  }
+
+  .profile-error-title {
+    font-size: 16px;
+  }
+
+  .profile-error-message {
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+}
+
+/* Fixed Save Bar - Mobile optimizations */
+@media (max-width: 600px) {
+  .fixed-save-bar {
+    padding: 12px 16px;
+    gap: 12px;
+  }
+
+  .save-bar-btn {
+    height: 44px;
+    padding: 0 16px;
+    font-size: 14px;
+    border-radius: 10px;
+    flex: 1;
+    max-width: none;
+  }
+
+  .save-bar-btn--save {
+    padding: 0 20px;
+  }
+
+  .preview-mode-indicator {
+    font-size: 13px;
+    gap: 6px;
+  }
+}
+
+/* Extra Small Mobile (max-width: 360px) - Minimal layout */
+@media (max-width: 360px) {
+  .account-profile-container {
+    padding: 10px;
+    padding-top: 85px;
+  }
+
+  .profile-card {
+    padding: 12px;
+  }
+
+  .sidebar-profile-name {
+    font-size: 18px;
+  }
+
+  .profile-avatar-wrapper {
+    width: 80px;
+    height: 80px;
+  }
+
+  .profile-avatar-image,
+  .profile-avatar-placeholder {
+    width: 80px;
+    height: 80px;
+  }
+
+  .profile-avatar-initial {
+    font-size: 30px;
+  }
+
+  .profile-form-input,
+  .profile-form-select,
+  .profile-form-textarea {
+    font-size: 16px;
+    padding: 12px 14px;
+  }
+
+  .verification-item {
+    padding: 12px 0;
+  }
+
+  .verification-icon-container {
+    width: 36px;
+    height: 36px;
+  }
+
+  .verification-icon-container svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .day-pill {
+    height: 30px;
+    padding: 0 10px;
+    font-size: 12px;
+  }
+
+  .fixed-save-bar {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+
+  .save-bar-btn {
+    height: 42px;
+    font-size: 13px;
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  /* Disable hover effects on touch devices */
+  .profile-card:hover {
+    transform: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .listing-item:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .next-action-card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .transport-icon-btn:hover {
+    border-color: var(--sl-border-subtle);
+    background: var(--sl-bg-body);
+    color: var(--sl-text-secondary);
+  }
+
+  .transport-icon-btn--selected:hover {
+    border-color: var(--sl-primary);
+    background: var(--sl-primary-soft);
+    color: var(--sl-primary);
+  }
+
+  /* Larger tap targets for buttons */
+  .verification-btn,
+  .verification-btn--secondary {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .selectable-chip,
+  .day-pill {
+    min-height: 36px;
+  }
+
+  /* Settings items - No hover margin shift on touch */
+  .settings-item:hover {
+    margin: 0;
+    padding: 16px 0;
+    background: transparent;
+  }
+}
