@@ -1,6 +1,6 @@
 # Policies Page - Quick Reference
 
-**GENERATED**: 2025-12-11
+**GENERATED**: 2026-01-20
 **PAGE_URL**: `/policies.html#{policy-slug}`
 **ENTRY_POINT**: `app/src/policies.jsx`
 
@@ -680,5 +680,5 @@ This is appropriate given the page's simpler requirements:
 ---
 
 **VERSION**: 1.1
-**LAST_UPDATED**: 2025-12-11
+**LAST_UPDATED**: 2026-01-20
 **STATUS**: Updated to match current implementation
