@@ -213,6 +213,97 @@ export async function sendInternalSignupNotification(
 }
 
 // ─────────────────────────────────────────────────────────────
+// Login Notification Function
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Send login notification email to user
+ * Uses Security 2 template (same as password reset) but without action button
+ * Provides security awareness - user knows when their account is accessed
+ */
+export async function sendLoginNotificationEmail(
+  email: string,
+  firstName: string,
+  loginTimestamp: string
+): Promise<EmailResult> {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    console.error('[emailUtils] Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+    return { success: false, error: 'Missing environment configuration' };
+  }
+
+  const sendEmailUrl = `${supabaseUrl}/functions/v1/send-email`;
+
+  // Format timestamp for display
+  const loginDate = new Date(loginTimestamp);
+  const formattedDate = loginDate.toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+  const formattedTime = loginDate.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZoneName: 'short',
+  });
+
+  // Security 2 template variables (informational, no button)
+  const templateVariables: Record<string, string> = {
+    toemail: email,
+    fromemail: 'security@splitlease.com',
+    fromname: 'Split Lease Security',
+    subject: 'New Sign-In to Your Account',
+    preheadertext: 'We noticed a new sign-in to your Split Lease account.',
+    title: 'New Sign-In Detected',
+    bodytext: firstName
+      ? `Hi ${firstName}, we detected a new sign-in to your Split Lease account on ${formattedDate} at ${formattedTime}. If this was you, no action is needed.`
+      : `We detected a new sign-in to your Split Lease account on ${formattedDate} at ${formattedTime}. If this was you, no action is needed.`,
+    bannertext1: 'SIGN-IN DETAILS',
+    bannertext2: `Date: ${formattedDate}`,
+    bannertext3: `Time: ${formattedTime}`,
+    // No button - informational only
+    buttontext: '',
+    buttonurl: '',
+    footermessage: 'If you didn\'t sign in, please reset your password immediately at https://split.lease/login or contact support.',
+  };
+
+  try {
+    console.log(`[emailUtils] Sending login notification to ${email}`);
+
+    const response = await fetch(sendEmailUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${serviceRoleKey}`,
+      },
+      body: JSON.stringify({
+        action: 'send',
+        payload: {
+          template_id: EMAIL_TEMPLATES.MAGIC_LOGIN_LINK, // Security 2 template
+          to_email: email,
+          variables: templateVariables,
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[emailUtils] Login notification failed: ${response.status} - ${errorText}`);
+      return { success: false, error: errorText };
+    }
+
+    console.log(`[emailUtils] Login notification sent successfully to ${email}`);
+    return { success: true };
+  } catch (error) {
+    console.error('[emailUtils] Login notification error:', error);
+    return { success: false, error: (error as Error).message };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
 // SMS Function
 // ─────────────────────────────────────────────────────────────
 
