@@ -284,81 +284,19 @@ export default defineConfig({
         entryFileNames: 'assets/[name]-[hash].js',
 
         /**
-         * Manual chunk splitting for optimal loading performance.
-         * (Golden Rule C - Performance P0)
+         * Manual chunk splitting DISABLED due to circular dependency issues.
+         * Vite's automatic code splitting handles module dependencies correctly.
          *
-         * Strategy:
-         * - Vendor chunks: React, Supabase (shared across all pages)
-         * - Feature chunks: Google Maps (only loaded on search/view pages)
-         * - Page chunks: Search page logic isolated
+         * Previous manual chunking caused circular imports between:
+         * - vendor-react (React core)
+         * - vendor (other node_modules that React depends on like tslib)
          *
-         * Expected bundle sizes after splitting:
-         * - vendor-react: ~140KB (React + ReactDOM)
-         * - vendor-supabase: ~80KB (Auth/DB layer)
-         * - vendor-google-maps: ~200KB (only loaded on map pages)
-         * - page-search: ~100KB (SearchPage specific code)
-         * - component-listing-card: ~30KB (Shared between search/favorites)
+         * This resulted in "Cannot access 'React' before initialization" errors.
+         *
+         * TODO: Re-enable manual chunking with proper dependency analysis
+         * to avoid circular imports while still optimizing bundle sizes.
          */
-        manualChunks(id) {
-          // React and React DOM - core framework (shared across all pages)
-          // CRITICAL: Must be checked before other conditions to ensure React loads first
-          if (id.includes('node_modules/react') ||
-              id.includes('node_modules/react-dom') ||
-              id.includes('node_modules/scheduler')) {
-            return 'vendor-react';
-          }
-
-          // Supabase client - database and auth layer (shared)
-          if (id.includes('node_modules/@supabase')) {
-            return 'vendor-supabase';
-          }
-
-          // Google Maps - heavy library, only needed on map pages
-          // Isolate to prevent loading on non-map pages
-          if (id.includes('@googlemaps') || id.includes('google-maps') || id.includes('vis.gl')) {
-            return 'vendor-google-maps';
-          }
-
-          // All other node_modules go into a shared vendor chunk
-          // This prevents vendor code from being bundled into component chunks
-          if (id.includes('node_modules')) {
-            return 'vendor';
-          }
-
-          // Search page specific logic - isolate for code splitting
-          // Only loaded when user visits /search
-          if (id.includes('islands/pages/SearchPage') ||
-              id.includes('islands/pages/useSearchPageLogic') ||
-              id.includes('islands/pages/useSearchPageAuth')) {
-            return 'page-search';
-          }
-
-          // View Split Lease page - isolate for code splitting
-          if (id.includes('islands/pages/ViewSplitLeasePage') ||
-              id.includes('islands/pages/useViewSplitLeaseLogic')) {
-            return 'page-view-listing';
-          }
-
-          // Listing card components - shared between search and favorites
-          if (id.includes('ListingCard') || id.includes('PropertyCard')) {
-            return 'component-listing-card';
-          }
-
-          // Schedule selector - shared UI component across pages
-          if (id.includes('scheduleSelector') || id.includes('ScheduleSelector')) {
-            return 'component-schedule';
-          }
-
-          // Modals - shared across pages
-          if (id.includes('/modals/') || id.includes('Modal')) {
-            return 'component-modals';
-          }
-
-          // Auth components - shared across pages
-          if (id.includes('SignUpLogin') || id.includes('AuthAware')) {
-            return 'component-auth';
-          }
-        }
+        // manualChunks disabled - using Vite's automatic splitting
       }
     },
     // Copy HTML files to root of dist, not preserving directory structure
