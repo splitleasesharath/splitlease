@@ -51,13 +51,42 @@ import { handleDecline } from "./handlers/decline.ts";
 import { handleSendCalendarInvite } from "./handlers/sendCalendarInvite.ts";
 import { handleNotifyParticipants } from "./handlers/notifyParticipants.ts";
 
+// Admin Handlers
+import { handleAdminFetchNewRequests } from "./handlers/admin/fetchNewRequests.ts";
+import { handleAdminFetchConfirmed } from "./handlers/admin/fetchConfirmedMeetings.ts";
+import { handleAdminConfirmMeeting } from "./handlers/admin/confirmMeeting.ts";
+import { handleAdminUpdateMeetingDates } from "./handlers/admin/updateMeetingDates.ts";
+import { handleAdminDeleteMeeting } from "./handlers/admin/deleteMeeting.ts";
+import {
+  handleAdminFetchBlockedSlots,
+  handleAdminBlockTimeSlot,
+  handleAdminUnblockTimeSlot,
+  handleAdminBlockFullDay,
+  handleAdminUnblockFullDay,
+} from "./handlers/admin/blockedSlots.ts";
+
 // ─────────────────────────────────────────────────────────────
 // Configuration (Immutable)
 // ─────────────────────────────────────────────────────────────
 
-const ALLOWED_ACTIONS = ["create", "delete", "accept", "decline", "send_calendar_invite", "notify_participants"] as const;
+const ALLOWED_ACTIONS = [
+  // Existing public actions
+  "create", "delete", "accept", "decline", "send_calendar_invite", "notify_participants",
+  // Admin actions (require authentication)
+  "admin_fetch_new_requests",
+  "admin_fetch_confirmed",
+  "admin_confirm_meeting",
+  "admin_update_meeting_dates",
+  "admin_delete_meeting",
+  "admin_fetch_blocked_slots",
+  "admin_block_time_slot",
+  "admin_unblock_time_slot",
+  "admin_block_full_day",
+  "admin_unblock_full_day",
+] as const;
 
-// NOTE: All actions are public until Supabase auth migration is complete
+// NOTE: Non-admin actions are public until Supabase auth migration is complete
+// Admin actions require authentication
 const PUBLIC_ACTIONS: ReadonlySet<string> = new Set([
   "create", "delete", "accept", "decline", "send_calendar_invite", "notify_participants"
 ]);
@@ -66,12 +95,24 @@ type Action = typeof ALLOWED_ACTIONS[number];
 
 // Handler map (immutable record) - replaces switch statement
 const handlers: Readonly<Record<Action, Function>> = {
+  // Existing handlers
   create: handleCreate,
   delete: handleDelete,
   accept: handleAccept,
   decline: handleDecline,
   send_calendar_invite: handleSendCalendarInvite,
   notify_participants: handleNotifyParticipants,
+  // Admin handlers
+  admin_fetch_new_requests: handleAdminFetchNewRequests,
+  admin_fetch_confirmed: handleAdminFetchConfirmed,
+  admin_confirm_meeting: handleAdminConfirmMeeting,
+  admin_update_meeting_dates: handleAdminUpdateMeetingDates,
+  admin_delete_meeting: handleAdminDeleteMeeting,
+  admin_fetch_blocked_slots: handleAdminFetchBlockedSlots,
+  admin_block_time_slot: handleAdminBlockTimeSlot,
+  admin_unblock_time_slot: handleAdminUnblockTimeSlot,
+  admin_block_full_day: handleAdminBlockFullDay,
+  admin_unblock_full_day: handleAdminUnblockFullDay,
 };
 
 // ─────────────────────────────────────────────────────────────
