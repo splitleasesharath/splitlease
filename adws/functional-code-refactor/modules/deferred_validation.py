@@ -40,11 +40,27 @@ from .page_classifier import (
     get_page_auth_type,
     file_path_to_url_path,
     ALL_PAGES,
+    get_visual_check_pages,
+    get_pages_grouped_by_auth,
+    resolve_dynamic_route,
 )
 
 
 def _is_page_file(file_path: str) -> bool:
-    """Check if a file is a page component entry point.
+    """DEPRECATED: Check if a file is a page component entry point.
+
+    ============================================================================
+    DEPRECATION NOTICE (2026-01-21):
+    This function is deprecated in favor of page_classifier.get_visual_check_pages().
+
+    The dependency-tracing approach was unreliable because:
+    1. AST parsing missed some import relationships (barrel exports, aliases)
+    2. Lib files often had broken import chains
+    3. Any frontend change should be visually validated anyway
+
+    New approach: Use get_visual_check_pages() to get pages directly from the
+    registry, grouped by auth type for proper MCP session selection.
+    ============================================================================
 
     Page entry points follow specific patterns:
     1. Top-level: src/islands/pages/HomePage.jsx (file named *Page.jsx directly in pages/)
@@ -116,7 +132,20 @@ def _trace_to_pages(
     reverse_deps: Dict[str, List[str]],
     max_depth: int = 10
 ) -> Set[str]:
-    """Recursively trace imports UP the dependency chain to find affected pages.
+    """DEPRECATED: Recursively trace imports UP the dependency chain to find affected pages.
+
+    ============================================================================
+    DEPRECATION NOTICE (2026-01-21):
+    This function is deprecated in favor of page_classifier.get_visual_check_pages().
+
+    The dependency-tracing approach was unreliable because:
+    1. AST parsing missed some import relationships (barrel exports, aliases)
+    2. Lib files often had broken import chains, resulting in "pageless" chunks
+    3. Any frontend change should be visually validated anyway
+
+    New approach: For any app/ change, run visual checks on ALL relevant pages
+    grouped by auth type. This is more thorough and more reliable.
+    ============================================================================
 
     Starting from modified files (e.g., logic/rules/proposalRules.js), walks
     up through the reverse dependency graph until reaching page files.
@@ -413,51 +442,47 @@ def run_deferred_validation(
         logger.log(f"  [FAIL] Build error: {e}")
         return result
 
-    # Phase 2: Visual regression OR Test-driven validation
-    if not skip_visual and batch.affected_pages:
-        # Chunks with affected pages: run visual regression
-        logger.step(f"Visual regression on {len(batch.affected_pages)} affected pages...")
+    # Phase 2: Visual regression using registry-based page selection
+    # NEW APPROACH (2026-01-21): Instead of tracing dependencies to find affected pages,
+    # we run visual checks on ALL pages grouped by auth type. This is more thorough and
+    # avoids the "pageless chunk" problem where lib files couldn't be traced to pages.
+    if not skip_visual:
+        # Get all checkable pages grouped by auth type
+        pages_by_auth = get_pages_grouped_by_auth()
+        total_pages = sum(len(pages) for pages in pages_by_auth.values())
+
+        logger.step(f"Visual regression on {total_pages} pages (public: {len(pages_by_auth['public'])}, host: {len(pages_by_auth['host'])}, guest: {len(pages_by_auth['guest'])})")
 
         visual_errors = []
         visual_screenshots = {}
 
-        for page_path in batch.affected_pages:
-            # Convert file path to URL path if needed
-            # _trace_to_pages returns file paths like "src/islands/pages/HostProposalsPage.jsx"
-            # but page_classifier expects URL paths like "/host-proposals"
-            url_path = file_path_to_url_path(page_path)
-            if url_path:
-                lookup_path = url_path
-            else:
-                # Already a URL path or unknown format
-                lookup_path = page_path
+        # Run visual checks by auth group (allows batching with same MCP session)
+        for auth_group, pages in pages_by_auth.items():
+            if not pages:
+                continue
 
-            # Get page info to determine auth type
-            page_info = get_page_info(lookup_path)
-            auth_type = page_info.auth_type if page_info else "public"
+            logger.log(f"  [{auth_group.upper()}] Checking {len(pages)} pages...")
 
-            # Get MCP sessions for this page
-            mcp_live, mcp_dev = get_mcp_sessions_for_page(lookup_path)
+            for page_info in pages:
+                # Resolve dynamic routes to concrete URLs
+                page_path = resolve_dynamic_route(page_info)
 
-            # Log the path resolution for debugging
-            if url_path and url_path != page_path:
-                logger.log(f"  [Path] {page_path} → {url_path}")
+                # Get MCP sessions for this page
+                mcp_live, mcp_dev = get_mcp_sessions_for_page(page_info.path)
 
-            visual_result = check_visual_parity(
-                page_path=lookup_path,  # Use URL path for navigation
-                mcp_session=mcp_live,
-                mcp_session_dev=mcp_dev,
-                auth_type=auth_type,
-                port=8010,
-                concurrent=True if mcp_live and mcp_dev else False,
-                slack_channel=slack_channel,
-                use_claude=use_claude
-            )
+                visual_result = check_visual_parity(
+                    page_path=page_path,
+                    mcp_session=mcp_live,
+                    mcp_session_dev=mcp_dev,
+                    auth_type=page_info.auth_type,
+                    port=8010,
+                    concurrent=True if mcp_live and mcp_dev else False,
+                    slack_channel=slack_channel,
+                    use_claude=use_claude
+                )
 
-            parity_status = visual_result.get("visualParity", "FAIL")
-
-            # Use lookup_path (URL) for logging, page_path (file) for error attribution
-            display_path = lookup_path if lookup_path != page_path else page_path
+                parity_status = visual_result.get("visualParity", "FAIL")
+                display_path = page_path
 
             if parity_status == "PASS":
                 logger.log(f"  [PASS] {display_path}")
@@ -483,37 +508,14 @@ def run_deferred_validation(
         result.visual_passed = len(visual_errors) == 0
         result.errors.extend(visual_errors)
 
-        if not result.visual_passed:
+        if result.visual_passed:
+            logger.log(f"  [PASS] All {total_pages} pages passed visual regression")
+        else:
             logger.log(f"  [FAIL] Visual regression failed with {len(visual_errors)} errors")
-    elif not batch.affected_pages and batch.chunks:
-        # ORPHANED CODE: No pages found after recursive tracing
-        # This is RARE and usually indicates dead code or broken import chain
-        logger.step(f"WARNING: {len(batch.chunks)} chunks have no traced pages - checking import chain...")
-
-        pageless_test_results = _run_test_driven_validation_for_pageless(
-            batch.chunks,
-            working_dir,
-            logger
-        )
-
-        if pageless_test_results.all_passed:
-            result.visual_passed = True
-            logger.log(f"  [PASS] All {len(batch.chunks)} pageless chunks validated via tests")
-        else:
-            result.visual_passed = False
-            for td_result in pageless_test_results.results:
-                if not td_result.all_tests_passed:
-                    result.errors.append(ValidationError(
-                        message=td_result.to_summary(),
-                        chunk_number=td_result.suite.chunk_number
-                    ))
-            logger.log(f"  [FAIL] {pageless_test_results.failed_count} pageless chunks failed tests")
     else:
+        # skip_visual is True
         result.visual_passed = True
-        if skip_visual:
-            logger.log("  [SKIP] Visual regression skipped by flag")
-        else:
-            logger.log("  [SKIP] No pages affected")
+        logger.log("  [SKIP] Visual regression skipped by flag")
 
     result.success = result.build_passed and result.visual_passed
     return result
@@ -521,7 +523,17 @@ def run_deferred_validation(
 
 @dataclass
 class PagelessTestResults:
-    """Aggregate results from test-driven validation of pageless chunks."""
+    """DEPRECATED: Aggregate results from test-driven validation of pageless chunks.
+
+    ============================================================================
+    DEPRECATION NOTICE (2026-01-21):
+    This class is deprecated. The "pageless chunk" concept no longer exists.
+
+    New approach: All app/ changes are validated via visual regression on ALL
+    pages, not just traced pages. This class is kept for backwards compatibility
+    but should not be used in new code.
+    ============================================================================
+    """
     results: List[TestDrivenResult] = field(default_factory=list)
     all_passed: bool = True
     failed_count: int = 0
@@ -532,7 +544,19 @@ def _run_test_driven_validation_for_pageless(
     working_dir: Path,
     logger: "RunLogger"
 ) -> PagelessTestResults:
-    """Run test-driven validation for chunks that don't affect any pages.
+    """DEPRECATED: Run test-driven validation for chunks that don't affect any pages.
+
+    ============================================================================
+    DEPRECATION NOTICE (2026-01-21):
+    This function is deprecated and no longer called by run_deferred_validation().
+
+    The "pageless chunk" problem has been solved by switching to registry-based
+    page selection. All frontend changes are now visually validated against ALL
+    pages grouped by auth type, eliminating the need for dependency tracing.
+
+    This function is kept for backwards compatibility but will be removed in a
+    future version.
+    ============================================================================
 
     For each pageless chunk:
     1. Generate test suite

@@ -491,6 +491,108 @@ def get_summary_stats() -> Dict:
 
 
 # =============================================================================
+# VISUAL REGRESSION PAGE SELECTION
+# =============================================================================
+
+# Core pages to always check during visual regression (smoke test set)
+# These are the most important pages that exercise key user flows
+SMOKE_TEST_PAGES: List[str] = [
+    "/",                    # Homepage - public entry point
+    "/browse-listings",     # Listing discovery - public
+    "/host-proposals",      # Host workflow - host auth
+    "/guest-proposals",     # Guest workflow - guest auth
+    "/listing-dashboard",   # Host listing management - host auth
+]
+
+
+def get_visual_check_pages(
+    auth_types: Optional[List[str]] = None,
+    smoke_test_only: bool = False,
+    include_dynamic: bool = False,
+    include_deprecated: bool = False
+) -> List[PageInfo]:
+    """
+    Get pages for visual regression testing.
+
+    This is the PRIMARY function for selecting which pages to visually test.
+    It replaces the complex _trace_to_pages dependency walking approach with
+    a simple registry-based selection.
+
+    Args:
+        auth_types: Filter by auth types (e.g., ["public", "host"]).
+                   If None, returns pages of all auth types.
+        smoke_test_only: If True, only return the core smoke test pages.
+        include_dynamic: If True, include pages with dynamic route params.
+                        Dynamic pages require test IDs to be resolved.
+        include_deprecated: If True, include deprecated pages.
+
+    Returns:
+        List of PageInfo objects suitable for visual testing.
+
+    Example usage:
+        # Get all public pages
+        pages = get_visual_check_pages(auth_types=["public"])
+
+        # Get smoke test set (fastest)
+        pages = get_visual_check_pages(smoke_test_only=True)
+
+        # Get all host + guest pages
+        pages = get_visual_check_pages(auth_types=["host", "guest"])
+
+        # Get everything checkable
+        pages = get_visual_check_pages(include_dynamic=True)
+    """
+    if smoke_test_only:
+        # Return only the smoke test pages
+        return [
+            ALL_PAGES[path] for path in SMOKE_TEST_PAGES
+            if path in ALL_PAGES
+        ]
+
+    pages = []
+    for page in ALL_PAGES.values():
+        # Skip dev-only pages always
+        if page.dev_only:
+            continue
+
+        # Skip deprecated unless requested
+        if page.deprecated and not include_deprecated:
+            continue
+
+        # Skip dynamic routes unless requested
+        if page.has_dynamic_segment and not include_dynamic:
+            continue
+
+        # Filter by auth type if specified
+        if auth_types and page.auth_type not in auth_types:
+            continue
+
+        pages.append(page)
+
+    return pages
+
+
+def get_pages_grouped_by_auth() -> Dict[str, List[PageInfo]]:
+    """
+    Get visual check pages grouped by authentication requirement.
+
+    This is useful for running visual checks in batches based on
+    which MCP session can access them.
+
+    Returns:
+        Dict with keys "public", "host", "guest" mapping to page lists.
+        "shared" pages are included in "host" (we use host auth for them).
+    """
+    checkable = get_visual_check_pages()
+
+    return {
+        "public": [p for p in checkable if p.auth_type == "public"],
+        "host": [p for p in checkable if p.auth_type in ("host", "shared")],
+        "guest": [p for p in checkable if p.auth_type == "guest"],
+    }
+
+
+# =============================================================================
 # CONVENIENCE: Print registry summary
 # =============================================================================
 
