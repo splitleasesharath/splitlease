@@ -1939,13 +1939,30 @@ export default function ViewSplitLeasePage() {
         {/* RIGHT COLUMN - BOOKING WIDGET (hidden on mobile) */}
         <div className={`${styles.bookingWidget} ${isMobile ? styles.hiddenMobile : ''}`}>
           {/* Price Display */}
-          <div className={styles.bookingPriceDisplay}>
+          <div className={styles.bookingPriceDisplay} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
             <div className={styles.bookingPriceAmount}>
               {pricingBreakdown?.valid && pricingBreakdown?.pricePerNight
                 ? `$${Number.isInteger(pricingBreakdown.pricePerNight) ? pricingBreakdown.pricePerNight : pricingBreakdown.pricePerNight.toFixed(2)}`
                 : 'Select Days'}
               <span className={styles.bookingPriceUnit}>/night</span>
             </div>
+            <FavoriteButton
+              listingId={listing?._id}
+              userId={loggedInUserData?.userId}
+              initialFavorited={isFavorited}
+              onToggle={(newState) => {
+                setIsFavorited(newState);
+                const displayName = listing?.name || 'Listing';
+                if (newState) {
+                  showToast(`${displayName} added to favorites`, 'success');
+                } else {
+                  showToast(`${displayName} removed from favorites`, 'info');
+                }
+              }}
+              onRequireAuth={() => setShowAuthModal(true)}
+              size="large"
+              variant="inline"
+            />
           </div>
 
           {/* Move-in Date */}
