@@ -151,7 +151,14 @@ export default function HostOverviewPage({ requireAuth = false, isAuthenticated 
                   onClick={handleScheduleCohost}
                   type="button"
                 >
-                  <span className="help-banner__icon">&#128161;</span>
+                  <span className="help-banner__icon">
+                    {/* Feather lightbulb icon - monochromatic per popup redesign protocol */}
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="9" y1="18" x2="15" y2="18"></line>
+                      <line x1="10" y1="22" x2="14" y2="22"></line>
+                      <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"></path>
+                    </svg>
+                  </span>
                   <p className="help-banner__text">
                     Need help setting up? Ask a Specialist Co-host!
                   </p>
@@ -161,7 +168,11 @@ export default function HostOverviewPage({ requireAuth = false, isAuthenticated 
                   onClick={() => setShowHelpBanner(false)}
                   aria-label="Dismiss help banner"
                 >
-                  &times;
+                  {/* Feather x icon - monochromatic per popup redesign protocol */}
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
                 </button>
               </div>
             )}
