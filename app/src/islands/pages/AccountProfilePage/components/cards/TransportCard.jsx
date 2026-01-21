@@ -25,6 +25,7 @@ export default function TransportCard({
   onTransportToggle, // New handler for toggle behavior
   readOnly = false
 }) {
+  console.log('[TransportCard] Rendered with transportationTypes:', transportationTypes, 'onTransportToggle:', typeof onTransportToggle);
   if (readOnly) {
     // Filter to only selected transport options
     const selectedOptions = transportationOptions.filter(opt =>
@@ -70,7 +71,10 @@ export default function TransportCard({
                   key={option.value}
                   type="button"
                   className={`transport-icon-btn ${isSelected ? 'transport-icon-btn--selected' : ''}`}
-                  onClick={() => onTransportToggle(option.value)}
+                  onClick={() => {
+                    console.log('[TransportCard] Button clicked for:', option.value);
+                    onTransportToggle(option.value);
+                  }}
                   title={option.label}
                 >
                   <IconComponent size={24} />

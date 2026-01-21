@@ -481,22 +481,34 @@ export function useAccountProfilePageLogic() {
         throw new Error('User not found');
       }
 
-      // Fetch job title from linked rental application (if exists)
+      // Fetch job title and employment status from linked rental application (if exists)
       let jobTitle = '';
+      let employmentStatus = '';
       const rentalAppId = userData['Rental Application'];
       if (rentalAppId) {
         const { data: rentalAppData } = await supabase
           .from('rentalapplication')
-          .select('"job title"')
+          .select('"job title", "employment status"')
           .eq('_id', rentalAppId)
           .single();
 
         if (rentalAppData) {
+          // Use job title if available, otherwise use employment status as display value
           jobTitle = rentalAppData['job title'] || '';
+          employmentStatus = rentalAppData['employment status'] || '';
+
+          // If no job title but has employment status, format it nicely for display
+          if (!jobTitle && employmentStatus) {
+            // Convert kebab-case to Title Case (e.g., "business-owner" -> "Business Owner")
+            jobTitle = employmentStatus
+              .split('-')
+              .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(' ');
+          }
         }
       }
 
-      setProfileData({ ...userData, _jobTitle: jobTitle, _rentalAppId: rentalAppId });
+      setProfileData({ ...userData, _jobTitle: jobTitle, _employmentStatus: employmentStatus, _rentalAppId: rentalAppId });
 
       // Initialize form data from profile
       // Database columns use Bubble.io naming conventions
@@ -1004,15 +1016,18 @@ export function useAccountProfilePageLogic() {
    * Handle transportation method toggle (multi-select)
    */
   const handleTransportToggle = useCallback((transportValue) => {
+    console.log('[handleTransportToggle] Toggling transport:', transportValue);
     setFormData(prev => {
       const currentTypes = prev.transportationTypes;
       const newTypes = currentTypes.includes(transportValue)
         ? currentTypes.filter(t => t !== transportValue)
         : [...currentTypes, transportValue];
 
+      console.log('[handleTransportToggle] Current:', currentTypes, '-> New:', newTypes);
       return { ...prev, transportationTypes: newTypes };
     });
     setIsDirty(true);
+    console.log('[handleTransportToggle] isDirty set to true');
   }, []);
 
   /**
@@ -1035,6 +1050,8 @@ export function useAccountProfilePageLogic() {
    * Save profile changes
    */
   const handleSave = useCallback(async () => {
+    console.log('[handleSave] Called. isEditorView:', isEditorView, 'profileUserId:', profileUserId);
+
     if (!isEditorView || !profileUserId) {
       console.error('Cannot save: not in editor view or no user ID');
       return { success: false, error: 'Cannot save changes' };
@@ -1075,14 +1092,19 @@ export function useAccountProfilePageLogic() {
         'Modified Date': new Date().toISOString()
       };
 
+      console.log('[handleSave] Update data:', updateData);
+
       const { error: updateError } = await supabase
         .from('user')
         .update(updateData)
         .eq('_id', profileUserId);
 
       if (updateError) {
+        console.error('[handleSave] Update error:', updateError);
         throw updateError;
       }
+
+      console.log('[handleSave] User data saved successfully');
 
       // Save job title to rental application table (if user has one)
       const rentalAppId = profileData?._rentalAppId;
