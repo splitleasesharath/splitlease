@@ -516,13 +516,15 @@ export function useAccountProfilePageLogic() {
       const dobTimestamp = userData['Date of Birth'];
       const dateOfBirth = dobTimestamp ? dobTimestamp.split('T')[0] : '';
 
-      // Parse transportation medium - handle both legacy string and new array format
+      // Parse transportation medium - now a text[] array in database
       const rawTransport = userData['transportation medium'];
       let transportationTypes = [];
       if (Array.isArray(rawTransport)) {
-        transportationTypes = rawTransport;
+        // Filter to only valid transport values (in case of corrupted data)
+        const validValues = ['car', 'public_transit', 'bicycle', 'walking', 'rideshare', 'other'];
+        transportationTypes = rawTransport.filter(val => validValues.includes(val));
       } else if (rawTransport && typeof rawTransport === 'string') {
-        // Legacy: single string value - convert to array
+        // Legacy fallback: single string value - convert to array
         transportationTypes = [rawTransport];
       }
 
@@ -1143,12 +1145,15 @@ export function useAccountProfilePageLogic() {
       const dobTimestamp = profileData['Date of Birth'];
       const dateOfBirth = dobTimestamp ? dobTimestamp.split('T')[0] : '';
 
-      // Parse transportation medium - handle both legacy string and new array format
+      // Parse transportation medium - now a text[] array in database
       const rawTransport = profileData['transportation medium'];
       let transportationTypes = [];
       if (Array.isArray(rawTransport)) {
-        transportationTypes = rawTransport;
+        // Filter to only valid transport values (in case of corrupted data)
+        const validValues = ['car', 'public_transit', 'bicycle', 'walking', 'rideshare', 'other'];
+        transportationTypes = rawTransport.filter(val => validValues.includes(val));
       } else if (rawTransport && typeof rawTransport === 'string') {
+        // Legacy fallback: single string value - convert to array
         transportationTypes = [rawTransport];
       }
 
