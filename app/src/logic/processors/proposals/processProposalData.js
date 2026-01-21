@@ -10,6 +10,11 @@
  * Intent: Create safe, typed objects for UI consumption, enforcing data integrity.
  */
 
+import { formatPrice } from '../../../lib/priceCalculations.js';
+
+// Re-export for backwards compatibility
+export { formatPrice };
+
 /**
  * Transform raw listing data from Bubble.io format
  * @param {Object} rawListing - Raw listing object from Supabase
@@ -198,25 +203,6 @@ export function getProposalDisplayText(proposal) {
   const listingName = proposal.listing?.name || 'Property';
 
   return `${hostName} - ${listingName}`;
-}
-
-/**
- * Format price for display
- * @param {number} price - Price value
- * @param {boolean} includeCents - Whether to include cents
- * @returns {string} Formatted price string
- */
-export function formatPrice(price, includeCents = true) {
-  if (price === null || price === undefined) return null;
-
-  const formatter = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: includeCents ? 2 : 0,
-    maximumFractionDigits: includeCents ? 2 : 0
-  });
-
-  return formatter.format(price);
 }
 
 /**
