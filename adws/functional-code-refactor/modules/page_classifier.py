@@ -4,9 +4,12 @@ Page Classifier - Maps pages to authentication requirements and MCP sessions
 This module provides a complete registry of all pages with:
 1. Authentication requirement (public, host, guest, shared)
 2. Dual MCP session mapping for concurrent LIVE vs DEV comparison
-3. Dynamic route parameters (e.g., :id, :userId)
+3. Dynamic route parameters (e.g., :id)
 
-Used by adw_parity_check.py to determine which MCP sessions to use for each page.
+IMPORTANT: This registry is derived from app/src/routes.config.js
+Any changes to routes should be reflected here.
+
+Used by visual_regression.py to determine which MCP sessions to use for each page.
 
 MCP Session Architecture:
 - playwright-host-live: Host auth session for split.lease
@@ -46,80 +49,114 @@ class PageInfo:
 
 
 # =============================================================================
-# COMPLETE PAGE REGISTRY
+# COMPLETE PAGE REGISTRY (from routes.config.js)
 # =============================================================================
-# Derived from app/src/routes.config.js - ALL pages with auth requirements
 
 # -----------------------------------------------------------------------------
 # PUBLIC PAGES - No authentication required, no MCP session needed
 # -----------------------------------------------------------------------------
 PUBLIC_PAGES: Dict[str, PageInfo] = {
     "/": PageInfo(
-        path="/", file="home.html", auth_type="public",
+        path="/", file="index.html", auth_type="public",
         mcp_live=None, mcp_dev=None,
         description="Homepage"
     ),
-    "/browse-listings": PageInfo(
-        path="/browse-listings", file="browse-listings.html", auth_type="public",
+    "/search": PageInfo(
+        path="/search", file="search.html", auth_type="public",
         mcp_live=None, mcp_dev=None,
-        description="Browse all listings"
+        description="Listing search page"
     ),
     "/view-split-lease": PageInfo(
         path="/view-split-lease", file="view-split-lease.html", auth_type="public",
         mcp_live=None, mcp_dev=None,
         has_dynamic_segment=True, dynamic_pattern="/view-split-lease/:id",
-        description="View single listing"
-    ),
-    "/how-split-lease-works": PageInfo(
-        path="/how-split-lease-works", file="how-split-lease-works.html", auth_type="public",
-        mcp_live=None, mcp_dev=None,
-        description="How it works page"
+        description="View listing details"
     ),
     "/help-center": PageInfo(
         path="/help-center", file="help-center.html", auth_type="public",
         mcp_live=None, mcp_dev=None,
         description="Help center home"
     ),
-    "/help-center-category": PageInfo(
-        path="/help-center-category", file="help-center-category.html", auth_type="public",
+    "/help-center/:category": PageInfo(
+        path="/help-center/:category", file="help-center-category.html", auth_type="public",
         mcp_live=None, mcp_dev=None,
         has_dynamic_segment=True, dynamic_pattern="/help-center/:category",
         description="Help center category"
     ),
-    "/login": PageInfo(
-        path="/login", file="login.html", auth_type="public",
+    "/faq": PageInfo(
+        path="/faq", file="faq.html", auth_type="public",
         mcp_live=None, mcp_dev=None,
-        description="Login page"
+        description="FAQ page"
     ),
-    "/signup": PageInfo(
-        path="/signup", file="signup.html", auth_type="public",
+    "/policies": PageInfo(
+        path="/policies", file="policies.html", auth_type="public",
         mcp_live=None, mcp_dev=None,
-        description="Signup page"
+        description="Policies page (terms, privacy)"
     ),
-    "/forgot-password": PageInfo(
-        path="/forgot-password", file="forgot-password.html", auth_type="public",
+    "/list-with-us": PageInfo(
+        path="/list-with-us", file="list-with-us.html", auth_type="public",
         mcp_live=None, mcp_dev=None,
-        description="Password reset request"
+        description="Host landing page"
+    ),
+    "/list-with-us-v2": PageInfo(
+        path="/list-with-us-v2", file="list-with-us-v2.html", auth_type="public",
+        mcp_live=None, mcp_dev=None,
+        description="Host landing page v2"
+    ),
+    "/why-split-lease": PageInfo(
+        path="/why-split-lease", file="why-split-lease.html", auth_type="public",
+        mcp_live=None, mcp_dev=None,
+        description="Marketing - why split lease"
+    ),
+    "/careers": PageInfo(
+        path="/careers", file="careers.html", auth_type="public",
+        mcp_live=None, mcp_dev=None,
+        description="Careers page"
+    ),
+    "/about-us": PageInfo(
+        path="/about-us", file="about-us.html", auth_type="public",
+        mcp_live=None, mcp_dev=None,
+        description="About us page"
+    ),
+    "/host-guarantee": PageInfo(
+        path="/host-guarantee", file="host-guarantee.html", auth_type="public",
+        mcp_live=None, mcp_dev=None,
+        description="Host guarantee info"
+    ),
+    "/referral": PageInfo(
+        path="/referral", file="referral.html", auth_type="public",
+        mcp_live=None, mcp_dev=None,
+        description="Referral program"
+    ),
+    "/guest-success": PageInfo(
+        path="/guest-success", file="guest-success.html", auth_type="public",
+        mcp_live=None, mcp_dev=None,
+        description="Guest success confirmation"
+    ),
+    "/host-success": PageInfo(
+        path="/host-success", file="host-success.html", auth_type="public",
+        mcp_live=None, mcp_dev=None,
+        description="Host success confirmation"
     ),
     "/reset-password": PageInfo(
         path="/reset-password", file="reset-password.html", auth_type="public",
         mcp_live=None, mcp_dev=None,
         description="Password reset form"
     ),
-    "/verification-sent": PageInfo(
-        path="/verification-sent", file="verification-sent.html", auth_type="public",
+    "/auth/verify": PageInfo(
+        path="/auth/verify", file="auth-verify.html", auth_type="public",
         mcp_live=None, mcp_dev=None,
-        description="Email verification sent"
+        description="Email verification callback"
     ),
-    "/terms-of-use": PageInfo(
-        path="/terms-of-use", file="terms-of-use.html", auth_type="public",
+    "/404": PageInfo(
+        path="/404", file="404.html", auth_type="public",
         mcp_live=None, mcp_dev=None,
-        description="Terms of use"
+        description="Error page"
     ),
-    "/privacy-policy": PageInfo(
-        path="/privacy-policy", file="privacy-policy.html", auth_type="public",
+    "/self-listing-v2": PageInfo(
+        path="/self-listing-v2", file="self-listing-v2.html", auth_type="public",
         mcp_live=None, mcp_dev=None,
-        description="Privacy policy"
+        description="New self-listing form (public)"
     ),
 }
 
@@ -127,10 +164,11 @@ PUBLIC_PAGES: Dict[str, PageInfo] = {
 # HOST-ONLY PAGES - Require host authentication
 # -----------------------------------------------------------------------------
 HOST_PAGES: Dict[str, PageInfo] = {
-    "/host-overview": PageInfo(
-        path="/host-overview", file="host-overview.html", auth_type="host",
+    "/preview-split-lease": PageInfo(
+        path="/preview-split-lease", file="preview-split-lease.html", auth_type="host",
         mcp_live="playwright-host-live", mcp_dev="playwright-host-dev",
-        description="Host dashboard overview"
+        has_dynamic_segment=True, dynamic_pattern="/preview-split-lease/:id",
+        description="Preview listing before publish"
     ),
     "/host-proposals": PageInfo(
         path="/host-proposals", file="host-proposals.html", auth_type="host",
@@ -147,17 +185,15 @@ HOST_PAGES: Dict[str, PageInfo] = {
         mcp_live="playwright-host-live", mcp_dev="playwright-host-dev",
         description="Listing management dashboard"
     ),
-    "/preview-split-lease": PageInfo(
-        path="/preview-split-lease", file="preview-split-lease.html", auth_type="host",
+    "/host-overview": PageInfo(
+        path="/host-overview", file="host-overview.html", auth_type="host",
         mcp_live="playwright-host-live", mcp_dev="playwright-host-dev",
-        has_dynamic_segment=True, dynamic_pattern="/preview-split-lease/:id",
-        description="Preview listing before publish"
+        description="Host dashboard overview"
     ),
-    "/edit-listing": PageInfo(
-        path="/edit-listing", file="edit-listing.html", auth_type="host",
+    "/house-manual": PageInfo(
+        path="/house-manual", file="house-manual.html", auth_type="host",
         mcp_live="playwright-host-live", mcp_dev="playwright-host-dev",
-        has_dynamic_segment=True, dynamic_pattern="/edit-listing/:id",
-        description="Edit existing listing"
+        description="House manual page"
     ),
 }
 
@@ -190,31 +226,48 @@ SHARED_PAGES: Dict[str, PageInfo] = {
     "/account-profile": PageInfo(
         path="/account-profile", file="account-profile.html", auth_type="shared",
         mcp_live="playwright-host-live", mcp_dev="playwright-host-dev",
-        has_dynamic_segment=True, dynamic_pattern="/account-profile/:userId",
-        description="User profile (own or other)"
+        description="User profile page"
     ),
     "/messages": PageInfo(
         path="/messages", file="messages.html", auth_type="shared",
         mcp_live="playwright-host-live", mcp_dev="playwright-host-dev",
         description="Messages inbox"
     ),
-    "/proposal": PageInfo(
-        path="/proposal", file="proposal.html", auth_type="shared",
-        mcp_live="playwright-host-live", mcp_dev="playwright-host-dev",
-        has_dynamic_segment=True, dynamic_pattern="/proposal/:id",
-        description="Single proposal view"
-    ),
 }
 
 # -----------------------------------------------------------------------------
-# DEV-ONLY PAGES - Only available in development
+# DEV-ONLY PAGES - Skip for visual regression
 # -----------------------------------------------------------------------------
 DEV_ONLY_PAGES: Dict[str, PageInfo] = {
-    "/_dev-route-registry": PageInfo(
-        path="/_dev-route-registry", file="_dev-route-registry.html", auth_type="public",
+    "/index-dev": PageInfo(
+        path="/index-dev", file="index-dev.html", auth_type="public",
         mcp_live=None, mcp_dev=None,
         dev_only=True,
-        description="Route registry debug page"
+        description="Development homepage"
+    ),
+    "/_internal-test": PageInfo(
+        path="/_internal-test", file="_internal-test.html", auth_type="public",
+        mcp_live=None, mcp_dev=None,
+        dev_only=True,
+        description="Internal test page"
+    ),
+    "/_internal/create-suggested-proposal": PageInfo(
+        path="/_internal/create-suggested-proposal", file="create-suggested-proposal.html", auth_type="public",
+        mcp_live=None, mcp_dev=None,
+        dev_only=True,
+        description="Internal proposal creation"
+    ),
+    "/_email-sms-unit": PageInfo(
+        path="/_email-sms-unit", file="_email-sms-unit.html", auth_type="public",
+        mcp_live=None, mcp_dev=None,
+        dev_only=True,
+        description="Email/SMS testing"
+    ),
+    "/referral-demo": PageInfo(
+        path="/referral-demo", file="referral-demo.html", auth_type="public",
+        mcp_live=None, mcp_dev=None,
+        dev_only=True,
+        description="Referral demo page"
     ),
 }
 
@@ -229,6 +282,30 @@ ALL_PAGES: Dict[str, PageInfo] = {
     **SHARED_PAGES,
     **DEV_ONLY_PAGES,
 }
+
+
+# =============================================================================
+# TEST IDs FOR DYNAMIC ROUTES
+# =============================================================================
+TEST_IDS = {
+    # Listing ID - Used for: /view-split-lease/:id, /preview-split-lease/:id
+    "listing_id": "1705678660579x984500774015074300",
+
+    # Help Center Category
+    "help_center_category": "knowledge-base",
+}
+
+
+# =============================================================================
+# SMOKE TEST PAGES - Core pages for quick validation
+# =============================================================================
+SMOKE_TEST_PAGES: List[str] = [
+    "/",                    # Homepage - public entry point
+    "/search",              # Listing search - public
+    "/host-proposals",      # Host workflow - host auth
+    "/guest-proposals",     # Guest workflow - guest auth
+    "/listing-dashboard",   # Host listing management - host auth
+]
 
 
 # =============================================================================
@@ -426,22 +503,10 @@ def group_pages_for_concurrent_check() -> Dict[str, List[PageInfo]]:
         Dictionary with keys like "host", "guest", "public" mapping to page lists
     """
     return {
-        "public": [p for p in ALL_PAGES.values() if p.auth_type == "public"],
-        "host": [p for p in ALL_PAGES.values() if p.auth_type in ("host", "shared")],
-        "guest": [p for p in ALL_PAGES.values() if p.auth_type == "guest"],
+        "public": [p for p in ALL_PAGES.values() if p.auth_type == "public" and not p.dev_only],
+        "host": [p for p in ALL_PAGES.values() if p.auth_type in ("host", "shared") and not p.dev_only],
+        "guest": [p for p in ALL_PAGES.values() if p.auth_type == "guest" and not p.dev_only],
     }
-
-
-# =============================================================================
-# TEST IDs FOR DYNAMIC ROUTES
-# =============================================================================
-TEST_IDS = {
-    # Listing ID - Used for: /view-split-lease/:id, /preview-split-lease/:id, /edit-listing/:id
-    "listing_id": "1705678660579x984500774015074300",
-
-    # Help Center Categories - Static
-    "help_center_category": "guests",
-}
 
 
 def resolve_dynamic_route(page: PageInfo) -> str:
@@ -470,45 +535,13 @@ def resolve_dynamic_route(page: PageInfo) -> str:
 
 
 # =============================================================================
-# SUMMARY STATISTICS
-# =============================================================================
-
-def get_summary_stats() -> Dict:
-    """Get summary statistics for the page registry"""
-    checkable = get_checkable_pages()
-
-    return {
-        "total_pages": len(ALL_PAGES),
-        "checkable_pages": len(checkable),
-        "public_pages": len(PUBLIC_PAGES),
-        "host_pages": len(HOST_PAGES),
-        "guest_pages": len(GUEST_PAGES),
-        "shared_pages": len(SHARED_PAGES),
-        "dev_only_pages": len(DEV_ONLY_PAGES),
-        "dynamic_routes": len([p for p in ALL_PAGES.values() if p.has_dynamic_segment]),
-        "deprecated_pages": len([p for p in ALL_PAGES.values() if p.deprecated]),
-    }
-
-
-# =============================================================================
 # VISUAL REGRESSION PAGE SELECTION
 # =============================================================================
-
-# Core pages to always check during visual regression (smoke test set)
-# These are the most important pages that exercise key user flows
-SMOKE_TEST_PAGES: List[str] = [
-    "/",                    # Homepage - public entry point
-    "/browse-listings",     # Listing discovery - public
-    "/host-proposals",      # Host workflow - host auth
-    "/guest-proposals",     # Guest workflow - guest auth
-    "/listing-dashboard",   # Host listing management - host auth
-]
-
 
 def get_visual_check_pages(
     auth_types: Optional[List[str]] = None,
     smoke_test_only: bool = False,
-    include_dynamic: bool = False,
+    include_dynamic: bool = True,  # Changed to True by default
     include_deprecated: bool = False
 ) -> List[PageInfo]:
     """
@@ -593,6 +626,27 @@ def get_pages_grouped_by_auth() -> Dict[str, List[PageInfo]]:
 
 
 # =============================================================================
+# SUMMARY STATISTICS
+# =============================================================================
+
+def get_summary_stats() -> Dict:
+    """Get summary statistics for the page registry"""
+    checkable = get_checkable_pages()
+
+    return {
+        "total_pages": len(ALL_PAGES),
+        "checkable_pages": len(checkable),
+        "public_pages": len(PUBLIC_PAGES),
+        "host_pages": len(HOST_PAGES),
+        "guest_pages": len(GUEST_PAGES),
+        "shared_pages": len(SHARED_PAGES),
+        "dev_only_pages": len(DEV_ONLY_PAGES),
+        "dynamic_routes": len([p for p in ALL_PAGES.values() if p.has_dynamic_segment]),
+        "deprecated_pages": len([p for p in ALL_PAGES.values() if p.deprecated]),
+    }
+
+
+# =============================================================================
 # CONVENIENCE: Print registry summary
 # =============================================================================
 
@@ -610,4 +664,11 @@ if __name__ == "__main__":
     for group_name, pages in groups.items():
         print(f"\n  {group_name.upper()} ({len(pages)} pages):")
         for page in pages:
-            print(f"    - {page.path}")
+            dynamic_marker = " [DYNAMIC]" if page.has_dynamic_segment else ""
+            print(f"    - {page.path}{dynamic_marker}")
+
+    print("\n\nDYNAMIC ROUTE RESOLUTION:")
+    for page in ALL_PAGES.values():
+        if page.has_dynamic_segment:
+            resolved = resolve_dynamic_route(page)
+            print(f"  {page.path} -> {resolved}")
