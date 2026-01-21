@@ -7,9 +7,9 @@
  *
  * UPDATE 2026-01-17: Added FavoriteButton to price display section
  */
-// FORCE RELOAD v6 - timestamp: 1737557700000 - Custom Schedule Visibility Fix
-console.log('🔄 ViewSplitLeasePage v6 - Custom Schedule Visibility Fixed - ' + new Date().toISOString());
-console.log('🔄 If you see this, the correct file with custom schedule fix is loaded!');
+// FORCE RELOAD v7 - timestamp: 1737558600000 - Custom Schedule DEBUG
+console.log('🔄 ViewSplitLeasePage v7 - Custom Schedule DEBUG - ' + new Date().toISOString());
+console.log('🔄 DEBUG: Checking isMobile and listing conditionals');
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Header from '../shared/Header.jsx';
@@ -1924,7 +1924,11 @@ export default function ViewSplitLeasePage() {
           )}
 
           {/* Custom schedule section - decoupled from scheduleSelectorListing to ensure visibility */}
-          {!isMobile && listing && (
+          {(() => {
+            const shouldRender = !isMobile && listing;
+            logger.debug(`🎯 Custom Schedule Conditional Check: isMobile=${isMobile}, listing=${!!listing}, shouldRender=${shouldRender}`);
+            return shouldRender;
+          })() && (
             <div style={{
               marginBottom: '14px',
               padding: '12px',
@@ -2835,7 +2839,11 @@ export default function ViewSplitLeasePage() {
                 )}
 
                 {/* Custom schedule section - decoupled from scheduleSelectorListing to ensure visibility (Mobile) */}
-                {listing && (
+                {(() => {
+                  const shouldRender = !!listing;
+                  logger.debug(`🎯 Custom Schedule Conditional Check (MOBILE): listing=${!!listing}, shouldRender=${shouldRender}`);
+                  return shouldRender;
+                })() && (
                   <div style={{
                     marginBottom: '16px',
                     padding: '12px',
