@@ -1,6 +1,6 @@
 # Cloudflare Pages redirects and rewrites
 # AUTO-GENERATED from routes.config.js - DO NOT EDIT MANUALLY
-# Routes: 6 dynamic, 30 static
+# Routes: 6 dynamic, 31 static
 #
 # See: https://developers.cloudflare.com/pages/configuration/redirects/
 
@@ -112,6 +112,10 @@
 # /favorite-listings → favorite-listings.html
 /favorite-listings  /_internal/favorite-listings-view  200
 /favorite-listings/  /_internal/favorite-listings-view  200
+
+# /favorite-listings-v2 → favorite-listings-v2.html
+/favorite-listings-v2  /_internal/favorite-listings-v2-view  200
+/favorite-listings-v2/  /_internal/favorite-listings-v2-view  200
 
 # /rental-application → rental-application.html
 /rental-application  /_internal/rental-application-view  200

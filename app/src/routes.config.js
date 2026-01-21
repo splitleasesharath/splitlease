@@ -276,6 +276,15 @@ export const routes = [
     hasDynamicSegment: false
   },
   {
+    path: '/favorite-listings-v2',
+    file: 'favorite-listings-v2.html',
+    aliases: ['/favorite-listings-v2.html'],
+    protected: true,
+    cloudflareInternal: true,
+    internalName: 'favorite-listings-v2-view',
+    hasDynamicSegment: false
+  },
+  {
     path: '/rental-application',
     file: 'rental-application.html',
     aliases: ['/rental-application.html'],

@@ -565,6 +565,18 @@ export function getAllCancellationPolicies() {
 }
 
 /**
+ * Get all parking options from cache (for dropdown options)
+ * @returns {Array<{id: string, label: string}>} Array of parking options
+ */
+export function getAllParkingOptions() {
+  const options = [];
+  lookupCache.parking.forEach((parking, id) => {
+    options.push({ id, label: parking.label });
+  });
+  return options;
+}
+
+/**
  * Get storage option data by ID (synchronous lookup from cache)
  * @param {string} storageId - The storage option ID
  * @returns {object|null} The storage option data {title, summaryGuest} or null
