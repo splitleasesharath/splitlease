@@ -1,6 +1,6 @@
 # Cloudflare Pages redirects and rewrites
 # AUTO-GENERATED from routes.config.js - DO NOT EDIT MANUALLY
-# Routes: 6 dynamic, 37 static
+# Routes: 6 dynamic, 38 static
 #
 # See: https://developers.cloudflare.com/pages/configuration/redirects/
 
@@ -190,6 +190,10 @@
 # /simulation-hostside-demo → simulation-hostside-demo.html
 /simulation-hostside-demo  /_internal/simulation-hostside-demo-view  200
 /simulation-hostside-demo/  /_internal/simulation-hostside-demo-view  200
+
+# /simulation-host-mobile → simulation-host-mobile.html
+/simulation-host-mobile  /_internal/simulation-host-mobile-view  200
+/simulation-host-mobile/  /_internal/simulation-host-mobile-view  200
 
 # Note: Cloudflare Pages automatically serves /404.html for not found routes
 # No explicit catch-all rule needed - native 404.html support handles this
