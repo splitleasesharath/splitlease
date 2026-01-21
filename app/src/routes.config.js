@@ -560,6 +560,16 @@ export const routes = [
     cloudflareInternal: false,
     internalName: 'modify-listings-view',
     hasDynamicSegment: false
+  },
+  {
+    path: '/_internal/message-curation',
+    file: 'message-curation.html',
+    aliases: ['/_internal/message-curation.html', '/message-curation'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'message-curation-view',
+    hasDynamicSegment: false
   }
 ];
 
