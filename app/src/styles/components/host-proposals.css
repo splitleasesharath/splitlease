@@ -595,86 +595,99 @@
   padding-top: var(--spacing-4xl);
 }
 
-/* Header */
+/* Header - Matched to GuestEditingProposalModal hierarchy */
 .modal-header {
   margin-bottom: var(--spacing-2xl);
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .modal-title {
-  font-family: var(--font-inter);
-  font-size: var(--text-xl);
-  font-weight: 700;
-  color: var(--text-dark);
-  margin: 0 0 var(--spacing-sm) 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: #31135D;
+  margin: 0 0 8px 0;
 }
 
 .modal-schedule {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  gap: 8px;
 }
 
 .modal-schedule .schedule-text {
-  font-size: var(--text-base);
-  color: var(--text-gray);
+  font-size: 13px;
+  color: #6b7280;
 }
 
-/* Proposal Details */
+/* Proposal Details - Matched to GuestEditingProposalModal hierarchy */
 .proposal-details {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  gap: 0;
   margin-bottom: var(--spacing-2xl);
+  padding: 16px 20px;
+  background: #fafafa;
+  border-radius: 10px;
 }
 
 .proposal-details .detail-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--spacing-xs) 0;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.proposal-details .detail-row:last-of-type:not(.total-row) {
+  border-bottom: none;
 }
 
 .detail-label {
-  font-size: var(--text-base);
-  color: var(--text-gray);
+  font-size: 13px;
+  color: #4b5563;
 }
 
 .detail-value {
-  font-size: var(--text-base);
-  color: var(--text-dark);
+  font-size: 13px;
+  color: #1a1a1a;
   font-weight: 500;
   text-align: right;
 }
 
 .detail-value .bullet {
-  color: #3B82F6;
+  color: #6B4EFF;
   margin-right: 4px;
 }
 
 .detail-value .original-value {
   text-decoration: line-through;
-  color: var(--text-light-gray);
+  color: #9ca3af;
   margin-right: var(--spacing-sm);
   font-weight: 400;
 }
 
 .total-row {
-  border-top: 1px solid var(--border-color);
-  padding-top: var(--spacing-lg);
-  margin-top: var(--spacing-sm);
+  border-top: 1px solid #e5e5e5;
+  border-bottom: none !important;
+  padding-top: 12px;
+  margin-top: 8px;
 }
 
 .total-row .total {
-  font-size: var(--text-md);
+  font-size: 16px;
   font-weight: 700;
+  color: #6B4EFF;
 }
 
-/* Collapsible Sections - Updated per protocol */
+/* Collapsible Sections - Matched to GuestEditingProposalModal hierarchy */
 .collapsible-section {
-  border: 1px solid #E7E0EC;
-  border-radius: 12px;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
   margin-bottom: 16px;
   overflow: hidden;
+  background: #ffffff;
 }
 
 .section-header {
@@ -682,24 +695,24 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px;
+  padding: 14px 16px;
   background: transparent;
   border: none;
   cursor: pointer;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 14px;
   font-weight: 600;
-  color: #1C1B1F;
+  color: #1a1a1a;
   transition: background-color 0.2s ease;
 }
 
 .section-header:hover {
-  background-color: #F7F2FA;
+  background-color: #fafafa;
 }
 
 .chevron {
   transition: transform 0.2s ease;
-  color: #49454F;
+  color: #6b7280;
 }
 
 .chevron.open {
@@ -708,6 +721,7 @@
 
 .section-content {
   padding: 0 16px 16px;
+  background: #fafafa;
 }
 
 /* Guest Details */

@@ -221,6 +221,15 @@
   border-radius: 4px;
 }
 
+/* Feather SVG icon replacement per popup redesign protocol */
+.schedule-cohost-icon-svg {
+  width: 28px;
+  height: 28px;
+  color: var(--sc-purple-primary);
+  stroke: var(--sc-purple-primary);
+  flex-shrink: 0;
+}
+
 .schedule-cohost-icon {
   width: 24px;
   height: 24px;
