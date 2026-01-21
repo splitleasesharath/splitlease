@@ -540,6 +540,16 @@ export const routes = [
     cloudflareInternal: false,
     internalName: 'simulation-admin-view',
     hasDynamicSegment: false
+  },
+  {
+    path: '/_internal/send-magic-login-links',
+    file: 'send-magic-login-links.html',
+    aliases: ['/_internal/send-magic-login-links.html', '/send-magic-login-links'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'send-magic-login-links-view',
+    hasDynamicSegment: false
   }
 ];
 
