@@ -520,6 +520,16 @@ export const routes = [
     cloudflareInternal: false,
     internalName: 'verify-users-view',
     hasDynamicSegment: false
+  },
+  {
+    path: '/_internal/co-host-requests',
+    file: 'co-host-requests.html',
+    aliases: ['/_internal/co-host-requests.html', '/co-host-requests'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'co-host-requests-view',
+    hasDynamicSegment: false
   }
 ];
 
