@@ -5,8 +5,140 @@
  * Refined heart button, host section, and button styles.
  */
 
-import { useState } from 'react';
-import FavoriteButton from '../../../shared/FavoriteButton/FavoriteButton.jsx';
+import { useState, useRef, useEffect } from 'react';
+
+/**
+ * FavoriteButtonWithConfirm - Favorite button with confirmation popup
+ * Shows "Are you sure?" popup before removing from favorites
+ */
+const FavoriteButtonWithConfirm = ({ listingId, userId, onConfirmRemove }) => {
+  const [showConfirm, setShowConfirm] = useState(false);
+  const popupRef = useRef(null);
+  const buttonRef = useRef(null);
+
+  // Close popup when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (showConfirm && popupRef.current && !popupRef.current.contains(e.target) && !buttonRef.current.contains(e.target)) {
+        setShowConfirm(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showConfirm]);
+
+  const handleButtonClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowConfirm(true);
+  };
+
+  const handleConfirm = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowConfirm(false);
+    if (onConfirmRemove) {
+      onConfirmRemove();
+    }
+  };
+
+  const handleCancel = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowConfirm(false);
+  };
+
+  const styles = {
+    container: {
+      position: 'absolute',
+      top: '16px',
+      right: '16px',
+      zIndex: 10,
+    },
+    button: {
+      width: '40px',
+      height: '40px',
+      borderRadius: '50%',
+      background: 'white',
+      border: 'none',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+      transition: 'transform 0.2s',
+    },
+    popup: {
+      position: 'absolute',
+      top: '48px',
+      right: '0',
+      background: 'white',
+      borderRadius: '12px',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+      padding: '16px',
+      minWidth: '200px',
+      zIndex: 100,
+    },
+    popupText: {
+      fontSize: '14px',
+      fontWeight: 600,
+      color: '#1E293B',
+      marginBottom: '12px',
+      textAlign: 'center',
+    },
+    popupButtons: {
+      display: 'flex',
+      gap: '8px',
+    },
+    cancelBtn: {
+      flex: 1,
+      padding: '8px 12px',
+      borderRadius: '8px',
+      border: '1px solid #E2E8F0',
+      background: 'white',
+      color: '#64748B',
+      fontSize: '13px',
+      fontWeight: 600,
+      cursor: 'pointer',
+    },
+    removeBtn: {
+      flex: 1,
+      padding: '8px 12px',
+      borderRadius: '8px',
+      border: 'none',
+      background: '#EF4444',
+      color: 'white',
+      fontSize: '13px',
+      fontWeight: 600,
+      cursor: 'pointer',
+    },
+  };
+
+  return (
+    <div style={styles.container}>
+      <button
+        ref={buttonRef}
+        style={styles.button}
+        onClick={handleButtonClick}
+        aria-label="Remove from favorites"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="#EF4444" stroke="#EF4444" strokeWidth="2">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+        </svg>
+      </button>
+
+      {showConfirm && (
+        <div ref={popupRef} style={styles.popup}>
+          <div style={styles.popupText}>Remove from favorites?</div>
+          <div style={styles.popupButtons}>
+            <button style={styles.cancelBtn} onClick={handleCancel}>Cancel</button>
+            <button style={styles.removeBtn} onClick={handleConfirm}>Remove</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const FavoritesCardV2 = ({
   listing,
@@ -255,17 +387,14 @@ const FavoritesCardV2 = ({
         {hasProposal && <div style={{ ...styles.statusBadge, ...styles.badgeProposal }}>Proposal Sent</div>}
         {!hasProposal && isNewListing && <div style={{ ...styles.statusBadge, ...styles.badgeNew }}>New</div>}
 
-        <FavoriteButton
+        <FavoriteButtonWithConfirm
           listingId={listing.id}
           userId={userId}
-          initialFavorited={true}
-          onToggle={(newState) => {
+          onConfirmRemove={() => {
             if (onToggleFavorite) {
-              onToggleFavorite(listing.id, listing.title, newState);
+              onToggleFavorite(listing.id, listing.title, false);
             }
           }}
-          size="medium"
-          variant="overlay"
         />
 
         {hasMultiplePhotos && (
