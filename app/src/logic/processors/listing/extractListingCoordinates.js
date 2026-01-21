@@ -1,3 +1,5 @@
+import { isWithinNYCBounds } from '../../../lib/constants.js'
+
 /**
  * Extract coordinates from listing's JSONB location fields.
  * Priority: "Location - slightly different address" (privacy) → "Location - Address" (main).
@@ -6,6 +8,7 @@
  * @rule NO FALLBACK: Returns null if no valid coordinates found (listings without coordinates must be filtered out).
  * @rule Priority 1: Use "Location - slightly different address" for privacy/pin separation.
  * @rule Priority 2: Use "Location - Address" as fallback.
+ * @rule BOUNDS CHECK: Coordinates must fall within NYC metro area bounds (rejects (0,0) "Null Island" etc.)
  *
  * @param {object} params - Named parameters.
  * @param {object|string|null} params.locationSlightlyDifferent - JSONB field for privacy-adjusted address.
@@ -68,11 +71,10 @@ export function extractListingCoordinates({
     }
   }
 
-  // Priority 1: Check slightly different address
+  // Priority 1: Check slightly different address (with NYC bounds validation)
   if (
     parsedSlightlyDifferent &&
-    typeof parsedSlightlyDifferent.lat === 'number' &&
-    typeof parsedSlightlyDifferent.lng === 'number'
+    isWithinNYCBounds(parsedSlightlyDifferent.lat, parsedSlightlyDifferent.lng)
   ) {
     return {
       lat: parsedSlightlyDifferent.lat,
@@ -81,11 +83,10 @@ export function extractListingCoordinates({
     }
   }
 
-  // Priority 2: Check main address
+  // Priority 2: Check main address (with NYC bounds validation)
   if (
     parsedAddress &&
-    typeof parsedAddress.lat === 'number' &&
-    typeof parsedAddress.lng === 'number'
+    isWithinNYCBounds(parsedAddress.lat, parsedAddress.lng)
   ) {
     return {
       lat: parsedAddress.lat,

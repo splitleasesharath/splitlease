@@ -32,7 +32,8 @@
       "Bash(timeout:*)",
       "Bash(ping:*)",
       "Bash(bun run lint)",
-      "Bash(start:*)"
+      "Bash(start:*)",
+      "Bash(echo:*)"
     ],
     "deny": [],
     "ask": []
