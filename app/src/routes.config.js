@@ -530,6 +530,16 @@ export const routes = [
     cloudflareInternal: false,
     internalName: 'co-host-requests-view',
     hasDynamicSegment: false
+  },
+  {
+    path: '/_internal/simulation-admin',
+    file: 'simulation-admin.html',
+    aliases: ['/_internal/simulation-admin.html', '/simulation-admin'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'simulation-admin-view',
+    hasDynamicSegment: false
   }
 ];
 
