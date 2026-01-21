@@ -163,8 +163,8 @@
   width: 400px !important; /* Map width from mockup */
   flex-shrink: 0;
   position: sticky;
-  top: 184px; /* Header (80px) + Sub-header (72px) + gap (32px) */
-  height: calc(100vh - 216px); /* Viewport minus header + sub-header + padding */
+  top: 192px; /* Header (80px) + Sub-header (72px) + gap (40px) */
+  height: calc(100vh - 224px); /* Viewport minus header + sub-header + padding */
   background: white;
   border-radius: 16px;
   overflow: hidden;
