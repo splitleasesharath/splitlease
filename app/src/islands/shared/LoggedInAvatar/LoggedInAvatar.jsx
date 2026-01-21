@@ -74,6 +74,7 @@ export default function LoggedInAvatar({
   const effectiveUnreadMessagesCount = dataLoading ? (user.unreadMessagesCount || 0) : supabaseData.unreadMessagesCount;
   const effectiveFirstListingId = dataLoading ? null : supabaseData.firstListingId;
   const effectiveThreadsCount = dataLoading ? 0 : (supabaseData.threadsCount || 0);
+  const effectiveLastSuggestedProposalId = dataLoading ? null : supabaseData.lastSuggestedProposalId;
 
   // Handle resize for mobile detection
   useEffect(() => {
@@ -215,13 +216,18 @@ export default function LoggedInAvatar({
     }
 
     // 3. Proposals Suggested - GUEST only
-    //    Helps guests discover listings to submit proposals to
+    //    Links to guest-proposals page with the most recent suggestion pre-selected
     if (menuVisibility.myProposalsSuggested) {
+      // Build path with proposal ID query param if available for deep-linking
+      const suggestedPath = effectiveLastSuggestedProposalId
+        ? `/guest-proposals?proposal=${effectiveLastSuggestedProposalId}`
+        : '/guest-proposals';
+
       items.push({
         id: 'proposals-suggested',
         label: 'Proposals Suggested',
         icon: '/assets/icons/file-text-purple.svg',
-        path: '/proposals-suggested',
+        path: suggestedPath,
       });
     }
 

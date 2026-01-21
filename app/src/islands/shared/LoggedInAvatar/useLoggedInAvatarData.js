@@ -120,6 +120,7 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
     favoritesCount: 0,
     unreadMessagesCount: 0,
     suggestedProposalsCount: 0,
+    lastSuggestedProposalId: null, // ID of most recent suggested proposal for deep linking
     threadsCount: 0 // Count of message threads user is part of
   });
   const [loading, setLoading] = useState(true);
@@ -195,12 +196,15 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
 
         // 7. Check for proposals suggested by Split Lease
         //    These are proposals created by SL agent on behalf of the guest
+        //    Fetch the most recent one's ID for deep-linking from the menu
         supabase
           .from('proposal')
-          .select('_id', { count: 'exact', head: true })
+          .select('_id, "Created Date"')
           .eq('Guest', userId)
           .in('Status', SUGGESTED_PROPOSAL_STATUSES)
-          .or('"Deleted".is.null,"Deleted".eq.false'),
+          .or('"Deleted".is.null,"Deleted".eq.false')
+          .order('Created Date', { ascending: false })
+          .limit(10),
 
         // 8. Get favorites and proposals counts from junction tables (Phase 5b migration)
         supabase.rpc('get_user_junction_counts', { p_user_id: userId }),
@@ -342,6 +346,15 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
         console.error('[useLoggedInAvatarData] Error fetching threads:', threadsResult.error);
       }
 
+      // Process suggested proposals - extract count and most recent ID
+      const suggestedProposals = suggestedProposalsResult.data || [];
+      const suggestedProposalsCount = suggestedProposals.length;
+      const lastSuggestedProposalId = suggestedProposals.length > 0 ? suggestedProposals[0]._id : null;
+
+      if (suggestedProposalsResult.error) {
+        console.warn('[useLoggedInAvatarData] Suggested proposals query failed:', suggestedProposalsResult.error);
+      }
+
       const newData = {
         userType: normalizedType,
         proposalsCount,
@@ -353,7 +366,8 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
         leasesCount: leasesResult.count || 0,
         favoritesCount,
         unreadMessagesCount: messagesResult.count || 0,
-        suggestedProposalsCount: suggestedProposalsResult.count || 0,
+        suggestedProposalsCount,
+        lastSuggestedProposalId,
         threadsCount: threadsResult.data || 0  // RPC returns data directly, not count
       };
 
