@@ -334,7 +334,7 @@ const FavoritesCardV2 = ({
       justifyContent: 'space-between',
       paddingTop: '20px',
       marginTop: 'auto',
-      borderTop: '1px solid #F1F5F9',
+      borderTop: '1px solid #D1D5DB',
     },
     priceLabel: {
       fontSize: '12px',
