@@ -6,17 +6,30 @@
  */
 
 /**
+ * Parse markdown bold syntax (**text**) and return React elements
+ * @param {string} text - Text with markdown bold syntax
+ * @returns {Array} Array of React elements (strings and <strong> elements)
+ */
+function parseMarkdownBold(text) {
+  if (!text) return text;
+
+  // Split by **text** pattern, capturing the bold content
+  const parts = text.split(/\*\*([^*]+)\*\*/g);
+
+  return parts.map((part, index) => {
+    // Odd indices are the captured bold text
+    if (index % 2 === 1) {
+      return <strong key={index}>{part}</strong>;
+    }
+    return part;
+  });
+}
+
+/**
  * @param {Object} props
- * @param {string} props.summary - AI-generated summary text
+ * @param {string} props.summary - AI-generated summary text (may contain **bold** markdown)
  */
 export default function WhyThisProposal({ summary }) {
-  // TODO(human): Implement the summary display logic
-  // The summary comes from negotiationsummary table and explains
-  // why this listing was suggested to the guest.
-  // Consider: Should we show a default message when no summary exists?
-  // Should we truncate long summaries with "Read more"?
-  // Should we add visual indicators (icons, highlights)?
-
   if (!summary) {
     return (
       <div className="sp-why-section">
@@ -37,7 +50,7 @@ export default function WhyThisProposal({ summary }) {
         <span className="sp-why-icon">💡</span>
         Why This Listing?
       </h3>
-      <p className="sp-why-text">{summary}</p>
+      <p className="sp-why-text">{parseMarkdownBold(summary)}</p>
     </div>
   );
 }
