@@ -570,6 +570,16 @@ export const routes = [
     cloudflareInternal: false,
     internalName: 'message-curation-view',
     hasDynamicSegment: false
+  },
+  {
+    path: '/_internal/usability-data-management',
+    file: 'usability-data-management.html',
+    aliases: ['/_internal/usability-data-management.html', '/usability-data-management'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'usability-data-management-view',
+    hasDynamicSegment: false
   }
 ];
 
