@@ -56,6 +56,7 @@ const FavoriteButtonWithConfirm = ({ listingId, userId, onConfirmRemove }) => {
       zIndex: 10,
     },
     button: {
+      all: 'unset', // Reset ALL inherited/global styles
       width: '40px',
       height: '40px',
       borderRadius: '50%',
@@ -65,6 +66,8 @@ const FavoriteButtonWithConfirm = ({ listingId, userId, onConfirmRemove }) => {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
+      padding: '0', // Explicitly override global button padding
+      boxSizing: 'border-box',
       boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
       transition: 'transform 0.2s',
     },
