@@ -468,6 +468,28 @@ export const routes = [
     cloudflareInternal: true,
     internalName: 'simulation-host-mobile-view',
     hasDynamicSegment: false
+  },
+
+  // ===== CORPORATE INTERNAL TOOLS =====
+  {
+    path: '/_internal/guest-relationships',
+    file: 'guest-relationships.html',
+    aliases: ['/_internal/guest-relationships.html', '/guest-relationships'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'guest-relationships-view',
+    hasDynamicSegment: false
+  },
+  {
+    path: '/_internal/manage-virtual-meetings',
+    file: 'manage-virtual-meetings.html',
+    aliases: ['/_internal/manage-virtual-meetings.html', '/manage-virtual-meetings'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'manage-virtual-meetings-view',
+    hasDynamicSegment: false
   }
 ];
 
