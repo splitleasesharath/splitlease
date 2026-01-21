@@ -550,6 +550,16 @@ export const routes = [
     cloudflareInternal: false,
     internalName: 'send-magic-login-links-view',
     hasDynamicSegment: false
+  },
+  {
+    path: '/_internal/modify-listings',
+    file: 'modify-listings.html',
+    aliases: ['/_internal/modify-listings.html', '/modify-listings'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'modify-listings-view',
+    hasDynamicSegment: false
   }
 ];
 

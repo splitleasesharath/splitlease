@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig, splitVendorChunkPlugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 import fs from 'fs';
@@ -94,6 +94,7 @@ function copyDirectory(src, dest) {
 export default defineConfig({
   plugins: [
     react(),
+    splitVendorChunkPlugin(),
     {
       name: 'multi-page-routing',
       configureServer(server) {
@@ -300,7 +301,10 @@ export default defineConfig({
          */
         manualChunks(id) {
           // React and React DOM - core framework (shared across all pages)
-          if (id.includes('node_modules/react')) {
+          // CRITICAL: Must be checked before other conditions to ensure React loads first
+          if (id.includes('node_modules/react') ||
+              id.includes('node_modules/react-dom') ||
+              id.includes('node_modules/scheduler')) {
             return 'vendor-react';
           }
 
@@ -313,6 +317,12 @@ export default defineConfig({
           // Isolate to prevent loading on non-map pages
           if (id.includes('@googlemaps') || id.includes('google-maps') || id.includes('vis.gl')) {
             return 'vendor-google-maps';
+          }
+
+          // All other node_modules go into a shared vendor chunk
+          // This prevents vendor code from being bundled into component chunks
+          if (id.includes('node_modules')) {
+            return 'vendor';
           }
 
           // Search page specific logic - isolate for code splitting
