@@ -33,7 +33,14 @@ from .test_driven_validation import (
     TestDrivenResult,
 )
 from .visual_regression import check_visual_parity
-from .page_classifier import get_mcp_sessions_for_page, get_page_info, ALL_PAGES
+from .page_classifier import (
+    get_mcp_sessions_for_page,
+    get_page_info,
+    get_page_info_by_file_path,
+    get_page_auth_type,
+    file_path_to_url_path,
+    ALL_PAGES,
+)
 
 
 def _is_page_file(file_path: str) -> bool:
@@ -360,15 +367,29 @@ def run_deferred_validation(
         visual_screenshots = {}
 
         for page_path in batch.affected_pages:
+            # Convert file path to URL path if needed
+            # _trace_to_pages returns file paths like "src/islands/pages/HostProposalsPage.jsx"
+            # but page_classifier expects URL paths like "/host-proposals"
+            url_path = file_path_to_url_path(page_path)
+            if url_path:
+                lookup_path = url_path
+            else:
+                # Already a URL path or unknown format
+                lookup_path = page_path
+
             # Get page info to determine auth type
-            page_info = get_page_info(page_path)
+            page_info = get_page_info(lookup_path)
             auth_type = page_info.auth_type if page_info else "public"
 
             # Get MCP sessions for this page
-            mcp_live, mcp_dev = get_mcp_sessions_for_page(page_path)
+            mcp_live, mcp_dev = get_mcp_sessions_for_page(lookup_path)
+
+            # Log the path resolution for debugging
+            if url_path and url_path != page_path:
+                logger.log(f"  [Path] {page_path} → {url_path}")
 
             visual_result = check_visual_parity(
-                page_path=page_path,
+                page_path=lookup_path,  # Use URL path for navigation
                 mcp_session=mcp_live,
                 mcp_session_dev=mcp_dev,
                 auth_type=auth_type,
@@ -379,21 +400,24 @@ def run_deferred_validation(
 
             parity_status = visual_result.get("visualParity", "FAIL")
 
+            # Use lookup_path (URL) for logging, page_path (file) for error attribution
+            display_path = lookup_path if lookup_path != page_path else page_path
+
             if parity_status == "PASS":
-                logger.log(f"  [PASS] {page_path}")
+                logger.log(f"  [PASS] {display_path}")
             elif parity_status == "BLOCKED":
                 issues = visual_result.get('issues', ['Unknown'])
-                logger.log(f"  [BLOCKED] {page_path}: {issues[0] if issues else 'Unknown'}")
+                logger.log(f"  [BLOCKED] {display_path}: {issues[0] if issues else 'Unknown'}")
                 visual_errors.append(ValidationError(
-                    message=f"Visual check blocked for {page_path}",
-                    file_path=page_path
+                    message=f"Visual check blocked for {display_path}",
+                    file_path=page_path  # Keep original file path for attribution
                 ))
             else:  # FAIL
                 issues = visual_result.get('issues', ['Unknown visual difference'])
-                logger.log(f"  [FAIL] {page_path}: {issues[0] if issues else 'Unknown'}")
+                logger.log(f"  [FAIL] {display_path}: {issues[0] if issues else 'Unknown'}")
                 visual_errors.append(ValidationError(
-                    message=f"Visual parity failed for {page_path}: {issues[0] if issues else 'Unknown'}",
-                    file_path=page_path
+                    message=f"Visual parity failed for {display_path}: {issues[0] if issues else 'Unknown'}",
+                    file_path=page_path  # Keep original file path for attribution
                 ))
 
             # Collect screenshots for reporting

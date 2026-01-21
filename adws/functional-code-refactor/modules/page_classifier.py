@@ -256,6 +256,104 @@ def get_mcp_sessions_for_page(path: str) -> Tuple[Optional[McpSession], Optional
     return (page.mcp_live, page.mcp_dev)
 
 
+def get_page_auth_type(path: str) -> str:
+    """Get the auth type for a page path.
+
+    Args:
+        path: URL path (e.g., "/host-proposals") or file path
+
+    Returns:
+        Auth type string: "public", "host", "guest", or "shared"
+    """
+    # Try direct lookup first
+    page = ALL_PAGES.get(path)
+    if page:
+        return page.auth_type
+
+    # Try converting file path to URL path
+    url_path = file_path_to_url_path(path)
+    if url_path:
+        page = ALL_PAGES.get(url_path)
+        if page:
+            return page.auth_type
+
+    return "public"  # Default to public for unknown pages
+
+
+def file_path_to_url_path(file_path: str) -> Optional[str]:
+    """Convert a component file path to its URL path.
+
+    Handles common naming patterns:
+    - src/islands/pages/HostProposalsPage.jsx → /host-proposals
+    - src/islands/pages/GuestProposalsPage.jsx → /guest-proposals
+    - pages/ListingDashboardPage.jsx → /listing-dashboard
+
+    Args:
+        file_path: File path like "src/islands/pages/HostProposalsPage.jsx"
+
+    Returns:
+        URL path like "/host-proposals", or None if not a page file
+    """
+    import re
+
+    # Normalize path separators
+    normalized = file_path.replace('\\', '/')
+
+    # Check if this is a page file
+    if '/pages/' not in normalized:
+        return None
+
+    # Extract filename
+    filename = normalized.split('/')[-1]
+
+    # Remove extension
+    name = re.sub(r'\.(jsx?|tsx?)$', '', filename)
+
+    # Remove common suffixes
+    name = re.sub(r'Page$', '', name)
+
+    # Convert PascalCase to kebab-case
+    # e.g., HostProposals → host-proposals
+    kebab = re.sub(r'([a-z])([A-Z])', r'\1-\2', name).lower()
+
+    # Add leading slash
+    url_path = f"/{kebab}"
+
+    # Check if this URL path exists in our registry
+    if url_path in ALL_PAGES:
+        return url_path
+
+    # Try some common variations
+    variations = [
+        url_path,
+        url_path.replace('-page', ''),
+        f"/{name.lower()}",
+    ]
+
+    for variant in variations:
+        if variant in ALL_PAGES:
+            return variant
+
+    # If still not found, return the computed path anyway
+    # (may be useful for logging)
+    return url_path
+
+
+def get_page_info_by_file_path(file_path: str) -> Optional[PageInfo]:
+    """Get PageInfo by looking up a component file path.
+
+    Args:
+        file_path: File path like "src/islands/pages/HostProposalsPage.jsx"
+
+    Returns:
+        PageInfo if found, None otherwise
+    """
+    url_path = file_path_to_url_path(file_path)
+    if url_path:
+        return ALL_PAGES.get(url_path)
+    return None
+
+
 def get_pages_by_auth_type(auth_type: AuthType) -> List[PageInfo]:
     """Get all pages requiring a specific auth type"""
     return [p for p in ALL_PAGES.values() if p.auth_type == auth_type]
