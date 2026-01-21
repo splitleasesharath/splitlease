@@ -232,7 +232,9 @@ def main():
     parser.add_argument("--limit", type=int, help="Limit number of chunks to implement")
     parser.add_argument("--audit-type", default="general", help="Type of audit (default: general)")
     parser.add_argument("--skip-visual", action="store_true", help="Skip visual regression testing")
-    parser.add_argument("--slack-channel", default=None, help="Slack channel for notifications (e.g., #dev-alerts)")
+    parser.add_argument("--slack-channel", default="test-bed", help="Slack channel for notifications (default: test-bed)")
+    parser.add_argument("--no-slack", action="store_true", help="Disable Slack notifications")
+    parser.add_argument("--use-gemini", action="store_true", help="Use Gemini instead of Claude for visual checks")
     parser.add_argument("--legacy", action="store_true", help="Use legacy per-chunk validation (slower)")
 
     args = parser.parse_args()
@@ -498,12 +500,15 @@ def main():
                 )
 
             # Run deferred validation
+            # Resolve slack_channel: None if --no-slack, otherwise use --slack-channel value
+            effective_slack_channel = None if args.no_slack else args.slack_channel
             validation_result = run_deferred_validation(
                 validation_batch,
                 project_root,
                 logger,
                 skip_visual=args.skip_visual,
-                slack_channel=args.slack_channel
+                slack_channel=effective_slack_channel,
+                use_claude=not args.use_gemini  # Default: use Claude
             )
 
             phase_durations["validate"] = time.time() - phase_start

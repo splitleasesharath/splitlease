@@ -22,8 +22,10 @@ Available Components:
 Examples:
     python test_orchestrator.py audit app/src/logic
     python test_orchestrator.py chunks .claude/plans/New/<plan-file>.md
-    python test_orchestrator.py visual /listing
-    python test_orchestrator.py visual // --use-claude --slack-channel test-bed
+    python test_orchestrator.py visual //                     # Uses Claude + Slack (test-bed) by default
+    python test_orchestrator.py visual // --no-slack          # Skip Slack notifications
+    python test_orchestrator.py visual // --use-gemini        # Use Gemini instead of Claude
+    python test_orchestrator.py visual // --slack-channel dev # Send to #dev instead
     python test_orchestrator.py dev-server
     python test_orchestrator.py full app/src/logic
     python test_orchestrator.py paths
@@ -126,13 +128,13 @@ def test_implement(plan_file: str, chunk_number: int = None):
         print("\n[FAILURE] Implementation failed")
 
 
-def test_visual(page_path: str, use_claude: bool = False, slack_channel: str = None):
+def test_visual(page_path: str, use_claude: bool = True, slack_channel: str = "test-bed"):
     """Test visual regression functionality with concurrent MCP sessions.
 
     Args:
         page_path: URL path to test (e.g., "/search")
-        use_claude: If True, use Claude instead of Gemini (avoids quota issues)
-        slack_channel: Optional Slack channel for notifications (e.g., "#dev-alerts")
+        use_claude: Use Claude instead of Gemini (default: True, avoids quota issues)
+        slack_channel: Slack channel for notifications (default: "test-bed")
     """
     print("="*60)
     print("TESTING: Visual Regression Check (Concurrent Mode)")
@@ -515,11 +517,14 @@ def main():
 
     elif component == "visual":
         if not args:
-            print("Usage: test_orchestrator.py visual <page_path> [--use-claude] [--slack-channel CHANNEL]")
+            print("Usage: test_orchestrator.py visual <page_path> [--use-gemini] [--no-slack] [--slack-channel CHANNEL]")
             sys.exit(1)
-        use_claude = "--use-claude" in args
-        slack_channel = None
-        if "--slack-channel" in args:
+        # Defaults: use Claude and send to test-bed
+        use_claude = "--use-gemini" not in args  # Default True, --use-gemini opts out
+        slack_channel = "test-bed"  # Default channel
+        if "--no-slack" in args:
+            slack_channel = None
+        elif "--slack-channel" in args:
             idx = args.index("--slack-channel")
             if idx + 1 < len(args):
                 slack_channel = args[idx + 1]
@@ -530,7 +535,7 @@ def main():
                 page_path = arg
                 break
         if not page_path:
-            print("Usage: test_orchestrator.py visual <page_path> [--use-claude] [--slack-channel CHANNEL]")
+            print("Usage: test_orchestrator.py visual <page_path> [--use-gemini] [--no-slack] [--slack-channel CHANNEL]")
             sys.exit(1)
         test_visual(page_path, use_claude=use_claude, slack_channel=slack_channel)
 

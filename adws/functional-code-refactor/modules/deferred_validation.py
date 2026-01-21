@@ -345,7 +345,8 @@ def run_deferred_validation(
     logger: "RunLogger",
     skip_visual: bool = False,
     build_timeout: int = 180,
-    slack_channel: Optional[str] = None
+    slack_channel: Optional[str] = None,
+    use_claude: bool = True
 ) -> ValidationResult:
     """Run validation after all chunks implemented.
 
@@ -361,6 +362,7 @@ def run_deferred_validation(
         skip_visual: If True, skip visual regression testing
         build_timeout: Build timeout in seconds (default: 180)
         slack_channel: Optional Slack channel for visual regression notifications
+        use_claude: Use Claude instead of Gemini for visual checks (default: True)
 
     Returns:
         ValidationResult with success status and any errors
@@ -448,7 +450,8 @@ def run_deferred_validation(
                 auth_type=auth_type,
                 port=8010,
                 concurrent=True if mcp_live and mcp_dev else False,
-                slack_channel=slack_channel
+                slack_channel=slack_channel,
+                use_claude=use_claude
             )
 
             parity_status = visual_result.get("visualParity", "FAIL")
