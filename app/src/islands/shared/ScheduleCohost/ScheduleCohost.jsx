@@ -637,11 +637,13 @@ export default function ScheduleCohost({
         <header className="schedule-cohost-header">
           <div className="schedule-cohost-header-content">
             <div className="schedule-cohost-header-title">
-              <img
-                src="https://cdn.prod.website-files.com/65c82bd7eda94f81b69c8ea8/65e81c5fb2c5ee14e40bfb0c_Icon-cohost.svg"
-                alt=""
-                className="schedule-cohost-icon-img"
-              />
+              {/* Feather users icon - monochromatic per popup redesign protocol */}
+              <svg className="schedule-cohost-icon-svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
               <h2 id="schedule-cohost-title" className="schedule-cohost-title">Meet with a Co-Host</h2>
             </div>
             <p className="schedule-cohost-subtitle">Get personalized guidance and support.</p>
