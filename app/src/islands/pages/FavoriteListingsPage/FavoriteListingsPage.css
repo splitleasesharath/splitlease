@@ -156,15 +156,15 @@
 .favorites-page .listings-column {
   overflow-y: visible;
   background: transparent;
-  padding-top: 40px; /* Top gap for cards below sub-header */
+  padding-top: 50px; /* Top gap for cards below sub-header */
 }
 
 .favorites-page .map-column {
   width: 400px !important; /* Map width from mockup */
   flex-shrink: 0;
   position: sticky;
-  top: 192px; /* Header (80px) + Sub-header (72px) + gap (40px) */
-  height: calc(100vh - 224px); /* Viewport minus headers and gaps */
+  top: 202px; /* Header (80px) + Sub-header (72px) + gap (50px) */
+  height: calc(100vh - 234px); /* Viewport minus headers and gaps */
   background: white;
   border-radius: 16px;
   overflow: hidden;
