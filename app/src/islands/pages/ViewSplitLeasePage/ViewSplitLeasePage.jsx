@@ -1920,10 +1920,20 @@ export default function ViewSplitLeasePage() {
                 onPriceChange={handlePriceChange}
                 showPricing={false}
               />
+            </div>
+          )}
 
+          {/* Custom schedule section - decoupled from scheduleSelectorListing to ensure visibility */}
+          {!isMobile && listing && (
+            <div style={{
+              marginBottom: '14px',
+              padding: '12px',
+              background: 'linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)',
+              borderRadius: '12px',
+              border: '1px solid #E5E7EB'
+            }}>
               {/* Listing's weekly pattern info + custom schedule option */}
               <div style={{
-                marginTop: '12px',
                 fontSize: '13px',
                 color: '#4B5563'
               }}>
@@ -2821,10 +2831,20 @@ export default function ViewSplitLeasePage() {
                       onPriceChange={handlePriceChange}
                       showPricing={false}
                     />
+                  </div>
+                )}
 
+                {/* Custom schedule section - decoupled from scheduleSelectorListing to ensure visibility (Mobile) */}
+                {listing && (
+                  <div style={{
+                    marginBottom: '16px',
+                    padding: '12px',
+                    background: '#f9fafb',
+                    borderRadius: '12px',
+                    border: '1px solid #E5E7EB'
+                  }}>
                     {/* Listing's weekly pattern info + custom schedule option (Mobile) */}
                     <div style={{
-                      marginTop: '12px',
                       fontSize: '13px',
                       color: '#4B5563'
                     }}>
