@@ -125,15 +125,16 @@
   margin-bottom: var(--ho-spacing-2xl);
 }
 
+/* Help Banner - Updated per Popup Redesign Protocol */
 .help-banner {
   display: flex;
   align-items: center;
   gap: var(--ho-spacing-md);
-  background-color: var(--ho-color-off-white);
-  padding: var(--ho-spacing-lg);
+  background-color: var(--ho-color-light-purple-bg);
+  padding: var(--ho-spacing-md);
   border-radius: var(--ho-radius-large);
   margin-bottom: var(--ho-spacing-2xl);
-  border-left: 4px solid var(--ho-color-primary-blue);
+  border: 1px solid var(--ho-color-purple-border);
 }
 
 .help-banner__content {
@@ -153,9 +154,25 @@
   opacity: 0.8;
 }
 
+/* Icon container with purple circle background per protocol */
 .help-banner__icon {
-  font-size: 24px;
   flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  background-color: var(--ho-color-primary-purple);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Feather icon styling - monochromatic white on purple bg */
+.help-banner__icon svg {
+  width: 18px;
+  height: 18px;
+  stroke: white;
+  stroke-width: 2;
+  fill: none;
 }
 
 .help-banner__text {
@@ -165,26 +182,37 @@
   margin: 0;
 }
 
+/* Close button - Feather X icon styling */
 .help-banner__close {
-  background: none;
+  background: transparent;
   border: none;
-  font-size: 24px;
-  color: var(--ho-color-text-secondary);
   cursor: pointer;
   padding: 0;
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--ho-radius-small);
+  border-radius: 50%;
   transition: all var(--ho-transition-normal);
   flex-shrink: 0;
 }
 
 .help-banner__close:hover {
-  background-color: rgba(0, 0, 0, 0.05);
-  color: var(--ho-color-text-primary);
+  background-color: var(--ho-color-purple-selected);
+}
+
+.help-banner__close svg {
+  width: 20px;
+  height: 20px;
+  stroke: var(--ho-color-text-secondary);
+  stroke-width: 2;
+  fill: none;
+  transition: stroke var(--ho-transition-normal);
+}
+
+.help-banner__close:hover svg {
+  stroke: var(--ho-color-primary-purple);
 }
 
 .action-buttons {
