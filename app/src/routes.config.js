@@ -386,6 +386,16 @@ export const routes = [
     hasDynamicSegment: false
   },
   {
+    path: '/_internal/leases-overview',
+    file: 'leases-overview.html',
+    aliases: ['/_internal/leases-overview.html'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'leases-overview-view',
+    hasDynamicSegment: false
+  },
+  {
     path: '/_email-sms-unit',
     file: '_email-sms-unit.html',
     aliases: ['/_email-sms-unit.html'],
