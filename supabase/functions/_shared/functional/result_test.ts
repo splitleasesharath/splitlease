@@ -12,6 +12,7 @@
 
 import { assertEquals, assertThrows } from 'jsr:@std/assert';
 import {
+  type Result,
   ok,
   err,
   isOk,
@@ -331,7 +332,7 @@ Deno.test('all() returns first error', () => {
 });
 
 Deno.test('all() handles empty array', () => {
-  const results: ReturnType<typeof ok<number, string>>[] = [];
+  const results: Result<number, string>[] = [];
   const collected = all(results);
   const value = assertOk(collected);
   assertEquals(value, []);

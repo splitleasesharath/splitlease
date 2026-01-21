@@ -173,9 +173,11 @@ Deno.test('validatePhoneE164() rejects missing plus sign', () => {
   );
 });
 
-Deno.test('validatePhoneE164() rejects too short', () => {
+Deno.test('validatePhoneE164() rejects single digit after plus', () => {
+  // E.164 requires at least 2 digits (country code + 1 digit)
+  // The regex requires \+[1-9]\d{1,14} so +1 alone fails
   assertThrows(
-    () => validatePhoneE164('+1555'),
+    () => validatePhoneE164('+1'),
     ValidationError,
     'must be in E.164 format'
   );
