@@ -510,6 +510,16 @@ export const routes = [
     cloudflareInternal: false,
     internalName: 'quick-price-view',
     hasDynamicSegment: false
+  },
+  {
+    path: '/_internal/verify-users',
+    file: 'verify-users.html',
+    aliases: ['/_internal/verify-users.html', '/verify-users'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'verify-users-view',
+    hasDynamicSegment: false
   }
 ];
 
