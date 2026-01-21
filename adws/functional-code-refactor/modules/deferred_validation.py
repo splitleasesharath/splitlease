@@ -485,6 +485,118 @@ Focus on making the build pass. Be surgical - fix only what's broken.
         return False
 
 
+def _run_lint_check(
+    working_dir: Path,
+    logger: "RunLogger",
+    timeout: int = 60
+) -> tuple[bool, List[ValidationError], str]:
+    """Run ESLint separately to capture actual error output.
+
+    Args:
+        working_dir: Project working directory
+        logger: RunLogger for output
+        timeout: Lint timeout in seconds (default: 60)
+
+    Returns:
+        Tuple of (passed, errors, raw_output)
+    """
+    try:
+        lint_result = subprocess.run(
+            ["bun", "run", "lint"],
+            cwd=working_dir / "app",
+            capture_output=True,
+            text=True,
+            timeout=timeout
+        )
+
+        raw_output = lint_result.stdout + "\n" + lint_result.stderr
+
+        if lint_result.returncode == 0:
+            return True, [], raw_output
+
+        # Parse ESLint errors from stdout (ESLint writes errors to stdout)
+        errors = _parse_eslint_errors(lint_result.stdout)
+
+        # If we didn't find structured errors, fall back to generic parsing
+        if not errors:
+            errors = _parse_build_errors(raw_output)
+
+        return False, errors, raw_output
+
+    except subprocess.TimeoutExpired:
+        return False, [ValidationError(message=f"Lint timed out ({timeout}s)")], ""
+    except Exception as e:
+        return False, [ValidationError(message=f"Lint check error: {str(e)[:100]}")], ""
+
+
+def _parse_eslint_errors(eslint_output: str) -> List[ValidationError]:
+    """Parse ESLint output into structured errors.
+
+    ESLint output format:
+    /path/to/file.js
+      10:5  error  'foo' is defined but never used  no-unused-vars
+      15:10  warning  Missing return type  @typescript-eslint/explicit-function-return-type
+
+    Args:
+        eslint_output: Raw stdout from ESLint
+
+    Returns:
+        List of ValidationError objects
+    """
+    import re
+    errors: List[ValidationError] = []
+    current_file: Optional[str] = None
+
+    for line in eslint_output.split('\n'):
+        line_stripped = line.strip()
+        if not line_stripped:
+            continue
+
+        # Check if this line is a file path (starts a new file section)
+        # File paths typically end with .js, .jsx, .ts, .tsx and start the line
+        if re.match(r'^[\w/\\:.-]+\.(jsx?|tsx?|mjs|cjs)$', line_stripped):
+            current_file = line_stripped
+            continue
+
+        # Check for error/warning line format: "  10:5  error  message  rule-name"
+        error_match = re.match(r'^\s*(\d+):(\d+)\s+(error|warning)\s+(.+?)\s+(\S+)$', line)
+        if error_match and current_file:
+            line_num = int(error_match.group(1))
+            col_num = int(error_match.group(2))
+            severity = error_match.group(3)
+            message = error_match.group(4)
+            rule = error_match.group(5)
+
+            # Only capture errors, not warnings (unless no errors found)
+            if severity == "error":
+                errors.append(ValidationError(
+                    message=f"{message} ({rule})",
+                    file_path=current_file,
+                    line_number=line_num
+                ))
+
+        # Also check for simpler format without rule name
+        # "  10:5  error  message"
+        simple_match = re.match(r'^\s*(\d+):(\d+)\s+(error|warning)\s+(.+)$', line)
+        if simple_match and current_file and not error_match:
+            line_num = int(simple_match.group(1))
+            severity = simple_match.group(3)
+            message = simple_match.group(4)
+
+            if severity == "error":
+                errors.append(ValidationError(
+                    message=message,
+                    file_path=current_file,
+                    line_number=line_num
+                ))
+
+        # Limit to 30 errors
+        if len(errors) >= 30:
+            break
+
+    return errors
+
+
 def _run_build_with_retry(
     working_dir: Path,
     batch: ValidationBatch,
@@ -498,6 +610,14 @@ def _run_build_with_retry(
     - Build attempt 1 -> if fail -> debug session 1 -> retry
     - Build attempt 2 -> if fail -> debug session 2 -> retry
     - Build attempt 3 -> if fail -> FAILED (no more retries)
+
+    The build pipeline is:
+    1. Lint check (ESLint) - runs separately to capture actual errors
+    2. Type check (TypeScript) - runs separately
+    3. Vite build - final production build
+
+    If lint fails, we capture ESLint's actual error output (file, line, message)
+    instead of just the bun wrapper "script lint exited with code 1" message.
 
     Args:
         working_dir: Project working directory
@@ -516,58 +636,139 @@ def _run_build_with_retry(
     for attempt in range(1, max_debug_sessions + 2):  # +2 because we get one more attempt than debug sessions
         logger.log(f"  [BUILD] Attempt {attempt}/{max_debug_sessions + 1}...")
 
-        build_start = time.time()
-        try:
-            build_result = subprocess.run(
-                ["bun", "run", "build"],
-                cwd=working_dir / "app",
-                capture_output=True,
-                text=True,
-                timeout=build_timeout
-            )
-            build_duration = time.time() - build_start
-            total_duration += build_duration
+        attempt_start = time.time()
 
-            if build_result.returncode == 0:
-                logger.log(f"  [OK] Build passed on attempt {attempt} ({build_duration:.1f}s)")
-                return True, [], total_duration
+        # Step 1: Run lint check separately to capture actual ESLint errors
+        lint_passed, lint_errors, lint_output = _run_lint_check(working_dir, logger)
 
-            # Build failed - parse errors
-            error_output = build_result.stderr or build_result.stdout
-            errors = _parse_build_errors(error_output)
-            all_errors = errors
+        if not lint_passed:
+            lint_duration = time.time() - attempt_start
+            total_duration += lint_duration
 
-            logger.log(f"  [FAIL] Build attempt {attempt} failed with {len(errors)} errors ({build_duration:.1f}s)")
-            for error in errors[:3]:  # Log first 3 errors
-                logger.log(f"    - {error.message[:100]}")
+            # Use the detailed ESLint errors if available
+            all_errors = lint_errors if lint_errors else [
+                ValidationError(message="Lint failed (no detailed errors captured)")
+            ]
 
-            # Check if we can do another debug session
+            logger.log(f"  [FAIL] Lint failed on attempt {attempt} with {len(all_errors)} errors ({lint_duration:.1f}s)")
+
+            # Log actual ESLint errors (up to 5)
+            for i, error in enumerate(all_errors[:5]):
+                file_info = f" ({error.file_path}:{error.line_number})" if error.file_path else ""
+                logger.log(f"    {i+1}. {error.message[:80]}{file_info}")
+
+            if len(all_errors) > 5:
+                logger.log(f"    ... and {len(all_errors) - 5} more errors")
+
+            # Trigger debug session if available
             if debug_sessions_used < max_debug_sessions:
                 debug_sessions_used += 1
                 debug_success = _run_build_debug_session(
-                    errors, batch, working_dir, logger, debug_sessions_used
+                    all_errors, batch, working_dir, logger, debug_sessions_used
                 )
                 if not debug_success:
                     logger.log(f"  [WARN] Debug session failed to run - continuing anyway")
-                # Continue to next build attempt
+                continue  # Try next build attempt
             else:
                 logger.log(f"  [FAIL] No more debug sessions available ({max_debug_sessions} used)")
                 break
 
-        except subprocess.TimeoutExpired:
-            build_duration = build_timeout
-            total_duration += build_duration
-            all_errors.append(ValidationError(
-                message=f"Build timed out ({build_timeout}s) on attempt {attempt}"
-            ))
-            logger.log(f"  [FAIL] Build attempt {attempt} timed out ({build_timeout}s)")
+        # Step 2: Run typecheck
+        try:
+            typecheck_result = subprocess.run(
+                ["bun", "run", "typecheck"],
+                cwd=working_dir / "app",
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
 
-            # Timeout also triggers debug session if available
+            if typecheck_result.returncode != 0:
+                typecheck_duration = time.time() - attempt_start
+                total_duration += typecheck_duration
+
+                all_errors = _parse_build_errors(
+                    typecheck_result.stdout + "\n" + typecheck_result.stderr
+                )
+                if not all_errors:
+                    all_errors = [ValidationError(
+                        message="Type check failed (see output for details)"
+                    )]
+
+                logger.log(f"  [FAIL] Typecheck failed on attempt {attempt} ({typecheck_duration:.1f}s)")
+                for error in all_errors[:3]:
+                    logger.log(f"    - {error.message[:100]}")
+
+                if debug_sessions_used < max_debug_sessions:
+                    debug_sessions_used += 1
+                    _run_build_debug_session(
+                        all_errors, batch, working_dir, logger, debug_sessions_used
+                    )
+                    continue
+                else:
+                    logger.log(f"  [FAIL] No more debug sessions available ({max_debug_sessions} used)")
+                    break
+
+        except subprocess.TimeoutExpired:
+            typecheck_duration = time.time() - attempt_start
+            total_duration += typecheck_duration
+            all_errors = [ValidationError(message="Typecheck timed out (60s)")]
+            logger.log(f"  [FAIL] Typecheck timed out on attempt {attempt}")
+            if debug_sessions_used < max_debug_sessions:
+                debug_sessions_used += 1
+                _run_build_debug_session(all_errors, batch, working_dir, logger, debug_sessions_used)
+                continue
+            else:
+                break
+
+        # Step 3: Run vite build (lint and typecheck already passed)
+        try:
+            vite_result = subprocess.run(
+                ["bunx", "vite", "build"],
+                cwd=working_dir / "app",
+                capture_output=True,
+                text=True,
+                timeout=build_timeout - 60  # Reserve 60s for lint+typecheck
+            )
+
+            build_duration = time.time() - attempt_start
+            total_duration += build_duration
+
+            if vite_result.returncode == 0:
+                logger.log(f"  [OK] Build passed on attempt {attempt} ({build_duration:.1f}s)")
+                return True, [], total_duration
+
+            # Vite build failed
+            all_errors = _parse_build_errors(
+                vite_result.stdout + "\n" + vite_result.stderr
+            )
+            if not all_errors:
+                all_errors = [ValidationError(message="Vite build failed (see output)")]
+
+            logger.log(f"  [FAIL] Vite build failed on attempt {attempt} ({build_duration:.1f}s)")
+            for error in all_errors[:3]:
+                logger.log(f"    - {error.message[:100]}")
+
             if debug_sessions_used < max_debug_sessions:
                 debug_sessions_used += 1
                 _run_build_debug_session(
                     all_errors, batch, working_dir, logger, debug_sessions_used
                 )
+            else:
+                logger.log(f"  [FAIL] No more debug sessions available ({max_debug_sessions} used)")
+                break
+
+        except subprocess.TimeoutExpired:
+            build_duration = time.time() - attempt_start
+            total_duration += build_duration
+            all_errors = [ValidationError(
+                message=f"Vite build timed out ({build_timeout - 60}s)"
+            )]
+            logger.log(f"  [FAIL] Vite build timed out on attempt {attempt}")
+
+            if debug_sessions_used < max_debug_sessions:
+                debug_sessions_used += 1
+                _run_build_debug_session(all_errors, batch, working_dir, logger, debug_sessions_used)
             else:
                 break
 
