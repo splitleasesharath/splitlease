@@ -702,12 +702,13 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
   const handleAcceptProposal = useCallback(async (proposal) => {
     try {
       // Use proposal Edge Function to update status
+      // Status must use full Bubble display format for status transition validation
       const { data, error } = await supabase.functions.invoke('proposal', {
         body: {
           action: 'update',
           payload: {
-            proposalId: proposal._id || proposal.id,
-            status: 'Accepted'
+            proposal_id: proposal._id || proposal.id,
+            status: 'Proposal or Counteroffer Accepted / Drafting Lease Documents'
           }
         }
       });
@@ -772,12 +773,14 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
    */
   const handleCounteroffer = useCallback(async (counterofferData) => {
     try {
-      // Use proposal Edge Function to create counteroffer
+      // Use proposal Edge Function to update with counteroffer status and fields
+      // Note: 'counteroffer' action doesn't exist - use 'update' with proper status
       const { data, error } = await supabase.functions.invoke('proposal', {
         body: {
-          action: 'counteroffer',
+          action: 'update',
           payload: {
-            proposalId: selectedProposal._id || selectedProposal.id,
+            proposal_id: selectedProposal._id || selectedProposal.id,
+            status: 'Host Counteroffer Submitted / Awaiting Guest Review',
             ...counterofferData
           }
         }
@@ -807,13 +810,14 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
    */
   const handleRejectFromEditing = useCallback(async (proposal, reason) => {
     try {
+      // Status must use full Bubble display format for status transition validation
       const { data, error } = await supabase.functions.invoke('proposal', {
         body: {
           action: 'update',
           payload: {
-            proposalId: proposal._id || proposal.id,
-            status: 'Declined',
-            rejectionReason: reason
+            proposal_id: proposal._id || proposal.id,
+            status: 'Proposal Rejected by Host',
+            reason_for_cancellation: reason
           }
         }
       });
