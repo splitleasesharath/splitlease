@@ -490,6 +490,16 @@ export const routes = [
     cloudflareInternal: false,
     internalName: 'manage-virtual-meetings-view',
     hasDynamicSegment: false
+  },
+  {
+    path: '/_internal/manage-informational-texts',
+    file: 'manage-informational-texts.html',
+    aliases: ['/_internal/manage-informational-texts.html', '/manage-informational-texts'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'manage-informational-texts-view',
+    hasDynamicSegment: false
   }
 ];
 
