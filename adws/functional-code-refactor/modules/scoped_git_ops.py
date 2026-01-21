@@ -312,3 +312,41 @@ def create_refactor_scope(working_dir: Path, base_path: str = "") -> RefactorSco
         New RefactorScope instance
     """
     return RefactorScope(working_dir=working_dir, base_path=base_path)
+
+
+def get_modified_files_from_git(working_dir: Path) -> Set[str]:
+    """Get all modified files (staged + unstaged) from git.
+
+    This is used in the simplified pipeline to track which files
+    were modified during implementation, without requiring chunk parsing.
+
+    Args:
+        working_dir: Project root directory
+
+    Returns:
+        Set of file paths (relative to working_dir) that have been modified
+    """
+    modified = set()
+
+    # Get unstaged changes
+    result = subprocess.run(
+        ["git", "diff", "--name-only"],
+        cwd=working_dir,
+        capture_output=True,
+        text=True
+    )
+    if result.stdout.strip():
+        modified.update(result.stdout.strip().split('\n'))
+
+    # Get staged changes
+    result = subprocess.run(
+        ["git", "diff", "--cached", "--name-only"],
+        cwd=working_dir,
+        capture_output=True,
+        text=True
+    )
+    if result.stdout.strip():
+        modified.update(result.stdout.strip().split('\n'))
+
+    # Filter out empty strings and normalize paths
+    return {f.replace('\\', '/') for f in modified if f.strip()}

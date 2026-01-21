@@ -4,28 +4,27 @@
 # ///
 
 """
-ADW Unified FP Refactor Orchestrator - Complete Pipeline with Deferred Validation
+ADW Simplified FP Refactor Orchestrator - Unified Implementation Pipeline
 
-Enhanced orchestration pipeline with:
-- Dependency graph analysis (transitive reduction, cycle detection, topological levels)
-- Topology-based chunk ordering (leaf-first)
-- Deferred validation (all chunks implemented before single build/visual check)
-- Single commit/reset at the end (no per-chunk commits)
+Simplified orchestration pipeline that eliminates chunk-based parsing:
+- Uses /prime + /ralph-loop for persistent audit session
+- Single implementation phase (no chunk-by-chunk processing)
+- File tracking via git diff (no chunk parsing)
+- Deferred validation with file-based ValidationBatch
 
 Workflow:
-1. AUDIT: Claude Opus audits directory with dependency context
-2. GRAPH: Run graph algorithms on dependency data
-3. PARSE: Extract and topology-sort chunks by level
-4. IMPLEMENT: Implement all chunks (syntax check only, no build per chunk)
-5. VALIDATE: Single deferred validation (build + optional visual)
-6. COMMIT/RESET: All-or-nothing based on validation result
+1. AUDIT: Claude Opus with /prime + /ralph-loop creates implementation plan
+2. GRAPH: Run graph algorithms for dependency context (injected into audit)
+3. IMPLEMENT: Single Claude session implements entire plan
+4. VALIDATE: Build + visual regression
+5. COMMIT/RESET: All-or-nothing based on validation result
 
 Usage:
-    uv run adw_unified_fp_orchestrator.py <target_path> [--limit N] [--audit-type TYPE]
+    uv run orchestrator.py <target_path> [--audit-type TYPE]
 
 Example:
-    uv run adw_unified_fp_orchestrator.py app/src/logic --limit 1
-    uv run adw_unified_fp_orchestrator.py app/src/logic --audit-type performance
+    uv run orchestrator.py app/src/logic
+    uv run orchestrator.py app/src/logic --audit-type performance
 """
 
 import sys
@@ -35,7 +34,7 @@ import logging
 import time
 from pathlib import Path
 from datetime import datetime
-from typing import List, Optional, Dict
+from typing import Optional, Dict, Set
 
 # Add adws to path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -44,25 +43,19 @@ from modules.agent import prompt_claude_code
 from modules.data_types import AgentPromptRequest
 from modules.run_logger import create_run_logger, RunLogger
 from modules.dev_server import DevServerManager
-from modules.chunk_parser import extract_page_groups, ChunkData
 from modules.graph_algorithms import (
     GraphAnalysisResult,
     build_simple_graph,
     analyze_graph,
 )
-from modules.topology_sort import (
-    topology_sort_chunks_with_graph,
-    TopologySortResult,
-    get_chunk_level_stats,
-)
 from modules.deferred_validation import (
-    ValidationBatch,
     ValidationResult,
     OrchestrationResult,
     run_deferred_validation,
+    create_validation_batch_from_files,
 )
 from modules.ast_dependency_analyzer import analyze_dependencies
-from modules.scoped_git_ops import RefactorScope, create_refactor_scope
+from modules.scoped_git_ops import create_refactor_scope, get_modified_files_from_git
 from code_audit import run_code_audit_and_plan
 from modules.webhook import notify_started, notify_in_progress, notify_success, notify_failure
 
@@ -134,123 +127,118 @@ def _cleanup_browser_processes(logger: RunLogger, silent: bool = False) -> None:
             logger.step(f"Browser cleanup warning: {e}", notify=False)
 
 
-def implement_chunk_syntax_only(
-    chunk: ChunkData,
+def implement_full_plan(
+    plan_file: Path,
     project_root: Path,
     adws_dir: Path,
     logger: RunLogger
 ) -> bool:
-    """Implement a single chunk with syntax validation only (no build check).
+    """Implement the entire plan in a single Claude session.
 
-    This is the fast path for deferred validation - we rely on syntax
-    checking in the prompt and defer full build verification until all
-    chunks are implemented.
+    Instead of parsing chunks and implementing one-by-one, this function
+    hands the complete plan to Claude and lets it implement all changes
+    in a single persistent session.
 
     Args:
-        chunk: ChunkData to implement
-        project_root: Project root directory (for file operations)
-        adws_dir: adws/ directory (Claude's working directory for context/memory)
+        plan_file: Path to the implementation plan markdown file
+        project_root: Project root directory
+        adws_dir: adws/ directory (Claude's working directory)
         logger: RunLogger for output
 
     Returns:
-        True if implementation succeeded, False on syntax/agent errors
+        True if implementation succeeded, False otherwise
     """
-    logger.log(f"    Implementing chunk {chunk.number}: {chunk.title}")
+    logger.log("  Invoking Claude to implement full plan...")
 
-    # File paths need to be relative from adws/ (Claude's working dir)
-    # So we prefix with ../ to get back to project root
-    file_path_from_adws = f"../{chunk.file_path}"
+    # Read the plan file to provide context
+    plan_content = plan_file.read_text(encoding='utf-8')
 
-    prompt = f"""Implement ONLY chunk {chunk.number} from the refactoring plan.
+    # Path relative from adws/ for Claude
+    plan_path_from_adws = f"../{plan_file.relative_to(project_root)}"
 
-**Chunk Details:**
-- File: {file_path_from_adws}
-- Line: {chunk.line_number}
-- Title: {chunk.title}
+    prompt = f"""/ralph-loop:ralph-loop
 
-**Current Code:**
-```javascript
-{chunk.current_code}
+You have an implementation plan to execute. The plan is at: {plan_path_from_adws}
+
+## Plan Content
+
+{plan_content}
+
+## Your Task
+
+Implement ALL changes described in the plan above. For each file listed:
+
+1. **Read** the current file content
+2. **Locate** the code section to modify (match the "Current Code" block)
+3. **Replace** with the "Refactored Code" block EXACTLY as shown
+4. **Verify** the file was modified correctly by reading it back
+
+## Rules
+
+- Follow the **Implementation Order** specified in the plan
+- Do NOT skip any files
+- Do NOT commit changes (we validate first)
+- Do NOT run build commands
+- If a file doesn't exist or code doesn't match, report the error and continue
+
+## On Completion
+
+When all files are implemented, output:
+```
+IMPLEMENTATION COMPLETE
+Files modified: [count]
 ```
 
-**Refactored Code:**
-```javascript
-{chunk.refactored_code}
-```
-
-**Instructions:**
-1. Read the file: {file_path_from_adws}
-2. Locate the current code.
-3. **BEFORE writing**: Validate the refactored code has valid JavaScript/JSX syntax:
-   - Check for balanced braces, brackets, and parentheses
-   - Verify all strings are properly closed
-   - Confirm JSX tags are properly closed
-   - Check import statements are valid
-4. Replace the current code with the refactored code EXACTLY as shown.
-5. **AFTER writing**: Read the file back and verify the change was applied correctly.
-6. Do NOT commit.
-7. Do NOT run build commands.
-
-**CRITICAL**: If you detect ANY syntax issues in the refactored code, STOP and report the error instead of writing broken code.
+Begin implementation now.
 """
-    agent_dir = project_root / "adws" / "agents" / "implementation" / f"chunk_{chunk.number}"
+
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    agent_dir = project_root / "adws" / "agents" / "implementation" / f"full_plan_{timestamp}"
     agent_dir.mkdir(parents=True, exist_ok=True)
     output_file = agent_dir / "raw_output.jsonl"
 
     request = AgentPromptRequest(
         prompt=prompt,
-        adw_id=f"refactor_chunk_{chunk.number}",
-        agent_name="chunk_implementor",
-        model="sonnet",
+        adw_id=f"implement_plan_{timestamp}",
+        agent_name="plan_implementor",
+        model="sonnet",  # Use sonnet for implementation speed
         output_file=str(output_file),
-        working_dir=str(adws_dir),  # Claude runs from adws/ for separate context/memory
+        working_dir=str(adws_dir),
         dangerously_skip_permissions=True
     )
 
     response = prompt_claude_code(request)
+
     if not response.success:
-        logger.log(f"    [FAIL] Chunk {chunk.number} implementation failed: {response.output[:100]}")
+        logger.log(f"  [FAIL] Implementation failed: {response.output[:200]}")
         return False
 
-    logger.log(f"    [OK] Chunk {chunk.number} implemented (deferred validation)")
+    logger.log("  [OK] Implementation session completed")
     return True
 
 
-def get_concurrent_mcp_sessions(page_path: str) -> tuple:
-    """
-    Get MCP session pair for concurrent LIVE vs DEV comparison.
-
-    Returns:
-        Tuple of (live_session, dev_session) - None for public pages
-    """
-    return get_mcp_sessions_for_page(page_path)
-
-
 def main():
-    parser = argparse.ArgumentParser(description="ADW Unified FP Refactor Orchestrator")
+    parser = argparse.ArgumentParser(description="ADW Simplified FP Refactor Orchestrator")
     parser.add_argument("target_path", help="Path to audit (e.g., app/src/logic)")
-    parser.add_argument("--limit", type=int, help="Limit number of chunks to implement")
     parser.add_argument("--audit-type", default="general", help="Type of audit (default: general)")
     parser.add_argument("--skip-visual", action="store_true", help="Skip visual regression testing")
     parser.add_argument("--slack-channel", default="test-bed", help="Slack channel for notifications (default: test-bed)")
     parser.add_argument("--no-slack", action="store_true", help="Disable Slack notifications")
     parser.add_argument("--use-gemini", action="store_true", help="Use Gemini instead of Claude for visual checks")
-    parser.add_argument("--legacy", action="store_true", help="Use legacy per-chunk validation (slower)")
 
     args = parser.parse_args()
 
     # Directory structure:
     # - project_root: Split Lease directory (for file operations, git, dev server)
     # - adws_dir: adws/ directory (where Claude runs for separate context/memory)
-    # Path: functional-code-refactor/orchestrator.py → functional-code-refactor → adws → project root
     script_dir = Path(__file__).parent.resolve()
     adws_dir = script_dir.parent  # adws/ - Claude's working directory
     project_root = adws_dir.parent  # Project root: Split Lease
 
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-    logger = create_run_logger("unified_fp_refactor", timestamp, project_root)
+    logger = create_run_logger("simplified_fp_refactor", timestamp, project_root)
 
-    # Track timing and metrics for OrchestrationResult
+    # Track timing and metrics
     start_time = time.time()
     phase_durations: Dict[str, float] = {}
     orchestration_result: Optional[OrchestrationResult] = None
@@ -260,21 +248,22 @@ def main():
     dev_server = None
     graph_result: Optional[GraphAnalysisResult] = None
     dep_context = None
+    modified_files: Set[str] = set()
 
     # Clean up zombie browser processes before starting
     _cleanup_browser_processes(logger)
 
     try:
         # =====================================================================
-        # PHASE 1: AUDIT (Claude Opus with dependency context)
+        # PHASE 1: AUDIT (Claude Opus with /prime + /ralph-loop)
         # =====================================================================
         phase_start = time.time()
-        logger.phase_start("PHASE 1: CODE AUDIT (Claude Opus)")
+        logger.phase_start("PHASE 1: CODE AUDIT (Claude Opus + /prime + /ralph-loop)")
         logger.step(f"Target: {args.target_path}")
         logger.step(f"Audit type: {args.audit_type}")
 
         # Webhook: Notify pipeline started
-        notify_started("FP Refactor", details=f"Target: {args.target_path}")
+        notify_started("FP Refactor (Simplified)", details=f"Target: {args.target_path}")
 
         plan_file_relative, graph_result = run_code_audit_and_plan(
             args.target_path,
@@ -288,78 +277,41 @@ def main():
             logger.phase_complete("PHASE 1: CODE AUDIT", success=False, error="Plan file not created")
             sys.exit(1)
 
-        logger.step(f"Plan created: {plan_file_relative}")
+        logger.step(f"Implementation plan created: {plan_file_relative}")
         phase_durations["audit"] = time.time() - phase_start
         logger.phase_complete("PHASE 1: CODE AUDIT", success=True)
 
         # =====================================================================
-        # PHASE 1.5: GRAPH ANALYSIS (if not already done in audit)
+        # PHASE 1.5: GRAPH ANALYSIS (for dependency context - already done in audit)
         # =====================================================================
         phase_start = time.time()
         logger.phase_start("PHASE 1.5: GRAPH ANALYSIS")
 
         if graph_result is None:
-            logger.step("Running graph analysis (was skipped in audit)...")
+            logger.step("Running graph analysis...")
             try:
-                # CRITICAL: Resolve target_path relative to project_root (project root)
-                # The orchestrator runs from adws/, but paths like "app/src/logic"
-                # must resolve relative to the project root, not adws/
                 absolute_target = project_root / args.target_path
                 dep_context = analyze_dependencies(str(absolute_target))
                 simple_graph = build_simple_graph(dep_context)
                 graph_result = analyze_graph(simple_graph)
             except Exception as e:
                 logger.step(f"Warning: Graph analysis failed: {e}")
-                logger.step("Proceeding without topological ordering")
 
         if graph_result:
             logger.step(f"Transitive reduction: {graph_result.edge_reduction_pct:.0%} edges removed")
             logger.step(f"Cycles detected: {graph_result.cycle_count}")
             logger.step(f"Topological levels: {graph_result.level_count}")
         else:
-            logger.step("No graph analysis available - using original chunk order")
+            logger.step("No graph analysis available")
 
         phase_durations["graph"] = time.time() - phase_start
         logger.phase_complete("PHASE 1.5: GRAPH ANALYSIS", success=True)
 
         # =====================================================================
-        # PHASE 2: PARSE PLAN & TOPOLOGY SORT
+        # PHASE 2: DEV SERVER SETUP
         # =====================================================================
         phase_start = time.time()
-        logger.phase_start("PHASE 2: PARSING PLAN & TOPOLOGY SORT")
-
-        page_groups = extract_page_groups(plan_file)
-        logger.step(f"Found {len(page_groups)} page groups")
-
-        # Flatten all chunks for topology sort
-        all_chunks: List[ChunkData] = []
-        for page_path, chunks in page_groups.items():
-            all_chunks.extend(chunks)
-            logger.step(f"  {page_path}: {len(chunks)} chunks", notify=False)
-
-        # Apply topology sort if we have graph data
-        sort_result: Optional[TopologySortResult] = None
-        if graph_result:
-            sort_result = topology_sort_chunks_with_graph(all_chunks, graph_result)
-            stats = get_chunk_level_stats(sort_result)
-            logger.step(f"Topology sort: {stats['total_chunks']} chunks across {stats['total_levels']} levels")
-
-            if stats['chunks_in_cycles'] > 0:
-                logger.step(f"WARNING: {stats['chunks_in_cycles']} chunks in {stats['cycle_count']} cycle groups - will refactor atomically")
-
-            # Use sorted chunks
-            all_chunks = sort_result.sorted_chunks
-        else:
-            logger.step("Using original chunk order (no graph data)")
-
-        phase_durations["parse"] = time.time() - phase_start
-        logger.phase_complete("PHASE 2: PARSING PLAN & TOPOLOGY SORT", success=True)
-
-        # =====================================================================
-        # PHASE 3: SETUP DEV SERVER
-        # =====================================================================
-        phase_start = time.time()
-        logger.phase_start("PHASE 3: SETTING UP DEV SERVER")
+        logger.phase_start("PHASE 2: DEV SERVER SETUP")
 
         if (project_root / "app").exists():
             app_dir = project_root / "app"
@@ -377,130 +329,77 @@ def main():
 
         dev_server = DevServerManager(app_dir, dev_logger)
         phase_durations["setup"] = time.time() - phase_start
-        logger.phase_complete("PHASE 3: DEV SERVER SETUP", success=True)
+        logger.phase_complete("PHASE 2: DEV SERVER SETUP", success=True)
 
         # =====================================================================
-        # PHASE 4: IMPLEMENT ALL CHUNKS (No per-chunk validation)
+        # PHASE 3: IMPLEMENT FULL PLAN (Single Session)
         # =====================================================================
         phase_start = time.time()
-        logger.phase_start("PHASE 4: IMPLEMENTING ALL CHUNKS (Deferred Validation)")
+        logger.phase_start("PHASE 3: IMPLEMENTING FULL PLAN (Single Session)")
 
-        chunks_implemented = 0
-        implementation_failed = False
-
-        # Apply limit if specified
-        chunks_to_process = all_chunks[:args.limit] if args.limit else all_chunks
-        total_chunks = len(chunks_to_process)
-
-        # Create scoped tracker for files modified during refactoring
-        # This allows us to reset ONLY refactored files on failure, preserving pipeline fixes
-        # Pass target_path as base_path so chunk paths get properly resolved
-        # (chunks use relative paths like "constants/proposalStatuses.js")
+        # Create scoped tracker for rollback
         refactor_scope = create_refactor_scope(project_root, base_path=args.target_path)
 
-        logger.step(f"Processing {total_chunks} chunks...")
+        # Implement the entire plan in one session
+        implementation_success = implement_full_plan(plan_file, project_root, adws_dir, logger)
 
-        # Group by level if we have sort result
-        if sort_result:
-            for level_idx, level_chunks in enumerate(sort_result.levels):
-                # Filter to chunks we're processing
-                level_chunks_filtered = [c for c in level_chunks if c in chunks_to_process]
-                if not level_chunks_filtered:
-                    continue
-
-                logger.step(f"Level {level_idx}: {len(level_chunks_filtered)} chunks")
-
-                for chunk in level_chunks_filtered:
-                    # Track file in refactor scope BEFORE implementation
-                    refactor_scope.track_from_chunk(chunk)
-
-                    success = implement_chunk_syntax_only(chunk, project_root, adws_dir, logger)
-                    if not success:
-                        logger.log(f"  [FAIL] Syntax error in chunk {chunk.number}, aborting...")
-                        implementation_failed = True
-                        break
-                    chunks_implemented += 1
-
-                if implementation_failed:
-                    break
-        else:
-            # No topology sort - process in original order
-            for chunk in chunks_to_process:
-                # Track file in refactor scope BEFORE implementation
-                refactor_scope.track_from_chunk(chunk)
-
-                success = implement_chunk_syntax_only(chunk, project_root, adws_dir, logger)
-                if not success:
-                    logger.log(f"  [FAIL] Syntax error in chunk {chunk.number}, aborting...")
-                    implementation_failed = True
-                    break
-                chunks_implemented += 1
-
-        phase_durations["implement"] = time.time() - phase_start
-
-        if implementation_failed:
-            logger.log(f"Implementation failed at chunk level, resetting...")
-            # SCOPED RESET: Only reset refactored files, preserve pipeline fixes
-            logger.log(refactor_scope.summarize())
-            refactor_scope.reset_scoped(logger)
-            logger.phase_complete("PHASE 4: IMPLEMENTATION", success=False, error="Syntax error")
+        if not implementation_success:
+            logger.phase_complete("PHASE 3: IMPLEMENTATION", success=False, error="Implementation failed")
 
             # Build final result
             orchestration_result = OrchestrationResult(
                 success=False,
                 phase_reached="implement",
-                total_chunks=total_chunks,
-                chunks_implemented=chunks_implemented,
+                total_chunks=0,
+                chunks_implemented=0,
                 topological_levels=graph_result.level_count if graph_result else 0,
                 cycles_detected=graph_result.cycle_count if graph_result else 0,
                 edge_reduction_pct=graph_result.edge_reduction_pct if graph_result else 0,
                 total_duration_seconds=time.time() - start_time,
                 phase_durations=phase_durations,
-                errors=["Implementation failed - syntax error"],
+                errors=["Implementation failed"],
                 plan_path=str(plan_file_relative)
             )
             logger.log(orchestration_result.to_summary())
             run_success = False
 
         else:
-            logger.step(f"Implemented {chunks_implemented}/{total_chunks} chunks")
-            logger.phase_complete("PHASE 4: IMPLEMENTATION", success=True)
+            # Get modified files from git diff (instead of chunk tracking)
+            modified_files = get_modified_files_from_git(project_root)
+            logger.step(f"Files modified: {len(modified_files)}")
+
+            # Track files in refactor scope for potential rollback
+            refactor_scope.track_files(list(modified_files))
+
+            phase_durations["implement"] = time.time() - phase_start
+            logger.phase_complete("PHASE 3: IMPLEMENTATION", success=True)
 
             # Webhook: Notify implementation complete
-            notify_in_progress("Implementation", details=f"{chunks_implemented}/{total_chunks} chunks")
+            notify_in_progress("Implementation", details=f"{len(modified_files)} files modified")
 
             # =================================================================
-            # PHASE 5: DEFERRED VALIDATION
+            # PHASE 4: DEFERRED VALIDATION
             # =================================================================
             phase_start = time.time()
-            logger.phase_start("PHASE 5: DEFERRED VALIDATION")
+            logger.phase_start("PHASE 4: DEFERRED VALIDATION")
 
-            # Get reverse dependencies for validation batch
+            # Get reverse dependencies for page tracing
             reverse_deps = {}
             if dep_context is None:
                 try:
-                    # Resolve target_path relative to project_root (project root)
                     absolute_target = project_root / args.target_path
                     dep_context = analyze_dependencies(str(absolute_target))
                     reverse_deps = dep_context.reverse_dependencies
                 except Exception:
-                    pass  # Proceed without reverse deps
+                    pass
 
-            # Build validation batch
-            if sort_result:
-                validation_batch = ValidationBatch.from_topology_result(
-                    sort_result,
-                    reverse_deps
-                )
-            else:
-                from modules.deferred_validation import create_validation_batch_from_chunks
-                validation_batch = create_validation_batch_from_chunks(
-                    chunks_to_process,
-                    reverse_deps
-                )
+            # Build validation batch from file paths (not chunks)
+            validation_batch = create_validation_batch_from_files(
+                modified_files,
+                reverse_deps
+            )
 
             # Run deferred validation
-            # Resolve slack_channel: None if --no-slack, otherwise use --slack-channel value
             effective_slack_channel = None if args.no_slack else args.slack_channel
             validation_result = run_deferred_validation(
                 validation_batch,
@@ -508,7 +407,7 @@ def main():
                 logger,
                 skip_visual=args.skip_visual,
                 slack_channel=effective_slack_channel,
-                use_claude=not args.use_gemini  # Default: use Claude
+                use_claude=not args.use_gemini
             )
 
             phase_durations["validate"] = time.time() - phase_start
@@ -517,32 +416,30 @@ def main():
                 # ============================================================
                 # SUCCESS: Commit all changes
                 # ============================================================
-                logger.log(f"[PASS] All validation passed")
+                logger.log("[PASS] All validation passed")
 
-                chunk_ids = ", ".join(str(c.number) for c in chunks_to_process)
                 commit_msg = (
-                    f"refactor: Implement {chunks_implemented} chunks across "
-                    f"{graph_result.level_count if graph_result else 1} levels\n\n"
-                    f"Chunks: {chunk_ids}\n"
-                    f"Edge reduction: {graph_result.edge_reduction_pct:.0%}\n" if graph_result else ""
-                    f"Cycles: {graph_result.cycle_count}\n" if graph_result else ""
+                    f"refactor: Implement FP improvements in {args.target_path}\n\n"
+                    f"Files modified: {len(modified_files)}\n"
+                    f"Topological levels: {graph_result.level_count if graph_result else 'N/A'}\n"
+                    f"Edge reduction: {graph_result.edge_reduction_pct:.0%}" if graph_result else ""
                 )
 
                 subprocess.run(["git", "add", "."], cwd=project_root, check=False)
                 subprocess.run(["git", "commit", "-m", commit_msg.strip()], cwd=project_root, check=False)
 
-                logger.phase_complete("PHASE 5: DEFERRED VALIDATION", success=True)
+                logger.phase_complete("PHASE 4: DEFERRED VALIDATION", success=True)
                 run_success = True
 
                 # Webhook: Notify success
-                notify_success("FP Refactor", details=f"{chunks_implemented} chunks committed")
+                notify_success("FP Refactor", details=f"{len(modified_files)} files committed")
 
                 # Build final result
                 orchestration_result = OrchestrationResult(
                     success=True,
                     phase_reached="validate",
-                    total_chunks=total_chunks,
-                    chunks_implemented=chunks_implemented,
+                    total_chunks=len(modified_files),  # Use file count instead of chunk count
+                    chunks_implemented=len(modified_files),
                     topological_levels=graph_result.level_count if graph_result else 0,
                     cycles_detected=graph_result.cycle_count if graph_result else 0,
                     edge_reduction_pct=graph_result.edge_reduction_pct if graph_result else 0,
@@ -553,21 +450,15 @@ def main():
 
             else:
                 # ============================================================
-                # FAIL: Reset refactored files only, preserve pipeline fixes
+                # FAIL: Reset modified files, preserve other changes
                 # ============================================================
                 logger.log(f"[FAIL] Validation failed with {len(validation_result.errors)} errors")
 
-                # SCOPED RESET: Only reset refactored files, preserve pipeline fixes
+                # SCOPED RESET: Only reset refactored files
                 logger.log(refactor_scope.summarize())
                 refactor_scope.reset_scoped(logger)
 
-                # Report affected chunks
-                if validation_result.affected_chunks:
-                    logger.log("Chunks likely causing errors:")
-                    for chunk in validation_result.affected_chunks[:5]:
-                        logger.log(f"  - Chunk {chunk.number}: {chunk.file_path}")
-
-                logger.phase_complete("PHASE 5: DEFERRED VALIDATION", success=False,
+                logger.phase_complete("PHASE 4: DEFERRED VALIDATION", success=False,
                                      error=f"{len(validation_result.errors)} errors")
                 run_success = False
 
@@ -578,20 +469,19 @@ def main():
                 orchestration_result = OrchestrationResult(
                     success=False,
                     phase_reached="validate",
-                    total_chunks=total_chunks,
-                    chunks_implemented=chunks_implemented,
+                    total_chunks=len(modified_files),
+                    chunks_implemented=len(modified_files),
                     topological_levels=graph_result.level_count if graph_result else 0,
                     cycles_detected=graph_result.cycle_count if graph_result else 0,
                     edge_reduction_pct=graph_result.edge_reduction_pct if graph_result else 0,
                     total_duration_seconds=time.time() - start_time,
                     phase_durations=phase_durations,
                     errors=[e.message for e in validation_result.errors[:10]],
-                    affected_chunks=[c.number for c in validation_result.affected_chunks],
                     plan_path=str(plan_file_relative)
                 )
 
         # =====================================================================
-        # PHASE 6: SUMMARY
+        # PHASE 5: SUMMARY
         # =====================================================================
         if orchestration_result:
             logger.summary(

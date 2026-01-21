@@ -1123,3 +1123,33 @@ def create_validation_batch_from_chunks(
         affected_pages=pages,
         cycle_groups=[]  # No cycle info without topology sort
     )
+
+
+def create_validation_batch_from_files(
+    modified_files: Set[str],
+    reverse_deps: Dict[str, List[str]] = None
+) -> ValidationBatch:
+    """Create a validation batch directly from file paths.
+
+    This is the simplified approach used when chunk parsing is eliminated.
+    Instead of parsing chunks from markdown, we track modified files via
+    git diff and build the validation batch directly.
+
+    Args:
+        modified_files: Set of modified file paths (from git diff)
+        reverse_deps: Optional reverse dependency map for page tracing
+
+    Returns:
+        ValidationBatch ready for validation
+    """
+    # Trace to affected pages if we have reverse deps
+    pages: Set[str] = set()
+    if reverse_deps:
+        pages = _trace_to_pages(modified_files, reverse_deps)
+
+    return ValidationBatch(
+        chunks=[],  # No chunks in simplified pipeline
+        implemented_files=modified_files,
+        affected_pages=pages,
+        cycle_groups=[]  # No cycle info without topology sort
+    )

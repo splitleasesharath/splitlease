@@ -117,7 +117,7 @@ def run_code_audit_and_plan(
 
     # Generate timestamp for output files
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-    plan_file = f"adws/adw_plans/{timestamp}_code_refactor_plan.md"
+    plan_file = f"adws/adw_plans/{timestamp}_implementation_plan.md"
     agent_dir = f"adws/agents/code_audit_{timestamp}"
 
     # NEW: Pre-compute dependencies with graph algorithms
@@ -146,8 +146,7 @@ def run_code_audit_and_plan(
         # Fallback to hardcoded prompt if file not found
         prompt = f"""/ralph-loop:ralph-loop
 Audit the codebase at: {target_path_from_adws}
-Create a chunk-based refactoring plan at: {plan_file}
-Group chunks by affected page group.
+Create an implementation plan at: {plan_file}
 """
         # Run Opus session
     output_file = project_root / agent_dir / "raw_output.jsonl"
@@ -206,7 +205,7 @@ Group chunks by affected page group.
         print(f"Plan file not found at: {plan_path}")
         # Search for it just in case
         print("Searching for plan file...")
-        possible_plans = list(project_root.glob(f"**/*{timestamp}_code_refactor_plan.md"))
+        possible_plans = list(project_root.glob(f"**/*{timestamp}_implementation_plan.md"))
         if possible_plans:
             plan_path = possible_plans[0]
             print(f"Found plan at: {plan_path}")
