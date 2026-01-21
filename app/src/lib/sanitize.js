@@ -217,6 +217,15 @@ export function sanitizeListingId(id) {
 /**
  * Rate limit check for API calls (simple in-memory implementation)
  * In production, use Redis or similar for distributed rate limiting
+ *
+ * NOTE: This uses module-level mutable state (rateLimitMap) which persists
+ * across the application lifecycle. This is intentional for rate limiting
+ * but means state is not isolated between tests or SSR requests.
+ *
+ * For server-side rendering or testing, consider:
+ * - Using a factory function that returns fresh state
+ * - Implementing a reset function for tests
+ * - Using Redis or similar for production distributed rate limiting
  */
 const rateLimitMap = new Map();
 

@@ -192,7 +192,7 @@ export function goToFavorites() {
 
 /**
  * Navigate to rental application
- * Now redirects to account profile with rental application section focus and modal auto-open
+ * Redirects to account profile with rental application section focus and modal auto-open
  *
  * @param {string} proposalId - Optional proposal ID for context
  * @param {Object} options - Navigation options
@@ -213,9 +213,7 @@ export function goToRentalApplication(proposalId, options = {}) {
   }
 
   if (proposalId) {
-    window.location.href = `/rental-application?proposal=${proposalId}`;
-  } else {
-    window.location.href = '/rental-application';
+    params.set('proposal', proposalId);
   }
 
   const queryString = params.toString();

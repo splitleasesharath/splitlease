@@ -2,6 +2,15 @@
  * Price Calculation Utilities
  * Handles all pricing logic for view-split-lease page
  *
+ * @deprecated These functions are being consolidated into logic/calculators/pricing/.
+ * New code should import from:
+ *   - logic/calculators/pricing/calculateFourWeekRent.js
+ *   - logic/calculators/pricing/calculateReservationTotal.js
+ *   - logic/calculators/pricing/calculatePricingBreakdown.js
+ *   - logic/calculators/pricing/getNightlyRateByFrequency.js
+ *
+ * This module is retained for backward compatibility with existing imports.
+ *
  * Usage:
  *   import { calculate4WeekRent, calculateReservationTotal } from './priceCalculations.js';
  */

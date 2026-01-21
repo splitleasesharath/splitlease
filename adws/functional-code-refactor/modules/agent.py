@@ -23,9 +23,12 @@ from .data_types import (
 from .gemini_agent import prompt_gemini_agent
 from .webhook import notify_failure, notify_in_progress
 
-# Load environment variables from adws/.env (relative to this file)
-_adws_env_path = Path(__file__).parent.parent / ".env"
-load_dotenv(_adws_env_path)
+# Load environment variables from project root .env
+# The project structure is: Split Lease/.env (project root)
+#                          Split Lease/adws/functional-code-refactor/modules/agent.py (this file)
+# So we need to go up 4 levels: modules -> functional-code-refactor -> adws -> Split Lease
+_project_root_env_path = Path(__file__).parent.parent.parent.parent / ".env"
+load_dotenv(_project_root_env_path)
 
 # Get Claude Code CLI path from environment
 CLAUDE_PATH = os.getenv("CLAUDE_CODE_PATH", "claude")

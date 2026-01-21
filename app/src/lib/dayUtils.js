@@ -8,6 +8,9 @@
  * to use 0-indexed days natively. The database now stores days in JS format.
  */
 
+// Import and re-export DAY_NAMES from canonical source
+import { DAY_NAMES as CANONICAL_DAY_NAMES } from './constants.js';
+
 /**
  * Validate that days array contains only valid 0-based indices
  * @param {number[]} days - Array of day indices to validate
@@ -20,16 +23,9 @@ export function isValidDaysArray(days) {
 
 /**
  * Day names indexed by 0-based day number
+ * Re-exported from lib/constants.js for backward compatibility
  */
-export const DAY_NAMES = [
-  'Sunday',   // 0
-  'Monday',   // 1
-  'Tuesday',  // 2
-  'Wednesday',// 3
-  'Thursday', // 4
-  'Friday',   // 5
-  'Saturday'  // 6
-];
+export const DAY_NAMES = CANONICAL_DAY_NAMES;
 
 /**
  * Get day name from 0-based index
@@ -40,7 +36,7 @@ export function getDayName(dayIndex) {
   if (typeof dayIndex !== 'number' || dayIndex < 0 || dayIndex > 6) {
     return 'Unknown';
   }
-  return DAY_NAMES[dayIndex];
+  return CANONICAL_DAY_NAMES[dayIndex];
 }
 
 /**
@@ -55,8 +51,8 @@ export function getShortDayName(dayIndex) {
 
 /**
  * Calculate days until target day of week
- * @.claude\plans\Deprecated\Context\Option Sets\ZEP - Curation Parameters(OS).md {number} fromDay - Current day (0-6)
- * @.claude\plans\Deprecated\Context\Option Sets\ZEP - Curation Parameters(OS).md {number} toDay - Target day (0-6)
+ * @param {number} fromDay - Current day (0-6)
+ * @param {number} toDay - Target day (0-6)
  * @returns {number} Days until target (0-6)
  */
 export function daysUntilDayOfWeek(fromDay, toDay) {

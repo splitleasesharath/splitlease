@@ -5,12 +5,13 @@
  * 0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday
  */
 
-// Day names and letters
-export const DAY_NAMES = [
-  'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'
-];
+// Import and re-export from canonical source for consistency
+import { DAY_NAMES as CANONICAL_DAY_NAMES, DAY_ABBREVIATIONS } from '../constants.js';
 
-export const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+// Re-export for backward compatibility
+export const DAY_NAMES = CANONICAL_DAY_NAMES;
+
+export const DAY_LETTERS = DAY_ABBREVIATIONS;
 
 export const DAY_ABBREV = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 

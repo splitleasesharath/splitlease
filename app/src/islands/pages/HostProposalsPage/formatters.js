@@ -1,6 +1,7 @@
 /**
  * Formatting utilities for Host Proposals Page
  */
+import { formatDateDisplay, formatDateRange as formatDateRangeCentral } from '../../../lib/dateFormatters.js';
 
 /**
  * Format a number as currency (USD)
@@ -17,33 +18,22 @@ export function formatCurrency(amount) {
 
 /**
  * Format a date as M/D/YY
+ * Delegates to centralized dateFormatters
  * @param {Date|string} date - The date to format
  * @returns {string} Formatted date string
  */
 export function formatDate(date) {
-  if (!date) return '';
-  const d = new Date(date);
-  if (isNaN(d.getTime())) return '';
-  const month = d.getMonth() + 1;
-  const day = d.getDate();
-  const year = d.getFullYear().toString().slice(-2);
-  return `${month}/${day}/${year}`;
+  return formatDateDisplay(date, { format: 'short', fallback: '' });
 }
 
 /**
  * Format a date as full date (e.g., "Mar 28, 2025")
+ * Delegates to centralized dateFormatters
  * @param {Date|string} date - The date to format
  * @returns {string} Formatted date string
  */
 export function formatFullDate(date) {
-  if (!date) return '';
-  const d = new Date(date);
-  if (isNaN(d.getTime())) return '';
-  return d.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
-  });
+  return formatDateDisplay(date, { format: 'medium', fallback: '' });
 }
 
 /**
@@ -82,5 +72,5 @@ export function formatTime(time) {
  * @returns {string} Formatted date range
  */
 export function formatDateRange(start, end) {
-  return `${formatDate(start)} - ${formatDate(end)}`;
+  return formatDateRangeCentral(start, end, { format: 'short' });
 }

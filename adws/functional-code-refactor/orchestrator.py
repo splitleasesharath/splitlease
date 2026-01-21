@@ -328,6 +328,7 @@ def main():
             dev_logger.addHandler(handler)
 
         dev_server = DevServerManager(app_dir, dev_logger)
+        dev_server.start()  # Actually start the dev server on port 8010
         phase_durations["setup"] = time.time() - phase_start
         logger.phase_complete("PHASE 2: DEV SERVER SETUP", success=True)
 
@@ -338,7 +339,10 @@ def main():
         logger.phase_start("PHASE 3: IMPLEMENTING FULL PLAN (Single Session)")
 
         # Create scoped tracker for rollback
-        refactor_scope = create_refactor_scope(project_root, base_path=args.target_path)
+        # NOTE: Don't use base_path here because get_modified_files_from_git() returns
+        # complete relative paths (e.g., "adws/functional-code-refactor/modules/agent.py")
+        # that should NOT have a base path prepended
+        refactor_scope = create_refactor_scope(project_root, base_path="")
 
         # Implement the entire plan in one session
         implementation_success = implement_full_plan(plan_file, project_root, adws_dir, logger)

@@ -2,6 +2,7 @@
  * Utility functions for formatting listing data
  * Implements the 4 conditional logic rules from Bubble
  */
+import { formatDateDisplay } from '../../../lib/dateFormatters.js';
 
 /**
  * Bathroom display mapping based on Bubble option set
@@ -51,7 +52,6 @@ export const getBathroomDisplay = (count) => {
 export const formatBedroomBathroom = (bedrooms, bathrooms, kitchenType) => {
   const parts = [];
 
-  // CONDITIONAL 2: When bathrooms = 0, show only bedroom info
   if (bathrooms === 0) {
     if (bedrooms === 1) {
       return '1 bedroom';
@@ -61,27 +61,21 @@ export const formatBedroomBathroom = (bedrooms, bathrooms, kitchenType) => {
     return '';
   }
 
-  // CONDITIONAL 1: When bedrooms = 1
   if (bedrooms === 1) {
     parts.push('1 bedroom');
-  }
-  // CONDITIONAL 3: When bedrooms > 1
-  else if (bedrooms > 1) {
+  } else if (bedrooms > 1) {
     parts.push(`${bedrooms} bedrooms`);
   }
 
-  // Add bathroom information (if > 0)
   if (bathrooms > 0) {
     const bathroomDisplay = getBathroomDisplay(bathrooms);
     parts.push(bathroomDisplay);
   }
 
-  // CONDITIONAL 4: Add kitchen type only if provided
   if (kitchenType && kitchenType !== '') {
     parts.push(kitchenType);
   }
 
-  // Join parts with bullet separator
   return parts.length > 0 ? '• ' + parts.join(' • ') : '';
 };
 
@@ -121,18 +115,12 @@ export const formatLocation = (borough, hood, city) => {
 
 /**
  * Format date for display
+ * Delegates to centralized dateFormatters for consistency
  * @param {string} dateString - ISO date string
  * @returns {string} Formatted date (e.g., "Jan 15, 2024")
  */
 export const formatDate = (dateString) => {
-  if (!dateString) return '';
-
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
+  return formatDateDisplay(dateString, { format: 'medium', fallback: '' });
 };
 
 /**
@@ -145,7 +133,6 @@ export const formatDate = (dateString) => {
 export const getProcessedImageUrl = (imageUrl, width, height) => {
   if (!imageUrl) return '';
 
-  // If imgix is already in the URL, add parameters
   if (imageUrl.includes('imgix')) {
     const params = new URLSearchParams();
     if (width) params.append('w', width.toString());
