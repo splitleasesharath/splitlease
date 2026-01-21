@@ -8,7 +8,7 @@
  */
 
 import React from 'react';
-import { Car, Train, Bike, Footprints, Compass } from 'lucide-react';
+import { Car, Train, Plane, Compass } from 'lucide-react';
 import ProfileCard from '../shared/ProfileCard.jsx';
 import DaySelectorPills from '../shared/DaySelectorPills.jsx';
 
@@ -19,10 +19,7 @@ const DAY_ABBREV = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const TRANSPORT_ICONS = {
   car: Car,
   public_transit: Train,
-  bicycle: Bike,
-  walking: Footprints,
-  rideshare: Car,
-  other: Compass
+  plane: Plane
 };
 
 export default function ScheduleCommuteCard({

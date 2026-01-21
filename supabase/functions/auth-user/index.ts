@@ -33,7 +33,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders } from '../_shared/cors.ts';
 
 // FP Utilities
-import { Result, ok, err } from "../_shared/fp/result.ts";
+import { Result, ok, err } from "../_shared/functional/result.ts";
 import {
   parseRequest,
   validateAction,
@@ -44,8 +44,8 @@ import {
   formatErrorResponseHttp,
   formatCorsResponse,
   CorsPreflightSignal,
-} from "../_shared/fp/orchestration.ts";
-import { createErrorLog, addError, setAction, ErrorLog } from "../_shared/fp/errorLog.ts";
+} from "../_shared/functional/orchestration.ts";
+import { createErrorLog, addError, setAction, ErrorLog } from "../_shared/functional/errorLog.ts";
 import { reportErrorLog } from "../_shared/slack.ts";
 
 // Import handlers

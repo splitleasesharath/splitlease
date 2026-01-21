@@ -6,8 +6,11 @@ validating after each individual chunk. This reduces the number of build
 cycles and allows the full codebase to be validated in context.
 
 The validation sequence:
-1. Full production build (catches type errors, import errors)
-2. Visual regression on affected pages (if applicable)
+1. Full production build with retry loop:
+   - Build attempt 1 → if fail → debug session 1 → retry
+   - Build attempt 2 → if fail → debug session 2 → retry
+   - Build attempt 3 → if fail → mark as FAILED (no more retries)
+2. Visual regression on affected pages (if build passes)
 3. Return detailed result with error attribution
 """
 
@@ -16,6 +19,7 @@ from typing import List, Set, Optional, Dict, TYPE_CHECKING
 from pathlib import Path
 import subprocess
 import time
+import json
 
 if TYPE_CHECKING:
     from .chunk_parser import ChunkData
@@ -32,21 +36,99 @@ from .test_driven_validation import (
     TestSuite,
     TestDrivenResult,
 )
+from .visual_regression import check_visual_parity
+from .page_classifier import (
+    get_mcp_sessions_for_page,
+    get_page_info,
+    get_page_info_by_file_path,
+    get_page_auth_type,
+    file_path_to_url_path,
+    ALL_PAGES,
+    get_visual_check_pages,
+    get_pages_grouped_by_auth,
+    resolve_dynamic_route,
+)
 
 
 def _is_page_file(file_path: str) -> bool:
-    """Check if a file is a page component.
+    """DEPRECATED: Check if a file is a page component entry point.
 
-    Page files live in islands/pages/ and are the entry points for routes.
+    ============================================================================
+    DEPRECATION NOTICE (2026-01-21):
+    This function is deprecated in favor of page_classifier.get_visual_check_pages().
+
+    The dependency-tracing approach was unreliable because:
+    1. AST parsing missed some import relationships (barrel exports, aliases)
+    2. Lib files often had broken import chains
+    3. Any frontend change should be visually validated anyway
+
+    New approach: Use get_visual_check_pages() to get pages directly from the
+    registry, grouped by auth type for proper MCP session selection.
+    ============================================================================
+
+    Page entry points follow specific patterns:
+    1. Top-level: src/islands/pages/HomePage.jsx (file named *Page.jsx directly in pages/)
+    2. Directory-based: src/islands/pages/HostProposalsPage/index.jsx
+    3. Directory-based: src/islands/pages/HostProposalsPage/HostProposalsPage.jsx
+
+    NOT page entry points (these are sub-components/utilities):
+    - src/islands/pages/HostProposalsPage/InfoGrid.jsx (nested component)
+    - src/islands/pages/HostProposalsPage/formatters.js (utility file)
+    - src/islands/pages/proposals/displayUtils.js (utility directory)
 
     Args:
-        file_path: Normalized file path (forward slashes)
+        file_path: File path (forward or back slashes)
 
     Returns:
-        True if this is a page file
+        True if this is an actual page entry point file
     """
+    import re
+
     normalized = file_path.replace('\\', '/')
-    return '/pages/' in normalized or normalized.startswith('src/islands/pages/')
+
+    # Must be in pages directory
+    if '/pages/' not in normalized:
+        return False
+
+    # Extract the part after /pages/
+    pages_match = re.search(r'/pages/(.+)$', normalized)
+    if not pages_match:
+        return False
+
+    after_pages = pages_match.group(1)
+    parts = after_pages.split('/')
+
+    # Case 1: Top-level page file directly in pages/
+    # e.g., "HomePage.jsx" → True
+    # e.g., "GuestProposalsPage.jsx" → True
+    if len(parts) == 1:
+        filename = parts[0]
+        # Must end with Page.jsx or Page.js (not just any .jsx/.js file)
+        return bool(re.match(r'.+Page\.(jsx?|tsx?)$', filename))
+
+    # Case 2: Directory-based page with index.jsx or matching name
+    # e.g., "HostProposalsPage/index.jsx" → True
+    # e.g., "HostProposalsPage/HostProposalsPage.jsx" → True
+    # e.g., "HostProposalsPage/InfoGrid.jsx" → False (sub-component)
+    if len(parts) == 2:
+        dir_name = parts[0]
+        filename = parts[1]
+
+        # Check for index.jsx
+        if re.match(r'index\.(jsx?|tsx?)$', filename):
+            return True
+
+        # Check if filename matches directory name (e.g., HostProposalsPage/HostProposalsPage.jsx)
+        filename_without_ext = re.sub(r'\.(jsx?|tsx?)$', '', filename)
+        if filename_without_ext == dir_name:
+            return True
+
+        return False
+
+    # Case 3: Deeper nesting - these are always sub-components
+    # e.g., "MessagingPage/components/MessageThread.jsx" → False
+    # e.g., "proposals/VirtualMeetingsSection.jsx" → False
+    return False
 
 
 def _trace_to_pages(
@@ -54,7 +136,20 @@ def _trace_to_pages(
     reverse_deps: Dict[str, List[str]],
     max_depth: int = 10
 ) -> Set[str]:
-    """Recursively trace imports UP the dependency chain to find affected pages.
+    """DEPRECATED: Recursively trace imports UP the dependency chain to find affected pages.
+
+    ============================================================================
+    DEPRECATION NOTICE (2026-01-21):
+    This function is deprecated in favor of page_classifier.get_visual_check_pages().
+
+    The dependency-tracing approach was unreliable because:
+    1. AST parsing missed some import relationships (barrel exports, aliases)
+    2. Lib files often had broken import chains, resulting in "pageless" chunks
+    3. Any frontend change should be visually validated anyway
+
+    New approach: For any app/ change, run visual checks on ALL relevant pages
+    grouped by auth type. This is more thorough and more reliable.
+    ============================================================================
 
     Starting from modified files (e.g., logic/rules/proposalRules.js), walks
     up through the reverse dependency graph until reaching page files.
@@ -277,18 +372,427 @@ class OrchestrationResult:
         return msg
 
 
+# =============================================================================
+# BUILD DEBUG SESSION
+# =============================================================================
+
+def _run_build_debug_session(
+    build_errors: List[ValidationError],
+    batch: ValidationBatch,
+    working_dir: Path,
+    logger: "RunLogger",
+    session_number: int
+) -> bool:
+    """Run a Claude debug session to fix build errors.
+
+    Invokes Claude Code to analyze and fix build errors. Claude has access to
+    the error output, the modified files, and can make edits to fix the issues.
+
+    Args:
+        build_errors: List of parsed build errors
+        batch: ValidationBatch containing chunks and affected files
+        working_dir: Project working directory
+        logger: RunLogger for output
+        session_number: Which debug session this is (1 or 2)
+
+    Returns:
+        True if the debug session completed (regardless of fix success),
+        False if the debug session failed to run
+    """
+    logger.step(f"DEBUG SESSION {session_number}: Invoking Claude to fix build errors...")
+
+    # Build context for Claude
+    error_summary = "\n".join([
+        f"  - {e.message[:150]}" + (f" ({e.file_path}:{e.line_number})" if e.file_path else "")
+        for e in build_errors[:10]  # Limit to 10 errors
+    ])
+
+    modified_files = "\n".join([f"  - {f}" for f in sorted(batch.implemented_files)])
+
+    # Build the debug prompt
+    debug_prompt = f"""BUILD FAILURE - Debug Session {session_number}/2
+
+The build failed after implementing refactoring chunks. Please analyze the errors and fix them.
+
+## Build Errors ({len(build_errors)} total):
+{error_summary}
+
+## Files Modified by Refactoring:
+{modified_files}
+
+## Instructions:
+1. Analyze the build errors to understand what went wrong
+2. Read the affected files to see the current state
+3. Fix the errors - common issues include:
+   - Import path errors (file doesn't exist, wrong relative path)
+   - Missing exports (function was deleted but still imported elsewhere)
+   - Circular dependencies
+   - Syntax errors from incomplete edits
+4. After making fixes, verify by checking the file syntax
+5. DO NOT add new features or refactor further - only fix the build errors
+
+Working directory: {working_dir}
+App directory: {working_dir / "app"}
+
+Focus on making the build pass. Be surgical - fix only what's broken.
+"""
+
+    try:
+        # Write the prompt to a temp file for Claude to read
+        debug_prompt_file = working_dir / "adws" / "functional-code-refactor" / f".debug_session_{session_number}.txt"
+        debug_prompt_file.write_text(debug_prompt, encoding="utf-8")
+
+        logger.log(f"  [DEBUG] Debug prompt saved to: {debug_prompt_file}")
+        logger.log(f"  [DEBUG] Invoking Claude Code for troubleshooting...")
+
+        # Run Claude Code with the debug prompt
+        # We use claude with --print to get output and a timeout
+        debug_start = time.time()
+        debug_result = subprocess.run(
+            [
+                "claude",
+                "--print",
+                "--dangerously-skip-permissions",
+                "-p", debug_prompt
+            ],
+            cwd=working_dir,
+            capture_output=True,
+            text=True,
+            timeout=300  # 5 minute timeout for debug session
+        )
+        debug_duration = time.time() - debug_start
+
+        if debug_result.returncode == 0:
+            logger.log(f"  [DEBUG] Debug session {session_number} completed ({debug_duration:.1f}s)")
+            # Log a snippet of Claude's response
+            response_preview = debug_result.stdout[:500] if debug_result.stdout else "(no output)"
+            logger.log(f"  [DEBUG] Claude response preview: {response_preview[:200]}...")
+            return True
+        else:
+            logger.log(f"  [DEBUG] Debug session {session_number} exited with code {debug_result.returncode}")
+            if debug_result.stderr:
+                logger.log(f"  [DEBUG] stderr: {debug_result.stderr[:200]}")
+            return True  # Session ran, even if it didn't fully succeed
+
+    except subprocess.TimeoutExpired:
+        logger.log(f"  [DEBUG] Debug session {session_number} timed out (300s)")
+        return True  # Timeout counts as "session ran"
+    except FileNotFoundError:
+        logger.log(f"  [DEBUG] Claude CLI not found - cannot run debug session")
+        return False
+    except Exception as e:
+        logger.log(f"  [DEBUG] Debug session {session_number} error: {str(e)[:100]}")
+        return False
+
+
+def _run_lint_check(
+    working_dir: Path,
+    logger: "RunLogger",
+    timeout: int = 60
+) -> tuple[bool, List[ValidationError], str]:
+    """Run ESLint separately to capture actual error output.
+
+    Args:
+        working_dir: Project working directory
+        logger: RunLogger for output
+        timeout: Lint timeout in seconds (default: 60)
+
+    Returns:
+        Tuple of (passed, errors, raw_output)
+    """
+    try:
+        lint_result = subprocess.run(
+            ["bun", "run", "lint"],
+            cwd=working_dir / "app",
+            capture_output=True,
+            text=True,
+            timeout=timeout
+        )
+
+        raw_output = lint_result.stdout + "\n" + lint_result.stderr
+
+        if lint_result.returncode == 0:
+            return True, [], raw_output
+
+        # Parse ESLint errors from stdout (ESLint writes errors to stdout)
+        errors = _parse_eslint_errors(lint_result.stdout)
+
+        # If we didn't find structured errors, fall back to generic parsing
+        if not errors:
+            errors = _parse_build_errors(raw_output)
+
+        return False, errors, raw_output
+
+    except subprocess.TimeoutExpired:
+        return False, [ValidationError(message=f"Lint timed out ({timeout}s)")], ""
+    except Exception as e:
+        return False, [ValidationError(message=f"Lint check error: {str(e)[:100]}")], ""
+
+
+def _parse_eslint_errors(eslint_output: str) -> List[ValidationError]:
+    """Parse ESLint output into structured errors.
+
+    ESLint output format:
+    /path/to/file.js
+      10:5  error  'foo' is defined but never used  no-unused-vars
+      15:10  warning  Missing return type  @typescript-eslint/explicit-function-return-type
+
+    Args:
+        eslint_output: Raw stdout from ESLint
+
+    Returns:
+        List of ValidationError objects
+    """
+    import re
+    errors: List[ValidationError] = []
+    current_file: Optional[str] = None
+
+    for line in eslint_output.split('\n'):
+        line_stripped = line.strip()
+        if not line_stripped:
+            continue
+
+        # Check if this line is a file path (starts a new file section)
+        # File paths typically end with .js, .jsx, .ts, .tsx and start the line
+        if re.match(r'^[\w/\\:.-]+\.(jsx?|tsx?|mjs|cjs)$', line_stripped):
+            current_file = line_stripped
+            continue
+
+        # Check for error/warning line format: "  10:5  error  message  rule-name"
+        error_match = re.match(r'^\s*(\d+):(\d+)\s+(error|warning)\s+(.+?)\s+(\S+)$', line)
+        if error_match and current_file:
+            line_num = int(error_match.group(1))
+            col_num = int(error_match.group(2))
+            severity = error_match.group(3)
+            message = error_match.group(4)
+            rule = error_match.group(5)
+
+            # Only capture errors, not warnings (unless no errors found)
+            if severity == "error":
+                errors.append(ValidationError(
+                    message=f"{message} ({rule})",
+                    file_path=current_file,
+                    line_number=line_num
+                ))
+
+        # Also check for simpler format without rule name
+        # "  10:5  error  message"
+        simple_match = re.match(r'^\s*(\d+):(\d+)\s+(error|warning)\s+(.+)$', line)
+        if simple_match and current_file and not error_match:
+            line_num = int(simple_match.group(1))
+            severity = simple_match.group(3)
+            message = simple_match.group(4)
+
+            if severity == "error":
+                errors.append(ValidationError(
+                    message=message,
+                    file_path=current_file,
+                    line_number=line_num
+                ))
+
+        # Limit to 30 errors
+        if len(errors) >= 30:
+            break
+
+    return errors
+
+
+def _run_build_with_retry(
+    working_dir: Path,
+    batch: ValidationBatch,
+    logger: "RunLogger",
+    build_timeout: int = 180,
+    max_debug_sessions: int = 2
+) -> tuple[bool, List[ValidationError], float]:
+    """Run build with debug-retry loop.
+
+    Attempts to build up to (max_debug_sessions + 1) times:
+    - Build attempt 1 -> if fail -> debug session 1 -> retry
+    - Build attempt 2 -> if fail -> debug session 2 -> retry
+    - Build attempt 3 -> if fail -> FAILED (no more retries)
+
+    The build pipeline is:
+    1. Lint check (ESLint) - runs separately to capture actual errors
+    2. Type check (TypeScript) - runs separately
+    3. Vite build - final production build
+
+    If lint fails, we capture ESLint's actual error output (file, line, message)
+    instead of just the bun wrapper "script lint exited with code 1" message.
+
+    Args:
+        working_dir: Project working directory
+        batch: ValidationBatch containing chunks and affected files
+        logger: RunLogger for output
+        build_timeout: Build timeout in seconds (default: 180)
+        max_debug_sessions: Maximum number of debug sessions (default: 2)
+
+    Returns:
+        Tuple of (build_passed, errors, total_duration)
+    """
+    total_duration = 0.0
+    debug_sessions_used = 0
+    all_errors: List[ValidationError] = []
+
+    for attempt in range(1, max_debug_sessions + 2):  # +2 because we get one more attempt than debug sessions
+        logger.log(f"  [BUILD] Attempt {attempt}/{max_debug_sessions + 1}...")
+
+        attempt_start = time.time()
+
+        # Step 1: Run lint check separately to capture actual ESLint errors
+        lint_passed, lint_errors, lint_output = _run_lint_check(working_dir, logger)
+
+        if not lint_passed:
+            lint_duration = time.time() - attempt_start
+            total_duration += lint_duration
+
+            # Use the detailed ESLint errors if available
+            all_errors = lint_errors if lint_errors else [
+                ValidationError(message="Lint failed (no detailed errors captured)")
+            ]
+
+            logger.log(f"  [FAIL] Lint failed on attempt {attempt} with {len(all_errors)} errors ({lint_duration:.1f}s)")
+
+            # Log actual ESLint errors (up to 5)
+            for i, error in enumerate(all_errors[:5]):
+                file_info = f" ({error.file_path}:{error.line_number})" if error.file_path else ""
+                logger.log(f"    {i+1}. {error.message[:80]}{file_info}")
+
+            if len(all_errors) > 5:
+                logger.log(f"    ... and {len(all_errors) - 5} more errors")
+
+            # Trigger debug session if available
+            if debug_sessions_used < max_debug_sessions:
+                debug_sessions_used += 1
+                debug_success = _run_build_debug_session(
+                    all_errors, batch, working_dir, logger, debug_sessions_used
+                )
+                if not debug_success:
+                    logger.log(f"  [WARN] Debug session failed to run - continuing anyway")
+                continue  # Try next build attempt
+            else:
+                logger.log(f"  [FAIL] No more debug sessions available ({max_debug_sessions} used)")
+                break
+
+        # Step 2: Run typecheck
+        try:
+            typecheck_result = subprocess.run(
+                ["bun", "run", "typecheck"],
+                cwd=working_dir / "app",
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
+
+            if typecheck_result.returncode != 0:
+                typecheck_duration = time.time() - attempt_start
+                total_duration += typecheck_duration
+
+                all_errors = _parse_build_errors(
+                    typecheck_result.stdout + "\n" + typecheck_result.stderr
+                )
+                if not all_errors:
+                    all_errors = [ValidationError(
+                        message="Type check failed (see output for details)"
+                    )]
+
+                logger.log(f"  [FAIL] Typecheck failed on attempt {attempt} ({typecheck_duration:.1f}s)")
+                for error in all_errors[:3]:
+                    logger.log(f"    - {error.message[:100]}")
+
+                if debug_sessions_used < max_debug_sessions:
+                    debug_sessions_used += 1
+                    _run_build_debug_session(
+                        all_errors, batch, working_dir, logger, debug_sessions_used
+                    )
+                    continue
+                else:
+                    logger.log(f"  [FAIL] No more debug sessions available ({max_debug_sessions} used)")
+                    break
+
+        except subprocess.TimeoutExpired:
+            typecheck_duration = time.time() - attempt_start
+            total_duration += typecheck_duration
+            all_errors = [ValidationError(message="Typecheck timed out (60s)")]
+            logger.log(f"  [FAIL] Typecheck timed out on attempt {attempt}")
+            if debug_sessions_used < max_debug_sessions:
+                debug_sessions_used += 1
+                _run_build_debug_session(all_errors, batch, working_dir, logger, debug_sessions_used)
+                continue
+            else:
+                break
+
+        # Step 3: Run vite build (lint and typecheck already passed)
+        try:
+            vite_result = subprocess.run(
+                ["bunx", "vite", "build"],
+                cwd=working_dir / "app",
+                capture_output=True,
+                text=True,
+                timeout=build_timeout - 60  # Reserve 60s for lint+typecheck
+            )
+
+            build_duration = time.time() - attempt_start
+            total_duration += build_duration
+
+            if vite_result.returncode == 0:
+                logger.log(f"  [OK] Build passed on attempt {attempt} ({build_duration:.1f}s)")
+                return True, [], total_duration
+
+            # Vite build failed
+            all_errors = _parse_build_errors(
+                vite_result.stdout + "\n" + vite_result.stderr
+            )
+            if not all_errors:
+                all_errors = [ValidationError(message="Vite build failed (see output)")]
+
+            logger.log(f"  [FAIL] Vite build failed on attempt {attempt} ({build_duration:.1f}s)")
+            for error in all_errors[:3]:
+                logger.log(f"    - {error.message[:100]}")
+
+            if debug_sessions_used < max_debug_sessions:
+                debug_sessions_used += 1
+                _run_build_debug_session(
+                    all_errors, batch, working_dir, logger, debug_sessions_used
+                )
+            else:
+                logger.log(f"  [FAIL] No more debug sessions available ({max_debug_sessions} used)")
+                break
+
+        except subprocess.TimeoutExpired:
+            build_duration = time.time() - attempt_start
+            total_duration += build_duration
+            all_errors = [ValidationError(
+                message=f"Vite build timed out ({build_timeout - 60}s)"
+            )]
+            logger.log(f"  [FAIL] Vite build timed out on attempt {attempt}")
+
+            if debug_sessions_used < max_debug_sessions:
+                debug_sessions_used += 1
+                _run_build_debug_session(all_errors, batch, working_dir, logger, debug_sessions_used)
+            else:
+                break
+
+    return False, all_errors, total_duration
+
+
 def run_deferred_validation(
     batch: ValidationBatch,
     working_dir: Path,
     logger: "RunLogger",
     skip_visual: bool = False,
-    build_timeout: int = 180
+    build_timeout: int = 180,
+    slack_channel: Optional[str] = None,
+    use_claude: bool = True,
+    max_debug_sessions: int = 2
 ) -> ValidationResult:
     """Run validation after all chunks implemented.
 
     Validation sequence:
-    1. Full production build (catches type errors, import errors)
-    2. Visual regression on affected pages (if any and not skipped)
+    1. Full production build with debug-retry loop:
+       - Build attempt 1 -> if fail -> debug session 1 -> retry
+       - Build attempt 2 -> if fail -> debug session 2 -> retry
+       - Build attempt 3 -> if fail -> FAILED
+    2. Visual regression on affected pages (if build passes and not skipped)
     3. Return detailed result with error attribution
 
     Args:
@@ -297,93 +801,112 @@ def run_deferred_validation(
         logger: RunLogger for output
         skip_visual: If True, skip visual regression testing
         build_timeout: Build timeout in seconds (default: 180)
+        slack_channel: Optional Slack channel for visual regression notifications
+        use_claude: Use Claude instead of Gemini for visual checks (default: True)
+        max_debug_sessions: Maximum debug sessions before giving up (default: 2)
 
     Returns:
         ValidationResult with success status and any errors
     """
     result = ValidationResult(success=False)
 
-    # Phase 1: Build check
+    # Phase 1: Build check with debug-retry loop
     logger.step(f"Running full build verification ({len(batch.implemented_files)} files changed)...")
 
-    try:
-        build_start = time.time()
-        build_result = subprocess.run(
-            ["bun", "run", "build"],
-            cwd=working_dir / "app",
-            capture_output=True,
-            text=True,
-            timeout=build_timeout
+    build_passed, build_errors, build_duration = _run_build_with_retry(
+        working_dir=working_dir,
+        batch=batch,
+        logger=logger,
+        build_timeout=build_timeout,
+        max_debug_sessions=max_debug_sessions
+    )
+
+    if not build_passed:
+        result.build_passed = False
+        result.errors = build_errors
+        result.affected_chunks = _attribute_errors_to_chunks(
+            build_errors, batch.chunks
         )
-        build_duration = time.time() - build_start
-
-        if build_result.returncode != 0:
-            result.build_passed = False
-            error_output = build_result.stderr or build_result.stdout
-
-            # Parse errors and attribute to chunks
-            result.errors = _parse_build_errors(error_output)
-            result.affected_chunks = _attribute_errors_to_chunks(
-                result.errors, batch.chunks
-            )
-
-            logger.log(f"  [FAIL] Build failed with {len(result.errors)} errors ({build_duration:.1f}s)")
-            for error in result.errors[:5]:  # Log first 5 errors
-                logger.log(f"    - {error.message[:100]}")
-
-            return result
-
-        result.build_passed = True
-        logger.log(f"  [OK] Build passed ({build_duration:.1f}s)")
-
-    except subprocess.TimeoutExpired:
-        result.errors.append(ValidationError(
-            message=f"Build timed out ({build_timeout}s)"
-        ))
-        logger.log(f"  [FAIL] Build timed out ({build_timeout}s)")
-        return result
-    except Exception as e:
-        result.errors.append(ValidationError(message=str(e)))
-        logger.log(f"  [FAIL] Build error: {e}")
+        logger.log(f"  [FAIL] Build failed after {max_debug_sessions} debug sessions ({build_duration:.1f}s total)")
         return result
 
-    # Phase 2: Visual regression OR Test-driven validation
-    if not skip_visual and batch.affected_pages:
-        # Chunks with affected pages: run visual regression
-        logger.step(f"Visual regression on {len(batch.affected_pages)} affected pages...")
-        # TODO: Implement batch visual regression
-        # For now, mark as passed - visual regression handled separately
-        result.visual_passed = True
-        logger.log("  [SKIP] Batch visual regression not yet implemented")
-    elif not batch.affected_pages and batch.chunks:
-        # ORPHANED CODE: No pages found after recursive tracing
-        # This is RARE and usually indicates dead code or broken import chain
-        logger.step(f"WARNING: {len(batch.chunks)} chunks have no traced pages - checking import chain...")
+    result.build_passed = True
+    logger.log(f"  [OK] Build passed ({build_duration:.1f}s)")
 
-        pageless_test_results = _run_test_driven_validation_for_pageless(
-            batch.chunks,
-            working_dir,
-            logger
-        )
+    # Phase 2: Visual regression using registry-based page selection
+    # NEW APPROACH (2026-01-21): Instead of tracing dependencies to find affected pages,
+    # we run visual checks on ALL pages grouped by auth type. This is more thorough and
+    # avoids the "pageless chunk" problem where lib files couldn't be traced to pages.
+    if not skip_visual:
+        # Get all checkable pages grouped by auth type
+        pages_by_auth = get_pages_grouped_by_auth()
+        total_pages = sum(len(pages) for pages in pages_by_auth.values())
 
-        if pageless_test_results.all_passed:
-            result.visual_passed = True
-            logger.log(f"  [PASS] All {len(batch.chunks)} pageless chunks validated via tests")
+        logger.step(f"Visual regression on {total_pages} pages (public: {len(pages_by_auth['public'])}, host: {len(pages_by_auth['host'])}, guest: {len(pages_by_auth['guest'])})")
+
+        visual_errors = []
+        visual_screenshots = {}
+
+        # Run visual checks by auth group (allows batching with same MCP session)
+        for auth_group, pages in pages_by_auth.items():
+            if not pages:
+                continue
+
+            logger.log(f"  [{auth_group.upper()}] Checking {len(pages)} pages...")
+
+            for page_info in pages:
+                # Resolve dynamic routes to concrete URLs
+                page_path = resolve_dynamic_route(page_info)
+
+                # Get MCP sessions for this page
+                mcp_live, mcp_dev = get_mcp_sessions_for_page(page_info.path)
+
+                visual_result = check_visual_parity(
+                    page_path=page_path,
+                    mcp_session=mcp_live,
+                    mcp_session_dev=mcp_dev,
+                    auth_type=page_info.auth_type,
+                    port=8010,
+                    concurrent=True if mcp_live and mcp_dev else False,
+                    slack_channel=slack_channel,
+                    use_claude=use_claude
+                )
+
+                parity_status = visual_result.get("visualParity", "FAIL")
+                display_path = page_path
+
+            if parity_status == "PASS":
+                logger.log(f"  [PASS] {display_path}")
+            elif parity_status == "BLOCKED":
+                issues = visual_result.get('issues', ['Unknown'])
+                logger.log(f"  [BLOCKED] {display_path}: {issues[0] if issues else 'Unknown'}")
+                visual_errors.append(ValidationError(
+                    message=f"Visual check blocked for {display_path}",
+                    file_path=page_path  # Keep original file path for attribution
+                ))
+            else:  # FAIL
+                issues = visual_result.get('issues', ['Unknown visual difference'])
+                logger.log(f"  [FAIL] {display_path}: {issues[0] if issues else 'Unknown'}")
+                visual_errors.append(ValidationError(
+                    message=f"Visual parity failed for {display_path}: {issues[0] if issues else 'Unknown'}",
+                    file_path=page_path  # Keep original file path for attribution
+                ))
+
+            # Collect screenshots for reporting
+            if visual_result.get("screenshots"):
+                visual_screenshots[page_path] = visual_result["screenshots"]
+
+        result.visual_passed = len(visual_errors) == 0
+        result.errors.extend(visual_errors)
+
+        if result.visual_passed:
+            logger.log(f"  [PASS] All {total_pages} pages passed visual regression")
         else:
-            result.visual_passed = False
-            for td_result in pageless_test_results.results:
-                if not td_result.all_tests_passed:
-                    result.errors.append(ValidationError(
-                        message=td_result.to_summary(),
-                        chunk_number=td_result.suite.chunk_number
-                    ))
-            logger.log(f"  [FAIL] {pageless_test_results.failed_count} pageless chunks failed tests")
+            logger.log(f"  [FAIL] Visual regression failed with {len(visual_errors)} errors")
     else:
+        # skip_visual is True
         result.visual_passed = True
-        if skip_visual:
-            logger.log("  [SKIP] Visual regression skipped by flag")
-        else:
-            logger.log("  [SKIP] No pages affected")
+        logger.log("  [SKIP] Visual regression skipped by flag")
 
     result.success = result.build_passed and result.visual_passed
     return result
@@ -391,7 +914,17 @@ def run_deferred_validation(
 
 @dataclass
 class PagelessTestResults:
-    """Aggregate results from test-driven validation of pageless chunks."""
+    """DEPRECATED: Aggregate results from test-driven validation of pageless chunks.
+
+    ============================================================================
+    DEPRECATION NOTICE (2026-01-21):
+    This class is deprecated. The "pageless chunk" concept no longer exists.
+
+    New approach: All app/ changes are validated via visual regression on ALL
+    pages, not just traced pages. This class is kept for backwards compatibility
+    but should not be used in new code.
+    ============================================================================
+    """
     results: List[TestDrivenResult] = field(default_factory=list)
     all_passed: bool = True
     failed_count: int = 0
@@ -402,7 +935,19 @@ def _run_test_driven_validation_for_pageless(
     working_dir: Path,
     logger: "RunLogger"
 ) -> PagelessTestResults:
-    """Run test-driven validation for chunks that don't affect any pages.
+    """DEPRECATED: Run test-driven validation for chunks that don't affect any pages.
+
+    ============================================================================
+    DEPRECATION NOTICE (2026-01-21):
+    This function is deprecated and no longer called by run_deferred_validation().
+
+    The "pageless chunk" problem has been solved by switching to registry-based
+    page selection. All frontend changes are now visually validated against ALL
+    pages grouped by auth type, eliminating the need for dependency tracing.
+
+    This function is kept for backwards compatibility but will be removed in a
+    future version.
+    ============================================================================
 
     For each pageless chunk:
     1. Generate test suite

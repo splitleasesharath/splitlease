@@ -6,6 +6,8 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
+import Header from '../../shared/Header.jsx';
+import Footer from '../../shared/Footer.jsx';
 import GoogleMap from '../../shared/GoogleMap.jsx';
 import AuthAwareSearchScheduleSelector from '../../shared/AuthAwareSearchScheduleSelector.jsx';
 import ContactHostMessaging from '../../shared/ContactHostMessaging.jsx';
@@ -16,7 +18,7 @@ import CreateProposalFlowV2, { clearProposalDraft } from '../../shared/CreatePro
 import ProposalSuccessModal from '../../modals/ProposalSuccessModal.jsx';
 import SignUpLoginModal from '../../shared/SignUpLoginModal.jsx';
 import EmptyState from './components/EmptyState';
-import FavoritesCard from './components/FavoritesCard.jsx';
+import FavoritesCardV2 from './components/FavoritesCardV2.jsx';
 import { getFavoritedListingIds, removeFromFavorites } from './favoritesApi';
 import { checkAuthStatus, validateTokenAndFetchUser, getSessionId } from '../../../lib/auth/tokenValidation.js';
 import { logoutUser } from '../../../lib/auth/logout.js';
@@ -66,19 +68,20 @@ async function fetchInformationalTexts() {
 }
 
 /**
- * ListingsGrid - Grid of favorites cards (new vertical design)
- * Note: On favorites page, all listings are favorited by definition
- * @param {Map} proposalsByListingId - Map of listing ID to proposal object
- * @param {Function} onCreateProposal - Handler to open inline proposal creation modal
- * @param {Function} onPhotoClick - Handler to open fullscreen photo gallery
+ * ListingsGridV2 - Grid using pure inline styles (no CSS conflicts)
  */
-function ListingsGrid({ listings, onOpenContactModal, onOpenInfoModal, mapRef, isLoggedIn, onToggleFavorite, userId, proposalsByListingId, onCreateProposal, onPhotoClick }) {
+function ListingsGridV2({ listings, onOpenContactModal, isLoggedIn, onToggleFavorite, userId, proposalsByListingId, onCreateProposal, onPhotoClick }) {
   return (
-    <div className="favorites-grid">
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+      gap: '20px',
+      padding: '0',
+    }}>
       {listings.map((listing) => {
         const proposalForListing = proposalsByListingId?.get(listing.id) || null;
         return (
-          <FavoritesCard
+          <FavoritesCardV2
             key={listing.id}
             listing={listing}
             onOpenContactModal={onOpenContactModal}
@@ -927,8 +930,12 @@ const FavoriteListingsPage = () => {
 
   // Render
   return (
-    <div className="favorites-page">
-      {/* Toast Notification */}
+    <>
+      {/* Standard Site Header */}
+      <Header />
+
+      <div className="favorites-page">
+        {/* Toast Notification */}
       {toast.show && (
         <div className={`toast toast-${toast.type} show`}>
           <span className="toast-icon">
@@ -1069,11 +1076,9 @@ const FavoriteListingsPage = () => {
             )}
 
             {!isLoading && !error && listings.length > 0 && (
-              <ListingsGrid
+              <ListingsGridV2
                 listings={listings}
                 onOpenContactModal={handleOpenContactModal}
-                onOpenInfoModal={handleOpenInfoModal}
-                mapRef={mapRef}
                 isLoggedIn={isLoggedIn}
                 onToggleFavorite={handleToggleFavorite}
                 userId={userId}
@@ -1420,7 +1425,11 @@ const FavoriteListingsPage = () => {
           </button>
         </div>
       )}
-    </div>
+      </div>
+
+      {/* Standard Site Footer */}
+      <Footer />
+    </>
   );
 };
 

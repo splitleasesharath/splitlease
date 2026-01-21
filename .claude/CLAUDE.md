@@ -257,6 +257,7 @@ The goal is calibrated judgment, not permission-seeking paralysis.
 - Over-engineer for hypothetical future needs
 - Manually edit `_redirects` or `_routes.json` (auto-generated)
 - **Send entire formData to updateListing** - always filter to changed fields only
+- **Use project-specific abbreviations** - Always use full, descriptive names for directories, files, variables, and functions. For example, use `functional/` not `fp/`, use `configuration/` not `cfg/`, use `utilities/` not `util/`, use `manager` not `mgr`. Industry-standard terms (API, URL, JSON, HTTP, HTML, CSS, DOM, SQL) are acceptable.
 
 ### Database Update Pattern (CRITICAL)
 

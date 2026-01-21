@@ -64,14 +64,8 @@ export const STORAGE_TYPES = [
   { value: 'In a suitcase', label: 'In a suitcase' }
 ];
 
-export const PARKING_OPTIONS = [
-  { value: 'Street Parking', label: 'Street Parking' },
-  { value: 'No Parking', label: 'No Parking' },
-  { value: 'Off-Street Parking', label: 'Off-Street Parking' },
-  { value: 'Attached Garage', label: 'Attached Garage' },
-  { value: 'Detached Garage', label: 'Detached Garage' },
-  { value: 'Nearby Parking Structure', label: 'Nearby Parking Structure' }
-];
+// PARKING_OPTIONS removed - now fetched from reference table via getAllParkingOptions()
+// The database stores FK IDs (e.g., '1569530159044x...'), not display strings
 
 // CANCELLATION_POLICIES removed - now fetched from reference table via getAllCancellationPolicies()
 

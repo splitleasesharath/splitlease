@@ -72,12 +72,9 @@ export default function PublicView({
   // Transportation options for display
   const transportationOptions = [
     { value: '', label: 'Not specified' },
-    { value: 'car', label: 'Mostly drive', icon: 'car' },
-    { value: 'public_transit', label: 'Public transit', icon: 'train' },
-    { value: 'bicycle', label: 'Bicycle', icon: 'bike' },
-    { value: 'walking', label: 'Walk', icon: 'footprints' },
-    { value: 'rideshare', label: 'Rideshare', icon: 'car' },
-    { value: 'other', label: 'Other', icon: 'compass' }
+    { value: 'car', label: 'Car', icon: 'car' },
+    { value: 'public_transit', label: 'Public Transit', icon: 'train' },
+    { value: 'plane', label: 'Plane', icon: 'plane' }
   ];
 
   return (

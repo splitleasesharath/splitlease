@@ -61,13 +61,13 @@ export const DAYS = {
 };
 
 export const DAY_NAMES = [
-  'Sunday',
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday'
+  'Sunday',   // 0
+  'Monday',   // 1
+  'Tuesday',  // 2
+  'Wednesday',// 3
+  'Thursday', // 4
+  'Friday',   // 5
+  'Saturday'  // 6
 ];
 
 export const DAY_ABBREVIATIONS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];

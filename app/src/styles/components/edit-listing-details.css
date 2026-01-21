@@ -605,11 +605,6 @@
   right: var(--spacing-xs, 4px);
   display: flex;
   gap: var(--spacing-xs, 4px);
-  opacity: 0;
-  transition: opacity 150ms ease;
-}
-
-.eld-photo-item:hover .eld-photo-controls {
   opacity: 1;
 }
 

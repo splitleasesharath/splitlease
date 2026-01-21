@@ -281,10 +281,7 @@ export function useAccountProfilePageLogic() {
     { value: '', label: 'Select transportation...' },
     { value: 'car', label: 'Car' },
     { value: 'public_transit', label: 'Public Transit' },
-    { value: 'bicycle', label: 'Bicycle' },
-    { value: 'walking', label: 'Walking' },
-    { value: 'rideshare', label: 'Rideshare (Uber/Lyft)' },
-    { value: 'other', label: 'Other' }
+    { value: 'plane', label: 'Plane' }
   ]);
 
   // UI state
@@ -638,15 +635,16 @@ export function useAccountProfilePageLogic() {
           clearAuthErrorFromUrl();
 
           // Set user-friendly error message based on error type
+          // These errors typically occur when email verification links expire
           let errorMessage = 'Authentication failed. ';
           if (authError.errorCode === 'otp_expired') {
-            errorMessage = 'This magic login link has expired or already been used. Please request a new login link.';
+            errorMessage = 'This verification link has expired or already been used. Please request a new verification email from your profile settings.';
           } else if (authError.errorCode === 'access_denied') {
-            errorMessage = 'Access denied. The login link may have expired or been used already. Please request a new login link.';
+            errorMessage = 'Access denied. The verification link may have expired or been used already. Please request a new verification email.';
           } else if (authError.errorDescription) {
             errorMessage = authError.errorDescription;
           } else {
-            errorMessage = 'The login link is invalid or has expired. Please request a new login link.';
+            errorMessage = 'The verification link is invalid or has expired. Please request a new verification email from your profile settings.';
           }
 
           // Throw error to be caught and displayed
@@ -1071,6 +1069,9 @@ export function useAccountProfilePageLogic() {
     }
 
     if (!validateForm()) {
+      if (window.showToast) {
+        window.showToast({ title: 'Validation error', content: 'Please fix the errors before saving.', type: 'error' });
+      }
       return { success: false, error: 'Please fix validation errors' };
     }
 
@@ -1140,10 +1141,21 @@ export function useAccountProfilePageLogic() {
       setIsDirty(false);
       setSaving(false);
 
+      // Show success toast
+      if (window.showToast) {
+        window.showToast({ title: 'Profile saved!', content: 'Your changes have been saved successfully.', type: 'success' });
+      }
+
       return { success: true };
     } catch (err) {
       console.error('Error saving profile:', err);
       setSaving(false);
+
+      // Show error toast
+      if (window.showToast) {
+        window.showToast({ title: 'Save failed', content: err.message || 'Please try again.', type: 'error' });
+      }
+
       return { success: false, error: err.message };
     }
   }, [isEditorView, profileUserId, formData, validateForm, fetchProfileData]);

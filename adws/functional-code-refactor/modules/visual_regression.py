@@ -121,19 +121,64 @@ def check_visual_parity(
 
             # Try to find screenshots in common locations if not in result
             if not live_screenshot or not dev_screenshot:
-                safe_path = page_path.replace('/', '_')
+                safe_path = page_path.replace('/', '_').strip('_') or 'homepage'
+
+                # Directories where Playwright MCP saves screenshots
                 possible_dirs = [
+                    Path.cwd() / ".playwright-mcp",  # Playwright MCP default location
+                    Path(__file__).parent.parent / ".playwright-mcp",  # functional-code-refactor/.playwright-mcp
                     Path.cwd(),  # Current working directory
                     Path(__file__).parent.parent,  # adws directory
                     Path(__file__).parent.parent / "screenshots",
                 ]
+
+                # Filename patterns the agent might use (in priority order)
+                live_patterns = [
+                    f"parity_LIVE{page_path.replace('/', '_')}.png",  # Instructed format
+                    f"live-{safe_path}-full.png",                     # Full page screenshot
+                    f"live-{safe_path}-screenshot.png",               # Screenshot suffix
+                    f"live-{safe_path}.png",                          # Common agent format
+                    f"live_{safe_path}.png",                          # Underscore variant
+                    f"LIVE-{safe_path}.png",                          # Uppercase variant
+                    f"{safe_path}-live.png",                          # Suffix variant
+                ]
+                dev_patterns = [
+                    f"parity_DEV{page_path.replace('/', '_')}.png",   # Instructed format
+                    f"dev-{safe_path}-full.png",                      # Full page screenshot
+                    f"dev-{safe_path}-screenshot.png",                # Screenshot suffix
+                    f"dev-{safe_path}.png",                           # Common agent format
+                    f"dev_{safe_path}.png",                           # Underscore variant
+                    f"DEV-{safe_path}.png",                           # Uppercase variant
+                    f"{safe_path}-dev.png",                           # Suffix variant
+                ]
+
                 for dir_path in possible_dirs:
-                    live_candidate = dir_path / f"parity_LIVE{safe_path}.png"
-                    dev_candidate = dir_path / f"parity_DEV{safe_path}.png"
-                    if live_candidate.exists():
-                        live_screenshot = str(live_candidate)
-                    if dev_candidate.exists():
-                        dev_screenshot = str(dev_candidate)
+                    if not dir_path.exists():
+                        continue
+                    # Try each pattern for live screenshot
+                    if not live_screenshot:
+                        for pattern in live_patterns:
+                            candidate = dir_path / pattern
+                            if candidate.exists():
+                                live_screenshot = str(candidate)
+                                break
+                    # Try each pattern for dev screenshot
+                    if not dev_screenshot:
+                        for pattern in dev_patterns:
+                            candidate = dir_path / pattern
+                            if candidate.exists():
+                                dev_screenshot = str(candidate)
+                                break
+
+            # Debug: Show what screenshots were found
+            if live_screenshot:
+                print(f"  [Slack] Found LIVE screenshot: {live_screenshot}")
+            else:
+                print(f"  [Slack] WARNING: No LIVE screenshot found")
+            if dev_screenshot:
+                print(f"  [Slack] Found DEV screenshot: {dev_screenshot}")
+            else:
+                print(f"  [Slack] WARNING: No DEV screenshot found")
 
             slack_result = notify_parity_check_result(
                 page_path=page_path,
@@ -144,7 +189,9 @@ def check_visual_parity(
                 issues=result.get("issues")
             )
             if slack_result.get("ok"):
-                print(f"  [Slack] Notification sent to {slack_channel}")
+                screenshots_info = slack_result.get("screenshots", [])
+                uploaded_count = sum(1 for s in screenshots_info if s.get("ok"))
+                print(f"  [Slack] Notification sent to {slack_channel} ({uploaded_count} screenshots uploaded)")
             elif slack_result.get("skipped"):
                 print(f"  [Slack] Skipped: {slack_result.get('error', 'No token configured')}")
             else:

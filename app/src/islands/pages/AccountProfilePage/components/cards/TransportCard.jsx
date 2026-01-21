@@ -6,17 +6,14 @@
  */
 
 import React from 'react';
-import { Car, Train, Bike, Footprints, Compass } from 'lucide-react';
+import { Car, Train, Plane, Compass } from 'lucide-react';
 import ProfileCard from '../shared/ProfileCard.jsx';
 
 // Icon mapping for transportation types
 const TRANSPORT_ICONS = {
   car: Car,
   public_transit: Train,
-  bicycle: Bike,
-  walking: Footprints,
-  rideshare: Car,
-  other: Compass
+  plane: Plane
 };
 
 export default function TransportCard({
