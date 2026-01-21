@@ -1,4 +1,9 @@
 {
+  "tasks": {
+    "test": "deno test --allow-env --allow-read",
+    "test:coverage": "deno test --allow-env --allow-read --coverage=coverage",
+    "test:watch": "deno test --allow-env --allow-read --watch"
+  },
   "lint": {
     "include": [
       "./**/*.ts"
@@ -23,5 +28,9 @@
     "indentWidth": 2,
     "singleQuote": true,
     "proseWrap": "always"
+  },
+  "test": {
+    "include": ["./**/*_test.ts"],
+    "exclude": ["./tests/integration/**"]
   }
 }
