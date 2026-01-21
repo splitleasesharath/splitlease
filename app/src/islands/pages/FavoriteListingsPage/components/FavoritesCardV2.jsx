@@ -6,6 +6,7 @@
  */
 
 import { useState } from 'react';
+import FavoriteButton from '../../../shared/FavoriteButton/FavoriteButton.jsx';
 
 const FavoritesCardV2 = ({
   listing,
@@ -13,7 +14,8 @@ const FavoritesCardV2 = ({
   onOpenCreateProposalModal,
   onPhotoClick,
   proposalForListing,
-  viewMode = 'grid'
+  viewMode = 'grid',
+  userId
 }) => {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [imageError, setImageError] = useState(false);
@@ -43,12 +45,6 @@ const FavoritesCardV2 = ({
     }
   };
 
-  const handleFavoriteToggle = (e) => {
-    e.stopPropagation();
-    if (onToggleFavorite) {
-      onToggleFavorite(listing.id, listing.title, false);
-    }
-  };
 
   const getHostInitial = () => {
     const name = listing.host?.name || 'H';
@@ -106,22 +102,6 @@ const FavoritesCardV2 = ({
     badgeNew: {
       background: '#10B981',
       color: 'white',
-    },
-    favoriteBtn: {
-      position: 'absolute',
-      top: '16px',
-      right: '16px',
-      width: '40px',
-      height: '40px',
-      borderRadius: '50%',
-      background: 'white',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-      zIndex: 2,
-      border: 'none',
-      cursor: 'pointer',
     },
     photoDots: {
       position: 'absolute',
@@ -275,11 +255,18 @@ const FavoritesCardV2 = ({
         {hasProposal && <div style={{ ...styles.statusBadge, ...styles.badgeProposal }}>Proposal Sent</div>}
         {!hasProposal && isNewListing && <div style={{ ...styles.statusBadge, ...styles.badgeNew }}>New</div>}
 
-        <button style={styles.favoriteBtn} onClick={handleFavoriteToggle}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="#EF4444" stroke="#EF4444" strokeWidth="2">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-          </svg>
-        </button>
+        <FavoriteButton
+          listingId={listing.id}
+          userId={userId}
+          initialFavorited={true}
+          onToggle={(newState) => {
+            if (onToggleFavorite) {
+              onToggleFavorite(listing.id, listing.title, newState);
+            }
+          }}
+          size="medium"
+          variant="overlay"
+        />
 
         {hasMultiplePhotos && (
           <div style={styles.photoDots}>
