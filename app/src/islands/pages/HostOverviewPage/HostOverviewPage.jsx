@@ -17,11 +17,11 @@ import Header from '../../shared/Header.jsx';
 import Footer from '../../shared/Footer.jsx';
 import CreateDuplicateListingModal from '../../shared/CreateDuplicateListingModal/CreateDuplicateListingModal.jsx';
 import ImportListingModal from '../../shared/ImportListingModal/ImportListingModal.jsx';
+import ConfirmDeleteModal from '../../shared/ConfirmDeleteModal/ConfirmDeleteModal.jsx';
 import ScheduleCohost from '../../shared/ScheduleCohost/ScheduleCohost.jsx';
 
 // Local components
 import { ListingCard, ClaimListingCard, HouseManualCard, VirtualMeetingCard } from './components/HostOverviewCards.jsx';
-import { ConfirmModal } from './components/HostOverviewModals.jsx';
 import { ToastContainer } from './components/HostOverviewToast.jsx';
 import { Button } from './components/HostOverviewButton.jsx';
 
@@ -268,15 +268,15 @@ export default function HostOverviewPage({ requireAuth = false, isAuthenticated 
       <Footer />
 
       {/* Delete Confirmation Modal */}
-      <ConfirmModal
+      <ConfirmDeleteModal
         isOpen={showDeleteConfirm}
         onClose={handleCancelDelete}
         onConfirm={handleConfirmDelete}
-        title={`Delete ${deleteType === 'manual' ? 'House Manual' : 'Listing'}`}
-        message={`Are you sure you want to delete ${itemToDelete?.name || itemToDelete?.Name || itemToDelete?.display || itemToDelete?.Display || 'this item'}? This action cannot be undone.`}
-        confirmText="Yes, Delete"
-        cancelText="No, Cancel"
-        variant="danger"
+        title={`Delete ${deleteType === 'manual' ? 'House Manual' : deleteType === 'claim' ? 'Claim' : 'Listing'}`}
+        itemName={itemToDelete?.name || itemToDelete?.Name || itemToDelete?.display || itemToDelete?.Display || ''}
+        warning={deleteType === 'listing' ? 'Deleting a listing with active leases may affect your guests.' : ''}
+        confirmText="Delete"
+        cancelText="Cancel"
       />
 
       {/* Toast Notifications */}

@@ -1,0 +1,360 @@
+/**
+ * EditPhoneNumberModal.css
+ * Updated to follow POPUP_REPLICATION_PROTOCOL.md design system
+ *
+ * Color Scheme: Monochromatic Purple - NO GREEN, NO YELLOW
+ * Primary: #31135D
+ * Light BG: #F7F2FA
+ * Border: #E7E0EC
+ * Text: #1C1B1F (primary), #49454F (secondary), #79747E (muted)
+ */
+
+/* ============================================================================
+   MODAL OVERLAY
+   ============================================================================ */
+.edit-phone-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: editPhoneFadeIn 0.2s ease;
+}
+
+@keyframes editPhoneFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ============================================================================
+   MOBILE GRAB HANDLE
+   ============================================================================ */
+.edit-phone-modal-grab-handle {
+  display: none;
+  width: 36px;
+  height: 4px;
+  background: #E7E0EC;
+  border-radius: 2px;
+  margin: 8px auto 0;
+}
+
+/* ============================================================================
+   MODAL CONTAINER
+   ============================================================================ */
+.edit-phone-modal {
+  background-color: #FFFFFF;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 420px;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  animation: editPhoneSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes editPhoneSlideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ============================================================================
+   HEADER SECTION
+   ============================================================================ */
+.edit-phone-modal-header {
+  flex-shrink: 0;
+  width: 100%;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #E7E0EC;
+  background-color: #FFFFFF;
+}
+
+.edit-phone-modal-header-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.edit-phone-modal-header-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.edit-phone-modal-icon {
+  width: 24px;
+  height: 24px;
+  color: #31135D;
+  flex-shrink: 0;
+}
+
+.edit-phone-modal-icon svg {
+  width: 100%;
+  height: 100%;
+  stroke-width: 2;
+}
+
+.edit-phone-modal-title {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: #1C1B1F;
+  margin: 0;
+}
+
+.edit-phone-modal-subtitle {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #49454F;
+  margin: 4px 0 0 36px;
+}
+
+.edit-phone-modal-close {
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: #49454F;
+  transition: background-color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.edit-phone-modal-close:hover {
+  background-color: #F7F2FA;
+}
+
+.edit-phone-modal-close svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+/* ============================================================================
+   BODY SECTION
+   ============================================================================ */
+.edit-phone-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 20px;
+}
+
+/* ============================================================================
+   FORM ELEMENTS
+   ============================================================================ */
+.edit-phone-form-group {
+  margin-bottom: 20px;
+}
+
+.edit-phone-label {
+  display: block;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1C1B1F;
+  margin-bottom: 8px;
+}
+
+.edit-phone-input {
+  width: 100%;
+  height: 48px;
+  padding: 0 14px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 16px;
+  color: #1C1B1F;
+  background: #FFFFFF;
+  border: 1px solid #E7E0EC;
+  border-radius: 8px;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.edit-phone-input:focus {
+  outline: none;
+  border-color: #31135D;
+  box-shadow: 0 0 0 2px rgba(49, 19, 93, 0.15);
+}
+
+.edit-phone-input:disabled {
+  background: #F7F2FA;
+  color: #79747E;
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.edit-phone-input::placeholder {
+  color: #79747E;
+}
+
+/* ============================================================================
+   FOOTER SECTION
+   ============================================================================ */
+.edit-phone-modal-footer {
+  flex-shrink: 0;
+  width: 100%;
+  padding: 16px 20px;
+  background-color: #FFFFFF;
+  border-top: 1px solid #E7E0EC;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.edit-phone-btn {
+  height: 44px;
+  padding: 0 24px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 100px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.edit-phone-btn--secondary {
+  background: transparent;
+  color: #31135D;
+  border: 1px solid #E7E0EC;
+}
+
+.edit-phone-btn--secondary:hover {
+  background-color: #F7F2FA;
+  border-color: #31135D;
+}
+
+.edit-phone-btn--primary {
+  background-color: #31135D;
+  color: #FFFFFF;
+}
+
+.edit-phone-btn--primary:hover:not(:disabled) {
+  background-color: #4A2F7C;
+  box-shadow: 0 4px 12px rgba(49, 19, 93, 0.2);
+}
+
+.edit-phone-btn--primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Spinner for loading state */
+.edit-phone-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #FFFFFF;
+  border-radius: 50%;
+  animation: editPhoneSpin 1s linear infinite;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+@keyframes editPhoneSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================================================
+   RESPONSIVE - TABLET
+   ============================================================================ */
+@media (max-width: 700px) {
+  .edit-phone-modal {
+    max-width: 100%;
+  }
+
+  .edit-phone-modal-title {
+    font-size: 16px;
+  }
+}
+
+/* ============================================================================
+   RESPONSIVE - MOBILE BOTTOM SHEET
+   Screen width < 480px triggers slide-up mode per protocol
+   ============================================================================ */
+@media (max-width: 480px) {
+  .edit-phone-modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .edit-phone-modal {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 24px 24px 0 0;
+    max-height: 90vh;
+    animation: editPhoneSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes editPhoneSlideUp {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .edit-phone-modal-grab-handle {
+    display: block;
+  }
+
+  .edit-phone-modal-header {
+    padding: 12px 16px 16px;
+  }
+
+  .edit-phone-modal-title {
+    font-size: 18px;
+    font-weight: 400;
+  }
+
+  .edit-phone-modal-subtitle {
+    margin-left: 0;
+    margin-top: 8px;
+    font-size: 12px;
+  }
+
+  .edit-phone-modal-header-top {
+    gap: 8px;
+  }
+
+  .edit-phone-modal-body {
+    padding: 16px;
+  }
+
+  .edit-phone-modal-footer {
+    padding: 12px 16px 20px;
+  }
+
+  .edit-phone-btn {
+    flex: 1;
+    padding: 0 16px;
+  }
+}

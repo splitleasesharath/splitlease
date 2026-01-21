@@ -265,4 +265,29 @@
   --max-width-sidebar: 380px;
   --max-width-modal: 400px;
   --max-width-map: 100%;
+
+  /* ========================================
+     FAVORITES PAGE REDESIGN TOKENS
+     ======================================== */
+
+  /* Primary Colors */
+  --favorites-purple: #6B4EE6;
+  --favorites-purple-light: #F0EBFF;
+  --favorites-purple-dark: #5A3ED5;
+  --favorites-purple-gradient: linear-gradient(135deg, #6B4EE6 0%, #8B6CF5 100%);
+
+  /* Text Colors */
+  --favorites-text-dark: #1a1a2e;
+  --favorites-text-medium: #64748B;
+  --favorites-text-light: #94A3B8;
+
+  /* Background & Border */
+  --favorites-bg: #FAFBFC;
+  --favorites-border: #E8ECF0;
+  --favorites-card-bg: #ffffff;
+
+  /* Status Colors */
+  --favorites-success: #10B981;
+  --favorites-heart: #FF6B5B;
+  --favorites-heart-hover: #e55a4a;
 }

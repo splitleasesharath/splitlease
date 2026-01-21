@@ -1,0 +1,865 @@
+/**
+ * VisitReviewerHouseManual Component Styles
+ *
+ * BEM naming convention: vrhm-*
+ * Uses CSS variables from variables.css
+ */
+
+/* ========================================
+   CONTAINER
+   ======================================== */
+
+.vrhm-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: var(--spacing-lg);
+  min-height: 100vh;
+  background-color: var(--bg-light);
+  font-family: var(--font-inter);
+}
+
+/* ========================================
+   HEADER SECTION
+   ======================================== */
+
+.vrhm-header {
+  background-color: var(--bg-white);
+  border-radius: var(--rounded-xl);
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.vrhm-header__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-md);
+}
+
+.vrhm-header__title {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--primary-purple);
+  margin: 0;
+}
+
+.vrhm-header__actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.vrhm-header__action-btn {
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: var(--rounded-md);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--text-sm);
+  color: var(--text-gray);
+  cursor: pointer;
+  transition: all var(--transition-fast) var(--easing-ease);
+}
+
+.vrhm-header__action-btn:hover {
+  background-color: var(--bg-light-gray);
+  border-color: var(--secondary-purple);
+  color: var(--secondary-purple);
+}
+
+.vrhm-header__meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.vrhm-header__host {
+  font-size: var(--text-base);
+  color: var(--text-gray);
+}
+
+.vrhm-header__host-name {
+  font-weight: var(--font-weight-medium);
+  color: var(--text-dark);
+}
+
+.vrhm-header__address {
+  font-size: var(--text-sm);
+  color: var(--text-light-gray);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.vrhm-header__arrival {
+  font-size: var(--text-sm);
+  color: var(--text-gray);
+  margin-top: var(--spacing-sm);
+  padding-top: var(--spacing-sm);
+  border-top: 1px solid var(--border-color);
+}
+
+.vrhm-header__arrival-label {
+  color: var(--text-light-gray);
+}
+
+.vrhm-header__section-count {
+  font-size: var(--text-sm);
+  color: var(--text-light-gray);
+  margin-top: var(--spacing-sm);
+}
+
+/* ========================================
+   MESSAGES
+   ======================================== */
+
+.vrhm-message {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--rounded-lg);
+  margin-bottom: var(--spacing-lg);
+  font-size: var(--text-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.vrhm-message--success {
+  background-color: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+
+.vrhm-message--error {
+  background-color: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+/* ========================================
+   CONTENT AREA
+   ======================================== */
+
+.vrhm-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+/* ========================================
+   CATEGORY SECTIONS
+   ======================================== */
+
+.vrhm-category {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.vrhm-category__title {
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-dark);
+  margin: 0;
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 2px solid var(--primary-purple);
+}
+
+.vrhm-category__sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+/* ========================================
+   COLLAPSIBLE SECTION
+   ======================================== */
+
+.vrhm-section {
+  background-color: var(--bg-white);
+  border-radius: var(--rounded-lg);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  transition: box-shadow var(--transition-base) var(--easing-ease);
+}
+
+.vrhm-section:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.vrhm-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-lg);
+  cursor: pointer;
+  background-color: var(--bg-white);
+  transition: background-color var(--transition-fast) var(--easing-ease);
+}
+
+.vrhm-section__header:hover {
+  background-color: var(--bg-light);
+}
+
+.vrhm-section__header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.vrhm-section__icon {
+  font-size: var(--text-xl);
+  width: 32px;
+  text-align: center;
+}
+
+.vrhm-section__title {
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-dark);
+  margin: 0;
+}
+
+.vrhm-section__toggle {
+  font-size: var(--text-lg);
+  color: var(--text-gray);
+  transition: transform var(--transition-fast) var(--easing-ease);
+}
+
+.vrhm-section--expanded .vrhm-section__toggle {
+  transform: rotate(180deg);
+}
+
+.vrhm-section__content {
+  padding: 0 var(--spacing-lg) var(--spacing-lg);
+  border-top: 1px solid var(--border-color);
+}
+
+.vrhm-section__content--collapsed {
+  display: none;
+}
+
+/* ========================================
+   SECTION CONTENT TYPES
+   ======================================== */
+
+/* Text content */
+.vrhm-text-content {
+  font-size: var(--text-base);
+  color: var(--text-dark);
+  line-height: var(--line-height-relaxed);
+  white-space: pre-wrap;
+}
+
+/* WiFi section */
+.vrhm-wifi {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding-top: var(--spacing-md);
+}
+
+.vrhm-wifi__row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.vrhm-wifi__label {
+  font-size: var(--text-sm);
+  color: var(--text-gray);
+  min-width: 80px;
+}
+
+.vrhm-wifi__value {
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-dark);
+  font-family: var(--font-mono, monospace);
+  background-color: var(--bg-light);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--rounded-md);
+}
+
+.vrhm-wifi__copy-btn {
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: var(--rounded-md);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--text-sm);
+  color: var(--secondary-purple);
+  cursor: pointer;
+  transition: all var(--transition-fast) var(--easing-ease);
+}
+
+.vrhm-wifi__copy-btn:hover {
+  background-color: var(--secondary-purple);
+  color: var(--white);
+}
+
+.vrhm-wifi__photo {
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: var(--rounded-lg);
+  object-fit: contain;
+}
+
+/* Rules list */
+.vrhm-rules {
+  padding-top: var(--spacing-md);
+}
+
+.vrhm-rules__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.vrhm-rules__item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  font-size: var(--text-base);
+  color: var(--text-dark);
+}
+
+.vrhm-rules__bullet {
+  color: var(--secondary-purple);
+  font-weight: var(--font-weight-bold);
+}
+
+/* Checklist */
+.vrhm-checklist {
+  padding-top: var(--spacing-md);
+}
+
+.vrhm-checklist__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.vrhm-checklist__item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--text-base);
+  color: var(--text-dark);
+}
+
+.vrhm-checklist__checkbox {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border-color);
+  border-radius: var(--rounded-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.vrhm-checklist__checkbox--checked {
+  background-color: var(--success-green);
+  border-color: var(--success-green);
+  color: var(--white);
+}
+
+/* Contacts */
+.vrhm-contacts {
+  padding-top: var(--spacing-md);
+}
+
+.vrhm-contacts__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.vrhm-contacts__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-md);
+  background-color: var(--bg-light);
+  border-radius: var(--rounded-md);
+}
+
+.vrhm-contacts__name {
+  font-weight: var(--font-weight-medium);
+  color: var(--text-dark);
+}
+
+.vrhm-contacts__role {
+  font-size: var(--text-sm);
+  color: var(--text-gray);
+}
+
+.vrhm-contacts__phone,
+.vrhm-contacts__email {
+  font-size: var(--text-sm);
+  color: var(--secondary-purple);
+}
+
+/* ========================================
+   REVIEW SECTION
+   ======================================== */
+
+.vrhm-review-section {
+  background-color: var(--bg-white);
+  border-radius: var(--rounded-xl);
+  padding: var(--spacing-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.vrhm-review-cta {
+  text-align: center;
+}
+
+.vrhm-review-cta__title {
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-dark);
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.vrhm-review-cta__text {
+  font-size: var(--text-base);
+  color: var(--text-gray);
+  margin: 0 0 var(--spacing-lg) 0;
+}
+
+.vrhm-review-submitted {
+  text-align: center;
+  padding: var(--spacing-xl);
+}
+
+.vrhm-review-submitted__icon {
+  width: 48px;
+  height: 48px;
+  background-color: var(--success-green);
+  color: var(--white);
+  border-radius: var(--rounded-full);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-2xl);
+  margin-bottom: var(--spacing-md);
+}
+
+.vrhm-review-submitted__title {
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-dark);
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.vrhm-review-submitted__text {
+  font-size: var(--text-base);
+  color: var(--text-gray);
+  margin: 0;
+}
+
+/* ========================================
+   REVIEW FORM
+   ======================================== */
+
+.vrhm-review-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+.vrhm-review-form__title {
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-dark);
+  margin: 0;
+}
+
+.vrhm-review-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.vrhm-review-form__label {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-dark);
+}
+
+.vrhm-review-form__required {
+  color: #dc2626;
+}
+
+.vrhm-review-form__textarea {
+  font-family: var(--font-inter);
+  font-size: var(--text-base);
+  color: var(--text-dark);
+  background-color: var(--bg-white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--rounded-md);
+  padding: var(--spacing-md);
+  min-height: 120px;
+  resize: vertical;
+  transition: border-color var(--transition-fast) var(--easing-ease),
+    box-shadow var(--transition-fast) var(--easing-ease);
+}
+
+.vrhm-review-form__textarea:focus {
+  outline: none;
+  border-color: var(--secondary-purple);
+  box-shadow: 0 0 0 3px rgba(109, 49, 194, 0.1);
+}
+
+.vrhm-review-form__hint {
+  font-size: var(--text-xs);
+  color: var(--text-light-gray);
+}
+
+.vrhm-review-form__error {
+  font-size: var(--text-sm);
+  color: #dc2626;
+  background-color: #fef2f2;
+  padding: var(--spacing-md);
+  border-radius: var(--rounded-md);
+  border: 1px solid #fecaca;
+}
+
+/* Star Rating */
+.vrhm-rating {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.vrhm-rating__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+}
+
+.vrhm-rating__label {
+  font-size: var(--text-sm);
+  color: var(--text-gray);
+  flex: 1;
+}
+
+.vrhm-rating__stars {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.vrhm-rating__star {
+  font-size: var(--text-xl);
+  cursor: pointer;
+  color: var(--border-color);
+  transition: color var(--transition-fast) var(--easing-ease),
+    transform var(--transition-fast) var(--easing-ease);
+}
+
+.vrhm-rating__star:hover {
+  transform: scale(1.1);
+}
+
+.vrhm-rating__star--filled {
+  color: #fbbf24;
+}
+
+.vrhm-rating__star--hovered {
+  color: #f59e0b;
+}
+
+/* Form Actions */
+.vrhm-review-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-md);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--border-color);
+}
+
+/* ========================================
+   BUTTONS
+   ======================================== */
+
+.vrhm-button-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-xl);
+  font-family: var(--font-inter);
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--white);
+  background: var(--gradient-purple-button);
+  border: none;
+  border-radius: var(--rounded-lg);
+  cursor: pointer;
+  transition: all var(--transition-base) var(--easing-ease);
+}
+
+.vrhm-button-primary:hover:not(:disabled) {
+  background: var(--gradient-purple-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-purple-md);
+}
+
+.vrhm-button-primary:disabled {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}
+
+.vrhm-button-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-xl);
+  font-family: var(--font-inter);
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-dark);
+  background-color: var(--bg-white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--rounded-lg);
+  cursor: pointer;
+  transition: all var(--transition-base) var(--easing-ease);
+}
+
+.vrhm-button-secondary:hover:not(:disabled) {
+  background-color: var(--bg-light-gray);
+  border-color: var(--border-gray-light);
+}
+
+.vrhm-button-secondary:disabled {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}
+
+/* ========================================
+   LOADING STATE
+   ======================================== */
+
+.vrhm-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: var(--spacing-lg);
+}
+
+.vrhm-loading__spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--border-color);
+  border-top-color: var(--secondary-purple);
+  border-radius: var(--rounded-full);
+  animation: vrhm-spin 1s linear infinite;
+}
+
+@keyframes vrhm-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.vrhm-loading__text {
+  font-size: var(--text-base);
+  color: var(--text-gray);
+  margin: 0;
+}
+
+/* ========================================
+   ACCESS DENIED STATE
+   ======================================== */
+
+.vrhm-access-denied {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  text-align: center;
+  padding: var(--spacing-xl);
+}
+
+.vrhm-access-denied__icon {
+  width: 64px;
+  height: 64px;
+  background-color: #fef2f2;
+  color: #dc2626;
+  border-radius: var(--rounded-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-3xl);
+  margin-bottom: var(--spacing-lg);
+}
+
+.vrhm-access-denied__title {
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-dark);
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.vrhm-access-denied__message {
+  font-size: var(--text-base);
+  color: var(--text-gray);
+  margin: 0 0 var(--spacing-lg) 0;
+  max-width: 400px;
+}
+
+.vrhm-access-denied__login-hint {
+  font-size: var(--text-sm);
+  color: var(--text-light-gray);
+  margin-top: var(--spacing-md);
+}
+
+/* ========================================
+   ERROR STATE
+   ======================================== */
+
+.vrhm-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  text-align: center;
+  padding: var(--spacing-xl);
+}
+
+.vrhm-error__icon {
+  width: 64px;
+  height: 64px;
+  background-color: #fef2f2;
+  color: #dc2626;
+  border-radius: var(--rounded-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-3xl);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--spacing-lg);
+}
+
+.vrhm-error__title {
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-dark);
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.vrhm-error__message {
+  font-size: var(--text-base);
+  color: var(--text-gray);
+  margin: 0 0 var(--spacing-lg) 0;
+  max-width: 400px;
+}
+
+/* ========================================
+   EMPTY STATE
+   ======================================== */
+
+.vrhm-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  text-align: center;
+  color: var(--text-gray);
+}
+
+/* ========================================
+   FOOTER
+   ======================================== */
+
+.vrhm-footer {
+  text-align: center;
+  padding: var(--spacing-xl) 0;
+  margin-top: var(--spacing-xl);
+  border-top: 1px solid var(--border-color);
+}
+
+.vrhm-footer__text {
+  font-size: var(--text-sm);
+  color: var(--text-light-gray);
+  margin: 0;
+}
+
+.vrhm-footer__text strong {
+  color: var(--secondary-purple);
+}
+
+/* ========================================
+   RESPONSIVE STYLES
+   ======================================== */
+
+@media (max-width: 600px) {
+  .vrhm-container {
+    padding: var(--spacing-md);
+  }
+
+  .vrhm-header {
+    padding: var(--spacing-lg);
+  }
+
+  .vrhm-header__top {
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+
+  .vrhm-header__title {
+    font-size: var(--text-xl);
+  }
+
+  .vrhm-header__actions {
+    width: 100%;
+  }
+
+  .vrhm-header__action-btn {
+    flex: 1;
+    text-align: center;
+  }
+
+  .vrhm-section__header {
+    padding: var(--spacing-md);
+  }
+
+  .vrhm-section__content {
+    padding: 0 var(--spacing-md) var(--spacing-md);
+  }
+
+  .vrhm-review-section {
+    padding: var(--spacing-lg);
+  }
+
+  .vrhm-review-form__actions {
+    flex-direction: column;
+  }
+
+  .vrhm-review-form__actions button {
+    width: 100%;
+  }
+
+  .vrhm-rating__row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+  }
+
+  .vrhm-wifi__row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

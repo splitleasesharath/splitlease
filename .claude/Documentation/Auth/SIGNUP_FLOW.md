@@ -1,6 +1,6 @@
 # Split Lease - Signup Flow Documentation
 
-**GENERATED**: 2025-12-11
+**GENERATED**: 2026-01-20
 **VERSION**: 2.0.0
 **STATUS**: Production
 **BACKEND**: Supabase Auth (Native) - No Bubble Dependency
@@ -939,6 +939,6 @@ try {
 ---
 
 **DOCUMENT_VERSION**: 2.0.0
-**LAST_UPDATED**: 2025-12-11
+**LAST_UPDATED**: 2026-01-20
 **AUTHOR**: Claude Code
 **MIGRATION**: Bubble -> Supabase Auth (Native)

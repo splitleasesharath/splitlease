@@ -70,7 +70,8 @@
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  width: 300px;
+  width: 220px;
+  min-width: 220px !important;
   max-height: 600px;
   background-color: #FFFFFF;
   border: 1px solid #E5E5E5;
@@ -81,6 +82,11 @@
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
+  transform: none !important;
+  left: auto !important;
+  padding: 8px 0;
+  /* CRITICAL: Override mobile.css pointer-events: none which blocks clicks on mobile */
+  pointer-events: auto !important;
 }
 
 @keyframes dropdownFadeIn {
@@ -128,10 +134,9 @@
   background-color: #CAC8C8;
 }
 
-/* Active menu item (current page) */
+/* Active menu item (current page) - hidden from menu */
 .logged-in-avatar .menu-item.active {
-  border-left: 3px solid #FF6B35;
-  padding-left: 12px;
+  display: none;
 }
 
 /* Menu Icon (Emoji) - Scoped to LoggedInAvatar only */
@@ -196,14 +201,23 @@
 }
 
 /* Responsive adjustments - Scoped to LoggedInAvatar only */
+/* IMPORTANT: Must use !important to override global mobile.css rules */
 @media (max-width: 768px) {
   .logged-in-avatar .dropdown-menu {
-    position: fixed;
-    top: 60px;
-    right: 10px;
-    left: auto;
-    width: calc(100vw - 20px);
-    max-width: 300px;
+    position: fixed !important;
+    top: 60px !important;
+    right: 10px !important;
+    left: auto !important;
+    width: calc(100vw - 20px) !important;
+    min-width: unset !important;
+    max-width: 300px !important;
+    padding: 8px 0 !important;
+    background-color: #FFFFFF !important;
+    border: 1px solid #E5E5E5 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
+    /* CRITICAL: Override mobile.css pointer-events: none */
+    pointer-events: auto !important;
   }
 
   @keyframes dropdownFadeIn {

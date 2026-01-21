@@ -1,41 +1,46 @@
 /* Schedule Co-Host Modal Styles */
-/* Design based on Bubble Schedule-Co-Host component specifications */
+/* Updated to follow POPUP_REPLICATION_PROTOCOL.md */
+/* Color Scheme: Monochromatic Purple - NO GREEN, NO YELLOW */
 
 /* ============================================================
-   COLOR PALETTE (from design spec)
+   COLOR PALETTE (Updated per protocol)
    ============================================================ */
 :root {
-  --sc-purple-primary: #6F348F;
+  /* Primary Purple Palette (from protocol) */
+  --sc-purple-primary: #31135D;
   --sc-purple-deep: #31135D;
-  --sc-purple-border: #4847CE;
-  --sc-purple-light: #8C97C7;
-  --sc-purple-text: #5C20B6;
+  --sc-purple-border: #E7E0EC;
+  --sc-purple-light: #F7F2FA;
+  --sc-purple-text: #31135D;
+  --sc-purple-hover: #4A2F7C;
+  --sc-purple-accent: #6D31C2;
   --sc-white: #FFFFFF;
-  --sc-background-light: #F7F8F9;
-  --sc-border-gray: #D4D4D4;
-  --sc-text-dark: #000000;
-  --sc-text-medium: #424242;
-  --sc-text-light: #3D3D3D;
-  --sc-placeholder: #B5B5B5;
-  --sc-tag-bg: #dfdff6;
-  --sc-shadow: #AAAAAA;
-  --sc-tag-border: #C9C9C9;
-  --sc-disabled: #DDDDDD;
-  --sc-alert-yellow: #FFF6B2;
+  --sc-background-light: #F7F2FA;
+  --sc-border-gray: #E7E0EC;
+  --sc-text-dark: #1C1B1F;
+  --sc-text-medium: #49454F;
+  --sc-text-light: #79747E;
+  --sc-placeholder: #79747E;
+  --sc-tag-bg: #F7F2FA;
+  --sc-shadow: rgba(0, 0, 0, 0.2);
+  --sc-tag-border: #E7E0EC;
+  --sc-disabled: #E7E0EC;
+  --sc-alert-bg: #F7F2FA;
 
-  /* Co-host Progress Bar */
-  --sc-progress-inactive: #EDEAF6;
-  --sc-progress-active: #6D31C2;
+  /* Co-host Progress Bar (purple tones) */
+  --sc-progress-inactive: #E7E0EC;
+  --sc-progress-active: #31135D;
   --sc-progress-dot-size: 22px;
   --sc-progress-bar-height: 5px;
 
   /* Co-host Details Section */
-  --sc-details-bg: #F1F3F5;
-  --sc-details-border: #000000;
-  --sc-star-unselected: #E3E3E3;
-  --sc-star-selected: #FDE16D;
-  --sc-focus-blue: #52A8EC;
-  --sc-submit-green: #1F8E16;
+  --sc-details-bg: #F7F2FA;
+  --sc-details-border: #E7E0EC;
+  --sc-star-unselected: #E7E0EC;
+  --sc-star-selected: #31135D;
+  --sc-focus-purple: #31135D;
+  /* Positive Action Purple (replaces green per protocol) */
+  --sc-action-positive: #5B5FCF;
 }
 
 /* ============================================================
@@ -47,12 +52,30 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 9999;
   padding: 20px;
+  animation: scheduleCoHostFadeIn 0.2s ease;
+}
+
+@keyframes scheduleCoHostFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ============================================================
+   MOBILE GRAB HANDLE (per protocol)
+   ============================================================ */
+.schedule-cohost-grab-handle {
+  display: none;
+  width: 36px;
+  height: 4px;
+  background: var(--sc-border-gray);
+  border-radius: 2px;
+  margin: 8px auto 0;
 }
 
 /* ============================================================
@@ -61,39 +84,64 @@
 .schedule-cohost-modal {
   position: relative;
   background-color: var(--sc-white);
-  border-radius: 10px;
+  border-radius: 16px;
   padding: 0;
   width: 100%;
   max-width: 580px;
-  max-height: 90vh;
-  overflow-x: hidden;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 60px var(--sc-shadow);
+  animation: scheduleCoHostSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes scheduleCoHostSlideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Scrollable body area */
+.schedule-cohost-modal-body {
+  flex-grow: 1;
   overflow-y: auto;
-  box-shadow: 0 4px 2px 0 var(--sc-shadow);
-  border: 1px solid var(--sc-border-gray);
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ============================================================
-   CLOSE BUTTON
+   CLOSE BUTTON (per protocol)
    ============================================================ */
 .schedule-cohost-close {
-  position: absolute;
-  top: 9px;
-  right: 15px;
-  background: none;
+  width: 32px;
+  height: 32px;
+  background: transparent;
   border: none;
-  color: var(--sc-purple-primary);
   cursor: pointer;
-  padding: 4px;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
-  transition: all 0.2s;
-  z-index: 10;
+  border-radius: 8px;
+  color: var(--sc-text-medium);
+  transition: background-color 0.2s ease;
+  flex-shrink: 0;
 }
 
 .schedule-cohost-close:hover {
-  background-color: rgba(111, 52, 143, 0.1);
+  background-color: var(--sc-purple-light);
+}
+
+.schedule-cohost-close svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  stroke-width: 2;
 }
 
 /* ============================================================
@@ -143,43 +191,67 @@
 }
 
 /* ============================================================
-   HEADER
+   HEADER (per protocol)
    ============================================================ */
 .schedule-cohost-header {
-  padding: 20px 20px 15px 20px;
-  border-bottom: 1px solid var(--sc-text-dark);
-  margin-bottom: 0;
+  flex-shrink: 0;
+  width: 100%;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--sc-border-gray);
+}
+
+.schedule-cohost-header-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .schedule-cohost-header-title {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
+  gap: 12px;
 }
 
 .schedule-cohost-icon-img {
-  width: 20px;
-  height: 20px;
-  border-radius: 5px;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+}
+
+.schedule-cohost-icon {
+  width: 24px;
+  height: 24px;
+  color: var(--sc-purple-primary);
+  flex-shrink: 0;
+}
+
+.schedule-cohost-icon svg {
+  width: 24px;
+  height: 24px;
+  stroke: var(--sc-purple-primary);
+  stroke-width: 2;
+  fill: none;
 }
 
 .schedule-cohost-title {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 18px;
   font-weight: 500;
+  line-height: 1.4;
   color: var(--sc-text-dark);
   margin: 0;
-  line-height: 1.6;
 }
 
 .schedule-cohost-subtitle {
-  font-family: 'Lato', sans-serif;
-  font-size: 14px;
-  font-weight: 400;
-  color: var(--sc-text-medium);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 13px;
+  color: var(--sc-text-light);
   margin: 0;
-  line-height: 1.25;
+  line-height: 1.4;
+  padding-left: 36px;
 }
 
 /* ============================================================
@@ -663,45 +735,56 @@
 }
 
 /* ============================================================
-   ACTIONS / SUBMIT BUTTON
+   ACTIONS / SUBMIT BUTTON (per protocol - pill shaped)
    ============================================================ */
 .schedule-cohost-actions {
-  padding: 15px 20px 20px;
+  flex-shrink: 0;
+  width: 100%;
+  padding: 16px 20px;
+  background-color: var(--sc-white);
+  border-top: 1px solid var(--sc-border-gray);
   text-align: center;
 }
 
 .schedule-cohost-submit {
+  height: 44px;
+  padding: 0 24px;
   background-color: var(--sc-purple-deep);
-  color: #FCFAFF;
-  border: none;
-  border-radius: 20px;
-  padding: 14px 20px;
-  font-family: 'DM Sans', 'Inter', sans-serif;
-  font-size: 16px;
-  font-weight: 500;
-  letter-spacing: -0.25px;
+  color: #FFFFFF;
+  border: 2px solid transparent;
+  border-radius: 100px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.2s ease;
   min-width: 200px;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .schedule-cohost-submit:hover:not(:disabled) {
-  background-color: #2d1f3d;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(49, 19, 93, 0.3);
+  background-color: var(--sc-purple-hover);
+  box-shadow: 0 4px 12px rgba(49, 19, 93, 0.2);
+}
+
+.schedule-cohost-submit:active:not(:disabled) {
+  transform: translateY(1px);
 }
 
 .schedule-cohost-submit:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  transform: none;
 }
 
 .schedule-cohost-hint {
-  font-family: 'Lato', sans-serif;
-  font-size: 13px;
-  color: #d9534f;
-  margin: 12px 0 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 12px;
+  color: var(--sc-text-light);
+  margin: 8px 0 0;
 }
 
 /* ============================================================
@@ -712,10 +795,11 @@
   padding: 30px 20px;
 }
 
+/* Success icon - uses positive action purple (no green per protocol) */
 .schedule-cohost-success-icon {
   width: 64px;
   height: 64px;
-  background-color: #64b342;
+  background-color: var(--sc-action-positive);
   color: white;
   border-radius: 50%;
   display: flex;
@@ -772,21 +856,32 @@
   margin: 0 0 24px;
 }
 
+/* Done button - uses positive action purple (no green per protocol) */
 .schedule-cohost-done-btn {
-  background-color: #64b342;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 12px 32px;
-  font-family: 'DM Sans', 'Inter', sans-serif;
-  font-size: 15px;
+  height: 44px;
+  padding: 0 24px;
+  background-color: var(--sc-action-positive);
+  color: #FFFFFF;
+  border: 2px solid transparent;
+  border-radius: 100px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .schedule-cohost-done-btn:hover {
-  background-color: #559237;
+  background-color: #4A4ED0;
+  box-shadow: 0 4px 12px rgba(91, 95, 207, 0.3);
+}
+
+.schedule-cohost-done-btn:active {
+  transform: translateY(1px);
 }
 
 /* ============================================================
@@ -839,14 +934,52 @@
   }
 }
 
+/* ============================================================
+   RESPONSIVE - MOBILE BOTTOM SHEET (per protocol)
+   Screen width < 480px triggers slide-up mode
+   Border radius: 24px 24px 0 0
+   Grab handle visible
+   ============================================================ */
 @media (max-width: 480px) {
-  .schedule-cohost-modal {
+  .schedule-cohost-overlay {
+    align-items: flex-end;
     padding: 0;
-    max-height: 95vh;
+  }
+
+  .schedule-cohost-modal {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 24px 24px 0 0;
+    max-height: 90vh;
+    animation: scheduleCoHostSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes scheduleCoHostSlideUp {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .schedule-cohost-grab-handle {
+    display: block;
+  }
+
+  .schedule-cohost-header {
+    padding: 12px 16px 16px;
   }
 
   .schedule-cohost-title {
-    font-size: 16px;
+    font-size: 18px;
+    font-weight: 400;
+  }
+
+  .schedule-cohost-subtitle {
+    padding-left: 32px;
   }
 
   .schedule-cohost-slots-grid {
@@ -884,6 +1017,14 @@
   .schedule-cohost-calendar {
     padding: 10px 15px;
     margin: 0 15px 15px;
+  }
+
+  .schedule-cohost-actions {
+    padding: 12px 16px 20px;
+  }
+
+  .schedule-cohost-done-btn {
+    width: 100%;
   }
 }
 
@@ -1232,26 +1373,32 @@
   color: var(--sc-placeholder);
 }
 
+/* Submit rating button - uses positive action purple (no green per protocol) */
 .schedule-cohost-submit-rating-btn {
   display: block;
   width: 100%;
+  height: 44px;
   background: transparent;
-  border: 2px solid var(--sc-submit-green);
-  border-radius: 8px;
-  padding: 12px 32px;
-  font-family: 'Lato', sans-serif;
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--sc-submit-green);
+  border: 2px solid var(--sc-action-positive);
+  border-radius: 100px;
+  padding: 0 24px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--sc-action-positive);
   cursor: pointer;
   margin-top: 16px;
-  transition: all 0.2s;
-  letter-spacing: -1px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .schedule-cohost-submit-rating-btn:hover:not(:disabled) {
-  background-color: var(--sc-submit-green);
+  background-color: var(--sc-action-positive);
   color: var(--sc-white);
+}
+
+.schedule-cohost-submit-rating-btn:active:not(:disabled) {
+  transform: translateY(1px);
 }
 
 .schedule-cohost-submit-rating-btn:disabled {

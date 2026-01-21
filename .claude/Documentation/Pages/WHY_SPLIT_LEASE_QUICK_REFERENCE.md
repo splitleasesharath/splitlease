@@ -1,6 +1,6 @@
 # Why Split Lease Page - Quick Reference
 
-**GENERATED**: 2025-12-11
+**GENERATED**: 2026-01-20
 **PAGE_URL**: `/why-split-lease`
 **ENTRY_POINT**: `app/src/why-split-lease.jsx`
 
@@ -689,5 +689,5 @@ LIMIT 3
 ---
 
 **VERSION**: 1.1
-**LAST_UPDATED**: 2025-12-11
+**LAST_UPDATED**: 2026-01-20
 **STATUS**: Comprehensive - Full page analysis complete

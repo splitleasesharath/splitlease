@@ -1,0 +1,446 @@
+/* Confirm Delete Modal Styles */
+/* Following POPUP_REPLICATION_PROTOCOL.md */
+/* Color Scheme: Monochromatic Purple - NO GREEN, NO YELLOW */
+/* Danger buttons: OUTLINED ONLY (per protocol) */
+
+/* ============================================================================
+   MODAL OVERLAY
+   ============================================================================ */
+.confirm-delete-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: confirmDeleteFadeIn 0.2s ease;
+}
+
+@keyframes confirmDeleteFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ============================================================================
+   MODAL CONTAINER
+   - Flexbox layout with fixed Header/Footer and scrollable Body
+   - Max-height: 92vh per protocol
+   ============================================================================ */
+.confirm-delete-modal-container {
+  background-color: #FFFFFF;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 420px;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  animation: confirmDeleteSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes confirmDeleteSlideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ============================================================================
+   MOBILE GRAB HANDLE
+   - 36x4px centered bar for mobile bottom sheet
+   ============================================================================ */
+.confirm-delete-modal-grab-handle {
+  display: none;
+  width: 36px;
+  height: 4px;
+  background: #E7E0EC;
+  border-radius: 2px;
+  margin: 8px auto 0;
+}
+
+/* ============================================================================
+   HEADER SECTION
+   - Reduced height per protocol
+   - Icon and Title aligned via flex: center
+   ============================================================================ */
+.confirm-delete-modal-header {
+  flex-shrink: 0;
+  width: 100%;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #E7E0EC;
+}
+
+.confirm-delete-modal-header-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.confirm-delete-modal-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.confirm-delete-modal-icon svg {
+  width: 24px;
+  height: 24px;
+  stroke-width: 2;
+  fill: none;
+}
+
+/* Danger icon styling - red stroke per protocol */
+.confirm-delete-modal-icon--danger {
+  color: #DC3545;
+}
+
+.confirm-delete-modal-icon--danger svg {
+  stroke: #DC3545;
+}
+
+.confirm-delete-modal-title {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: #1C1B1F;
+  margin: 0;
+}
+
+.confirm-delete-modal-close-btn {
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: #49454F;
+  transition: background-color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.confirm-delete-modal-close-btn:hover {
+  background-color: #F7F2FA;
+}
+
+.confirm-delete-modal-close-btn svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+/* ============================================================================
+   MODAL BODY (SCROLLABLE)
+   - overflow-y: auto for scrolling
+   - flex-grow: 1 to fill available space
+   - Spacing Scale: 8px, 16px, 24px
+   ============================================================================ */
+.confirm-delete-modal-body {
+  flex-grow: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px 20px;
+}
+
+/* ============================================================================
+   ITEM PREVIEW
+   - Shows the item being deleted
+   - Icon Box: 48x48px white square with 8px radius per protocol
+   ============================================================================ */
+.confirm-delete-modal-item-preview {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  background: #F7F2FA;
+  border: 1px solid #E7E0EC;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.confirm-delete-modal-item-icon {
+  width: 48px;
+  height: 48px;
+  background: #FFFFFF;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.confirm-delete-modal-item-icon svg {
+  width: 24px;
+  height: 24px;
+  stroke: #31135D;
+  stroke-width: 2;
+  fill: none;
+}
+
+.confirm-delete-modal-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.confirm-delete-modal-item-name {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1C1B1F;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.confirm-delete-modal-item-label {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 12px;
+  color: #79747E;
+}
+
+/* ============================================================================
+   MESSAGE
+   ============================================================================ */
+.confirm-delete-modal-message {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #49454F;
+  margin: 0 0 16px;
+}
+
+/* ============================================================================
+   WARNING BANNER
+   - Background: #F7F2FA
+   - Border: 1px solid #E7E0EC
+   - Uses AlertTriangle icon
+   - Equal margin top/bottom for visual balance
+   ============================================================================ */
+.confirm-delete-modal-warning {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px;
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 8px;
+}
+
+.confirm-delete-modal-warning-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.confirm-delete-modal-warning-icon svg {
+  width: 24px;
+  height: 24px;
+  stroke: #DC3545;
+  stroke-width: 2;
+  fill: none;
+}
+
+.confirm-delete-modal-warning-text {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 13px;
+  color: #991B1B;
+  margin: 0;
+  line-height: 1.45;
+}
+
+/* ============================================================================
+   FOOTER / BUTTON SECTION
+   - Fixed at bottom (flex-shrink: 0)
+   - Padding matches header (16px) for visual balance
+   ============================================================================ */
+.confirm-delete-modal-footer {
+  flex-shrink: 0;
+  width: 100%;
+  padding: 16px 20px;
+  background-color: #FFFFFF;
+  border-top: 1px solid #E7E0EC;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+/* ============================================================================
+   BUTTON VARIANTS
+   - Radius: 100px (pill-shaped) per protocol
+   - Danger: OUTLINED ONLY per protocol (transparent bg, red border)
+   - Secondary: Outline purple
+   ============================================================================ */
+.confirm-delete-modal-btn {
+  height: 44px;
+  padding: 0 24px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  border: 2px solid transparent;
+  border-radius: 100px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* Secondary Button - Outline Purple */
+.confirm-delete-modal-btn--secondary {
+  background: transparent;
+  border-color: #31135D;
+  color: #31135D;
+}
+
+.confirm-delete-modal-btn--secondary:hover:not(:disabled) {
+  background-color: #31135D;
+  color: #FFFFFF;
+}
+
+.confirm-delete-modal-btn--secondary:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.confirm-delete-modal-btn--secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Danger Button - OUTLINED ONLY per protocol */
+.confirm-delete-modal-btn--danger {
+  background: transparent;
+  border-color: #DC3545;
+  color: #DC3545;
+}
+
+.confirm-delete-modal-btn--danger:hover:not(:disabled) {
+  background-color: #DC3545;
+  color: #FFFFFF;
+}
+
+.confirm-delete-modal-btn--danger:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.confirm-delete-modal-btn--danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Loading spinner for button */
+.confirm-delete-modal-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(220, 53, 69, 0.3);
+  border-top-color: #DC3545;
+  border-radius: 50%;
+  animation: confirmDeleteSpin 0.8s linear infinite;
+}
+
+.confirm-delete-modal-btn--danger:hover .confirm-delete-modal-spinner {
+  border-color: rgba(255, 255, 255, 0.3);
+  border-top-color: #FFFFFF;
+}
+
+@keyframes confirmDeleteSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================================================
+   RESPONSIVE - TABLET
+   ============================================================================ */
+@media (max-width: 700px) {
+  .confirm-delete-modal-title {
+    font-size: 16px;
+  }
+
+  .confirm-delete-modal-container {
+    max-width: 100%;
+  }
+}
+
+/* ============================================================================
+   RESPONSIVE - MOBILE BOTTOM SHEET
+   - Screen width < 480px triggers slide-up mode per protocol
+   - Border radius: 24px 24px 0 0
+   - Grab handle visible
+   ============================================================================ */
+@media (max-width: 480px) {
+  .confirm-delete-modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .confirm-delete-modal-container {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 24px 24px 0 0;
+    max-height: 90vh;
+    animation: confirmDeleteSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes confirmDeleteSlideUp {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .confirm-delete-modal-grab-handle {
+    display: block;
+  }
+
+  .confirm-delete-modal-header {
+    padding: 12px 16px 16px;
+  }
+
+  .confirm-delete-modal-title {
+    font-size: 18px;
+    font-weight: 400;
+  }
+
+  .confirm-delete-modal-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .confirm-delete-modal-body {
+    padding: 12px 16px;
+  }
+
+  .confirm-delete-modal-footer {
+    padding: 12px 16px 20px;
+    flex-direction: column-reverse;
+  }
+
+  .confirm-delete-modal-btn {
+    width: 100%;
+  }
+}

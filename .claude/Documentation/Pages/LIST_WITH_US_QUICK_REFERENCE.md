@@ -1,6 +1,6 @@
 # List With Us Page - Quick Reference
 
-**GENERATED**: 2025-12-11
+**GENERATED**: 2026-01-20
 **PAGE_URL**: `/list-with-us.html`
 **ENTRY_POINT**: `app/src/list-with-us.jsx`
 
@@ -666,5 +666,5 @@ import '../../../styles/components/import-listing-modal.css';
 ---
 
 **VERSION**: 2.0
-**LAST_UPDATED**: 2025-12-11
+**LAST_UPDATED**: 2026-01-20
 **STATUS**: Updated to match current implementation

@@ -1247,6 +1247,37 @@
   box-shadow: none;
 }
 
+/* Create Proposal Button - Specific styling */
+.bookingCreateButton {
+  width: 100%;
+  padding: 14px;
+  background: #4C2C73;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 14px rgba(76, 44, 115, 0.4);
+}
+
+.bookingCreateButtonEnabled {
+  background: #4C2C73;
+}
+
+.bookingCreateButtonEnabled:hover {
+  background: #3D2259;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(76, 44, 115, 0.5);
+}
+
+.bookingCreateButtonDisabled {
+  background: #D1D5DB;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 .bookingExistingLink {
   display: block;
   text-align: center;
@@ -1776,6 +1807,32 @@
 }
 
 .mobileBookingSubmitButton:disabled {
+  background: #D1D5DB;
+  cursor: not-allowed;
+}
+
+/* Mobile Create Proposal Button */
+.mobileBookingCreateButton {
+  width: 100%;
+  padding: 16px;
+  background: #4C2C73;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mobileBookingCreateButtonEnabled {
+  background: #4C2C73;
+}
+
+.mobileBookingCreateButtonEnabled:hover {
+  background: #3D2259;
+}
+
+.mobileBookingCreateButtonDisabled {
   background: #D1D5DB;
   cursor: not-allowed;
 }

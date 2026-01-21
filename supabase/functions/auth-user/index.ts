@@ -33,7 +33,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders } from '../_shared/cors.ts';
 
 // FP Utilities
-import { Result, ok, err } from "../_shared/fp/result.ts";
+import { Result, ok, err } from "../_shared/functional/result.ts";
 import {
   parseRequest,
   validateAction,
@@ -44,8 +44,8 @@ import {
   formatErrorResponseHttp,
   formatCorsResponse,
   CorsPreflightSignal,
-} from "../_shared/fp/orchestration.ts";
-import { createErrorLog, addError, setAction, ErrorLog } from "../_shared/fp/errorLog.ts";
+} from "../_shared/functional/orchestration.ts";
+import { createErrorLog, addError, setAction, ErrorLog } from "../_shared/functional/errorLog.ts";
 import { reportErrorLog } from "../_shared/slack.ts";
 
 // Import handlers
@@ -58,6 +58,7 @@ import { handleUpdatePassword } from './handlers/updatePassword.ts';
 import { handleGenerateMagicLink } from './handlers/generateMagicLink.ts';
 import { handleOAuthSignup } from './handlers/oauthSignup.ts';
 import { handleOAuthLogin } from './handlers/oauthLogin.ts';
+import { handleSendMagicLinkSms } from './handlers/sendMagicLinkSms.ts';
 
 // ─────────────────────────────────────────────────────────────
 // Configuration (Immutable)
@@ -73,6 +74,7 @@ const ALLOWED_ACTIONS = [
   'generate_magic_link',
   'oauth_signup',
   'oauth_login',
+  'send_magic_link_sms',
 ] as const;
 
 type Action = typeof ALLOWED_ACTIONS[number];
@@ -92,6 +94,7 @@ const handlers: Readonly<Record<Action, Function>> = {
   generate_magic_link: handleGenerateMagicLink,
   oauth_signup: handleOAuthSignup,
   oauth_login: handleOAuthLogin,
+  send_magic_link_sms: handleSendMagicLinkSms,
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -279,6 +282,10 @@ async function executeHandler(
 
     case 'oauth_login':
       // OAuth login - verify user exists and return session data
+      return handler(supabaseUrl, supabaseServiceKey, payload);
+
+    case 'send_magic_link_sms':
+      // Generate magic link and send via SMS (atomic operation for usability testing)
       return handler(supabaseUrl, supabaseServiceKey, payload);
 
     default: {

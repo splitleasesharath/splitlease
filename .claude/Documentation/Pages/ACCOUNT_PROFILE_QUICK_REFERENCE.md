@@ -1,6 +1,6 @@
 # Account Profile Page - Quick Reference
 
-**GENERATED**: 2025-12-11
+**GENERATED**: 2026-01-20
 **PAGE_URL**: `/account-profile` or `/account-profile/{userId}`
 **ENTRY_POINT**: `app/src/account-profile.jsx`
 
@@ -868,5 +868,5 @@ This differs from the pure **Hollow Component Pattern** used in pages like `Gues
 ---
 
 **VERSION**: 2.0
-**LAST_UPDATED**: 2025-12-11
+**LAST_UPDATED**: 2026-01-20
 **STATUS**: Comprehensive after thorough analysis

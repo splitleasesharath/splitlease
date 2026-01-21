@@ -302,7 +302,8 @@
     flex-direction: row;
     align-items: stretch;
     min-height: 200px;
-    max-height: 280px;
+    /* Removed max-height - text content now dictates card height */
+    /* Image matches via align-self: stretch + object-fit: cover */
     height: auto;
     position: relative;
 }
@@ -335,7 +336,7 @@
    All cards now have images (real or placeholder), so horizontal
    layout should always apply. */
 
-/* Image Section - Left 40%, dynamic height to match card */
+/* Image Section - Left 40%, height follows text column */
 .listing-images {
     position: relative;
     width: 40%;
@@ -347,12 +348,75 @@
     align-self: stretch;
 }
 
+/* Image is absolutely positioned to decouple from layout flow */
+/* This prevents the image's natural dimensions from affecting card height */
 .listing-images img {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
     object-position: center;
     border-radius: 16px 0 0 16px;
+}
+
+/* ============================================================================
+   PREVIEW SPLIT LEASE PAGE - Form Input Styling
+   Matches ViewSplitLeasePage booking widget color scheme
+   ============================================================================ */
+
+.preview-date-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid #E5E7EB;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 500;
+    color: #111827;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.preview-date-input:hover {
+    border-color: #31135d;
+    box-shadow: 0 4px 6px rgba(49, 19, 93, 0.1);
+}
+
+.preview-date-input:focus {
+    border-color: #31135d;
+    box-shadow: 0 0 0 4px rgba(49, 19, 93, 0.15);
+    transform: translateY(-1px);
+    outline: none;
+}
+
+.preview-select-input {
+    width: 100%;
+    padding: 10px 12px;
+    padding-right: 40px;
+    border: 2px solid #E5E7EB;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 500;
+    color: #111827;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    appearance: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.preview-select-input:hover {
+    border-color: #31135d;
+    box-shadow: 0 4px 6px rgba(49, 19, 93, 0.1);
+}
+
+.preview-select-input:focus {
+    border-color: #31135d;
+    box-shadow: 0 0 0 4px rgba(49, 19, 93, 0.15);
+    outline: none;
 }
 
 /* Image Navigation Buttons (Carousel) */
@@ -930,7 +994,7 @@
     align-items: center;
     gap: 0.375rem;
     padding: 8px 14px;
-    background: #10b981;
+    background: #4B47CE;
     color: white;
     border: none;
     border-radius: 6px;
@@ -942,7 +1006,7 @@
 }
 
 .listing-host-section .view-proposal-btn:hover {
-    background: #047857;
+    background: #3d3ab8;
     transform: translateY(-1px);
 }
 
@@ -1020,6 +1084,80 @@
 .listing-price-sidebar .availability-note.availability-later {
     color: var(--secondary-purple, #6D31C2);
     font-weight: 500;
+}
+
+/* V26 Stacked Map Trigger Button in Sidebar */
+.listing-price-sidebar .sidebar-map-trigger {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    margin-top: 12px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1.5px solid rgba(0, 0, 0, 0.12);
+    cursor: pointer;
+    font-family: inherit;
+    text-align: left;
+    overflow: hidden;
+    /* Map background */
+    background: url('https://tile.openstreetmap.org/15/9654/12312.png') center/cover;
+    transition: all 0.2s ease;
+}
+
+/* Frosted glass overlay */
+.listing-price-sidebar .sidebar-map-trigger::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.55);
+    transition: background 0.2s ease;
+    border-radius: inherit;
+}
+
+.listing-price-sidebar .sidebar-map-trigger:hover::before {
+    background: rgba(255, 255, 255, 0.45);
+}
+
+.listing-price-sidebar .sidebar-map-trigger:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Top label - "View on Map" */
+.listing-price-sidebar .sidebar-map-trigger .map-trigger-label {
+    position: relative;
+    z-index: 1;
+    font-size: 9px;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.55);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Location name with arrow */
+.listing-price-sidebar .sidebar-map-trigger .map-trigger-location {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a1a2e;
+    margin-top: 1px;
+}
+
+.listing-price-sidebar .sidebar-map-trigger .map-trigger-arrow {
+    opacity: 0.8;
+    stroke: #1a1a2e;
+    transition: all 0.2s ease;
+}
+
+.listing-price-sidebar .sidebar-map-trigger:hover .map-trigger-arrow {
+    opacity: 1;
+    transform: translateX(2px);
 }
 
 /* Legacy listing-info (for compatibility) */
@@ -1427,12 +1565,16 @@
     .listing-card .listing-location-pill {
         padding: 5px 10px 5px 8px !important;
         margin-bottom: 4px;
-        font-size: 11px;
+        gap: 4px;
     }
 
     .listing-card .listing-location-pill .location-pin-icon {
         width: 12px;
         height: 12px;
+    }
+
+    .listing-card .listing-location-pill .location-text {
+        font-size: 11px;
     }
 
     .listing-card .listing-location-pill .location-arrow-icon {

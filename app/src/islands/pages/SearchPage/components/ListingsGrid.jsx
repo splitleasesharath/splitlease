@@ -4,7 +4,7 @@ import { PropertyCard } from './PropertyCard.jsx';
 /**
  * ListingsGrid - Grid of property cards with lazy loading
  */
-export function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef, pulseTimeoutRef, isLoggedIn, userId, favoritedListingIds, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalsByListingId, selectedNightsCount }) {
+export function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef, isLoggedIn, userId, favoritedListingIds, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalsByListingId, selectedNightsCount }) {
 
   const sentinelRef = useRef(null);
 
@@ -47,23 +47,6 @@ export function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenC
               if (mapRef.current) {
                 mapRef.current.zoomToListing(listing.id);
               }
-            }}
-            onCardHover={(listing) => {
-              if (mapRef.current) {
-                mapRef.current.highlightListing(listing.id);
-              }
-            }}
-            onCardLeave={() => {
-              // Delay stopPulse to allow hovering to map without losing pulse
-              if (pulseTimeoutRef.current) {
-                clearTimeout(pulseTimeoutRef.current);
-              }
-              pulseTimeoutRef.current = setTimeout(() => {
-                if (mapRef.current) {
-                  mapRef.current.stopPulse();
-                }
-                pulseTimeoutRef.current = null;
-              }, 150); // Short delay to allow transition to map
             }}
             onOpenContactModal={onOpenContactModal}
             onOpenInfoModal={onOpenInfoModal}

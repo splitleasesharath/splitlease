@@ -1,6 +1,6 @@
 # View Split Lease Page - Quick Reference Guide
 
-**GENERATED**: 2025-12-11
+**GENERATED**: 2026-01-20
 **STATUS**: Comprehensive documentation reflecting current implementation
 **LOC**: ~2,722 lines
 
@@ -873,5 +873,5 @@ When modifying ViewSplitLeasePage:
 ---
 
 **DOCUMENT_VERSION**: 2.0
-**LAST_UPDATED**: 2025-12-11
+**LAST_UPDATED**: 2026-01-20
 **STATUS**: Complete - reflects current implementation

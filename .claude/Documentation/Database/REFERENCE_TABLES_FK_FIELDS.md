@@ -4,7 +4,7 @@ This document provides a complete index of all foreign key relationships in the 
 1. **PostgreSQL FK Constraints** - Actual database-enforced foreign keys
 2. **Bubble ID Field Mappings** - Logical relationships using Bubble.io ID format
 
-**Last Updated**: 2025-12-18
+**Last Updated**: 2026-01-20
 
 ---
 
@@ -690,7 +690,7 @@ These fields contain Bubble IDs but the target table could not be determined:
 | **Part 1: PostgreSQL FKs** | 53 database-enforced foreign keys |
 | **Part 2: Bubble ID Mappings** | Logical relationships via Bubble IDs |
 
-**Generated**: 2025-12-18
+**Generated**: 2026-01-20
 **PostgreSQL FK Query**: `information_schema.table_constraints` JOIN query
 **Bubble ID Verification**: 2-phase (semantic + brute force)
 **Tables Analyzed**: 35 core business tables
