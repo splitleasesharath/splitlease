@@ -202,7 +202,7 @@ const FavoritesCardV2 = ({
       flexDirection: isGrid ? 'column' : 'row',
       transform: isHovered ? 'translateY(-8px)' : 'none',
       fontFamily: "'Inter', sans-serif",
-      border: '1px solid #F1F5F9',
+      border: '1px solid #D1D5DB',
       padding: 0,
       margin: 0,
       boxSizing: 'border-box',
