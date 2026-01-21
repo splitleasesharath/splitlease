@@ -156,6 +156,7 @@
 .favorites-page .listings-column {
   overflow-y: visible;
   background: transparent;
+  padding-top: 16px; /* Extra gap for listings below sub-header */
 }
 
 .favorites-page .map-column {
