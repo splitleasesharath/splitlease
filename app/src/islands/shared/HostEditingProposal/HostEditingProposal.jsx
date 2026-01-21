@@ -477,6 +477,24 @@ export function HostEditingProposal({
   // Determine if we're in reject-only mode
   const isRejectOnlyMode = initialShowReject && showRejectModal
 
+  // In reject-only mode, render ONLY the CancelProposalModal (no container)
+  // This prevents the white container box from appearing behind the modal
+  if (isRejectOnlyMode) {
+    return (
+      <CancelProposalModal
+        isOpen={showRejectModal}
+        proposal={proposal}
+        userType="host"
+        buttonText="Reject Proposal"
+        onClose={() => {
+          setShowRejectModal(false)
+          onCancel?.()
+        }}
+        onConfirm={handleReject}
+      />
+    )
+  }
+
   return (
     <div className="hep-container">
       {/* Mobile Grab Handle - per POPUP_REPLICATION_PROTOCOL.md */}
