@@ -1,0 +1,217 @@
+/**
+ * SimulationAdminPage.css
+ * Styles for the Simulation Admin internal tool
+ * BEM naming convention: .simulation-admin-*
+ */
+
+/* ===== PAGE LAYOUT ===== */
+
+.simulation-admin-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f8fafc;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ===== HEADER ===== */
+
+.simulation-admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 32px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.header-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.header-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.header-subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.refresh-button {
+  padding: 8px 16px;
+  background-color: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.refresh-button:hover:not(:disabled) {
+  background-color: #e2e8f0;
+  border-color: #cbd5e1;
+}
+
+.refresh-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ===== MAIN CONTENT ===== */
+
+.simulation-admin-main {
+  flex: 1;
+  padding: 24px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ===== ERROR BANNER ===== */
+
+.error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #991b1b;
+}
+
+.error-banner span {
+  font-size: 14px;
+}
+
+.retry-button {
+  padding: 6px 12px;
+  background-color: #ffffff;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.retry-button:hover {
+  background-color: #fef2f2;
+  border-color: #f87171;
+}
+
+/* ===== SECTION STYLES ===== */
+
+.selection-section {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.section-title {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.clear-selection-button {
+  margin-top: 12px;
+  padding: 6px 12px;
+  background-color: transparent;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.clear-selection-button:hover {
+  background-color: #f8fafc;
+  color: #475569;
+}
+
+/* ===== EMPTY STATE ===== */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  text-align: center;
+}
+
+.empty-icon {
+  width: 64px;
+  height: 64px;
+  color: #cbd5e1;
+  margin-bottom: 16px;
+}
+
+.empty-title {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.empty-text {
+  margin: 0;
+  font-size: 14px;
+  color: #94a3b8;
+  max-width: 320px;
+}
+
+/* ===== FOOTER ===== */
+
+.simulation-admin-footer {
+  padding: 16px 32px;
+  background-color: #ffffff;
+  border-top: 1px solid #e2e8f0;
+  text-align: center;
+}
+
+.footer-text {
+  margin: 0;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+/* ===== RESPONSIVE ===== */
+
+@media (max-width: 768px) {
+  .simulation-admin-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+    padding: 16px;
+  }
+
+  .simulation-admin-main {
+    padding: 16px;
+  }
+
+  .selection-section {
+    padding: 16px;
+  }
+
+  .empty-state {
+    padding: 32px 16px;
+  }
+}
