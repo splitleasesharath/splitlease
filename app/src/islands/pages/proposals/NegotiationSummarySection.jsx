@@ -39,7 +39,8 @@ export default function NegotiationSummarySection({ summaries }) {
   if (!summary) return null;
 
   // Check multiple possible field names for the summary text
-  const summaryText = summary['Guest Summary'] || summary['Host Summary'] || summary.summary || '';
+  // Note: 'Summary' is the Bubble.io column name (capital S)
+  const summaryText = summary['Summary'] || summary['Guest Summary'] || summary['Host Summary'] || summary.summary || '';
   if (!summaryText) return null;
 
   return (
