@@ -632,12 +632,16 @@ app/
 │   │   └── components/
 │   │       ├── LeaseCard.jsx                   # MIGRATE
 │   │       ├── SearchBox.jsx                   # MIGRATE
-│   │       └── LeaseDropdown.jsx               # MIGRATE
+│   │       ├── LeaseDropdown.jsx               # MIGRATE
+│   │       ├── BulkActionToolbar.jsx           # NEW (bulk operations)
+│   │       ├── DocumentUploader.jsx            # NEW (drag-and-drop)
+│   │       └── DocumentList.jsx                # NEW (display attachments)
 │   ├── logic/
 │   │   ├── calculators/leases/
 │   │   │   └── calculatePaymentProgress.js     # NEW
 │   │   ├── rules/leases/
-│   │   │   ├── canDeleteLease.js               # NEW
+│   │   │   ├── canDeleteLease.js               # NEW (soft-delete rules)
+│   │   │   ├── canHardDeleteLease.js           # NEW (hard-delete rules)
 │   │   │   └── isLeaseActive.js                # NEW
 │   │   └── processors/leases/
 │   │       ├── adaptLeaseFromSupabase.js       # NEW
@@ -651,12 +655,25 @@ app/
 ```
 supabase/functions/
 └── leases-admin/
-    └── index.ts                                # NEW
+    └── index.ts                                # NEW (11 actions)
 ```
+
+**Edge Function Actions:**
+| Category | Actions |
+|----------|---------|
+| CRUD | `list`, `get`, `updateStatus` |
+| Delete | `softDelete`, `hardDelete` |
+| Bulk | `bulkUpdateStatus`, `bulkSoftDelete`, `bulkExport` |
+| Documents | `uploadDocument`, `deleteDocument`, `listDocuments` |
 
 ### Config Updates
 ```
-app/src/routes.config.js                        # MODIFY (add route)
+app/src/routes.config.js                        # MODIFY (add /_internal/leases-overview route)
+```
+
+### Supabase Storage
+```
+Bucket: lease-documents                          # NEW (for PDF/contract uploads)
 ```
 
 ---
@@ -680,12 +697,16 @@ app/src/routes.config.js                        # MODIFY (add route)
 | Phase | Effort |
 |-------|--------|
 | Phase 1: Infrastructure | 1 hour |
-| Phase 2: Edge Function | 2-3 hours |
-| Phase 3: Logic Layer | 2 hours |
-| Phase 4: Page Component | 3-4 hours |
-| Phase 5: Styling | 1-2 hours |
-| Phase 6: Testing | 2 hours |
-| **Total** | **11-14 hours** |
+| Phase 2: Edge Function (Core) | 2-3 hours |
+| Phase 3: Edge Function (Extended) | 3-4 hours |
+| Phase 4: Logic Layer | 2 hours |
+| Phase 5: Page Component (Core) | 3-4 hours |
+| Phase 6: Page Component (Extended) | 3-4 hours |
+| Phase 7: Styling | 2-3 hours |
+| Phase 8: Testing | 3 hours |
+| **Total** | **19-24 hours** |
+
+> **Note:** Expanded scope includes bulk operations, document management, and both soft/hard delete functionality.
 
 ---
 
