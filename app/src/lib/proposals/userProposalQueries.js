@@ -448,6 +448,35 @@ export async function fetchProposalsByIds(proposalIds) {
   // Create virtual meeting lookup map
   const vmMap = new Map(virtualMeetings.map(vm => [vm.proposal, vm]));
 
+  // Step 6.5: Fetch negotiation summaries for all proposals
+  const proposalIdsForSummaries = validProposals.map(p => p._id);
+  let negotiationSummaries = [];
+
+  if (proposalIdsForSummaries.length > 0) {
+    const { data: summariesData, error: summariesError } = await supabase
+      .from('negotiationsummary')
+      .select('*')
+      .in('"Proposal associated"', proposalIdsForSummaries)
+      .order('"Created Date"', { ascending: false });
+
+    if (summariesError) {
+      console.error('fetchProposalsByIds: Error fetching negotiation summaries:', summariesError);
+    } else {
+      negotiationSummaries = summariesData || [];
+      console.log(`fetchProposalsByIds: Fetched ${negotiationSummaries.length} negotiation summaries`);
+    }
+  }
+
+  // Create summary lookup map
+  const summaryMap = new Map();
+  negotiationSummaries.forEach(summary => {
+    const proposalId = summary['Proposal associated'];
+    if (!summaryMap.has(proposalId)) {
+      summaryMap.set(proposalId, []);
+    }
+    summaryMap.get(proposalId).push(summary);
+  });
+
   // Step 7: Create lookup maps for efficient joining
   const listingMap = new Map((listings || []).map(l => [l._id, l]));
   // Key hosts by their _id (Host User column now contains user._id directly)
@@ -481,6 +510,8 @@ export async function fetchProposalsByIds(proposalIds) {
     const virtualMeeting = vmMap.get(proposal._id) || null;
     // Lookup rental application
     const rentalApplication = rentalAppMap.get(proposal['rental application']) || null;
+    // Lookup negotiation summaries
+    const negotiationSummaries = summaryMap.get(proposal._id) || [];
 
     // Resolve house rules IDs to names (from proposal, not listing)
     // House Rules field is stored as a JSON string array: "[\"id1\", \"id2\"]"
@@ -514,7 +545,8 @@ export async function fetchProposalsByIds(proposalIds) {
       guest: guest || null,
       virtualMeeting,
       rentalApplication,
-      houseRules: houseRulesResolved
+      houseRules: houseRulesResolved,
+      negotiationSummaries
     };
   });
 
