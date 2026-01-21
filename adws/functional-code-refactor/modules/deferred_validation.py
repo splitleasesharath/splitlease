@@ -32,6 +32,8 @@ from .test_driven_validation import (
     TestSuite,
     TestDrivenResult,
 )
+from .visual_regression import check_visual_parity
+from .page_classifier import get_mcp_sessions_for_page, get_page_info, ALL_PAGES
 
 
 def _is_page_file(file_path: str) -> bool:
@@ -282,7 +284,8 @@ def run_deferred_validation(
     working_dir: Path,
     logger: "RunLogger",
     skip_visual: bool = False,
-    build_timeout: int = 180
+    build_timeout: int = 180,
+    slack_channel: Optional[str] = None
 ) -> ValidationResult:
     """Run validation after all chunks implemented.
 
@@ -297,6 +300,7 @@ def run_deferred_validation(
         logger: RunLogger for output
         skip_visual: If True, skip visual regression testing
         build_timeout: Build timeout in seconds (default: 180)
+        slack_channel: Optional Slack channel for visual regression notifications
 
     Returns:
         ValidationResult with success status and any errors
@@ -351,10 +355,56 @@ def run_deferred_validation(
     if not skip_visual and batch.affected_pages:
         # Chunks with affected pages: run visual regression
         logger.step(f"Visual regression on {len(batch.affected_pages)} affected pages...")
-        # TODO: Implement batch visual regression
-        # For now, mark as passed - visual regression handled separately
-        result.visual_passed = True
-        logger.log("  [SKIP] Batch visual regression not yet implemented")
+
+        visual_errors = []
+        visual_screenshots = {}
+
+        for page_path in batch.affected_pages:
+            # Get page info to determine auth type
+            page_info = get_page_info(page_path)
+            auth_type = page_info.auth_type if page_info else "public"
+
+            # Get MCP sessions for this page
+            mcp_live, mcp_dev = get_mcp_sessions_for_page(page_path)
+
+            visual_result = check_visual_parity(
+                page_path=page_path,
+                mcp_session=mcp_live,
+                mcp_session_dev=mcp_dev,
+                auth_type=auth_type,
+                port=8010,
+                concurrent=True if mcp_live and mcp_dev else False,
+                slack_channel=slack_channel
+            )
+
+            parity_status = visual_result.get("visualParity", "FAIL")
+
+            if parity_status == "PASS":
+                logger.log(f"  [PASS] {page_path}")
+            elif parity_status == "BLOCKED":
+                issues = visual_result.get('issues', ['Unknown'])
+                logger.log(f"  [BLOCKED] {page_path}: {issues[0] if issues else 'Unknown'}")
+                visual_errors.append(ValidationError(
+                    message=f"Visual check blocked for {page_path}",
+                    file_path=page_path
+                ))
+            else:  # FAIL
+                issues = visual_result.get('issues', ['Unknown visual difference'])
+                logger.log(f"  [FAIL] {page_path}: {issues[0] if issues else 'Unknown'}")
+                visual_errors.append(ValidationError(
+                    message=f"Visual parity failed for {page_path}: {issues[0] if issues else 'Unknown'}",
+                    file_path=page_path
+                ))
+
+            # Collect screenshots for reporting
+            if visual_result.get("screenshots"):
+                visual_screenshots[page_path] = visual_result["screenshots"]
+
+        result.visual_passed = len(visual_errors) == 0
+        result.errors.extend(visual_errors)
+
+        if not result.visual_passed:
+            logger.log(f"  [FAIL] Visual regression failed with {len(visual_errors)} errors")
     elif not batch.affected_pages and batch.chunks:
         # ORPHANED CODE: No pages found after recursive tracing
         # This is RARE and usually indicates dead code or broken import chain
