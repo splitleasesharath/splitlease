@@ -1,0 +1,681 @@
+/**
+ * Simulation Guestside Demo Page Styles
+ *
+ * Design follows Split Lease brand guidelines:
+ * - Primary color: #4F46E5 (indigo)
+ * - Success: #10B981 (emerald)
+ * - Warning: #F59E0B (amber)
+ * - Error: #EF4444 (red)
+ */
+
+/* ============================================================================
+   PAGE LAYOUT
+   ============================================================================ */
+
+.simulation-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+  min-height: calc(100vh - 200px);
+}
+
+/* ============================================================================
+   WARNING BANNER
+   ============================================================================ */
+
+.simulation-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background-color: #FEF3C7;
+  border: 1px solid #F59E0B;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  font-size: 14px;
+  color: #92400E;
+}
+
+.simulation-warning__icon {
+  flex-shrink: 0;
+}
+
+/* ============================================================================
+   HEADER
+   ============================================================================ */
+
+.simulation-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.simulation-header__title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1F2937;
+  margin: 0 0 8px 0;
+}
+
+.simulation-header__subtitle {
+  font-size: 16px;
+  color: #6B7280;
+  margin: 0 0 16px 0;
+}
+
+.simulation-header__info {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  font-size: 14px;
+  color: #6B7280;
+}
+
+.simulation-header__user,
+.simulation-header__datetime {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ============================================================================
+   LOADING STATE
+   ============================================================================ */
+
+.simulation-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px;
+}
+
+.simulation-loading__spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #E5E7EB;
+  border-top-color: #4F46E5;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.simulation-loading__message {
+  margin-top: 16px;
+  font-size: 16px;
+  color: #6B7280;
+}
+
+/* ============================================================================
+   LOGIN PROMPT
+   ============================================================================ */
+
+.simulation-login-prompt {
+  text-align: center;
+  padding: 48px;
+  background: #F9FAFB;
+  border-radius: 12px;
+  border: 1px solid #E5E7EB;
+}
+
+.simulation-login-prompt h2 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1F2937;
+  margin: 0 0 12px 0;
+}
+
+.simulation-login-prompt p {
+  font-size: 16px;
+  color: #6B7280;
+  margin: 0 0 24px 0;
+}
+
+.simulation-login-button {
+  padding: 12px 32px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  background-color: #4F46E5;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.simulation-login-button:hover {
+  background-color: #4338CA;
+}
+
+/* ============================================================================
+   USABILITY CODE SECTION
+   ============================================================================ */
+
+.simulation-code-section {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #F9FAFB;
+  border-radius: 8px;
+}
+
+.simulation-code-section__label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.simulation-code-section__input {
+  width: 100%;
+  max-width: 300px;
+  padding: 10px 14px;
+  font-size: 14px;
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.simulation-code-section__input:focus {
+  border-color: #4F46E5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.simulation-code-section__hint {
+  font-size: 12px;
+  color: #9CA3AF;
+  margin: 8px 0 0 0;
+}
+
+/* ============================================================================
+   PROGRESS INDICATOR
+   ============================================================================ */
+
+.simulation-progress {
+  margin-bottom: 32px;
+  padding: 20px;
+  background: linear-gradient(to right, #EEF2FF, #F5F3FF);
+  border-radius: 12px;
+}
+
+.simulation-progress__track {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.simulation-progress__step-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.simulation-progress__step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.simulation-progress__step--completed {
+  color: #10B981;
+}
+
+.simulation-progress__step--current {
+  color: #4F46E5;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.15);
+}
+
+.simulation-progress__step--pending {
+  color: #9CA3AF;
+}
+
+.simulation-progress__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.simulation-progress__label {
+  font-size: 11px;
+  font-weight: 500;
+  text-align: center;
+  max-width: 80px;
+}
+
+.simulation-progress__connector {
+  color: #D1D5DB;
+}
+
+.simulation-progress__path-badge {
+  text-align: center;
+  margin-top: 12px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4F46E5;
+  background: #fff;
+  border-radius: 16px;
+  display: inline-block;
+}
+
+/* ============================================================================
+   STEP BUTTON
+   ============================================================================ */
+
+.step-button-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 4px;
+  border-radius: 12px;
+  transition: all 0.2s;
+}
+
+.step-button-container--active {
+  background: linear-gradient(to right, #EEF2FF, transparent);
+}
+
+.step-button-container--completed {
+  opacity: 0.9;
+}
+
+.step-button-container--disabled {
+  opacity: 0.5;
+}
+
+.step-button__number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #4F46E5;
+  background: #EEF2FF;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.step-button-container--completed .step-button__number {
+  color: #10B981;
+  background: #D1FAE5;
+}
+
+.step-button-container--disabled .step-button__number {
+  color: #9CA3AF;
+  background: #F3F4F6;
+}
+
+.step-button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #1F2937;
+  background: #fff;
+  border: 2px solid #E5E7EB;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.step-button:hover:not(:disabled) {
+  border-color: #4F46E5;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.1);
+}
+
+.step-button:disabled {
+  cursor: not-allowed;
+  background: #F9FAFB;
+}
+
+.step-button-container--completed .step-button {
+  border-color: #10B981;
+  background: #F0FDF4;
+}
+
+.step-button-container--loading .step-button {
+  border-color: #4F46E5;
+  background: #EEF2FF;
+}
+
+.step-button__content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.step-button__icon--spinner {
+  animation: spin 1s linear infinite;
+  color: #4F46E5;
+}
+
+.step-button__icon--check {
+  color: #10B981;
+}
+
+.step-button__label {
+  line-height: 1.4;
+}
+
+/* ============================================================================
+   STEP INSTRUCTIONS
+   ============================================================================ */
+
+.step-instructions {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 16px;
+  margin: 8px 0 16px 48px;
+  background: #F9FAFB;
+  border-left: 3px solid #4F46E5;
+  border-radius: 0 8px 8px 0;
+}
+
+.step-instructions__icon {
+  color: #4F46E5;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.step-instructions__text {
+  font-size: 13px;
+  color: #6B7280;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ============================================================================
+   BRANCHING PATHS
+   ============================================================================ */
+
+.simulation-paths {
+  margin-top: 24px;
+  padding: 24px;
+  background: #F9FAFB;
+  border-radius: 12px;
+}
+
+.simulation-paths__title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1F2937;
+  margin: 0 0 8px 0;
+  text-align: center;
+}
+
+.simulation-paths__description {
+  font-size: 14px;
+  color: #6B7280;
+  margin: 0 0 24px 0;
+  text-align: center;
+}
+
+.simulation-paths__container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+/* ============================================================================
+   ENDING SCENARIO
+   ============================================================================ */
+
+.ending-scenario {
+  padding: 20px;
+  background: #fff;
+  border: 2px solid #E5E7EB;
+  border-radius: 12px;
+  transition: all 0.3s;
+}
+
+.ending-scenario--dimmed {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.ending-scenario--1 {
+  border-color: #10B981;
+}
+
+.ending-scenario--2 {
+  border-color: #F59E0B;
+}
+
+.ending-scenario__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1F2937;
+  margin: 0 0 16px 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.ending-scenario--1 .ending-scenario__title {
+  color: #059669;
+}
+
+.ending-scenario--2 .ending-scenario__title {
+  color: #D97706;
+}
+
+.ending-scenario__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ============================================================================
+   SIMULATION COMPLETE
+   ============================================================================ */
+
+.simulation-complete {
+  text-align: center;
+  padding: 48px;
+  background: linear-gradient(to bottom, #F0FDF4, #ECFDF5);
+  border: 2px solid #10B981;
+  border-radius: 16px;
+}
+
+.simulation-complete__icon {
+  color: #10B981;
+  margin-bottom: 16px;
+}
+
+.simulation-complete__title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #065F46;
+  margin: 0 0 12px 0;
+}
+
+.simulation-complete__message {
+  font-size: 16px;
+  color: #047857;
+  margin: 0 0 24px 0;
+}
+
+.simulation-complete__summary {
+  text-align: left;
+  max-width: 400px;
+  margin: 0 auto 32px;
+  padding: 16px 24px;
+  background: #fff;
+  border-radius: 8px;
+}
+
+.simulation-complete__summary h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 12px 0;
+}
+
+.simulation-complete__summary ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.simulation-complete__summary li {
+  font-size: 13px;
+  color: #6B7280;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.simulation-complete__actions {
+  margin-bottom: 16px;
+}
+
+.simulation-complete__reset-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #4F46E5;
+  background: #fff;
+  border: 2px solid #4F46E5;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.simulation-complete__reset-button:hover {
+  color: #fff;
+  background: #4F46E5;
+}
+
+.simulation-complete__note {
+  font-size: 12px;
+  color: #9CA3AF;
+  margin: 0;
+}
+
+/* ============================================================================
+   TOAST NOTIFICATIONS
+   ============================================================================ */
+
+.simulation-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  max-width: 400px;
+  padding: 16px 20px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  animation: slideIn 0.3s ease-out;
+  z-index: 1000;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.simulation-toast--success {
+  border-left: 4px solid #10B981;
+}
+
+.simulation-toast--error {
+  border-left: 4px solid #EF4444;
+}
+
+.simulation-toast--info {
+  border-left: 4px solid #4F46E5;
+}
+
+.simulation-toast__title {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1F2937;
+  margin-bottom: 4px;
+}
+
+.simulation-toast__message {
+  font-size: 13px;
+  color: #6B7280;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* ============================================================================
+   RESPONSIVE DESIGN
+   ============================================================================ */
+
+@media (max-width: 768px) {
+  .simulation-page {
+    padding: 16px;
+  }
+
+  .simulation-header__title {
+    font-size: 22px;
+  }
+
+  .simulation-header__info {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .simulation-progress__track {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .simulation-progress__connector {
+    transform: rotate(90deg);
+    margin: 4px 0;
+  }
+
+  .step-button-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .step-button__number {
+    align-self: flex-start;
+    margin-bottom: 8px;
+  }
+
+  .step-instructions {
+    margin-left: 0;
+  }
+
+  .simulation-paths__container {
+    grid-template-columns: 1fr;
+  }
+
+  .simulation-toast {
+    left: 16px;
+    right: 16px;
+    max-width: none;
+  }
+}

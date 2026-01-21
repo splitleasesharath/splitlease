@@ -507,6 +507,7 @@ def prompt_claude_code(request: AgentPromptRequest) -> AgentPromptResponse:
         cmd.extend(["--model", request.model])
         cmd.extend(["--output-format", "stream-json"])
         cmd.append("--verbose")
+        cmd.extend(["--output-style", "concise"])
 
         # Add dangerous skip permissions flag if enabled
         if request.dangerously_skip_permissions:
