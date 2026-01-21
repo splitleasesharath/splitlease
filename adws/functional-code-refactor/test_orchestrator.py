@@ -23,6 +23,7 @@ Examples:
     python test_orchestrator.py audit app/src/logic
     python test_orchestrator.py chunks .claude/plans/New/<plan-file>.md
     python test_orchestrator.py visual /listing
+    python test_orchestrator.py visual // --use-claude --slack-channel test-bed
     python test_orchestrator.py dev-server
     python test_orchestrator.py full app/src/logic
     python test_orchestrator.py paths
@@ -125,12 +126,13 @@ def test_implement(plan_file: str, chunk_number: int = None):
         print("\n[FAILURE] Implementation failed")
 
 
-def test_visual(page_path: str, use_claude: bool = False):
+def test_visual(page_path: str, use_claude: bool = False, slack_channel: str = None):
     """Test visual regression functionality with concurrent MCP sessions.
 
     Args:
         page_path: URL path to test (e.g., "/search")
         use_claude: If True, use Claude instead of Gemini (avoids quota issues)
+        slack_channel: Optional Slack channel for notifications (e.g., "#dev-alerts")
     """
     print("="*60)
     print("TESTING: Visual Regression Check (Concurrent Mode)")
@@ -179,7 +181,8 @@ def test_visual(page_path: str, use_claude: bool = False):
             auth_type=auth_type,
             port=port,
             use_claude=use_claude,
-            concurrent=True
+            concurrent=True,
+            slack_channel=slack_channel
         )
 
         print(f"\nResult: {result.get('visualParity')}")
@@ -512,14 +515,24 @@ def main():
 
     elif component == "visual":
         if not args:
-            print("Usage: test_orchestrator.py visual <page_path> [--use-claude]")
+            print("Usage: test_orchestrator.py visual <page_path> [--use-claude] [--slack-channel CHANNEL]")
             sys.exit(1)
         use_claude = "--use-claude" in args
-        page_path = args[0] if args[0] != "--use-claude" else args[1] if len(args) > 1 else None
+        slack_channel = None
+        if "--slack-channel" in args:
+            idx = args.index("--slack-channel")
+            if idx + 1 < len(args):
+                slack_channel = args[idx + 1]
+        # Find page_path (first arg that doesn't start with --)
+        page_path = None
+        for arg in args:
+            if not arg.startswith("--"):
+                page_path = arg
+                break
         if not page_path:
-            print("Usage: test_orchestrator.py visual <page_path> [--use-claude]")
+            print("Usage: test_orchestrator.py visual <page_path> [--use-claude] [--slack-channel CHANNEL]")
             sys.exit(1)
-        test_visual(page_path, use_claude=use_claude)
+        test_visual(page_path, use_claude=use_claude, slack_channel=slack_channel)
 
     elif component == "dev-server":
         test_dev_server()

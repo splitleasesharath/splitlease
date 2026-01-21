@@ -135,6 +135,8 @@ def check_visual_parity(
                 # Filename patterns the agent might use (in priority order)
                 live_patterns = [
                     f"parity_LIVE{page_path.replace('/', '_')}.png",  # Instructed format
+                    f"live-{safe_path}-full.png",                     # Full page screenshot
+                    f"live-{safe_path}-screenshot.png",               # Screenshot suffix
                     f"live-{safe_path}.png",                          # Common agent format
                     f"live_{safe_path}.png",                          # Underscore variant
                     f"LIVE-{safe_path}.png",                          # Uppercase variant
@@ -142,6 +144,8 @@ def check_visual_parity(
                 ]
                 dev_patterns = [
                     f"parity_DEV{page_path.replace('/', '_')}.png",   # Instructed format
+                    f"dev-{safe_path}-full.png",                      # Full page screenshot
+                    f"dev-{safe_path}-screenshot.png",                # Screenshot suffix
                     f"dev-{safe_path}.png",                           # Common agent format
                     f"dev_{safe_path}.png",                           # Underscore variant
                     f"DEV-{safe_path}.png",                           # Uppercase variant
@@ -166,6 +170,16 @@ def check_visual_parity(
                                 dev_screenshot = str(candidate)
                                 break
 
+            # Debug: Show what screenshots were found
+            if live_screenshot:
+                print(f"  [Slack] Found LIVE screenshot: {live_screenshot}")
+            else:
+                print(f"  [Slack] WARNING: No LIVE screenshot found")
+            if dev_screenshot:
+                print(f"  [Slack] Found DEV screenshot: {dev_screenshot}")
+            else:
+                print(f"  [Slack] WARNING: No DEV screenshot found")
+
             slack_result = notify_parity_check_result(
                 page_path=page_path,
                 result=result.get("visualParity", "FAIL"),
@@ -175,7 +189,9 @@ def check_visual_parity(
                 issues=result.get("issues")
             )
             if slack_result.get("ok"):
-                print(f"  [Slack] Notification sent to {slack_channel}")
+                screenshots_info = slack_result.get("screenshots", [])
+                uploaded_count = sum(1 for s in screenshots_info if s.get("ok"))
+                print(f"  [Slack] Notification sent to {slack_channel} ({uploaded_count} screenshots uploaded)")
             elif slack_result.get("skipped"):
                 print(f"  [Slack] Skipped: {slack_result.get('error', 'No token configured')}")
             else:
