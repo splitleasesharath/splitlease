@@ -610,10 +610,8 @@ export async function handleCreateSuggested(
                   "Created By": input.guestId,
                   "Created Date": now,
                   "Modified Date": now,
-                  // Use lowercase 'summary' - this is the field the frontend expects
-                  // PostgREST normalizes column names, so this should work whether
-                  // the actual column is 'summary', 'Summary', or 'Summary Text'
-                  summary: aiGuestSummary,
+                  "To Account": input.guestId,
+                  "Summary": aiGuestSummary,
                 });
 
               if (summaryInsertError) {
