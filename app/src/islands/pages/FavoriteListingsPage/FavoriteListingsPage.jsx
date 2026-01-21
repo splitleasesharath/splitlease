@@ -1500,6 +1500,9 @@ const FavoriteListingsPage = () => {
         </div>
       )}
 
+      {/* Pre-footer divider bar */}
+      <div className="favorites-prefooter-bar"></div>
+
       {/* Standard Site Footer */}
       <Footer />
     </>

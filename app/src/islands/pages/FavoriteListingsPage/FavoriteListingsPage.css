@@ -163,8 +163,9 @@
   width: 400px !important; /* Map width from mockup */
   flex-shrink: 0;
   position: sticky;
-  top: 252px; /* Header (80px) + Sub-header (72px) + gap (100px) */
-  height: calc(100vh - 284px); /* Viewport minus headers and gaps */
+  top: 160px; /* Aligned with cards below sub-header */
+  margin-top: 70px !important; /* Push map down to align with first card */
+  height: calc(100vh - 212px); /* Viewport minus headers */
   background: white;
   border-radius: 16px;
   overflow: hidden;
@@ -671,4 +672,13 @@
 .mobile-map-content {
   flex: 1;
   position: relative;
+}
+
+/* ============================================
+   PRE-FOOTER BAR (Divider above footer)
+   ============================================ */
+.favorites-prefooter-bar {
+  width: 100%;
+  height: 60px;
+  background: white;
 }
