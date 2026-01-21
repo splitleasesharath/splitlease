@@ -35,7 +35,11 @@ Deno.serve(async (req: Request) => {
     console.log(`[proposal] Action: ${action}`);
 
     // Validate action
-    const validActions = ['create', 'update', 'get', 'suggest', 'create_suggested', 'create_mockup', 'get_prefill_data'];
+    const validActions = [
+      'create', 'update', 'get', 'suggest', 'create_suggested', 'create_mockup', 'get_prefill_data',
+      // Usability test simulation actions
+      'createTestProposal', 'createTestRentalApplication', 'acceptProposal', 'createCounteroffer', 'acceptCounteroffer'
+    ];
     if (!validActions.includes(action)) {
       return new Response(
         JSON.stringify({ success: false, error: `Invalid action: ${action}` }),

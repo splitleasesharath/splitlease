@@ -422,6 +422,34 @@ export const routes = [
     cloudflareInternal: false,
     hasDynamicSegment: false,
     devOnly: true
+  },
+
+  // ===== SIMULATION PAGES =====
+  {
+    path: '/_internal/guest-simulation',
+    file: 'guest-simulation.html',
+    aliases: ['/_internal/guest-simulation.html', '/simulation-guest-proposals-mobile-day1'],
+    protected: false,  // Auth handled in-page for usability testing
+    cloudflareInternal: false,
+    hasDynamicSegment: false
+  },
+  {
+    path: '/simulation-guest-mobile',
+    file: 'simulation-guest-mobile.html',
+    aliases: ['/simulation-guest-mobile.html', '/simulation-guest-proposals-mobile-day2'],
+    protected: true,
+    cloudflareInternal: true,
+    internalName: 'simulation-guest-mobile-view',
+    hasDynamicSegment: false
+  },
+  {
+    path: '/simulation-guestside-demo',
+    file: 'simulation-guestside-demo.html',
+    aliases: ['/simulation-guestside-demo.html', '/usability-test'],
+    protected: true,
+    cloudflareInternal: true,
+    internalName: 'simulation-guestside-demo-view',
+    hasDynamicSegment: false
   }
 ];
 
