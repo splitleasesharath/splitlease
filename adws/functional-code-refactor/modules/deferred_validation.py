@@ -6,8 +6,11 @@ validating after each individual chunk. This reduces the number of build
 cycles and allows the full codebase to be validated in context.
 
 The validation sequence:
-1. Full production build (catches type errors, import errors)
-2. Visual regression on affected pages (if applicable)
+1. Full production build with retry loop:
+   - Build attempt 1 → if fail → debug session 1 → retry
+   - Build attempt 2 → if fail → debug session 2 → retry
+   - Build attempt 3 → if fail → mark as FAILED (no more retries)
+2. Visual regression on affected pages (if build passes)
 3. Return detailed result with error attribution
 """
 
@@ -16,6 +19,7 @@ from typing import List, Set, Optional, Dict, TYPE_CHECKING
 from pathlib import Path
 import subprocess
 import time
+import json
 
 if TYPE_CHECKING:
     from .chunk_parser import ChunkData
@@ -368,6 +372,208 @@ class OrchestrationResult:
         return msg
 
 
+# =============================================================================
+# BUILD DEBUG SESSION
+# =============================================================================
+
+def _run_build_debug_session(
+    build_errors: List[ValidationError],
+    batch: ValidationBatch,
+    working_dir: Path,
+    logger: "RunLogger",
+    session_number: int
+) -> bool:
+    """Run a Claude debug session to fix build errors.
+
+    Invokes Claude Code to analyze and fix build errors. Claude has access to
+    the error output, the modified files, and can make edits to fix the issues.
+
+    Args:
+        build_errors: List of parsed build errors
+        batch: ValidationBatch containing chunks and affected files
+        working_dir: Project working directory
+        logger: RunLogger for output
+        session_number: Which debug session this is (1 or 2)
+
+    Returns:
+        True if the debug session completed (regardless of fix success),
+        False if the debug session failed to run
+    """
+    logger.step(f"DEBUG SESSION {session_number}: Invoking Claude to fix build errors...")
+
+    # Build context for Claude
+    error_summary = "\n".join([
+        f"  - {e.message[:150]}" + (f" ({e.file_path}:{e.line_number})" if e.file_path else "")
+        for e in build_errors[:10]  # Limit to 10 errors
+    ])
+
+    modified_files = "\n".join([f"  - {f}" for f in sorted(batch.implemented_files)])
+
+    # Build the debug prompt
+    debug_prompt = f"""BUILD FAILURE - Debug Session {session_number}/2
+
+The build failed after implementing refactoring chunks. Please analyze the errors and fix them.
+
+## Build Errors ({len(build_errors)} total):
+{error_summary}
+
+## Files Modified by Refactoring:
+{modified_files}
+
+## Instructions:
+1. Analyze the build errors to understand what went wrong
+2. Read the affected files to see the current state
+3. Fix the errors - common issues include:
+   - Import path errors (file doesn't exist, wrong relative path)
+   - Missing exports (function was deleted but still imported elsewhere)
+   - Circular dependencies
+   - Syntax errors from incomplete edits
+4. After making fixes, verify by checking the file syntax
+5. DO NOT add new features or refactor further - only fix the build errors
+
+Working directory: {working_dir}
+App directory: {working_dir / "app"}
+
+Focus on making the build pass. Be surgical - fix only what's broken.
+"""
+
+    try:
+        # Write the prompt to a temp file for Claude to read
+        debug_prompt_file = working_dir / "adws" / "functional-code-refactor" / f".debug_session_{session_number}.txt"
+        debug_prompt_file.write_text(debug_prompt, encoding="utf-8")
+
+        logger.log(f"  [DEBUG] Debug prompt saved to: {debug_prompt_file}")
+        logger.log(f"  [DEBUG] Invoking Claude Code for troubleshooting...")
+
+        # Run Claude Code with the debug prompt
+        # We use claude with --print to get output and a timeout
+        debug_start = time.time()
+        debug_result = subprocess.run(
+            [
+                "claude",
+                "--print",
+                "--dangerously-skip-permissions",
+                "-p", debug_prompt
+            ],
+            cwd=working_dir,
+            capture_output=True,
+            text=True,
+            timeout=300  # 5 minute timeout for debug session
+        )
+        debug_duration = time.time() - debug_start
+
+        if debug_result.returncode == 0:
+            logger.log(f"  [DEBUG] Debug session {session_number} completed ({debug_duration:.1f}s)")
+            # Log a snippet of Claude's response
+            response_preview = debug_result.stdout[:500] if debug_result.stdout else "(no output)"
+            logger.log(f"  [DEBUG] Claude response preview: {response_preview[:200]}...")
+            return True
+        else:
+            logger.log(f"  [DEBUG] Debug session {session_number} exited with code {debug_result.returncode}")
+            if debug_result.stderr:
+                logger.log(f"  [DEBUG] stderr: {debug_result.stderr[:200]}")
+            return True  # Session ran, even if it didn't fully succeed
+
+    except subprocess.TimeoutExpired:
+        logger.log(f"  [DEBUG] Debug session {session_number} timed out (300s)")
+        return True  # Timeout counts as "session ran"
+    except FileNotFoundError:
+        logger.log(f"  [DEBUG] Claude CLI not found - cannot run debug session")
+        return False
+    except Exception as e:
+        logger.log(f"  [DEBUG] Debug session {session_number} error: {str(e)[:100]}")
+        return False
+
+
+def _run_build_with_retry(
+    working_dir: Path,
+    batch: ValidationBatch,
+    logger: "RunLogger",
+    build_timeout: int = 180,
+    max_debug_sessions: int = 2
+) -> tuple[bool, List[ValidationError], float]:
+    """Run build with debug-retry loop.
+
+    Attempts to build up to (max_debug_sessions + 1) times:
+    - Build attempt 1 -> if fail -> debug session 1 -> retry
+    - Build attempt 2 -> if fail -> debug session 2 -> retry
+    - Build attempt 3 -> if fail -> FAILED (no more retries)
+
+    Args:
+        working_dir: Project working directory
+        batch: ValidationBatch containing chunks and affected files
+        logger: RunLogger for output
+        build_timeout: Build timeout in seconds (default: 180)
+        max_debug_sessions: Maximum number of debug sessions (default: 2)
+
+    Returns:
+        Tuple of (build_passed, errors, total_duration)
+    """
+    total_duration = 0.0
+    debug_sessions_used = 0
+    all_errors: List[ValidationError] = []
+
+    for attempt in range(1, max_debug_sessions + 2):  # +2 because we get one more attempt than debug sessions
+        logger.log(f"  [BUILD] Attempt {attempt}/{max_debug_sessions + 1}...")
+
+        build_start = time.time()
+        try:
+            build_result = subprocess.run(
+                ["bun", "run", "build"],
+                cwd=working_dir / "app",
+                capture_output=True,
+                text=True,
+                timeout=build_timeout
+            )
+            build_duration = time.time() - build_start
+            total_duration += build_duration
+
+            if build_result.returncode == 0:
+                logger.log(f"  [OK] Build passed on attempt {attempt} ({build_duration:.1f}s)")
+                return True, [], total_duration
+
+            # Build failed - parse errors
+            error_output = build_result.stderr or build_result.stdout
+            errors = _parse_build_errors(error_output)
+            all_errors = errors
+
+            logger.log(f"  [FAIL] Build attempt {attempt} failed with {len(errors)} errors ({build_duration:.1f}s)")
+            for error in errors[:3]:  # Log first 3 errors
+                logger.log(f"    - {error.message[:100]}")
+
+            # Check if we can do another debug session
+            if debug_sessions_used < max_debug_sessions:
+                debug_sessions_used += 1
+                debug_success = _run_build_debug_session(
+                    errors, batch, working_dir, logger, debug_sessions_used
+                )
+                if not debug_success:
+                    logger.log(f"  [WARN] Debug session failed to run - continuing anyway")
+                # Continue to next build attempt
+            else:
+                logger.log(f"  [FAIL] No more debug sessions available ({max_debug_sessions} used)")
+                break
+
+        except subprocess.TimeoutExpired:
+            build_duration = build_timeout
+            total_duration += build_duration
+            all_errors.append(ValidationError(
+                message=f"Build timed out ({build_timeout}s) on attempt {attempt}"
+            ))
+            logger.log(f"  [FAIL] Build attempt {attempt} timed out ({build_timeout}s)")
+
+            # Timeout also triggers debug session if available
+            if debug_sessions_used < max_debug_sessions:
+                debug_sessions_used += 1
+                _run_build_debug_session(
+                    all_errors, batch, working_dir, logger, debug_sessions_used
+                )
+            else:
+                break
+
+    return False, all_errors, total_duration
+
+
 def run_deferred_validation(
     batch: ValidationBatch,
     working_dir: Path,
@@ -375,13 +581,17 @@ def run_deferred_validation(
     skip_visual: bool = False,
     build_timeout: int = 180,
     slack_channel: Optional[str] = None,
-    use_claude: bool = True
+    use_claude: bool = True,
+    max_debug_sessions: int = 2
 ) -> ValidationResult:
     """Run validation after all chunks implemented.
 
     Validation sequence:
-    1. Full production build (catches type errors, import errors)
-    2. Visual regression on affected pages (if any and not skipped)
+    1. Full production build with debug-retry loop:
+       - Build attempt 1 -> if fail -> debug session 1 -> retry
+       - Build attempt 2 -> if fail -> debug session 2 -> retry
+       - Build attempt 3 -> if fail -> FAILED
+    2. Visual regression on affected pages (if build passes and not skipped)
     3. Return detailed result with error attribution
 
     Args:
@@ -392,55 +602,35 @@ def run_deferred_validation(
         build_timeout: Build timeout in seconds (default: 180)
         slack_channel: Optional Slack channel for visual regression notifications
         use_claude: Use Claude instead of Gemini for visual checks (default: True)
+        max_debug_sessions: Maximum debug sessions before giving up (default: 2)
 
     Returns:
         ValidationResult with success status and any errors
     """
     result = ValidationResult(success=False)
 
-    # Phase 1: Build check
+    # Phase 1: Build check with debug-retry loop
     logger.step(f"Running full build verification ({len(batch.implemented_files)} files changed)...")
 
-    try:
-        build_start = time.time()
-        build_result = subprocess.run(
-            ["bun", "run", "build"],
-            cwd=working_dir / "app",
-            capture_output=True,
-            text=True,
-            timeout=build_timeout
+    build_passed, build_errors, build_duration = _run_build_with_retry(
+        working_dir=working_dir,
+        batch=batch,
+        logger=logger,
+        build_timeout=build_timeout,
+        max_debug_sessions=max_debug_sessions
+    )
+
+    if not build_passed:
+        result.build_passed = False
+        result.errors = build_errors
+        result.affected_chunks = _attribute_errors_to_chunks(
+            build_errors, batch.chunks
         )
-        build_duration = time.time() - build_start
-
-        if build_result.returncode != 0:
-            result.build_passed = False
-            error_output = build_result.stderr or build_result.stdout
-
-            # Parse errors and attribute to chunks
-            result.errors = _parse_build_errors(error_output)
-            result.affected_chunks = _attribute_errors_to_chunks(
-                result.errors, batch.chunks
-            )
-
-            logger.log(f"  [FAIL] Build failed with {len(result.errors)} errors ({build_duration:.1f}s)")
-            for error in result.errors[:5]:  # Log first 5 errors
-                logger.log(f"    - {error.message[:100]}")
-
-            return result
-
-        result.build_passed = True
-        logger.log(f"  [OK] Build passed ({build_duration:.1f}s)")
-
-    except subprocess.TimeoutExpired:
-        result.errors.append(ValidationError(
-            message=f"Build timed out ({build_timeout}s)"
-        ))
-        logger.log(f"  [FAIL] Build timed out ({build_timeout}s)")
+        logger.log(f"  [FAIL] Build failed after {max_debug_sessions} debug sessions ({build_duration:.1f}s total)")
         return result
-    except Exception as e:
-        result.errors.append(ValidationError(message=str(e)))
-        logger.log(f"  [FAIL] Build error: {e}")
-        return result
+
+    result.build_passed = True
+    logger.log(f"  [OK] Build passed ({build_duration:.1f}s)")
 
     # Phase 2: Visual regression using registry-based page selection
     # NEW APPROACH (2026-01-21): Instead of tracing dependencies to find affected pages,
