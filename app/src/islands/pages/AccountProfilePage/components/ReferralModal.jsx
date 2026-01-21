@@ -3,9 +3,16 @@
  *
  * Modal for the referral program allowing users to share their referral link
  * and view their referral stats.
+ *
+ * Updated to follow POPUP_REPLICATION_PROTOCOL.md design system.
+ * Features:
+ * - Monochromatic purple color scheme (no green/yellow)
+ * - Mobile bottom sheet behavior (< 480px)
+ * - Pill-shaped buttons (100px radius)
+ * - Feather icons (stroke-only)
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useToast } from '../../../shared/Toast';
 import './ReferralModal.css';
 
@@ -261,14 +268,53 @@ export default function ReferralModal({ isOpen, onClose, referralCode = 'yournam
     }
   };
 
+  // Close modal on Escape key press
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen, onClose]);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="referral-modal-overlay" onClick={handleOverlayClick}>
-      <div className="referral-modal">
+    <div
+      className="referral-modal-overlay"
+      onClick={handleOverlayClick}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="referral-modal-title"
+    >
+      <div className="referral-modal" onClick={(e) => e.stopPropagation()}>
+        {/* Mobile grab handle - visible only on mobile */}
+        <div className="referral-modal-grab-handle" aria-hidden="true" />
+
         <div className="referral-modal-header">
-          <h2>Give $50, Get $50</h2>
-          <button className="referral-modal-close" onClick={onClose}>
+          <h2 id="referral-modal-title">Give $50, Get $50</h2>
+          <button
+            className="referral-modal-close"
+            onClick={onClose}
+            type="button"
+            aria-label="Close modal"
+          >
             <CloseIcon />
           </button>
         </div>

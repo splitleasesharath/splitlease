@@ -201,41 +201,105 @@
         </div>
     </main>
 
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <h3>Split Lease Help Center</h3>
-                <p class="text-muted">Your guide to multi-local living</p>
-                <div class="footer-contact">
-                    <div class="contact-item">
-                        <i data-feather="mail"></i>
-                        <a href="mailto:support@split.lease">support@split.lease</a>
-                    </div>
-                    <div class="contact-item">
-                        <i data-feather="message-circle"></i>
-                        <span>Live Chat Available</span>
-                    </div>
+    <!-- Split Lease Footer -->
+    <footer class="main-footer">
+        <div class="footer-container">
+            <div class="footer-column">
+                <h4>For Hosts</h4>
+                <a href="https://app.split.lease/signup-login">List Property Now</a>
+                <a href="https://app.split.lease/host-step-by-step-guide-to-list">How to List</a>
+                <a href="https://app.split.lease/policies/cancellation-and-refund-policy">Legal Section</a>
+                <a href="https://app.split.lease/host-guarantees">Guarantees</a>
+                <a href="https://app.split.lease/demo-house-manual">Free House Manual</a>
+            </div>
+            <div class="footer-column">
+                <h4>For Guests</h4>
+                <a href="https://app.split.lease/search">Explore Split Leases</a>
+                <a href="https://app.split.lease/success-stories-guest">Success Stories</a>
+                <a href="https://app.split.lease/signup-login">Speak to an Agent</a>
+                <a href="/help-center/guests">View FAQ</a>
+            </div>
+            <div class="footer-column">
+                <h4>Company</h4>
+                <a href="https://app.split.lease/periodic-tenancy">About Periodic Tenancy</a>
+                <a href="https://app.split.lease/team">About the Team</a>
+                <a href="https://app.split.lease/careers">Careers at Split Lease</a>
+                <a href="/help-center/knowledge-base">View Blog</a>
+            </div>
+            <div class="footer-column">
+                <h4>Refer a friend</h4>
+                <p class="referral-text">You get $50 and they get $50 *after their first booking</p>
+                <div class="referral-options">
+                    <label><input type="radio" name="referral" value="text"> Text</label>
+                    <label><input type="radio" name="referral" value="email"> Email</label>
                 </div>
-                <div class="footer-links">
-                    <a href="https://split.lease/policies/terms-of-use" target="_blank">Terms of Use</a>
-                    <span>•</span>
-                    <a href="https://split.lease/policies" target="_blank">Privacy Policy</a>
-                    <span>•</span>
-                    <a href="https://split.lease" target="_blank">Back to Split Lease</a>
-                </div>
-                <p style="margin-top: 24px; font-size: 14px; color: #999;">© 2025 Split Lease. All rights reserved.</p>
+                <input type="text" placeholder="Your friend's" class="referral-input">
+                <button class="share-btn">Share now</button>
+            </div>
+            <div class="footer-column">
+                <h4>Import your listing from another site</h4>
+                <p class="import-text">No need to start from scratch</p>
+                <input type="text" placeholder="https://your-listing-link" class="import-input" id="importUrl">
+                <input type="email" placeholder="janedoe@your_email.com" class="import-input" id="importEmail">
+                <button class="import-btn" onclick="handleImportListing()">Submit</button>
             </div>
         </div>
     </footer>
 
+    <!-- App Download Section -->
+    <div class="app-download-section">
+        <div class="app-card">
+            <img src="https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=256,h=330,f=auto,dpr=1,fit=contain/f1743107051105x956510081926083000/iphone-removebg-preview.png" alt="Split Lease App" class="app-phone-image" loading="lazy">
+            <div class="app-content">
+                <p class="app-tagline">Now you can change<br>your nights<br><em>on the go.</em></p>
+                <a href="https://apps.apple.com/app/split-lease" class="app-store-btn">
+                    <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on the App Store" height="40">
+                </a>
+                <p class="app-subtitle">Download at the App Store</p>
+            </div>
+        </div>
+
+        <div class="alexa-card">
+            <img src="https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=256,h=225,f=auto,dpr=1,fit=cover,q=75/f1625329487406x361063433051586300/402087-smart-speakers-amazon-echo-dot-4th-gen-10015594%201.png" alt="Amazon Alexa" class="alexa-device-image" loading="lazy">
+            <div class="alexa-content">
+                <p class="alexa-tagline">Voice-controlled concierge,<br>at your service.</p>
+                <a href="https://www.amazon.com/dp/B08XYZ123" class="alexa-btn">
+                    <span class="amazon-logo">Available on<br><strong>amazon.com</strong></span>
+                </a>
+                <p class="alexa-command">"Alexa, enable Split Lease"</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Bottom -->
+    <div class="footer-bottom">
+        <a href="https://app.split.lease/terms">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" style="margin-right: 0.5rem;">
+                <path d="M2 2h8v8H2z" stroke="currentColor" stroke-width="1" fill="none"/>
+                <path d="M4 6h4M4 8h3"/>
+            </svg>
+            Terms of Use
+        </a>
+        <span>Made with love in New York City</span>
+        <span>&copy; 2025 SplitLease</span>
+    </div>
+
+    <!-- Initialize Feather Icons and Navigation -->
+    <script src="/help-center-articles/js/split-lease-nav.js"></script>
     <script>
         feather.replace();
+
+        // Feedback button functionality
         const feedbackButtons = document.querySelectorAll('.feedback-btn');
         feedbackButtons.forEach(btn => {
             btn.addEventListener('click', function() {
                 feedbackButtons.forEach(b => b.classList.remove('selected'));
                 this.classList.add('selected');
-                setTimeout(() => { alert('Thank you for your feedback!'); }, 300);
+                const feedback = this.dataset.feedback;
+                console.log('User feedback:', feedback);
+                setTimeout(() => {
+                    alert('Thank you for your feedback!');
+                }, 300);
             });
         });
     </script>

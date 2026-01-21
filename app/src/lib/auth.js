@@ -1016,7 +1016,11 @@ export async function validateTokenAndFetchUser({ clearOnFailure = true } = {}) 
       // Proposal count for determining first proposal flow
       proposalCount: userData.proposalCount ?? 0,
       // Rental application submission status for hiding CTA in success modal
-      hasSubmittedRentalApp: userData.hasSubmittedRentalApp ?? false
+      hasSubmittedRentalApp: userData.hasSubmittedRentalApp ?? false,
+      // Usability testing flag - determines who sees mobile testing popup
+      isUsabilityTester: userData.isUsabilityTester ?? false,
+      // Phone number for SMS magic link pre-fill
+      phoneNumber: userData.phoneNumber || null
     };
 
     // Cache firstName and avatarUrl for optimistic UI on page load

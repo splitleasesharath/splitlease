@@ -2,10 +2,43 @@ import { useState, useEffect } from 'react';
 import '../../../styles/components/import-listing-modal.css';
 
 /**
+ * Feather Icons as inline SVG components
+ * Following POPUP_REPLICATION_PROTOCOL.md: Monochromatic, stroke-width: 2, no fill
+ */
+const DownloadIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="7 10 12 15 17 10" />
+    <line x1="12" y1="15" x2="12" y2="3" />
+  </svg>
+);
+
+const XIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+
+const AlertCircleIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="8" x2="12" y2="12" />
+    <line x1="12" y1="16" x2="12.01" y2="16" />
+  </svg>
+);
+
+/**
  * ImportListingModal Component
  *
- * A modal component for importing listings from external platforms (Airbnb, VRBO, etc.)
- * Converted from Bubble.io reusable element to React
+ * A modal for importing listings from external platforms (Airbnb, VRBO, etc.)
+ * Updated to follow POPUP_REPLICATION_PROTOCOL.md design system.
+ *
+ * Features:
+ * - Monochromatic purple color scheme (no green/yellow)
+ * - Mobile bottom sheet behavior (< 480px)
+ * - Feather icons (stroke-only)
+ * - Pill-shaped buttons (100px radius)
+ * - Fixed header/footer with scrollable body
  *
  * @param {Object} props
  * @param {boolean} props.isOpen - Controls modal visibility
@@ -68,7 +101,6 @@ const ImportListingModal = ({
     const newErrors = {};
 
     // Validate listing URL - just check it's not empty
-    // We accept any text since it will be sent to Slack for processing
     if (!listingUrl.trim()) {
       newErrors.listingUrl = 'Listing URL is required';
     }
@@ -93,7 +125,6 @@ const ImportListingModal = ({
 
     if (!validate()) return;
 
-    // Call parent submit handler with form data
     await onSubmit({
       listingUrl: listingUrl.trim(),
       emailAddress: emailAddress.trim()
@@ -119,24 +150,26 @@ const ImportListingModal = ({
       onClick={handleBackdropClick}
       role="dialog"
       aria-modal="true"
-      aria-labelledby="modal-title"
+      aria-labelledby="import-modal-title"
     >
       {/* Modal container */}
       <div
         className="import-listing-modal-container"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Mobile grab handle - visible only on mobile */}
+        <div className="import-listing-grab-handle" aria-hidden="true" />
+
         {/* Header Section */}
-        <div className="import-listing-header">
-          <div className="import-listing-header-top">
-            {/* Download Icon */}
-            <span className="import-listing-icon" aria-hidden="true">📥</span>
+        <header className="import-listing-header">
+          <div className="import-listing-header-content">
+            {/* Download Icon (Feather) */}
+            <span className="import-listing-icon" aria-hidden="true">
+              <DownloadIcon />
+            </span>
 
             {/* Title */}
-            <h2
-              id="modal-title"
-              className="import-listing-title"
-            >
+            <h2 id="import-modal-title" className="import-listing-title">
               Import Your Listing
             </h2>
           </div>
@@ -148,85 +181,91 @@ const ImportListingModal = ({
             aria-label="Close modal"
             type="button"
           >
-            ×
+            <XIcon />
           </button>
+        </header>
+
+        {/* Scrollable Body */}
+        <div className="import-listing-body">
+          <form onSubmit={handleSubmit} aria-label="Import listing form">
+            {/* Listing URL Section */}
+            <div className="import-listing-section">
+              <label htmlFor="listing-url" className="import-listing-label">
+                Listing URL
+              </label>
+              <input
+                id="listing-url"
+                type="text"
+                value={listingUrl}
+                onChange={(e) => setListingUrl(e.target.value)}
+                placeholder="Enter or paste URL here..."
+                className={`import-listing-input ${errors.listingUrl ? 'input-error' : ''}`}
+                aria-invalid={errors.listingUrl ? 'true' : 'false'}
+                aria-describedby={errors.listingUrl ? 'listing-url-error' : 'listing-url-help'}
+              />
+              {errors.listingUrl && (
+                <span id="listing-url-error" className="error-message" role="alert">
+                  {errors.listingUrl}
+                </span>
+              )}
+              <p id="listing-url-help" className="import-listing-helper">
+                Supports all platforms: Airbnb, VRBO, and more.
+              </p>
+            </div>
+
+            {/* Email Section */}
+            <div className="import-listing-section">
+              <label htmlFor="email-address" className="import-listing-label">
+                Email Address
+              </label>
+              <input
+                id="email-address"
+                type="email"
+                value={emailAddress}
+                onChange={(e) => setEmailAddress(e.target.value)}
+                placeholder="your@email.com"
+                className={`import-listing-input ${errors.emailAddress ? 'input-error' : ''}`}
+                aria-invalid={errors.emailAddress ? 'true' : 'false'}
+                aria-describedby={errors.emailAddress ? 'email-error' : undefined}
+              />
+              {errors.emailAddress && (
+                <span id="email-error" className="error-message" role="alert">
+                  {errors.emailAddress}
+                </span>
+              )}
+            </div>
+
+            {/* Info Banner */}
+            <div className="import-listing-info" role="note" aria-label="Import information">
+              <div className="info-icon">
+                <AlertCircleIcon />
+              </div>
+              <p className="import-listing-info-text">
+                We'll import photos, description, and amenities. You can edit everything after import.
+              </p>
+            </div>
+          </form>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4" aria-label="Import listing form">
-          {/* Listing URL Section */}
-          <div className="import-listing-section">
-            <label
-              htmlFor="listing-url"
-              className="import-listing-label"
-            >
-              Listing URL
-            </label>
-            <input
-              id="listing-url"
-              type="text"
-              value={listingUrl}
-              onChange={(e) => setListingUrl(e.target.value)}
-              placeholder="Enter or Paste URL here..."
-              className={`import-listing-input ${errors.listingUrl ? 'input-error' : ''}`}
-              aria-invalid={errors.listingUrl ? 'true' : 'false'}
-              aria-describedby={errors.listingUrl ? 'listing-url-error' : 'listing-url-help'}
-            />
-            {errors.listingUrl && (
-              <span id="listing-url-error" className="error-message" role="alert">
-                {errors.listingUrl}
-              </span>
+        {/* Footer with Submit Button */}
+        <footer className="import-listing-footer">
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="import-listing-btn import-listing-btn-primary"
+            aria-label={isLoading ? 'Importing listing' : 'Import listing'}
+            onClick={handleSubmit}
+          >
+            {isLoading ? (
+              <>
+                <span className="spinner" aria-hidden="true" />
+                Importing...
+              </>
+            ) : (
+              'Import Listing'
             )}
-            <p id="listing-url-help" className="import-listing-helper">
-              Supports all platforms: Airbnb, VRBO and more.
-            </p>
-          </div>
-
-          {/* Email Section */}
-          <div className="import-listing-section">
-            <label
-              htmlFor="email-address"
-              className="import-listing-label"
-            >
-              Enter your email address
-            </label>
-            <input
-              id="email-address"
-              type="email"
-              value={emailAddress}
-              onChange={(e) => setEmailAddress(e.target.value)}
-              placeholder="Email Address..."
-              className={`import-listing-input ${errors.emailAddress ? 'input-error' : ''}`}
-              aria-invalid={errors.emailAddress ? 'true' : 'false'}
-              aria-describedby={errors.emailAddress ? 'email-error' : undefined}
-            />
-            {errors.emailAddress && (
-              <span id="email-error" className="error-message" role="alert">
-                {errors.emailAddress}
-              </span>
-            )}
-          </div>
-
-          {/* Info Box */}
-          <div className="import-listing-info" role="note" aria-label="Import information">
-            <div className="info-icon">ℹ️</div>
-            <p className="import-listing-info-text">
-              We'll import photos, description, and amenities. You can edit everything after import.
-            </p>
-          </div>
-
-          {/* Submit Button */}
-          <div className="import-listing-buttons">
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="import-listing-btn import-listing-btn-primary"
-              aria-label={isLoading ? 'Importing listing' : 'Import listing'}
-            >
-              {isLoading ? 'Importing...' : 'Import Listing'}
-            </button>
-          </div>
-        </form>
+          </button>
+        </footer>
       </div>
     </div>
   );

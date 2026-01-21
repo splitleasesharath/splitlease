@@ -35,7 +35,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { ValidationError } from '../_shared/errors.ts';
 
 // FP Utilities
-import { Result, ok, err } from "../_shared/fp/result.ts";
+import { Result, ok, err } from "../_shared/functional/result.ts";
 import {
   parseRequest,
   validateAction,
@@ -46,8 +46,8 @@ import {
   formatErrorResponseHttp,
   formatCorsResponse,
   CorsPreflightSignal,
-} from "../_shared/fp/orchestration.ts";
-import { createErrorLog, addError, setAction, ErrorLog } from "../_shared/fp/errorLog.ts";
+} from "../_shared/functional/orchestration.ts";
+import { createErrorLog, addError, setAction, ErrorLog } from "../_shared/functional/errorLog.ts";
 import { reportErrorLog } from "../_shared/slack.ts";
 
 import { handleProcessQueue } from './handlers/processQueue.ts';

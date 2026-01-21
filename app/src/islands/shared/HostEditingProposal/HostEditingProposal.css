@@ -1,8 +1,20 @@
 /**
  * Host Editing Proposal Styles
  *
- * Design tokens aligned with Split Lease brand
- * Primary Purple: #31135D
+ * Updated to follow POPUP_REPLICATION_PROTOCOL.md design system.
+ * Features:
+ * - Monochromatic purple color scheme (no green/yellow)
+ * - Pill-shaped buttons (100px radius)
+ * - Mobile bottom-sheet behavior (<480px)
+ * - Protocol grab handle (36x4px, #E7E0EC)
+ * - Inter font family for buttons
+ *
+ * Color Tokens:
+ * - Primary: #31135D
+ * - Hover: #4A2F7C
+ * - Light BG: #F7F2FA
+ * - Border: #E7E0EC
+ * - Danger: #DC3545 (outlined only)
  */
 
 /* ========================================
@@ -34,6 +46,21 @@
 }
 
 /* ========================================
+   Mobile Grab Handle
+   - 36x4px centered bar for mobile bottom sheet
+   - Hidden on desktop, visible on mobile (<480px)
+   ======================================== */
+.hep-grab-handle {
+  display: none;
+  width: 36px;
+  height: 4px;
+  background: #E7E0EC;
+  border-radius: 2px;
+  margin: 8px auto 0;
+  flex-shrink: 0;
+}
+
+/* ========================================
    Base Container
    ======================================== */
 
@@ -46,6 +73,9 @@
   font-family: var(--hep-font-sans);
   box-sizing: border-box;
   padding: 16px;
+  border-radius: 16px;
+  max-height: 92vh;
+  overflow: hidden;
 }
 
 .hep-container *,
@@ -55,70 +85,86 @@
 }
 
 /* ========================================
+   Scrollable Body
+   - Fills available space and scrolls
+   - Allows footer to stay fixed at bottom
+   - Consistent vertical padding per protocol
+   ======================================== */
+
+.hep-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-top: 16px;
+  padding-bottom: 8px;
+}
+
+/* ========================================
    Typography
    ======================================== */
 
 .hep-title-main {
-  font-family: var(--hep-font-serif);
-  font-weight: 900;
-  font-size: 26px;
-  color: var(--hep-text-primary);
-  line-height: 1;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 500;
+  font-size: 18px;
+  color: #1C1B1F;
+  line-height: 1.4;
   letter-spacing: 0;
   margin: 0;
 }
 
 .hep-title-section {
-  font-family: var(--hep-font-serif);
-  font-weight: 900;
-  font-size: 20px;
-  color: var(--hep-text-dark);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  color: #1C1B1F;
   line-height: 1.5;
   margin: 0;
 }
 
 .hep-label {
-  font-family: var(--hep-font-dm-sans);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-weight: 500;
-  font-size: 16px;
-  color: var(--hep-text-dark);
-  line-height: 1.25;
-  letter-spacing: -1px;
+  font-size: 14px;
+  color: #1C1B1F;
+  line-height: 1.4;
+  letter-spacing: 0;
 }
 
 .hep-row-label {
-  font-family: var(--hep-font-sans);
-  font-weight: 700;
-  font-size: 16px;
-  color: var(--hep-text-primary);
-  line-height: 1.25;
-  letter-spacing: -1px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: #49454F;
+  line-height: 1.4;
+  letter-spacing: 0;
 }
 
 .hep-description {
-  font-family: var(--hep-font-serif);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-weight: 400;
-  font-size: 16px;
-  color: var(--hep-text-primary);
-  line-height: 2;
+  font-size: 14px;
+  color: #49454F;
+  line-height: 1.5;
 }
 
 .hep-text-value {
-  font-family: var(--hep-font-sans);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-weight: 400;
-  font-size: 16px;
-  color: var(--hep-text-primary);
+  font-size: 14px;
+  color: #49454F;
 }
 
 /* ========================================
    Buttons
    ======================================== */
 
+/* Buttons - Updated per POPUP_REPLICATION_PROTOCOL.md */
 .hep-btn {
-  border-radius: 20px;
+  border-radius: 100px; /* Pill-shaped per protocol */
   cursor: pointer;
-  transition: box-shadow 200ms ease;
-  font-family: var(--hep-font-sans);
+  transition: all 0.2s ease;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -131,36 +177,38 @@
   cursor: not-allowed;
 }
 
+/* Primary button - Protocol purple */
 .hep-btn-primary {
-  background-color: var(--hep-primary-purple);
-  color: var(--hep-primary-white);
-  font-weight: 700;
-  font-size: 18px;
-  border: 2px solid var(--hep-primary-purple);
+  background-color: #31135D;
+  color: #FFFFFF;
+  font-weight: 600;
+  font-size: 14px;
+  border: none;
   height: 44px;
   padding: 0 24px;
   min-width: fit-content;
   white-space: nowrap;
-  word-spacing: 1px;
-  letter-spacing: -1px;
 }
 
 .hep-btn-primary:hover:not(:disabled) {
-  box-shadow: 0 4px 12px rgba(49, 19, 93, 0.3);
+  background-color: #4A2F7C;
+  box-shadow: 0 4px 12px rgba(49, 19, 93, 0.2);
 }
 
+/* Secondary button - Outlined style per protocol */
 .hep-btn-secondary {
   background-color: transparent;
-  color: var(--hep-primary-purple);
-  font-weight: 400;
-  font-size: 18px;
-  border: 1px solid var(--hep-primary-purple);
+  color: #31135D;
+  font-weight: 600;
+  font-size: 14px;
+  border: 1px solid #E7E0EC;
   height: 44px;
   padding: 0 24px;
 }
 
 .hep-btn-secondary:hover:not(:disabled) {
-  background-color: rgba(49, 19, 93, 0.05);
+  background-color: #F7F2FA;
+  border-color: #31135D;
 }
 
 .hep-btn-destructive {
@@ -179,18 +227,20 @@
   box-shadow: 0 4px 12px rgba(200, 35, 51, 0.3);
 }
 
+/* Cancel/Secondary button - Outlined style per protocol */
 .hep-btn-cancel {
   background-color: transparent;
-  border: 1px solid var(--hep-text-tertiary);
-  color: var(--hep-text-tertiary);
-  font-weight: 400;
+  border: 2px solid #E7E0EC;
+  color: #49454F;
+  font-weight: 600;
   font-size: 14px;
-  height: 32px;
-  padding: 0 16px;
+  height: 44px;
+  padding: 0 24px;
 }
 
 .hep-btn-cancel:hover:not(:disabled) {
-  background-color: rgba(0, 0, 0, 0.02);
+  background-color: #F7F2FA;
+  border-color: #31135D;
 }
 
 .hep-btn-reject {
@@ -398,12 +448,12 @@
 
 /* ========================================
    Containers & Groups
+   - Per protocol spacing scale: 8px, 16px, 24px
    ======================================== */
 
 .hep-editing-terms {
   width: 100%;
-  padding: 16px;
-  margin-top: 16px;
+  padding: 16px 0 8px;
 }
 
 .hep-proposal-row {
@@ -417,6 +467,7 @@
 
 /* ========================================
    Collapsible Section
+   - Per protocol: 8px spacing between adjacent elements
    ======================================== */
 
 .hep-collapsible {
@@ -424,7 +475,7 @@
   border: 1px solid var(--hep-surface-purple);
   border-radius: 10px;
   width: 100%;
-  min-height: 40px;
+  min-height: 44px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -456,31 +507,45 @@
 }
 
 /* ========================================
-   Icons
+   Icons - Updated per POPUP_REPLICATION_PROTOCOL.md
    ======================================== */
 
 .hep-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: none;
+  background: transparent;
   border: none;
   cursor: pointer;
-  padding: 4px;
+  padding: 0;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.hep-icon:hover {
+  background-color: #F7F2FA;
 }
 
 .hep-icon-edit {
-  color: var(--hep-primary-purple);
-  width: 30px;
-  height: 30px;
-  border-radius: 4px;
+  width: 32px;
+  height: 32px;
+  color: #31135D;
+}
+
+.hep-icon-edit svg {
+  width: 18px;
+  height: 18px;
 }
 
 .hep-icon-close {
-  color: var(--hep-primary-purple);
+  width: 32px;
+  height: 32px;
+  color: #49454F;
+}
+
+.hep-icon-close svg {
   width: 20px;
   height: 20px;
-  border-radius: 4px;
 }
 
 .hep-icon-reject {
@@ -489,7 +554,7 @@
 
 .hep-header-actions {
   display: flex;
-  gap: 8px;
+  gap: 4px;
 }
 
 /* ========================================
@@ -501,12 +566,12 @@
 }
 
 .hep-breakdown-title {
-  font-family: var(--hep-font-serif);
-  font-weight: 900;
-  font-size: 20px;
-  color: var(--hep-text-dark);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  color: #1C1B1F;
   line-height: 1.5;
-  margin-bottom: 16px;
+  margin-bottom: 4px;
 }
 
 .hep-breakdown-row {
@@ -514,15 +579,15 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 8px 12px;
-  min-height: 27px;
+  padding: 4px 0;
+  min-height: 24px;
 }
 
 .hep-breakdown-row-label {
-  font-family: var(--hep-font-sans);
-  font-weight: 700;
-  font-size: 16px;
-  color: var(--hep-text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: #49454F;
 }
 
 .hep-breakdown-edit-btn {
@@ -552,10 +617,10 @@
 }
 
 .hep-breakdown-row-value {
-  font-family: var(--hep-font-sans);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-weight: 400;
-  font-size: 16px;
-  color: var(--hep-text-primary);
+  font-size: 14px;
+  color: #1C1B1F;
   text-align: right;
 }
 
@@ -563,14 +628,15 @@
   background-color: rgba(49, 19, 93, 0.05);
 }
 
+/* Changed row indicator - uses protocol purple instead of yellow */
 .hep-breakdown-row-changed {
-  background-color: rgba(255, 193, 7, 0.15);
-  border-left: 3px solid #ffc107;
+  background-color: rgba(49, 19, 93, 0.08);
+  border-left: 3px solid #31135D;
 }
 
 .hep-breakdown-row-changed .hep-breakdown-row-value {
   font-weight: 700;
-  color: var(--hep-primary-purple);
+  color: #31135D;
 }
 
 .hep-original-value {
@@ -582,24 +648,26 @@
   margin-top: 2px;
 }
 
+/* Changes indicator - uses protocol purple instead of yellow */
 .hep-changes-indicator {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
-  margin-bottom: 12px;
-  background-color: rgba(255, 193, 7, 0.1);
-  border: 1px solid #ffc107;
-  border-radius: 4px;
+  padding: 6px 10px;
+  margin-bottom: 8px;
+  background-color: #F7F2FA;
+  border: 1px solid #E7E0EC;
+  border-radius: 8px;
 }
 
+/* Changes badge - uses protocol purple instead of yellow */
 .hep-changes-badge {
-  background-color: #ffc107;
-  color: var(--hep-text-dark);
+  background-color: #31135D;
+  color: #FFFFFF;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: 100px; /* Pill-shaped per protocol */
   text-transform: uppercase;
 }
 
@@ -692,10 +760,10 @@
 }
 
 .hep-reject-title {
-  font-family: var(--hep-font-serif);
-  font-weight: 700;
-  font-size: 18px;
-  color: var(--hep-reject-red);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  color: #DC3545;
 }
 
 .hep-reject-warning {
@@ -799,9 +867,10 @@
   color: var(--hep-text-primary);
 }
 
+/* Total highlight - uses protocol purple instead of green */
 .hep-reject-detail-total {
   font-size: 16px;
-  color: var(--hep-primary-green);
+  color: #31135D;
 }
 
 /* ========================================
@@ -834,10 +903,10 @@
 }
 
 .hep-popup-title {
-  font-family: var(--hep-font-serif);
-  font-weight: 900;
-  font-size: 20px;
-  color: var(--hep-text-dark);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  color: #1C1B1F;
   margin-bottom: 16px;
 }
 
@@ -862,10 +931,15 @@
 
 /* ========================================
    Form Groups
+   - Per protocol: 8px label-to-input, 16px between groups
    ======================================== */
 
 .hep-form-group {
   margin-bottom: 16px;
+}
+
+.hep-form-group:last-child {
+  margin-bottom: 0;
 }
 
 .hep-form-group label {
@@ -885,72 +959,93 @@
 
 /* ========================================
    Section Headers
+   - Border spans full width by using negative margins
+   - Protocol border color: #E7E0EC
    ======================================== */
 
 .hep-section-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 16px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--hep-tag-border);
+  padding-bottom: 16px;
+  margin-bottom: 0;
+  margin-left: -16px;
+  margin-right: -16px;
+  padding-left: 16px;
+  padding-right: 16px;
+  border-bottom: 1px solid #E7E0EC;
+  flex-shrink: 0;
+}
+
+.hep-header-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.hep-header-subtext {
+  margin: 0;
 }
 
 /* ========================================
-   Actions Row
+   Actions Row (Edit State)
+   Per protocol: matches footer button styling
    ======================================== */
 
 .hep-actions-row {
   display: flex;
+  flex-direction: row;
   gap: 12px;
   justify-content: center;
-  margin-top: 24px;
-  padding: 16px 0;
+  align-items: center;
+  margin-top: 16px;
+  padding: 16px 0 8px;
+  border-top: 1px solid #E7E0EC;
 }
 
 /* ========================================
-   Primary Actions (Side by Side Layout)
+   Primary Actions (Footer)
+   Per protocol: 16px 20px padding, centered buttons
+   border-top separates footer from body
    ======================================== */
 
 .hep-primary-actions {
   display: flex;
-  gap: 16px;
-  justify-content: space-between;
+  flex-direction: row;
+  gap: 12px;
+  justify-content: center;
   align-items: center;
-  margin-top: 24px;
-  padding: 16px 0;
+  margin-top: 0;
+  padding: 16px 20px 8px;
+  background-color: #FFFFFF;
+  flex-shrink: 0;
+  border-top: 1px solid #E7E0EC;
+  margin-left: -16px;
+  margin-right: -16px;
 }
 
+/* Reject outline button - Red outlined per protocol
+   Matches hep-btn-cancel sizing for consistency */
 .hep-btn-reject-outline {
   background-color: transparent;
-  border: 1px solid var(--hep-reject-red);
-  color: var(--hep-reject-red);
-  font-weight: 500;
+  border: 2px solid #DC3545;
+  color: #DC3545;
+  font-weight: 600;
   font-size: 14px;
   height: 44px;
-  padding: 0 20px;
-  flex-shrink: 0;
+  padding: 0 24px;
 }
 
 .hep-btn-reject-outline:hover:not(:disabled) {
-  background-color: rgba(200, 35, 51, 0.05);
+  background-color: rgba(220, 53, 69, 0.08);
 }
 
+/* Primary large - extends hep-btn-primary without changing size
+   Just inherits from hep-btn-primary, no flex expansion */
 .hep-btn-primary-large {
-  flex: 1;
-  max-width: none;
-  min-width: 0;
-  font-size: 18px;
-  font-weight: 700;
-  height: 48px;
-  padding: 0 32px;
-  box-shadow: 0 2px 8px rgba(49, 19, 93, 0.2);
-}
-
-.hep-btn-primary-large:hover:not(:disabled) {
-  box-shadow: 0 4px 16px rgba(49, 19, 93, 0.35);
-  transform: translateY(-1px);
-  transition: all 200ms ease;
+  /* Inherits all from hep-btn-primary via class combination */
 }
 
 /* ========================================
@@ -1044,8 +1139,9 @@
   font-weight: 600;
 }
 
+/* Check-in highlight - uses protocol purple instead of green */
 .hss-summary-value.hss-checkin {
-  color: #28a745;
+  color: #31135D;
 }
 
 .hss-summary-value.hss-checkout {
@@ -1058,7 +1154,7 @@
 
 .hep-animate-collapse {
   overflow: hidden;
-  transition: max-height 300ms ease, opacity 300ms ease, overflow 0ms 300ms;
+  transition: max-height 300ms ease, opacity 300ms ease;
 }
 
 .hep-animate-collapse.collapsed {
@@ -1067,14 +1163,14 @@
 }
 
 .hep-animate-collapse.expanded {
-  max-height: 2000px;
+  max-height: none;
   opacity: 1;
   overflow: visible;
-  transition: max-height 300ms ease, opacity 300ms ease, overflow 0ms 0ms;
 }
 
 /* ========================================
    Utility Classes
+   - Per protocol spacing scale: 8px, 12px, 16px, 24px
    ======================================== */
 
 .hep-hidden {
@@ -1095,16 +1191,41 @@
   margin-top: 8px;
 }
 
+.hep-mt-12 {
+  margin-top: 12px;
+}
+
 .hep-mt-16 {
   margin-top: 16px;
+}
+
+.hep-mt-24 {
+  margin-top: 24px;
+}
+
+.hep-mb-8 {
+  margin-bottom: 8px;
+}
+
+.hep-mb-12 {
+  margin-bottom: 12px;
 }
 
 .hep-mb-16 {
   margin-bottom: 16px;
 }
 
+.hep-mb-24 {
+  margin-bottom: 24px;
+}
+
 .hep-p-16 {
   padding: 16px;
+}
+
+.hep-py-16 {
+  padding-top: 16px;
+  padding-bottom: 16px;
 }
 
 /* ========================================
@@ -1131,21 +1252,7 @@
   }
 
   .hep-title-main {
-    font-size: 22px;
-  }
-
-  .hep-primary-actions {
-    flex-direction: column-reverse;
-    gap: 12px;
-  }
-
-  .hep-primary-actions .hep-btn-primary-large {
-    width: 100%;
-    flex: none;
-  }
-
-  .hep-primary-actions .hep-btn-reject-outline {
-    width: 100%;
+    font-size: 18px;
   }
 }
 
@@ -1169,5 +1276,96 @@
 
   .hep-popup-actions .hep-btn {
     width: 100%;
+  }
+}
+
+/* ========================================
+   RESPONSIVE - MOBILE BOTTOM SHEET
+   - Screen width < 480px triggers slide-up mode per protocol
+   - Border radius: 24px 24px 0 0
+   - Grab handle visible
+   - Fixed footer with safe-area padding
+   - Consistent spacing: 12px mobile adjustments
+   ======================================== */
+@media (max-width: 480px) {
+  .hep-grab-handle {
+    display: block;
+  }
+
+  .hep-container {
+    border-radius: 24px 24px 0 0;
+    max-height: 90vh;
+    padding: 0 16px 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .hep-section-header {
+    padding: 12px 16px 12px;
+    margin-left: -16px;
+    margin-right: -16px;
+    flex-shrink: 0;
+  }
+
+  .hep-title-main {
+    font-size: 18px;
+    font-weight: 500;
+  }
+
+  /* Scrollable body */
+  .hep-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-top: 12px;
+    padding-bottom: 8px;
+  }
+
+  /* Collapsible section tighter on mobile */
+  .hep-collapsible {
+    margin-bottom: 12px;
+    min-height: 40px;
+  }
+
+  /* Primary actions - fixed at bottom with safe area */
+  .hep-primary-actions {
+    flex-shrink: 0;
+    flex-direction: column-reverse;
+    padding: 12px 16px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    margin-top: 0;
+    margin-left: -16px;
+    margin-right: -16px;
+    gap: 10px;
+    border-top: 1px solid #E7E0EC;
+    background-color: #FFFFFF;
+  }
+
+  .hep-primary-actions .hep-btn {
+    width: 100%;
+    font-size: 14px;
+    height: 44px;
+    min-width: unset;
+  }
+
+  .hep-primary-actions .hep-btn-reject-outline {
+    width: 100%;
+    min-width: unset;
+  }
+
+  .hep-primary-actions .hep-btn-primary-large {
+    width: 100%;
+    flex: none;
+  }
+
+  /* Tighter form spacing on mobile */
+  .hep-form-group {
+    margin-bottom: 12px;
+  }
+
+  .hep-editing-terms {
+    padding: 12px 0;
   }
 }

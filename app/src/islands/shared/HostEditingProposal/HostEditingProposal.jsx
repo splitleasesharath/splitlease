@@ -479,10 +479,18 @@ export function HostEditingProposal({
 
   return (
     <div className="hep-container">
+      {/* Mobile Grab Handle - per POPUP_REPLICATION_PROTOCOL.md */}
+      <div className="hep-grab-handle" aria-hidden="true" />
+
       {/* Header - hidden in reject-only mode */}
       {!isRejectOnlyMode && (
         <div className="hep-section-header">
-          <h2 className="hep-title-main">Review Proposal Terms</h2>
+          <div className="hep-header-content">
+            <h2 className="hep-title-main">Review Proposal Terms</h2>
+            <div className="hep-description hep-header-subtext">
+              Reviewing proposal from <strong>{guestName}</strong> for <strong>{listingTitle}</strong>
+            </div>
+          </div>
           <div className="hep-header-actions">
             <button
               type="button"
@@ -490,7 +498,7 @@ export function HostEditingProposal({
               onClick={handleToggleView}
               title="Edit proposal"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
@@ -509,150 +517,148 @@ export function HostEditingProposal({
         </div>
       )}
 
-      {/* Guest Info - hidden in reject-only mode */}
-      {!isRejectOnlyMode && (
-        <div className="hep-description hep-mb-16">
-          Reviewing proposal from <strong>{guestName}</strong> for <strong>{listingTitle}</strong>
-        </div>
-      )}
+      {/* Scrollable Body */}
+      <div className="hep-body">
 
-      {/* Collapsible Edit Section - hidden in reject-only mode */}
-      {!isRejectOnlyMode && (
-        <div
-          className="hep-collapsible"
-          onClick={handleToggleEditSection}
-        >
-          <span className="hep-collapsible-title">Edit Proposal Terms</span>
-          <svg
-            className={`hep-collapsible-icon ${isEditSectionExpanded ? 'hep-collapsible-icon--expanded' : ''}`}
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
+        {/* Collapsible Edit Section - hidden in reject-only mode */}
+        {!isRejectOnlyMode && (
+          <div
+            className="hep-collapsible"
+            onClick={handleToggleEditSection}
           >
-            <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </div>
-      )}
-
-      {/* Editing Form */}
-      <div className={`hep-animate-collapse ${isEditSectionExpanded && view === 'editing' ? 'expanded' : 'collapsed'}`}>
-        <div className="hep-editing-terms">
-          <h3 className="hep-title-section hep-mb-16">Proposal Details</h3>
-
-          {/* Schedule Selector */}
-          <div className="hep-form-group">
-            <label className="hep-label">Schedule Selection</label>
-            <ScheduleSelector
-              initialNightsSelected={editedNightsSelected}
-              availableNights={listing?.nightsAvailable || listing?.['Nights Available']}
-              onChange={handleScheduleChange}
-              disabled={isInternalUsage || listing?.rentalType === 'Weekly'}
-            />
+            <span className="hep-collapsible-title">Edit Proposal Terms</span>
+            <svg
+              className={`hep-collapsible-icon ${isEditSectionExpanded ? 'hep-collapsible-icon--expanded' : ''}`}
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
           </div>
+        )}
 
-          {/* Move-in Date */}
-          <div className="hep-form-group">
-            <label className="hep-label">Your convenient move-in date</label>
-            <DateInput
-              value={editedMoveInDate}
-              onChange={setEditedMoveInDate}
-              placeholder="Move-in"
-              minDate={new Date()}
-            />
-            <div className="hep-text-value hep-mt-8">
-              Move-in suggestion: {formatDate(originalValues.moveInDate)}
-            </div>
-          </div>
+        {/* Editing Form */}
+        <div className={`hep-animate-collapse ${isEditSectionExpanded && view === 'editing' ? 'expanded' : 'collapsed'}`}>
+          <div className="hep-editing-terms">
+            <h3 className="hep-title-section hep-mb-16">Proposal Details</h3>
 
-          {/* Reservation Span */}
-          <div className="hep-form-row">
+            {/* Schedule Selector */}
             <div className="hep-form-group">
-              <label className="hep-label">Reservation Span</label>
-              <ReservationSpanDropdown
-                value={editedReservationSpan}
-                onChange={(span) => {
-                  setEditedReservationSpan(span)
-                  if (span.value !== 'other') {
-                    setEditedWeeks(span.weeks)
-                  }
-                }}
-                options={RESERVATION_SPANS}
-                placeholder="Select reservation span"
+              <label className="hep-label">Schedule Selection</label>
+              <ScheduleSelector
+                initialNightsSelected={editedNightsSelected}
+                availableNights={listing?.nightsAvailable || listing?.['Nights Available']}
+                onChange={handleScheduleChange}
+                disabled={isInternalUsage || listing?.rentalType === 'Weekly'}
               />
             </div>
-            {editedReservationSpan?.value === 'other' && (
+
+            {/* Move-in Date */}
+            <div className="hep-form-group">
+              <label className="hep-label">Your convenient move-in date</label>
+              <DateInput
+                value={editedMoveInDate}
+                onChange={setEditedMoveInDate}
+                placeholder="Move-in"
+                minDate={new Date()}
+              />
+              <div className="hep-text-value hep-mt-8">
+                Move-in suggestion: {formatDate(originalValues.moveInDate)}
+              </div>
+            </div>
+
+            {/* Reservation Span */}
+            <div className="hep-form-row">
               <div className="hep-form-group">
-                <label className="hep-label"># of weeks</label>
-                <NumberInput
-                  value={editedWeeks}
-                  onChange={setEditedWeeks}
-                  placeholder="Enter # Weeks"
-                  min={1}
-                  max={52}
+                <label className="hep-label">Reservation Span</label>
+                <ReservationSpanDropdown
+                  value={editedReservationSpan}
+                  onChange={(span) => {
+                    setEditedReservationSpan(span)
+                    if (span.value !== 'other') {
+                      setEditedWeeks(span.weeks)
+                    }
+                  }}
+                  options={RESERVATION_SPANS}
+                  placeholder="Select reservation span"
                 />
               </div>
-            )}
-          </div>
+              {editedReservationSpan?.value === 'other' && (
+                <div className="hep-form-group">
+                  <label className="hep-label"># of weeks</label>
+                  <NumberInput
+                    value={editedWeeks}
+                    onChange={setEditedWeeks}
+                    placeholder="Enter # Weeks"
+                    min={1}
+                    max={52}
+                  />
+                </div>
+              )}
+            </div>
 
-          {/* House Rules */}
-          <div className="hep-form-group">
-            <label className="hep-label">House Rules</label>
-            <HouseRulesMultiSelect
-              value={editedHouseRules}
-              onChange={setEditedHouseRules}
-              options={availableHouseRules}
-              placeholder="Choose some options..."
-            />
-          </div>
+            {/* House Rules */}
+            <div className="hep-form-group">
+              <label className="hep-label">House Rules</label>
+              <HouseRulesMultiSelect
+                value={editedHouseRules}
+                onChange={setEditedHouseRules}
+                options={availableHouseRules}
+                placeholder="Choose some options..."
+              />
+            </div>
 
-          {/* Approximate Move-out */}
-          <div className="hep-proposal-row hep-mt-16">
-            <span className="hep-row-label">Approximate Move-out</span>
-            <span className="hep-text-value">{formatDate(approxMoveOut)}</span>
-          </div>
+            {/* Approximate Move-out */}
+            <div className="hep-proposal-row hep-mt-16">
+              <span className="hep-row-label">Approximate Move-out</span>
+              <span className="hep-text-value">{formatDate(approxMoveOut)}</span>
+            </div>
 
-          {/* Actions */}
-          <div className="hep-actions-row">
-            <button
-              type="button"
-              className="hep-btn hep-btn-cancel"
-              onClick={handleCancel}
-            >
-              Cancel edits
-            </button>
-            <button
-              type="button"
-              className="hep-btn hep-btn-primary"
-              onClick={handleUpdateProposal}
-            >
-              Update Proposal
-            </button>
+            {/* Actions */}
+            <div className="hep-actions-row">
+              <button
+                type="button"
+                className="hep-btn hep-btn-cancel"
+                onClick={handleCancel}
+              >
+                Cancel edits
+              </button>
+              <button
+                type="button"
+                className="hep-btn hep-btn-primary"
+                onClick={handleUpdateProposal}
+              >
+                Update Proposal
+              </button>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Reservation Price Breakdown - shown in general view, hidden in reject-only mode */}
-      {view === 'general' && !isRejectOnlyMode && (
-        <ReservationPriceBreakdown
-          moveInDate={editedMoveInDate}
-          checkInDay={editedCheckInDay}
-          checkOutDay={editedCheckOutDay}
-          reservationSpan={editedReservationSpan}
-          weeksReservationSpan={editedWeeks}
-          houseRules={editedHouseRules}
-          nightsSelected={editedNightsSelected}
-          nightlyCompensation={nightlyCompensation}
-          totalCompensation={totalCompensation}
-          hostCompensationPer4Weeks={compensationPer4Weeks}
-          originalTotalCompensation={originalTotalCompensation}
-          originalCompensationPer4Weeks={originalCompensationPer4Weeks}
-          isVisible={true}
-          originalValues={originalValues}
-          onEditField={handleEditField}
-        />
-      )}
+        {/* Reservation Price Breakdown - shown in general view, hidden in reject-only mode */}
+        {view === 'general' && !isRejectOnlyMode && (
+          <ReservationPriceBreakdown
+            moveInDate={editedMoveInDate}
+            checkInDay={editedCheckInDay}
+            checkOutDay={editedCheckOutDay}
+            reservationSpan={editedReservationSpan}
+            weeksReservationSpan={editedWeeks}
+            houseRules={editedHouseRules}
+            nightsSelected={editedNightsSelected}
+            nightlyCompensation={nightlyCompensation}
+            totalCompensation={totalCompensation}
+            hostCompensationPer4Weeks={compensationPer4Weeks}
+            originalTotalCompensation={originalTotalCompensation}
+            originalCompensationPer4Weeks={originalCompensationPer4Weeks}
+            isVisible={true}
+            originalValues={originalValues}
+            onEditField={handleEditField}
+          />
+        )}
+      </div>
+      {/* End Scrollable Body */}
 
       {/* Primary Actions Row - Submit/Accept and Reject side by side - hidden in reject-only mode */}
       {view === 'general' && !isRejectOnlyMode && (

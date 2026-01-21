@@ -1,7 +1,10 @@
 /* Create Duplicate Listing Modal Styles */
-/* Converted from Bubble.io element to match Split Lease styling */
+/* Updated to follow POPUP_REPLICATION_PROTOCOL.md */
+/* Color Scheme: Monochromatic Purple - NO GREEN, NO YELLOW */
 
-/* Modal Overlay */
+/* ============================================================================
+   MODAL OVERLAY
+   ============================================================================ */
 .create-listing-modal-overlay {
   position: fixed;
   top: 0;
@@ -14,29 +17,34 @@
   align-items: center;
   justify-content: center;
   padding: 20px;
-  animation: fadeIn 0.2s ease;
+  animation: createListingFadeIn 0.2s ease;
 }
 
-@keyframes fadeIn {
+@keyframes createListingFadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
-/* Modal Container */
+/* ============================================================================
+   MODAL CONTAINER
+   - Flexbox layout with fixed Header/Footer and scrollable Body
+   - Max-height: 92vh per protocol
+   ============================================================================ */
 .create-listing-modal-container {
   background-color: #FFFFFF;
-  border: 1px solid #6B6B6B;
-  border-radius: 10px;
+  border-radius: 16px;
   width: 90%;
-  max-width: 500px;
+  max-width: 480px;
+  max-height: 92vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  animation: slideIn 0.3s ease;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  animation: createListingSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
+  overflow: hidden;
 }
 
-@keyframes slideIn {
+@keyframes createListingSlideIn {
   from {
     transform: translateY(-20px);
     opacity: 0;
@@ -47,15 +55,38 @@
   }
 }
 
-/* Header Section */
+/* ============================================================================
+   MOBILE GRAB HANDLE
+   - 36x4px centered bar for mobile bottom sheet
+   ============================================================================ */
+.create-listing-grab-handle {
+  display: none;
+  width: 36px;
+  height: 4px;
+  background: #E7E0EC;
+  border-radius: 2px;
+  margin: 8px auto 0;
+}
+
+/* ============================================================================
+   HEADER SECTION
+   - Reduced height per protocol
+   - Icon and Title aligned via flex: center
+   ============================================================================ */
 .create-listing-header {
+  flex-shrink: 0;
   width: 100%;
-  border-bottom: 1px solid #000000;
-  padding: 20px;
-  position: relative;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #E7E0EC;
+}
+
+.create-listing-header-content {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
 }
 
 .create-listing-header-top {
@@ -64,10 +95,40 @@
   gap: 12px;
 }
 
+.create-listing-icon {
+  width: 24px;
+  height: 24px;
+  color: #31135D;
+  flex-shrink: 0;
+}
+
+.create-listing-icon svg {
+  width: 24px;
+  height: 24px;
+  stroke: #31135D;
+  stroke-width: 2;
+  fill: none;
+}
+
+.create-listing-title {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: #1C1B1F;
+  margin: 0;
+}
+
+.create-listing-subtitle {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 13px;
+  color: #79747E;
+  margin: 0;
+  line-height: 1.4;
+  padding-left: 36px;
+}
+
 .create-listing-close-btn {
-  position: absolute;
-  top: 20px;
-  right: 20px;
   width: 32px;
   height: 32px;
   background: transparent;
@@ -77,139 +138,168 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
-  font-size: 28px;
-  color: #000000;
-  line-height: 1;
+  border-radius: 8px;
+  color: #49454F;
   transition: background-color 0.2s ease;
+  flex-shrink: 0;
+  align-self: flex-start;
 }
 
 .create-listing-close-btn:hover {
-  background-color: #f0f0f0;
+  background-color: #F7F2FA;
 }
 
-.create-listing-icon {
-  font-size: 24px;
-  line-height: 1;
+.create-listing-close-btn svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  stroke-width: 2;
 }
 
-.create-listing-title {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 18px;
-  font-weight: 500;
-  line-height: 1.6;
-  color: #000000;
-  margin: 0;
+/* ============================================================================
+   MODAL BODY (SCROLLABLE)
+   - overflow-y: auto for scrolling
+   - flex-grow: 1 to fill available space
+   ============================================================================ */
+.create-listing-body {
+  flex-grow: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
-.create-listing-subtitle {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 14px;
-  color: #666666;
-  margin: 0;
-  line-height: 1.4;
-}
-
-/* Input/Dropdown Sections */
+/* ============================================================================
+   FORM SECTIONS
+   - Spacing Scale: 8px, 16px, 24px (consistent vertical rhythm)
+   ============================================================================ */
 .create-listing-section {
   width: 100%;
-  padding: 20px;
+  padding: 16px 20px 8px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  border-bottom: 1px dotted #6B6B6B;
+  gap: 8px;
+}
+
+.create-listing-section + .create-listing-section {
+  padding-top: 8px;
 }
 
 .create-listing-label {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 14px;
   font-weight: 500;
-  color: #000000;
+  color: #1C1B1F;
   margin: 0;
 }
 
 .create-listing-input,
 .create-listing-select {
   width: 100%;
-  height: 40px;
-  padding: 8px 12px;
-  font-family: 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  height: 44px;
+  padding: 10px 14px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 14px;
-  color: #3D3D3D;
+  color: #1C1B1F;
   background: #FFFFFF;
-  border: 1px solid #4B47CE;
-  border-radius: 4px;
+  border: 1px solid #E7E0EC;
+  border-radius: 8px;
   transition: all 0.2s ease;
 }
 
 .create-listing-input::placeholder {
-  color: #B5B5B5;
+  color: #79747E;
 }
 
 .create-listing-input:focus,
 .create-listing-select:focus {
   outline: none;
-  border-color: #4B47CE;
-  box-shadow: 0 0 0 2px rgba(75, 71, 206, 0.2);
+  border-color: #31135D;
+  box-shadow: 0 0 0 2px rgba(49, 19, 93, 0.15);
 }
 
 .create-listing-input:disabled,
 .create-listing-select:disabled {
-  background-color: #f5f5f5;
+  background-color: #F7F2FA;
   cursor: not-allowed;
   opacity: 0.6;
 }
 
 .create-listing-select {
   cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2349454F' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 40px;
 }
 
 .create-listing-helper {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 12px;
-  color: #999999;
+  color: #79747E;
   margin: 0;
   line-height: 1.4;
 }
 
-/* Button Section */
-.create-listing-buttons {
+/* ============================================================================
+   FOOTER / BUTTON SECTION
+   - Fixed at bottom (flex-shrink: 0)
+   - Padding matches header (16px) for visual balance
+   ============================================================================ */
+.create-listing-footer {
+  flex-shrink: 0;
   width: 100%;
-  min-height: 54px;
-  background-color: #F7F8F9;
+  padding: 16px 20px;
+  background-color: #FFFFFF;
+  border-top: 1px solid #E7E0EC;
   display: flex;
-  align-items: center;
-  justify-content: center;
   gap: 12px;
-  padding: 12px 20px;
-  border-bottom-left-radius: 10px;
-  border-bottom-right-radius: 10px;
+  justify-content: flex-end;
 }
 
+/* Legacy class support - maps to footer */
+.create-listing-buttons {
+  flex-shrink: 0;
+  width: 100%;
+  padding: 16px 20px;
+  background-color: #FFFFFF;
+  border-top: 1px solid #E7E0EC;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+/* ============================================================================
+   BUTTON VARIANTS
+   - Radius: 100px (pill-shaped) per protocol
+   - Primary: Background #31135D, Text White
+   - Secondary: Outline #31135D
+   ============================================================================ */
 .create-listing-btn {
-  min-width: 128px;
-  height: 36px;
-  padding: 0 20px;
-  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 16px;
-  font-weight: 500;
-  letter-spacing: -0.25px;
-  border: none;
-  border-radius: 20px;
+  height: 44px;
+  padding: 0 24px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  border: 2px solid transparent;
+  border-radius: 100px;
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
-/* Primary Button (Create/Duplicate) */
+/* Primary Button */
 .create-listing-btn-primary {
-  color: #FCFAFF;
-  background-color: #31133D;
+  color: #FFFFFF;
+  background-color: #31135D;
 }
 
 .create-listing-btn-primary:hover:not(:disabled) {
-  background-color: #3d1a4a;
-  box-shadow: 0 2px 8px rgba(49, 19, 61, 0.3);
+  background-color: #4A2F7C;
+  box-shadow: 0 4px 12px rgba(49, 19, 93, 0.2);
 }
 
 .create-listing-btn-primary:active:not(:disabled) {
@@ -221,15 +311,16 @@
   cursor: not-allowed;
 }
 
-/* Secondary Button (Copy Existing) */
+/* Secondary Button - Outline Purple */
 .create-listing-btn-secondary {
-  color: #FCFAFF;
-  background-color: #31133D;
+  background: transparent;
+  border-color: #31135D;
+  color: #31135D;
 }
 
 .create-listing-btn-secondary:hover:not(:disabled) {
-  background-color: #3d1a4a;
-  box-shadow: 0 2px 8px rgba(49, 19, 61, 0.3);
+  background-color: #31135D;
+  color: #FFFFFF;
 }
 
 .create-listing-btn-secondary:active:not(:disabled) {
@@ -241,37 +332,42 @@
   cursor: not-allowed;
 }
 
-/* Back Button */
+/* Back Button - Ghost style */
 .create-listing-btn-back {
-  color: #31133D;
   background: transparent;
-  border: 1px solid #31133D;
-  padding: 0 16px;
-  min-width: auto;
+  border: 1px solid #E7E0EC;
+  color: #49454F;
 }
 
 .create-listing-btn-back:hover:not(:disabled) {
-  background-color: #f0f0f0;
+  background-color: #F7F2FA;
+  color: #31135D;
 }
 
 .create-listing-btn-back:active:not(:disabled) {
   transform: translateY(1px);
 }
 
-/* Responsive Design */
-@media (max-width: 700px) {
-  .create-listing-btn {
-    font-size: 13px;
-    min-width: 110px;
-    padding: 0 16px;
-  }
+/* Loading spinner for button */
+.create-listing-btn .spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #FFFFFF;
+  border-radius: 50%;
+  animation: createListingSpin 0.8s linear infinite;
+}
 
+@keyframes createListingSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================================================
+   RESPONSIVE - TABLET
+   ============================================================================ */
+@media (max-width: 700px) {
   .create-listing-title {
     font-size: 16px;
-  }
-
-  .create-listing-subtitle {
-    font-size: 13px;
   }
 
   .create-listing-modal-container {
@@ -279,25 +375,70 @@
   }
 }
 
-/* Mobile Optimization */
+/* ============================================================================
+   RESPONSIVE - MOBILE BOTTOM SHEET
+   - Screen width < 480px triggers slide-up mode per protocol
+   - Border radius: 24px 24px 0 0
+   - Grab handle visible
+   ============================================================================ */
 @media (max-width: 480px) {
   .create-listing-modal-overlay {
-    padding: 10px;
+    align-items: flex-end;
+    padding: 0;
   }
 
-  .create-listing-header,
+  .create-listing-modal-container {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 24px 24px 0 0;
+    max-height: 90vh;
+    animation: createListingSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes createListingSlideUp {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .create-listing-grab-handle {
+    display: block;
+  }
+
+  .create-listing-header {
+    padding: 12px 16px 16px;
+  }
+
+  .create-listing-title {
+    font-size: 18px;
+    font-weight: 400;
+  }
+
+  .create-listing-subtitle {
+    padding-left: 32px;
+  }
+
+  .create-listing-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
   .create-listing-section {
-    padding: 16px;
+    padding: 12px 16px 8px;
   }
 
+  .create-listing-footer,
   .create-listing-buttons {
-    flex-direction: column;
-    gap: 8px;
-    padding: 12px 16px;
+    padding: 12px 16px 20px;
+    flex-direction: column-reverse;
   }
 
   .create-listing-btn {
     width: 100%;
-    min-width: unset;
   }
 }

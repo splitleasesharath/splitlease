@@ -2,17 +2,34 @@
  * House Manual Edge Function
  * Split Lease - AI-Powered House Manual Creation
  *
- * Routes AI requests to appropriate handlers for house manual content extraction.
+ * Routes AI requests to appropriate handlers for house manual content extraction
+ * and AI suggestions management.
  *
  * NO FALLBACK PRINCIPLE: All errors fail fast without fallback logic
  *
  * Supported Actions:
+ *
+ * CONTENT EXTRACTION:
  * - parse_text: Parse freeform text to structured house manual format
  * - transcribe_audio: Transcribe audio via Whisper API
  * - extract_wifi: Extract WiFi credentials from image via Vision API
  * - parse_document: Parse PDF files for house manual content
  * - parse_google_doc: Parse Google Doc URLs
  * - initiate_call: Start AI phone call for information gathering (Twilio)
+ *
+ * AI SUGGESTIONS:
+ * - get_suggestions: Fetch pending AI suggestions for a house manual
+ * - accept_suggestion: Accept and apply a single suggestion
+ * - ignore_suggestion: Mark a suggestion as ignored
+ * - combine_suggestion: Accept with user-edited combined content
+ * - accept_all_suggestions: Batch accept all pending suggestions
+ * - reuse_previous: Copy suggestions from a previous house manual
+ *
+ * GUEST VIEWER (Visit Reviewer House Manual):
+ * - get_visit_manual: Fetch house manual for guest viewing (requires auth)
+ * - validate_access_token: Validate magic link access token
+ * - track_engagement: Track guest engagement (link_saw, map_saw, narration_heard)
+ * - submit_review: Submit guest review with structured ratings
  *
  * FP ARCHITECTURE:
  * - Pure functions for validation, routing, and response formatting
@@ -35,30 +52,68 @@ import { handleExtractWifi } from "./handlers/extractWifi.ts";
 import { handleParseDocument } from "./handlers/parseDocument.ts";
 import { handleParseGoogleDoc } from "./handlers/parseGoogleDoc.ts";
 import { handleInitiateCall } from "./handlers/initiateCall.ts";
+// AI Suggestions handlers
+import { handleGetSuggestions } from "./handlers/getSuggestions.ts";
+import { handleAcceptSuggestion } from "./handlers/acceptSuggestion.ts";
+import { handleIgnoreSuggestion } from "./handlers/ignoreSuggestion.ts";
+import { handleCombineSuggestion } from "./handlers/combineSuggestion.ts";
+import { handleAcceptAllSuggestions } from "./handlers/acceptAllSuggestions.ts";
+import { handleReusePrevious } from "./handlers/reusePrevious.ts";
+// Guest Viewer (Visit Reviewer) handlers
+import { handleGetVisitManual } from "./handlers/getVisitManual.ts";
+import { handleValidateAccessToken } from "./handlers/validateAccessToken.ts";
+import { handleTrackEngagement } from "./handlers/trackEngagement.ts";
+import { handleSubmitReview } from "./handlers/submitReview.ts";
 
 // ─────────────────────────────────────────────────────────────
 // Configuration (Immutable)
 // ─────────────────────────────────────────────────────────────
 
 const ALLOWED_ACTIONS = [
+  // Content extraction actions
   "parse_text",
   "transcribe_audio",
   "extract_wifi",
   "parse_document",
   "parse_google_doc",
   "initiate_call",
+  // AI Suggestions actions
+  "get_suggestions",
+  "accept_suggestion",
+  "ignore_suggestion",
+  "combine_suggestion",
+  "accept_all_suggestions",
+  "reuse_previous",
+  // Guest Viewer (Visit Reviewer) actions
+  "get_visit_manual",
+  "validate_access_token",
+  "track_engagement",
+  "submit_review",
 ] as const;
 
 type Action = typeof ALLOWED_ACTIONS[number];
 
 // Handler map (immutable record)
 const handlers: Readonly<Record<Action, Function>> = {
+  // Content extraction handlers
   parse_text: handleParseText,
   transcribe_audio: handleTranscribeAudio,
   extract_wifi: handleExtractWifi,
   parse_document: handleParseDocument,
   parse_google_doc: handleParseGoogleDoc,
   initiate_call: handleInitiateCall,
+  // AI Suggestions handlers
+  get_suggestions: handleGetSuggestions,
+  accept_suggestion: handleAcceptSuggestion,
+  ignore_suggestion: handleIgnoreSuggestion,
+  combine_suggestion: handleCombineSuggestion,
+  accept_all_suggestions: handleAcceptAllSuggestions,
+  reuse_previous: handleReusePrevious,
+  // Guest Viewer (Visit Reviewer) handlers
+  get_visit_manual: handleGetVisitManual,
+  validate_access_token: handleValidateAccessToken,
+  track_engagement: handleTrackEngagement,
+  submit_review: handleSubmitReview,
 };
 
 // ─────────────────────────────────────────────────────────────

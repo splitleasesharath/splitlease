@@ -26,7 +26,7 @@ export default function CompareTermsModal({ proposal, onClose, onAcceptCounterof
 
       // Step 2-3: Calculate lease numbering format
       const { count: leaseCount, error: countError } = await supabase
-        .from('Booking - Lease')
+        .from('bookings_leases')
         .select('*', { count: 'exact', head: true });
 
       if (countError) throw countError;

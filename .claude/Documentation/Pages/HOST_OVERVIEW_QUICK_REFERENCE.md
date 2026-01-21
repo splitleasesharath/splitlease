@@ -1,6 +1,6 @@
 # Host Overview Page - Quick Reference
 
-**GENERATED**: 2025-12-11
+**GENERATED**: 2026-01-20
 **PAGE_URL**: `/host-overview`
 **ENTRY_POINT**: `app/src/host-overview.jsx`
 
@@ -961,6 +961,6 @@ Each data source handles errors independently:
 
 ---
 
-**VERSION**: 2.0
-**LAST_UPDATED**: 2025-12-11
+**VERSION**: 2.1
+**LAST_UPDATED**: 2026-01-20
 **STATUS**: Comprehensive documentation for Host Overview page (updated with multi-source listing fetching, pricing display, and CreateDuplicateListingModal)

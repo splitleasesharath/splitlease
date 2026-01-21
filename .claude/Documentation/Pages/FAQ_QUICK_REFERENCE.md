@@ -1,6 +1,6 @@
 # FAQ Page - Quick Reference
 
-**GENERATED**: 2025-12-11
+**GENERATED**: 2026-01-20
 **PAGE_URL**: `/faq.html` or `/faq?section={tab}&question={id}`
 **ENTRY_POINT**: `app/src/faq.jsx`
 
@@ -733,5 +733,5 @@ These may be future features or were removed from the component.
 ---
 
 **VERSION**: 2.0
-**LAST_UPDATED**: 2025-12-11
+**LAST_UPDATED**: 2026-01-20
 **STATUS**: Complete documentation of FAQ page architecture

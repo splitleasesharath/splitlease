@@ -1597,17 +1597,7 @@ export default function PreviewSplitLeasePage() {
               value={moveInDate || ''}
               min={minMoveInDate}
               onChange={(e) => setMoveInDate(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                border: '2px solid #E5E7EB',
-                borderRadius: '10px',
-                fontSize: '15px',
-                fontWeight: '500',
-                color: '#111827',
-                background: 'white',
-                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
-              }}
+              className="preview-date-input"
             />
           </div>
 
@@ -1652,20 +1642,7 @@ export default function PreviewSplitLeasePage() {
               <select
                 value={reservationSpan}
                 onChange={(e) => setReservationSpan(Number(e.target.value))}
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  paddingRight: '40px',
-                  border: '2px solid #E5E7EB',
-                  borderRadius: '10px',
-                  fontSize: '15px',
-                  fontWeight: '500',
-                  color: '#111827',
-                  background: 'white',
-                  cursor: 'pointer',
-                  appearance: 'none',
-                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
-                }}
+                className="preview-select-input"
               >
                 {[6, 7, 8, 9, 10, 12, 13, 16, 17, 20, 22, 26].map(weeks => (
                   <option key={weeks} value={weeks}>

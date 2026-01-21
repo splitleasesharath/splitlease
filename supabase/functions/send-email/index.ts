@@ -24,7 +24,7 @@ import {
 } from "../_shared/errors.ts";
 
 // FP Utilities
-import { Result, ok, err } from "../_shared/fp/result.ts";
+import { Result, ok, err } from "../_shared/functional/result.ts";
 import {
   parseRequest,
   validateAction,
@@ -34,8 +34,8 @@ import {
   formatCorsResponse,
   CorsPreflightSignal,
   extractAuthToken,
-} from "../_shared/fp/orchestration.ts";
-import { createErrorLog, addError, setAction, ErrorLog } from "../_shared/fp/errorLog.ts";
+} from "../_shared/functional/orchestration.ts";
+import { createErrorLog, addError, setAction, ErrorLog } from "../_shared/functional/errorLog.ts";
 import { reportErrorLog } from "../_shared/slack.ts";
 
 import { handleSend } from "./handlers/send.ts";

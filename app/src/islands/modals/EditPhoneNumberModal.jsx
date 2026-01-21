@@ -1,11 +1,51 @@
 /**
  * Edit Phone Number Modal
  * Allows users to update their phone number from the account profile page
- * Design matches Bubble.io popup styling
+ *
+ * Updated to follow POPUP_REPLICATION_PROTOCOL.md design system.
+ * Features:
+ * - Monochromatic purple color scheme (no green/yellow)
+ * - Mobile bottom sheet behavior (< 480px)
+ * - Feather icons (stroke-only)
+ * - Pill-shaped buttons (100px radius)
  */
 
 import { useState, useEffect } from 'react';
 import { toast } from '../../lib/toastService.js';
+import './EditPhoneNumberModal.css';
+
+// Phone icon (Feather style)
+function PhoneIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+    </svg>
+  );
+}
+
+// Close icon (Feather style)
+function CloseIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <line x1="18" y1="6" x2="6" y2="18"></line>
+      <line x1="6" y1="6" x2="18" y2="18"></line>
+    </svg>
+  );
+}
 
 export default function EditPhoneNumberModal({ isOpen, currentPhoneNumber, onSave, onClose }) {
   const [newPhoneNumber, setNewPhoneNumber] = useState('');
@@ -19,6 +59,36 @@ export default function EditPhoneNumberModal({ isOpen, currentPhoneNumber, onSav
       setSaving(false);
     }
   }, [isOpen]);
+
+  // Handle escape key
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen, onClose]);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
+  const handleOverlayClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
 
   const handleSave = async () => {
     if (!newPhoneNumber.trim()) {
@@ -41,194 +111,102 @@ export default function EditPhoneNumberModal({ isOpen, currentPhoneNumber, onSav
 
   return (
     <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 2002,
-        display: 'flex',
-        alignItems: 'flex-start',
-        justifyContent: 'center',
-        paddingTop: '100px',
-        paddingBottom: '50px',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      }}
-      onClick={onClose}
+      className="edit-phone-modal-overlay"
+      onClick={handleOverlayClick}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="edit-phone-modal-title"
     >
-      {/* Modal Container - matches Bubble design */}
-      <div
-        style={{
-          position: 'relative',
-          backgroundColor: '#ffffff',
-          borderRadius: '5px',
-          boxShadow: 'rgba(0, 0, 0, 0.38) 0px 50px 80px 0px',
-          width: 'calc(100% - 20px)',
-          minWidth: '409px',
-          maxWidth: '409px',
-          minHeight: '360px',
-          maxHeight: '360px',
-          overflow: 'auto',
-          padding: 0,
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Inner Content Group */}
-        <div
-          style={{
-            position: 'relative',
-            backgroundColor: '#ffffff',
-            borderRadius: '5px',
-            padding: '16px',
-            width: '377px',
-            height: '328px',
-            margin: '16px',
-          }}
-        >
-          {/* Title */}
-          <div
-            style={{
-              fontFamily: 'Lato, sans-serif',
-              fontSize: '24px',
-              fontWeight: 'bold',
-              color: '#424242',
-              textAlign: 'center',
-              lineHeight: 1.25,
-              marginTop: '10px',
-              marginBottom: '20px',
-            }}
+      <div className="edit-phone-modal" onClick={(e) => e.stopPropagation()}>
+        {/* Mobile grab handle - visible only on mobile */}
+        <div className="edit-phone-modal-grab-handle" aria-hidden="true" />
+
+        {/* Header */}
+        <header className="edit-phone-modal-header">
+          <div className="edit-phone-modal-header-content">
+            <div className="edit-phone-modal-header-top">
+              <span className="edit-phone-modal-icon" aria-hidden="true">
+                <PhoneIcon />
+              </span>
+              <h2 id="edit-phone-modal-title" className="edit-phone-modal-title">
+                Edit Phone Number
+              </h2>
+            </div>
+            <p className="edit-phone-modal-subtitle">
+              Update your contact phone number for booking communications.
+            </p>
+          </div>
+          <button
+            className="edit-phone-modal-close"
+            onClick={onClose}
+            aria-label="Close modal"
+            type="button"
           >
-            Edit your Phone Number
+            <CloseIcon />
+          </button>
+        </header>
+
+        {/* Body */}
+        <div className="edit-phone-modal-body">
+          {/* Old Phone Number */}
+          <div className="edit-phone-form-group">
+            <label className="edit-phone-label" htmlFor="current-phone">
+              Current Phone Number
+            </label>
+            <input
+              id="current-phone"
+              type="tel"
+              className="edit-phone-input"
+              value={currentPhoneNumber || ''}
+              disabled
+              inputMode="tel"
+            />
           </div>
 
-          {/* Old Phone Number Label */}
-          <div
-            style={{
-              fontFamily: 'Lato, sans-serif',
-              fontSize: '14px',
-              fontWeight: 400,
-              color: '#424242',
-              lineHeight: 1.25,
-              marginBottom: '10px',
-            }}
-          >
-            Old Phone Number
-          </div>
-
-          {/* Old Phone Number Input (disabled) */}
-          <input
-            type="tel"
-            value={currentPhoneNumber || ''}
-            disabled
-            style={{
-              width: '100%',
-              height: '60px',
-              backgroundColor: '#ffffff',
-              borderStyle: 'solid',
-              borderWidth: '2px',
-              borderColor: '#424242',
-              borderRadius: '5px',
-              fontFamily: 'inherit',
-              fontSize: '20px',
-              fontWeight: 400,
-              color: '#3d3d3d',
-              padding: '0 12px',
-              boxSizing: 'border-box',
-              marginBottom: '20px',
-              opacity: 0.7,
-              cursor: 'not-allowed',
-            }}
-            inputMode="tel"
-          />
-
-          {/* New Phone Number Label */}
-          <div
-            style={{
-              fontFamily: 'Lato, sans-serif',
-              fontSize: '14px',
-              fontWeight: 400,
-              color: '#424242',
-              lineHeight: 1.25,
-              marginBottom: '10px',
-            }}
-          >
-            New Phone Number
-          </div>
-
-          {/* New Phone Number Input */}
-          <input
-            type="tel"
-            value={newPhoneNumber}
-            onChange={(e) => setNewPhoneNumber(e.target.value)}
-            placeholder="  Type your new number here"
-            style={{
-              width: '100%',
-              height: '60px',
-              backgroundColor: '#ffffff',
-              borderStyle: 'solid',
-              borderWidth: '2px',
-              borderColor: '#424242',
-              borderRadius: '5px',
-              fontFamily: 'inherit',
-              fontSize: '20px',
-              fontWeight: 400,
-              color: '#3d3d3d',
-              padding: '0 12px',
-              boxSizing: 'border-box',
-              marginBottom: '20px',
-            }}
-            inputMode="tel"
-            autoFocus
-          />
-
-          {/* Save Button */}
-          <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              style={{
-                backgroundColor: '#00C851',
-                fontFamily: 'inherit',
-                fontSize: '22px',
-                fontWeight: 'bold',
-                color: '#ffffff',
-                textAlign: 'center',
-                lineHeight: 1,
-                borderRadius: '3px',
-                border: 'none',
-                cursor: saving ? 'not-allowed' : 'pointer',
-                width: '156px',
-                height: '49px',
-                opacity: saving ? 0.6 : 1,
-              }}
-            >
-              {saving ? 'Saving...' : 'Save'}
-            </button>
+          {/* New Phone Number */}
+          <div className="edit-phone-form-group">
+            <label className="edit-phone-label" htmlFor="new-phone">
+              New Phone Number
+            </label>
+            <input
+              id="new-phone"
+              type="tel"
+              className="edit-phone-input"
+              value={newPhoneNumber}
+              onChange={(e) => setNewPhoneNumber(e.target.value)}
+              placeholder="Enter your new phone number"
+              inputMode="tel"
+              autoFocus
+            />
           </div>
         </div>
 
-        {/* Close Button (X icon) */}
-        <button
-          onClick={onClose}
-          style={{
-            position: 'absolute',
-            top: '0px',
-            right: '0px',
-            width: '20px',
-            height: '20px',
-            backgroundColor: 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#31135d',
-            fontSize: '18px',
-            fontWeight: 'bold',
-            padding: 0,
-          }}
-          aria-label="Close"
-        >
-          &times;
-        </button>
+        {/* Footer */}
+        <footer className="edit-phone-modal-footer">
+          <button
+            type="button"
+            className="edit-phone-btn edit-phone-btn--secondary"
+            onClick={onClose}
+            disabled={saving}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="edit-phone-btn edit-phone-btn--primary"
+            onClick={handleSave}
+            disabled={saving || !newPhoneNumber.trim()}
+          >
+            {saving ? (
+              <>
+                <span className="edit-phone-spinner" aria-hidden="true" />
+                Saving...
+              </>
+            ) : (
+              'Save Changes'
+            )}
+          </button>
+        </footer>
       </div>
     </div>
   );

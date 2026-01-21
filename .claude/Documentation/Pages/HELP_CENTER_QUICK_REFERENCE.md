@@ -1,6 +1,6 @@
 # Help Center Page - Quick Reference
 
-**GENERATED**: 2025-12-11
+**GENERATED**: 2026-01-20
 **PAGE_URL**: `/help-center` (hub), `/help-center/{category}` (category), `/help-center-articles/{category}/{slug}.html` (articles)
 **ENTRY_POINTS**: `app/src/help-center.jsx`, `app/src/help-center-category.jsx`
 
@@ -685,5 +685,5 @@ export function getArticlesByCategory(categoryId) {
 ---
 
 **VERSION**: 2.0
-**LAST_UPDATED**: 2025-12-11
+**LAST_UPDATED**: 2026-01-20
 **STATUS**: Updated to reflect current implementation (Slack service, modal states, data exports)

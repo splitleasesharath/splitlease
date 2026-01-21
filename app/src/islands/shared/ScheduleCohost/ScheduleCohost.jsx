@@ -2,12 +2,19 @@
  * Schedule Co-Host Component
  * Modal for scheduling meetings with Split Lease specialists
  * Features a calendar date picker with time slot selection
+ * Updated to follow POPUP_REPLICATION_PROTOCOL.md design system
  *
  * Workflow based on Bubble Schedule-Co-Host element:
  * - Creates Co-Host Request record
  * - Creates Virtual Meeting Schedules and Links record
  * - Sends confirmation notifications
  * - Supports post-meeting rating
+ *
+ * Design Features (per protocol):
+ * - Monochromatic purple color scheme (no green/yellow)
+ * - Mobile bottom sheet behavior (< 480px)
+ * - Pill-shaped buttons (100px radius)
+ * - Feather icons (stroke-only)
  */
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -600,8 +607,17 @@ export default function ScheduleCohost({
   const slotsRemaining = 3 - selectedTimeSlots.length;
 
   return (
-    <div className="schedule-cohost-overlay" onClick={handleBackdropClick}>
-      <div className="schedule-cohost-modal">
+    <div
+      className="schedule-cohost-overlay"
+      onClick={handleBackdropClick}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="schedule-cohost-title"
+    >
+      <div className="schedule-cohost-modal" onClick={(e) => e.stopPropagation()}>
+        {/* Mobile grab handle - visible only on mobile */}
+        <div className="schedule-cohost-grab-handle" aria-hidden="true" />
+
         {/* Toast Notifications */}
         <div className="schedule-cohost-toasts">
           {toasts.map((toast) => (
@@ -617,25 +633,27 @@ export default function ScheduleCohost({
           </div>
         )}
 
-        {/* Close Button */}
-        <button className="schedule-cohost-close" onClick={onClose} type="button">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M18 6L6 18M6 6l12 12" />
-          </svg>
-        </button>
-
-        {/* Header */}
-        <div className="schedule-cohost-header">
-          <div className="schedule-cohost-header-title">
-            <img
-              src="https://cdn.prod.website-files.com/65c82bd7eda94f81b69c8ea8/65e81c5fb2c5ee14e40bfb0c_Icon-cohost.svg"
-              alt=""
-              className="schedule-cohost-icon-img"
-            />
-            <h2 className="schedule-cohost-title">Meet with a Co-Host</h2>
+        {/* Header (per protocol structure) */}
+        <header className="schedule-cohost-header">
+          <div className="schedule-cohost-header-content">
+            <div className="schedule-cohost-header-title">
+              <img
+                src="https://cdn.prod.website-files.com/65c82bd7eda94f81b69c8ea8/65e81c5fb2c5ee14e40bfb0c_Icon-cohost.svg"
+                alt=""
+                className="schedule-cohost-icon-img"
+              />
+              <h2 id="schedule-cohost-title" className="schedule-cohost-title">Meet with a Co-Host</h2>
+            </div>
+            <p className="schedule-cohost-subtitle">Get personalized guidance and support.</p>
           </div>
-          <p className="schedule-cohost-subtitle">Get personalized guidance and support.</p>
-        </div>
+          {/* Close Button */}
+          <button className="schedule-cohost-close" onClick={onClose} type="button" aria-label="Close modal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </header>
 
         {/* Request Form Stage */}
         {stage === 'request' && (

@@ -3,6 +3,7 @@
  *
  * Reusable modal for creating new listings or duplicating existing ones.
  * Converted from Bubble.io element to match Split Lease architecture.
+ * Updated to follow POPUP_REPLICATION_PROTOCOL.md design system.
  *
  * Features:
  * - Create new listings with default values
@@ -12,6 +13,9 @@
  * - Form validation
  * - Supabase integration
  * - Toast notifications
+ * - Mobile bottom sheet behavior (< 480px)
+ * - Monochromatic purple color scheme
+ * - Feather icons (stroke-only)
  */
 
 import { useState, useEffect } from 'react';
@@ -20,6 +24,31 @@ import { showToast } from '../Toast.jsx';
 // TODO: Re-add when Bubble integration is restored
 // import { createListingInCode } from '../../../lib/bubbleAPI.js';
 import '../../../styles/components/create-listing-modal.css';
+
+/**
+ * Feather Icons as inline SVG components
+ * Following POPUP_REPLICATION_PROTOCOL.md: Monochromatic, stroke-width: 2, no fill
+ */
+const HomeIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+    <polyline points="9 22 9 12 15 12 15 22" />
+  </svg>
+);
+
+const CopyIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+  </svg>
+);
+
+const XIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
 
 export default function CreateDuplicateListingModal({
   isVisible,
@@ -206,8 +235,8 @@ export default function CreateDuplicateListingModal({
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isVisible]);
 
-  // Determine header icon and title based on view mode
-  const headerIcon = viewMode === 'create' ? '🏠' : '📋';
+  // Determine header title based on view mode
+  const HeaderIcon = viewMode === 'create' ? HomeIcon : CopyIcon;
   const headerTitle = viewMode === 'create' ? 'Create New Listing' : 'Copy Existing Listing';
   const headerSubtitle = viewMode === 'create'
     ? 'Enter the title guests will see when browsing.'
@@ -216,70 +245,93 @@ export default function CreateDuplicateListingModal({
   if (!isVisible) return null;
 
   return (
-    <div className="create-listing-modal-overlay" onClick={handleOverlayClick}>
-      <div className="create-listing-modal-container">
+    <div
+      className="create-listing-modal-overlay"
+      onClick={handleOverlayClick}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="create-listing-modal-title"
+    >
+      <div
+        className="create-listing-modal-container"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Mobile grab handle - visible only on mobile */}
+        <div className="create-listing-grab-handle" aria-hidden="true" />
+
         {/* Header Section */}
-        <div className="create-listing-header">
+        <header className="create-listing-header">
+          <div className="create-listing-header-content">
+            <div className="create-listing-header-top">
+              <span className="create-listing-icon" aria-hidden="true">
+                <HeaderIcon />
+              </span>
+              <h2 id="create-listing-modal-title" className="create-listing-title">
+                {headerTitle}
+              </h2>
+            </div>
+            <p className="create-listing-subtitle">{headerSubtitle}</p>
+          </div>
           <button
             className="create-listing-close-btn"
             onClick={handleClose}
             aria-label="Close modal"
+            type="button"
           >
-            ×
+            <XIcon />
           </button>
-          <div className="create-listing-header-top">
-            <span className="create-listing-icon">{headerIcon}</span>
-            <h2 className="create-listing-title">{headerTitle}</h2>
-          </div>
-          <p className="create-listing-subtitle">{headerSubtitle}</p>
-        </div>
+        </header>
 
-        {/* Copy Mode: Dropdown to select listing */}
-        {viewMode === 'copy' && (
+        {/* Scrollable Body */}
+        <div className="create-listing-body">
+          {/* Copy Mode: Dropdown to select listing */}
+          {viewMode === 'copy' && (
+            <div className="create-listing-section">
+              <label htmlFor="listing-select" className="create-listing-label">
+                Select Listing to Copy
+              </label>
+              <select
+                id="listing-select"
+                className="create-listing-select"
+                value={selectedListingId}
+                onChange={(e) => setSelectedListingId(e.target.value)}
+              >
+                <option value="">-- Select a listing --</option>
+                {existingListings.map(listing => (
+                  <option key={listing._id} value={listing._id}>
+                    {listing.Name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Input Section */}
           <div className="create-listing-section">
-            <label htmlFor="listing-select" className="create-listing-label">
-              Select Listing to Copy
+            <label htmlFor="listing-title" className="create-listing-label">
+              Listing Title
             </label>
-            <select
-              id="listing-select"
-              className="create-listing-select"
-              value={selectedListingId}
-              onChange={(e) => setSelectedListingId(e.target.value)}
-            >
-              <option value="">-- Select a listing --</option>
-              {existingListings.map(listing => (
-                <option key={listing._id} value={listing._id}>
-                  {listing.Name}
-                </option>
-              ))}
-            </select>
+            <input
+              id="listing-title"
+              type="text"
+              className="create-listing-input"
+              value={listingName}
+              onChange={(e) => setListingName(e.target.value)}
+              placeholder="Enter listing title"
+              disabled={isLoading}
+            />
+            <p className="create-listing-helper">Don't worry, you can change it later</p>
           </div>
-        )}
-
-        {/* Input Section */}
-        <div className="create-listing-section">
-          <label htmlFor="listing-title" className="create-listing-label">
-            Listing Title
-          </label>
-          <input
-            id="listing-title"
-            type="text"
-            className="create-listing-input"
-            value={listingName}
-            onChange={(e) => setListingName(e.target.value)}
-            placeholder="Enter listing title"
-            disabled={isLoading}
-          />
-          <p className="create-listing-helper">Don't worry, you can change it later</p>
         </div>
 
-        {/* Button Section */}
-        <div className="create-listing-buttons">
+        {/* Footer with Action Buttons */}
+        <footer className="create-listing-footer">
           {viewMode === 'create' ? (
             <>
               {/* Only show Copy Existing button when user is logged in */}
               {isLoggedIn && existingListings.length > 0 && (
                 <button
+                  type="button"
                   className="create-listing-btn create-listing-btn-secondary"
                   onClick={handleShowCopyMode}
                   disabled={isLoading}
@@ -288,16 +340,25 @@ export default function CreateDuplicateListingModal({
                 </button>
               )}
               <button
+                type="button"
                 className="create-listing-btn create-listing-btn-primary"
                 onClick={handleCreateNew}
                 disabled={!listingName.trim() || isLoading}
               >
-                {isLoading ? 'Creating...' : 'Create New'}
+                {isLoading ? (
+                  <>
+                    <span className="spinner" aria-hidden="true" />
+                    Creating...
+                  </>
+                ) : (
+                  'Create New'
+                )}
               </button>
             </>
           ) : (
             <>
               <button
+                type="button"
                 className="create-listing-btn create-listing-btn-back"
                 onClick={handleBack}
                 disabled={isLoading}
@@ -305,15 +366,23 @@ export default function CreateDuplicateListingModal({
                 Back
               </button>
               <button
+                type="button"
                 className="create-listing-btn create-listing-btn-primary"
                 onClick={handleDuplicate}
                 disabled={!listingName.trim() || !selectedListingId || isLoading}
               >
-                {isLoading ? 'Duplicating...' : 'Duplicate'}
+                {isLoading ? (
+                  <>
+                    <span className="spinner" aria-hidden="true" />
+                    Duplicating...
+                  </>
+                ) : (
+                  'Duplicate'
+                )}
               </button>
             </>
           )}
-        </div>
+        </footer>
       </div>
     </div>
   );

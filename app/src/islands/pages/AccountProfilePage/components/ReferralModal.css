@@ -1,218 +1,306 @@
 /* ReferralModal Styles */
+/* Updated to follow POPUP_REPLICATION_PROTOCOL.md */
+/* Color Scheme: Monochromatic Purple - NO GREEN, NO YELLOW */
 
+/* ============================================================================
+   MODAL OVERLAY
+   ============================================================================ */
 .referral-modal-overlay {
-  display: flex !important;
-  position: fixed !important;
-  inset: 0 !important;
-  background: rgba(0, 0, 0, 0.45) !important;
-  align-items: center !important;
-  justify-content: center !important;
-  z-index: 10000 !important;
-  padding: 16px !important;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: referralFadeIn 0.2s ease;
 }
 
+@keyframes referralFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ============================================================================
+   MOBILE GRAB HANDLE (per protocol)
+   ============================================================================ */
+.referral-modal-grab-handle {
+  display: none;
+  width: 36px;
+  height: 4px;
+  background: #E7E0EC;
+  border-radius: 2px;
+  margin: 8px auto 0;
+}
+
+/* ============================================================================
+   MODAL CONTAINER
+   ============================================================================ */
 .referral-modal {
-  background: #ffffff !important;
-  border-radius: 16px !important;
-  max-width: 520px !important;
-  width: 100% !important;
-  padding: 24px !important;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15) !important;
-  animation: modalFadeIn 0.2s ease !important;
-  /* Ensure no inherited modal styles affect this */
-  position: relative !important;
-  transform: none !important;
-  top: auto !important;
-  left: auto !important;
-  right: auto !important;
-  bottom: auto !important;
-  max-height: 90vh !important;
-  overflow-y: auto !important;
+  background-color: #FFFFFF;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 520px;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  animation: referralSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
 }
 
-@keyframes modalFadeIn {
+@keyframes referralSlideIn {
   from {
+    transform: translateY(-20px);
     opacity: 0;
-    transform: scale(0.95);
   }
   to {
+    transform: translateY(0);
     opacity: 1;
-    transform: scale(1);
   }
 }
 
+/* ============================================================================
+   HEADER SECTION
+   ============================================================================ */
 .referral-modal-header {
+  flex-shrink: 0;
+  width: 100%;
+  padding: 16px 20px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #E7E0EC;
 }
 
 .referral-modal-header h2 {
-  font-size: 20px;
-  font-weight: 700;
-  color: #1a1a1a;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: #1C1B1F;
   margin: 0;
 }
 
 .referral-modal-close {
-  background: none;
+  width: 32px;
+  height: 32px;
+  background: transparent;
   border: none;
-  padding: 4px;
   cursor: pointer;
-  color: #9ca3af;
-  transition: color 0.2s ease;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 8px;
+  color: #49454F;
+  transition: background-color 0.2s ease;
+  flex-shrink: 0;
 }
 
 .referral-modal-close:hover {
-  color: #1a1a1a;
+  background-color: #F7F2FA;
+}
+
+.referral-modal-close svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+/* ============================================================================
+   MODAL BODY (SCROLLABLE)
+   ============================================================================ */
+.referral-modal-body {
+  flex-grow: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px 20px;
 }
 
 .referral-modal-subtitle {
-  color: #6b7280;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 14px;
   line-height: 1.5;
-  margin: 12px 0 20px;
+  color: #49454F;
+  margin: 0 0 16px;
+  padding: 0 20px;
+}
+
+/* ============================================================================
+   SHARE LINK SECTION
+   ============================================================================ */
+.referral-share-section {
+  padding: 0 20px 16px;
 }
 
 .referral-share-section label {
-  font-size: 13px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
   font-weight: 500;
-  color: #9ca3af;
+  color: #1C1B1F;
+  display: block;
+  margin-bottom: 8px;
 }
 
 .referral-share-link {
   display: flex;
   gap: 8px;
-  margin-top: 6px;
 }
 
 .referral-share-link input {
   flex: 1;
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid #e5e7eb;
+  height: 44px;
+  padding: 10px 14px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 14px;
-  color: #1a1a1a;
-  background: #f9fafb;
+  color: #1C1B1F;
+  background: #F7F2FA;
+  border: 1px solid #E7E0EC;
+  border-radius: 8px;
 }
 
 .referral-share-link input:focus {
   outline: none;
-  border-color: #6366F1;
+  border-color: #31135D;
+  box-shadow: 0 0 0 2px rgba(49, 19, 93, 0.15);
 }
 
 .referral-share-link button {
-  background: #6366F1;
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  padding: 10px 16px;
+  height: 44px;
+  padding: 0 20px;
+  background-color: #31135D;
+  color: #FFFFFF;
+  border: 2px solid transparent;
+  border-radius: 100px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: all 0.2s ease;
   white-space: nowrap;
 }
 
 .referral-share-link button:hover {
-  background: #4F46E5;
+  background-color: #4A2F7C;
+  box-shadow: 0 4px 12px rgba(49, 19, 93, 0.2);
 }
 
+/* ============================================================================
+   SHARE ACTION BUTTONS
+   ============================================================================ */
 .referral-share-actions {
   display: flex;
-  gap: 10px;
-  margin: 8px 0;
-}
-
-.referral-share-actions:first-of-type {
-  margin-top: 16px;
+  gap: 8px;
+  padding: 0 20px;
+  margin-bottom: 8px;
 }
 
 .referral-secondary-btn {
   flex: 1;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 12px;
-  border-radius: 10px;
-  border: 1px solid #e5e7eb;
-  background: #f9fafb;
-  cursor: pointer;
+  background: transparent;
+  border: 1px solid #E7E0EC;
+  border-radius: 8px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 14px;
   font-weight: 500;
-  color: #1a1a1a;
-  transition: border-color 0.2s ease, background 0.2s ease;
+  color: #1C1B1F;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .referral-secondary-btn:hover {
-  border-color: #6366F1;
-  background: #EEF2FF;
+  border-color: #31135D;
+  background-color: #F7F2FA;
+  color: #31135D;
 }
 
 .referral-secondary-btn svg {
-  color: #6366F1;
+  color: #31135D;
 }
 
+/* ============================================================================
+   REWARDS STATS
+   ============================================================================ */
 .referral-rewards {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
-  margin: 20px 0;
   padding: 16px;
-  background: #f9fafb;
-  border-radius: 12px;
+  margin: 16px 20px;
+  background: #F7F2FA;
+  border: 1px solid #E7E0EC;
+  border-radius: 8px;
   text-align: center;
 }
 
 .referral-reward-item strong {
   display: block;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 20px;
   font-weight: 700;
-  color: #6366F1;
+  color: #31135D;
 }
 
 .referral-reward-item span {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 12px;
-  color: #9ca3af;
-  margin-top: 2px;
+  color: #79747E;
+  margin-top: 4px;
   display: block;
 }
 
+/* ============================================================================
+   FOOTER
+   ============================================================================ */
 .referral-modal-footer {
+  flex-shrink: 0;
+  width: 100%;
+  padding: 16px 20px;
+  background-color: #FFFFFF;
+  border-top: 1px solid #E7E0EC;
   display: flex;
   justify-content: space-between;
   font-size: 13px;
-  padding-top: 16px;
-  border-top: 1px solid #e5e7eb;
 }
 
 .referral-modal-footer a {
-  color: #6366F1;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #31135D;
   text-decoration: none;
   transition: opacity 0.2s ease;
 }
 
 .referral-modal-footer a:hover {
-  opacity: 0.8;
+  text-decoration: underline;
 }
 
-/* Host Referral Gift Card */
+/* ============================================================================
+   HOST REFERRAL GIFT CARD
+   ============================================================================ */
 .host-referral-card {
   width: 100%;
   max-width: 414px;
   aspect-ratio: 1.75 / 1;
   background: #ffffff;
-  border-radius: 18px;
+  border-radius: 12px;
   position: relative;
   padding: 20px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  margin: 16px auto;
+  margin: 0 auto 16px;
   overflow: hidden;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #E7E0EC;
 }
 
 .host-referral-card__corner-accent {
@@ -221,8 +309,8 @@
   right: 0;
   width: 120px;
   height: 120px;
-  background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
-  border-radius: 0 18px 0 100%;
+  background: linear-gradient(135deg, #31135D 0%, #6D31C2 100%);
+  border-radius: 0 12px 0 100%;
   opacity: 0.1;
 }
 
@@ -233,16 +321,18 @@
 }
 
 .host-referral-card__brand {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1.5px;
-  color: #6366F1;
+  color: #31135D;
 }
 
 .host-referral-card__amount {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 32px;
   font-weight: 800;
-  color: #6366F1;
+  color: #31135D;
   line-height: 1;
 }
 
@@ -251,22 +341,25 @@
 }
 
 .host-referral-card__sent-by {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 11px;
-  color: #9ca3af;
+  color: #79747E;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .host-referral-card__name {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 18px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: #1C1B1F;
   margin-top: 2px;
 }
 
 .host-referral-card__message {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 13px;
-  color: #6b7280;
+  color: #49454F;
   line-height: 1.4;
   margin-top: 8px;
 }
@@ -282,17 +375,19 @@
 }
 
 .host-referral-card__valid {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 11px;
-  color: #9ca3af;
+  color: #79747E;
 }
 
 .host-referral-card__badge {
-  background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+  background: linear-gradient(135deg, #31135D 0%, #6D31C2 100%);
   padding: 4px 10px;
   border-radius: 12px;
 }
 
 .host-referral-card__badge-text {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 10px;
   font-weight: 600;
   color: #ffffff;
@@ -300,73 +395,85 @@
   letter-spacing: 0.5px;
 }
 
-@media (max-width: 768px) {
-  /* Keep modal centered like desktop - no slide-up behavior */
-  .referral-modal-overlay {
-    padding: 16px !important;
-    align-items: center !important; /* Stay centered */
+/* ============================================================================
+   RESPONSIVE - TABLET
+   ============================================================================ */
+@media (max-width: 700px) {
+  .referral-modal-header h2 {
+    font-size: 16px;
   }
 
   .referral-modal {
-    padding: 20px !important;
-    border-radius: 16px !important; /* Keep all corners rounded */
-    max-height: 85vh !important;
-    max-height: 85dvh !important;
-    overflow-y: auto !important;
-    animation: modalFadeIn 0.2s ease !important; /* Use fade, not slide */
+    max-width: 100%;
+  }
+}
+
+/* ============================================================================
+   RESPONSIVE - MOBILE BOTTOM SHEET
+   Screen width < 480px triggers slide-up mode per protocol
+   Border radius: 24px 24px 0 0
+   Grab handle visible
+   ============================================================================ */
+@media (max-width: 480px) {
+  .referral-modal-overlay {
+    align-items: flex-end;
+    padding: 0;
   }
 
-  /* No drag handle on mobile - keep clean centered look */
-  .referral-modal::before {
-    display: none !important;
+  .referral-modal {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 24px 24px 0 0;
+    max-height: 90vh;
+    animation: referralSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes referralSlideUp {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .referral-modal-grab-handle {
+    display: block;
   }
 
   .referral-modal-header {
-    margin-bottom: 8px;
+    padding: 12px 16px 16px;
   }
 
   .referral-modal-header h2 {
     font-size: 18px;
+    font-weight: 400;
   }
 
   .referral-modal-subtitle {
+    padding: 0 16px;
     font-size: 13px;
-    margin: 8px 0 16px;
-    line-height: 1.4;
   }
 
-  .referral-share-section label {
-    font-size: 12px;
-  }
-
-  .referral-share-link {
-    margin-top: 4px;
-  }
-
-  .referral-share-link input {
-    padding: 8px 10px;
-    font-size: 13px;
+  .referral-share-section {
+    padding: 0 16px 16px;
   }
 
   .referral-share-link button {
-    padding: 8px 14px;
-    font-size: 13px;
+    padding: 0 16px;
   }
 
-  /* Make share buttons wrap on mobile - 3 per row */
   .referral-share-actions {
+    padding: 0 16px;
     flex-wrap: wrap;
-    margin: 6px 0;
-  }
-
-  .referral-share-actions:first-of-type {
-    margin-top: 12px;
   }
 
   .referral-secondary-btn {
-    flex: 1 1 calc(33.33% - 8px); /* 3 per row */
+    flex: 1 1 calc(33.33% - 6px);
     min-width: 80px;
-    padding: 10px 6px;
+    height: 40px;
     font-size: 12px;
     gap: 4px;
   }
@@ -377,10 +484,9 @@
   }
 
   .referral-rewards {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
+    margin: 16px 16px;
     padding: 12px;
-    margin: 16px 0;
+    gap: 8px;
   }
 
   .referral-reward-item strong {
@@ -392,11 +498,10 @@
   }
 
   .referral-modal-footer {
+    padding: 12px 16px 20px;
     flex-direction: column;
     gap: 8px;
     align-items: center;
-    padding-top: 12px;
-    font-size: 12px;
   }
 
   /* Hide gift card on mobile */

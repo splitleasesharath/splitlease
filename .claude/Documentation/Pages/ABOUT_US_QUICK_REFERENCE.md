@@ -1,6 +1,6 @@
 # About Us Page - Quick Reference
 
-**GENERATED**: 2025-12-11
+**GENERATED**: 2026-01-20
 **PAGE_URL**: `/about-us`
 **ENTRY_POINT**: `app/src/about-us.jsx`
 
@@ -702,5 +702,5 @@ console.error('[AboutUsPage] Unexpected error:', err);
 ---
 
 **VERSION**: 1.1
-**LAST_UPDATED**: 2025-12-11
+**LAST_UPDATED**: 2026-01-20
 **STATUS**: Updated to match current implementation

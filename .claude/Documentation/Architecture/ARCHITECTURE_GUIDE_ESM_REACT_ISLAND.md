@@ -459,21 +459,62 @@ bun run generate-routes  # Regenerate after route changes
 
 All backend logic runs on Supabase Edge Functions (Deno 2).
 
-### Function Inventory (11 functions)
+### Function Inventory (29 functions)
 
+#### Core Functions
 | Function | Purpose |
 |----------|---------|
-| `auth-user` | Supabase Auth (login, signup, reset, validate) |
-| `bubble-proxy` | Bubble API proxy (favorites, messaging, photos) |
-| `listing` | Listing CRUD with Supabase |
-| `proposal` | Proposal operations with Bubble sync |
-| `ai-gateway` | OpenAI completions (streaming + non-streaming) |
+| `auth-user` | Supabase Auth (login, signup, reset, validate, magic-link, oauth) |
+| `listing` | Listing CRUD with atomic Bubble sync |
+| `proposal` | Proposal CRUD with queue-based sync |
+| `messages` | Real-time messaging threads |
+
+#### AI-Powered
+| Function | Purpose |
+|----------|---------|
+| `ai-gateway` | OpenAI proxy with prompt templating |
 | `ai-signup-guest` | AI-powered guest signup flow |
-| `ai-parse-profile` | AI profile parsing |
-| `bubble_sync` | Bubble↔Supabase bidirectional sync |
-| `communications` | Communication handling |
-| `pricing` | Pricing calculations |
+| `ai-parse-profile` | Queue-based AI profile parsing |
+| `house-manual` | AI-powered house manual extraction |
+
+#### Bubble Integration
+| Function | Purpose |
+|----------|---------|
+| `bubble-proxy` | Bubble API proxy (favorites, messaging, photos) |
+| `bubble_sync` | Queue processor for Supabase→Bubble sync |
+
+#### Booking Features
+| Function | Purpose |
+|----------|---------|
+| `date-change-request` | Lease date changes with throttling |
+| `rental-application` | Rental application processing |
+| `guest-payment-records` | Guest payment schedule generation |
+| `host-payment-records` | Host payment schedule generation |
+| `virtual-meeting` | Virtual meeting scheduling |
+| `cohost-request` | Co-host request management |
+| `cohost-request-slack-callback` | Slack interactive callbacks |
+
+#### Workflow Orchestration
+| Function | Purpose |
+|----------|---------|
+| `workflow-enqueue` | Workflow definition queueing |
+| `workflow-orchestrator` | Sequential step execution via pgmq |
+| `reminder-scheduler` | Reminder system with webhooks |
+
+#### Notifications
+| Function | Purpose |
+|----------|---------|
+| `send-email` | SendGrid proxy with templates |
+| `send-sms` | Twilio proxy for SMS delivery |
 | `slack` | Slack notifications |
+
+#### Utilities
+| Function | Purpose |
+|----------|---------|
+| `qr-generator` | QR code generation (PNG binary) |
+| `pricing` | Pricing calculations (placeholder) |
+| `communications` | Communication handling (placeholder) |
+| `query-leo` | Debug utility for mockup queries |
 
 ### API Pattern
 
@@ -589,7 +630,7 @@ Each HTML file has a corresponding JSX entry point:
 | Rules | 22 |
 | Processors | 14 |
 | Workflows | 12 |
-| Edge Functions | 11 |
+| Edge Functions | 29 |
 | Database Tables | 93 |
 | CSS Files | 40+ |
 
@@ -610,6 +651,6 @@ When extracting logic from existing components:
 
 ---
 
-**VERSION**: 2.0
-**UPDATED**: 2025-12-11
+**VERSION**: 3.0
+**UPDATED**: 2026-01-20
 **ARCHITECTURE**: ESM + React 18 Islands + Four-Layer Logic Core
