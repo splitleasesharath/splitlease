@@ -585,15 +585,16 @@ export function useAccountProfilePageLogic() {
           clearAuthErrorFromUrl();
 
           // Set user-friendly error message based on error type
+          // These errors typically occur when email verification links expire
           let errorMessage = 'Authentication failed. ';
           if (authError.errorCode === 'otp_expired') {
-            errorMessage = 'This magic login link has expired or already been used. Please request a new login link.';
+            errorMessage = 'This verification link has expired or already been used. Please request a new verification email from your profile settings.';
           } else if (authError.errorCode === 'access_denied') {
-            errorMessage = 'Access denied. The login link may have expired or been used already. Please request a new login link.';
+            errorMessage = 'Access denied. The verification link may have expired or been used already. Please request a new verification email.';
           } else if (authError.errorDescription) {
             errorMessage = authError.errorDescription;
           } else {
-            errorMessage = 'The login link is invalid or has expired. Please request a new login link.';
+            errorMessage = 'The verification link is invalid or has expired. Please request a new verification email from your profile settings.';
           }
 
           // Throw error to be caught and displayed
