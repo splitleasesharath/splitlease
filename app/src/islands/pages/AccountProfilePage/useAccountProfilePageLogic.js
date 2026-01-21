@@ -516,16 +516,27 @@ export function useAccountProfilePageLogic() {
       const dobTimestamp = userData['Date of Birth'];
       const dateOfBirth = dobTimestamp ? dobTimestamp.split('T')[0] : '';
 
-      // Parse transportation medium - now a text[] array in database
+      // Parse transportation medium - stored as JSON string in text column
       const rawTransport = userData['transportation medium'];
       let transportationTypes = [];
-      if (Array.isArray(rawTransport)) {
-        // Filter to only valid transport values (in case of corrupted data)
-        const validValues = ['car', 'public_transit', 'bicycle', 'walking', 'rideshare', 'other'];
+      const validValues = ['car', 'public_transit', 'bicycle', 'walking', 'rideshare', 'other'];
+
+      if (rawTransport && typeof rawTransport === 'string') {
+        try {
+          // Try to parse as JSON array
+          const parsed = JSON.parse(rawTransport);
+          if (Array.isArray(parsed)) {
+            transportationTypes = parsed.filter(val => validValues.includes(val));
+          }
+        } catch {
+          // If not valid JSON, check if it's a single valid value
+          if (validValues.includes(rawTransport)) {
+            transportationTypes = [rawTransport];
+          }
+        }
+      } else if (Array.isArray(rawTransport)) {
+        // Handle case where it comes back as array (shouldn't happen with text column)
         transportationTypes = rawTransport.filter(val => validValues.includes(val));
-      } else if (rawTransport && typeof rawTransport === 'string') {
-        // Legacy fallback: single string value - convert to array
-        transportationTypes = [rawTransport];
       }
 
       setFormData({
@@ -1088,7 +1099,9 @@ export function useAccountProfilePageLogic() {
         'need for Space': formData.needForSpace.trim(),
         'special needs': formData.specialNeeds.trim(),
         'Recent Days Selected': indicesToDayNames(formData.selectedDays),
-        'transportation medium': formData.transportationTypes, // Now an array
+        'transportation medium': formData.transportationTypes.length > 0
+          ? JSON.stringify(formData.transportationTypes)
+          : null, // Store as JSON string
         'Reasons to Host me': formData.goodGuestReasons,
         'About - Commonly Stored Items': formData.storageItems,
         'Modified Date': new Date().toISOString()
@@ -1145,16 +1158,24 @@ export function useAccountProfilePageLogic() {
       const dobTimestamp = profileData['Date of Birth'];
       const dateOfBirth = dobTimestamp ? dobTimestamp.split('T')[0] : '';
 
-      // Parse transportation medium - now a text[] array in database
+      // Parse transportation medium - stored as JSON string in text column
       const rawTransport = profileData['transportation medium'];
       let transportationTypes = [];
-      if (Array.isArray(rawTransport)) {
-        // Filter to only valid transport values (in case of corrupted data)
-        const validValues = ['car', 'public_transit', 'bicycle', 'walking', 'rideshare', 'other'];
+      const validValues = ['car', 'public_transit', 'bicycle', 'walking', 'rideshare', 'other'];
+
+      if (rawTransport && typeof rawTransport === 'string') {
+        try {
+          const parsed = JSON.parse(rawTransport);
+          if (Array.isArray(parsed)) {
+            transportationTypes = parsed.filter(val => validValues.includes(val));
+          }
+        } catch {
+          if (validValues.includes(rawTransport)) {
+            transportationTypes = [rawTransport];
+          }
+        }
+      } else if (Array.isArray(rawTransport)) {
         transportationTypes = rawTransport.filter(val => validValues.includes(val));
-      } else if (rawTransport && typeof rawTransport === 'string') {
-        // Legacy fallback: single string value - convert to array
-        transportationTypes = [rawTransport];
       }
 
       setFormData({
