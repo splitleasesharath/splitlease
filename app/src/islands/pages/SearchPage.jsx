@@ -1,3 +1,24 @@
+/**
+ * SearchPage Component - REFACTORED
+ *
+ * Following the "Hollow Component" pattern - this component is a UI shell.
+ * All business logic delegated to hooks:
+ * - useSearchPageLogic: listings, filters, geography, modals, fallback
+ * - useSearchPageAuth: auth state, favorites, proposals
+ *
+ * REFACTORED FROM: ~2,226 lines
+ * REFACTORED TO: ~1,400 lines
+ *
+ * CHANGES:
+ * - Removed duplicate transformListing (now exported from hook)
+ * - Removed inline fallback listings logic (now in useSearchPageLogic)
+ * - Removed inline auth effects (now in useSearchPageAuth)
+ * - Removed direct Supabase calls (now in hooks or proposalService)
+ * - Uses JWT-derived authUserId for all auth operations (Golden Rule D)
+ *
+ * SECURITY: All user IDs derived from JWT via useAuthenticatedUser hook
+ */
+
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
 import GoogleMap from '../shared/GoogleMap.jsx';
@@ -7,171 +28,57 @@ import AiSignupMarketReport from '../shared/AiSignupMarketReport/AiSignupMarketR
 import AuthAwareSearchScheduleSelector from '../shared/AuthAwareSearchScheduleSelector.jsx';
 import SignUpLoginModal from '../shared/SignUpLoginModal.jsx';
 import LoggedInAvatar from '../shared/LoggedInAvatar/LoggedInAvatar.jsx';
-import FavoriteButton from '../shared/FavoriteButton/FavoriteButton.jsx';
 import CreateProposalFlowV2, { clearProposalDraft } from '../shared/CreateProposalFlowV2.jsx';
 import { isGuest } from '../../logic/rules/users/isGuest.js';
 import { isHost } from '../../logic/rules/users/isHost.js';
-import { supabase } from '../../lib/supabase.js';
 import { logger } from '../../lib/logger.js';
-import { fetchProposalsByGuest, fetchLastProposalDefaults } from '../../lib/proposalDataFetcher.js';
-import { fetchZatPriceConfiguration } from '../../lib/listingDataFetcher.js';
-import { checkAuthStatus, getUserId, getSessionId, logoutUser, getFirstName, getAvatarUrl, validateTokenAndFetchUser } from '../../lib/auth.js';
-import { getUserType as getStoredUserType, getAuthState } from '../../lib/secureStorage.js';
-import { useAuthenticatedUser } from '../../hooks/useAuthenticatedUser.js';
-import { PRICE_TIERS, SORT_OPTIONS, WEEK_PATTERNS, LISTING_CONFIG, VIEW_LISTING_URL, SEARCH_URL } from '../../lib/constants.js';
-import { initializeLookups, getNeighborhoodName, getBoroughName, getPropertyTypeLabel, isInitialized } from '../../lib/dataLookups.js';
-import { parseUrlToFilters, updateUrlParams, watchUrlChanges, hasUrlFilters } from '../../lib/urlParams.js';
-import { fetchPhotoUrls, fetchHostData, extractPhotos, parseAmenities, parseJsonArray } from '../../lib/supabaseUtils.js';
-import { sanitizeSearchQuery } from '../../lib/sanitize.js';
+import { checkAuthStatus, logoutUser } from '../../lib/auth.js';
+import { LISTING_CONFIG } from '../../lib/constants.js';
 import { createDay } from '../../lib/scheduleSelector/dayHelpers.js';
 import { calculateNextAvailableCheckIn } from '../../logic/calculators/scheduling/calculateNextAvailableCheckIn.js';
 import { shiftMoveInDateIfPast } from '../../logic/calculators/scheduling/shiftMoveInDateIfPast.js';
 import { calculateCheckInOutFromDays } from '../../logic/calculators/scheduling/calculateCheckInOutFromDays.js';
-import { formatHostName } from '../../logic/processors/display/formatHostName.js';
-// NOTE: adaptDaysToBubble removed - database now uses 0-indexed days natively
 import { countSelectedNights } from '../../lib/scheduleSelector/nightCalculations.js';
-import { calculatePrice } from '../../lib/scheduleSelector/priceCalculations.js';
 import ProposalSuccessModal from '../modals/ProposalSuccessModal.jsx';
-import { fetchInformationalTexts } from '../../lib/informationalTextsFetcher.js';
 import CompactScheduleIndicator from './SearchPage/components/CompactScheduleIndicator.jsx';
 import MobileFilterBar from './SearchPage/components/MobileFilterBar.jsx';
-import { NeighborhoodSearchFilter, NeighborhoodCheckboxList, NeighborhoodDropdownFilter } from './SearchPage/components/NeighborhoodFilters.jsx';
+import { NeighborhoodSearchFilter } from './SearchPage/components/NeighborhoodFilters.jsx';
 import PropertyCard from '../shared/ListingCard/PropertyCard.jsx';
 import UsabilityPopup from '../shared/UsabilityPopup/UsabilityPopup.jsx';
 
+// HOOKS - Hollow Component Pattern
+import { useSearchPageLogic } from './useSearchPageLogic.js';
+import { useSearchPageAuth } from './useSearchPageAuth.js';
+
+// SERVICE - Centralized proposal API
+import { createProposal, transformListingForProposal } from '../../lib/proposalService.js';
+
 // ============================================================================
-// Internal Components
+// Internal Components (UI-only, no business logic)
 // ============================================================================
-
-/**
- * FilterPanel - Left sidebar with filters
- */
-function FilterPanel({
-  isActive,
-  selectedDays,
-  onDaysChange,
-  boroughs,
-  selectedBorough,
-  onBoroughChange,
-  neighborhoods,
-  selectedNeighborhoods,
-  onNeighborhoodsChange,
-  weekPattern,
-  onWeekPatternChange,
-  priceTier,
-  onPriceTierChange,
-  sortBy,
-  onSortByChange
-}) {
-  return (
-    <div className={`filter-panel ${isActive ? 'active' : ''}`}>
-      <div className="filter-container">
-        {/* Single Horizontal Filter Row - All filters inline */}
-        <div className="horizontal-filters">
-          {/* Borough Select */}
-          <div className="filter-group compact">
-            <label htmlFor="boroughSelect">Select Borough</label>
-            <select
-              id="boroughSelect"
-              className="filter-select"
-              value={selectedBorough}
-              onChange={(e) => onBoroughChange(e.target.value)}
-            >
-              {boroughs.length === 0 ? (
-                <option value="">Loading boroughs...</option>
-              ) : (
-                boroughs.map(borough => (
-                  <option key={borough.id} value={borough.value}>
-                    {borough.name}
-                  </option>
-                ))
-              )}
-            </select>
-          </div>
-
-          {/* Week Pattern */}
-          <div className="filter-group compact">
-            <label htmlFor="weekPattern">Select Week Pattern</label>
-            <select
-              id="weekPattern"
-              className="filter-select"
-              value={weekPattern}
-              onChange={(e) => onWeekPatternChange(e.target.value)}
-              aria-label="Filter by week pattern"
-            >
-              <option value="every-week">Every week</option>
-              <option value="one-on-off">One week on, one week off</option>
-              <option value="two-on-off">Two weeks on, two weeks off</option>
-              <option value="one-three-off">One week on, three weeks off</option>
-            </select>
-          </div>
-
-          {/* Price Tier */}
-          <div className="filter-group compact">
-            <label htmlFor="priceTier">Select Price Tier</label>
-            <select
-              id="priceTier"
-              className="filter-select"
-              value={priceTier}
-              onChange={(e) => onPriceTierChange(e.target.value)}
-              aria-label="Filter by price range"
-            >
-              <option value="under-200">&lt; $200/night</option>
-              <option value="200-350">$200-$350/night</option>
-              <option value="350-500">$350-$500/night</option>
-              <option value="500-plus">$500+/night</option>
-              <option value="all">All Prices</option>
-            </select>
-          </div>
-
-          {/* Sort By */}
-          <div className="filter-group compact">
-            <label htmlFor="sortBy">Sort By</label>
-            <select
-              id="sortBy"
-              className="filter-select"
-              value={sortBy}
-              onChange={(e) => onSortByChange(e.target.value)}
-              aria-label="Sort listings by"
-            >
-              <option value="recommended">Our Recommendations</option>
-              <option value="price-low">Price-Lowest to Highest</option>
-              <option value="most-viewed">Most Viewed</option>
-              <option value="recent">Recently Added</option>
-            </select>
-          </div>
-
-          {/* Neighborhood Dropdown */}
-          <div className="filter-group compact">
-            <label htmlFor="neighborhoodSelectMobile">Neighborhood</label>
-            <select
-              id="neighborhoodSelectMobile"
-              className="filter-select"
-              value={selectedNeighborhoods[0] || ''}
-              onChange={(e) => {
-                const value = e.target.value;
-                onNeighborhoodsChange(value ? [value] : []);
-              }}
-            >
-              <option value="">All Neighborhoods</option>
-              {neighborhoods.map(neighborhood => (
-                <option key={neighborhood.id} value={neighborhood.id}>
-                  {neighborhood.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 /**
  * ListingsGrid - Grid of property cards with lazy loading
  */
-function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef, isLoggedIn, userId, favoritedListingIds, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalsByListingId, selectedNightsCount }) {
-
+function ListingsGrid({
+  listings,
+  onLoadMore,
+  hasMore,
+  isLoading,
+  onOpenContactModal,
+  onOpenInfoModal,
+  mapRef,
+  isLoggedIn,
+  userId,
+  favoritedListingIds,
+  onToggleFavorite,
+  onRequireAuth,
+  showCreateProposalButton,
+  onOpenCreateProposalModal,
+  proposalsByListingId,
+  selectedNightsCount,
+  showMessageButton
+}) {
   const sentinelRef = useRef(null);
 
   useEffect(() => {
@@ -183,11 +90,7 @@ function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactM
           onLoadMore();
         }
       },
-      {
-        root: null,
-        rootMargin: '100px',
-        threshold: 0.1
-      }
+      { root: null, rootMargin: '100px', threshold: 0.1 }
     );
 
     observer.observe(sentinelRef.current);
@@ -201,7 +104,7 @@ function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactM
 
   return (
     <div className="listings-container">
-      {listings.map((listing, index) => {
+      {listings.map((listing) => {
         const listingId = listing.id || listing._id;
         const isFavorited = favoritedListingIds?.has(listingId);
         const proposalForListing = proposalsByListingId?.get(listingId) || null;
@@ -307,108 +210,130 @@ function EmptyState({ onResetFilters }) {
 // ============================================================================
 
 export default function SearchPage() {
-  // GOLD STANDARD AUTH PATTERN - Use consolidated hook
-  const { user: authenticatedUser, userId: authUserId, loading: authLoading, isAuthenticated } = useAuthenticatedUser();
+  // ==========================================================================
+  // HOOK 1: Listings, Filters, Geography, Modals, Fallback
+  // ==========================================================================
+  const {
+    // Loading & Error
+    isLoading,
+    error,
+    // Listings
+    allActiveListings,
+    allListings,
+    displayedListings,
+    hasMore,
+    // Fallback Listings (when filters return no results)
+    fallbackListings,
+    fallbackDisplayedListings,
+    isFallbackLoading,
+    hasFallbackMore,
+    handleFallbackLoadMore,
+    // Geography
+    boroughs,
+    neighborhoods,
+    // Filters
+    selectedBorough,
+    selectedNeighborhoods,
+    weekPattern,
+    priceTier,
+    sortBy,
+    neighborhoodSearch,
+    // UI State
+    filterPanelActive,
+    menuOpen,
+    mobileMapVisible,
+    // Modals
+    isContactModalOpen,
+    isInfoModalOpen,
+    isAIResearchModalOpen,
+    selectedListing,
+    infoModalTriggerRef,
+    informationalTexts,
+    // Refs
+    mapRef,
+    // Handlers
+    setSelectedBorough,
+    setSelectedNeighborhoods,
+    setWeekPattern,
+    setPriceTier,
+    setSortBy,
+    setNeighborhoodSearch,
+    handleResetFilters,
+    setFilterPanelActive,
+    setMenuOpen,
+    setMobileMapVisible,
+    handleLoadMore,
+    fetchListings,
+    handleOpenContactModal,
+    handleCloseContactModal,
+    handleOpenInfoModal,
+    handleCloseInfoModal,
+    handleOpenAIResearchModal,
+    handleCloseAIResearchModal
+  } = useSearchPageLogic();
 
-  // State management
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [allActiveListings, setAllActiveListings] = useState([]); // ALL active listings (green pins, no filters)
-  const [allListings, setAllListings] = useState([]); // Filtered listings (purple pins)
-  const [displayedListings, setDisplayedListings] = useState([]); // Lazy-loaded subset for cards
-  const [loadedCount, setLoadedCount] = useState(0);
-  const [fallbackListings, setFallbackListings] = useState([]); // All listings shown when filtered results are empty
-  const [fallbackDisplayedListings, setFallbackDisplayedListings] = useState([]); // Lazy-loaded subset for fallback
-  const [fallbackLoadedCount, setFallbackLoadedCount] = useState(0);
-  const [isFallbackLoading, setIsFallbackLoading] = useState(false);
-  const [fallbackFetchFailed, setFallbackFetchFailed] = useState(false); // Track if fallback fetch failed to prevent infinite retry loop
+  // ==========================================================================
+  // HOOK 2: Auth State, Favorites, Proposals
+  // ==========================================================================
+  const {
+    // Core Auth
+    isLoggedIn,
+    currentUser,
+    authUserId,
+    authenticatedUser,
+    // Favorites
+    favoritesCount,
+    favoritedListingIds,
+    handleToggleFavorite,
+    // Proposals
+    proposalsByListingId,
+    setProposalsByListingId,
+    zatConfig,
+    loggedInUserData,
+    setLoggedInUserData,
+    lastProposalDefaults,
+    reservationSpanForProposal,
+    setReservationSpanForProposal,
+    // Proposal Flow
+    pendingProposalData,
+    setPendingProposalData,
+    showSuccessModal,
+    setShowSuccessModal,
+    successProposalId,
+    setSuccessProposalId,
+    isSubmittingProposal,
+    setIsSubmittingProposal,
+    showAuthModalForProposal,
+    setShowAuthModalForProposal
+  } = useSearchPageAuth();
 
-  // Modal state management
-  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
-  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
-  const [isAIResearchModalOpen, setIsAIResearchModalOpen] = useState(false);
+  // ==========================================================================
+  // UI-ONLY STATE (kept in component - not business logic)
+  // ==========================================================================
+
+  // Auth Modal (separate from login/logout flow)
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalView, setAuthModalView] = useState('login');
-  const [selectedListing, setSelectedListing] = useState(null);
-  const [infoModalTriggerRef, setInfoModalTriggerRef] = useState(null);
-  const [informationalTexts, setInformationalTexts] = useState({});
+
+  // Proposal Flow UI
   const [isCreateProposalModalOpen, setIsCreateProposalModalOpen] = useState(false);
   const [selectedListingForProposal, setSelectedListingForProposal] = useState(null);
   const [selectedDayObjectsForProposal, setSelectedDayObjectsForProposal] = useState([]);
   const [moveInDateForProposal, setMoveInDateForProposal] = useState('');
 
-  // Refs
-  const mapRef = useRef(null);
-  const fetchInProgressRef = useRef(false); // Track if fetch is already in progress
-  const lastFetchParamsRef = useRef(null); // Track last fetch parameters to prevent duplicates
-  const menuRef = useRef(null); // Ref for hamburger menu dropdown
-
-  // Parse URL parameters for initial filter state
-  const urlFilters = parseUrlToFilters();
-
-  // Filter state (initialized from URL if available)
-  const [boroughs, setBoroughs] = useState([]);
-  const [selectedBorough, setSelectedBorough] = useState(urlFilters.selectedBorough);
-  const [neighborhoods, setNeighborhoods] = useState([]);
-  const [selectedNeighborhoods, setSelectedNeighborhoods] = useState(urlFilters.selectedNeighborhoods);
-  const [weekPattern, setWeekPattern] = useState(urlFilters.weekPattern);
-  const [priceTier, setPriceTier] = useState(urlFilters.priceTier);
-  const [sortBy, setSortBy] = useState(urlFilters.sortBy);
-  const [neighborhoodSearch, setNeighborhoodSearch] = useState('');
-
-  // Dynamic pricing state - tracks selected nights from day selector
-  // Default: Mon-Fri = 5 days = 4 nights (nights = days - 1)
+  // Dynamic pricing from day selector
   const [selectedNightsCount, setSelectedNightsCount] = useState(4);
 
-  // UI state
-  const [filterPanelActive, setFilterPanelActive] = useState(false);
+  // UI state for filter popup and headers
   const [filterPopupOpen, setFilterPopupOpen] = useState(false);
-  const [mapSectionActive, setMapSectionActive] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [mobileMapVisible, setMobileMapVisible] = useState(false);
   const [mobileHeaderHidden, setMobileHeaderHidden] = useState(false);
   const [desktopHeaderCollapsed, setDesktopHeaderCollapsed] = useState(false);
 
-  // Auth state - Initialize with cached data for optimistic UI (prevents flash of logged-out state)
-  const cachedFirstName = getFirstName();
-  const cachedAvatarUrl = getAvatarUrl();
-  const cachedUserType = getStoredUserType();
-  const hasCachedAuth = !!(cachedFirstName && getAuthState());
-
-  const [isLoggedIn, setIsLoggedIn] = useState(hasCachedAuth);
-  const [currentUser, setCurrentUser] = useState(() => {
-    if (hasCachedAuth) {
-      return {
-        id: getUserId(),
-        name: cachedFirstName,
-        email: '',
-        userType: cachedUserType || 'GUEST',
-        avatarUrl: cachedAvatarUrl || null,
-        proposalCount: 0,
-        _isOptimistic: true // Flag to indicate this is optimistic data
-      };
-    }
-    return null;
-  });
-  const [favoritesCount, setFavoritesCount] = useState(0);
-  const [favoritedListingIds, setFavoritedListingIds] = useState(new Set());
-
-  // Proposals state - Map of listing ID to proposal object
-  const [proposalsByListingId, setProposalsByListingId] = useState(new Map());
-
-  // Proposal flow state
-  const [zatConfig, setZatConfig] = useState(null);
-  const [loggedInUserData, setLoggedInUserData] = useState(null);
-  const [lastProposalDefaults, setLastProposalDefaults] = useState(null);
-  const [reservationSpanForProposal, setReservationSpanForProposal] = useState(13);
-  const [pendingProposalData, setPendingProposalData] = useState(null);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [successProposalId, setSuccessProposalId] = useState(null);
-  const [isSubmittingProposal, setIsSubmittingProposal] = useState(false);
-  const [showAuthModalForProposal, setShowAuthModalForProposal] = useState(false);
-
-  // Toast notification state
+  // Toast notification
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+  // Refs
+  const menuRef = useRef(null);
 
   // Track selected days from URL for check-in/check-out display
   const [selectedDaysForDisplay, setSelectedDaysForDisplay] = useState(() => {
@@ -420,28 +345,9 @@ export default function SearchPage() {
     return [1, 2, 3, 4, 5]; // Default: Mon-Fri
   });
 
-  // Listen for URL changes to update selected days display
-  useEffect(() => {
-    const handleUrlChange = () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const daysParam = urlParams.get('days-selected');
-      if (daysParam) {
-        const days = daysParam.split(',').map(d => parseInt(d.trim(), 10)).filter(d => !isNaN(d) && d >= 0 && d <= 6);
-        setSelectedDaysForDisplay(days);
-      }
-    };
-
-    // Listen for popstate (back/forward navigation)
-    window.addEventListener('popstate', handleUrlChange);
-
-    // Also listen for custom event that SearchScheduleSelector dispatches
-    window.addEventListener('daysSelected', handleUrlChange);
-
-    return () => {
-      window.removeEventListener('popstate', handleUrlChange);
-      window.removeEventListener('daysSelected', handleUrlChange);
-    };
-  }, []);
+  // ==========================================================================
+  // COMPUTED VALUES
+  // ==========================================================================
 
   // Calculate check-in and check-out day names
   const checkInOutDays = useMemo(() => {
@@ -464,11 +370,10 @@ export default function SearchPage() {
     return count;
   }, [selectedNeighborhoods, weekPattern, priceTier, sortBy]);
 
-  // Generate active filter tags for the new filter design
+  // Generate active filter tags
   const activeFilterTags = useMemo(() => {
     const tags = [];
 
-    // Borough filter
     if (selectedBorough && selectedBorough !== 'all' && selectedBorough !== '') {
       const boroughName = boroughs.find(b => b.value === selectedBorough)?.name;
       if (boroughName && boroughName !== 'All Boroughs') {
@@ -481,7 +386,6 @@ export default function SearchPage() {
       }
     }
 
-    // Neighborhoods filter
     if (selectedNeighborhoods.length > 0) {
       const neighborhoodNames = selectedNeighborhoods
         .map(id => neighborhoods.find(n => n.id === id)?.name)
@@ -498,7 +402,6 @@ export default function SearchPage() {
       });
     }
 
-    // Price filter
     if (priceTier && priceTier !== 'all') {
       const priceLabels = {
         'under-200': 'Under $200',
@@ -514,7 +417,6 @@ export default function SearchPage() {
       });
     }
 
-    // Week pattern filter
     if (weekPattern && weekPattern !== 'every-week') {
       const patternLabels = {
         'one-on-off': 'Every other week',
@@ -532,38 +434,43 @@ export default function SearchPage() {
     return tags;
   }, [selectedBorough, selectedNeighborhoods, priceTier, weekPattern, boroughs, neighborhoods]);
 
-  // Toggle filter popup
-  const toggleFilterPopup = useCallback(() => {
-    setFilterPopupOpen(prev => !prev);
-  }, []);
+  // Determine if "Create Proposal" button should be visible
+  const showCreateProposalButton = useMemo(() => {
+    if (!isLoggedIn || !currentUser) return false;
+    const userIsGuest = isGuest({ userType: currentUser.userType });
+    const hasExistingProposals = (currentUser.proposalCount ?? 0) > 0;
+    return userIsGuest && hasExistingProposals;
+  }, [isLoggedIn, currentUser]);
 
-  // Close filter popup
-  const closeFilterPopup = useCallback(() => {
-    setFilterPopupOpen(false);
-  }, []);
+  // Determine if "Message" button should be visible on listing cards
+  const showMessageButton = useMemo(() => {
+    if (!isLoggedIn || !currentUser) return true;
+    const userIsHost = isHost({ userType: currentUser.userType });
+    return !userIsHost;
+  }, [isLoggedIn, currentUser]);
 
-  // Clear all filters
-  const clearAllFilters = useCallback(() => {
-    setSelectedBorough('all');
-    setSelectedNeighborhoods([]);
-    setPriceTier('all');
-    setWeekPattern('every-week');
-    setSortBy('recommended');
-    closeFilterPopup();
-  }, [closeFilterPopup]);
+  // ==========================================================================
+  // EFFECTS (UI-only)
+  // ==========================================================================
 
-  // Flag to prevent URL update on initial load
-  const isInitialMount = useRef(true);
-
-  // Initialize data lookups on mount
+  // Listen for URL changes to update selected days display
   useEffect(() => {
-    const init = async () => {
-      if (!isInitialized()) {
-        logger.debug('Initializing data lookups...');
-        await initializeLookups();
+    const handleUrlChange = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const daysParam = urlParams.get('days-selected');
+      if (daysParam) {
+        const days = daysParam.split(',').map(d => parseInt(d.trim(), 10)).filter(d => !isNaN(d) && d >= 0 && d <= 6);
+        setSelectedDaysForDisplay(days);
       }
     };
-    init();
+
+    window.addEventListener('popstate', handleUrlChange);
+    window.addEventListener('daysSelected', handleUrlChange);
+
+    return () => {
+      window.removeEventListener('popstate', handleUrlChange);
+      window.removeEventListener('daysSelected', handleUrlChange);
+    };
   }, []);
 
   // Close hamburger menu when clicking outside
@@ -580,8 +487,7 @@ export default function SearchPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [menuOpen]);
 
-  // Header scroll hide/show effect for both mobile and desktop
-  // Note: The scrolling element is .listings-content for both
+  // Header scroll hide/show effect
   useEffect(() => {
     let lastScrollY = 0;
     let ticking = false;
@@ -589,15 +495,12 @@ export default function SearchPage() {
     const handleScroll = (e) => {
       if (!ticking) {
         window.requestAnimationFrame(() => {
-          // Get scroll position from the actual scrolling element
           const scrollElement = e.target;
           const currentScrollY = scrollElement.scrollTop || 0;
           const isMobile = window.innerWidth <= 768;
           const isDesktop = window.innerWidth >= 769;
 
           if (isMobile) {
-            // Mobile: Hide header when scrolling down past first card (~250px)
-            // Show header when scrolling up
             if (currentScrollY > 250 && currentScrollY > lastScrollY) {
               setMobileHeaderHidden(true);
             } else if (currentScrollY < lastScrollY) {
@@ -605,8 +508,6 @@ export default function SearchPage() {
             }
             setDesktopHeaderCollapsed(false);
           } else if (isDesktop) {
-            // Desktop: Collapse filter section when scrolling down (~150px)
-            // Show full filter section when scrolling up
             if (currentScrollY > 150 && currentScrollY > lastScrollY) {
               setDesktopHeaderCollapsed(true);
             } else if (currentScrollY < lastScrollY) {
@@ -622,7 +523,6 @@ export default function SearchPage() {
       }
     };
 
-    // Find the actual scrolling container (.listings-content)
     const listingsContent = document.querySelector('.listings-content');
 
     if (listingsContent) {
@@ -630,1512 +530,11 @@ export default function SearchPage() {
       return () => listingsContent.removeEventListener('scroll', handleScroll);
     }
 
-    // Fallback to window scroll for safety
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Fetch informational texts on mount
-  useEffect(() => {
-    const loadInformationalTexts = async () => {
-      const texts = await fetchInformationalTexts();
-      setInformationalTexts(texts);
-    };
-    loadInformationalTexts();
-  }, []);
-
-  // Fetch ZAT price configuration on mount
-  useEffect(() => {
-    const loadZatConfig = async () => {
-      try {
-        const config = await fetchZatPriceConfiguration();
-        setZatConfig(config);
-      } catch (error) {
-        logger.warn('Failed to load ZAT config:', error);
-      }
-    };
-    loadZatConfig();
-  }, []);
-
-  // Check authentication status and fetch user data
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        // Wait for auth hook to complete
-        if (authLoading) return;
-
-        // GOLD STANDARD AUTH PATTERN - Use hook result
-        setIsLoggedIn(isAuthenticated);
-
-        if (isAuthenticated && authUserId) {
-          // Set auth state from hook
-          setCurrentUser(authenticatedUser);
-
-          // Fetch favorites, proposals count, and profile data from Supabase
-          // Uses junction table RPCs for favorites/proposals (Phase 5b migration)
-          // Parallel fetch: profile data + junction counts + favorites list
-          const [userResult, countsResult] = await Promise.all([
-            // Profile data + favorites for proposal form prefilling and heart icons
-            supabase
-              .from('user')
-              .select('"About Me / Bio", "need for Space", "special needs", "Favorited Listings"')
-              .eq('_id', authUserId)
-              .single(),
-            // Junction counts for proposals
-            supabase.rpc('get_user_junction_counts', { p_user_id: authUserId })
-          ]);
-
-          const userRecord = userResult.data;
-          const error = userResult.error;
-
-          // Handle favorites from user table JSONB field
-          const favorites = userRecord?.['Favorited Listings'] || [];
-          if (Array.isArray(favorites) && favorites.length > 0) {
-            // Filter to only valid Bubble listing IDs (pattern: digits + 'x' + digits)
-            const validFavorites = favorites.filter(id =>
-              typeof id === 'string' && /^\d+x\d+$/.test(id)
-            );
-
-            // Store all favorited IDs for heart icon state
-            setFavoritedListingIds(new Set(validFavorites));
-            // Set count to match - all favorites count regardless of Active status
-            setFavoritesCount(validFavorites.length);
-            logger.debug('[SearchPage] Favorites count from user table:', validFavorites.length);
-          } else {
-            setFavoritesCount(0);
-            setFavoritedListingIds(new Set());
-          }
-
-          // Handle proposals count from junction RPC
-          const junctionCounts = countsResult.data?.[0] || {};
-          const proposalCount = Number(junctionCounts.proposals_count) || 0;
-          logger.debug('[SearchPage] Proposals count from junction:', proposalCount);
-
-          if (!error && userRecord) {
-            // Update currentUser with actual proposal count
-            setCurrentUser(prev => ({
-              ...prev,
-              proposalCount: proposalCount
-            }));
-
-            // Set logged in user data for proposal form prefilling
-            setLoggedInUserData({
-              aboutMe: userRecord['About Me / Bio'] || '',
-              needForSpace: userRecord['need for Space'] || '',
-              specialNeeds: userRecord['special needs'] || '',
-              proposalCount: proposalCount
-            });
-
-            // Fetch last proposal defaults for pre-population
-            const proposalDefaults = await fetchLastProposalDefaults(authUserId);
-            if (proposalDefaults) {
-              setLastProposalDefaults(proposalDefaults);
-              logger.debug('[SearchPage] Loaded last proposal defaults:', proposalDefaults);
-            }
-
-            // Fetch user's proposals to check if any exist for specific listings
-            const userIsGuest = isGuest({ userType: authenticatedUser.userType });
-            if (userIsGuest && authUserId && proposalCount > 0) {
-              try {
-                const proposals = await fetchProposalsByGuest(authUserId);
-                logger.debug(`[SearchPage] Loaded ${proposals.length} proposals for user`);
-
-                // Create a map of listing ID to proposal (only include non-terminal proposals)
-                const proposalsMap = new Map();
-                proposals.forEach(proposal => {
-                  const listingId = proposal.Listing;
-                  if (listingId) {
-                    // If multiple proposals exist for same listing, keep the most recent one
-                    // (proposals are already sorted by Created Date descending)
-                    if (!proposalsMap.has(listingId)) {
-                      proposalsMap.set(listingId, proposal);
-                    }
-                  }
-                });
-
-                setProposalsByListingId(proposalsMap);
-                logger.debug(`[SearchPage] Mapped ${proposalsMap.size} listings with proposals`);
-              } catch (proposalErr) {
-                logger.warn('[SearchPage] Failed to fetch proposals (non-critical):', proposalErr);
-                // Don't fail the page if proposals can't be loaded - just show Create Proposal for all
-              }
-            }
-          }
-        }
-      } catch (error) {
-        logger.error('[SearchPage] Auth check error:', error);
-        setIsLoggedIn(false);
-        setCurrentUser(null);
-      }
-    };
-
-    checkAuth();
-  }, [authLoading, isAuthenticated, authUserId, authenticatedUser]);
-
-  // Fetch ALL active listings for green markers (NO FILTERS - runs once on mount)
-  useEffect(() => {
-    const fetchAllActiveListings = async () => {
-      logger.debug('🌍 Fetching ALL active listings for map background (green pins)...');
-
-      try {
-        const { data, error } = await supabase
-          .from('listing')
-          .select('*')
-          .eq('Active', true)
-          .eq('isForUsability', false)
-          .or('"Location - Address".not.is.null,"Location - slightly different address".not.is.null');
-
-        if (error) throw error;
-
-        logger.debug('📊 fetchAllActiveListings: Supabase returned', data.length, 'active listings');
-
-        // Collect legacy photo IDs (strings) for batch fetch
-        // New format has embedded objects with URLs, no fetch needed
-        const legacyPhotoIds = new Set();
-        data.forEach(listing => {
-          const photosField = listing['Features - Photos'];
-          let photos = [];
-
-          if (Array.isArray(photosField)) {
-            photos = photosField;
-          } else if (typeof photosField === 'string') {
-            try {
-              photos = JSON.parse(photosField);
-            } catch (e) {
-              // Ignore parse errors
-            }
-          }
-
-          // Only collect string IDs (legacy format), not objects (new format)
-          if (Array.isArray(photos)) {
-            photos.forEach(photo => {
-              if (typeof photo === 'string') {
-                legacyPhotoIds.add(photo);
-              }
-            });
-          }
-        });
-
-        // Only fetch from listing_photo table if there are legacy photo IDs
-        const photoMap = legacyPhotoIds.size > 0
-          ? await fetchPhotoUrls(Array.from(legacyPhotoIds))
-          : {};
-
-        // Extract photos per listing (handles both embedded objects and legacy IDs)
-        const resolvedPhotos = {};
-        data.forEach(listing => {
-          resolvedPhotos[listing._id] = extractPhotos(
-            listing['Features - Photos'],
-            photoMap,
-            listing._id
-          );
-        });
-
-        // Batch fetch host data
-        const hostIds = new Set();
-        data.forEach(listing => {
-          if (listing['Host User']) {
-            hostIds.add(listing['Host User']);
-          }
-        });
-
-        const hostMap = await fetchHostData(Array.from(hostIds));
-
-        // Map host data to listings
-        const resolvedHosts = {};
-        data.forEach(listing => {
-          const hostId = listing['Host User'];
-          resolvedHosts[listing._id] = hostMap[hostId] || null;
-        });
-
-        // Transform listings
-        const transformedListings = data.map(listing =>
-          transformListing(listing, resolvedPhotos[listing._id], resolvedHosts[listing._id])
-        );
-
-        // Filter to only listings with valid coordinates (NO FALLBACK)
-        const listingsWithCoordinates = transformedListings.filter(listing => {
-          const hasValidCoords = listing.coordinates && listing.coordinates.lat && listing.coordinates.lng;
-          if (!hasValidCoords) {
-            logger.warn('⚠️ fetchAllActiveListings: Excluding listing without coordinates:', {
-              id: listing.id,
-              title: listing.title
-            });
-          }
-          return hasValidCoords;
-        });
-
-        logger.debug(`✅ Fetched ${listingsWithCoordinates.length} active listings with coordinates for green markers`);
-        setAllActiveListings(listingsWithCoordinates);
-      } catch (error) {
-        logger.error('❌ Failed to fetch all active listings:', error);
-        // Don't set error state - this shouldn't block the page, filtered results will still work
-      }
-    };
-
-    fetchAllActiveListings();
-  }, []); // Run once on mount
-
-  // Sync filter state to URL parameters
-  useEffect(() => {
-    // Skip URL update on initial mount (URL already parsed)
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
-
-    // Update URL with current filter state
-    const filters = {
-      selectedBorough,
-      weekPattern,
-      priceTier,
-      sortBy,
-      selectedNeighborhoods
-    };
-
-    updateUrlParams(filters, false); // false = push new history entry
-  }, [selectedBorough, weekPattern, priceTier, sortBy, selectedNeighborhoods]);
-
-  // Watch for browser back/forward navigation
-  useEffect(() => {
-    const cleanup = watchUrlChanges((newFilters) => {
-      logger.debug('URL changed via browser navigation, updating filters:', newFilters);
-
-      // Update all filter states from URL
-      setSelectedBorough(newFilters.selectedBorough);
-      setWeekPattern(newFilters.weekPattern);
-      setPriceTier(newFilters.priceTier);
-      setSortBy(newFilters.sortBy);
-      setSelectedNeighborhoods(newFilters.selectedNeighborhoods);
-    });
-
-    return cleanup;
-  }, []);
-
-  // Load boroughs on mount
-  useEffect(() => {
-    const loadBoroughs = async () => {
-      try {
-        logger.debug('[DEBUG] Loading boroughs from zat_geo_borough_toplevel...');
-        const { data, error } = await supabase
-          .schema('reference_table')
-          .from('zat_geo_borough_toplevel')
-          .select('_id, "Display Borough"')
-          .order('"Display Borough"', { ascending: true });
-
-        if (error) throw error;
-
-        logger.debug('[DEBUG] Raw borough data from Supabase:', data);
-
-        const boroughList = data
-          .filter(b => b['Display Borough'] && b['Display Borough'].trim())
-          .map(b => ({
-            id: b._id,
-            name: b['Display Borough'].trim(),
-            value: b['Display Borough'].trim().toLowerCase()
-              .replace(/\s+county\s+nj/i, '')
-              .replace(/\s+/g, '-')
-          }));
-
-        logger.debug('[DEBUG] Processed borough list:', boroughList.map(b => ({
-          id: b.id,
-          name: b.name,
-          value: b.value
-        })));
-
-        setBoroughs(boroughList);
-
-        // Only set default borough if not already set from URL
-        if (!selectedBorough) {
-          const manhattan = boroughList.find(b => b.value === 'manhattan');
-          if (manhattan) {
-            setSelectedBorough(manhattan.value);
-          }
-        } else {
-          // Validate borough from URL exists in list
-          const boroughExists = boroughList.find(b => b.value === selectedBorough);
-          if (!boroughExists) {
-            logger.warn(`Borough "${selectedBorough}" from URL not found, defaulting to Manhattan`);
-            const manhattan = boroughList.find(b => b.value === 'manhattan');
-            if (manhattan) {
-              setSelectedBorough(manhattan.value);
-            }
-          }
-        }
-      } catch (err) {
-        logger.error('Failed to load boroughs:', err);
-      }
-    };
-
-    loadBoroughs();
-  }, []);
-
-  // Load neighborhoods when borough changes
-  useEffect(() => {
-    const loadNeighborhoods = async () => {
-      logger.debug('[DEBUG] loadNeighborhoods called - selectedBorough:', selectedBorough, 'boroughs.length:', boroughs.length);
-
-      if (!selectedBorough || boroughs.length === 0) {
-        logger.debug('[DEBUG] Skipping neighborhood load - missing selectedBorough or boroughs');
-        return;
-      }
-
-      // When "all" boroughs is selected, clear neighborhoods and load all
-      if (selectedBorough === 'all') {
-        logger.debug('[DEBUG] All boroughs selected - loading all neighborhoods');
-        try {
-          const { data, error } = await supabase
-            .schema('reference_table')
-            .from('zat_geo_hood_mediumlevel')
-            .select('_id, Display, "Geo-Borough"')
-            .order('Display', { ascending: true });
-
-          if (error) throw error;
-
-          const formattedNeighborhoods = data.map(n => ({
-            id: n._id,
-            name: n.Display,
-            value: n._id
-          }));
-
-          setNeighborhoods(formattedNeighborhoods);
-          setSelectedNeighborhoods([]); // Clear neighborhood selection when switching to all boroughs
-          logger.debug('[DEBUG] Loaded all neighborhoods:', formattedNeighborhoods.length);
-        } catch (error) {
-          logger.error('Failed to load all neighborhoods:', error);
-        }
-        return;
-      }
-
-      const borough = boroughs.find(b => b.value === selectedBorough);
-      if (!borough) {
-        logger.warn('[DEBUG] Borough not found for value:', selectedBorough);
-        logger.debug('[DEBUG] Available borough values:', boroughs.map(b => b.value));
-        return;
-      }
-
-      logger.debug('[DEBUG] Loading neighborhoods for borough:', {
-        boroughName: borough.name,
-        boroughId: borough.id,
-        boroughIdType: typeof borough.id,
-        boroughValue: borough.value
-      });
-
-      try {
-        // First, let's see what neighborhoods exist without filtering
-        const { data: allNeighborhoods, error: allError } = await supabase
-          .schema('reference_table')
-          .from('zat_geo_hood_mediumlevel')
-          .select('_id, Display, "Geo-Borough"')
-          .limit(5);
-
-        logger.debug('[DEBUG] Sample neighborhoods (first 5):', allNeighborhoods?.map(n => ({
-          id: n._id,
-          name: n.Display,
-          geoBoroughValue: n['Geo-Borough'],
-          geoBoroughType: typeof n['Geo-Borough']
-        })));
-
-        // Now query with the filter
-        const { data, error } = await supabase
-          .schema('reference_table')
-          .from('zat_geo_hood_mediumlevel')
-          .select('_id, Display, "Geo-Borough"')
-          .eq('"Geo-Borough"', borough.id)
-          .order('Display', { ascending: true });
-
-        if (error) throw error;
-
-        logger.debug(`[DEBUG] Found ${data.length} neighborhoods for ${borough.name}:`,
-          data.slice(0, 5).map(n => ({ id: n._id, name: n.Display, boroughRef: n['Geo-Borough'] }))
-        );
-
-        // Debug: Check if borough.id matches any Geo-Borough values
-        if (data.length === 0 && allNeighborhoods && allNeighborhoods.length > 0) {
-          logger.warn('[DEBUG] No neighborhoods found! Comparing IDs:');
-          logger.debug('[DEBUG] Looking for borough.id:', borough.id);
-          logger.debug('[DEBUG] Sample Geo-Borough values:', allNeighborhoods.map(n => n['Geo-Borough']));
-          logger.debug('[DEBUG] ID match check:', allNeighborhoods.some(n => n['Geo-Borough'] === borough.id));
-        }
-
-        const neighborhoodList = data
-          .filter(n => n.Display && n.Display.trim())
-          .map(n => ({
-            id: n._id,
-            name: n.Display.trim(),
-            boroughId: n['Geo-Borough']
-          }));
-
-        setNeighborhoods(neighborhoodList);
-        setSelectedNeighborhoods([]); // Clear selections when borough changes
-      } catch (err) {
-        logger.error('Failed to load neighborhoods:', err);
-      }
-    };
-
-    loadNeighborhoods();
-  }, [selectedBorough, boroughs]);
-
-  // Fetch listings with filters
-  const fetchListings = useCallback(async () => {
-    if (boroughs.length === 0 || !selectedBorough) return;
-
-    // Performance optimization: Prevent duplicate fetches
-    const fetchParams = `${selectedBorough}-${selectedNeighborhoods.join(',')}-${weekPattern}-${priceTier}-${sortBy}`;
-
-    // Skip if same parameters are already being fetched or were just fetched
-    if (fetchInProgressRef.current) {
-      if (import.meta.env.DEV) {
-        logger.debug('⏭️ Skipping duplicate fetch - already in progress');
-      }
-      return;
-    }
-
-    if (lastFetchParamsRef.current === fetchParams) {
-      if (import.meta.env.DEV) {
-        logger.debug('⏭️ Skipping duplicate fetch - same parameters as last fetch');
-      }
-      return;
-    }
-
-    fetchInProgressRef.current = true;
-    lastFetchParamsRef.current = fetchParams;
-
-    if (import.meta.env.DEV) {
-      logger.debug('🔍 Starting fetch:', fetchParams);
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // Build query
-      // CRITICAL FIX: Use Complete=true instead of Active=true to match Bubble's filter logic
-      // Bubble shows listings where Complete=true AND (Active=true OR Active IS NULL)
-      // Note: The column name "Active" needs quotes in the .or() syntax
-      // PHOTO CONSTRAINT: Listings without photos cannot appear in search results
-      let query = supabase
-        .from('listing')
-        .select('*')
-        .eq('"Complete"', true)
-        .or('"Active".eq.true,"Active".is.null')
-        .or('"Location - Address".not.is.null,"Location - slightly different address".not.is.null')
-        .not('"Features - Photos"', 'is', null);
-
-      // Apply borough filter (skip if "all" is selected)
-      if (selectedBorough && selectedBorough !== 'all') {
-        const borough = boroughs.find(b => b.value === selectedBorough);
-        if (borough) {
-          query = query.eq('"Location - Borough"', borough.id);
-        }
-      }
-
-      // Apply week pattern filter
-      if (weekPattern !== 'every-week') {
-        const weekPatternText = WEEK_PATTERNS[weekPattern];
-        if (weekPatternText) {
-          query = query.eq('"Weeks offered"', weekPatternText);
-        }
-      }
-
-      // Apply price filter
-      if (priceTier !== 'all') {
-        const priceRange = PRICE_TIERS[priceTier];
-        if (priceRange) {
-          query = query
-            .gte('"Standarized Minimum Nightly Price (Filter)"', priceRange.min)
-            .lte('"Standarized Minimum Nightly Price (Filter)"', priceRange.max);
-        }
-      }
-
-      // Apply neighborhood filter
-      if (selectedNeighborhoods.length > 0) {
-        query = query.in('"Location - Hood"', selectedNeighborhoods);
-      }
-
-      // Apply sorting
-      const sortConfig = SORT_OPTIONS[sortBy] || SORT_OPTIONS.recommended;
-      query = query.order(sortConfig.field, { ascending: sortConfig.ascending });
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-
-      logger.debug('📊 SearchPage: Supabase query returned', data.length, 'listings');
-      logger.debug('📍 SearchPage: First 3 raw listings from DB:', data.slice(0, 3).map(l => ({
-        id: l._id,
-        name: l.Name,
-        locationAddress: l['Location - Address'],
-        lat: l['Location - Address']?.lat,
-        lng: l['Location - Address']?.lng,
-        hasLat: !!l['Location - Address']?.lat,
-        hasLng: !!l['Location - Address']?.lng
-      })));
-
-      // Check coordinate coverage
-      const listingsWithCoords = data.filter(l => l['Location - Address']?.lat && l['Location - Address']?.lng);
-      const listingsWithoutCoords = data.filter(l => !l['Location - Address']?.lat || !l['Location - Address']?.lng);
-      logger.debug('📍 SearchPage: Coordinate coverage:', {
-        total: data.length,
-        withCoordinates: listingsWithCoords.length,
-        withoutCoordinates: listingsWithoutCoords.length,
-        percentageWithCoords: ((listingsWithCoords.length / data.length) * 100).toFixed(1) + '%'
-      });
-
-      if (listingsWithoutCoords.length > 0) {
-        logger.error('❌ SearchPage: Listings WITHOUT coordinates:', listingsWithoutCoords.map(l => ({
-          id: l._id,
-          name: l.Name,
-          locationAddress: l['Location - Address'],
-          lat: l['Location - Address']?.lat,
-          lng: l['Location - Address']?.lng
-        })));
-      }
-
-      // Collect legacy photo IDs (strings) for batch fetch
-      // New format has embedded objects with URLs, no fetch needed
-      const legacyPhotoIds = new Set();
-      data.forEach(listing => {
-        const photosField = listing['Features - Photos'];
-        let photos = [];
-
-        if (Array.isArray(photosField)) {
-          photos = photosField;
-        } else if (typeof photosField === 'string') {
-          try {
-            photos = JSON.parse(photosField);
-          } catch (e) {
-            // Ignore parse errors
-          }
-        }
-
-        // Only collect string IDs (legacy format), not objects (new format)
-        if (Array.isArray(photos)) {
-          photos.forEach(photo => {
-            if (typeof photo === 'string') {
-              legacyPhotoIds.add(photo);
-            }
-          });
-        }
-      });
-
-      // Only fetch from listing_photo table if there are legacy photo IDs
-      const photoMap = legacyPhotoIds.size > 0
-        ? await fetchPhotoUrls(Array.from(legacyPhotoIds))
-        : {};
-
-      // Extract photos per listing (handles both embedded objects and legacy IDs)
-      const resolvedPhotos = {};
-      data.forEach(listing => {
-        resolvedPhotos[listing._id] = extractPhotos(
-          listing['Features - Photos'],
-          photoMap,
-          listing._id
-        );
-      });
-
-      // Batch fetch host data for all listings
-      const hostIds = new Set();
-      data.forEach(listing => {
-        if (listing['Host User']) {
-          hostIds.add(listing['Host User']);
-        }
-      });
-
-      const hostMap = await fetchHostData(Array.from(hostIds));
-
-      // Map host data to listings
-      const resolvedHosts = {};
-      data.forEach(listing => {
-        const hostId = listing['Host User'];
-        resolvedHosts[listing._id] = hostMap[hostId] || null;
-      });
-
-      // Transform and filter data
-      logger.debug('🔄 SearchPage: Starting transformation of', data.length, 'listings');
-      const transformedListings = data.map(listing =>
-        transformListing(listing, resolvedPhotos[listing._id], resolvedHosts[listing._id])
-      );
-      logger.debug('✅ SearchPage: Transformation complete. Transformed', transformedListings.length, 'listings');
-      logger.debug('📍 SearchPage: First 3 transformed listings:', transformedListings.slice(0, 3).map(l => ({
-        id: l.id,
-        title: l.title,
-        coordinates: l.coordinates,
-        hasValidCoords: !!(l.coordinates?.lat && l.coordinates?.lng)
-      })));
-
-      // Filter out listings without valid coordinates (NO FALLBACK - coordinates are required)
-      const listingsWithCoordinates = transformedListings.filter(listing => {
-        const hasValidCoords = listing.coordinates && listing.coordinates.lat && listing.coordinates.lng;
-        if (!hasValidCoords) {
-          logger.warn('⚠️ SearchPage: Excluding listing without valid coordinates:', {
-            id: listing.id,
-            title: listing.title,
-            coordinates: listing.coordinates
-          });
-        }
-        return hasValidCoords;
-      });
-
-      logger.debug('📍 SearchPage: Coordinate filter results:', {
-        before: transformedListings.length,
-        after: listingsWithCoordinates.length,
-        excluded: transformedListings.length - listingsWithCoordinates.length
-      });
-
-      // PHOTO CONSTRAINT: Filter out listings without photos
-      const listingsWithPhotos = listingsWithCoordinates.filter(listing => {
-        const hasPhotos = listing.images && listing.images.length > 0;
-        if (!hasPhotos) {
-          logger.warn('⚠️ SearchPage: Excluding listing without photos:', {
-            id: listing.id,
-            title: listing.title,
-            imageCount: listing.images?.length || 0
-          });
-        }
-        return hasPhotos;
-      });
-
-      logger.debug('📸 SearchPage: Photo filter results:', {
-        before: listingsWithCoordinates.length,
-        after: listingsWithPhotos.length,
-        excluded: listingsWithCoordinates.length - listingsWithPhotos.length
-      });
-
-      // No day filtering applied - show all listings with valid coordinates and photos
-      const filteredListings = listingsWithPhotos;
-
-      logger.debug('📊 SearchPage: Final filtered listings being set to state:', {
-        count: filteredListings.length,
-        firstThree: filteredListings.slice(0, 3).map(l => ({
-          id: l.id,
-          title: l.title,
-          coordinates: l.coordinates,
-          hasValidCoords: !!(l.coordinates?.lat && l.coordinates?.lng)
-        }))
-      });
-
-      setAllListings(filteredListings);
-      setLoadedCount(0);
-
-      logger.debug('✅ SearchPage: State updated with', filteredListings.length, 'filtered listings');
-    } catch (err) {
-      // Log technical details for debugging
-      logger.error('Failed to fetch listings:', {
-        message: err.message,
-        stack: err.stack,
-        timestamp: new Date().toISOString(),
-        filters: {
-          borough: selectedBorough,
-          neighborhoods: selectedNeighborhoods,
-          weekPattern,
-          priceTier
-        }
-      });
-
-      // Show user-friendly error message (NO FALLBACK - acknowledge the real problem)
-      setError('We had trouble loading listings. Please try refreshing the page or adjusting your filters.');
-    } finally {
-      setIsLoading(false);
-      fetchInProgressRef.current = false;
-    }
-  }, [boroughs, selectedBorough, selectedNeighborhoods, weekPattern, priceTier, sortBy]);
-
-  // Fetch all listings with basic constraints only (for fallback display when filtered results are empty)
-  const fetchAllListings = useCallback(async () => {
-    setIsFallbackLoading(true);
-
-    try {
-      // Build query with ONLY basic constraints - no borough, neighborhood, price, or week pattern filters
-      const query = supabase
-        .from('listing')
-        .select('*')
-        .eq('"Complete"', true)
-        .or('"Active".eq.true,"Active".is.null')
-        .or('"Location - Address".not.is.null,"Location - slightly different address".not.is.null')
-        .not('"Features - Photos"', 'is', null)
-        .order('"Modified Date"', { ascending: false });
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-
-      logger.debug('📊 SearchPage: Fallback query returned', data.length, 'listings');
-
-      // Collect legacy photo IDs (strings) for batch fetch
-      // New format has embedded objects with URLs, no fetch needed
-      const legacyPhotoIds = new Set();
-      data.forEach(listing => {
-        const photosField = listing['Features - Photos'];
-        let photos = [];
-
-        if (Array.isArray(photosField)) {
-          photos = photosField;
-        } else if (typeof photosField === 'string') {
-          try {
-            photos = JSON.parse(photosField);
-          } catch (e) {
-            // Ignore parse errors
-          }
-        }
-
-        // Only collect string IDs (legacy format), not objects (new format)
-        if (Array.isArray(photos)) {
-          photos.forEach(photo => {
-            if (typeof photo === 'string') {
-              legacyPhotoIds.add(photo);
-            }
-          });
-        }
-      });
-
-      // Only fetch from listing_photo table if there are legacy photo IDs
-      const photoMap = legacyPhotoIds.size > 0
-        ? await fetchPhotoUrls(Array.from(legacyPhotoIds))
-        : {};
-
-      // Extract photos per listing (handles both embedded objects and legacy IDs)
-      const resolvedPhotos = {};
-      data.forEach(listing => {
-        resolvedPhotos[listing._id] = extractPhotos(
-          listing['Features - Photos'],
-          photoMap,
-          listing._id
-        );
-      });
-
-      // Batch fetch host data for all listings
-      const hostIds = new Set();
-      data.forEach(listing => {
-        if (listing['Host User']) {
-          hostIds.add(listing['Host User']);
-        }
-      });
-
-      const hostMap = await fetchHostData(Array.from(hostIds));
-
-      // Map host data to listings
-      const resolvedHosts = {};
-      data.forEach(listing => {
-        const hostId = listing['Host User'];
-        resolvedHosts[listing._id] = hostMap[hostId] || null;
-      });
-
-      // Transform listings
-      const transformedListings = data.map(listing =>
-        transformListing(listing, resolvedPhotos[listing._id], resolvedHosts[listing._id])
-      );
-
-      // Filter out listings without valid coordinates
-      const listingsWithCoordinates = transformedListings.filter(listing => {
-        return listing.coordinates && listing.coordinates.lat && listing.coordinates.lng;
-      });
-
-      // Filter out listings without photos
-      const listingsWithPhotos = listingsWithCoordinates.filter(listing => {
-        return listing.images && listing.images.length > 0;
-      });
-
-      logger.debug('📊 SearchPage: Fallback listings ready:', listingsWithPhotos.length);
-
-      setFallbackListings(listingsWithPhotos);
-      setFallbackLoadedCount(0);
-    } catch (err) {
-      logger.error('Failed to fetch fallback listings:', err);
-      // Don't set error state - this is a fallback, so we just show nothing
-      setFallbackListings([]);
-      // Mark that fetch failed to prevent infinite retry loop
-      setFallbackFetchFailed(true);
-    } finally {
-      setIsFallbackLoading(false);
-    }
-  }, []);
-
-  // Transform raw listing data
-  const transformListing = (dbListing, images, hostData) => {
-    // Resolve human-readable names from database IDs
-    const neighborhoodName = getNeighborhoodName(dbListing['Location - Hood']);
-    const boroughName = getBoroughName(dbListing['Location - Borough']);
-    const propertyType = getPropertyTypeLabel(dbListing['Features - Type of Space']);
-
-    // Build location string with proper formatting
-    const locationParts = [];
-    if (neighborhoodName) locationParts.push(neighborhoodName);
-    if (boroughName) locationParts.push(boroughName);
-    const location = locationParts.join(', ') || 'New York, NY';
-
-    // Extract coordinates from JSONB fields
-    // Priority: "Location - slightly different address" (for privacy/pin separation)
-    // Fallback: "Location - Address" (main address)
-    // Format: { address: "...", lat: number, lng: number }
-    let locationSlightlyDifferent = dbListing['Location - slightly different address'];
-    let locationAddress = dbListing['Location - Address'];
-
-    // Parse if they're strings (Supabase may return JSONB as strings)
-    if (typeof locationSlightlyDifferent === 'string') {
-      try {
-        locationSlightlyDifferent = JSON.parse(locationSlightlyDifferent);
-      } catch (error) {
-        logger.error('❌ SearchPage: Failed to parse Location - slightly different address:', {
-          id: dbListing._id,
-          name: dbListing.Name,
-          rawValue: locationSlightlyDifferent,
-          error: error.message
-        });
-        locationSlightlyDifferent = null;
-      }
-    }
-
-    if (typeof locationAddress === 'string') {
-      try {
-        locationAddress = JSON.parse(locationAddress);
-      } catch (error) {
-        logger.error('❌ SearchPage: Failed to parse Location - Address:', {
-          id: dbListing._id,
-          name: dbListing.Name,
-          rawValue: locationAddress,
-          error: error.message
-        });
-        locationAddress = null;
-      }
-    }
-
-    // Use slightly different address if available, otherwise fallback to main address
-    let coordinates = null;
-    let coordinateSource = null;
-
-    if (locationSlightlyDifferent?.lat && locationSlightlyDifferent?.lng) {
-      coordinates = {
-        lat: locationSlightlyDifferent.lat,
-        lng: locationSlightlyDifferent.lng
-      };
-      coordinateSource = 'slightly-different-address';
-    } else if (locationAddress?.lat && locationAddress?.lng) {
-      coordinates = {
-        lat: locationAddress.lat,
-        lng: locationAddress.lng
-      };
-      coordinateSource = 'main-address';
-    }
-
-    logger.debug('🔄 SearchPage: Transforming listing:', {
-      id: dbListing._id,
-      name: dbListing.Name,
-      hasSlightlyDifferentAddress: !!locationSlightlyDifferent,
-      hasMainAddress: !!locationAddress,
-      coordinateSource: coordinateSource,
-      coordinates: coordinates,
-      hasValidCoords: !!coordinates
-    });
-
-    if (!coordinates) {
-      logger.error('❌ SearchPage: Missing coordinates for listing - will be filtered out:', {
-        id: dbListing._id,
-        name: dbListing.Name,
-        locationSlightlyDifferent: locationSlightlyDifferent,
-        locationAddress: locationAddress
-      });
-    } else {
-      logger.debug('✅ SearchPage: Valid coordinates found from', coordinateSource, ':', {
-        id: dbListing._id,
-        name: dbListing.Name,
-        lat: coordinates.lat,
-        lng: coordinates.lng
-      });
-    }
-
-    logger.debug('📍 SearchPage: Final coordinates for listing:', {
-      id: dbListing._id,
-      coordinates,
-      hasValidCoordinates: !!coordinates
-    });
-
-    return {
-      id: dbListing._id,
-      title: dbListing.Name || 'Unnamed Listing',
-      location: location,
-      neighborhood: neighborhoodName || '',
-      borough: boroughName || '',
-      coordinates,
-      price: {
-        starting: dbListing['Standarized Minimum Nightly Price (Filter)'] || 0,
-        full: dbListing['💰Nightly Host Rate for 7 nights'] || 0
-      },
-      'Starting nightly price': dbListing['Standarized Minimum Nightly Price (Filter)'] || 0,
-      // Host rate fields needed by calculatePrice from priceCalculations.js
-      '💰Nightly Host Rate for 2 nights': dbListing['💰Nightly Host Rate for 2 nights'] || null,
-      '💰Nightly Host Rate for 3 nights': dbListing['💰Nightly Host Rate for 3 nights'] || null,
-      '💰Nightly Host Rate for 4 nights': dbListing['💰Nightly Host Rate for 4 nights'] || null,
-      '💰Nightly Host Rate for 5 nights': dbListing['💰Nightly Host Rate for 5 nights'] || null,
-      '💰Nightly Host Rate for 7 nights': dbListing['💰Nightly Host Rate for 7 nights'] || null,
-      // Rental type for calculatePrice dispatch (Monthly/Weekly/Nightly)
-      'rental type': dbListing['rental type'] || 'Nightly',
-      rentalType: dbListing['rental type'] || 'Nightly',
-      // Monthly rate if needed
-      '💰Monthly Host Rate': dbListing['💰Monthly Host Rate'] || null,
-      // Weekly rate if needed
-      '💰Weekly Host Rate': dbListing['💰Weekly Host Rate'] || null,
-      // Fees
-      '💰Cleaning Cost / Maintenance Fee': dbListing['💰Cleaning Cost / Maintenance Fee'] || 0,
-      '💰Damage Deposit': dbListing['💰Damage Deposit'] || 0,
-      '💰Unit Markup': dbListing['💰Unit Markup'] || 0,
-      // Weeks offered pattern
-      'Weeks offered': dbListing['Weeks offered'] || 'Every week',
-      weeksOffered: dbListing['Weeks offered'] || 'Every week',
-      type: propertyType,
-      squareFeet: dbListing['Features - SQFT Area'] || null,
-      maxGuests: dbListing['Features - Qty Guests'] || 1,
-      bedrooms: dbListing['Features - Qty Bedrooms'] || 0,
-      bathrooms: dbListing['Features - Qty Bathrooms'] || 0,
-      amenities: parseAmenities(dbListing),
-      host: hostData || {
-        name: null,
-        image: null,
-        verified: false
-      },
-      // Photos loaded via batch fetch BEFORE transformation
-      images: images || [],
-      description: `${(dbListing['Features - Qty Bedrooms'] || 0) === 0 ? 'Studio' : `${dbListing['Features - Qty Bedrooms']} bedroom`} • ${dbListing['Features - Qty Bathrooms'] || 0} bathroom`,
-      // Parse JSONB field that may be stringified JSON or native array
-      days_available: parseJsonArray(dbListing['Days Available (List of Days)']),
-      isNew: false
-    };
-  };
-
-  // Fetch listings when filters change
-  useEffect(() => {
-    fetchListings();
-  }, [fetchListings]);
-
-  // Lazy load listings
-  useEffect(() => {
-    if (allListings.length === 0) {
-      setDisplayedListings([]);
-      return;
-    }
-
-    const initialCount = LISTING_CONFIG.INITIAL_LOAD_COUNT;
-    setDisplayedListings(allListings.slice(0, initialCount));
-    setLoadedCount(initialCount);
-  }, [allListings]);
-
-  const handleLoadMore = useCallback(() => {
-    const batchSize = LISTING_CONFIG.LOAD_BATCH_SIZE;
-    const nextCount = Math.min(loadedCount + batchSize, allListings.length);
-    setDisplayedListings(allListings.slice(0, nextCount));
-    setLoadedCount(nextCount);
-  }, [loadedCount, allListings]);
-
-  const hasMore = loadedCount < allListings.length;
-
-  // Fetch fallback listings when filtered results are empty
-  useEffect(() => {
-    // Don't retry if fetch already failed (prevents infinite loop)
-    if (!isLoading && allListings.length === 0 && fallbackListings.length === 0 && !isFallbackLoading && !fallbackFetchFailed) {
-      fetchAllListings();
-    }
-  }, [isLoading, allListings.length, fallbackListings.length, isFallbackLoading, fallbackFetchFailed, fetchAllListings]);
-
-  // Clear fallback listings when filtered results are found
-  useEffect(() => {
-    if (allListings.length > 0 && fallbackListings.length > 0) {
-      setFallbackListings([]);
-      setFallbackDisplayedListings([]);
-      setFallbackLoadedCount(0);
-    }
-  }, [allListings.length, fallbackListings.length]);
-
-  // Lazy load fallback listings
-  useEffect(() => {
-    if (fallbackListings.length === 0) {
-      setFallbackDisplayedListings([]);
-      return;
-    }
-
-    const initialCount = LISTING_CONFIG.INITIAL_LOAD_COUNT;
-    setFallbackDisplayedListings(fallbackListings.slice(0, initialCount));
-    setFallbackLoadedCount(initialCount);
-  }, [fallbackListings]);
-
-  const handleFallbackLoadMore = useCallback(() => {
-    const batchSize = LISTING_CONFIG.LOAD_BATCH_SIZE;
-    const nextCount = Math.min(fallbackLoadedCount + batchSize, fallbackListings.length);
-    setFallbackDisplayedListings(fallbackListings.slice(0, nextCount));
-    setFallbackLoadedCount(nextCount);
-  }, [fallbackLoadedCount, fallbackListings]);
-
-  const hasFallbackMore = fallbackLoadedCount < fallbackListings.length;
-
-  // Reset all filters
-  const handleResetFilters = () => {
-    const manhattan = boroughs.find(b => b.value === 'manhattan');
-    if (manhattan) {
-      setSelectedBorough(manhattan.value);
-    }
-    setSelectedNeighborhoods([]);
-    setWeekPattern('every-week');
-    setPriceTier('all');
-    setSortBy('recommended');
-    setNeighborhoodSearch('');
-  };
-
-  // Modal handler functions
-  const handleOpenContactModal = (listing) => {
-    setSelectedListing(listing);
-    setIsContactModalOpen(true);
-  };
-
-  const handleCloseContactModal = () => {
-    setIsContactModalOpen(false);
-    setSelectedListing(null);
-  };
-
-  const handleOpenInfoModal = (listing, triggerRef) => {
-    setSelectedListing(listing);
-    setInfoModalTriggerRef(triggerRef);
-    setIsInfoModalOpen(true);
-  };
-
-  const handleCloseInfoModal = () => {
-    setIsInfoModalOpen(false);
-    setSelectedListing(null);
-    setInfoModalTriggerRef(null);
-  };
-
-  const handleOpenAIResearchModal = () => {
-    setIsAIResearchModalOpen(true);
-  };
-
-  const handleCloseAIResearchModal = () => {
-    setIsAIResearchModalOpen(false);
-  };
-
-  // Scroll to listing card when marker is clicked
-  // Ensures the listing is loaded (lazy-loading) before scrolling
-  const scrollToListingCard = (listing) => {
-    const listingId = listing.id || listing._id;
-    logger.debug('[scrollToListingCard] Looking for listing:', listingId);
-
-    // First check if the listing card already exists in the DOM
-    const listingCard = document.querySelector(`[data-listing-id="${listingId}"]`);
-    logger.debug('[scrollToListingCard] Initial card search result:', listingCard);
-
-    if (listingCard) {
-      // Card exists, scroll to it
-      listingCard.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center'
-      });
-
-      // Add a brief highlight effect to the card
-      listingCard.classList.add('listing-card--highlighted');
-      setTimeout(() => {
-        listingCard.classList.remove('listing-card--highlighted');
-      }, 2000);
-    } else {
-      // Card not in DOM - might not be lazy-loaded yet
-      // Find the listing's position in allListings and load up to that point
-      const listingIndex = allListings.findIndex(l => (l.id || l._id) === listingId);
-      logger.debug('[scrollToListingCard] Listing index in allListings:', listingIndex);
-
-      if (listingIndex >= 0) {
-        // Load listings up to and including the clicked one
-        const needToLoad = listingIndex + 1;
-        if (needToLoad > loadedCount) {
-          logger.debug('[scrollToListingCard] Loading more listings to show card. Need:', needToLoad, 'Currently loaded:', loadedCount);
-          setDisplayedListings(allListings.slice(0, needToLoad));
-          setLoadedCount(needToLoad);
-
-          // Wait for React to render the new cards, then scroll
-          setTimeout(() => {
-            const newListingCard = document.querySelector(`[data-listing-id="${listingId}"]`);
-            logger.debug('[scrollToListingCard] After load, found card:', newListingCard);
-
-            if (newListingCard) {
-              newListingCard.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center'
-              });
-
-              newListingCard.classList.add('listing-card--highlighted');
-              setTimeout(() => {
-                newListingCard.classList.remove('listing-card--highlighted');
-              }, 2000);
-            }
-          }, 100); // Small delay to allow React to render
-        }
-      } else {
-        logger.warn('[scrollToListingCard] Listing not found in allListings:', listingId);
-      }
-    }
-  };
-
-  // Create Proposal modal handlers
-  const handleOpenCreateProposalModal = (listing) => {
-    // Get default schedule from URL params or use default weekdays
-    const urlParams = new URLSearchParams(window.location.search);
-    const daysParam = urlParams.get('days-selected');
-
-    let initialDays = [];
-    if (daysParam) {
-      try {
-        // URL stores 0-based day indices (0=Sun, 6=Sat) matching JS Date.getDay()
-        const zeroBased = daysParam.split(',').map(d => parseInt(d.trim(), 10));
-        initialDays = zeroBased
-          .filter(d => d >= 0 && d <= 6)  // Valid 0-based day range
-          .map(dayIndex => createDay(dayIndex, true));
-      } catch (e) {
-        logger.warn('Failed to parse days from URL:', e);
-      }
-    }
-
-    // Default to weekdays (Mon-Fri) if no URL selection
-    if (initialDays.length === 0) {
-      initialDays = [1, 2, 3, 4, 5].map(dayIndex => createDay(dayIndex, true));
-    }
-
-    // Calculate minimum move-in date (2 weeks from today)
-    const today = new Date();
-    const twoWeeksFromNow = new Date(today);
-    twoWeeksFromNow.setDate(today.getDate() + 14);
-    const minMoveInDate = twoWeeksFromNow.toISOString().split('T')[0];
-
-    // Determine move-in date: prefer last proposal's date (shifted if needed), fallback to smart calculation
-    let smartMoveInDate = minMoveInDate;
-
-    if (lastProposalDefaults?.moveInDate) {
-      // Use previous proposal's move-in date, shifted forward if necessary
-      smartMoveInDate = shiftMoveInDateIfPast({
-        previousMoveInDate: lastProposalDefaults.moveInDate,
-        minDate: minMoveInDate
-      }) || minMoveInDate;
-      logger.debug('[SearchPage] Pre-filling move-in from last proposal:', lastProposalDefaults.moveInDate, '->', smartMoveInDate);
-    } else if (initialDays.length > 0) {
-      // Fallback: calculate based on selected days
-      try {
-        const selectedDayIndices = initialDays.map(d => d.dayOfWeek);
-        smartMoveInDate = calculateNextAvailableCheckIn({
-          selectedDayIndices,
-          minDate: minMoveInDate
-        });
-      } catch (err) {
-        logger.error('Error calculating smart move-in date:', err);
-        smartMoveInDate = minMoveInDate;
-      }
-    }
-
-    // Determine reservation span: prefer last proposal's span, fallback to default
-    const prefillReservationSpan = lastProposalDefaults?.reservationSpanWeeks || 13;
-
-    setSelectedListingForProposal(listing);
-    setSelectedDayObjectsForProposal(initialDays);
-    setMoveInDateForProposal(smartMoveInDate);
-    setReservationSpanForProposal(prefillReservationSpan);
-    setIsCreateProposalModalOpen(true);
-  };
-
-  const handleCloseCreateProposalModal = () => {
-    setIsCreateProposalModalOpen(false);
-    setSelectedListingForProposal(null);
-  };
-
-  // Submit proposal to backend (after auth is confirmed)
-  const submitProposal = async (proposalData) => {
-    setIsSubmittingProposal(true);
-
-    try {
-      // Get the guest ID (Bubble user _id)
-      const guestId = loggedInUserData?.userId || getSessionId();
-
-      if (!guestId) {
-        throw new Error('User ID not found. Please log in again.');
-      }
-
-      logger.debug('[SearchPage] Submitting proposal to Edge Function...');
-      logger.debug('   Guest ID:', guestId);
-      logger.debug('   Listing ID:', selectedListingForProposal?.id || selectedListingForProposal?._id);
-
-      // Days are already in JS format (0-6) - database now uses 0-indexed natively
-      // proposalData.daysSelectedObjects contains Day objects with dayOfWeek property
-      const daysInJsFormat = proposalData.daysSelectedObjects?.map(d => d.dayOfWeek) || [];
-
-      // Sort days in JS format first to detect wrap-around (Saturday/Sunday spanning)
-      const sortedJsDays = [...daysInJsFormat].sort((a, b) => a - b);
-
-      // Check for wrap-around case (both Saturday=6 and Sunday=0 present, but not all 7 days)
-      const hasSaturday = sortedJsDays.includes(6);
-      const hasSunday = sortedJsDays.includes(0);
-      const isWrapAround = hasSaturday && hasSunday && daysInJsFormat.length < 7;
-
-      let checkInDay, checkOutDay, nightsSelected;
-
-      if (isWrapAround) {
-        // Find the gap in the sorted selection to determine wrap-around point
-        let gapIndex = -1;
-        for (let i = 0; i < sortedJsDays.length - 1; i++) {
-          if (sortedJsDays[i + 1] - sortedJsDays[i] > 1) {
-            gapIndex = i + 1;
-            break;
-          }
-        }
-
-        if (gapIndex !== -1) {
-          // Wrap-around: check-in is the first day after the gap, check-out is the last day before gap
-          checkInDay = sortedJsDays[gapIndex];
-          checkOutDay = sortedJsDays[gapIndex - 1];
-
-          // Reorder days to be in actual sequence (check-in to check-out)
-          const reorderedDays = [...sortedJsDays.slice(gapIndex), ...sortedJsDays.slice(0, gapIndex)];
-
-          // Nights = all days except the last one (checkout day)
-          nightsSelected = reorderedDays.slice(0, -1);
-        } else {
-          // No gap found, use standard logic
-          checkInDay = sortedJsDays[0];
-          checkOutDay = sortedJsDays[sortedJsDays.length - 1];
-          nightsSelected = sortedJsDays.slice(0, -1);
-        }
-      } else {
-        // Standard case: check-in = first day, check-out = last day
-        checkInDay = sortedJsDays[0];
-        checkOutDay = sortedJsDays[sortedJsDays.length - 1];
-        // Nights = all days except the last one (checkout day)
-        nightsSelected = sortedJsDays.slice(0, -1);
-      }
-
-      // Format reservation span text
-      const reservationSpanWeeks = proposalData.reservationSpan || 13;
-      const reservationSpanText = reservationSpanWeeks === 13
-        ? '13 weeks (3 months)'
-        : reservationSpanWeeks === 20
-          ? '20 weeks (approx. 5 months)'
-          : `${reservationSpanWeeks} weeks`;
-
-      // Build the Edge Function payload (using 0-indexed days)
-      const edgeFunctionPayload = {
-        guestId: guestId,
-        listingId: selectedListingForProposal?.id || selectedListingForProposal?._id,
-        moveInStartRange: proposalData.moveInDate,
-        moveInEndRange: proposalData.moveInDate, // Same as start if no flexibility
-        daysSelected: daysInJsFormat,
-        nightsSelected: nightsSelected,
-        reservationSpan: reservationSpanText,
-        reservationSpanWeeks: reservationSpanWeeks,
-        checkIn: checkInDay,
-        checkOut: checkOutDay,
-        proposalPrice: proposalData.pricePerNight,
-        fourWeekRent: proposalData.pricePerFourWeeks,
-        hostCompensation: proposalData.pricePerFourWeeks, // Same as 4-week rent for now
-        needForSpace: proposalData.needForSpace || '',
-        aboutMe: proposalData.aboutYourself || '',
-        estimatedBookingTotal: proposalData.totalPrice,
-        // Optional fields
-        specialNeeds: proposalData.hasUniqueRequirements ? proposalData.uniqueRequirements : '',
-        moveInRangeText: proposalData.moveInRange || '',
-        flexibleMoveIn: !!proposalData.moveInRange,
-        fourWeekCompensation: proposalData.pricePerFourWeeks
-      };
-
-      logger.debug('[SearchPage] Edge Function payload:', edgeFunctionPayload);
-
-      // Call the proposal Edge Function (Supabase-native)
-      const { data, error } = await supabase.functions.invoke('proposal', {
-        body: {
-          action: 'create',
-          payload: edgeFunctionPayload
-        }
-      });
-
-      if (error) {
-        logger.error('[SearchPage] Edge Function error:', error);
-        throw new Error(error.message || 'Failed to submit proposal');
-      }
-
-      if (!data?.success) {
-        logger.error('[SearchPage] Proposal submission failed:', data?.error);
-        throw new Error(data?.error || 'Failed to submit proposal');
-      }
-
-      logger.debug('[SearchPage] Proposal submitted successfully:', data);
-      logger.debug('   Proposal ID:', data.data?.proposalId);
-
-      // Clear the localStorage draft on successful submission
-      clearProposalDraft(proposalData.listingId);
-
-      // Close the create proposal modal
-      setIsCreateProposalModalOpen(false);
-      setPendingProposalData(null);
-
-      // Store the proposal ID and show success modal
-      const newProposalId = data.data?.proposalId;
-      setSuccessProposalId(newProposalId);
-      setShowSuccessModal(true);
-
-      // Update proposalsByListingId map with the new proposal
-      // This enables immediate UI update (button changes from "Create" to "View")
-      if (newProposalId && selectedListingForProposal) {
-        const listingId = selectedListingForProposal.id || selectedListingForProposal._id;
-        if (listingId) {
-          setProposalsByListingId(prev => {
-            const updated = new Map(prev);
-            updated.set(listingId, { _id: newProposalId });
-            logger.debug(`[SearchPage] Added proposal ${newProposalId} to listing ${listingId}`);
-            return updated;
-          });
-        }
-      }
-
-    } catch (error) {
-      logger.error('[SearchPage] Error submitting proposal:', error);
-      showToast(error.message || 'Failed to submit proposal. Please try again.', 'error');
-      // Keep the modal open on error so user can retry
-    } finally {
-      setIsSubmittingProposal(false);
-    }
-  };
-
-  // Handle proposal submission - checks auth first
-  const handleCreateProposalSubmit = async (proposalData) => {
-    logger.debug('[SearchPage] Proposal submission initiated:', proposalData);
-
-    // Check if user is logged in
-    const isAuthenticated = await checkAuthStatus();
-
-    if (!isAuthenticated) {
-      logger.debug('[SearchPage] User not logged in, showing auth modal');
-      // Store the proposal data for later submission
-      setPendingProposalData(proposalData);
-      // Close the proposal modal
-      setIsCreateProposalModalOpen(false);
-      // Open auth modal
-      setShowAuthModalForProposal(true);
-      return;
-    }
-
-    // User is logged in, proceed with submission
-    logger.debug('[SearchPage] User is logged in, submitting proposal');
-    await submitProposal(proposalData);
-  };
-
-  // Handle successful authentication for proposal submission
-  const handleAuthSuccessForProposal = async (authResult) => {
-    logger.debug('[SearchPage] Auth success for proposal:', authResult);
-
-    // Close the auth modal
-    setShowAuthModalForProposal(false);
-
-    // Update the logged-in user data
-    // CRITICAL: Use clearOnFailure: false to preserve session if Edge Function fails
-    try {
-      const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
-      if (userData) {
-        setLoggedInUserData({
-          ...userData,
-          userId: getSessionId()
-        });
-        setIsLoggedIn(true);
-        setCurrentUser({
-          id: getSessionId(),
-          name: userData.fullName || userData.firstName || '',
-          email: userData.email || '',
-          userType: userData.userType || 'GUEST',
-          avatarUrl: userData.profilePhoto || null
-        });
-        logger.debug('[SearchPage] User data updated after auth:', userData.firstName);
-      }
-    } catch (err) {
-      logger.error('[SearchPage] Error fetching user data after auth:', err);
-    }
-
-    // If there's a pending proposal, submit it now
-    if (pendingProposalData) {
-      logger.debug('[SearchPage] Submitting pending proposal after auth');
-      // Small delay to ensure auth state is fully updated
-      setTimeout(async () => {
-        await submitProposal(pendingProposalData);
-      }, 500);
-    }
-  };
-
-  // Transform listing data from SearchPage format to CreateProposalFlowV2 expected format
-  const transformListingForProposal = (listing) => {
-    if (!listing) return null;
-    return {
-      _id: listing.id,
-      Name: listing.title,
-      'Minimum Nights': 2,
-      'Maximum Nights': 7,
-      'rental type': 'Nightly',
-      'Weeks offered': listing.weeks_offered || 'Every week',
-      '💰Unit Markup': 0,
-      '💰Nightly Host Rate for 2 nights': listing['Price 2 nights selected'],
-      '💰Nightly Host Rate for 3 nights': listing['Price 3 nights selected'],
-      '💰Nightly Host Rate for 4 nights': listing['Price 4 nights selected'],
-      '💰Nightly Host Rate for 5 nights': listing['Price 5 nights selected'],
-      '💰Nightly Host Rate for 7 nights': listing['Price 7 nights selected'],
-      '💰Cleaning Cost / Maintenance Fee': 0,
-      '💰Damage Deposit': 0,
-      host: listing.host
-    };
-  };
-
-  // Show toast notification
-  const showToast = (message, type = 'success') => {
-    setToast({ show: true, message, type });
-    setTimeout(() => {
-      setToast({ show: false, message: '', type: 'success' });
-    }, 3000);
-  };
-
-  // Update favorites count and show toast (API call handled by FavoriteButton component)
-  const handleToggleFavorite = (listingId, listingTitle, newState) => {
-    logger.debug('[SearchPage] handleToggleFavorite called:', {
-      listingId,
-      listingTitle,
-      newState,
-      currentFavoritesCount: favoritesCount
-    });
-
-    // Update the local set to keep heart icon state in sync
-    const newFavoritedIds = new Set(favoritedListingIds);
-    if (newState) {
-      newFavoritedIds.add(listingId);
-    } else {
-      newFavoritedIds.delete(listingId);
-    }
-    setFavoritedListingIds(newFavoritedIds);
-    // Update count to match the set size
-    setFavoritesCount(newFavoritedIds.size);
-
-    // Show toast notification
-    const displayName = listingTitle || 'Listing';
-    if (newState) {
-      showToast(`${displayName} added to favorites`, 'success');
-    } else {
-      showToast(`${displayName} removed from favorites`, 'info');
-    }
-  };
-
-  // Auth navigation handlers
-  const handleNavigate = (path) => {
-    window.location.href = path;
-  };
-
-  const handleLogout = async () => {
-    try {
-      await logoutUser();
-      setIsLoggedIn(false);
-      setCurrentUser(null);
-      setFavoritesCount(0);
-      // Optionally redirect to home or refresh the page
-      window.location.reload();
-    } catch (error) {
-      logger.error('[SearchPage] Logout error:', error);
-    }
-  };
-
-  // Mount SearchScheduleSelector component in both mobile and desktop locations
-  // Note: Schedule selector is now display-only and does not affect filtering
+  // Mount SearchScheduleSelector component
   useEffect(() => {
     const mountPointDesktop = document.getElementById('schedule-selector-mount-point');
     const mountPointMobile = document.getElementById('schedule-selector-mount-point-mobile');
@@ -2144,10 +543,7 @@ export default function SearchPage() {
     const selectorProps = {
       onSelectionChange: (days) => {
         logger.debug('Schedule selector changed:', days);
-        // Calculate nights from days (nights = days - 1)
         const nightsCount = countSelectedNights(days);
-        logger.debug(`[SearchPage] Days selected: ${days.length}, Nights: ${nightsCount}`);
-        // Update nights count for dynamic pricing (0 nights is valid - shows starting price)
         setSelectedNightsCount(nightsCount);
       },
       onError: (error) => logger.error('AuthAwareSearchScheduleSelector error:', error),
@@ -2171,65 +567,231 @@ export default function SearchPage() {
     };
   }, [weekPattern]);
 
-  // Determine if "Create Proposal" button should be visible
-  // Conditions: logged in AND is a guest AND has 1+ existing proposals
-  const showCreateProposalButton = useMemo(() => {
-    if (!isLoggedIn || !currentUser) return false;
-    const userIsGuest = isGuest({ userType: currentUser.userType });
-    const hasExistingProposals = (currentUser.proposalCount ?? 0) > 0;
-    return userIsGuest && hasExistingProposals;
-  }, [isLoggedIn, currentUser]);
+  // ==========================================================================
+  // HANDLERS
+  // ==========================================================================
 
-  // Determine if "Message" button should be visible on listing cards
-  // Hidden for logged-in host users (hosts shouldn't message other hosts)
-  const showMessageButton = useMemo(() => {
-    if (!isLoggedIn || !currentUser) return true; // Show for guests (not logged in)
-    const userIsHost = isHost({ userType: currentUser.userType });
-    return !userIsHost;
-  }, [isLoggedIn, currentUser]);
+  const toggleFilterPopup = useCallback(() => {
+    setFilterPopupOpen(prev => !prev);
+  }, []);
 
-  // Render
+  const closeFilterPopup = useCallback(() => {
+    setFilterPopupOpen(false);
+  }, []);
+
+  const clearAllFilters = useCallback(() => {
+    setSelectedBorough('all');
+    setSelectedNeighborhoods([]);
+    setPriceTier('all');
+    setWeekPattern('every-week');
+    setSortBy('recommended');
+    closeFilterPopup();
+  }, [closeFilterPopup]);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast({ show: false, message: '', type: 'success' });
+    }, 3000);
+  };
+
+  // Auth navigation handlers
+  const handleNavigate = (path) => {
+    window.location.href = path;
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+      window.location.reload();
+    } catch (error) {
+      logger.error('[SearchPage] Logout error:', error);
+    }
+  };
+
+  // Scroll to listing card when marker is clicked
+  const scrollToListingCard = (listing) => {
+    const listingId = listing.id || listing._id;
+    const listingCard = document.querySelector(`[data-listing-id="${listingId}"]`);
+
+    if (listingCard) {
+      listingCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      listingCard.classList.add('listing-card--highlighted');
+      setTimeout(() => {
+        listingCard.classList.remove('listing-card--highlighted');
+      }, 2000);
+    }
+  };
+
+  // ==========================================================================
+  // PROPOSAL HANDLERS
+  // ==========================================================================
+
+  const handleOpenCreateProposalModal = (listing) => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const daysParam = urlParams.get('days-selected');
+
+    let initialDays = [];
+    if (daysParam) {
+      try {
+        const zeroBased = daysParam.split(',').map(d => parseInt(d.trim(), 10));
+        initialDays = zeroBased
+          .filter(d => d >= 0 && d <= 6)
+          .map(dayIndex => createDay(dayIndex, true));
+      } catch (e) {
+        logger.warn('Failed to parse days from URL:', e);
+      }
+    }
+
+    if (initialDays.length === 0) {
+      initialDays = [1, 2, 3, 4, 5].map(dayIndex => createDay(dayIndex, true));
+    }
+
+    const today = new Date();
+    const twoWeeksFromNow = new Date(today);
+    twoWeeksFromNow.setDate(today.getDate() + 14);
+    const minMoveInDate = twoWeeksFromNow.toISOString().split('T')[0];
+
+    let smartMoveInDate = minMoveInDate;
+
+    if (lastProposalDefaults?.moveInDate) {
+      smartMoveInDate = shiftMoveInDateIfPast({
+        previousMoveInDate: lastProposalDefaults.moveInDate,
+        minDate: minMoveInDate
+      }) || minMoveInDate;
+    } else if (initialDays.length > 0) {
+      try {
+        const selectedDayIndices = initialDays.map(d => d.dayOfWeek);
+        smartMoveInDate = calculateNextAvailableCheckIn({
+          selectedDayIndices,
+          minDate: minMoveInDate
+        });
+      } catch (err) {
+        smartMoveInDate = minMoveInDate;
+      }
+    }
+
+    const prefillReservationSpan = lastProposalDefaults?.reservationSpanWeeks || 13;
+
+    setSelectedListingForProposal(listing);
+    setSelectedDayObjectsForProposal(initialDays);
+    setMoveInDateForProposal(smartMoveInDate);
+    setReservationSpanForProposal(prefillReservationSpan);
+    setIsCreateProposalModalOpen(true);
+  };
+
+  const handleCloseCreateProposalModal = () => {
+    setIsCreateProposalModalOpen(false);
+    setSelectedListingForProposal(null);
+  };
+
+  /**
+   * Submit proposal using proposalService
+   * SECURITY: Uses authUserId from JWT, not getSessionId()
+   */
+  const submitProposal = async (proposalData) => {
+    setIsSubmittingProposal(true);
+
+    try {
+      // SECURITY: Use JWT-derived user ID (Golden Rule D)
+      if (!authUserId) {
+        throw new Error('Authentication required. Please log in again.');
+      }
+
+      // Use centralized proposal service
+      const result = await createProposal({
+        guestId: authUserId, // JWT-derived, not getSessionId()
+        listingId: selectedListingForProposal?.id || selectedListingForProposal?._id,
+        moveInDate: proposalData.moveInDate,
+        daysSelectedObjects: proposalData.daysSelectedObjects,
+        reservationSpanWeeks: proposalData.reservationSpan || 13,
+        pricing: {
+          pricePerNight: proposalData.pricePerNight,
+          pricePerFourWeeks: proposalData.pricePerFourWeeks,
+          totalPrice: proposalData.totalPrice
+        },
+        details: {
+          needForSpace: proposalData.needForSpace,
+          aboutMe: proposalData.aboutYourself,
+          specialNeeds: proposalData.hasUniqueRequirements ? proposalData.uniqueRequirements : '',
+          moveInRangeText: proposalData.moveInRange
+        }
+      });
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      // Success handling
+      clearProposalDraft(proposalData.listingId);
+      setIsCreateProposalModalOpen(false);
+      setPendingProposalData(null);
+      setSuccessProposalId(result.proposalId);
+      setShowSuccessModal(true);
+
+      // Update local state
+      if (result.proposalId && selectedListingForProposal) {
+        const listingId = selectedListingForProposal.id || selectedListingForProposal._id;
+        setProposalsByListingId(prev => {
+          const updated = new Map(prev);
+          updated.set(listingId, { _id: result.proposalId });
+          return updated;
+        });
+      }
+
+    } catch (error) {
+      logger.error('[SearchPage] Error submitting proposal:', error);
+      showToast(error.message || 'Failed to submit proposal. Please try again.', 'error');
+    } finally {
+      setIsSubmittingProposal(false);
+    }
+  };
+
+  const handleCreateProposalSubmit = async (proposalData) => {
+    const isAuthenticated = await checkAuthStatus();
+
+    if (!isAuthenticated) {
+      setPendingProposalData(proposalData);
+      setIsCreateProposalModalOpen(false);
+      setShowAuthModalForProposal(true);
+      return;
+    }
+
+    await submitProposal(proposalData);
+  };
+
+  /**
+   * Handle successful auth during proposal flow.
+   * SECURITY: Uses authUserId from JWT, NOT getSessionId()
+   */
+  const handleAuthSuccessForProposal = async (authResult) => {
+    setShowAuthModalForProposal(false);
+
+    // Auth hook will auto-sync user data via useEffect when isAuthenticated changes.
+    // We just need to wait briefly for the sync to complete, then submit.
+    // NOTE: loggedInUserData is set by useSearchPageAuth hook, not here.
+
+    if (pendingProposalData) {
+      // Wait for auth hook to sync user data
+      setTimeout(async () => {
+        await submitProposal(pendingProposalData);
+      }, 500);
+    }
+  };
+
+  // ==========================================================================
+  // RENDER - JSX only (no business logic in render)
+  // ==========================================================================
+
   return (
     <div className="search-page">
       {/* Toast Notification */}
       {toast.show && (
         <div className="toast-container">
           <div className={`toast toast-${toast.type} show`}>
-            {/* Icon */}
-            {toast.type === 'success' && (
-              <svg className="toast-icon" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" strokeLinecap="round" strokeLinejoin="round"/>
-                <polyline points="22 4 12 14.01 9 11.01" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            )}
-            {toast.type === 'info' && (
-              <svg className="toast-icon" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="16" x2="12" y2="12" strokeLinecap="round"/>
-                <line x1="12" y1="8" x2="12.01" y2="8" strokeLinecap="round"/>
-              </svg>
-            )}
-            {toast.type === 'error' && (
-              <svg className="toast-icon" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="15" y1="9" x2="9" y2="15" strokeLinecap="round"/>
-                <line x1="9" y1="9" x2="15" y2="15" strokeLinecap="round"/>
-              </svg>
-            )}
-            {toast.type === 'warning' && (
-              <svg className="toast-icon" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                <line x1="12" y1="9" x2="12" y2="13" strokeLinecap="round"/>
-                <line x1="12" y1="17" x2="12.01" y2="17" strokeLinecap="round"/>
-              </svg>
-            )}
-
-            {/* Content */}
             <div className="toast-content">
               <h4 className="toast-title">{toast.message}</h4>
             </div>
-
-            {/* Close Button */}
             <button
               className="toast-close"
               onClick={() => setToast({ show: false, message: '', type: 'success' })}
@@ -2248,7 +810,7 @@ export default function SearchPage() {
       <main className="two-column-layout">
         {/* LEFT COLUMN: Listings with filters */}
         <section className={`listings-column ${mobileHeaderHidden ? 'listings-column--header-hidden' : ''}`}>
-          {/* Mobile Filter Bar - Sticky at top on mobile */}
+          {/* Mobile Filter Bar */}
           <MobileFilterBar
             onFilterClick={() => setFilterPanelActive(!filterPanelActive)}
             onMapClick={() => setMobileMapVisible(true)}
@@ -2265,79 +827,22 @@ export default function SearchPage() {
             isHidden={mobileHeaderHidden}
           />
 
-          {/* Mobile Schedule Selector - Always visible on mobile */}
+          {/* Mobile Schedule Selector */}
           <div className={`mobile-schedule-selector ${mobileHeaderHidden ? 'mobile-schedule-selector--hidden' : ''}`}>
             <div className="filter-group schedule-selector-group" id="schedule-selector-mount-point-mobile">
-              {/* AuthAwareSearchScheduleSelector will be mounted here on mobile */}
             </div>
           </div>
 
-          {/* Compact Schedule Indicator - Shows when header is hidden (mobile) */}
+          {/* Compact Schedule Indicator */}
           <CompactScheduleIndicator isVisible={mobileHeaderHidden} />
 
-          {/* Desktop Compact Schedule Indicator - Shows when filter section is collapsed */}
-          <div
-            className={`desktop-compact-indicator desktop-compact-indicator--clickable ${desktopHeaderCollapsed ? 'desktop-compact-indicator--visible' : ''}`}
-            onClick={() => setDesktopHeaderCollapsed(false)}
-            role="button"
-            tabIndex={desktopHeaderCollapsed ? 0 : -1}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setDesktopHeaderCollapsed(false); }}
-            aria-label="Click to expand filter section"
-            title="Click anywhere to show filters"
-          >
-            <div className="desktop-compact-dots">
-              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((dayLetter, index) => (
-                <div
-                  key={index}
-                  className={`desktop-compact-dot ${selectedDaysForDisplay.includes(index) ? 'active' : ''}`}
-                  title={['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][index]}
-                >
-                  {dayLetter}
-                </div>
-              ))}
-            </div>
-            <div className="desktop-compact-checkin">
-              {checkInOutDays.checkIn && checkInOutDays.checkOut && (
-                <>
-                  <span className="desktop-compact-label">Check-in:</span>
-                  <span className="desktop-compact-day">{checkInOutDays.checkIn.substring(0, 3)}</span>
-                  <span className="desktop-compact-separator">→</span>
-                  <span className="desktop-compact-label">Out:</span>
-                  <span className="desktop-compact-day">{checkInOutDays.checkOut.substring(0, 3)}</span>
-                </>
-              )}
-            </div>
-            {activeFilterTags.length > 0 && (
-              <div className="desktop-compact-filters">
-                <button className="desktop-compact-filter-btn" onClick={(e) => { e.stopPropagation(); toggleFilterPopup(); }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-                  </svg>
-                  <span>{activeFilterTags.length}</span>
-                </button>
-              </div>
-            )}
-            {/* Expand Icon - Visual indicator that header is clickable */}
-            <div className="desktop-compact-expand">
-              <div className="desktop-compact-expand-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          {/* NEW FILTER SECTION - Desktop Only */}
+          {/* Filter Section (Desktop) */}
           <div className={`filter-section ${activeFilterTags.length > 0 ? 'has-active-filters' : ''} ${desktopHeaderCollapsed ? 'filter-section--collapsed' : ''}`}>
             <div className="filter-bar">
-              {/* Schedule Selector */}
               <div className="schedule-selector">
                 <div className="filter-group schedule-selector-group" id="schedule-selector-mount-point">
-                  {/* AuthAwareSearchScheduleSelector will be mounted here on desktop */}
                 </div>
               </div>
-
-              {/* Filter Toggle Button - Shows when no filters active */}
               <div className="filter-popup-wrapper" id="topFilterWrapper">
                 <button
                   className={`filter-toggle-btn-new ${filterPopupOpen ? 'active' : ''}`}
@@ -2352,18 +857,9 @@ export default function SearchPage() {
                   )}
                 </button>
               </div>
-
-              {/* Divider */}
               <div className="filter-divider"></div>
-
-              {/* Check-in/Check-out Block */}
               {checkInOutDays.checkIn && checkInOutDays.checkOut && (
                 <div className="checkin-block">
-                  <svg className="sync-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="23 4 23 10 17 10"></polyline>
-                    <polyline points="1 20 1 14 7 14"></polyline>
-                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                  </svg>
                   <div className="checkin-details">
                     <div className="checkin-row">
                       <span className="label">Check-in:</span>
@@ -2379,7 +875,7 @@ export default function SearchPage() {
             </div>
           </div>
 
-          {/* Filter Tags Row - Shows when filters are active, hides on desktop scroll */}
+          {/* Filter Tags Row - Shows active filters as removable chips */}
           <div className={`filter-tags-row ${activeFilterTags.length > 0 ? 'has-filters' : ''} ${desktopHeaderCollapsed ? 'filter-tags-row--collapsed' : ''}`}>
             <button className="results-filter-btn" onClick={toggleFilterPopup}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -2433,7 +929,6 @@ export default function SearchPage() {
             </div>
 
             <div className="filter-popup-body">
-              {/* Row 1: Borough, Week Pattern, Price Range */}
               {/* Borough Select */}
               <div className="filter-popup-group">
                 <label className="filter-popup-label">Borough</label>
@@ -2488,19 +983,34 @@ export default function SearchPage() {
                 </select>
               </div>
 
-              {/* Row 2: Neighborhoods - compact search */}
+              {/* Neighborhoods */}
               <div className="filter-popup-group filter-popup-group--full-width">
                 <label className="filter-popup-label">Neighborhoods</label>
-                <NeighborhoodSearchFilter
-                  neighborhoods={neighborhoods}
-                  selectedNeighborhoods={selectedNeighborhoods}
-                  onNeighborhoodsChange={setSelectedNeighborhoods}
-                  neighborhoodSearch={neighborhoodSearch}
-                  onNeighborhoodSearchChange={setNeighborhoodSearch}
-                  searchInputId="neighborhoodSearchPopup"
-                />
+                <div className="filter-popup-neighborhoods">
+                  {neighborhoods.length === 0 ? (
+                    <div className="neighborhood-list-empty">Loading neighborhoods...</div>
+                  ) : (
+                    <div className="neighborhood-checkbox-grid">
+                      {neighborhoods.map(neighborhood => (
+                        <label key={neighborhood.id} className="neighborhood-checkbox-item-popup">
+                          <input
+                            type="checkbox"
+                            checked={selectedNeighborhoods.includes(neighborhood.id)}
+                            onChange={() => {
+                              if (selectedNeighborhoods.includes(neighborhood.id)) {
+                                setSelectedNeighborhoods(selectedNeighborhoods.filter(id => id !== neighborhood.id));
+                              } else {
+                                setSelectedNeighborhoods([...selectedNeighborhoods, neighborhood.id]);
+                              }
+                            }}
+                          />
+                          <span>{neighborhood.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-
             </div>
 
             <div className="filter-popup-footer">
@@ -2518,115 +1028,7 @@ export default function SearchPage() {
             <div className="filter-backdrop open" onClick={closeFilterPopup}></div>
           )}
 
-          {/* All filters in single horizontal flexbox container - MOBILE ONLY */}
-          <div className={`inline-filters ${filterPanelActive ? 'active' : ''}`}>
-            {/* Close button for mobile filter panel */}
-            {filterPanelActive && (
-              <button
-                className="mobile-filter-close-btn"
-                onClick={() => setFilterPanelActive(false)}
-              >
-                ✕ Close Filters
-              </button>
-            )}
-
-            {/* Neighborhood Search Filter - Compact autocomplete */}
-            <NeighborhoodSearchFilter
-              neighborhoods={neighborhoods}
-              selectedNeighborhoods={selectedNeighborhoods}
-              onNeighborhoodsChange={setSelectedNeighborhoods}
-              neighborhoodSearch={neighborhoodSearch}
-              onNeighborhoodSearchChange={setNeighborhoodSearch}
-              searchInputId="neighborhoodSearchInline"
-            />
-
-            {/* Borough Select */}
-            <div className="filter-group compact">
-              <label htmlFor="boroughSelect">Borough</label>
-              <select
-                id="boroughSelect"
-                className="filter-select"
-                value={selectedBorough}
-                onChange={(e) => setSelectedBorough(e.target.value)}
-              >
-                {boroughs.length === 0 ? (
-                  <option value="">Loading...</option>
-                ) : (
-                  <>
-                    <option value="all">All Boroughs</option>
-                    {boroughs.map(borough => (
-                      <option key={borough.id} value={borough.value}>
-                        {borough.name}
-                      </option>
-                    ))}
-                  </>
-                )}
-              </select>
-            </div>
-
-            {/* Week Pattern */}
-            <div className="filter-group compact">
-              <label htmlFor="weekPattern">Week Pattern</label>
-              <select
-                id="weekPattern"
-                className="filter-select"
-                value={weekPattern}
-                onChange={(e) => setWeekPattern(e.target.value)}
-              >
-                <option value="every-week">Every week</option>
-                <option value="one-on-off">One on, one off</option>
-                <option value="two-on-off">Two on, two off</option>
-                <option value="one-three-off">One on, three off</option>
-              </select>
-            </div>
-
-            {/* Price Tier */}
-            <div className="filter-group compact">
-              <label htmlFor="priceTier">Price</label>
-              <select
-                id="priceTier"
-                className="filter-select"
-                value={priceTier}
-                onChange={(e) => setPriceTier(e.target.value)}
-              >
-                <option value="under-200">&lt; $200/night</option>
-                <option value="200-350">$200-$350/night</option>
-                <option value="350-500">$350-$500/night</option>
-                <option value="500-plus">$500+/night</option>
-                <option value="all">All Prices</option>
-              </select>
-            </div>
-
-            {/* Sort By */}
-            <div className="filter-group compact">
-              <label htmlFor="sortBy">Sort By</label>
-              <select
-                id="sortBy"
-                className="filter-select"
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-              >
-                <option value="recommended">Recommended</option>
-                <option value="price-low">Price: Low to High</option>
-                <option value="most-viewed">Most Viewed</option>
-                <option value="recent">Recently Added</option>
-              </select>
-            </div>
-
-            {/* Apply Filters Button - Mobile Only */}
-            {filterPanelActive && (
-              <div className="mobile-filter-apply-container">
-                <button
-                  className="mobile-filter-apply-btn"
-                  onClick={() => setFilterPanelActive(false)}
-                >
-                  {activeFilterCount > 0 ? `Apply Filters (${activeFilterCount})` : 'Apply Filters'}
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Results header with listings count and sort - hidden when mobile or desktop header is collapsed */}
+          {/* Results header */}
           <div className={`results-header ${mobileHeaderHidden ? 'results-header--hidden' : ''} ${desktopHeaderCollapsed ? 'results-header--desktop-hidden' : ''}`}>
             <span className="results-count">
               <strong>{allListings.length} listings</strong> in {selectedBorough === 'all' ? 'NYC' : (boroughs.find(b => b.value === selectedBorough)?.name || 'NYC')}
@@ -2655,7 +1057,6 @@ export default function SearchPage() {
               <>
                 <EmptyState onResetFilters={handleResetFilters} />
 
-                {/* Fallback: Show all available listings */}
                 {isFallbackLoading && (
                   <div className="fallback-loading">
                     <p>Loading all available listings...</p>
@@ -2722,9 +1123,8 @@ export default function SearchPage() {
           </div>
         </section>
 
-        {/* RIGHT COLUMN: Map with integrated header */}
+        {/* RIGHT COLUMN: Map */}
         <section className="map-column">
-          {/* Integrated Logo and Hamburger Menu */}
           <div className="map-header">
             <a href="/" className="map-logo">
               <img
@@ -2737,30 +1137,17 @@ export default function SearchPage() {
               <span className="logo-text">Split Lease</span>
             </a>
 
-            {/* Right side: conditional based on auth state */}
             <div className="map-header-actions">
               {isLoggedIn && currentUser ? (
                 <>
-                  {/* Favorites Heart with Count */}
                   <a href="/favorite-listings" className="favorites-link" aria-label="My Favorite Listings">
-                    <svg
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                     </svg>
                     {favoritesCount > 0 && (
                       <span className="favorites-badge">{favoritesCount}</span>
                     )}
                   </a>
-
-                  {/* Logged In Avatar */}
                   <LoggedInAvatar
                     user={currentUser}
                     currentPath="/search"
@@ -2770,7 +1157,6 @@ export default function SearchPage() {
                 </>
               ) : (
                 <div ref={menuRef} style={{ position: 'relative' }}>
-                  {/* Hamburger Menu - Only for logged out users */}
                   <button
                     className="hamburger-menu"
                     onClick={() => setMenuOpen(!menuOpen)}
@@ -2783,22 +1169,15 @@ export default function SearchPage() {
                       <line x1="3" y1="18" x2="21" y2="18" />
                     </svg>
                   </button>
-
-                  {/* Dropdown Menu */}
                   {menuOpen && (
                     <div className="header-dropdown">
                       <a href="/guest-success">Success Stories</a>
-                      <a
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setMenuOpen(false);
-                          setAuthModalView('login');
-                          setIsAuthModalOpen(true);
-                        }}
-                      >
-                        Sign In / Sign Up
-                      </a>
+                      <a href="#" onClick={(e) => {
+                        e.preventDefault();
+                        setMenuOpen(false);
+                        setAuthModalView('login');
+                        setIsAuthModalOpen(true);
+                      }}>Sign In / Sign Up</a>
                       <a href="/why-split-lease">Understand Split Lease</a>
                       <a href="/faq">Explore FAQs</a>
                       <a href="/help-center">Support Centre</a>
@@ -2816,14 +1195,8 @@ export default function SearchPage() {
             selectedListing={null}
             selectedBorough={selectedBorough}
             selectedNightsCount={selectedNightsCount}
-            onMarkerClick={(listing) => {
-              logger.debug('Marker clicked:', listing.title);
-              scrollToListingCard(listing);
-            }}
-            onMessageClick={(listing) => {
-              logger.debug('[SearchPage] Map card message clicked for:', listing?.id);
-              handleOpenContactModal(listing);
-            }}
+            onMarkerClick={scrollToListingCard}
+            onMessageClick={handleOpenContactModal}
             onAIResearchClick={handleOpenAIResearchModal}
             isLoggedIn={isLoggedIn}
             favoritedListingIds={favoritedListingIds}
@@ -2849,6 +1222,7 @@ export default function SearchPage() {
           setIsAuthModalOpen(true);
         }}
       />
+
       <InformationalText
         isOpen={isInfoModalOpen}
         onClose={handleCloseInfoModal}
@@ -2859,10 +1233,12 @@ export default function SearchPage() {
         expandedContent={informationalTexts['Price Starts']?.desktopPlus}
         showMoreAvailable={informationalTexts['Price Starts']?.showMore}
       />
+
       <AiSignupMarketReport
         isOpen={isAIResearchModalOpen}
         onClose={handleCloseAIResearchModal}
       />
+
       <SignUpLoginModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
@@ -2871,6 +1247,7 @@ export default function SearchPage() {
           logger.debug('Auth successful from SearchPage');
         }}
       />
+
       {isCreateProposalModalOpen && selectedListingForProposal && (
         <CreateProposalFlowV2
           listing={transformListingForProposal(selectedListingForProposal)}
@@ -2894,7 +1271,6 @@ export default function SearchPage() {
         />
       )}
 
-      {/* Auth Modal for Proposal Submission (when user is not logged in) */}
       {showAuthModalForProposal && (
         <SignUpLoginModal
           isOpen={showAuthModalForProposal}
@@ -2909,7 +1285,6 @@ export default function SearchPage() {
         />
       )}
 
-      {/* Proposal Success Modal */}
       {showSuccessModal && (
         <ProposalSuccessModal
           proposalId={successProposalId}
@@ -2923,7 +1298,7 @@ export default function SearchPage() {
         />
       )}
 
-      {/* Mobile Map Modal - Fullscreen map view for mobile devices */}
+      {/* Mobile Map Modal */}
       {mobileMapVisible && (
         <div className="mobile-map-modal">
           <div className="mobile-map-header">
@@ -2932,7 +1307,7 @@ export default function SearchPage() {
               onClick={() => setMobileMapVisible(false)}
               aria-label="Close map"
             >
-              ✕
+              X
             </button>
             <h2>Map View</h2>
           </div>
@@ -2944,15 +1319,8 @@ export default function SearchPage() {
               selectedListing={null}
               selectedBorough={selectedBorough}
               selectedNightsCount={selectedNightsCount}
-              onMarkerClick={(listing) => {
-                logger.debug('[Mobile Map] Marker clicked:', listing.title);
-                // Let GoogleMap component handle showing the listing card overlay
-                // Do NOT close the mobile map - user stays in map view
-              }}
-              onMessageClick={(listing) => {
-                logger.debug('[SearchPage] Mobile map card message clicked for:', listing?.id);
-                handleOpenContactModal(listing);
-              }}
+              onMarkerClick={() => {}}
+              onMessageClick={handleOpenContactModal}
               onAIResearchClick={handleOpenAIResearchModal}
               isLoggedIn={isLoggedIn}
               favoritedListingIds={favoritedListingIds}
@@ -2968,7 +1336,6 @@ export default function SearchPage() {
         </div>
       )}
 
-      {/* Usability Testing Popup - Shows for desktop testers to switch to mobile */}
       <UsabilityPopup userData={authenticatedUser} />
     </div>
   );
