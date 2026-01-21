@@ -44,18 +44,71 @@ from .page_classifier import (
 
 
 def _is_page_file(file_path: str) -> bool:
-    """Check if a file is a page component.
+    """Check if a file is a page component entry point.
 
-    Page files live in islands/pages/ and are the entry points for routes.
+    Page entry points follow specific patterns:
+    1. Top-level: src/islands/pages/HomePage.jsx (file named *Page.jsx directly in pages/)
+    2. Directory-based: src/islands/pages/HostProposalsPage/index.jsx
+    3. Directory-based: src/islands/pages/HostProposalsPage/HostProposalsPage.jsx
+
+    NOT page entry points (these are sub-components/utilities):
+    - src/islands/pages/HostProposalsPage/InfoGrid.jsx (nested component)
+    - src/islands/pages/HostProposalsPage/formatters.js (utility file)
+    - src/islands/pages/proposals/displayUtils.js (utility directory)
 
     Args:
-        file_path: Normalized file path (forward slashes)
+        file_path: File path (forward or back slashes)
 
     Returns:
-        True if this is a page file
+        True if this is an actual page entry point file
     """
+    import re
+
     normalized = file_path.replace('\\', '/')
-    return '/pages/' in normalized or normalized.startswith('src/islands/pages/')
+
+    # Must be in pages directory
+    if '/pages/' not in normalized:
+        return False
+
+    # Extract the part after /pages/
+    pages_match = re.search(r'/pages/(.+)$', normalized)
+    if not pages_match:
+        return False
+
+    after_pages = pages_match.group(1)
+    parts = after_pages.split('/')
+
+    # Case 1: Top-level page file directly in pages/
+    # e.g., "HomePage.jsx" → True
+    # e.g., "GuestProposalsPage.jsx" → True
+    if len(parts) == 1:
+        filename = parts[0]
+        # Must end with Page.jsx or Page.js (not just any .jsx/.js file)
+        return bool(re.match(r'.+Page\.(jsx?|tsx?)$', filename))
+
+    # Case 2: Directory-based page with index.jsx or matching name
+    # e.g., "HostProposalsPage/index.jsx" → True
+    # e.g., "HostProposalsPage/HostProposalsPage.jsx" → True
+    # e.g., "HostProposalsPage/InfoGrid.jsx" → False (sub-component)
+    if len(parts) == 2:
+        dir_name = parts[0]
+        filename = parts[1]
+
+        # Check for index.jsx
+        if re.match(r'index\.(jsx?|tsx?)$', filename):
+            return True
+
+        # Check if filename matches directory name (e.g., HostProposalsPage/HostProposalsPage.jsx)
+        filename_without_ext = re.sub(r'\.(jsx?|tsx?)$', '', filename)
+        if filename_without_ext == dir_name:
+            return True
+
+        return False
+
+    # Case 3: Deeper nesting - these are always sub-components
+    # e.g., "MessagingPage/components/MessageThread.jsx" → False
+    # e.g., "proposals/VirtualMeetingsSection.jsx" → False
+    return False
 
 
 def _trace_to_pages(

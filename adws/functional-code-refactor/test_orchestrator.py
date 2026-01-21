@@ -15,6 +15,9 @@ Available Components:
     visual         - Test visual regression
     dev-server     - Test dev server management
     full           - Run full orchestrator with --limit 1
+    paths          - Test path conversion (file path → URL path)
+    page-detect    - Test page file detection (_is_page_file)
+    validation     - Test deferred validation flow with mock data
 
 Examples:
     python test_orchestrator.py audit app/src/logic
@@ -22,6 +25,9 @@ Examples:
     python test_orchestrator.py visual /listing
     python test_orchestrator.py dev-server
     python test_orchestrator.py full app/src/logic
+    python test_orchestrator.py paths
+    python test_orchestrator.py page-detect
+    python test_orchestrator.py validation
 """
 
 import sys
@@ -234,6 +240,237 @@ def test_dev_server():
             dev_server.stop()
 
 
+def test_path_conversion():
+    """Test file path to URL path conversion."""
+    print("="*60)
+    print("TESTING: Path Conversion (file_path_to_url_path)")
+    print("="*60)
+
+    sys.path.insert(0, str(Path(__file__).parent))
+    from modules.page_classifier import file_path_to_url_path, get_page_info, get_mcp_sessions_for_page, ALL_PAGES
+
+    # Test cases: (input_path, expected_url, should_find_page)
+    test_cases = [
+        # Top-level pages
+        ("src/islands/pages/HomePage.jsx", "/", True),
+        ("src/islands/pages/GuestProposalsPage.jsx", "/guest-proposals", True),
+        ("app/src/islands/pages/LoginPage.jsx", "/login", True),
+
+        # Directory-based pages
+        ("src/islands/pages/HostProposalsPage/index.jsx", "/host-proposals", True),
+        ("src/islands/pages/HostProposalsPage/HostProposalsPage.jsx", "/host-proposals", True),
+        ("src/islands/pages/ListingDashboardPage/ListingDashboardPage.jsx", "/listing-dashboard", True),
+        ("src/islands/pages/HostOverviewPage/HostOverviewPage.jsx", "/host-overview", True),
+
+        # Nested components (should NOT be pages)
+        ("src/islands/pages/HostProposalsPage/InfoGrid.jsx", None, False),
+        ("src/islands/pages/HostProposalsPage/formatters.js", None, False),
+        ("src/islands/pages/proposals/displayUtils.js", None, False),
+        ("src/islands/pages/MessagingPage/components/MessageThread.jsx", None, False),
+        ("src/islands/pages/ListingDashboardPage/components/AvailabilitySection.jsx", None, False),
+
+        # Already URL paths
+        ("/host-proposals", None, True),  # Should return None but page should exist
+        ("/listing-dashboard", None, True),
+    ]
+
+    print("\nPath Conversion Results:")
+    print("-" * 80)
+    print(f"{'Input Path':<55} {'URL':<20} {'Found':<8}")
+    print("-" * 80)
+
+    passed = 0
+    failed = 0
+
+    for input_path, expected_url, should_find in test_cases:
+        url = file_path_to_url_path(input_path)
+
+        # Check if page exists (either via converted URL or direct lookup)
+        lookup = url if url else input_path
+        page_info = get_page_info(lookup)
+        found = page_info is not None
+
+        # Determine pass/fail
+        # For files that should convert: url should match expected and page should be found
+        # For non-page files: url should be None or not find a page
+        if expected_url is not None:
+            test_passed = (url == expected_url) and (found == should_find)
+        else:
+            # For non-page files, we expect conversion to fail or not match a real page
+            test_passed = (found == should_find)
+
+        status = "PASS" if test_passed else "FAIL"
+
+        if test_passed:
+            passed += 1
+        else:
+            failed += 1
+
+        # Truncate long paths for display
+        display_input = input_path if len(input_path) <= 55 else "..." + input_path[-52:]
+        display_url = str(url) if url else "(none)"
+
+        print(f"{display_input:<55} {display_url:<20} {found!s:<8} [{status}]")
+
+    print("-" * 80)
+    print(f"\nResults: {passed} passed, {failed} failed out of {len(test_cases)} tests")
+
+    if failed > 0:
+        print("\n[FAIL] Some path conversion tests failed!")
+        return False
+    else:
+        print("\n[PASS] All path conversion tests passed!")
+        return True
+
+
+def test_page_detection():
+    """Test _is_page_file detection accuracy."""
+    print("="*60)
+    print("TESTING: Page File Detection (_is_page_file)")
+    print("="*60)
+
+    sys.path.insert(0, str(Path(__file__).parent))
+    from modules.deferred_validation import _is_page_file
+
+    # Test cases: (file_path, expected_is_page)
+    test_cases = [
+        # TRUE POSITIVES: Should be detected as pages
+        ("src/islands/pages/HomePage.jsx", True),
+        ("src/islands/pages/GuestProposalsPage.jsx", True),
+        ("src/islands/pages/LoginPage.jsx", True),
+        ("src/islands/pages/HostProposalsPage/index.jsx", True),
+        ("src/islands/pages/HostProposalsPage/HostProposalsPage.jsx", True),
+        ("src/islands/pages/ListingDashboardPage/ListingDashboardPage.jsx", True),
+        ("app/src/islands/pages/AccountProfilePage/AccountProfilePage.jsx", True),
+        ("islands/pages/MessagesPage.jsx", True),
+
+        # TRUE NEGATIVES: Should NOT be detected as pages
+        ("src/islands/pages/HostProposalsPage/InfoGrid.jsx", False),
+        ("src/islands/pages/HostProposalsPage/formatters.js", False),
+        ("src/islands/pages/HostProposalsPage/CollapsibleProposalCard.jsx", False),
+        ("src/islands/pages/proposals/displayUtils.js", False),
+        ("src/islands/pages/proposals/VirtualMeetingsSection.jsx", False),
+        ("src/islands/pages/MessagingPage/components/MessageThread.jsx", False),
+        ("src/islands/pages/ListingDashboardPage/components/AvailabilitySection.jsx", False),
+        ("src/islands/pages/ListingDashboardPage/components/PropertyInfoSection.jsx", False),
+        ("src/islands/pages/FavoriteListingsPage/formatters.js", False),
+        ("src/islands/pages/FavoriteListingsPage/types.js", False),
+
+        # Non-page paths
+        ("src/lib/dateFormatters.js", False),
+        ("src/hooks/useAuth.js", False),
+        ("src/islands/modals/CompareTermsModal.jsx", False),
+    ]
+
+    print("\nPage Detection Results:")
+    print("-" * 80)
+    print(f"{'File Path':<60} {'Expected':<10} {'Actual':<10}")
+    print("-" * 80)
+
+    passed = 0
+    failed = 0
+
+    for file_path, expected in test_cases:
+        actual = _is_page_file(file_path)
+        test_passed = actual == expected
+
+        if test_passed:
+            passed += 1
+            status = "PASS"
+        else:
+            failed += 1
+            status = "FAIL"
+
+        display_path = file_path if len(file_path) <= 60 else "..." + file_path[-57:]
+        print(f"{display_path:<60} {expected!s:<10} {actual!s:<10} [{status}]")
+
+    print("-" * 80)
+    print(f"\nResults: {passed} passed, {failed} failed out of {len(test_cases)} tests")
+
+    if failed > 0:
+        print("\n[FAIL] Some page detection tests failed!")
+        return False
+    else:
+        print("\n[PASS] All page detection tests passed!")
+        return True
+
+
+def test_validation_flow():
+    """Test the deferred validation flow with mock data."""
+    print("="*60)
+    print("TESTING: Deferred Validation Flow (Mock Data)")
+    print("="*60)
+
+    sys.path.insert(0, str(Path(__file__).parent))
+    from modules.deferred_validation import _is_page_file, _trace_to_pages
+    from modules.page_classifier import file_path_to_url_path, get_page_info, get_mcp_sessions_for_page
+
+    # Simulate the paths from the failed run log
+    problematic_paths = [
+        "src/islands/pages/proposals/displayUtils.js",
+        "src/islands/pages/MessagingPage/components/MessageThread.jsx",
+        "src/islands/pages/ListingDashboardPage/components/AvailabilitySection.jsx",
+        "src/islands/pages/proposals/VirtualMeetingsSection.jsx",
+        "src/islands/pages/ListingDashboardPage/components/PropertyInfoSection.jsx",
+        "src/islands/pages/HostProposalsPage/InfoGrid.jsx",
+        "src/islands/pages/HostProposalsPage/formatters.js",
+    ]
+
+    print("\nAnalyzing Problematic Paths from Run Log:")
+    print("-" * 80)
+
+    for path in problematic_paths:
+        is_page = _is_page_file(path)
+        url_path = file_path_to_url_path(path)
+        page_info = get_page_info(url_path) if url_path else None
+        mcp_live, mcp_dev = get_mcp_sessions_for_page(url_path) if url_path else (None, None)
+
+        print(f"\nPath: {path}")
+        print(f"  _is_page_file(): {is_page}")
+        print(f"  file_path_to_url_path(): {url_path}")
+        print(f"  Page found in registry: {page_info is not None}")
+        if page_info:
+            print(f"  Auth type: {page_info.auth_type}")
+            print(f"  MCP sessions: LIVE={mcp_live}, DEV={mcp_dev}")
+
+        # This path should NOT be identified as a page
+        if is_page:
+            print(f"  [ERROR] This should NOT be detected as a page!")
+
+    # Now test with actual page files
+    print("\n\nAnalyzing Actual Page Entry Points:")
+    print("-" * 80)
+
+    actual_pages = [
+        "src/islands/pages/HostProposalsPage/index.jsx",
+        "src/islands/pages/GuestProposalsPage.jsx",
+        "src/islands/pages/ListingDashboardPage/ListingDashboardPage.jsx",
+        "src/islands/pages/MessagesPage.jsx",
+    ]
+
+    for path in actual_pages:
+        is_page = _is_page_file(path)
+        url_path = file_path_to_url_path(path)
+        page_info = get_page_info(url_path) if url_path else None
+        mcp_live, mcp_dev = get_mcp_sessions_for_page(url_path) if url_path else (None, None)
+
+        print(f"\nPath: {path}")
+        print(f"  _is_page_file(): {is_page}")
+        print(f"  file_path_to_url_path(): {url_path}")
+        print(f"  Page found in registry: {page_info is not None}")
+        if page_info:
+            print(f"  Auth type: {page_info.auth_type}")
+            print(f"  MCP sessions: LIVE={mcp_live}, DEV={mcp_dev}")
+
+        # This path SHOULD be identified as a page
+        if not is_page:
+            print(f"  [ERROR] This SHOULD be detected as a page!")
+
+    print("\n" + "="*60)
+    print("Validation flow test complete")
+    print("="*60)
+
+
 def test_full(target_path: str):
     """Run full orchestrator with --limit 1."""
     print("="*60)
@@ -292,6 +529,15 @@ def main():
             print("Usage: test_orchestrator.py full <target_path>")
             sys.exit(1)
         test_full(args[0])
+
+    elif component == "paths":
+        test_path_conversion()
+
+    elif component == "page-detect":
+        test_page_detection()
+
+    elif component == "validation":
+        test_validation_flow()
 
     else:
         print(f"Unknown component: {component}")

@@ -286,7 +286,8 @@ def file_path_to_url_path(file_path: str) -> Optional[str]:
     Handles common naming patterns:
     - src/islands/pages/HostProposalsPage.jsx → /host-proposals
     - src/islands/pages/GuestProposalsPage.jsx → /guest-proposals
-    - pages/ListingDashboardPage.jsx → /listing-dashboard
+    - src/islands/pages/HostProposalsPage/index.jsx → /host-proposals
+    - src/islands/pages/HomePage.jsx → /
 
     Args:
         file_path: File path like "src/islands/pages/HostProposalsPage.jsx"
@@ -303,11 +304,33 @@ def file_path_to_url_path(file_path: str) -> Optional[str]:
     if '/pages/' not in normalized:
         return None
 
-    # Extract filename
-    filename = normalized.split('/')[-1]
+    # Extract everything after /pages/
+    pages_idx = normalized.rfind('/pages/')
+    after_pages = normalized[pages_idx + 7:]  # len('/pages/') = 7
+    parts = after_pages.split('/')
 
-    # Remove extension
-    name = re.sub(r'\.(jsx?|tsx?)$', '', filename)
+    # Determine the page name based on path structure
+    if len(parts) == 1:
+        # Direct page file: pages/HostProposalsPage.jsx
+        filename = parts[0]
+        name = re.sub(r'\.(jsx?|tsx?)$', '', filename)
+    elif len(parts) >= 2:
+        filename = parts[-1]
+        filename_without_ext = re.sub(r'\.(jsx?|tsx?)$', '', filename)
+
+        # Check if it's an index file or matching directory name
+        if filename_without_ext.lower() == 'index':
+            # Directory-based page: pages/HostProposalsPage/index.jsx
+            name = parts[0]  # Use directory name
+        elif filename_without_ext == parts[0]:
+            # Matching filename: pages/HostProposalsPage/HostProposalsPage.jsx
+            name = parts[0]
+        else:
+            # Sub-component: pages/HostProposalsPage/InfoGrid.jsx
+            # Not a page entry point, but still return something for logging
+            name = filename_without_ext
+    else:
+        return None
 
     # Remove common suffixes
     name = re.sub(r'Page$', '', name)
@@ -315,6 +338,10 @@ def file_path_to_url_path(file_path: str) -> Optional[str]:
     # Convert PascalCase to kebab-case
     # e.g., HostProposals → host-proposals
     kebab = re.sub(r'([a-z])([A-Z])', r'\1-\2', name).lower()
+
+    # Special case: 'home' maps to '/'
+    if kebab == 'home':
+        return '/'
 
     # Add leading slash
     url_path = f"/{kebab}"
