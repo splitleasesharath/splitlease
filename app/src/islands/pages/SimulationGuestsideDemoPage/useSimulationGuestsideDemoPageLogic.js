@@ -397,21 +397,35 @@ export function useSimulationGuestsideDemoPageLogic() {
 
       const proposalId = proposalResult?.proposalId || proposalResult?.data?.proposalId;
 
-      // 3. Schedule virtual meeting
-      const { error: vmError } = await supabase.functions.invoke('bubble-proxy', {
-        body: {
-          action: 'scheduleVirtualMeeting',
-          payload: {
-            proposalId: proposalId,
-            hostId: testListing['Host User'],
-            guestId: userId,
-            isUsabilityTest: true
-          }
-        }
-      });
+      // 3. Schedule virtual meeting - Create directly in database for simulation
+      // Note: In production, this would go through the virtual-meeting Edge Function
+      try {
+        const { data: vmData, error: vmError } = await supabase
+          .from('virtualmeetingschedulesandlinks')
+          .insert({
+            proposal: proposalId,
+            'requested by': testListing['Host User'],
+            'suggested dates and times': [
+              new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days from now
+              new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days from now
+            ],
+            'is_usability_test': true,
+            'Created Date': new Date().toISOString()
+          })
+          .select('_id')
+          .single();
 
-      if (vmError) {
-        console.warn('[SimulationGuestsideDemo] VM scheduling warning:', vmError);
+        if (vmError) {
+          console.warn('[SimulationGuestsideDemo] VM creation warning:', vmError);
+        } else if (vmData) {
+          // Link VM to proposal
+          await supabase
+            .from('proposal')
+            .update({ 'virtual meeting': vmData._id })
+            .eq('_id', proposalId);
+        }
+      } catch (vmErr) {
+        console.warn('[SimulationGuestsideDemo] VM scheduling warning:', vmErr);
         // Continue - VM is not critical for simulation flow
       }
 
@@ -587,50 +601,44 @@ export function useSimulationGuestsideDemoPageLogic() {
     setSimulationState(prev => ({ ...prev, isLoading: true, stepInProgress: stepId }));
 
     try {
-      // 1. Create lease record via Edge Function
-      const { data: leaseResult, error: leaseError } = await supabase.functions.invoke('bubble-proxy', {
-        body: {
-          action: 'createLease',
-          payload: {
-            proposalId: simulationState.testProposalId,
-            isUsabilityTest: true
-          }
-        }
-      });
+      // 1. Create lease record directly in database for simulation
+      // In production, this would go through a lease management Edge Function
+      const { data: lease, error: leaseError } = await supabase
+        .from('bookings_leases')
+        .insert({
+          proposal: simulationState.testProposalId,
+          'Guest User': userId,
+          'Lease Status': 'Drafting',
+          'Lease signed?': false,
+          'is_usability_test': true,
+          'Created Date': new Date().toISOString()
+        })
+        .select('_id')
+        .single();
 
-      if (leaseError) throw leaseError;
-
-      const leaseId = leaseResult?.leaseId || leaseResult?.data?.leaseId;
-
-      // 2. Generate lease documents (simulated)
-      const { error: docsError } = await supabase.functions.invoke('bubble-proxy', {
-        body: {
-          action: 'generateLeaseDocuments',
-          payload: {
-            leaseId: leaseId,
-            isUsabilityTest: true
-          }
-        }
-      });
-
-      if (docsError) {
-        console.warn('[SimulationGuestsideDemo] Lease docs warning:', docsError);
-        // Continue - not critical
+      if (leaseError) {
+        console.warn('[SimulationGuestsideDemo] Lease creation warning:', leaseError);
+        // Continue with simulation even if lease table doesn't exist
       }
 
-      // 3. Update proposal status directly
+      const leaseId = lease?._id;
+
+      // 2. Update proposal status - simulating lease documents being drafted
       await supabase
         .from('proposal')
-        .update({ Status: 'Lease Documents Sent for Review' })
+        .update({
+          Status: 'Lease Documents Sent for Review',
+          'Modified Date': new Date().toISOString()
+        })
         .eq('_id', simulationState.testProposalId);
 
-      // 4. Update user step
+      // 3. Update user step
       await supabase
         .from('user')
         .update({ 'Usability Step': USER_STEP_VALUES.D })
         .eq('_id', userId);
 
-      // 5. Update state
+      // 4. Update state
       setSimulationState(prev => ({
         ...prev,
         isLoading: false,
@@ -677,23 +685,21 @@ export function useSimulationGuestsideDemoPageLogic() {
         .eq('_id', simulationState.testProposalId);
 
       // 3. Simulate payment (local simulation as per requirements)
-      const { error: paymentError } = await supabase.functions.invoke('bubble-proxy', {
-        body: {
-          action: 'processTestPayment',
-          payload: {
-            leaseId: simulationState.testLeaseId,
-            proposalId: simulationState.testProposalId,
-            isUsabilityTest: true,
-            amount: 1000, // Simulated amount
-            paymentMethod: 'test_local_simulation'
-          }
-        }
-      });
+      // Note: In production, this would integrate with Stripe.
+      // For usability testing, we simulate the payment locally.
+      console.log('[SimulationGuestsideDemo] Simulating payment for lease:', simulationState.testLeaseId);
 
-      if (paymentError) {
-        console.warn('[SimulationGuestsideDemo] Payment simulation warning:', paymentError);
-        // Continue - we'll update status anyway for the simulation
-      }
+      // Create a simulated payment record if needed
+      // For now, we just log it as the payment flow is simulated
+      const simulatedPaymentData = {
+        leaseId: simulationState.testLeaseId,
+        proposalId: simulationState.testProposalId,
+        amount: 1000, // Simulated amount
+        paymentMethod: 'test_local_simulation',
+        status: 'completed',
+        timestamp: new Date().toISOString()
+      };
+      console.log('[SimulationGuestsideDemo] Simulated payment:', simulatedPaymentData);
 
       // 4. Activate lease
       await supabase

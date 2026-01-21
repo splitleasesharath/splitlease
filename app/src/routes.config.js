@@ -450,6 +450,15 @@ export const routes = [
     cloudflareInternal: true,
     internalName: 'simulation-guestside-demo-view',
     hasDynamicSegment: false
+  },
+  {
+    path: '/simulation-hostside-demo',
+    file: 'simulation-hostside-demo.html',
+    aliases: ['/simulation-hostside-demo.html', '/host-usability-test'],
+    protected: true,
+    cloudflareInternal: true,
+    internalName: 'simulation-hostside-demo-view',
+    hasDynamicSegment: false
   }
 ];
 

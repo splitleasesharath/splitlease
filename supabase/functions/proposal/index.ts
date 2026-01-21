@@ -152,6 +152,96 @@ Deno.serve(async (req: Request) => {
         break;
       }
 
+      // ========================================================================
+      // USABILITY TEST SIMULATION ACTIONS
+      // These actions support the guest-side usability simulation flow
+      // ========================================================================
+
+      case 'createTestProposal': {
+        console.log('[proposal] Loading createTestProposal handler...');
+        const { handleCreateTestProposal } = await import("./actions/create_test_proposal.ts");
+        console.log('[proposal] createTestProposal handler loaded');
+
+        // Authentication required - must be logged in as the tester
+        const user = await authenticateFromHeaders(req.headers, supabaseUrl, supabaseAnonKey);
+        if (!user) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'Authentication required' }),
+            { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        result = await handleCreateTestProposal(payload, supabase);
+        break;
+      }
+
+      case 'createTestRentalApplication': {
+        console.log('[proposal] Loading createTestRentalApplication handler...');
+        const { handleCreateTestRentalApplication } = await import("./actions/create_test_rental_application.ts");
+        console.log('[proposal] createTestRentalApplication handler loaded');
+
+        // Authentication required
+        const user = await authenticateFromHeaders(req.headers, supabaseUrl, supabaseAnonKey);
+        if (!user) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'Authentication required' }),
+            { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        result = await handleCreateTestRentalApplication(payload, supabase);
+        break;
+      }
+
+      case 'acceptProposal': {
+        console.log('[proposal] Loading acceptProposal handler...');
+        const { handleAcceptProposal } = await import("./actions/accept_proposal.ts");
+        console.log('[proposal] acceptProposal handler loaded');
+
+        // Authentication required
+        const user = await authenticateFromHeaders(req.headers, supabaseUrl, supabaseAnonKey);
+        if (!user) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'Authentication required' }),
+            { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        result = await handleAcceptProposal(payload, supabase);
+        break;
+      }
+
+      case 'createCounteroffer': {
+        console.log('[proposal] Loading createCounteroffer handler...');
+        const { handleCreateCounteroffer } = await import("./actions/create_counteroffer.ts");
+        console.log('[proposal] createCounteroffer handler loaded');
+
+        // Authentication required
+        const user = await authenticateFromHeaders(req.headers, supabaseUrl, supabaseAnonKey);
+        if (!user) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'Authentication required' }),
+            { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        result = await handleCreateCounteroffer(payload, supabase);
+        break;
+      }
+
+      case 'acceptCounteroffer': {
+        console.log('[proposal] Loading acceptCounteroffer handler...');
+        const { handleAcceptCounteroffer } = await import("./actions/accept_counteroffer.ts");
+        console.log('[proposal] acceptCounteroffer handler loaded');
+
+        // Authentication required
+        const user = await authenticateFromHeaders(req.headers, supabaseUrl, supabaseAnonKey);
+        if (!user) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'Authentication required' }),
+            { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        result = await handleAcceptCounteroffer(payload, supabase);
+        break;
+      }
+
       default:
         throw new Error(`Unhandled action: ${action}`);
     }

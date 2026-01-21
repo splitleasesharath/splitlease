@@ -1,0 +1,712 @@
+/**
+ * GuestSimulationPage.css
+ * Styles for the Day 1 Guest Proposal Simulation page
+ *
+ * Color scheme:
+ * - Primary: #3B82F6 (blue)
+ * - Success: #22C55E (green)
+ * - Warning: #F59E0B (amber)
+ * - Error: #EF4444 (red)
+ * - Gray: #6B7280, #9CA3AF, #E5E7EB
+ */
+
+/* ============================================================================
+   PAGE LAYOUT
+   ============================================================================ */
+
+.gsim-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #F9FAFB;
+}
+
+.gsim-main {
+  flex: 1;
+  padding: 2rem 1rem;
+}
+
+.gsim-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* ============================================================================
+   HEADER
+   ============================================================================ */
+
+.gsim-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.gsim-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 0.5rem 0;
+}
+
+.gsim-subtitle {
+  font-size: 1rem;
+  color: #6B7280;
+  margin: 0;
+}
+
+/* ============================================================================
+   WARNING BANNER
+   ============================================================================ */
+
+.gsim-warning-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background-color: #FEF3C7;
+  border: 1px solid #F59E0B;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.gsim-warning-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  stroke: #D97706;
+}
+
+.gsim-warning-banner span {
+  font-size: 0.875rem;
+  color: #92400E;
+}
+
+/* ============================================================================
+   USER INFO
+   ============================================================================ */
+
+.gsim-user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background-color: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.gsim-user-label {
+  font-size: 0.875rem;
+  color: #6B7280;
+}
+
+.gsim-user-email {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1E40AF;
+}
+
+/* ============================================================================
+   ERROR DISPLAY
+   ============================================================================ */
+
+.gsim-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background-color: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.gsim-error p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #DC2626;
+}
+
+.gsim-error button {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  color: #DC2626;
+  background: transparent;
+  border: 1px solid #DC2626;
+  border-radius: 0.25rem;
+  cursor: pointer;
+}
+
+.gsim-error button:hover {
+  background-color: #FEE2E2;
+}
+
+/* ============================================================================
+   MOBILE CONFIRMATION
+   ============================================================================ */
+
+.gsim-mobile-confirm {
+  padding: 1.5rem;
+  background-color: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.gsim-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.gsim-checkbox-label input[type="checkbox"] {
+  width: 1.25rem;
+  height: 1.25rem;
+  accent-color: #3B82F6;
+}
+
+.gsim-mobile-hint {
+  margin: 0.75rem 0 0 2rem;
+  font-size: 0.875rem;
+  color: #6B7280;
+}
+
+/* ============================================================================
+   STEP PROGRESS
+   ============================================================================ */
+
+.gsim-steps-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0;
+  padding: 1.5rem;
+  background-color: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.gsim-step-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.gsim-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.gsim-step-indicator {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background-color: #F3F4F6;
+  border: 2px solid #D1D5DB;
+  transition: all 0.2s ease;
+}
+
+.gsim-step.active .gsim-step-indicator {
+  background-color: #DBEAFE;
+  border-color: #3B82F6;
+}
+
+.gsim-step.completed .gsim-step-indicator {
+  background-color: #DCFCE7;
+  border-color: #22C55E;
+}
+
+.gsim-step.disabled .gsim-step-indicator {
+  background-color: #F9FAFB;
+  border-color: #E5E7EB;
+}
+
+.gsim-step-number {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #6B7280;
+}
+
+.gsim-step.active .gsim-step-number {
+  color: #3B82F6;
+}
+
+.gsim-step-check {
+  stroke: #22C55E;
+}
+
+.gsim-step-disabled {
+  stroke: #D1D5DB;
+}
+
+.gsim-step-label {
+  font-size: 0.75rem;
+  color: #6B7280;
+  text-align: center;
+  max-width: 4rem;
+}
+
+.gsim-step.active .gsim-step-label {
+  color: #3B82F6;
+  font-weight: 500;
+}
+
+.gsim-step.completed .gsim-step-label {
+  color: #22C55E;
+}
+
+.gsim-step.disabled .gsim-step-label {
+  color: #D1D5DB;
+}
+
+.gsim-step-connector {
+  width: 2rem;
+  height: 2px;
+  background-color: #E5E7EB;
+  margin: 0 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+/* ============================================================================
+   STEPS GRID
+   ============================================================================ */
+
+.gsim-steps-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  margin-bottom: 1.5rem;
+}
+
+/* ============================================================================
+   STEP CARD
+   ============================================================================ */
+
+.gsim-step-card {
+  padding: 1.5rem;
+  background-color: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.gsim-step-card.active {
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.gsim-step-card.completed {
+  border-color: #22C55E;
+  background-color: #F0FDF4;
+}
+
+.gsim-step-card.disabled {
+  opacity: 0.6;
+  background-color: #F9FAFB;
+}
+
+.gsim-step-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.gsim-step-card-badge {
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background-color: #EFF6FF;
+  flex-shrink: 0;
+}
+
+.gsim-step-card.completed .gsim-step-card-badge {
+  background-color: #DCFCE7;
+}
+
+.gsim-step-card.disabled .gsim-step-card-badge {
+  background-color: #F3F4F6;
+}
+
+.gsim-step-card-badge span {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #3B82F6;
+}
+
+.gsim-step-card-badge svg {
+  width: 1rem;
+  height: 1rem;
+  stroke: #22C55E;
+}
+
+.gsim-step-card-badge-disabled {
+  font-size: 1rem;
+  color: #9CA3AF;
+}
+
+.gsim-step-card-title-section {
+  flex: 1;
+}
+
+.gsim-step-card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.gsim-step-card.disabled .gsim-step-card-title {
+  color: #9CA3AF;
+}
+
+.gsim-step-card-description {
+  font-size: 0.875rem;
+  color: #6B7280;
+  margin: 0 0 1rem 0;
+  line-height: 1.5;
+}
+
+.gsim-step-card.disabled .gsim-step-card-description {
+  color: #9CA3AF;
+}
+
+.gsim-step-card-actions {
+  margin-bottom: 0.75rem;
+}
+
+.gsim-step-card-result {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+}
+
+.gsim-step-card-result.success {
+  background-color: #DCFCE7;
+  color: #166534;
+}
+
+.gsim-step-card-result.error {
+  background-color: #FEF2F2;
+  color: #DC2626;
+}
+
+.gsim-step-card-result svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
+.gsim-step-card-result.success svg {
+  stroke: #22C55E;
+}
+
+.gsim-step-card-result.error svg {
+  stroke: #EF4444;
+}
+
+/* ============================================================================
+   BUTTONS
+   ============================================================================ */
+
+.gsim-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  width: 100%;
+}
+
+.gsim-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.gsim-btn-primary {
+  background-color: #3B82F6;
+  color: white;
+}
+
+.gsim-btn-primary:hover:not(:disabled) {
+  background-color: #2563EB;
+}
+
+.gsim-btn-secondary {
+  background-color: #F3F4F6;
+  color: #374151;
+  border: 1px solid #D1D5DB;
+}
+
+.gsim-btn-secondary:hover:not(:disabled) {
+  background-color: #E5E7EB;
+}
+
+.gsim-btn-success {
+  background-color: #22C55E;
+  color: white;
+}
+
+.gsim-btn-success:hover:not(:disabled) {
+  background-color: #16A34A;
+}
+
+.gsim-btn-spinner {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: gsim-spin 0.6s linear infinite;
+}
+
+@keyframes gsim-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================================================
+   LOGIN SECTION
+   ============================================================================ */
+
+.gsim-login-section {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 0;
+}
+
+.gsim-login-card {
+  width: 100%;
+  max-width: 400px;
+  padding: 2rem;
+  background-color: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 0.75rem;
+}
+
+.gsim-login-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.gsim-login-header h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.5rem 0;
+}
+
+.gsim-login-header p {
+  font-size: 0.875rem;
+  color: #6B7280;
+  margin: 0;
+}
+
+.gsim-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.gsim-login-error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background-color: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 0.5rem;
+}
+
+.gsim-login-error svg {
+  width: 1rem;
+  height: 1rem;
+  stroke: #EF4444;
+  flex-shrink: 0;
+}
+
+.gsim-login-error span {
+  font-size: 0.875rem;
+  color: #DC2626;
+}
+
+.gsim-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.gsim-input-group label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.gsim-input-group input {
+  padding: 0.625rem 0.75rem;
+  font-size: 0.875rem;
+  border: 1px solid #D1D5DB;
+  border-radius: 0.5rem;
+  transition: border-color 0.15s ease;
+}
+
+.gsim-input-group input:focus {
+  outline: none;
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.gsim-input-group input:disabled {
+  background-color: #F9FAFB;
+  cursor: not-allowed;
+}
+
+/* ============================================================================
+   LOADING
+   ============================================================================ */
+
+.gsim-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  gap: 1rem;
+}
+
+.gsim-loading__spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid #E5E7EB;
+  border-top-color: #3B82F6;
+  border-radius: 50%;
+  animation: gsim-spin 0.6s linear infinite;
+}
+
+.gsim-loading p {
+  font-size: 1rem;
+  color: #6B7280;
+}
+
+.gsim-loading-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  background-color: rgba(255, 255, 255, 0.9);
+  z-index: 1000;
+}
+
+.gsim-loading-overlay p {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+/* ============================================================================
+   SIMULATION COMPLETE
+   ============================================================================ */
+
+.gsim-complete {
+  text-align: center;
+  padding: 3rem 2rem;
+  background-color: white;
+  border: 1px solid #22C55E;
+  border-radius: 0.75rem;
+}
+
+.gsim-complete-icon {
+  width: 4rem;
+  height: 4rem;
+  margin: 0 auto 1rem;
+  background-color: #DCFCE7;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gsim-complete-icon svg {
+  width: 2rem;
+  height: 2rem;
+  stroke: #22C55E;
+}
+
+.gsim-complete h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.5rem 0;
+}
+
+.gsim-complete p {
+  font-size: 1rem;
+  color: #6B7280;
+  margin: 0 0 1.5rem 0;
+}
+
+.gsim-complete .gsim-btn {
+  width: auto;
+  display: inline-flex;
+}
+
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+
+@media (max-width: 640px) {
+  .gsim-main {
+    padding: 1rem;
+  }
+
+  .gsim-title {
+    font-size: 1.5rem;
+  }
+
+  .gsim-steps-container {
+    padding: 1rem;
+  }
+
+  .gsim-step-connector {
+    width: 1rem;
+  }
+
+  .gsim-step-label {
+    font-size: 0.625rem;
+    max-width: 3rem;
+  }
+
+  .gsim-steps-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .gsim-login-card {
+    padding: 1.5rem;
+  }
+}
