@@ -7,8 +7,8 @@
  *
  * UPDATE 2026-01-17: Added FavoriteButton to price display section
  */
-// FORCE RELOAD v4 - timestamp: 1768673500000
-console.log('🔄 ViewSplitLeasePage v4 - FavoriteButton ACTIVE - ' + new Date().toISOString());
+// FORCE RELOAD v5 - timestamp: 1737498000000 - FavoriteButton CSS FIX
+console.log('🔄 ViewSplitLeasePage v5 - FavoriteButton CSS FIXED - ' + new Date().toISOString());
 console.log('🔄 If you see this, the correct file is loaded!');
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
