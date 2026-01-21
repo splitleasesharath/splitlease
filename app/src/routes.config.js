@@ -49,6 +49,15 @@ export const routes = [
     internalName: 'search-view',
     hasDynamicSegment: false
   },
+  {
+    path: '/quick-match',
+    file: 'quick-match.html',
+    aliases: ['/quick-match.html'],
+    protected: false,
+    cloudflareInternal: true,
+    internalName: 'quick-match-view',
+    hasDynamicSegment: false
+  },
 
   // ===== DYNAMIC ROUTES (WITH ID PARAMS) =====
   {

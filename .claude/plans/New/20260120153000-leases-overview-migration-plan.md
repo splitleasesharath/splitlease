@@ -218,6 +218,7 @@ serve(async (req) => {
   const supabase = createClient(/* ... */);
 
   switch (action) {
+    // === CRUD Operations ===
     case 'list':
       // Query bookings_leases with joins
       const { data, error } = await supabase
@@ -241,8 +242,45 @@ serve(async (req) => {
       // Update lease status
       break;
 
-    case 'delete':
-      // Soft delete lease
+    // === Delete Operations ===
+    case 'softDelete':
+      // Set Status to 'cancelled' (recoverable)
+      break;
+
+    case 'hardDelete':
+      // Permanently remove record (requires extra confirmation token)
+      break;
+
+    // === Bulk Operations ===
+    case 'bulkUpdateStatus':
+      // Update status for multiple leases
+      // payload: { leaseIds: string[], newStatus: string }
+      break;
+
+    case 'bulkSoftDelete':
+      // Soft delete multiple leases
+      // payload: { leaseIds: string[] }
+      break;
+
+    case 'bulkExport':
+      // Generate CSV/JSON export of selected leases
+      // payload: { leaseIds: string[], format: 'csv' | 'json' }
+      break;
+
+    // === Document Operations ===
+    case 'uploadDocument':
+      // Upload file to Supabase Storage, link to lease
+      // payload: { leaseId: string, fileName: string, fileType: string, fileBase64: string }
+      break;
+
+    case 'deleteDocument':
+      // Remove document from storage and lease record
+      // payload: { leaseId: string, documentId: string }
+      break;
+
+    case 'listDocuments':
+      // Get all documents for a lease
+      // payload: { leaseId: string }
       break;
   }
 });
@@ -381,10 +419,11 @@ showToast({ title: 'Lease deleted successfully', type: 'success' });
 **Add to `app/src/routes.config.js`:**
 ```javascript
 {
-  path: '/leases-overview',
+  path: '/_internal/leases-overview',
   file: 'leases-overview.html',
-  aliases: ['/leases-overview.html'],
+  aliases: ['/_internal/leases-overview.html'],
   protected: true,
+  adminOnly: true,  // Admin-only access
   cloudflareInternal: true,
   internalName: 'leases-overview-view',
   hasDynamicSegment: false
@@ -395,6 +434,8 @@ showToast({ title: 'Lease deleted successfully', type: 'success' });
 ```bash
 bun run generate-routes
 ```
+
+> **Note:** The `/_internal` prefix follows the pattern used by `create-suggested-proposal` flow for admin-only internal tools.
 
 ---
 
@@ -495,27 +536,38 @@ export function filterLeases(leases, { searchQuery, statusFilter }) {
 ### Phase 1: Infrastructure (Files & Routes)
 1. ☐ Create `app/public/leases-overview.html`
 2. ☐ Create `app/src/leases-overview.jsx` (entry point)
-3. ☐ Add route to `app/src/routes.config.js`
+3. ☐ Add route to `app/src/routes.config.js` with `/_internal/leases-overview` path
 4. ☐ Run `bun run generate-routes`
 5. ☐ Create directory structure under `app/src/islands/pages/LeasesOverviewPage/`
 
-### Phase 2: Edge Function
+### Phase 2: Edge Function (Core)
 1. ☐ Create `supabase/functions/leases-admin/index.ts`
 2. ☐ Implement `list` action with Supabase query
 3. ☐ Implement `get` action for single lease details
 4. ☐ Implement `updateStatus` action
-5. ☐ Implement `delete` action (soft delete)
-6. ☐ Test locally with `supabase functions serve`
+5. ☐ Implement `softDelete` action (set Status to cancelled)
+6. ☐ Implement `hardDelete` action (permanent removal, extra confirmation)
+7. ☐ Test locally with `supabase functions serve`
 
-### Phase 3: Logic Layer
+### Phase 3: Edge Function (Extended Features)
+1. ☐ Implement `bulkUpdateStatus` action
+2. ☐ Implement `bulkSoftDelete` action
+3. ☐ Implement `bulkExport` action (CSV/JSON generation)
+4. ☐ Implement `uploadDocument` action (Supabase Storage integration)
+5. ☐ Implement `deleteDocument` action
+6. ☐ Implement `listDocuments` action
+7. ☐ Create Supabase Storage bucket for lease documents
+
+### Phase 4: Logic Layer
 1. ☐ Create `logic/calculators/leases/calculatePaymentProgress.js`
 2. ☐ Create `logic/rules/leases/canDeleteLease.js`
-3. ☐ Create `logic/rules/leases/isLeaseActive.js`
-4. ☐ Create `logic/processors/leases/adaptLeaseFromSupabase.js`
-5. ☐ Create `logic/processors/leases/filterLeases.js`
-6. ☐ Create `logic/processors/leases/formatLeaseDisplay.js`
+3. ☐ Create `logic/rules/leases/canHardDeleteLease.js` (extra restrictions)
+4. ☐ Create `logic/rules/leases/isLeaseActive.js`
+5. ☐ Create `logic/processors/leases/adaptLeaseFromSupabase.js`
+6. ☐ Create `logic/processors/leases/filterLeases.js`
+7. ☐ Create `logic/processors/leases/formatLeaseDisplay.js`
 
-### Phase 4: Page Component
+### Phase 5: Page Component (Core)
 1. ☐ Create `useLeasesOverviewPageLogic.js` (all business logic)
 2. ☐ Create `LeasesOverviewPage.jsx` (hollow component)
 3. ☐ Migrate and convert `LeaseCard.tsx` → `LeaseCard.jsx`
@@ -524,20 +576,32 @@ export function filterLeases(leases, { searchQuery, statusFilter }) {
 6. ☐ Integrate existing `ToastProvider` for notifications
 7. ☐ Integrate existing `ConfirmDialog` or create if needed
 
-### Phase 5: Styling
+### Phase 6: Page Component (Extended Features)
+1. ☐ Add bulk selection UI (checkboxes on lease cards)
+2. ☐ Create `BulkActionToolbar.jsx` component
+3. ☐ Create `DocumentUploader.jsx` component (drag-and-drop)
+4. ☐ Create `DocumentList.jsx` component
+5. ☐ Add hard-delete confirmation modal (double confirmation)
+
+### Phase 7: Styling
 1. ☐ Create `app/src/styles/pages/leases-overview.css`
 2. ☐ Convert class names to BEM convention
 3. ☐ Replace hardcoded colors with CSS variables
-4. ☐ Import in entry point
+4. ☐ Style bulk action toolbar
+5. ☐ Style document uploader/list
+6. ☐ Import in entry point
 
-### Phase 6: Testing & Verification
-1. ☐ Test authentication flow
+### Phase 8: Testing & Verification
+1. ☐ Test authentication flow (admin-only access)
 2. ☐ Test data fetching from Supabase
 3. ☐ Test filtering and search
-4. ☐ Test delete with confirmation
-5. ☐ Test toast notifications
-6. ☐ Verify responsive design
-7. ☐ Cross-browser testing
+4. ☐ Test soft-delete with confirmation
+5. ☐ Test hard-delete with double confirmation
+6. ☐ Test bulk operations (select, status change, delete)
+7. ☐ Test document upload/download/delete
+8. ☐ Test toast notifications
+9. ☐ Verify responsive design
+10. ☐ Cross-browser testing
 
 ---
 
@@ -640,11 +704,45 @@ app/src/routes.config.js                        # MODIFY (add route)
 ## Approval Checklist
 
 Before implementation:
-- [ ] Confirm route path `/leases-overview` is acceptable
-- [ ] Confirm Edge Function name `leases-admin` is acceptable
-- [ ] Confirm this is an admin-only page (not guest-accessible)
-- [ ] Confirm delete should be soft-delete vs hard-delete
-- [ ] Confirm if additional actions needed (export, bulk operations)
+- [x] Confirm route path → **`/_internal/leases-overview`** (internal admin path)
+- [x] Confirm Edge Function name `leases-admin` is acceptable → **Yes**
+- [x] Confirm this is an admin-only page (not guest-accessible) → **Admin-only**
+- [x] Confirm delete should be soft-delete vs hard-delete → **Both options available**
+- [x] Confirm if additional actions needed → **Import lease documents, bulk operations**
+
+---
+
+## Additional Features (Per User Feedback)
+
+### 1. Import Lease Documents
+Allow admin to upload/import lease documents (PDFs, contracts) and attach them to lease records.
+
+**Implementation approach:**
+- Add `documents` array field in lease data model
+- Integrate with Supabase Storage for file uploads
+- Add upload UI component with drag-and-drop
+- Edge Function actions: `uploadDocument`, `deleteDocument`, `listDocuments`
+
+### 2. Bulk Operations
+Enable performing actions on multiple leases at once.
+
+**Supported operations:**
+- Bulk status change (e.g., mark multiple as "completed")
+- Bulk export (download selected as CSV/PDF)
+- Bulk soft-delete
+
+**Implementation approach:**
+- Add checkbox selection on lease cards
+- Add bulk action toolbar that appears when items selected
+- Edge Function action: `bulkUpdate` with array of lease IDs
+
+### 3. Both Delete Options
+- **Soft delete**: Sets `Status` to "cancelled" or "deleted" (recoverable)
+- **Hard delete**: Permanently removes record (admin confirmation required)
+
+**Implementation approach:**
+- Primary delete button performs soft-delete
+- "Permanently delete" option in dropdown for hard-delete (with extra confirmation)
 
 ---
 

@@ -1,6 +1,6 @@
 # Cloudflare Pages redirects and rewrites
 # AUTO-GENERATED from routes.config.js - DO NOT EDIT MANUALLY
-# Routes: 6 dynamic, 30 static
+# Routes: 6 dynamic, 31 static
 #
 # See: https://developers.cloudflare.com/pages/configuration/redirects/
 
@@ -44,6 +44,10 @@
 # /search → search.html
 /search  /_internal/search-view  200
 /search/  /_internal/search-view  200
+
+# /quick-match → quick-match.html
+/quick-match  /_internal/quick-match-view  200
+/quick-match/  /_internal/quick-match-view  200
 
 # /help-center → help-center.html
 /help-center  /_internal/help-center-view  200
