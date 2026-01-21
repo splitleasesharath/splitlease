@@ -770,19 +770,63 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
 
   /**
    * Handle counteroffer submission from editing view
+   *
+   * Transforms frontend field names to Edge Function expected format:
+   * - Frontend uses camelCase (numberOfWeeks, checkIn, etc.)
+   * - Edge Function expects hc_ prefix snake_case (hc_reservation_span_weeks, hc_check_in, etc.)
    */
   const handleCounteroffer = useCallback(async (counterofferData) => {
     try {
-      // Use proposal Edge Function to update with counteroffer status and fields
-      // Note: 'counteroffer' action doesn't exist - use 'update' with proper status
+      // Transform frontend field names to Edge Function expected format
+      // The Edge Function expects hc_ prefixed snake_case fields
+      const {
+        numberOfWeeks,
+        checkIn,
+        checkOut,
+        nightsSelected,
+        daysSelected,
+        moveInDate
+      } = counterofferData;
+
+      // Build the payload with properly named fields
+      const payload = {
+        proposal_id: selectedProposal._id || selectedProposal.id,
+        status: 'Host Counteroffer Submitted / Awaiting Guest Review'
+      };
+
+      // Only include fields that were actually provided/changed
+      if (numberOfWeeks !== undefined) {
+        payload.hc_reservation_span_weeks = numberOfWeeks;
+      }
+      if (checkIn !== undefined) {
+        // checkIn is a day object like { index: 1, display: 'Monday' }
+        payload.hc_check_in = typeof checkIn === 'object' ? checkIn.index : checkIn;
+      }
+      if (checkOut !== undefined) {
+        // checkOut is a day object like { index: 5, display: 'Friday' }
+        payload.hc_check_out = typeof checkOut === 'object' ? checkOut.index : checkOut;
+      }
+      if (nightsSelected !== undefined && Array.isArray(nightsSelected)) {
+        // nightsSelected is array of day indices [1, 2, 3, 4]
+        payload.hc_nights_selected = nightsSelected;
+      }
+      if (daysSelected !== undefined && Array.isArray(daysSelected)) {
+        // daysSelected is array of day indices [1, 2, 3, 4, 5]
+        payload.hc_days_selected = daysSelected;
+      }
+      if (moveInDate !== undefined) {
+        // moveInDate should be ISO string
+        payload.hc_move_in_date = moveInDate instanceof Date
+          ? moveInDate.toISOString().split('T')[0]
+          : moveInDate;
+      }
+
+      console.log('[useHostProposalsPageLogic] Sending counteroffer payload:', payload);
+
       const { data, error } = await supabase.functions.invoke('proposal', {
         body: {
           action: 'update',
-          payload: {
-            proposal_id: selectedProposal._id || selectedProposal.id,
-            status: 'Host Counteroffer Submitted / Awaiting Guest Review',
-            ...counterofferData
-          }
+          payload
         }
       });
 
