@@ -10,29 +10,57 @@
 
 /* ============================================================================
    CSS VARIABLES / DESIGN TOKENS
+   Updated to match Popup Redesign Protocol (Monochromatic Purple)
    ============================================================================ */
 
 .host-overview-page-wrapper {
-  --ho-color-deep-purple: #3D2661;
-  --ho-color-royal-purple: #4E2A84;
-  --ho-color-primary-brand: #250856;
+  /* Primary Purple Palette (from Popup Redesign Protocol) */
+  --ho-color-primary-purple: #31135D;      /* Headers, primary buttons, icons */
+  --ho-color-primary-purple-hover: #4A2F7C; /* Primary button hover */
+  --ho-color-positive-purple: #5B5FCF;      /* Replaces ALL green/success states */
+  --ho-color-positive-purple-hover: #4B48C8;
+  --ho-color-secondary-purple: #6D31C2;     /* Accents, Pro features */
+  --ho-color-secondary-purple-hover: #8C68EE;
+  --ho-color-light-purple-bg: #F7F2FA;      /* Banners, previews, button hovers */
+  --ho-color-purple-border: #E7E0EC;        /* Borders, dividers */
+  --ho-color-purple-selected: #E8DEF8;      /* Selected states */
+
+  /* Legacy aliases (mapped to new purple scheme) */
+  --ho-color-deep-purple: #31135D;
+  --ho-color-royal-purple: #4A2F7C;
+  --ho-color-primary-brand: #31135D;
+  --ho-color-primary-blue: #5B5FCF;         /* Now maps to positive purple */
+  --ho-color-secondary-blue: #4B48C8;
+  --ho-color-light-purple: #F7F2FA;
+
+  /* Neutrals */
   --ho-color-white: #FFFFFF;
-  --ho-color-off-white: #F5F5F5;
+  --ho-color-off-white: #F5F2FD;            /* Updated to match purple scheme */
   --ho-color-light-gray: #FAFAFA;
-  --ho-color-primary-blue: #4E4AFF;
-  --ho-color-secondary-blue: #5B56FF;
-  --ho-color-red: #FF6B6B;
-  --ho-color-coral: #E74C3C;
-  --ho-color-light-purple: #E8E4F0;
-  --ho-color-text-primary: #000000;
-  --ho-color-text-secondary: #666666;
+
+  /* Danger - OUTLINED ONLY per protocol */
+  --ho-color-danger: #DC3545;               /* Border/text only, never solid bg */
+  --ho-color-red: #DC3545;
+  --ho-color-coral: #DC3545;
+
+  /* Text */
+  --ho-color-text-primary: #1C1B1F;
+  --ho-color-text-secondary: #49454F;
+  --ho-color-text-muted: #79747E;
   --ho-color-text-light: #FFFFFF;
-  --ho-color-border-light: #E0E0E0;
-  --ho-font-primary: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --ho-color-border-light: #E7E0EC;
+
+  /* Typography */
+  --ho-font-primary: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Border Radius - Updated per protocol */
   --ho-radius-small: 6px;
   --ho-radius-medium: 8px;
   --ho-radius-large: 12px;
-  --ho-radius-pill: 20px;
+  --ho-radius-xl: 16px;
+  --ho-radius-pill: 100px;                  /* Full pill shape per protocol */
+
+  /* Spacing - 8px scale per protocol */
   --ho-spacing-xs: 4px;
   --ho-spacing-sm: 8px;
   --ho-spacing-md: 12px;
@@ -41,9 +69,17 @@
   --ho-spacing-2xl: 24px;
   --ho-spacing-3xl: 30px;
   --ho-spacing-4xl: 40px;
+
+  /* Shadows */
   --ho-shadow-card: 0px 2px 8px rgba(0, 0, 0, 0.08);
-  --ho-shadow-hover: 0px 4px 12px rgba(0, 0, 0, 0.12);
+  --ho-shadow-hover: 0px 4px 12px rgba(49, 19, 93, 0.2);
+  --ho-shadow-modal: 0 24px 48px rgba(0, 0, 0, 0.2);
+
+  /* Animation */
   --ho-transition-normal: 0.2s ease;
+  --ho-transition-modal: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Layout */
   --ho-max-content-width: 1440px;
   --ho-header-height: 70px;
 }
@@ -272,7 +308,10 @@
 }
 
 /* ============================================================================
-   BUTTON STYLES
+   BUTTON STYLES - Updated per Popup Redesign Protocol
+   - All buttons: 100px radius (pill-shaped)
+   - Danger: OUTLINED ONLY (no solid red backgrounds)
+   - Success/Positive: Uses purple (#5B5FCF), NOT green
    ============================================================================ */
 
 .btn {
@@ -282,25 +321,28 @@
   gap: var(--ho-spacing-sm);
   font-family: var(--ho-font-primary);
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1;
-  border: none;
+  border: 2px solid transparent;
   cursor: pointer;
   transition: all var(--ho-transition-normal);
   text-decoration: none;
   white-space: nowrap;
+  border-radius: var(--ho-radius-pill);  /* Always pill-shaped per protocol */
+  padding: 12px 24px;
+  min-height: 40px;
 }
 
+/* 1. Primary - Solid Purple (#31135D) */
 .btn--primary {
-  background-color: var(--ho-color-primary-brand);
+  background-color: var(--ho-color-primary-purple);
   color: var(--ho-color-text-light);
-  border-radius: var(--ho-radius-pill);
-  padding: var(--ho-spacing-sm) var(--ho-spacing-lg);
-  min-height: 36px;
+  border-color: var(--ho-color-primary-purple);
 }
 
 .btn--primary:hover:not(:disabled) {
-  background-color: var(--ho-color-deep-purple);
+  background-color: var(--ho-color-primary-purple-hover);
+  border-color: var(--ho-color-primary-purple-hover);
   box-shadow: var(--ho-shadow-hover);
 }
 
@@ -308,89 +350,128 @@
   transform: scale(0.98);
 }
 
+/* 2. Secondary - Outlined Purple */
 .btn--secondary {
-  background-color: var(--ho-color-white);
-  color: var(--ho-color-primary-brand);
-  border: 2px solid var(--ho-color-primary-brand);
-  border-radius: var(--ho-radius-pill);
-  padding: calc(var(--ho-spacing-sm) - 2px) calc(var(--ho-spacing-lg) - 2px);
-  min-height: 36px;
+  background-color: transparent;
+  color: var(--ho-color-primary-purple);
+  border-color: var(--ho-color-primary-purple);
 }
 
 .btn--secondary:hover:not(:disabled) {
-  background-color: var(--ho-color-light-purple);
-  border-color: var(--ho-color-deep-purple);
+  background-color: var(--ho-color-primary-purple);
+  color: var(--ho-color-text-light);
 }
 
 .btn--secondary:active:not(:disabled) {
   transform: scale(0.98);
 }
 
-.btn--action {
-  background-color: var(--ho-color-primary-blue);
+/* 3. Action/Positive - Chat Purple (replaces all green) */
+.btn--action,
+.btn--success,
+.btn--positive {
+  background-color: var(--ho-color-positive-purple);
   color: var(--ho-color-text-light);
-  border-radius: var(--ho-radius-medium);
-  padding: var(--ho-spacing-sm) var(--ho-spacing-md);
-  min-height: 36px;
+  border-color: var(--ho-color-positive-purple);
 }
 
-.btn--action:hover:not(:disabled) {
-  background-color: var(--ho-color-secondary-blue);
+.btn--action:hover:not(:disabled),
+.btn--success:hover:not(:disabled),
+.btn--positive:hover:not(:disabled) {
+  background-color: var(--ho-color-positive-purple-hover);
+  border-color: var(--ho-color-positive-purple-hover);
+  box-shadow: 0 4px 12px rgba(91, 95, 207, 0.2);
 }
 
-.btn--action:active:not(:disabled) {
+.btn--action:active:not(:disabled),
+.btn--success:active:not(:disabled),
+.btn--positive:active:not(:disabled) {
   transform: scale(0.98);
 }
 
-.btn--danger {
-  background-color: var(--ho-color-coral);
+/* 4. Accent - Secondary Purple (#6D31C2) */
+.btn--accent {
+  background-color: var(--ho-color-secondary-purple);
   color: var(--ho-color-text-light);
-  border-radius: var(--ho-radius-medium);
-  padding: var(--ho-spacing-md) var(--ho-spacing-xl);
-  min-height: 40px;
-  font-weight: 700;
+  border-color: var(--ho-color-secondary-purple);
+}
+
+.btn--accent:hover:not(:disabled) {
+  background-color: var(--ho-color-secondary-purple-hover);
+  border-color: var(--ho-color-secondary-purple-hover);
+  box-shadow: 0 4px 12px rgba(109, 49, 194, 0.2);
+}
+
+.btn--accent:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+/* 5. Danger - OUTLINED ONLY per protocol (no solid red backgrounds) */
+.btn--danger {
+  background-color: transparent;
+  color: var(--ho-color-danger);
+  border-color: var(--ho-color-danger);
 }
 
 .btn--danger:hover:not(:disabled) {
-  background-color: var(--ho-color-red);
+  background-color: var(--ho-color-danger);
+  color: var(--ho-color-text-light);
 }
 
 .btn--danger:active:not(:disabled) {
   transform: scale(0.98);
 }
 
+/* 6. Ghost - Subtle border */
 .btn--ghost {
   background-color: transparent;
   color: var(--ho-color-text-secondary);
-  padding: var(--ho-spacing-sm) var(--ho-spacing-md);
-  border-radius: var(--ho-radius-medium);
+  border-color: var(--ho-color-purple-border);
 }
 
 .btn--ghost:hover:not(:disabled) {
-  background-color: var(--ho-color-off-white);
-  color: var(--ho-color-text-primary);
+  background-color: var(--ho-color-light-purple-bg);
+  color: var(--ho-color-primary-purple);
+  border-color: var(--ho-color-primary-purple);
 }
 
+.btn--ghost:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+/* 7. Proposals - Now uses purple scheme instead of orange */
 .btn--proposals {
-  background-color: #FED7AA;
-  color: #92400E;
-  border-radius: var(--ho-radius-pill);
-  padding: var(--ho-spacing-xs) var(--ho-spacing-md);
+  background-color: var(--ho-color-light-purple-bg);
+  color: var(--ho-color-primary-purple);
+  border-color: var(--ho-color-purple-border);
+  padding: var(--ho-spacing-sm) var(--ho-spacing-lg);
   min-height: 32px;
-  font-weight: 600;
 }
 
 .btn--proposals:hover:not(:disabled) {
-  background-color: #FDBA74;
-  color: #78350F;
+  background-color: var(--ho-color-purple-selected);
+  border-color: var(--ho-color-primary-purple);
 }
 
 .btn--proposals:active:not(:disabled) {
   transform: scale(0.98);
 }
 
+/* Button modifiers */
 .btn--full-width {
   width: 100%;
+}
+
+.btn--small {
+  padding: var(--ho-spacing-sm) var(--ho-spacing-lg);
+  min-height: 32px;
+  font-size: 12px;
+}
+
+.btn--large {
+  padding: var(--ho-spacing-lg) var(--ho-spacing-2xl);
+  min-height: 48px;
+  font-size: 16px;
 }
 
 .btn--disabled,
@@ -401,7 +482,7 @@
 }
 
 .btn:focus-visible {
-  outline: 2px solid var(--ho-color-primary-blue);
+  outline: 2px solid var(--ho-color-positive-purple);
   outline-offset: 2px;
 }
 
@@ -614,14 +695,34 @@
   font-weight: 500;
 }
 
+/* Badge variants - Updated per Popup Redesign Protocol (NO GREEN) */
 .badge--leases {
-  background-color: #D1FAE5;
-  color: #065F46;
+  background-color: var(--ho-color-light-purple-bg);
+  color: var(--ho-color-positive-purple);  /* Uses purple instead of green */
+  border: 1px solid var(--ho-color-purple-border);
 }
 
 .badge--proposals {
-  background-color: #FED7AA;
-  color: #92400E;
+  background-color: var(--ho-color-purple-selected);
+  color: var(--ho-color-primary-purple);
+  border: 1px solid var(--ho-color-purple-border);
+}
+
+.badge--active,
+.badge--success {
+  background-color: var(--ho-color-light-purple-bg);
+  color: var(--ho-color-positive-purple);  /* Uses purple instead of green */
+}
+
+.badge--pending {
+  background-color: var(--ho-color-purple-selected);
+  color: var(--ho-color-secondary-purple);
+}
+
+.badge--danger {
+  background-color: transparent;
+  color: var(--ho-color-danger);
+  border: 1px solid var(--ho-color-danger);
 }
 
 .listing-card__actions {
@@ -844,9 +945,10 @@
   color: var(--ho-color-text-primary);
 }
 
+/* Status checkmark - Uses positive purple (NO GREEN per protocol) */
 .virtual-meeting-card__status::before {
   content: '\2713 ';
-  color: #10B981;
+  color: var(--ho-color-positive-purple);
 }
 
 .virtual-meeting-card__date {
@@ -966,73 +1068,80 @@
   transition: width 16ms linear;
 }
 
-/* Toast Type Variants */
+/* Toast Type Variants - Updated per Popup Redesign Protocol
+   - Success/Positive: Uses purple (#5B5FCF), NOT green
+   - Info: Uses primary purple
+   - Warning: Uses secondary purple (no yellow per protocol)
+   - Error: Uses danger red
+*/
 .host-toast--error {
-  border-left: 4px solid #EF4444;
+  border-left: 4px solid var(--ho-color-danger);
 }
 
 .host-toast--error .host-toast__icon {
-  background-color: #EF4444;
+  background-color: var(--ho-color-danger);
   color: white;
 }
 
 .host-toast--error .host-toast__title {
-  color: #EF4444;
+  color: var(--ho-color-danger);
 }
 
 .host-toast--error .host-toast__progress-bar {
-  background-color: #EF4444;
+  background-color: var(--ho-color-danger);
 }
 
 .host-toast--information {
-  border-left: 4px solid #3B82F6;
+  border-left: 4px solid var(--ho-color-primary-purple);
 }
 
 .host-toast--information .host-toast__icon {
-  background-color: #3B82F6;
+  background-color: var(--ho-color-primary-purple);
   color: white;
 }
 
 .host-toast--information .host-toast__title {
-  color: #3B82F6;
+  color: var(--ho-color-primary-purple);
 }
 
 .host-toast--information .host-toast__progress-bar {
-  background-color: #3B82F6;
+  background-color: var(--ho-color-primary-purple);
 }
 
+/* Warning - Uses secondary purple (NO YELLOW per protocol) */
 .host-toast--warning {
-  border-left: 4px solid #F59E0B;
+  border-left: 4px solid var(--ho-color-secondary-purple);
 }
 
 .host-toast--warning .host-toast__icon {
-  background-color: #F59E0B;
+  background-color: var(--ho-color-secondary-purple);
   color: white;
 }
 
 .host-toast--warning .host-toast__title {
-  color: #F59E0B;
+  color: var(--ho-color-secondary-purple);
 }
 
 .host-toast--warning .host-toast__progress-bar {
-  background-color: #F59E0B;
+  background-color: var(--ho-color-secondary-purple);
 }
 
+/* Success - Uses positive purple (NO GREEN per protocol) */
 .host-toast--success {
-  border-left: 4px solid #10B981;
+  border-left: 4px solid var(--ho-color-positive-purple);
 }
 
 .host-toast--success .host-toast__icon {
-  background-color: #10B981;
+  background-color: var(--ho-color-positive-purple);
   color: white;
 }
 
 .host-toast--success .host-toast__title {
-  color: #10B981;
+  color: var(--ho-color-positive-purple);
 }
 
 .host-toast--success .host-toast__progress-bar {
-  background-color: #10B981;
+  background-color: var(--ho-color-positive-purple);
 }
 
 @keyframes toastSlideDown {
@@ -1058,7 +1167,11 @@
 }
 
 /* ============================================================================
-   MODAL STYLES
+   MODAL STYLES - Updated per Popup Redesign Protocol
+   - Flexbox layout with fixed Header/Footer, scrollable Body
+   - Desktop: Centered fixed modal
+   - Mobile (<480px): Bottom sheet slide-up
+   - Max-height: 92vh with overflow-y: auto on body
    ============================================================================ */
 
 .host-modal-backdrop {
@@ -1071,20 +1184,21 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10001; /* Higher than pricing-edit-overlay (10000) */
+  z-index: 10001;
   padding: var(--ho-spacing-xl);
   animation: modalFadeIn 0.3s ease-out;
 }
 
 .host-modal {
   background-color: var(--ho-color-white);
-  border-radius: var(--ho-radius-large);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  max-height: 90vh;
+  border-radius: var(--ho-radius-xl);
+  box-shadow: var(--ho-shadow-modal);
+  max-height: 92vh;  /* Per protocol */
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  animation: modalScaleIn 0.3s ease-out;
+  animation: modalSlideUp var(--ho-transition-modal);
+  position: relative;
 }
 
 .host-modal--small {
@@ -1094,60 +1208,130 @@
 
 .host-modal--medium {
   width: 100%;
-  max-width: 600px;
+  max-width: 480px;  /* Per protocol */
 }
 
 .host-modal--large {
   width: 100%;
-  max-width: 900px;
+  max-width: 600px;
 }
 
+/* Modal Header - Fixed, reduced height per protocol */
 .host-modal__header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: var(--ho-spacing-2xl);
-  border-bottom: 1px solid var(--ho-color-border-light);
+  gap: var(--ho-spacing-sm);
+  padding: 18px 56px 12px 24px;  /* Reduced 25% per protocol, space for close btn */
+  border-bottom: 1px solid var(--ho-color-purple-border);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.host-modal__header-icon {
+  width: 24px;
+  height: 24px;
+  stroke: var(--ho-color-primary-purple);
+  fill: none;
+  stroke-width: 2;
+  flex-shrink: 0;
 }
 
 .host-modal__title {
   margin: 0;
-  font-size: 22px;
-  font-weight: 700;
+  font-size: 24px;
+  font-weight: 400;  /* Per protocol: NOT BOLD */
+  color: var(--ho-color-text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--ho-spacing-sm);
 }
 
+.host-modal__subtitle {
+  font-size: 14px;
+  color: var(--ho-color-text-secondary);
+  margin-top: var(--ho-spacing-xs);
+}
+
+/* Close button - Feather icon style */
 .host-modal__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
   width: 32px;
   height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: none;
+  background: transparent;
   border: none;
   cursor: pointer;
-  font-size: 32px;
-  line-height: 1;
-  color: var(--ho-color-text-secondary);
-  padding: 0;
-  transition: color var(--ho-transition-normal);
-  border-radius: var(--ho-radius-small);
+  border-radius: 50%;
+  transition: all var(--ho-transition-normal);
+  z-index: 10;
 }
 
 .host-modal__close:hover {
-  color: var(--ho-color-text-primary);
-  background-color: var(--ho-color-off-white);
+  background-color: var(--ho-color-light-purple-bg);
 }
 
+.host-modal__close svg,
+.host-modal__close-icon {
+  width: 20px;
+  height: 20px;
+  stroke: var(--ho-color-text-secondary);
+  stroke-width: 2;
+  fill: none;
+  transition: stroke var(--ho-transition-normal);
+}
+
+.host-modal__close:hover svg,
+.host-modal__close:hover .host-modal__close-icon {
+  stroke: var(--ho-color-primary-purple);
+}
+
+/* For text-based close button fallback */
+.host-modal__close-text {
+  font-size: 24px;
+  line-height: 1;
+  color: var(--ho-color-text-secondary);
+}
+
+.host-modal__close:hover .host-modal__close-text {
+  color: var(--ho-color-primary-purple);
+}
+
+/* Modal Body - Scrollable */
 .host-modal__content {
   padding: var(--ho-spacing-2xl);
   overflow-y: auto;
-  flex: 1;
+  flex-grow: 1;
+  -webkit-overflow-scrolling: touch;
 }
 
+/* Modal Footer - Fixed at bottom */
+.host-modal__footer {
+  padding: var(--ho-spacing-lg) var(--ho-spacing-2xl);
+  background-color: var(--ho-color-light-purple-bg);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--ho-spacing-md);
+  flex-shrink: 0;
+  border-top: 1px solid var(--ho-color-purple-border);
+}
+
+.host-modal__footer--space-between {
+  justify-content: space-between;
+}
+
+.host-modal__footer--single-action {
+  justify-content: center;
+}
+
+/* Confirm Modal specific styles */
 .host-confirm-modal__message {
-  margin-bottom: var(--ho-spacing-2xl);
+  margin-bottom: var(--ho-spacing-lg);
   font-size: 14px;
-  line-height: 1.7;
+  line-height: 1.6;
   color: var(--ho-color-text-primary);
 }
 
@@ -1157,24 +1341,64 @@
   justify-content: flex-end;
 }
 
+/* Info Banner inside modals - per protocol */
+.host-modal__info-banner {
+  background-color: var(--ho-color-light-purple-bg);
+  border: 1px solid var(--ho-color-purple-border);
+  border-radius: var(--ho-radius-large);
+  padding: var(--ho-spacing-md);
+  margin: var(--ho-spacing-lg) 0;
+  display: flex;
+  align-items: center;
+  gap: var(--ho-spacing-md);
+}
+
+.host-modal__info-banner-icon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  background-color: var(--ho-color-primary-purple);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.host-modal__info-banner-icon svg {
+  width: 12px;
+  height: 12px;
+  stroke: white;
+  stroke-width: 3;
+  fill: none;
+}
+
+.host-modal__info-banner-text {
+  font-size: 13px;
+  color: var(--ho-color-text-primary);
+  line-height: 1.4;
+  flex: 1;
+}
+
+/* Animations */
 @keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalSlideUp {
   from {
+    transform: translateY(20px);
     opacity: 0;
   }
   to {
+    transform: translateY(0);
     opacity: 1;
   }
 }
 
-@keyframes modalScaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+@keyframes modalSlideFromBottom {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
 }
 
 /* ============================================================================
@@ -1353,5 +1577,86 @@
 
   .host-confirm-modal__actions .btn {
     width: 100%;
+  }
+}
+
+/* ============================================================================
+   MOBILE BOTTOM SHEET (<480px) - Per Popup Redesign Protocol
+   ============================================================================ */
+
+@media (max-width: 480px) {
+  /* Modal becomes bottom sheet */
+  .host-modal-backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .host-modal {
+    max-width: 100%;
+    width: 100%;
+    border-radius: 24px 24px 0 0;  /* Rounded top only */
+    animation: modalSlideFromBottom 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    max-height: 92vh;
+  }
+
+  /* Drag handle for bottom sheet feel */
+  .host-modal::before {
+    content: '';
+    width: 36px;
+    height: 4px;
+    background-color: var(--ho-color-purple-border);
+    border-radius: 2px;
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 30;
+  }
+
+  .host-modal__header {
+    padding: 24px 24px 8px 24px;
+    background-color: var(--ho-color-white);
+  }
+
+  .host-modal__title {
+    font-size: 18px;
+    font-weight: 400;
+  }
+
+  .host-modal__header-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .host-modal__subtitle {
+    font-size: 13px;
+  }
+
+  .host-modal__content {
+    padding: 20px 24px 24px 24px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .host-modal__footer {
+    flex-direction: column-reverse;
+    padding: 16px 24px 24px 24px;  /* Extra bottom for safe area */
+    background-color: var(--ho-color-white);
+    border-top: 1px solid var(--ho-color-purple-border);
+  }
+
+  .host-modal__footer .btn {
+    width: 100%;
+    padding: 16px;  /* Larger tap targets */
+  }
+
+  .host-confirm-modal__actions {
+    flex-direction: column-reverse;
+    width: 100%;
+  }
+
+  .host-confirm-modal__actions .btn {
+    width: 100%;
+    padding: 16px;
   }
 }
