@@ -148,7 +148,7 @@
   gap: 24px !important;
   max-width: 1400px;
   margin: 0 auto;
-  padding: 24px 24px 100px;
+  padding: 32px 24px 100px; /* Increased top padding for more gap below sub-header */
   min-height: auto;
   align-items: start;
 }
@@ -162,8 +162,8 @@
   width: 400px !important; /* Map width from mockup */
   flex-shrink: 0;
   position: sticky;
-  top: 176px; /* Header (80px) + Sub-header (72px) + gap (24px) */
-  height: calc(100vh - 200px); /* Viewport minus header + sub-header + padding */
+  top: 184px; /* Header (80px) + Sub-header (72px) + gap (32px) */
+  height: calc(100vh - 216px); /* Viewport minus header + sub-header + padding */
   background: white;
   border-radius: 16px;
   overflow: hidden;
