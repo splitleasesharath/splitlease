@@ -1,0 +1,152 @@
+/**
+ * AI Room Redesign Component Styles
+ *
+ * Contains animations and component-specific styles.
+ * Uses standard Tailwind colors (indigo-600, gray-*, etc.) instead of custom room-* palette.
+ */
+
+/* ─────────────────────────────────────────────────────────────
+   Animations
+   ───────────────────────────────────────────────────────────── */
+
+/* Fade in animation for overlays */
+@keyframes ai-room-redesign-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.ai-room-redesign-fade-in {
+  animation: ai-room-redesign-fade-in 0.3s ease-in-out;
+}
+
+/* Slide up animation for popup */
+@keyframes ai-room-redesign-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ai-room-redesign-slide-up {
+  animation: ai-room-redesign-slide-up 0.3s ease-out;
+}
+
+/* Center positioning for desktop (used with translate) */
+@media (min-width: 768px) {
+  .ai-room-redesign-slide-up {
+    animation: ai-room-redesign-slide-up-centered 0.3s ease-out forwards;
+  }
+}
+
+@keyframes ai-room-redesign-slide-up-centered {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 50px));
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* Shake animation for error feedback */
+@keyframes ai-room-redesign-shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-4px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(4px);
+  }
+}
+
+.animate-shake {
+  animation: ai-room-redesign-shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+/* Generic fade-in class */
+.animate-fade-in {
+  animation: ai-room-redesign-fade-in 0.3s ease-in-out;
+}
+
+/* Generic slide-up class */
+.animate-slide-up {
+  animation: ai-room-redesign-slide-up 0.3s ease-out;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Scrollbar Styling
+   ───────────────────────────────────────────────────────────── */
+
+/* Custom scrollbar for the style selector grid */
+.ai-room-redesign-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.ai-room-redesign-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.ai-room-redesign-scrollbar::-webkit-scrollbar-thumb {
+  background: #c4c4c4;
+  border-radius: 3px;
+}
+
+.ai-room-redesign-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Mobile Touch Improvements
+   ───────────────────────────────────────────────────────────── */
+
+@media (hover: none) {
+  /* Remove hover effects on touch devices */
+  .ai-room-redesign-button:active {
+    transform: scale(0.98);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Focus Visible Styles (Accessibility)
+   ───────────────────────────────────────────────────────────── */
+
+.ai-room-redesign-focusable:focus-visible {
+  outline: 2px solid #4f46e5;
+  outline-offset: 2px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Shimmer Loading Placeholder (optional)
+   ───────────────────────────────────────────────────────────── */
+
+@keyframes ai-room-redesign-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.ai-room-redesign-shimmer {
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e0e0e0 50%,
+    #f0f0f0 75%
+  );
+  background-size: 200% 100%;
+  animation: ai-room-redesign-shimmer 1.5s infinite;
+}

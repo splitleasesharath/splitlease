@@ -450,6 +450,116 @@ export const routes = [
     cloudflareInternal: true,
     internalName: 'simulation-guestside-demo-view',
     hasDynamicSegment: false
+  },
+  {
+    path: '/simulation-hostside-demo',
+    file: 'simulation-hostside-demo.html',
+    aliases: ['/simulation-hostside-demo.html', '/host-usability-test'],
+    protected: true,
+    cloudflareInternal: true,
+    internalName: 'simulation-hostside-demo-view',
+    hasDynamicSegment: false
+  },
+  {
+    path: '/simulation-host-mobile',
+    file: 'simulation-host-mobile.html',
+    aliases: ['/simulation-host-mobile.html', '/host-simulation'],
+    protected: true,
+    cloudflareInternal: true,
+    internalName: 'simulation-host-mobile-view',
+    hasDynamicSegment: false
+  },
+
+  // ===== CORPORATE INTERNAL TOOLS =====
+  {
+    path: '/_internal/guest-relationships',
+    file: 'guest-relationships.html',
+    aliases: ['/_internal/guest-relationships.html', '/guest-relationships'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'guest-relationships-view',
+    hasDynamicSegment: false
+  },
+  {
+    path: '/_internal/manage-virtual-meetings',
+    file: 'manage-virtual-meetings.html',
+    aliases: ['/_internal/manage-virtual-meetings.html', '/manage-virtual-meetings'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'manage-virtual-meetings-view',
+    hasDynamicSegment: false
+  },
+  {
+    path: '/_internal/manage-informational-texts',
+    file: 'manage-informational-texts.html',
+    aliases: ['/_internal/manage-informational-texts.html', '/manage-informational-texts'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'manage-informational-texts-view',
+    hasDynamicSegment: false
+  },
+  {
+    path: '/_internal/quick-price',
+    file: 'quick-price.html',
+    aliases: ['/_internal/quick-price.html', '/quick-price'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'quick-price-view',
+    hasDynamicSegment: false
+  },
+  {
+    path: '/_internal/verify-users',
+    file: 'verify-users.html',
+    aliases: ['/_internal/verify-users.html', '/verify-users'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'verify-users-view',
+    hasDynamicSegment: false
+  },
+  {
+    path: '/_internal/co-host-requests',
+    file: 'co-host-requests.html',
+    aliases: ['/_internal/co-host-requests.html', '/co-host-requests'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'co-host-requests-view',
+    hasDynamicSegment: false
+  },
+  {
+    path: '/_internal/simulation-admin',
+    file: 'simulation-admin.html',
+    aliases: ['/_internal/simulation-admin.html', '/simulation-admin'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'simulation-admin-view',
+    hasDynamicSegment: false
+  },
+  {
+    path: '/_internal/send-magic-login-links',
+    file: 'send-magic-login-links.html',
+    aliases: ['/_internal/send-magic-login-links.html', '/send-magic-login-links'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'send-magic-login-links-view',
+    hasDynamicSegment: false
+  },
+  {
+    path: '/_internal/modify-listings',
+    file: 'modify-listings.html',
+    aliases: ['/_internal/modify-listings.html', '/modify-listings'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'modify-listings-view',
+    hasDynamicSegment: false
   }
 ];
 

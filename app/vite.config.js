@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig, splitVendorChunkPlugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 import fs from 'fs';
@@ -94,6 +94,7 @@ function copyDirectory(src, dest) {
 export default defineConfig({
   plugins: [
     react(),
+    splitVendorChunkPlugin(),
     {
       name: 'multi-page-routing',
       configureServer(server) {
@@ -280,7 +281,84 @@ export default defineConfig({
           return 'assets/[name]-[hash][extname]';
         },
         chunkFileNames: 'assets/[name]-[hash].js',
-        entryFileNames: 'assets/[name]-[hash].js'
+        entryFileNames: 'assets/[name]-[hash].js',
+
+        /**
+         * Manual chunk splitting for optimal loading performance.
+         * (Golden Rule C - Performance P0)
+         *
+         * Strategy:
+         * - Vendor chunks: React, Supabase (shared across all pages)
+         * - Feature chunks: Google Maps (only loaded on search/view pages)
+         * - Page chunks: Search page logic isolated
+         *
+         * Expected bundle sizes after splitting:
+         * - vendor-react: ~140KB (React + ReactDOM)
+         * - vendor-supabase: ~80KB (Auth/DB layer)
+         * - vendor-google-maps: ~200KB (only loaded on map pages)
+         * - page-search: ~100KB (SearchPage specific code)
+         * - component-listing-card: ~30KB (Shared between search/favorites)
+         */
+        manualChunks(id) {
+          // React and React DOM - core framework (shared across all pages)
+          // CRITICAL: Must be checked before other conditions to ensure React loads first
+          if (id.includes('node_modules/react') ||
+              id.includes('node_modules/react-dom') ||
+              id.includes('node_modules/scheduler')) {
+            return 'vendor-react';
+          }
+
+          // Supabase client - database and auth layer (shared)
+          if (id.includes('node_modules/@supabase')) {
+            return 'vendor-supabase';
+          }
+
+          // Google Maps - heavy library, only needed on map pages
+          // Isolate to prevent loading on non-map pages
+          if (id.includes('@googlemaps') || id.includes('google-maps') || id.includes('vis.gl')) {
+            return 'vendor-google-maps';
+          }
+
+          // All other node_modules go into a shared vendor chunk
+          // This prevents vendor code from being bundled into component chunks
+          if (id.includes('node_modules')) {
+            return 'vendor';
+          }
+
+          // Search page specific logic - isolate for code splitting
+          // Only loaded when user visits /search
+          if (id.includes('islands/pages/SearchPage') ||
+              id.includes('islands/pages/useSearchPageLogic') ||
+              id.includes('islands/pages/useSearchPageAuth')) {
+            return 'page-search';
+          }
+
+          // View Split Lease page - isolate for code splitting
+          if (id.includes('islands/pages/ViewSplitLeasePage') ||
+              id.includes('islands/pages/useViewSplitLeaseLogic')) {
+            return 'page-view-listing';
+          }
+
+          // Listing card components - shared between search and favorites
+          if (id.includes('ListingCard') || id.includes('PropertyCard')) {
+            return 'component-listing-card';
+          }
+
+          // Schedule selector - shared UI component across pages
+          if (id.includes('scheduleSelector') || id.includes('ScheduleSelector')) {
+            return 'component-schedule';
+          }
+
+          // Modals - shared across pages
+          if (id.includes('/modals/') || id.includes('Modal')) {
+            return 'component-modals';
+          }
+
+          // Auth components - shared across pages
+          if (id.includes('SignUpLogin') || id.includes('AuthAware')) {
+            return 'component-auth';
+          }
+        }
       }
     },
     // Copy HTML files to root of dist, not preserving directory structure

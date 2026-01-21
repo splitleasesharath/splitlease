@@ -1,16 +1,29 @@
 /**
- * PropertyCard - Unified listing card component
+ * PropertyCard - Memoized Unified listing card component
  * Used by SearchPage and FavoriteListingsPage
  * Displays listing image carousel, details, pricing, and action buttons
+ *
+ * PERFORMANCE OPTIMIZATION:
+ * - Wrapped in React.memo to prevent unnecessary re-renders
+ * - When parent (ListingsGrid) updates, cards that haven't changed won't re-render
+ * - Critical for search page performance with 50+ cards
+ *
+ * REFACTORED: Added React.memo wrapper (Golden Rule C)
  */
-import { useRef, useMemo } from 'react';
+import { memo, useRef, useMemo } from 'react';
 import { useImageCarousel } from '../../../hooks/useImageCarousel.js';
 import { formatHostName } from '../../../logic/processors/display/formatHostName.js';
 import { calculatePrice } from '../../../lib/scheduleSelector/priceCalculations.js';
 import { logger } from '../../../lib/logger.js';
 import FavoriteButton from '../FavoriteButton/FavoriteButton.jsx';
+// NOTE: ValueAlert and MatchScore removed - components not yet implemented
+// import ValueAlert from '../ValueInsights/ValueAlert.jsx';
+// import MatchScore from '../ValueInsights/MatchScore.jsx';
 
-export default function PropertyCard({
+/**
+ * PropertyCard Component - Memoized for performance
+ */
+const PropertyCard = memo(function PropertyCard({
   listing,
   onLocationClick,
   onCardHover,
@@ -27,7 +40,8 @@ export default function PropertyCard({
   proposalForListing,
   selectedNightsCount = 5, // Default to 5 nights if not provided
   onPhotoClick,
-  variant = 'search' // 'search' | 'favorites'
+  variant = 'search', // 'search' | 'favorites'
+  userPreferences = null // AI-extracted user preferences for match scoring
 }) {
   const {
     currentImageIndex,
@@ -42,8 +56,10 @@ export default function PropertyCard({
 
   const favoriteListingId = listing.id || listing._id;
 
-  // Get availability message (SearchPage only)
-  const getAvailabilityMessage = () => {
+  // Memoize availability message (SearchPage only) - depends only on listing ID and variant
+  const availabilityInfo = useMemo(() => {
+    if (variant !== 'search') return null;
+
     const id = listing.id || listing._id || '';
     // Use a simple hash of the listing ID to deterministically assign messages
     const hash = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -57,11 +73,9 @@ export default function PropertyCard({
     ];
 
     return messages[messageIndex];
-  };
+  }, [listing.id, listing._id, variant]);
 
-  const availabilityInfo = variant === 'search' ? getAvailabilityMessage() : null;
-
-  // Calculate dynamic price
+  // Calculate dynamic price - memoized for performance
   const dynamicPrice = useMemo(() => {
     const nightsCount = selectedNightsCount;
 
@@ -94,7 +108,14 @@ export default function PropertyCard({
       }
       return listing['Starting nightly price'] || listing.price?.starting || 0;
     }
-  }, [selectedNightsCount, listing._id, listing['Starting nightly price'], variant]);
+  }, [
+    selectedNightsCount,
+    listing._id,
+    listing['Starting nightly price'],
+    listing.price?.starting,
+    listing.rentalType,
+    variant
+  ]);
 
   const startingPrice = listing['Starting nightly price'] || listing.price?.starting || 0;
 
@@ -148,9 +169,9 @@ export default function PropertyCard({
       : `/view-split-lease/${listingId}`;
 
     if (variant === 'search') {
-      logger.debug('📅 PropertyCard: Opening listing with URL:', url);
+      logger.debug('PropertyCard: Opening listing with URL:', url);
     } else {
-      console.log('📅 PropertyCard: Opening listing with URL:', url);
+      console.log('PropertyCard: Opening listing with URL:', url);
     }
 
     // Detect mobile viewport
@@ -271,6 +292,18 @@ export default function PropertyCard({
             </button>
             <h3 className="listing-title">{listing.title}</h3>
           </div>
+
+          {/* AI Insights Section - Only on SearchPage */}
+          {/* NOTE: ValueAlert and MatchScore components not yet implemented
+          {variant === 'search' && (
+            <div className="ai-insights-section">
+              <ValueAlert listing={listing} threshold={15} />
+              {userPreferences && (
+                <MatchScore listing={listing} userPreferences={userPreferences} />
+              )}
+            </div>
+          )}
+          */}
 
           {/* Meta Section */}
           <div className="listing-meta">
@@ -471,4 +504,9 @@ export default function PropertyCard({
       </div>
     </a>
   );
-}
+});
+
+// Set display name for debugging
+PropertyCard.displayName = 'PropertyCard';
+
+export default PropertyCard;

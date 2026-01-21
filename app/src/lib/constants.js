@@ -414,6 +414,38 @@ export const BOROUGH_MAP_CONFIG = {
   }
 };
 
+// ============================================================================
+// NYC Metro Area Geographic Bounds
+// Used to validate that listing coordinates fall within serviceable area
+// Covers all 5 NYC boroughs plus Hudson County NJ with reasonable margin
+// ============================================================================
+
+export const NYC_METRO_BOUNDS = {
+  MIN_LAT: 40.4,   // South of Staten Island
+  MAX_LAT: 41.0,   // North of Bronx
+  MIN_LNG: -74.3,  // West of Staten Island/Jersey
+  MAX_LNG: -73.6   // East of Queens
+};
+
+/**
+ * Check if coordinates fall within NYC metro area bounds.
+ * Used to filter out invalid listings with (0,0) or other non-NYC coordinates.
+ *
+ * @param {number} lat - Latitude
+ * @param {number} lng - Longitude
+ * @returns {boolean} True if coordinates are within NYC metro bounds
+ */
+export function isWithinNYCBounds(lat, lng) {
+  return (
+    typeof lat === 'number' &&
+    typeof lng === 'number' &&
+    lat >= NYC_METRO_BOUNDS.MIN_LAT &&
+    lat <= NYC_METRO_BOUNDS.MAX_LAT &&
+    lng >= NYC_METRO_BOUNDS.MIN_LNG &&
+    lng <= NYC_METRO_BOUNDS.MAX_LNG
+  );
+}
+
 /**
  * Get map configuration for a borough
  * @param {string} boroughValue - Borough value (kebab-case: 'manhattan', 'staten-island', etc.)
