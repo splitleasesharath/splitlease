@@ -500,6 +500,16 @@ export const routes = [
     cloudflareInternal: false,
     internalName: 'manage-informational-texts-view',
     hasDynamicSegment: false
+  },
+  {
+    path: '/_internal/quick-price',
+    file: 'quick-price.html',
+    aliases: ['/_internal/quick-price.html', '/quick-price'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'quick-price-view',
+    hasDynamicSegment: false
   }
 ];
 
