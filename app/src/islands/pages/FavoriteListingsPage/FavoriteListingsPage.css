@@ -229,17 +229,17 @@
 
 .favorites-page .skeleton-card {
   background: white;
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
-  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
   /* VERTICAL layout - image on top, content below */
   display: flex;
   flex-direction: column;
 }
 
 .favorites-page .skeleton-image {
-  /* Match FavoritesCard photo height */
-  height: 180px;
+  /* Match FavoritesCard photo height - 200px per mockup */
+  height: 200px;
   width: 100%;
   background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
   background-size: 200% 100%;
@@ -247,11 +247,11 @@
 }
 
 .favorites-page .skeleton-content {
-  /* Match FavoritesCard content padding */
-  padding: 6px 8px 8px;
+  /* Match FavoritesCard content padding - 16px per mockup */
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .favorites-page .skeleton-line {
