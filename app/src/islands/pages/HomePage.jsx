@@ -119,16 +119,16 @@ function Hero({ onExploreRentals, onMoreDetails }) {
 
         <div className="hero-stats">
           <div className="stat-item">
-            <div className="stat-value">2,400+</div>
-            <div className="stat-label">NYC Multi-Locals</div>
+            <div className="stat-value">10,000+</div>
+            <div className="stat-label">commuting hours saved</div>
           </div>
           <div className="stat-item">
             <div className="stat-value">$18K</div>
             <div className="stat-label">Avg Yearly Savings</div>
           </div>
           <div className="stat-item">
-            <div className="stat-value">200+</div>
-            <div className="stat-label">NYC Listings</div>
+            <div className="stat-value">32,000+</div>
+            <div className="stat-label">unpacking hours saved</div>
           </div>
         </div>
       </div>
