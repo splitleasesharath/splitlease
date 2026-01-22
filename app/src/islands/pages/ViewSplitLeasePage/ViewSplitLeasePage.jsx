@@ -7,9 +7,9 @@
  *
  * UPDATE 2026-01-17: Added FavoriteButton to price display section
  */
-// FORCE RELOAD v7 - timestamp: 1737558600000 - Custom Schedule DEBUG
-console.log('🔄 ViewSplitLeasePage v7 - Custom Schedule DEBUG - ' + new Date().toISOString());
-console.log('🔄 DEBUG: Checking isMobile and listing conditionals');
+// FORCE RELOAD v8 - timestamp: 1737561000000 - Custom Schedule DEBUG URGENT
+console.log('🔄 ViewSplitLeasePage v8 - Custom Schedule DEBUG URGENT - ' + Date.now());
+console.log('🔄 DEBUG: Checking isMobile and listing conditionals - URGENT FIX');
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Header from '../shared/Header.jsx';

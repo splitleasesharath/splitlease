@@ -56,6 +56,9 @@ import "./prompts/parse-call-transcription.ts";
 import "./prompts/negotiation-summary-suggested.ts";
 import "./prompts/negotiation-summary-counteroffer.ts";
 import "./prompts/negotiation-summary-host.ts";
+import "./prompts/deepfake-script.ts";
+import "./prompts/narration-script.ts";
+import "./prompts/jingle-lyrics.ts";
 
 // ─────────────────────────────────────────────────────────────
 // Configuration (Immutable)

@@ -580,6 +580,18 @@ export const routes = [
     cloudflareInternal: false,
     internalName: 'usability-data-management-view',
     hasDynamicSegment: false
+  },
+
+  // ===== AI TOOLS (ADMIN INTERNAL) =====
+  {
+    path: '/_internal/ai-tools',
+    file: 'ai-tools.html',
+    aliases: ['/_internal/ai-tools.html', '/ai-tools'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'ai-tools-view',
+    hasDynamicSegment: false
   }
 ];
 
