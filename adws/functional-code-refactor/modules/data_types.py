@@ -157,6 +157,8 @@ class AgentPromptRequest(BaseModel):
     output_file: str
     working_dir: Optional[str] = None
     mcp_session: Optional[str] = None  # MCP server name for Playwright sessions
+    timeout: Optional[int] = None  # Timeout in seconds for the Claude Code process
+    system_prompt: Optional[str] = None  # Custom system prompt for the Claude session
 
 
 class AgentPromptResponse(BaseModel):

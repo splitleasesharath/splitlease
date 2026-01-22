@@ -10,21 +10,22 @@ Simplified orchestration pipeline that eliminates chunk-based parsing:
 - Uses /prime + /ralph-loop for persistent audit session
 - Single implementation phase (no chunk-by-chunk processing)
 - File tracking via git diff (no chunk parsing)
-- Deferred validation with file-based ValidationBatch
+- Build validation via ralph-loop with automatic troubleshooting
 
 Workflow:
 1. AUDIT: Claude Opus with /prime + /ralph-loop creates implementation plan
 2. GRAPH: Run graph algorithms for dependency context (injected into audit)
 3. IMPLEMENT: Single Claude session implements entire plan
-4. VALIDATE: Build + visual regression
+4. VALIDATE: Build via ralph-loop (auto-troubleshoot up to N iterations) + visual regression
 5. COMMIT/RESET: All-or-nothing based on validation result
 
 Usage:
-    uv run orchestrator.py <target_path> [--audit-type TYPE]
+    uv run orchestrator.py <target_path> [--audit-type TYPE] [--max-iterations N]
 
 Example:
     uv run orchestrator.py app/src/logic
     uv run orchestrator.py app/src/logic --audit-type performance
+    uv run orchestrator.py app/src/logic --max-iterations 3
 """
 
 import sys
@@ -197,6 +198,13 @@ Begin implementation now.
     agent_dir.mkdir(parents=True, exist_ok=True)
     output_file = agent_dir / "raw_output.jsonl"
 
+    # System prompt for autonomous execution - proceed without confirmation
+    system_prompt = (
+        "You are a high-level engineer. "
+        "Do NOT ask for confirmation. "
+        "Proceed autonomously through all phases."
+    )
+
     request = AgentPromptRequest(
         prompt=prompt,
         adw_id=f"implement_plan_{timestamp}",
@@ -204,7 +212,8 @@ Begin implementation now.
         model="sonnet",  # Use sonnet for implementation speed
         output_file=str(output_file),
         working_dir=str(adws_dir),
-        dangerously_skip_permissions=True
+        dangerously_skip_permissions=True,
+        system_prompt=system_prompt
     )
 
     response = prompt_claude_code(request)
@@ -225,6 +234,7 @@ def main():
     parser.add_argument("--slack-channel", default="test-bed", help="Slack channel for notifications (default: test-bed)")
     parser.add_argument("--no-slack", action="store_true", help="Disable Slack notifications")
     parser.add_argument("--use-gemini", action="store_true", help="Use Gemini instead of Claude for visual checks")
+    parser.add_argument("--max-iterations", type=int, default=5, help="Max ralph-loop iterations for build troubleshooting (default: 5)")
 
     args = parser.parse_args()
 
@@ -403,7 +413,7 @@ def main():
                 reverse_deps
             )
 
-            # Run deferred validation
+            # Run deferred validation with ralph-loop build troubleshooting
             effective_slack_channel = None if args.no_slack else args.slack_channel
             validation_result = run_deferred_validation(
                 validation_batch,
@@ -411,7 +421,8 @@ def main():
                 logger,
                 skip_visual=args.skip_visual,
                 slack_channel=effective_slack_channel,
-                use_claude=not args.use_gemini
+                use_claude=not args.use_gemini,
+                max_iterations=args.max_iterations
             )
 
             phase_durations["validate"] = time.time() - phase_start

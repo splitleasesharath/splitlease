@@ -373,406 +373,161 @@ class OrchestrationResult:
 
 
 # =============================================================================
-# BUILD DEBUG SESSION
+# RALPH-LOOP BUILD VALIDATION
 # =============================================================================
 
-def _run_build_debug_session(
-    build_errors: List[ValidationError],
+def _run_build_with_ralph_loop(
     batch: ValidationBatch,
     working_dir: Path,
     logger: "RunLogger",
-    session_number: int
-) -> bool:
-    """Run a Claude debug session to fix build errors.
-
-    Invokes Claude Code to analyze and fix build errors. Claude has access to
-    the error output, the modified files, and can make edits to fix the issues.
-
-    Args:
-        build_errors: List of parsed build errors
-        batch: ValidationBatch containing chunks and affected files
-        working_dir: Project working directory
-        logger: RunLogger for output
-        session_number: Which debug session this is (1 or 2)
-
-    Returns:
-        True if the debug session completed (regardless of fix success),
-        False if the debug session failed to run
-    """
-    logger.step(f"DEBUG SESSION {session_number}: Invoking Claude to fix build errors...")
-
-    # Build context for Claude
-    error_summary = "\n".join([
-        f"  - {e.message[:150]}" + (f" ({e.file_path}:{e.line_number})" if e.file_path else "")
-        for e in build_errors[:10]  # Limit to 10 errors
-    ])
-
-    modified_files = "\n".join([f"  - {f}" for f in sorted(batch.implemented_files)])
-
-    # Build the debug prompt
-    debug_prompt = f"""BUILD FAILURE - Debug Session {session_number}/2
-
-The build failed after implementing refactoring chunks. Please analyze the errors and fix them.
-
-## Build Errors ({len(build_errors)} total):
-{error_summary}
-
-## Files Modified by Refactoring:
-{modified_files}
-
-## Instructions:
-1. Analyze the build errors to understand what went wrong
-2. Read the affected files to see the current state
-3. Fix the errors - common issues include:
-   - Import path errors (file doesn't exist, wrong relative path)
-   - Missing exports (function was deleted but still imported elsewhere)
-   - Circular dependencies
-   - Syntax errors from incomplete edits
-4. After making fixes, verify by checking the file syntax
-5. DO NOT add new features or refactor further - only fix the build errors
-
-Working directory: {working_dir}
-App directory: {working_dir / "app"}
-
-Focus on making the build pass. Be surgical - fix only what's broken.
-"""
-
-    try:
-        # Write the prompt to a temp file for Claude to read
-        debug_prompt_file = working_dir / "adws" / "functional-code-refactor" / f".debug_session_{session_number}.txt"
-        debug_prompt_file.write_text(debug_prompt, encoding="utf-8")
-
-        logger.log(f"  [DEBUG] Debug prompt saved to: {debug_prompt_file}")
-        logger.log(f"  [DEBUG] Invoking Claude Code for troubleshooting...")
-
-        # Run Claude Code with the debug prompt
-        # We use claude with --print to get output and a timeout
-        debug_start = time.time()
-        debug_result = subprocess.run(
-            [
-                "claude",
-                "--print",
-                "--dangerously-skip-permissions",
-                "-p", debug_prompt
-            ],
-            cwd=working_dir,
-            capture_output=True,
-            text=True,
-            timeout=300  # 5 minute timeout for debug session
-        )
-        debug_duration = time.time() - debug_start
-
-        if debug_result.returncode == 0:
-            logger.log(f"  [DEBUG] Debug session {session_number} completed ({debug_duration:.1f}s)")
-            # Log a snippet of Claude's response
-            response_preview = debug_result.stdout[:500] if debug_result.stdout else "(no output)"
-            logger.log(f"  [DEBUG] Claude response preview: {response_preview[:200]}...")
-            return True
-        else:
-            logger.log(f"  [DEBUG] Debug session {session_number} exited with code {debug_result.returncode}")
-            if debug_result.stderr:
-                logger.log(f"  [DEBUG] stderr: {debug_result.stderr[:200]}")
-            return True  # Session ran, even if it didn't fully succeed
-
-    except subprocess.TimeoutExpired:
-        logger.log(f"  [DEBUG] Debug session {session_number} timed out (300s)")
-        return True  # Timeout counts as "session ran"
-    except FileNotFoundError:
-        logger.log(f"  [DEBUG] Claude CLI not found - cannot run debug session")
-        return False
-    except Exception as e:
-        logger.log(f"  [DEBUG] Debug session {session_number} error: {str(e)[:100]}")
-        return False
-
-
-def _run_lint_check(
-    working_dir: Path,
-    logger: "RunLogger",
-    timeout: int = 60
-) -> tuple[bool, List[ValidationError], str]:
-    """Run ESLint separately to capture actual error output.
-
-    Args:
-        working_dir: Project working directory
-        logger: RunLogger for output
-        timeout: Lint timeout in seconds (default: 60)
-
-    Returns:
-        Tuple of (passed, errors, raw_output)
-    """
-    try:
-        lint_result = subprocess.run(
-            ["bun", "run", "lint"],
-            cwd=working_dir / "app",
-            capture_output=True,
-            text=True,
-            timeout=timeout
-        )
-
-        raw_output = lint_result.stdout + "\n" + lint_result.stderr
-
-        if lint_result.returncode == 0:
-            return True, [], raw_output
-
-        # Parse ESLint errors from stdout (ESLint writes errors to stdout)
-        errors = _parse_eslint_errors(lint_result.stdout)
-
-        # If we didn't find structured errors, fall back to generic parsing
-        if not errors:
-            errors = _parse_build_errors(raw_output)
-
-        return False, errors, raw_output
-
-    except subprocess.TimeoutExpired:
-        return False, [ValidationError(message=f"Lint timed out ({timeout}s)")], ""
-    except Exception as e:
-        return False, [ValidationError(message=f"Lint check error: {str(e)[:100]}")], ""
-
-
-def _parse_eslint_errors(eslint_output: str) -> List[ValidationError]:
-    """Parse ESLint output into structured errors.
-
-    ESLint output format:
-    /path/to/file.js
-      10:5  error  'foo' is defined but never used  no-unused-vars
-      15:10  warning  Missing return type  @typescript-eslint/explicit-function-return-type
-
-    Args:
-        eslint_output: Raw stdout from ESLint
-
-    Returns:
-        List of ValidationError objects
-    """
-    import re
-    errors: List[ValidationError] = []
-    current_file: Optional[str] = None
-
-    for line in eslint_output.split('\n'):
-        line_stripped = line.strip()
-        if not line_stripped:
-            continue
-
-        # Check if this line is a file path (starts a new file section)
-        # File paths typically end with .js, .jsx, .ts, .tsx and start the line
-        if re.match(r'^[\w/\\:.-]+\.(jsx?|tsx?|mjs|cjs)$', line_stripped):
-            current_file = line_stripped
-            continue
-
-        # Check for error/warning line format: "  10:5  error  message  rule-name"
-        error_match = re.match(r'^\s*(\d+):(\d+)\s+(error|warning)\s+(.+?)\s+(\S+)$', line)
-        if error_match and current_file:
-            line_num = int(error_match.group(1))
-            col_num = int(error_match.group(2))
-            severity = error_match.group(3)
-            message = error_match.group(4)
-            rule = error_match.group(5)
-
-            # Only capture errors, not warnings (unless no errors found)
-            if severity == "error":
-                errors.append(ValidationError(
-                    message=f"{message} ({rule})",
-                    file_path=current_file,
-                    line_number=line_num
-                ))
-
-        # Also check for simpler format without rule name
-        # "  10:5  error  message"
-        simple_match = re.match(r'^\s*(\d+):(\d+)\s+(error|warning)\s+(.+)$', line)
-        if simple_match and current_file and not error_match:
-            line_num = int(simple_match.group(1))
-            severity = simple_match.group(3)
-            message = simple_match.group(4)
-
-            if severity == "error":
-                errors.append(ValidationError(
-                    message=message,
-                    file_path=current_file,
-                    line_number=line_num
-                ))
-
-        # Limit to 30 errors
-        if len(errors) >= 30:
-            break
-
-    return errors
-
-
-def _run_build_with_retry(
-    working_dir: Path,
-    batch: ValidationBatch,
-    logger: "RunLogger",
-    build_timeout: int = 180,
-    max_debug_sessions: int = 2
+    max_iterations: int = 5,
+    build_timeout: int = 180
 ) -> tuple[bool, List[ValidationError], float]:
-    """Run build with debug-retry loop.
+    """Run build validation using ralph-loop for automated troubleshooting.
 
-    Attempts to build up to (max_debug_sessions + 1) times:
-    - Build attempt 1 -> if fail -> debug session 1 -> retry
-    - Build attempt 2 -> if fail -> debug session 2 -> retry
-    - Build attempt 3 -> if fail -> FAILED (no more retries)
+    Uses ralph-loop to run `bun run build`, monitor the outcome, and automatically
+    troubleshoot failures. The loop continues until:
+    - Build succeeds (outputs "COMPLETED")
+    - Max iterations reached
+    - Unrecoverable error encountered
 
-    The build pipeline is:
-    1. Lint check (ESLint) - runs separately to capture actual errors
-    2. Type check (TypeScript) - runs separately
-    3. Vite build - final production build
-
-    If lint fails, we capture ESLint's actual error output (file, line, message)
-    instead of just the bun wrapper "script lint exited with code 1" message.
+    This replaces the previous _run_build_with_retry + _run_build_debug_session
+    approach with a single persistent Claude session that maintains context
+    across all troubleshooting iterations.
 
     Args:
-        working_dir: Project working directory
         batch: ValidationBatch containing chunks and affected files
+        working_dir: Project working directory
         logger: RunLogger for output
-        build_timeout: Build timeout in seconds (default: 180)
-        max_debug_sessions: Maximum number of debug sessions (default: 2)
+        max_iterations: Maximum troubleshooting iterations (default: 5)
+        build_timeout: Overall timeout in seconds (default: 180)
 
     Returns:
         Tuple of (build_passed, errors, total_duration)
     """
-    total_duration = 0.0
-    debug_sessions_used = 0
-    all_errors: List[ValidationError] = []
+    from datetime import datetime
+    from .agent import prompt_claude_code
+    from .data_types import AgentPromptRequest
 
-    for attempt in range(1, max_debug_sessions + 2):  # +2 because we get one more attempt than debug sessions
-        logger.log(f"  [BUILD] Attempt {attempt}/{max_debug_sessions + 1}...")
+    start_time = time.time()
 
-        attempt_start = time.time()
+    # Build context for the ralph-loop session
+    modified_files = "\n".join([f"  - {f}" for f in sorted(batch.implemented_files)])
 
-        # Step 1: Run lint check separately to capture actual ESLint errors
-        lint_passed, lint_errors, lint_output = _run_lint_check(working_dir, logger)
+    # The prompt uses ralph-loop to run build with troubleshooting
+    prompt = f"""/ralph-loop:ralph-loop --max-iterations {max_iterations}
 
-        if not lint_passed:
-            lint_duration = time.time() - attempt_start
-            total_duration += lint_duration
+## Task: Build Validation with Troubleshooting
 
-            # Use the detailed ESLint errors if available
-            all_errors = lint_errors if lint_errors else [
-                ValidationError(message="Lint failed (no detailed errors captured)")
-            ]
+Run `bun run build` from the `app/` directory and ensure it passes.
 
-            logger.log(f"  [FAIL] Lint failed on attempt {attempt} with {len(all_errors)} errors ({lint_duration:.1f}s)")
+### Modified Files (for context):
+{modified_files}
 
-            # Log actual ESLint errors (up to 5)
-            for i, error in enumerate(all_errors[:5]):
-                file_info = f" ({error.file_path}:{error.line_number})" if error.file_path else ""
-                logger.log(f"    {i+1}. {error.message[:80]}{file_info}")
+### Instructions:
 
-            if len(all_errors) > 5:
-                logger.log(f"    ... and {len(all_errors) - 5} more errors")
+1. **Run the build**: Execute `bun run build` from the `app/` directory
+2. **Monitor the outcome**: Wait for the build to complete
+3. **On SUCCESS**: Output "COMPLETED" to end the loop
+4. **On FAILURE**:
+   - Analyze the error output (lint errors, type errors, vite errors)
+   - Identify the root cause
+   - Fix the issues in the affected files
+   - Re-run `bun run build`
+5. **Repeat** until build succeeds or max iterations reached
 
-            # Trigger debug session if available
-            if debug_sessions_used < max_debug_sessions:
-                debug_sessions_used += 1
-                debug_success = _run_build_debug_session(
-                    all_errors, batch, working_dir, logger, debug_sessions_used
-                )
-                if not debug_success:
-                    logger.log(f"  [WARN] Debug session failed to run - continuing anyway")
-                continue  # Try next build attempt
-            else:
-                logger.log(f"  [FAIL] No more debug sessions available ({max_debug_sessions} used)")
-                break
+### Common Build Issues:
+- Import path errors (file doesn't exist, wrong relative path)
+- Missing exports (function was deleted but still imported elsewhere)
+- Type errors from refactoring changes
+- Circular dependencies
+- Syntax errors from incomplete edits
 
-        # Step 2: Run typecheck
-        try:
-            typecheck_result = subprocess.run(
-                ["bun", "run", "typecheck"],
-                cwd=working_dir / "app",
-                capture_output=True,
-                text=True,
-                timeout=60
-            )
+### Working Directories:
+- Project root: {working_dir}
+- App directory: {working_dir / "app"}
 
-            if typecheck_result.returncode != 0:
-                typecheck_duration = time.time() - attempt_start
-                total_duration += typecheck_duration
+### Completion Criteria:
+When `bun run build` exits with code 0, output exactly:
+```
+COMPLETED
+```
 
-                all_errors = _parse_build_errors(
-                    typecheck_result.stdout + "\n" + typecheck_result.stderr
-                )
-                if not all_errors:
-                    all_errors = [ValidationError(
-                        message="Type check failed (see output for details)"
-                    )]
+This signals successful build validation. Begin now.
+"""
 
-                logger.log(f"  [FAIL] Typecheck failed on attempt {attempt} ({typecheck_duration:.1f}s)")
-                for error in all_errors[:3]:
-                    logger.log(f"    - {error.message[:100]}")
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    agent_dir = working_dir / "adws" / "agents" / "build_validation" / f"ralph_loop_{timestamp}"
+    agent_dir.mkdir(parents=True, exist_ok=True)
+    output_file = agent_dir / "raw_output.jsonl"
 
-                if debug_sessions_used < max_debug_sessions:
-                    debug_sessions_used += 1
-                    _run_build_debug_session(
-                        all_errors, batch, working_dir, logger, debug_sessions_used
-                    )
-                    continue
-                else:
-                    logger.log(f"  [FAIL] No more debug sessions available ({max_debug_sessions} used)")
-                    break
+    logger.log(f"  [RALPH-LOOP] Starting build validation (max {max_iterations} iterations)...")
 
-        except subprocess.TimeoutExpired:
-            typecheck_duration = time.time() - attempt_start
-            total_duration += typecheck_duration
-            all_errors = [ValidationError(message="Typecheck timed out (60s)")]
-            logger.log(f"  [FAIL] Typecheck timed out on attempt {attempt}")
-            if debug_sessions_used < max_debug_sessions:
-                debug_sessions_used += 1
-                _run_build_debug_session(all_errors, batch, working_dir, logger, debug_sessions_used)
-                continue
-            else:
-                break
+    # System prompt for autonomous execution - proceed without confirmation
+    system_prompt = (
+        "You are a high-level engineer. "
+        "Do NOT ask for confirmation. "
+        "Proceed autonomously through all phases."
+    )
 
-        # Step 3: Run vite build (lint and typecheck already passed)
-        try:
-            vite_result = subprocess.run(
-                ["bunx", "vite", "build"],
-                cwd=working_dir / "app",
-                capture_output=True,
-                text=True,
-                timeout=build_timeout - 60  # Reserve 60s for lint+typecheck
-            )
+    request = AgentPromptRequest(
+        prompt=prompt,
+        adw_id=f"build_validation_{timestamp}",
+        agent_name="build_validator",
+        model="sonnet",
+        output_file=str(output_file),
+        working_dir=str(working_dir / "adws"),  # Run from adws/ for proper context
+        dangerously_skip_permissions=True,
+        timeout=build_timeout,
+        system_prompt=system_prompt
+    )
 
-            build_duration = time.time() - attempt_start
-            total_duration += build_duration
+    response = prompt_claude_code(request)
+    total_duration = time.time() - start_time
 
-            if vite_result.returncode == 0:
-                logger.log(f"  [OK] Build passed on attempt {attempt} ({build_duration:.1f}s)")
-                return True, [], total_duration
+    # Check if the session completed successfully
+    if response.success and "COMPLETED" in response.output:
+        logger.log(f"  [OK] Build passed via ralph-loop ({total_duration:.1f}s)")
+        return True, [], total_duration
 
-            # Vite build failed
-            all_errors = _parse_build_errors(
-                vite_result.stdout + "\n" + vite_result.stderr
-            )
-            if not all_errors:
-                all_errors = [ValidationError(message="Vite build failed (see output)")]
+    # Build failed or timed out
+    errors: List[ValidationError] = []
 
-            logger.log(f"  [FAIL] Vite build failed on attempt {attempt} ({build_duration:.1f}s)")
-            for error in all_errors[:3]:
-                logger.log(f"    - {error.message[:100]}")
+    if not response.success:
+        errors.append(ValidationError(
+            message=f"Ralph-loop build validation failed: {response.output[:200]}"
+        ))
+        logger.log(f"  [FAIL] Ralph-loop session failed ({total_duration:.1f}s)")
+    else:
+        # Session completed but didn't output COMPLETED
+        errors.append(ValidationError(
+            message=f"Build did not pass after {max_iterations} iterations"
+        ))
+        logger.log(f"  [FAIL] Build failed after {max_iterations} iterations ({total_duration:.1f}s)")
 
-            if debug_sessions_used < max_debug_sessions:
-                debug_sessions_used += 1
-                _run_build_debug_session(
-                    all_errors, batch, working_dir, logger, debug_sessions_used
-                )
-            else:
-                logger.log(f"  [FAIL] No more debug sessions available ({max_debug_sessions} used)")
-                break
+    # Try to parse any build errors from the output
+    if response.output:
+        parsed_errors = _parse_build_errors(response.output)
+        if parsed_errors:
+            errors.extend(parsed_errors[:10])  # Limit to 10 additional errors
 
-        except subprocess.TimeoutExpired:
-            build_duration = time.time() - attempt_start
-            total_duration += build_duration
-            all_errors = [ValidationError(
-                message=f"Vite build timed out ({build_timeout - 60}s)"
-            )]
-            logger.log(f"  [FAIL] Vite build timed out on attempt {attempt}")
+    return False, errors, total_duration
 
-            if debug_sessions_used < max_debug_sessions:
-                debug_sessions_used += 1
-                _run_build_debug_session(all_errors, batch, working_dir, logger, debug_sessions_used)
-            else:
-                break
 
-    return False, all_errors, total_duration
+# =============================================================================
+# DEPRECATED FUNCTIONS (Removed 2026-01-22)
+# =============================================================================
+# The following functions have been removed and replaced by ralph-loop approach:
+#
+# - _run_build_debug_session(): Invoked Claude for each retry attempt separately
+# - _run_build_with_retry(): Manual loop with lint→typecheck→build steps
+# - _run_lint_check(): Ran ESLint separately to capture error output
+# - _parse_eslint_errors(): Parsed ESLint output into ValidationError objects
+#
+# New approach: _run_build_with_ralph_loop() uses a single persistent Claude
+# session with /ralph-loop to run `bun run build`, monitor outcomes, and
+# automatically troubleshoot failures. This maintains context across all
+# attempts and provides cleaner iteration tracking.
 
 
 def run_deferred_validation(
@@ -783,15 +538,15 @@ def run_deferred_validation(
     build_timeout: int = 180,
     slack_channel: Optional[str] = None,
     use_claude: bool = True,
-    max_debug_sessions: int = 2
+    max_iterations: int = 5
 ) -> ValidationResult:
     """Run validation after all chunks implemented.
 
     Validation sequence:
-    1. Full production build with debug-retry loop:
-       - Build attempt 1 -> if fail -> debug session 1 -> retry
-       - Build attempt 2 -> if fail -> debug session 2 -> retry
-       - Build attempt 3 -> if fail -> FAILED
+    1. Full production build with ralph-loop troubleshooting:
+       - Uses `/ralph-loop` to run `bun run build`
+       - Automatically troubleshoots failures up to max_iterations
+       - Maintains context across all attempts in a single session
     2. Visual regression on affected pages (if build passes and not skipped)
     3. Return detailed result with error attribution
 
@@ -803,22 +558,22 @@ def run_deferred_validation(
         build_timeout: Build timeout in seconds (default: 180)
         slack_channel: Optional Slack channel for visual regression notifications
         use_claude: Use Claude instead of Gemini for visual checks (default: True)
-        max_debug_sessions: Maximum debug sessions before giving up (default: 2)
+        max_iterations: Maximum ralph-loop iterations for troubleshooting (default: 5)
 
     Returns:
         ValidationResult with success status and any errors
     """
     result = ValidationResult(success=False)
 
-    # Phase 1: Build check with debug-retry loop
-    logger.step(f"Running full build verification ({len(batch.implemented_files)} files changed)...")
+    # Phase 1: Build check with ralph-loop troubleshooting
+    logger.step(f"Running build validation via ralph-loop ({len(batch.implemented_files)} files changed)...")
 
-    build_passed, build_errors, build_duration = _run_build_with_retry(
-        working_dir=working_dir,
+    build_passed, build_errors, build_duration = _run_build_with_ralph_loop(
         batch=batch,
+        working_dir=working_dir,
         logger=logger,
-        build_timeout=build_timeout,
-        max_debug_sessions=max_debug_sessions
+        max_iterations=max_iterations,
+        build_timeout=build_timeout
     )
 
     if not build_passed:
@@ -827,7 +582,7 @@ def run_deferred_validation(
         result.affected_chunks = _attribute_errors_to_chunks(
             build_errors, batch.chunks
         )
-        logger.log(f"  [FAIL] Build failed after {max_debug_sessions} debug sessions ({build_duration:.1f}s total)")
+        logger.log(f"  [FAIL] Build failed after {max_iterations} ralph-loop iterations ({build_duration:.1f}s total)")
         return result
 
     result.build_passed = True

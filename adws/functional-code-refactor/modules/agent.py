@@ -515,6 +515,10 @@ def prompt_claude_code(request: AgentPromptRequest) -> AgentPromptResponse:
         if request.dangerously_skip_permissions:
             cmd.append("--dangerously-skip-permissions")
 
+        # Add custom system prompt if provided
+        if request.system_prompt:
+            cmd.extend(["--system-prompt", request.system_prompt])
+
     # Check for MCP config in working directory
     # Only supported by Claude Code CLI
     if provider != "gemini" and request.working_dir:
@@ -530,6 +534,8 @@ def prompt_claude_code(request: AgentPromptRequest) -> AgentPromptResponse:
         with open(request.output_file, "w", encoding='utf-8') as output_f:
             # Execute Claude Code with prompt via stdin (not command-line argument)
             # This avoids all shell argument parsing/escaping issues
+            # Use timeout from request if provided (for long-running operations like build validation)
+            timeout_seconds = request.timeout if request.timeout else None
             result = subprocess.run(
                 cmd,
                 input=request.prompt,  # Prompt via stdin (subprocess.PIPE is implicit)
@@ -540,6 +546,7 @@ def prompt_claude_code(request: AgentPromptRequest) -> AgentPromptResponse:
                 env=env,
                 cwd=request.working_dir,  # Use working_dir if provided
                 shell=(os.name == 'nt'),  # Required on Windows for npm-installed binaries like gemini.cmd
+                timeout=timeout_seconds,
             )
 
         if result.returncode == 0:
@@ -784,7 +791,8 @@ def prompt_claude_code(request: AgentPromptRequest) -> AgentPromptResponse:
             )
 
     except subprocess.TimeoutExpired:
-        error_msg = f"Error: {agent_name} command timed out after 5 minutes"
+        timeout_display = f"{request.timeout}s" if request.timeout else "default timeout"
+        error_msg = f"Error: {agent_name} command timed out after {timeout_display}"
 
         # Attempt fallback to Claude if Gemini timed out
         fallback_response = _attempt_claude_fallback(
