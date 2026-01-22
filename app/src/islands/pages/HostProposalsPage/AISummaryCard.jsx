@@ -43,13 +43,22 @@ function shouldShowAISummary(proposal) {
   const summary = getSummaryText(proposal);
   if (!summary) return false;
 
-  // Only show for new/review statuses
+  // Only show for new/review statuses (pending statuses where host needs to take action)
   const status = typeof proposal?.status === 'string'
     ? proposal.status
     : (proposal?.status?.id || proposal?.status?._id || '');
 
-  const showStatuses = ['proposal_submitted', 'host_review'];
-  return showStatuses.includes(status);
+  // Match statuses that start with common pending prefixes
+  // Handles variations like "proposal_submitted_by_guest_-_awaiting_rental_application"
+  const showStatusPrefixes = [
+    'proposal_submitted',
+    'host_review',
+    'pending',
+    'awaiting',
+    'new'
+  ];
+
+  return showStatusPrefixes.some(prefix => status.startsWith(prefix));
 }
 
 /**
