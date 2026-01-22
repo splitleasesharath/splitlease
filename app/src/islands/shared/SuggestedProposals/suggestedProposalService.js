@@ -72,11 +72,13 @@ export async function fetchSuggestedProposals(userId) {
 
     // Step 5: Fetch negotiation summaries if available
     // Note: Column name uses Bubble convention with space and capital P
+    // IMPORTANT: Filter by "To Account" to only show summaries intended for this user
     const proposalIdsForSummaries = enrichedProposals.map(p => p._id);
     const { data: summariesData } = await supabase
       .from('negotiationsummary')
       .select('*')
       .in('"Proposal associated"', proposalIdsForSummaries)
+      .eq('"To Account"', userId)
       .order('"Created Date"', { ascending: false });
 
     // Attach summaries to proposals
@@ -296,11 +298,13 @@ export async function fetchPendingConfirmationProposals(userId) {
 
     // Step 5: Fetch negotiation summaries if available
     // Note: Column name uses Bubble convention with space and capital P
+    // IMPORTANT: Filter by "To Account" to only show summaries intended for this user
     const proposalIdsForSummaries = enrichedProposals.map(p => p._id);
     const { data: summariesData } = await supabase
       .from('negotiationsummary')
       .select('*')
       .in('"Proposal associated"', proposalIdsForSummaries)
+      .eq('"To Account"', userId)
       .order('"Created Date"', { ascending: false });
 
     // Attach summaries to proposals
