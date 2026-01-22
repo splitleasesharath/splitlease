@@ -59,7 +59,25 @@ const styles = {
     flexShrink: 0
   },
 
-  // Host Avatar
+  // Host Avatar Container
+  avatarContainer: {
+    width: '48px',
+    height: '48px',
+    borderRadius: '50%',
+    flexShrink: 0,
+    position: 'relative',
+    overflow: 'hidden'
+  },
+
+  // Host Avatar with image
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    borderRadius: '50%'
+  },
+
+  // Host Avatar fallback (initials)
   avatar: {
     width: '48px',
     height: '48px',
@@ -698,9 +716,27 @@ export default function ContactHostMessaging({ isOpen, onClose, listing, onLogin
         >
           {/* Header */}
           <div style={styles.header}>
-            <div style={styles.avatar} aria-hidden="true">
-              {getHostInitials()}
-            </div>
+            {listing?.host?.imageUrl ? (
+              <div style={styles.avatarContainer} aria-hidden="true">
+                <img
+                  src={listing.host.imageUrl}
+                  alt=""
+                  style={styles.avatarImage}
+                  onError={(e) => {
+                    // Hide broken image and show fallback
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
+                <div style={{ ...styles.avatar, display: 'none', position: 'absolute', top: 0, left: 0 }}>
+                  {getHostInitials()}
+                </div>
+              </div>
+            ) : (
+              <div style={styles.avatar} aria-hidden="true">
+                {getHostInitials()}
+              </div>
+            )}
             <div style={styles.headerText}>
               <h2 id="contact-modal-title" style={styles.headerTitle}>
                 Message {hostName}
