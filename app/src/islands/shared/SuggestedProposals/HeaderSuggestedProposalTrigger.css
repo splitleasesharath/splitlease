@@ -20,9 +20,10 @@
   align-items: center;
   justify-content: center;
   width: 88px;
-  height: 88px;
+  height: 44px;
   padding: 0;
   margin-right: 8px;
+  overflow: visible;
 
   /* Visual - no circle, transparent background */
   border-radius: 0;
@@ -103,7 +104,7 @@
 @media (max-width: 768px) {
   .header-sp-trigger {
     width: 72px;
-    height: 72px;
+    height: 36px;
     margin-right: 4px;
   }
 
