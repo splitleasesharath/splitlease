@@ -631,6 +631,18 @@ export const routes = [
     dynamicPattern: '/_internal/manage-rental-applications/:id'
   },
 
+  // ===== CREATE DOCUMENT (ADMIN INTERNAL) =====
+  {
+    path: '/_internal/create-document',
+    file: 'create-document.html',
+    aliases: ['/_internal/create-document.html', '/create-document'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'create-document-view',
+    hasDynamicSegment: false
+  },
+
   // ===== GUEST EMERGENCY SUBMISSION (PUBLIC) =====
   {
     path: '/report-emergency',
