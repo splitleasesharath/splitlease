@@ -430,7 +430,8 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
         setSelectedListing(listingToSelect);
 
         // Fetch proposals for the selected listing
-        const proposalsResult = await fetchProposalsForListing(listingToSelect._id || listingToSelect.id);
+        // Pass userId explicitly since user state may not be set yet (async state update)
+        const proposalsResult = await fetchProposalsForListing(listingToSelect._id || listingToSelect.id, userId);
         setProposals(proposalsResult);
       } else {
         setListings([]);
@@ -479,8 +480,10 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
   /**
    * Fetch proposals for a specific listing directly from Supabase
    * Includes guest information for display
+   * @param {string} listingId - The listing ID to fetch proposals for
+   * @param {string} [hostUserIdOverride] - Optional host user ID (used when user state isn't set yet)
    */
-  const fetchProposalsForListing = async (listingId) => {
+  const fetchProposalsForListing = async (listingId, hostUserIdOverride = null) => {
     try {
       console.log('[useHostProposalsPageLogic] Fetching proposals for listing:', listingId);
 
@@ -606,8 +609,11 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
         }
 
         // Enrich proposals with negotiation summaries (host-directed)
+        console.log('[useHostProposalsPageLogic] DEBUG: About to fetch negotiation summaries');
         const proposalIds = proposals.map(p => p._id);
-        const hostUserId = user?._id || user?.userId;
+        // Use override if provided (needed when called before user state is set), otherwise fall back to user state
+        const hostUserId = hostUserIdOverride || user?._id || user?.userId;
+        console.log('[useHostProposalsPageLogic] DEBUG: proposalIds:', proposalIds, 'hostUserId:', hostUserId, 'override:', hostUserIdOverride);
 
         if (proposalIds.length > 0 && hostUserId) {
           const { data: summariesData, error: summariesError } = await supabase
