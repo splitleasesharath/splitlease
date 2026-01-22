@@ -6,7 +6,7 @@
  * Designed to fit seamlessly in the header's nav-right section.
  */
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import './HeaderSuggestedProposalTrigger.css';
 
 /**
@@ -20,6 +20,8 @@ export default function HeaderSuggestedProposalTrigger({
   isActive = false,
   proposalCount = 0
 }) {
+  const lottieRef = useRef(null);
+
   // Load Lottie player script
   useEffect(() => {
     if (document.querySelector('script[src*="lottie-player"]')) return;
@@ -30,6 +32,32 @@ export default function HeaderSuggestedProposalTrigger({
     document.body.appendChild(script);
   }, []);
 
+  // Play animation once when component mounts (shows up)
+  useEffect(() => {
+    if (proposalCount === 0) return;
+
+    // Wait for lottie-player to be ready
+    const checkAndPlay = () => {
+      const player = lottieRef.current;
+      if (player && player.play) {
+        player.seek(0);
+        player.play();
+      }
+    };
+
+    // Small delay to ensure lottie-player is initialized
+    const timer = setTimeout(checkAndPlay, 100);
+    return () => clearTimeout(timer);
+  }, [proposalCount]);
+
+  const handleMouseEnter = () => {
+    const player = lottieRef.current;
+    if (player && player.play) {
+      player.seek(0);
+      player.play();
+    }
+  };
+
   // Don't render if no proposals
   if (proposalCount === 0) return null;
 
@@ -37,6 +65,7 @@ export default function HeaderSuggestedProposalTrigger({
     <button
       className={`header-sp-trigger ${isActive ? 'header-sp-trigger--active' : ''}`}
       onClick={onClick}
+      onMouseEnter={handleMouseEnter}
       aria-label={`View ${proposalCount} suggested proposal${proposalCount !== 1 ? 's' : ''}`}
       type="button"
       title="You have suggested listings waiting for your review"
@@ -44,12 +73,11 @@ export default function HeaderSuggestedProposalTrigger({
       {/* Animated Lottie icon */}
       <span className="header-sp-trigger__icon" aria-hidden="true">
         <lottie-player
+          ref={lottieRef}
           src="/assets/lotties/proposals-suggested.json"
           background="transparent"
           speed="0.4"
           style={{ width: '88px', height: '88px' }}
-          loop
-          autoplay
         ></lottie-player>
       </span>
 
