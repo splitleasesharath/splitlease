@@ -306,8 +306,8 @@ async function authenticateFromHeaders(
 
   // Look up the application user ID from the user table
   // The user table stores the Bubble-style _id that's used throughout the app
-  const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
-  const { data: appUser, error: appUserError } = await supabaseClient
+  // CRITICAL: Use authClient (which has the Authorization header) instead of creating a new unauthenticated client
+  const { data: appUser, error: appUserError } = await authClient
     .from('user')
     .select('_id')
     .eq('id', user.id)  // id is the Supabase Auth UUID foreign key
