@@ -2,10 +2,11 @@
  * HeaderSuggestedProposalTrigger
  *
  * Inline trigger for the header navigation bar.
- * Displays a compact lightbulb button with count badge.
+ * Displays a compact animated Lottie button with count badge.
  * Designed to fit seamlessly in the header's nav-right section.
  */
 
+import { useEffect } from 'react';
 import './HeaderSuggestedProposalTrigger.css';
 
 /**
@@ -19,6 +20,16 @@ export default function HeaderSuggestedProposalTrigger({
   isActive = false,
   proposalCount = 0
 }) {
+  // Load Lottie player script
+  useEffect(() => {
+    if (document.querySelector('script[src*="lottie-player"]')) return;
+
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js';
+    script.async = true;
+    document.body.appendChild(script);
+  }, []);
+
   // Don't render if no proposals
   if (proposalCount === 0) return null;
 
@@ -30,9 +41,16 @@ export default function HeaderSuggestedProposalTrigger({
       type="button"
       title="You have suggested listings waiting for your review"
     >
-      {/* Lightbulb emoji as fallback-proof icon */}
-      <span className="header-sp-trigger__icon" role="img" aria-hidden="true">
-        💡
+      {/* Animated Lottie icon */}
+      <span className="header-sp-trigger__icon" aria-hidden="true">
+        <lottie-player
+          src="/assets/lotties/proposals-suggested.json"
+          background="transparent"
+          speed="1"
+          style={{ width: '28px', height: '28px' }}
+          loop
+          autoplay
+        ></lottie-player>
       </span>
 
       {/* Count badge */}
