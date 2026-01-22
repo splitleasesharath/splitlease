@@ -854,6 +854,24 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
 
       console.log('[useHostProposalsPageLogic] Converted payload:', payload);
 
+      // Validate session exists before Edge Function call
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.error('[useHostProposalsPageLogic] Session error:', sessionError);
+      }
+      console.log('[useHostProposalsPageLogic] Session exists:', !!session);
+      console.log('[useHostProposalsPageLogic] Access token exists:', !!session?.access_token);
+
+      if (!session?.access_token) {
+        // Try to refresh the session
+        console.log('[useHostProposalsPageLogic] No active session, attempting refresh...');
+        const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError || !refreshedSession) {
+          throw new Error('Session expired. Please refresh the page and try again.');
+        }
+        console.log('[useHostProposalsPageLogic] Session refreshed successfully');
+      }
+
       const { data, error } = await supabase.functions.invoke('proposal', {
         body: {
           action: 'update',
