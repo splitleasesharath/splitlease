@@ -45,6 +45,7 @@ import {
   formatDaysAsRange,
   formatDateForDisplay,
 } from "../../_shared/negotiationSummaryHelpers.ts";
+import { generateBubbleId } from "../../_shared/messagingHelpers.ts";
 
 // ID generation is now done via RPC: generate_bubble_id()
 
@@ -623,6 +624,42 @@ export async function handleCreate(
 
       if (aiHostSummary) {
         console.log(`[proposal:create] AI host summary generated successfully`);
+
+        // ================================================
+        // PERSIST AI SUMMARY TO negotiationsummary TABLE
+        // ================================================
+        // The host should see this summary to quickly understand the proposal
+        try {
+          const summaryId = await generateBubbleId(supabase);
+          const summaryNow = new Date().toISOString();
+
+          const { error: summaryInsertError } = await supabase
+            .from('negotiationsummary')
+            .insert({
+              _id: summaryId,
+              "Proposal associated": proposalId,
+              "Created By": input.guestId,
+              "Created Date": summaryNow,
+              "Modified Date": summaryNow,
+              "To Account": hostAccountData.User,
+              "Summary": aiHostSummary,
+            });
+
+          if (summaryInsertError) {
+            console.error(`[proposal:create] Failed to persist AI summary:`, {
+              code: summaryInsertError.code,
+              message: summaryInsertError.message,
+              details: summaryInsertError.details,
+              hint: summaryInsertError.hint,
+            });
+            // Non-blocking: Summary display is secondary to proposal creation
+          } else {
+            console.log(`[proposal:create] AI summary persisted to negotiationsummary: ${summaryId}`);
+          }
+        } catch (persistError) {
+          console.error(`[proposal:create] Exception persisting AI summary:`, persistError);
+          // Non-blocking: Continue with proposal creation
+        }
       } else {
         console.log(`[proposal:create] AI host summary returned null`);
       }
