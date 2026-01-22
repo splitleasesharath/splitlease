@@ -2622,7 +2622,8 @@ export default function ViewSplitLeasePage() {
         </>
       )}
 
-      <Footer />
+      {/* Hide footer on mobile - page should end with proposal creation tool */}
+      {!isMobile && <Footer />}
     </>
   );
 }
