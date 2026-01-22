@@ -606,6 +606,31 @@ export const routes = [
     hasDynamicSegment: false
   },
 
+  // ===== ADMIN THREADS MANAGEMENT =====
+  {
+    path: '/_internal/admin-threads',
+    file: 'admin-threads.html',
+    aliases: ['/_internal/admin-threads.html', '/admin-threads'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'admin-threads-view',
+    hasDynamicSegment: false
+  },
+
+  // ===== MANAGE RENTAL APPLICATIONS (ADMIN INTERNAL) =====
+  {
+    path: '/_internal/manage-rental-applications',
+    file: 'manage-rental-applications.html',
+    aliases: ['/_internal/manage-rental-applications.html', '/manage-rental-applications'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'manage-rental-applications-view',
+    hasDynamicSegment: true,
+    dynamicPattern: '/_internal/manage-rental-applications/:id'
+  },
+
   // ===== GUEST EMERGENCY SUBMISSION (PUBLIC) =====
   {
     path: '/report-emergency',

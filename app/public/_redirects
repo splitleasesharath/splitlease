@@ -1,6 +1,6 @@
 # Cloudflare Pages redirects and rewrites
 # AUTO-GENERATED from routes.config.js - DO NOT EDIT MANUALLY
-# Routes: 6 dynamic, 52 static
+# Routes: 7 dynamic, 53 static
 #
 # See: https://developers.cloudflare.com/pages/configuration/redirects/
 
@@ -34,6 +34,9 @@
 /host-proposals  /_internal/host-proposals-view  200
 /host-proposals/  /_internal/host-proposals-view  200
 /host-proposals/*  /_internal/host-proposals-view  200
+
+# /_internal/manage-rental-applications → manage-rental-applications.html
+/_internal/manage-rental-applications/*  /manage-rental-applications.html  200
 
 # ===== STATIC PAGES =====
 
@@ -259,6 +262,11 @@
 /_internal/emergency  /internal-emergency.html  200
 /_internal/emergency/  /internal-emergency.html  200
 /_internal/emergency.html  /internal-emergency.html  200
+
+# /_internal/admin-threads
+/_internal/admin-threads  /admin-threads.html  200
+/_internal/admin-threads/  /admin-threads.html  200
+/_internal/admin-threads.html  /admin-threads.html  200
 
 # /report-emergency → report-emergency.html
 /report-emergency  /_internal/report-emergency-view  200
