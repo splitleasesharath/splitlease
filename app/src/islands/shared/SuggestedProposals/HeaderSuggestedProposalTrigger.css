@@ -70,8 +70,8 @@
 /* Count badge */
 .header-sp-trigger__badge {
   position: absolute;
-  top: -6px;
-  right: -6px;
+  top: 8px;
+  right: 8px;
   min-width: 22px;
   height: 22px;
   background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
@@ -111,7 +111,7 @@
     min-width: 20px;
     height: 20px;
     font-size: 11px;
-    top: 0;
-    right: 0;
+    top: 6px;
+    right: 6px;
   }
 }
