@@ -452,20 +452,36 @@ export default function HostProposalsPage() {
 
       {/* Host Editing Proposal Modal */}
       {isEditingProposal && selectedProposal && (
-        <div className="editing-proposal-overlay">
-          <div className="editing-proposal-container">
-            <HostEditingProposal
-              proposal={selectedProposal}
-              availableHouseRules={allHouseRules}
-              initialShowReject={showRejectOnOpen}
-              onAcceptAsIs={() => handleAcceptAsIs(selectedProposal)}
-              onCounteroffer={handleCounteroffer}
-              onReject={(reason) => handleRejectFromEditing(selectedProposal, reason)}
-              onCancel={handleCloseEditing}
-              onAlert={handleEditingAlert}
-            />
+        showRejectOnOpen ? (
+          // Reject-only mode: render HostEditingProposal without overlay/container
+          // (it will only render the CancelProposalModal via portal)
+          <HostEditingProposal
+            proposal={selectedProposal}
+            availableHouseRules={allHouseRules}
+            initialShowReject={showRejectOnOpen}
+            onAcceptAsIs={() => handleAcceptAsIs(selectedProposal)}
+            onCounteroffer={handleCounteroffer}
+            onReject={(reason) => handleRejectFromEditing(selectedProposal, reason)}
+            onCancel={handleCloseEditing}
+            onAlert={handleEditingAlert}
+          />
+        ) : (
+          // Normal editing mode: show with overlay and container
+          <div className="editing-proposal-overlay">
+            <div className="editing-proposal-container">
+              <HostEditingProposal
+                proposal={selectedProposal}
+                availableHouseRules={allHouseRules}
+                initialShowReject={showRejectOnOpen}
+                onAcceptAsIs={() => handleAcceptAsIs(selectedProposal)}
+                onCounteroffer={handleCounteroffer}
+                onReject={(reason) => handleRejectFromEditing(selectedProposal, reason)}
+                onCancel={handleCloseEditing}
+                onAlert={handleEditingAlert}
+              />
+            </div>
           </div>
-        </div>
+        )
       )}
     </>
   );

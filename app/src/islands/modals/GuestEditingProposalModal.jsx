@@ -1056,20 +1056,6 @@ export default function GuestEditingProposalModal({
                   )}
                 </div>
 
-                {/* Weekly Pattern Display */}
-                <div className="gep-weekly-pattern">
-                  <span className="gep-weekly-pattern-label">Weekly Pattern:</span>
-                  <span className="gep-weekly-pattern-value">
-                    {proposal?.weekSelection?.display ||
-                     proposal?.['Week Selection']?.display ||
-                     'Not set'}
-                  </span>
-                </div>
-
-                {/* Schedule Selector Placeholder */}
-                <div className="gep-schedule-selector-placeholder">
-                  <p className="gep-placeholder-text">Schedule Selector</p>
-                </div>
               </div>
             )}
 

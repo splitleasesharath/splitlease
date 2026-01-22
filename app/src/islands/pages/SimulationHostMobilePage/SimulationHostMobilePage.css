@@ -1,0 +1,836 @@
+/**
+ * Simulation Host Mobile Page Styles
+ *
+ * Mobile-first design following Split Lease brand guidelines:
+ * - Primary: #4F46E5 (indigo)
+ * - Success: #10B981 (emerald)
+ * - Warning: #F59E0B (amber)
+ * - Error: #EF4444 (red)
+ */
+
+/* ============================================================================
+   PAGE LAYOUT
+   ============================================================================ */
+
+.simulation-host-page {
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 16px;
+  min-height: calc(100vh - 200px);
+}
+
+/* ============================================================================
+   WARNING BANNER
+   ============================================================================ */
+
+.simulation-host-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background-color: #FEF3C7;
+  border: 1px solid #F59E0B;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 13px;
+  color: #92400E;
+}
+
+.simulation-host-warning__icon {
+  flex-shrink: 0;
+}
+
+/* ============================================================================
+   HEADER
+   ============================================================================ */
+
+.simulation-host-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.simulation-host-header__title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1F2937;
+  margin: 0 0 4px 0;
+}
+
+.simulation-host-header__subtitle {
+  font-size: 14px;
+  color: #6B7280;
+  margin: 0 0 12px 0;
+}
+
+.simulation-host-header__info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #6B7280;
+}
+
+/* ============================================================================
+   LOADING STATE
+   ============================================================================ */
+
+.simulation-host-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 24px;
+}
+
+.simulation-host-loading__spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #E5E7EB;
+  border-top-color: #4F46E5;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.simulation-host-loading__message {
+  margin-top: 12px;
+  font-size: 14px;
+  color: #6B7280;
+}
+
+/* Inline spinner for buttons */
+.simulation-host-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+/* ============================================================================
+   LOGIN / NOT HOST / NO LISTINGS PROMPTS
+   ============================================================================ */
+
+.simulation-host-login-prompt,
+.simulation-host-not-host,
+.simulation-host-no-listings {
+  text-align: center;
+  padding: 40px 24px;
+  background: #F9FAFB;
+  border-radius: 12px;
+  border: 1px solid #E5E7EB;
+}
+
+.simulation-host-login-prompt h2,
+.simulation-host-not-host h2,
+.simulation-host-no-listings h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1F2937;
+  margin: 0 0 8px 0;
+}
+
+.simulation-host-login-prompt p,
+.simulation-host-not-host p,
+.simulation-host-no-listings p {
+  font-size: 14px;
+  color: #6B7280;
+  margin: 0 0 20px 0;
+}
+
+.simulation-host-login-button,
+.simulation-host-home-link,
+.simulation-host-create-listing-link {
+  display: inline-block;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background-color: #4F46E5;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+
+.simulation-host-login-button:hover,
+.simulation-host-home-link:hover,
+.simulation-host-create-listing-link:hover {
+  background-color: #4338CA;
+}
+
+/* ============================================================================
+   LISTING SELECTOR
+   ============================================================================ */
+
+.simulation-host-listing-selector {
+  margin-bottom: 24px;
+}
+
+.simulation-host-listing-selector__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1F2937;
+  margin: 0 0 4px 0;
+}
+
+.simulation-host-listing-selector__description {
+  font-size: 13px;
+  color: #6B7280;
+  margin: 0 0 12px 0;
+}
+
+.simulation-host-listing-selector__grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.simulation-host-listing-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #fff;
+  border: 2px solid #E5E7EB;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s;
+}
+
+.simulation-host-listing-card:hover {
+  border-color: #4F46E5;
+}
+
+.simulation-host-listing-card--selected {
+  border-color: #4F46E5;
+  background: #EEF2FF;
+}
+
+.simulation-host-listing-card__image {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  background-size: cover;
+  background-position: center;
+  background-color: #E5E7EB;
+  flex-shrink: 0;
+}
+
+.simulation-host-listing-card__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.simulation-host-listing-card__name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1F2937;
+  margin: 0 0 2px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.simulation-host-listing-card__address {
+  font-size: 12px;
+  color: #6B7280;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.simulation-host-listing-card__selected-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: #4F46E5;
+  margin-top: 4px;
+  display: block;
+}
+
+/* ============================================================================
+   MOBILE CONFIRMATION
+   ============================================================================ */
+
+.simulation-host-mobile-confirm {
+  text-align: center;
+  padding: 24px;
+  background: #F9FAFB;
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.simulation-host-mobile-confirm__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1F2937;
+  margin: 0 0 16px 0;
+}
+
+.simulation-host-mobile-confirm__checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  color: #374151;
+  cursor: pointer;
+}
+
+.simulation-host-mobile-confirm__checkbox input {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.simulation-host-mobile-confirm__hint {
+  font-size: 12px;
+  color: #9CA3AF;
+  margin-top: 12px;
+}
+
+.simulation-host-start-button {
+  padding: 14px 28px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #4F46E5, #7C3AED);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+.simulation-host-start-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+}
+
+.simulation-host-start-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ============================================================================
+   PROGRESS INDICATOR
+   ============================================================================ */
+
+.simulation-host-progress {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: linear-gradient(to right, #EEF2FF, #F5F3FF);
+  border-radius: 12px;
+  overflow-x: auto;
+}
+
+.simulation-host-progress__track {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+  min-width: max-content;
+}
+
+.simulation-host-progress__step-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.simulation-host-progress__step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  min-width: 50px;
+}
+
+.simulation-host-progress__step--completed {
+  color: #10B981;
+}
+
+.simulation-host-progress__step--current {
+  color: #4F46E5;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.15);
+}
+
+.simulation-host-progress__step--pending {
+  color: #9CA3AF;
+}
+
+.simulation-host-progress__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 50%;
+  background: currentColor;
+  color: #fff;
+}
+
+.simulation-host-progress__step--completed .simulation-host-progress__icon {
+  background: #10B981;
+}
+
+.simulation-host-progress__step--current .simulation-host-progress__icon {
+  background: #4F46E5;
+}
+
+.simulation-host-progress__step--pending .simulation-host-progress__icon {
+  background: #D1D5DB;
+}
+
+.simulation-host-progress__label {
+  font-size: 10px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.simulation-host-progress__connector {
+  color: #D1D5DB;
+  font-size: 12px;
+}
+
+/* ============================================================================
+   STEP CARDS
+   ============================================================================ */
+
+.simulation-host-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.simulation-host-step {
+  padding: 16px;
+  background: #fff;
+  border: 2px solid #E5E7EB;
+  border-radius: 12px;
+  transition: all 0.2s;
+}
+
+.simulation-host-step--active {
+  border-color: #4F46E5;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.1);
+}
+
+.simulation-host-step--completed {
+  border-color: #10B981;
+  background: #F0FDF4;
+}
+
+.simulation-host-step--disabled {
+  opacity: 0.5;
+}
+
+.simulation-host-step__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.simulation-host-step__number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #4F46E5;
+  background: #EEF2FF;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.simulation-host-step--completed .simulation-host-step__number {
+  color: #10B981;
+  background: #D1FAE5;
+}
+
+.simulation-host-step__title {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1F2937;
+  margin: 0;
+}
+
+.simulation-host-step__check {
+  color: #10B981;
+  font-size: 18px;
+}
+
+.simulation-host-step__description {
+  font-size: 13px;
+  color: #6B7280;
+  margin: 0 0 12px 0;
+  line-height: 1.5;
+}
+
+.simulation-host-step__info {
+  padding: 10px 12px;
+  background: #F9FAFB;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: #374151;
+}
+
+.simulation-host-step__button {
+  width: 100%;
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: #4F46E5;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.simulation-host-step__button:hover:not(:disabled) {
+  background: #4338CA;
+}
+
+.simulation-host-step__button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.simulation-host-step__completed-message {
+  padding: 12px;
+  background: #ECFDF5;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #065F46;
+}
+
+.simulation-host-step__completed-message p {
+  margin: 0 0 4px 0;
+}
+
+.simulation-host-step__completed-message p:last-child {
+  margin-bottom: 0;
+}
+
+/* ============================================================================
+   RENTAL TYPE SELECTOR
+   ============================================================================ */
+
+.simulation-host-rental-types {
+  margin-bottom: 16px;
+}
+
+.simulation-host-rental-types__label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.simulation-host-rental-types__options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.simulation-host-rental-type {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 12px;
+  background: #F9FAFB;
+  border: 2px solid #E5E7EB;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.simulation-host-rental-type:hover {
+  border-color: #4F46E5;
+}
+
+.simulation-host-rental-type--selected {
+  border-color: #4F46E5;
+  background: #EEF2FF;
+}
+
+.simulation-host-rental-type__label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1F2937;
+}
+
+.simulation-host-rental-type__description {
+  font-size: 12px;
+  color: #6B7280;
+}
+
+/* ============================================================================
+   PROPOSAL LIST
+   ============================================================================ */
+
+.simulation-host-proposal-list {
+  margin: 8px 0 0 0;
+  padding-left: 20px;
+  font-size: 12px;
+}
+
+.simulation-host-proposal-list li {
+  margin-bottom: 4px;
+}
+
+/* ============================================================================
+   CLEANUP SECTION
+   ============================================================================ */
+
+.simulation-host-cleanup-section {
+  text-align: center;
+  padding: 16px;
+  border-top: 1px solid #E5E7EB;
+}
+
+.simulation-host-cleanup-button {
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6B7280;
+  background: transparent;
+  border: 1px solid #D1D5DB;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.simulation-host-cleanup-button:hover:not(:disabled) {
+  color: #EF4444;
+  border-color: #EF4444;
+  background: #FEF2F2;
+}
+
+.simulation-host-cleanup-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ============================================================================
+   SIMULATION COMPLETE
+   ============================================================================ */
+
+.simulation-host-complete {
+  text-align: center;
+  padding: 32px 24px;
+  background: linear-gradient(to bottom, #F0FDF4, #ECFDF5);
+  border: 2px solid #10B981;
+  border-radius: 16px;
+}
+
+.simulation-host-complete__icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.simulation-host-complete__title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #065F46;
+  margin: 0 0 8px 0;
+}
+
+.simulation-host-complete__message {
+  font-size: 14px;
+  color: #047857;
+  margin: 0 0 20px 0;
+}
+
+.simulation-host-complete__summary {
+  text-align: left;
+  padding: 16px;
+  background: #fff;
+  border-radius: 10px;
+  margin-bottom: 24px;
+}
+
+.simulation-host-complete__summary h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 10px 0;
+}
+
+.simulation-host-complete__summary ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.simulation-host-complete__summary li {
+  font-size: 13px;
+  color: #6B7280;
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
+.simulation-host-complete__actions {
+  margin-bottom: 12px;
+}
+
+.simulation-host-complete__cleanup-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #4F46E5;
+  background: #fff;
+  border: 2px solid #4F46E5;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.simulation-host-complete__cleanup-button:hover:not(:disabled) {
+  color: #fff;
+  background: #4F46E5;
+}
+
+.simulation-host-complete__cleanup-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.simulation-host-complete__note {
+  font-size: 11px;
+  color: #9CA3AF;
+  margin: 0;
+}
+
+/* ============================================================================
+   TOAST NOTIFICATIONS
+   ============================================================================ */
+
+.simulation-host-toast {
+  position: fixed;
+  bottom: 20px;
+  left: 16px;
+  right: 16px;
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 14px 18px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  animation: slideUp 0.3s ease-out;
+  z-index: 1000;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.simulation-host-toast--success {
+  border-left: 4px solid #10B981;
+}
+
+.simulation-host-toast--error {
+  border-left: 4px solid #EF4444;
+}
+
+.simulation-host-toast--info {
+  border-left: 4px solid #4F46E5;
+}
+
+.simulation-host-toast__title {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1F2937;
+  margin-bottom: 2px;
+}
+
+.simulation-host-toast__message {
+  font-size: 12px;
+  color: #6B7280;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* ============================================================================
+   TABLET & DESKTOP ADJUSTMENTS
+   ============================================================================ */
+
+@media (min-width: 768px) {
+  .simulation-host-page {
+    max-width: 600px;
+    padding: 24px;
+  }
+
+  .simulation-host-header__title {
+    font-size: 28px;
+  }
+
+  .simulation-host-header__info {
+    flex-direction: row;
+    gap: 24px;
+  }
+
+  .simulation-host-listing-selector__grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .simulation-host-listing-card {
+    flex: 0 0 calc(50% - 6px);
+  }
+
+  .simulation-host-rental-types__options {
+    flex-direction: row;
+  }
+
+  .simulation-host-rental-type {
+    flex: 1;
+  }
+
+  .simulation-host-toast {
+    left: auto;
+    right: 24px;
+    bottom: 24px;
+  }
+}

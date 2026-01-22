@@ -19,6 +19,8 @@
  * - Event handlers (no inline logic)
  * - Loading/error states
  * - Modal controls
+ *
+ * REFACTORED: Added fallback listings logic and transformListing export
  */
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
@@ -46,6 +48,7 @@ import {
 } from '../../lib/supabaseUtils.js'
 import { sanitizeNeighborhoodSearch } from '../../lib/sanitize.js'
 import { fetchInformationalTexts } from '../../lib/informationalTextsFetcher.js'
+import { logger } from '../../lib/logger.js'
 
 // Logic Core imports - direct imports from source files
 import { calculateGuestFacingPrice } from '../../logic/calculators/pricing/calculateGuestFacingPrice.js';
@@ -64,7 +67,8 @@ function extractPhotoIdsFromListings(listings) {
   const photoIds = new Set()
   listings.forEach((listing) => {
     const photosField = listing['Features - Photos']
-    const parsed = parseJsonArray(photosField)
+    // parseJsonArray expects { field, fieldName } object, not raw value
+    const parsed = parseJsonArray({ field: photosField, fieldName: 'Features - Photos' })
     parsed.forEach((id) => photoIds.add(id))
   })
   return Array.from(photoIds)
@@ -89,6 +93,16 @@ export function useSearchPageLogic() {
   const [allListings, setAllListings] = useState([]) // Filtered (purple pins)
   const [displayedListings, setDisplayedListings] = useState([]) // Lazy-loaded subset
   const [loadedCount, setLoadedCount] = useState(0)
+
+  // ============================================================================
+  // Fallback Listings State (when filters return no results)
+  // MOVED FROM SearchPage.jsx - consolidated into hook
+  // ============================================================================
+  const [fallbackListings, setFallbackListings] = useState([])
+  const [fallbackDisplayedListings, setFallbackDisplayedListings] = useState([])
+  const [fallbackLoadedCount, setFallbackLoadedCount] = useState(0)
+  const [isFallbackLoading, setIsFallbackLoading] = useState(false)
+  const [fallbackFetchFailed, setFallbackFetchFailed] = useState(false)
 
   // Modal State
   const [isContactModalOpen, setIsContactModalOpen] = useState(false)
@@ -149,6 +163,9 @@ export function useSearchPageLogic() {
   /**
    * Transform raw Supabase listing data to UI format.
    * Uses Logic Core processors for data transformation.
+   *
+   * EXPORTED: This function is now exported for use by consumers
+   * that need the same transformation logic (e.g., fallback listings).
    */
   const transformListing = useCallback((dbListing, images, hostData) => {
     // Resolve human-readable names from database IDs
@@ -169,6 +186,13 @@ export function useSearchPageLogic() {
       listingId: dbListing._id
     })
 
+    // Helper to safely coerce to number (handles string numbers from Supabase)
+    const toNumber = (val, fallback = null) => {
+      if (val === null || val === undefined) return fallback
+      const num = Number(val)
+      return isNaN(num) ? fallback : num
+    }
+
     return {
       id: dbListing._id,
       title: dbListing.Name || 'Unnamed Listing',
@@ -179,16 +203,26 @@ export function useSearchPageLogic() {
         ? { lat: coordinatesResult.lat, lng: coordinatesResult.lng }
         : null,
       price: {
-        starting: dbListing['Standarized Minimum Nightly Price (Filter)'] || 0,
-        full: dbListing['💰Nightly Host Rate for 7 nights'] || 0
+        starting: toNumber(dbListing['Standarized Minimum Nightly Price (Filter)'], 0),
+        full: toNumber(dbListing['💰Nightly Host Rate for 7 nights'], 0)
       },
-      'Starting nightly price': dbListing['Standarized Minimum Nightly Price (Filter)'] || 0,
-      'Price 2 nights selected': dbListing['💰Nightly Host Rate for 2 nights'] || null,
-      'Price 3 nights selected': dbListing['💰Nightly Host Rate for 3 nights'] || null,
-      'Price 4 nights selected': dbListing['💰Nightly Host Rate for 4 nights'] || null,
-      'Price 5 nights selected': dbListing['💰Nightly Host Rate for 5 nights'] || null,
+      'Starting nightly price': toNumber(dbListing['Standarized Minimum Nightly Price (Filter)'], 0),
+      'Price 2 nights selected': toNumber(dbListing['💰Nightly Host Rate for 2 nights']),
+      'Price 3 nights selected': toNumber(dbListing['💰Nightly Host Rate for 3 nights']),
+      'Price 4 nights selected': toNumber(dbListing['💰Nightly Host Rate for 4 nights']),
+      'Price 5 nights selected': toNumber(dbListing['💰Nightly Host Rate for 5 nights']),
       'Price 6 nights selected': null,
-      'Price 7 nights selected': dbListing['💰Nightly Host Rate for 7 nights'] || null,
+      'Price 7 nights selected': toNumber(dbListing['💰Nightly Host Rate for 7 nights']),
+      // 7 REQUIRED FIELDS (Golden Rule B) - with numeric coercion
+      'rental type': dbListing['rental type'] || 'Nightly',
+      rentalType: dbListing['rental type'] || 'Nightly',
+      '💰Monthly Host Rate': toNumber(dbListing['💰Monthly Host Rate']),
+      '💰Weekly Host Rate': toNumber(dbListing['💰Weekly Host Rate']),
+      '💰Cleaning Cost / Maintenance Fee': toNumber(dbListing['💰Cleaning Cost / Maintenance Fee'], 0),
+      '💰Damage Deposit': toNumber(dbListing['💰Damage Deposit'], 0),
+      '💰Unit Markup': toNumber(dbListing['💰Unit Markup'], 0),
+      'Weeks offered': dbListing['Weeks offered'] || 'Every week',
+      weeksOffered: dbListing['Weeks offered'] || 'Every week',
       type: propertyType,
       squareFeet: dbListing['Features - SQFT Area'] || null,
       maxGuests: dbListing['Features - Qty Guests'] || 1,
@@ -203,7 +237,7 @@ export function useSearchPageLogic() {
       images: images || [],
       description: `${(dbListing['Features - Qty Bedrooms'] || 0) === 0 ? 'Studio' : `${dbListing['Features - Qty Bedrooms']} bedroom`} • ${dbListing['Features - Qty Bathrooms'] || 0} bathroom`,
       weeks_offered: dbListing['Weeks offered'] || 'Every week',
-      days_available: parseJsonArray(dbListing['Days Available (List of Days)']),
+      days_available: parseJsonArray({ field: dbListing['Days Available (List of Days)'], fieldName: 'Days Available' }),
       isNew: false
     }
   }, [])
@@ -213,7 +247,7 @@ export function useSearchPageLogic() {
    * Runs once on mount, no filters applied.
    */
   const fetchAllActiveListings = useCallback(async () => {
-    console.log('🌍 Fetching ALL active listings for map background (green pins)...')
+    logger.debug('Fetching ALL active listings for map background (green pins)...')
 
     try {
       const { data, error } = await supabase
@@ -228,15 +262,11 @@ export function useSearchPageLogic() {
 
       if (error) throw error
 
-      console.log('📊 fetchAllActiveListings: Supabase returned', data.length, 'active listings')
+      logger.debug('fetchAllActiveListings: Supabase returned', data.length, 'active listings')
 
       // Batch fetch photos
       const photoIdsArray = extractPhotoIdsFromListings(data)
-      console.log('📷 fetchAllActiveListings: Collected', photoIdsArray.length, 'unique photo IDs')
-      console.log('📷 fetchAllActiveListings: Sample photo IDs:', photoIdsArray.slice(0, 3))
-
       const photoMap = await fetchPhotoUrls(photoIdsArray)
-      console.log('📷 fetchAllActiveListings: photoMap has', Object.keys(photoMap).length, 'entries')
 
       // Extract photos per listing
       const resolvedPhotos = {}
@@ -270,25 +300,22 @@ export function useSearchPageLogic() {
         transformListing(listing, resolvedPhotos[listing._id], resolvedHosts[listing._id])
       )
 
-      // Filter to only listings with valid coordinates (NO FALLBACK)
+      // Filter to only listings with valid coordinates
       const listingsWithCoordinates = transformedListings.filter((listing) => {
         const hasValidCoords =
           listing.coordinates && listing.coordinates.lat && listing.coordinates.lng
-        if (!hasValidCoords) {
-          console.warn('⚠️ fetchAllActiveListings: Excluding listing without coordinates:', {
-            id: listing.id,
-            title: listing.title
-          })
-        }
         return hasValidCoords
       })
 
-      console.log(
-        `✅ Fetched ${listingsWithCoordinates.length} active listings with coordinates for green markers`
-      )
-      setAllActiveListings(listingsWithCoordinates)
+      // Filter out listings without photos
+      const listingsWithPhotos = listingsWithCoordinates.filter((listing) => {
+        return listing.images && listing.images.length > 0
+      })
+
+      logger.debug(`Fetched ${listingsWithPhotos.length} active listings with coordinates and photos`)
+      setAllActiveListings(listingsWithPhotos)
     } catch (error) {
-      console.error('❌ Failed to fetch all active listings:', error)
+      logger.error('Failed to fetch all active listings:', error)
       // Don't set error state - this shouldn't block the page
     }
   }, [transformListing])
@@ -304,12 +331,12 @@ export function useSearchPageLogic() {
     const fetchParams = `${selectedBorough}-${selectedNeighborhoods.join(',')}-${weekPattern}-${priceTier}-${sortBy}`
 
     if (fetchInProgressRef.current) {
-      console.log('⏭️ Skipping duplicate fetch - already in progress')
+      logger.debug('Skipping duplicate fetch - already in progress')
       return
     }
 
     if (lastFetchParamsRef.current === fetchParams) {
-      console.log('⏭️ Skipping duplicate fetch - same parameters')
+      logger.debug('Skipping duplicate fetch - same parameters')
       return
     }
 
@@ -366,15 +393,11 @@ export function useSearchPageLogic() {
 
       if (error) throw error
 
-      console.log('📊 SearchPage: Supabase query returned', data.length, 'listings')
+      logger.debug('SearchPage: Supabase query returned', data.length, 'listings')
 
       // Batch fetch photos
       const photoIdsArray = extractPhotoIdsFromListings(data)
-      console.log('📷 fetchListings: Collected', photoIdsArray.length, 'unique photo IDs')
-      console.log('📷 fetchListings: Sample photo IDs:', photoIdsArray.slice(0, 3))
-
       const photoMap = await fetchPhotoUrls(photoIdsArray)
-      console.log('📷 fetchListings: photoMap has', Object.keys(photoMap).length, 'entries')
 
       // Extract photos per listing
       const resolvedPhotos = {}
@@ -408,34 +431,24 @@ export function useSearchPageLogic() {
         transformListing(listing, resolvedPhotos[listing._id], resolvedHosts[listing._id])
       )
 
-      // Filter out listings without valid coordinates (NO FALLBACK)
+      // Filter out listings without valid coordinates
       const listingsWithCoordinates = transformedListings.filter((listing) => {
         const hasValidCoords =
           listing.coordinates && listing.coordinates.lat && listing.coordinates.lng
-        if (!hasValidCoords) {
-          console.warn('⚠️ SearchPage: Excluding listing without valid coordinates:', {
-            id: listing.id,
-            title: listing.title
-          })
-        }
         return hasValidCoords
       })
 
-      setAllListings(listingsWithCoordinates)
-      setLoadedCount(0)
-
-      console.log('✅ SearchPage: State updated with', listingsWithCoordinates.length, 'listings')
-    } catch (err) {
-      console.error('Failed to fetch listings:', {
-        message: err.message,
-        filters: {
-          borough: selectedBorough,
-          neighborhoods: selectedNeighborhoods,
-          weekPattern,
-          priceTier
-        }
+      // Filter out listings without photos
+      const listingsWithPhotos = listingsWithCoordinates.filter((listing) => {
+        return listing.images && listing.images.length > 0
       })
 
+      setAllListings(listingsWithPhotos)
+      setLoadedCount(0)
+
+      logger.debug('SearchPage: State updated with', listingsWithPhotos.length, 'listings')
+    } catch (err) {
+      logger.error('Failed to fetch listings:', err)
       setError(
         'We had trouble loading listings. Please try refreshing the page or adjusting your filters.'
       )
@@ -454,6 +467,123 @@ export function useSearchPageLogic() {
   ])
 
   // ============================================================================
+  // Fallback Listings Logic (MOVED FROM SearchPage.jsx)
+  // ============================================================================
+
+  /**
+   * Fetch all listings with basic constraints only (for fallback display when filtered results are empty).
+   * Infrastructure layer - Supabase query with minimal filtering.
+   */
+  const fetchFallbackListings = useCallback(async () => {
+    setIsFallbackLoading(true)
+
+    try {
+      // Build query with ONLY basic constraints - no borough, neighborhood, price, or week pattern filters
+      const query = supabase
+        .from('listing')
+        .select('*')
+        .eq('"Complete"', true)
+        .or('"Active".eq.true,"Active".is.null')
+        .or('"Location - Address".not.is.null,"Location - slightly different address".not.is.null')
+        .not('"Features - Photos"', 'is', null)
+        .order('"Modified Date"', { ascending: false })
+
+      const { data, error } = await query
+
+      if (error) throw error
+
+      logger.debug('Fallback query returned', data.length, 'listings')
+
+      // Collect legacy photo IDs (strings) for batch fetch
+      // New format has embedded objects with URLs, no fetch needed
+      const legacyPhotoIds = new Set()
+      data.forEach(listing => {
+        const photosField = listing['Features - Photos']
+        let photos = []
+
+        if (Array.isArray(photosField)) {
+          photos = photosField
+        } else if (typeof photosField === 'string') {
+          try {
+            photos = JSON.parse(photosField)
+          } catch (e) {
+            // Ignore parse errors
+          }
+        }
+
+        // Only collect string IDs (legacy format), not objects (new format)
+        if (Array.isArray(photos)) {
+          photos.forEach(photo => {
+            if (typeof photo === 'string') {
+              legacyPhotoIds.add(photo)
+            }
+          })
+        }
+      })
+
+      // Only fetch from listing_photo table if there are legacy photo IDs
+      const photoMap = legacyPhotoIds.size > 0
+        ? await fetchPhotoUrls(Array.from(legacyPhotoIds))
+        : {}
+
+      // Extract photos per listing (handles both embedded objects and legacy IDs)
+      const resolvedPhotos = {}
+      data.forEach(listing => {
+        resolvedPhotos[listing._id] = extractPhotos(
+          listing['Features - Photos'],
+          photoMap,
+          listing._id
+        )
+      })
+
+      // Batch fetch host data for all listings
+      const hostIds = new Set()
+      data.forEach(listing => {
+        if (listing['Host User']) {
+          hostIds.add(listing['Host User'])
+        }
+      })
+
+      const hostMap = await fetchHostData(Array.from(hostIds))
+
+      // Map host data to listings
+      const resolvedHosts = {}
+      data.forEach(listing => {
+        const hostId = listing['Host User']
+        resolvedHosts[listing._id] = hostMap[hostId] || null
+      })
+
+      // Transform listings
+      const transformedListings = data.map(listing =>
+        transformListing(listing, resolvedPhotos[listing._id], resolvedHosts[listing._id])
+      )
+
+      // Filter out listings without valid coordinates
+      const listingsWithCoordinates = transformedListings.filter(listing => {
+        return listing.coordinates && listing.coordinates.lat && listing.coordinates.lng
+      })
+
+      // Filter out listings without photos
+      const listingsWithPhotos = listingsWithCoordinates.filter(listing => {
+        return listing.images && listing.images.length > 0
+      })
+
+      logger.debug('Fallback listings ready:', listingsWithPhotos.length)
+
+      setFallbackListings(listingsWithPhotos)
+      setFallbackLoadedCount(0)
+    } catch (err) {
+      logger.error('Failed to fetch fallback listings:', err)
+      // Don't set error state - this is a fallback, so we just show nothing
+      setFallbackListings([])
+      // Mark that fetch failed to prevent infinite retry loop
+      setFallbackFetchFailed(true)
+    } finally {
+      setIsFallbackLoading(false)
+    }
+  }, [transformListing])
+
+  // ============================================================================
   // Effects - Data Loading
   // ============================================================================
 
@@ -461,7 +591,7 @@ export function useSearchPageLogic() {
   useEffect(() => {
     const init = async () => {
       if (!isInitialized()) {
-        console.log('Initializing data lookups...')
+        logger.debug('Initializing data lookups...')
         await initializeLookups()
       }
     }
@@ -518,7 +648,7 @@ export function useSearchPageLogic() {
           // Validate borough from URL exists
           const boroughExists = boroughList.find((b) => b.value === selectedBorough)
           if (!boroughExists) {
-            console.warn(`Borough "${selectedBorough}" from URL not found, defaulting to Manhattan`)
+            logger.warn(`Borough "${selectedBorough}" from URL not found, defaulting to Manhattan`)
             const manhattan = boroughList.find((b) => b.value === 'manhattan')
             if (manhattan) {
               setSelectedBorough(manhattan.value)
@@ -526,7 +656,7 @@ export function useSearchPageLogic() {
           }
         }
       } catch (err) {
-        console.error('Failed to load boroughs:', err)
+        logger.error('Failed to load boroughs:', err)
       }
     }
 
@@ -540,15 +670,9 @@ export function useSearchPageLogic() {
 
       const borough = boroughs.find((b) => b.value === selectedBorough)
       if (!borough) {
-        console.warn('Borough not found for value:', selectedBorough)
+        logger.warn('Borough not found for value:', selectedBorough)
         return
       }
-
-      console.log('Loading neighborhoods for borough:', {
-        boroughName: borough.name,
-        boroughId: borough.id,
-        boroughValue: borough.value
-      })
 
       try {
         const { data, error } = await supabase
@@ -559,10 +683,6 @@ export function useSearchPageLogic() {
           .order('Display', { ascending: true })
 
         if (error) throw error
-
-        console.log(`Found ${data.length} neighborhoods for ${borough.name}:`,
-          data.slice(0, 5).map(n => ({ id: n._id, name: n.Display, boroughRef: n['Geo-Borough'] }))
-        )
 
         const neighborhoodList = data
           .filter((n) => n.Display && n.Display.trim())
@@ -575,7 +695,7 @@ export function useSearchPageLogic() {
         setNeighborhoods(neighborhoodList)
         setSelectedNeighborhoods([]) // Clear selections when borough changes
       } catch (err) {
-        console.error('Failed to load neighborhoods:', err)
+        logger.error('Failed to load neighborhoods:', err)
       }
     }
 
@@ -599,6 +719,39 @@ export function useSearchPageLogic() {
     setLoadedCount(initialCount)
   }, [allListings])
 
+  // ============================================================================
+  // Fallback Listings Effects (MOVED FROM SearchPage.jsx)
+  // ============================================================================
+
+  // Fetch fallback listings when filtered results are empty
+  useEffect(() => {
+    // Don't retry if fetch already failed (prevents infinite loop)
+    if (!isLoading && allListings.length === 0 && fallbackListings.length === 0 && !isFallbackLoading && !fallbackFetchFailed) {
+      fetchFallbackListings()
+    }
+  }, [isLoading, allListings.length, fallbackListings.length, isFallbackLoading, fallbackFetchFailed, fetchFallbackListings])
+
+  // Clear fallback listings when filtered results are found
+  useEffect(() => {
+    if (allListings.length > 0 && fallbackListings.length > 0) {
+      setFallbackListings([])
+      setFallbackDisplayedListings([])
+      setFallbackLoadedCount(0)
+    }
+  }, [allListings.length, fallbackListings.length])
+
+  // Lazy load fallback listings
+  useEffect(() => {
+    if (fallbackListings.length === 0) {
+      setFallbackDisplayedListings([])
+      return
+    }
+
+    const initialCount = LISTING_CONFIG.INITIAL_LOAD_COUNT
+    setFallbackDisplayedListings(fallbackListings.slice(0, initialCount))
+    setFallbackLoadedCount(initialCount)
+  }, [fallbackListings])
+
   // Sync filter state to URL parameters
   useEffect(() => {
     // Skip URL update on initial mount
@@ -621,7 +774,7 @@ export function useSearchPageLogic() {
   // Watch for browser back/forward navigation
   useEffect(() => {
     const cleanup = watchUrlChanges((newFilters) => {
-      console.log('URL changed via browser navigation, updating filters:', newFilters)
+      logger.debug('URL changed via browser navigation, updating filters:', newFilters)
 
       setSelectedBorough(newFilters.selectedBorough)
       setWeekPattern(newFilters.weekPattern)
@@ -643,6 +796,14 @@ export function useSearchPageLogic() {
     setDisplayedListings(allListings.slice(0, nextCount))
     setLoadedCount(nextCount)
   }, [loadedCount, allListings])
+
+  // Fallback listings load more handler
+  const handleFallbackLoadMore = useCallback(() => {
+    const batchSize = LISTING_CONFIG.LOAD_BATCH_SIZE
+    const nextCount = Math.min(fallbackLoadedCount + batchSize, fallbackListings.length)
+    setFallbackDisplayedListings(fallbackListings.slice(0, nextCount))
+    setFallbackLoadedCount(nextCount)
+  }, [fallbackLoadedCount, fallbackListings])
 
   const handleResetFilters = useCallback(() => {
     const manhattan = boroughs.find((b) => b.value === 'manhattan')
@@ -692,23 +853,13 @@ export function useSearchPageLogic() {
   // ============================================================================
 
   const hasMore = loadedCount < allListings.length
+  const hasFallbackMore = fallbackLoadedCount < fallbackListings.length
 
   const filteredNeighborhoods = useMemo(() => {
     const filtered = neighborhoods.filter((n) => {
       const sanitizedSearch = sanitizeNeighborhoodSearch(neighborhoodSearch)
       return n.name.toLowerCase().includes(sanitizedSearch.toLowerCase())
     })
-
-    // Debug logging for neighborhood filtering
-    console.log('🔍 [useSearchPageLogic] Neighborhood Filtering Debug:', {
-      totalLoaded: neighborhoods.length,
-      searchTerm: neighborhoodSearch,
-      sanitizedSearch: sanitizeNeighborhoodSearch(neighborhoodSearch),
-      filteredCount: filtered.length,
-      sampleNeighborhoods: neighborhoods.slice(0, 5).map(n => n.name),
-      filteredNeighborhoods: filtered.map(n => n.name)
-    })
-
     return filtered
   }, [neighborhoods, neighborhoodSearch])
 
@@ -726,6 +877,13 @@ export function useSearchPageLogic() {
     allListings,
     displayedListings,
     hasMore,
+
+    // Fallback Listings (when filters return no results)
+    fallbackListings,
+    fallbackDisplayedListings,
+    isFallbackLoading,
+    hasFallbackMore,
+    handleFallbackLoadMore,
 
     // Geography Data
     boroughs,
@@ -782,6 +940,9 @@ export function useSearchPageLogic() {
     handleOpenInfoModal,
     handleCloseInfoModal,
     handleOpenAIResearchModal,
-    handleCloseAIResearchModal
+    handleCloseAIResearchModal,
+
+    // Utility Functions (exported for consumers)
+    transformListing
   }
 }
