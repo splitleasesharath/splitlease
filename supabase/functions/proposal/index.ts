@@ -296,7 +296,7 @@ async function authenticateFromHeaders(
   }
   console.log('[proposal:auth] User retrieved:', !!user);
   if (user) {
-    console.log('[proposal:auth] User ID:', user.id);
+    console.log('[proposal:auth] Supabase Auth UUID:', user.id);
     console.log('[proposal:auth] User email:', user.email);
   }
 
@@ -304,7 +304,22 @@ async function authenticateFromHeaders(
     return null;
   }
 
-  return { id: user.id, email: user.email ?? '' };
+  // Look up the application user ID from the user table
+  // The user table stores the Bubble-style _id that's used throughout the app
+  const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+  const { data: appUser, error: appUserError } = await supabaseClient
+    .from('user')
+    .select('_id')
+    .eq('id', user.id)  // id is the Supabase Auth UUID foreign key
+    .single();
+
+  if (appUserError || !appUser) {
+    console.error('[proposal:auth] Failed to lookup application user ID:', appUserError?.message);
+    return null;
+  }
+
+  console.log('[proposal:auth] Application user ID:', appUser._id);
+  return { id: appUser._id, email: user.email ?? '' };
 }
 
 console.log("[proposal] Edge Function ready");
