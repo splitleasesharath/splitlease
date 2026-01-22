@@ -1,17 +1,17 @@
 /**
  * Guest Proposals Page Styles
  *
- * V5 Balanced Design
- * - Refined elegance from V3 with accessibility from V4
- * - Base font 15px (readable but not oversized)
- * - Higher contrast text colors for accessibility
- * - 44x44 day pills (accessible touch target)
- * - 32px pricing (prominent but not overwhelming)
- * - 1px borders for refined look
+ * V6 Accessible Design (WCAG AAA)
+ * - Elderly-friendly base font 17px for comfortable reading
+ * - WCAG AAA high contrast text colors (4.5:1 minimum)
+ * - 48px minimum touch targets for accessibility
+ * - 36px pricing for prominence
+ * - Clear focus states for keyboard navigation
+ * - Reduced motion support
  */
 
 /* ============================================================================
-   DESIGN SYSTEM VARIABLES - BALANCED
+   DESIGN SYSTEM VARIABLES - ACCESSIBLE
    ============================================================================ */
 
 :root {
@@ -21,10 +21,10 @@
   --gp-purple-light: #8C68EE;
   --gp-purple-bg: #f8f5ff;
 
-  /* Text Colors - High contrast but not harsh */
-  --gp-text: #1a1a1a;              /* Dark but not pure black */
-  --gp-text-secondary: #4b5563;    /* Readable secondary */
-  --gp-text-muted: #6b7280;        /* Soft muted */
+  /* Text Colors - WCAG AAA High Contrast */
+  --gp-text: #111111;              /* Near black for maximum contrast */
+  --gp-text-secondary: #374151;    /* Dark gray, 4.5:1+ contrast */
+  --gp-text-muted: #4b5563;        /* Medium gray, meets AA */
 
   /* Background & Border - Soft and refined */
   --gp-border: #e5e7eb;
@@ -32,33 +32,39 @@
   --gp-bg: #fafafa;
   --gp-white: #fff;
 
-  /* Semantic Colors */
-  --gp-success: #059669;
-  --gp-success-bg: #ecfdf5;
-  --gp-danger: #dc2626;
-  --gp-danger-bg: #fef2f2;
-  --gp-warning: #d97706;
+  /* Semantic Colors - High Contrast */
+  --gp-success: #047857;           /* Darker green for contrast */
+  --gp-success-bg: #d1fae5;
+  --gp-danger: #b91c1c;            /* Darker red for contrast */
+  --gp-danger-bg: #fee2e2;
+  --gp-warning: #b45309;           /* Darker orange for contrast */
   --gp-warning-bg: #fef3c7;
 
-  /* Typography - BALANCED SIZES */
-  --gp-font-size-sm: 13px;
-  --gp-font-size-base: 15px;       /* Slightly larger than V3's 14px */
-  --gp-font-size-md: 16px;
-  --gp-font-size-lg: 18px;
-  --gp-font-size-xl: 22px;
-  --gp-font-size-2xl: 32px;        /* Between V3's 28px and V4's 36px */
-  --gp-font-size-label: 12px;
+  /* Typography - ELDERLY-FRIENDLY SIZES */
+  --gp-font-size-sm: 15px;         /* Minimum readable size */
+  --gp-font-size-base: 17px;       /* Comfortable reading for elderly */
+  --gp-font-size-md: 18px;
+  --gp-font-size-lg: 22px;
+  --gp-font-size-xl: 28px;
+  --gp-font-size-2xl: 36px;        /* Prominent values */
+  --gp-font-size-label: 14px;      /* Labels never below 14px */
 
-  /* Line Heights */
+  /* Line Heights - Relaxed for readability */
   --gp-line-height-tight: 1.3;
-  --gp-line-height-normal: 1.5;
-  --gp-line-height-relaxed: 1.6;
+  --gp-line-height-normal: 1.6;    /* Increased from 1.5 */
+  --gp-line-height-relaxed: 1.8;   /* Increased from 1.6 */
 
-  /* Touch Targets - For interactive elements only */
-  --gp-min-touch-target: 44px;
+  /* Touch Targets - WCAG 2.2 Enhanced */
+  --gp-min-touch-target: 48px;     /* Minimum 48px for accessibility */
 
-  /* Focus States */
-  --gp-focus-ring: 0 0 0 3px rgba(109, 49, 194, 0.4);
+  /* Focus States - Visible 3px outline */
+  --gp-focus-ring: 0 0 0 4px rgba(109, 49, 194, 0.5);
+  --gp-focus-outline: 3px solid var(--gp-purple-primary);
+  --gp-focus-outline-offset: 3px;
+
+  /* Transitions */
+  --gp-transition-fast: 150ms ease;
+  --gp-transition-normal: 200ms ease;
 }
 
 /* ============================================================================
@@ -3154,5 +3160,134 @@
 
   .proposals-section--suggested {
     padding: 16px;
+  }
+}
+
+/* ============================================================================
+   ACCESSIBILITY UTILITIES
+   ============================================================================ */
+
+/* Screen Reader Only - Visually hidden but accessible */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Skip Link - Keyboard navigation bypass */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 16px;
+  padding: 16px 24px;
+  background: var(--gp-purple-primary);
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: var(--gp-font-size-base);
+  border-radius: 12px;
+  z-index: 1000;
+  transition: top var(--gp-transition-fast);
+}
+
+.skip-link:focus {
+  top: 16px;
+  outline: none;
+  box-shadow: var(--gp-focus-ring);
+}
+
+/* ============================================================================
+   FOCUS STATES - Visible keyboard navigation
+   ============================================================================ */
+
+/* Global focus-visible styles for all interactive elements */
+.epc-header:focus-visible,
+.epc-btn:focus-visible,
+.epc-quick-link:focus-visible,
+.epc-day-pill:focus-visible,
+.retry-button:focus-visible,
+.browse-button:focus-visible,
+[role="button"]:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: var(--gp-focus-outline);
+  outline-offset: var(--gp-focus-outline-offset);
+}
+
+/* Remove default outline when using focus-visible */
+.epc-header:focus:not(:focus-visible),
+.epc-btn:focus:not(:focus-visible),
+button:focus:not(:focus-visible),
+a:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ============================================================================
+   REDUCED MOTION - Respect user preferences
+   ============================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+
+  .spinner {
+    animation: none;
+  }
+
+  .epc-content {
+    transition: none;
+  }
+
+  .epc-chevron {
+    transition: none;
+  }
+}
+
+/* ============================================================================
+   HIGH CONTRAST MODE - Enhanced visibility
+   ============================================================================ */
+
+@media (prefers-contrast: high) {
+  :root {
+    --gp-border: #000;
+    --gp-text-muted: #374151;
+  }
+
+  .epc-card {
+    border-width: 3px;
+  }
+
+  .epc-btn {
+    border-width: 3px;
+  }
+
+  .epc-day-pill {
+    border-width: 3px;
+  }
+
+  .proposals-section {
+    border-width: 3px;
+  }
+
+  .epc-header:focus-visible,
+  .epc-btn:focus-visible,
+  button:focus-visible,
+  a:focus-visible {
+    outline-width: 4px;
   }
 }

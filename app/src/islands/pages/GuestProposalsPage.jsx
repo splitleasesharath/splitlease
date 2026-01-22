@@ -38,8 +38,8 @@ import VirtualMeetingsSection from './proposals/VirtualMeetingsSection.jsx';
 
 function LoadingState() {
   return (
-    <div className="loading-state">
-      <div className="spinner"></div>
+    <div className="loading-state" role="status" aria-live="polite">
+      <div className="spinner" aria-hidden="true"></div>
       <p>Loading your proposals...</p>
     </div>
   );
@@ -51,8 +51,8 @@ function LoadingState() {
 
 function ErrorState({ error, onRetry }) {
   return (
-    <div className="error-state">
-      <div className="error-icon">!</div>
+    <div className="error-state" role="alert">
+      <div className="error-icon" aria-hidden="true">!</div>
       <h2>Something went wrong</h2>
       <p className="error-message">{error}</p>
       <button className="retry-button" onClick={onRetry}>
@@ -69,7 +69,7 @@ function ErrorState({ error, onRetry }) {
 function EmptyState() {
   return (
     <div className="empty-state">
-      <div className="empty-icon">0</div>
+      <div className="empty-icon" aria-hidden="true">0</div>
       <h2>No Proposals Yet</h2>
       <p>You haven't submitted any proposals yet.</p>
       <p className="empty-subtext">
@@ -137,7 +137,8 @@ export default function GuestProposalsPage() {
     <>
       <Header />
 
-      <main className="main-content">
+      <main className="main-content" role="main" id="main-content">
+        <h1 className="sr-only">Your Proposals</h1>
         <div className="proposals-page proposals-page--v7">
           {/* Loading State */}
           {isLoading && <LoadingState />}
@@ -157,9 +158,15 @@ export default function GuestProposalsPage() {
             <div className="proposals-sections">
               {/* Section 1: Suggested for You (SL-suggested proposals pending confirmation) */}
               {suggested.length > 0 && (
-                <section className="proposals-section proposals-section--suggested">
+                <section
+                  className="proposals-section proposals-section--suggested"
+                  aria-labelledby="suggested-proposals-heading"
+                >
+                  <h2 id="suggested-proposals-heading" className="sr-only">
+                    Suggested for You - {suggested.length} {suggested.length === 1 ? 'proposal' : 'proposals'}
+                  </h2>
                   <SectionHeader type="suggested" count={suggested.length} />
-                  <div className="proposals-section__cards">
+                  <div className="proposals-section__cards" role="list">
                     {suggested.map(proposal => (
                       <ExpandableProposalCard
                         key={proposal._id}
@@ -177,9 +184,15 @@ export default function GuestProposalsPage() {
 
               {/* Section 2: Your Proposals (user-submitted and confirmed proposals) */}
               {userCreated.length > 0 && (
-                <section className="proposals-section proposals-section--user">
+                <section
+                  className="proposals-section proposals-section--user"
+                  aria-labelledby="user-proposals-heading"
+                >
+                  <h2 id="user-proposals-heading" className="sr-only">
+                    Your Proposals - {userCreated.length} {userCreated.length === 1 ? 'proposal' : 'proposals'}
+                  </h2>
                   <SectionHeader type="user" count={userCreated.length} />
-                  <div className="proposals-section__cards">
+                  <div className="proposals-section__cards" role="list">
                     {userCreated.map(proposal => (
                       <ExpandableProposalCard
                         key={proposal._id}
