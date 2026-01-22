@@ -658,6 +658,55 @@ def run_deferred_validation(
             logger.log(f"  [PASS] All {total_pages} pages passed visual regression")
         else:
             logger.log(f"  [FAIL] Visual regression failed with {len(visual_errors)} errors")
+
+        # Send all collected screenshots to Slack (regardless of pass/fail)
+        if slack_channel and visual_screenshots:
+            logger.log(f"  [SLACK] Sending {len(visual_screenshots)} screenshot sets to Slack...")
+            try:
+                from .slack_client import create_slack_client_from_env
+                slack_client = create_slack_client_from_env(default_channel=slack_channel)
+
+                # Send summary message first
+                status_emoji = "✅" if result.visual_passed else "❌"
+                summary_msg = (
+                    f"{status_emoji} Visual Regression Summary\n"
+                    f"• Pages checked: {total_pages}\n"
+                    f"• Passed: {total_pages - len(visual_errors)}\n"
+                    f"• Failed: {len(visual_errors)}"
+                )
+                summary_response = slack_client.send_message(text=summary_msg, channel=slack_channel)
+
+                if summary_response.ok:
+                    thread_ts = summary_response.ts
+                    channel_id = summary_response.channel
+
+                    # Upload all screenshots as thread replies
+                    for page_path, screenshots in visual_screenshots.items():
+                        live_path = screenshots.get("live")
+                        dev_path = screenshots.get("dev")
+
+                        if live_path and Path(live_path).exists():
+                            slack_client.upload_screenshot(
+                                screenshot_path=live_path,
+                                channel=channel_id,
+                                thread_ts=thread_ts,
+                                title=f"LIVE: {page_path}"
+                            )
+
+                        if dev_path and Path(dev_path).exists():
+                            slack_client.upload_screenshot(
+                                screenshot_path=dev_path,
+                                channel=channel_id,
+                                thread_ts=thread_ts,
+                                title=f"DEV: {page_path}"
+                            )
+
+                    logger.log(f"  [SLACK] Screenshots uploaded successfully")
+                else:
+                    logger.log(f"  [SLACK] Failed to send summary: {summary_response.error}")
+
+            except Exception as slack_err:
+                logger.log(f"  [SLACK] Failed to send screenshots: {slack_err}")
     else:
         # skip_visual is True
         result.visual_passed = True
