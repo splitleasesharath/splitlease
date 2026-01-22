@@ -2617,8 +2617,6 @@ export default function ViewSplitLeasePage() {
             )}
           </div>
 
-          {/* Spacer to prevent content from being hidden behind fixed bar */}
-          <div className={mobileBookingExpanded ? styles.mobileBookingSpacerHidden : styles.mobileBookingSpacer} />
         </>
       )}
 
