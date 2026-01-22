@@ -71,7 +71,7 @@
 /* Count badge */
 .header-sp-trigger__badge {
   position: absolute;
-  top: 8px;
+  top: -14px;
   right: 8px;
   min-width: 22px;
   height: 22px;
@@ -112,7 +112,7 @@
     min-width: 20px;
     height: 20px;
     font-size: 11px;
-    top: 6px;
+    top: -12px;
     right: 6px;
   }
 }
