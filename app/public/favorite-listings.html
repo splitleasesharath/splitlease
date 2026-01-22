@@ -20,7 +20,8 @@
     })(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');
   </script>
 
-  <!-- config.js is imported in JSX entry files and bundled by Vite -->
+  <!-- config.js is required to set window.ENV for inline scripts -->
+  <script type="module" src="/src/lib/config.js"></script>
 
   <!-- Google Maps API -->
   <script>
@@ -72,9 +73,10 @@
     }
   </script>
 
-  <!-- Google Fonts - Lato -->
+  <!-- Google Fonts - Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>

@@ -8,77 +8,179 @@
 @import '../../../styles/components/toast.css';
 
 /* ============================================
-   PAGE CONTAINER
+   SUB-HEADER (Title + Count + View Toggle)
+   Per mockup: sits below main header, above content
    ============================================ */
-.favorites-page {
-  padding-top: 0 !important;
-  margin: 0;
-  min-height: calc(100vh - 80px); /* Account for header height */
-  width: 100%;
-  overflow: visible;
-  background: var(--favorites-bg, #FAFBFC);
-}
-
-/* ============================================
-   PAGE TITLE SECTION
-   ============================================ */
-.favorites-page__title-section {
-  padding: 20px 24px;
+.favorites-subheader {
+  position: sticky;
+  top: 80px; /* Below main header */
+  z-index: 50;
   background: white;
-  border-bottom: 1px solid var(--favorites-border, #E8ECF0);
+  border-bottom: 1px solid #E8ECF0;
+  padding: 0 24px;
 }
 
-.favorites-page__title-row {
+.favorites-subheader__inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.favorites-subheader__left {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.favorites-page__title {
+.favorites-subheader__title {
   font-size: 24px;
   font-weight: 700;
-  color: var(--favorites-text-dark, #1a1a2e);
+  color: #1a1a2e;
   margin: 0;
 }
 
-.favorites-page__count-badge {
-  background: var(--favorites-purple-light, #F0EBFF);
-  color: var(--favorites-purple, #6B4EE6);
+.favorites-subheader__count {
+  background: #F0EBFF;
+  color: #6B4EE6;
   padding: 4px 12px;
   border-radius: 20px;
   font-size: 14px;
   font-weight: 600;
 }
 
+.favorites-subheader__right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 /* ============================================
-   TWO-COLUMN LAYOUT OVERRIDE
-   Using CSS Grid for precise control (mockup spec)
+   PAGE CONTAINER
+   ============================================ */
+.favorites-page {
+  padding-top: 0 !important; /* Sub-header handles spacing now */
+  margin: 0;
+  min-height: 100vh;
+  width: 100%;
+  background: #FAFBFC; /* Light background from mockup */
+}
+
+/* ============================================
+   PAGE TITLE SECTION
+   ============================================ */
+.favorites-page__title-section {
+  padding: 32px 24px;
+  background: transparent;
+  border-bottom: none;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.favorites-page__title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.favorites-page__title-section-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.favorites-page__title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #0F172A;
+  margin: 0;
+}
+
+.favorites-page__count-badge {
+  background: #EEF2FF;
+  color: #6366F1;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.view-toggle {
+  display: flex;
+  gap: 0;
+  background: #F1F5F9;
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid #E2E8F0;
+}
+
+.view-btn {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  color: #64748B;
+}
+
+.view-btn.active {
+  background: white;
+  color: #0F172A;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* ============================================
+   TWO-COLUMN LAYOUT
+   Map aligns with cards (both start below sub-header)
    ============================================ */
 .favorites-page .two-column-layout {
   display: grid !important;
-  grid-template-columns: 1fr 400px !important;
+  grid-template-columns: 1fr 400px !important; /* Map width from mockup */
   gap: 24px !important;
   max-width: 1400px;
   margin: 0 auto;
-  padding: 24px;
+  padding: 24px 24px 300px; /* Top gap + generous bottom padding for footer */
   min-height: auto;
+  align-items: start;
 }
 
 .favorites-page .listings-column {
   overflow-y: visible;
   background: transparent;
+  padding-top: 50px; /* Top gap for cards below sub-header */
 }
 
 .favorites-page .map-column {
-  width: 400px !important;
+  width: 400px !important; /* Map width from mockup */
   flex-shrink: 0;
   position: sticky;
-  top: 100px; /* Account for header height */
-  height: calc(100vh - 130px);
+  top: 160px; /* Aligned with cards below sub-header */
+  margin-top: 70px !important; /* Push map down to align with first card */
+  height: calc(100vh - 212px); /* Viewport minus headers */
   background: white;
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+/* ============================================
+   CARD WRAPPER - Force zero padding to override global styles
+   ============================================ */
+.favorites-card-wrapper {
+  padding: 0 !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+  border-radius: 24px !important;
+  background: transparent !important;
 }
 
 /* ============================================
@@ -341,6 +443,18 @@
    Map hides, single column layout (mockup spec)
    ============================================ */
 @media (max-width: 1024px) {
+  .favorites-subheader {
+    top: 60px; /* Smaller header on tablet */
+  }
+
+  .favorites-subheader__inner {
+    height: 64px;
+  }
+
+  .favorites-subheader__title {
+    font-size: 22px;
+  }
+
   .favorites-page .two-column-layout {
     grid-template-columns: 1fr !important;
   }
@@ -360,6 +474,24 @@
    RESPONSIVE - MOBILE (768px)
    ============================================ */
 @media (max-width: 768px) {
+  .favorites-subheader {
+    top: 60px;
+    padding: 0 16px;
+  }
+
+  .favorites-subheader__inner {
+    height: 56px;
+  }
+
+  .favorites-subheader__title {
+    font-size: 20px;
+  }
+
+  .favorites-subheader__count {
+    font-size: 12px;
+    padding: 3px 10px;
+  }
+
   .favorites-page .two-column-layout {
     flex-direction: column;
   }
@@ -373,14 +505,14 @@
     display: none;
   }
 
-  /* ROW 2: Map Button Row - fixed below header */
+  /* ROW 2: Map Button Row - fixed below sub-header */
   .favorites-page .mobile-map-row {
     display: flex;
     position: fixed;
-    top: 60px; /* Below shared Header */
+    top: 116px; /* Below shared Header (60px) + Sub-header (56px) */
     left: 0;
     right: 0;
-    z-index: 99;
+    z-index: 49;
     padding: 0.5rem 1rem;
     background: white;
     border-bottom: 1px solid var(--favorites-border, #E8ECF0);
@@ -412,18 +544,18 @@
   .favorites-page .mobile-schedule-selector {
     display: block;
     position: fixed;
-    top: 110px; /* Below shared Header (60px) + Map row (50px) */
+    top: 166px; /* Below Header (60px) + Sub-header (56px) + Map row (50px) */
     left: 0;
     right: 0;
-    z-index: 98;
+    z-index: 48;
     padding: 0.75rem 1rem;
     background: white;
     border-bottom: 1px solid var(--favorites-border, #E8ECF0);
   }
 
-  /* Adjust listings column padding for fixed rows (shared Header handled separately) */
+  /* Adjust listings column padding for fixed rows */
   .favorites-page .listings-column {
-    padding-top: 160px; /* Map row (50px) + Schedule selector (50px) + buffer */
+    padding-top: 100px; /* Space for Map row + Schedule selector */
   }
 
   /* Page Title Section mobile */
@@ -540,4 +672,13 @@
 .mobile-map-content {
   flex: 1;
   position: relative;
+}
+
+/* ============================================
+   PRE-FOOTER BAR (Divider above footer)
+   ============================================ */
+.favorites-prefooter-bar {
+  width: 100%;
+  height: 60px;
+  background: white;
 }
