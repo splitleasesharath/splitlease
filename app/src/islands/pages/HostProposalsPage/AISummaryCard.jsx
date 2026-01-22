@@ -34,6 +34,28 @@ function getSummaryText(proposal) {
 }
 
 /**
+ * Parse text with [b]...[/b] tags into React elements with bold formatting
+ * @param {string} text - Text potentially containing [b]...[/b] tags
+ * @returns {React.ReactNode} Parsed content with <strong> elements
+ */
+function parseFormattedText(text) {
+  if (!text) return null;
+
+  // Split by [b] and [/b] tags, keeping track of whether we're in a bold section
+  const parts = text.split(/\[b\]|\[\/b\]/);
+
+  // The pattern alternates: normal, bold, normal, bold, ...
+  // First part is always normal (before any [b])
+  return parts.map((part, index) => {
+    // Even indices are normal text, odd indices are bold
+    if (index % 2 === 1) {
+      return <strong key={index}>{part}</strong>;
+    }
+    return part;
+  });
+}
+
+/**
  * Check if AI summary should be shown
  * @param {Object} proposal - The proposal object
  * @returns {boolean} True if should show summary
@@ -81,7 +103,7 @@ export function AISummaryCard({ proposal }) {
       </div>
       <div className="hp7-ai-summary-content">
         <div className="hp7-ai-summary-title">AI Summary</div>
-        <div className="hp7-ai-summary-text">{summary}</div>
+        <div className="hp7-ai-summary-text">{parseFormattedText(summary)}</div>
       </div>
     </div>
   );
