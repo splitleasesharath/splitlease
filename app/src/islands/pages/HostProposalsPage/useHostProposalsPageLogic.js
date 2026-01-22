@@ -604,6 +604,39 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
             }
           });
         }
+
+        // Enrich proposals with negotiation summaries (host-directed)
+        const proposalIds = proposals.map(p => p._id);
+        const hostUserId = user?._id || user?.userId;
+
+        if (proposalIds.length > 0 && hostUserId) {
+          const { data: summariesData, error: summariesError } = await supabase
+            .from('negotiationsummary')
+            .select('*')
+            .in('"Proposal associated"', proposalIds)
+            .eq('"To Account"', hostUserId)
+            .order('"Created Date"', { ascending: false });
+
+          if (summariesError) {
+            console.error('[useHostProposalsPageLogic] Error fetching negotiation summaries:', summariesError);
+          } else {
+            const summaryMap = {};
+            summariesData?.forEach(summary => {
+              const proposalId = summary['Proposal associated'];
+              if (!summaryMap[proposalId]) {
+                summaryMap[proposalId] = [];
+              }
+              summaryMap[proposalId].push(summary);
+            });
+
+            // Attach summaries to proposals
+            proposals.forEach(p => {
+              p.negotiationSummaries = summaryMap[p._id] || [];
+            });
+
+            console.log('[useHostProposalsPageLogic] Fetched negotiation summaries for', summariesData?.length || 0, 'proposals');
+          }
+        }
       }
 
       // Normalize all proposals for V7 components

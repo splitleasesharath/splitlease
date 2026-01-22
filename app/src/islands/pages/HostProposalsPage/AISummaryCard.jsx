@@ -14,13 +14,33 @@ import React from 'react';
 import { Cpu } from 'lucide-react';
 
 /**
+ * Get summary text from proposal
+ * Checks multiple possible sources in priority order:
+ * 1. negotiationSummaries array (most recent summary intended for host)
+ * 2. Direct ai_summary/guest_summary/summary fields (legacy)
+ * @param {Object} proposal - The proposal object
+ * @returns {string|null} Summary text or null if none found
+ */
+function getSummaryText(proposal) {
+  // Check negotiationSummaries array first (new approach)
+  const negotiationSummaries = proposal?.negotiationSummaries || [];
+  if (negotiationSummaries.length > 0) {
+    const latestSummary = negotiationSummaries[0]; // Already sorted by date desc
+    return latestSummary?.Summary || latestSummary?.summary || null;
+  }
+
+  // Fallback to direct fields (legacy)
+  return proposal?.ai_summary || proposal?.guest_summary || proposal?.summary || null;
+}
+
+/**
  * Check if AI summary should be shown
  * @param {Object} proposal - The proposal object
  * @returns {boolean} True if should show summary
  */
 function shouldShowAISummary(proposal) {
   // Must have a summary
-  const summary = proposal?.ai_summary || proposal?.guest_summary || proposal?.summary;
+  const summary = getSummaryText(proposal);
   if (!summary) return false;
 
   // Only show for new/review statuses
@@ -39,7 +59,7 @@ function shouldShowAISummary(proposal) {
  * @param {Object} props.proposal - The proposal object
  */
 export function AISummaryCard({ proposal }) {
-  const summary = proposal?.ai_summary || proposal?.guest_summary || proposal?.summary;
+  const summary = getSummaryText(proposal);
 
   if (!shouldShowAISummary(proposal)) {
     return null;
