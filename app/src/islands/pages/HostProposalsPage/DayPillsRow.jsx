@@ -47,43 +47,34 @@ export function DayPillsRow({ nightsSelected = [] }) {
     ? `${nightsCount} ${nightsCount === 1 ? 'night' : 'nights'} selected: ${selectedNightNames}`
     : 'No nights selected';
 
+  // Generate unique ID for this instance
+  const labelId = `days-label-${Math.random().toString(36).substr(2, 9)}`;
+
   return (
-    <div
-      className="hp7-days-row"
-      role="group"
-      aria-label="Weekly night schedule"
-      aria-describedby="days-row-summary"
-    >
-      <span className="hp7-days-label" id="days-row-label">Nights</span>
-      <div
-        className="hp7-days-pills"
-        role="list"
-        aria-labelledby="days-row-label"
-      >
+    <div className="hp7-days-row" role="group" aria-label="Selected days of the week">
+      <span className="hp7-days-label" id={labelId}>Days</span>
+      <div className="hp7-days-pills" aria-labelledby={labelId}>
         {DAY_LETTERS.map((letter, index) => {
           const isSelected = normalizedNights.includes(index);
           const dayName = DAY_NAMES[index];
           return (
-            <div
+            <span
               key={index}
-              role="listitem"
               className={`hp7-day-pill${isSelected ? ' selected' : ''}`}
-              aria-label={`${dayName}${isSelected ? ' night, selected' : ' night, not selected'}`}
+              aria-pressed={isSelected}
+              aria-label={isSelected ? `${dayName}, selected` : dayName}
             >
-              <span aria-hidden="true">{letter}</span>
-            </div>
+              {letter}
+            </span>
           );
         })}
       </div>
-      <div className="hp7-days-info" id="days-row-summary">
-        <div className="hp7-days-count" aria-live="polite">
-          {nightsCount} {nightsCount === 1 ? 'night' : 'nights'}
-        </div>
+      <div className="hp7-days-info">
+        <div className="hp7-days-count">{nightsCount} days, {Math.max(0, nightsCount - 1)} nights</div>
         {rangeText && (
           <div className="hp7-days-range">{rangeText}</div>
         )}
       </div>
-      <span className="visually-hidden">{ariaDescription}</span>
     </div>
   );
 }

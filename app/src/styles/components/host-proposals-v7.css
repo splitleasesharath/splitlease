@@ -126,8 +126,8 @@
 }
 
 .hp7-listing-pill-thumb {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   object-fit: cover;
 }
@@ -163,9 +163,9 @@
 .hp7-section-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-  font-size: 12px;
+  gap: 10px;
+  margin-bottom: 14px;
+  font-size: var(--hp7-font-size-xs);
   font-weight: 600;
   color: var(--hp7-text-muted);
   text-transform: uppercase;
@@ -177,16 +177,16 @@
 }
 
 .hp7-section-header .icon {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
 }
 
 .hp7-section-count {
   background: var(--hp7-border-light);
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-size: 11px;
-  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: var(--hp7-font-size-xs);
+  font-weight: 600;
 }
 
 .hp7-section-header.action-needed .hp7-section-count {
@@ -213,14 +213,14 @@
    ======================================== */
 .hp7-proposal-card {
   background: var(--hp7-white);
-  border: 1px solid var(--hp7-border);
+  border: 2px solid var(--hp7-border);
   border-radius: 12px;
   overflow: hidden;
-  transition: all 0.2s ease;
+  transition: all var(--hp7-transition-normal);
 }
 
 .hp7-proposal-card:hover {
-  border-color: #ccc;
+  border-color: #aaa;
 }
 
 .hp7-proposal-card.expanded {
@@ -274,8 +274,8 @@
 
 /* Guest Avatar */
 .hp7-guest-avatar {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
@@ -293,28 +293,28 @@
 
 .hp7-proposal-name {
   font-weight: 600;
-  font-size: 14px;
+  font-size: var(--hp7-font-size-base);
   color: var(--hp7-text);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
 .hp7-proposal-meta {
-  font-size: 13px;
+  font-size: var(--hp7-font-size-sm);
   color: var(--hp7-text-secondary);
-  margin-top: 1px;
+  margin-top: 2px;
 }
 
 /* Status Tags */
 .hp7-proposal-status {
-  font-size: 11px;
-  font-weight: 500;
+  font-size: var(--hp7-font-size-xs);
+  font-weight: 600;
   color: var(--hp7-text-muted);
-  padding: 4px 10px;
+  padding: 6px 12px;
   background: var(--hp7-border-light);
-  border-radius: 6px;
+  border-radius: 8px;
   flex-shrink: 0;
 }
 
@@ -342,48 +342,48 @@
 .hp7-new-badge {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  font-size: 10px;
+  gap: 4px;
+  font-size: var(--hp7-font-size-xs);
   font-weight: 600;
   color: var(--hp7-purple-primary);
   background: white;
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
   border: 1px solid var(--hp7-purple-border);
 }
 
 .hp7-verified-badge {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  font-size: 10px;
-  font-weight: 500;
+  gap: 4px;
+  font-size: var(--hp7-font-size-xs);
+  font-weight: 600;
   color: var(--hp7-green-text);
   background: var(--hp7-green-bg);
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
 }
 
 .hp7-verified-badge svg {
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
 }
 
 /* Expand Icon */
 .hp7-expand-icon {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--hp7-text-muted);
-  transition: transform 0.2s ease;
+  transition: transform var(--hp7-transition-normal);
   flex-shrink: 0;
 }
 
 .hp7-expand-icon svg {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
 }
 
 .hp7-proposal-card.expanded .hp7-expand-icon {
@@ -650,7 +650,7 @@
 }
 
 .hp7-info-item {
-  padding: 12px 16px;
+  padding: 14px 18px;
   border-right: 1px solid var(--hp7-border-light);
 }
 
@@ -659,16 +659,16 @@
 }
 
 .hp7-info-label {
-  font-size: 10px;
-  font-weight: 500;
+  font-size: var(--hp7-font-size-xs);
+  font-weight: 600;
   color: var(--hp7-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.3px;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 
 .hp7-info-value {
-  font-size: 13px;
+  font-size: var(--hp7-font-size-sm);
   font-weight: 600;
   color: var(--hp7-text);
 }
@@ -679,14 +679,14 @@
 .hp7-days-row {
   display: flex;
   align-items: center;
-  padding: 12px 16px;
-  gap: 10px;
+  padding: 14px 18px;
+  gap: 12px;
   border-bottom: 1px solid var(--hp7-border-light);
 }
 
 .hp7-days-label {
-  font-size: 10px;
-  font-weight: 500;
+  font-size: var(--hp7-font-size-xs);
+  font-weight: 600;
   color: var(--hp7-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -694,24 +694,25 @@
 
 .hp7-days-pills {
   display: flex;
-  gap: 4px;
+  gap: 6px;
 }
 
 .hp7-day-pill {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
+  font-size: var(--hp7-font-size-xs);
   font-weight: 600;
   background: var(--hp7-bg);
   color: var(--hp7-text-muted);
-  border: 1px solid var(--hp7-border);
+  border: 2px solid var(--hp7-border);
 }
 
-.hp7-day-pill.selected {
+.hp7-day-pill.selected,
+.hp7-day-pill[aria-pressed="true"] {
   background: var(--hp7-purple-dark);
   border-color: var(--hp7-purple-dark);
   color: white;
@@ -723,13 +724,13 @@
 }
 
 .hp7-days-count {
-  font-size: 12px;
+  font-size: var(--hp7-font-size-sm);
   font-weight: 600;
   color: var(--hp7-text);
 }
 
 .hp7-days-range {
-  font-size: 11px;
+  font-size: var(--hp7-font-size-xs);
   color: var(--hp7-text-muted);
 }
 
