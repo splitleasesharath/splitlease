@@ -46,17 +46,14 @@ export default function AvatarWithBadge({
   return (
     <div className="profile-avatar-wrapper">
       {/* Avatar Image */}
-      {imageUrl ? (
-        <img
-          src={imageUrl}
-          alt="Profile photo"
-          className="profile-avatar-image"
-        />
-      ) : (
-        <div className="profile-avatar-placeholder profile-avatar-initial">
-          {getInitial()}
-        </div>
-      )}
+      <img
+        src={imageUrl || '/assets/images/default-avatar.jpg'}
+        alt="Profile photo"
+        className="profile-avatar-image"
+        onError={(e) => {
+          e.target.src = '/assets/images/default-avatar.jpg';
+        }}
+      />
 
       {/* Badge */}
       {isEditorView ? (

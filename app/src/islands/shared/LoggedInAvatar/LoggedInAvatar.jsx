@@ -464,13 +464,14 @@ export default function LoggedInAvatar({
         aria-label="Toggle user menu"
         aria-expanded={isOpen}
       >
-        {user.avatarUrl ? (
-          <img src={user.avatarUrl} alt={user.name} className="avatar-image" />
-        ) : (
-          <div className="avatar-placeholder">
-            {user.name.charAt(0).toUpperCase()}
-          </div>
-        )}
+        <img
+          src={user.avatarUrl || '/assets/images/default-avatar.jpg'}
+          alt={user.name}
+          className="avatar-image"
+          onError={(e) => {
+            e.target.src = '/assets/images/default-avatar.jpg';
+          }}
+        />
         <span className="user-name-wrapper">
           {firstName}
           <svg
