@@ -592,6 +592,29 @@ export const routes = [
     cloudflareInternal: false,
     internalName: 'ai-tools-view',
     hasDynamicSegment: false
+  },
+
+  // ===== EMERGENCY MANAGEMENT (ADMIN INTERNAL) =====
+  {
+    path: '/_internal/emergency',
+    file: 'internal-emergency.html',
+    aliases: ['/_internal/emergency.html', '/internal-emergency'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'internal-emergency-view',
+    hasDynamicSegment: false
+  },
+
+  // ===== GUEST EMERGENCY SUBMISSION (PUBLIC) =====
+  {
+    path: '/report-emergency',
+    file: 'report-emergency.html',
+    aliases: ['/report-emergency.html', '/emergency-form'],
+    protected: false,
+    cloudflareInternal: true,
+    internalName: 'report-emergency-view',
+    hasDynamicSegment: false
   }
 ];
 

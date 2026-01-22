@@ -1,0 +1,408 @@
+/**
+ * Report Emergency Page Styles
+ * Split Lease - Guest Emergency Submission Form
+ */
+
+/* ============================================================================
+   Page Layout
+   ============================================================================ */
+
+.report-emergency-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f8f9fa;
+}
+
+.report-emergency-main {
+  flex: 1;
+  padding: 2rem 1rem;
+}
+
+.report-emergency-container {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+/* ============================================================================
+   Page Header
+   ============================================================================ */
+
+.report-emergency-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.report-emergency-header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 0.75rem 0;
+}
+
+.report-emergency-subtitle {
+  color: #6c757d;
+  font-size: 1.1rem;
+  margin: 0 0 1.5rem 0;
+  line-height: 1.5;
+}
+
+.emergency-notice {
+  background-color: #fff3cd;
+  border: 1px solid #ffecb5;
+  border-radius: 8px;
+  padding: 1rem;
+  color: #664d03;
+  font-size: 0.95rem;
+}
+
+.emergency-notice strong {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+/* ============================================================================
+   Alert Banner
+   ============================================================================ */
+
+.alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+
+.alert--error {
+  background-color: #f8d7da;
+  color: #842029;
+  border: 1px solid #f5c2c7;
+}
+
+/* ============================================================================
+   Emergency Form
+   ============================================================================ */
+
+.emergency-form {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 2rem;
+}
+
+/* Form Section */
+.form-section {
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.form-section:last-of-type {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.form-section h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin: 0 0 1rem 0;
+}
+
+.form-section__description {
+  color: #6c757d;
+  font-size: 0.9rem;
+  margin: 0 0 1rem 0;
+}
+
+/* Form Group */
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-group:last-child {
+  margin-bottom: 0;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #495057;
+  margin-bottom: 0.5rem;
+}
+
+/* Form Row (side by side) */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 600px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Form Inputs */
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  font-size: 1rem;
+  background-color: #fff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+}
+
+.form-input--error,
+.form-select--error,
+.form-textarea--error {
+  border-color: #dc3545;
+}
+
+.form-input--error:focus,
+.form-select--error:focus,
+.form-textarea--error:focus {
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.15);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+/* Form Hints & Errors */
+.form-hint {
+  display: block;
+  font-size: 0.8rem;
+  color: #6c757d;
+  margin-top: 0.35rem;
+}
+
+.form-error {
+  display: block;
+  font-size: 0.85rem;
+  color: #dc3545;
+  margin-top: 0.35rem;
+}
+
+/* ============================================================================
+   Photo Upload
+   ============================================================================ */
+
+.photo-upload-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 500px) {
+  .photo-upload-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.photo-upload {
+  position: relative;
+}
+
+.photo-upload__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.photo-upload__label {
+  display: block;
+  cursor: pointer;
+  border: 2px dashed #ced4da;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.photo-upload__label:hover {
+  border-color: #0d6efd;
+  background-color: rgba(13, 110, 253, 0.03);
+}
+
+.photo-upload__placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  color: #6c757d;
+}
+
+.photo-upload__placeholder svg {
+  margin-bottom: 0.5rem;
+}
+
+.photo-upload__placeholder span {
+  font-size: 0.9rem;
+}
+
+.photo-upload__preview {
+  position: relative;
+  aspect-ratio: 4/3;
+}
+
+.photo-upload__preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-upload__remove {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  text-align: center;
+  padding: 0.5rem;
+  font-size: 0.85rem;
+}
+
+/* ============================================================================
+   Form Actions
+   ============================================================================ */
+
+.form-actions {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.form-actions__note {
+  font-size: 0.85rem;
+  color: #6c757d;
+  margin-top: 1rem;
+}
+
+/* ============================================================================
+   Success State
+   ============================================================================ */
+
+.success-state {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 3rem 2rem;
+  text-align: center;
+  max-width: 500px;
+  margin: 2rem auto;
+}
+
+.success-state__icon {
+  color: #198754;
+  margin-bottom: 1.5rem;
+}
+
+.success-state h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin: 0 0 1rem 0;
+}
+
+.success-state p {
+  color: #495057;
+  line-height: 1.6;
+  margin: 0 0 1rem 0;
+}
+
+.success-state__note {
+  background-color: #fff3cd;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  color: #664d03;
+  font-size: 0.9rem;
+}
+
+.success-state__actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+@media (max-width: 500px) {
+  .success-state__actions {
+    flex-direction: column;
+  }
+}
+
+/* ============================================================================
+   Buttons
+   ============================================================================ */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn--primary {
+  background-color: #0d6efd;
+  color: #fff;
+}
+
+.btn--primary:hover:not(:disabled) {
+  background-color: #0b5ed7;
+}
+
+.btn--secondary {
+  background-color: #6c757d;
+  color: #fff;
+}
+
+.btn--secondary:hover:not(:disabled) {
+  background-color: #5c636a;
+}
+
+.btn--large {
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+}
+
+/* ============================================================================
+   Utility Classes
+   ============================================================================ */
+
+.text-muted {
+  color: #6c757d;
+}
