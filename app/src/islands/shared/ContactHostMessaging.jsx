@@ -716,10 +716,10 @@ export default function ContactHostMessaging({ isOpen, onClose, listing, onLogin
         >
           {/* Header */}
           <div style={styles.header}>
-            {listing?.host?.imageUrl ? (
+            {listing?.host?.image ? (
               <div style={styles.avatarContainer} aria-hidden="true">
                 <img
-                  src={listing.host.imageUrl}
+                  src={listing.host.image}
                   alt=""
                   style={styles.avatarImage}
                   onError={(e) => {
