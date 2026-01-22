@@ -905,7 +905,17 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
         console.log('[useHostProposalsPageLogic] Session refreshed successfully');
       }
 
+      // Get the latest session (might have been refreshed above)
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      const authToken = currentSession?.access_token;
+
+      console.log('[useHostProposalsPageLogic] Auth token length:', authToken?.length);
+      console.log('[useHostProposalsPageLogic] Invoking Edge Function with explicit auth...');
+
       const { data, error } = await supabase.functions.invoke('proposal', {
+        headers: {
+          Authorization: `Bearer ${authToken}`
+        },
         body: {
           action: 'update',
           payload
