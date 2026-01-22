@@ -7,16 +7,16 @@
 ADW Simplified FP Refactor Orchestrator - Unified Implementation Pipeline
 
 Simplified orchestration pipeline that eliminates chunk-based parsing:
-- Uses /prime + /ralph-loop for persistent audit session
+- Uses /prime for persistent audit session
 - Single implementation phase (no chunk-by-chunk processing)
 - File tracking via git diff (no chunk parsing)
-- Build validation via ralph-loop with automatic troubleshooting
+- Build validation with iterative Claude troubleshooting
 
 Workflow:
-1. AUDIT: Claude Opus with /prime + /ralph-loop creates implementation plan
+1. AUDIT: Claude Opus with /prime creates implementation plan
 2. GRAPH: Run graph algorithms for dependency context (injected into audit)
 3. IMPLEMENT: Single Claude session implements entire plan
-4. VALIDATE: Build via ralph-loop (auto-troubleshoot up to N iterations) + visual regression
+4. VALIDATE: Build + iterative fix (up to N iterations) + visual regression
 5. COMMIT/RESET: All-or-nothing based on validation result
 
 Usage:
@@ -157,9 +157,7 @@ def implement_full_plan(
     # Path relative from adws/ for Claude
     plan_path_from_adws = f"../{plan_file.relative_to(project_root)}"
 
-    prompt = f"""/ralph-loop:ralph-loop
-
-You have an implementation plan to execute. The plan is at: {plan_path_from_adws}
+    prompt = f"""You have an implementation plan to execute. The plan is at: {plan_path_from_adws}
 
 ## Plan Content
 
@@ -234,7 +232,7 @@ def main():
     parser.add_argument("--slack-channel", default="test-bed", help="Slack channel for notifications (default: test-bed)")
     parser.add_argument("--no-slack", action="store_true", help="Disable Slack notifications")
     parser.add_argument("--use-gemini", action="store_true", help="Use Gemini instead of Claude for visual checks")
-    parser.add_argument("--max-iterations", type=int, default=5, help="Max ralph-loop iterations for build troubleshooting (default: 5)")
+    parser.add_argument("--max-iterations", type=int, default=5, help="Max iterations for build troubleshooting (default: 5)")
 
     args = parser.parse_args()
 
@@ -265,10 +263,10 @@ def main():
 
     try:
         # =====================================================================
-        # PHASE 1: AUDIT (Claude Opus with /prime + /ralph-loop)
+        # PHASE 1: AUDIT (Claude Opus with /prime)
         # =====================================================================
         phase_start = time.time()
-        logger.phase_start("PHASE 1: CODE AUDIT (Claude Opus + /prime + /ralph-loop)")
+        logger.phase_start("PHASE 1: CODE AUDIT (Claude Opus + /prime)")
         logger.step(f"Target: {args.target_path}")
         logger.step(f"Audit type: {args.audit_type}")
 
@@ -413,7 +411,7 @@ def main():
                 reverse_deps
             )
 
-            # Run deferred validation with ralph-loop build troubleshooting
+            # Run deferred validation with iterative build troubleshooting
             effective_slack_channel = None if args.no_slack else args.slack_channel
             validation_result = run_deferred_validation(
                 validation_batch,

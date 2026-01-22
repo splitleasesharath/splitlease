@@ -373,30 +373,55 @@ class OrchestrationResult:
 
 
 # =============================================================================
-# RALPH-LOOP BUILD VALIDATION
+# ITERATIVE BUILD VALIDATION
 # =============================================================================
 
-def _run_build_with_ralph_loop(
+def _run_build_command(working_dir: Path) -> tuple[bool, str]:
+    """Run bun run build and return success status and output.
+
+    Args:
+        working_dir: Project root directory
+
+    Returns:
+        Tuple of (success, output_text)
+    """
+    import subprocess
+
+    app_dir = working_dir / "app"
+    try:
+        result = subprocess.run(
+            ["bun", "run", "build"],
+            cwd=str(app_dir),
+            capture_output=True,
+            text=True,
+            timeout=120,  # 2 minute timeout for build
+            encoding='utf-8'
+        )
+        output = result.stdout + result.stderr
+        return result.returncode == 0, output
+    except subprocess.TimeoutExpired:
+        return False, "Build timed out after 120 seconds"
+    except Exception as e:
+        return False, f"Build command failed: {str(e)}"
+
+
+def _run_build_with_troubleshooting(
     batch: ValidationBatch,
     working_dir: Path,
     logger: "RunLogger",
     max_iterations: int = 5,
     build_timeout: int = 180
 ) -> tuple[bool, List[ValidationError], float]:
-    """Run build validation using ralph-loop for automated troubleshooting.
+    """Run build validation with iterative troubleshooting.
 
-    Uses ralph-loop to run `bun run build`, monitor the outcome, and automatically
-    troubleshoot failures. The loop continues until:
-    - Build succeeds (outputs "COMPLETED")
-    - Max iterations reached
-    - Unrecoverable error encountered
-
-    This replaces the previous _run_build_with_retry + _run_build_debug_session
-    approach with a single persistent Claude session that maintains context
-    across all troubleshooting iterations.
+    Simple iterative approach:
+    1. Run `bun run build`
+    2. If success, return
+    3. If failure, invoke Claude to fix the errors
+    4. Repeat up to max_iterations
 
     Args:
-        batch: ValidationBatch containing chunks and affected files
+        batch: ValidationBatch containing files that were modified
         working_dir: Project working directory
         logger: RunLogger for output
         max_iterations: Maximum troubleshooting iterations (default: 5)
@@ -410,124 +435,105 @@ def _run_build_with_ralph_loop(
     from .data_types import AgentPromptRequest
 
     start_time = time.time()
-
-    # Build context for the ralph-loop session
     modified_files = "\n".join([f"  - {f}" for f in sorted(batch.implemented_files)])
 
-    # The prompt uses ralph-loop to run build with troubleshooting
-    prompt = f"""/ralph-loop:ralph-loop --max-iterations {max_iterations}
+    # Initial build attempt
+    logger.log(f"  [BUILD] Running initial build...")
+    build_success, build_output = _run_build_command(working_dir)
 
-## Task: Build Validation with Troubleshooting
-
-Run `bun run build` from the `app/` directory and ensure it passes.
-
-### Modified Files (for context):
-{modified_files}
-
-### Instructions:
-
-1. **Run the build**: Execute `bun run build` from the `app/` directory
-2. **Monitor the outcome**: Wait for the build to complete
-3. **On SUCCESS**: Output "COMPLETED" to end the loop
-4. **On FAILURE**:
-   - Analyze the error output (lint errors, type errors, vite errors)
-   - Identify the root cause
-   - Fix the issues in the affected files
-   - Re-run `bun run build`
-5. **Repeat** until build succeeds or max iterations reached
-
-### Common Build Issues:
-- Import path errors (file doesn't exist, wrong relative path)
-- Missing exports (function was deleted but still imported elsewhere)
-- Type errors from refactoring changes
-- Circular dependencies
-- Syntax errors from incomplete edits
-
-### Working Directories:
-- Project root: {working_dir}
-- App directory: {working_dir / "app"}
-
-### Completion Criteria:
-When `bun run build` exits with code 0, output exactly:
-```
-COMPLETED
-```
-
-This signals successful build validation. Begin now.
-"""
-
-    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-    agent_dir = working_dir / "adws" / "agents" / "build_validation" / f"ralph_loop_{timestamp}"
-    agent_dir.mkdir(parents=True, exist_ok=True)
-    output_file = agent_dir / "raw_output.jsonl"
-
-    logger.log(f"  [RALPH-LOOP] Starting build validation (max {max_iterations} iterations)...")
-
-    # System prompt for autonomous execution - proceed without confirmation
-    system_prompt = (
-        "You are a high-level engineer. "
-        "Do NOT ask for confirmation. "
-        "Proceed autonomously through all phases."
-    )
-
-    request = AgentPromptRequest(
-        prompt=prompt,
-        adw_id=f"build_validation_{timestamp}",
-        agent_name="build_validator",
-        model="sonnet",
-        output_file=str(output_file),
-        working_dir=str(working_dir),  # Run from project root so plugins load from .claude/settings.json
-        dangerously_skip_permissions=True,
-        timeout=build_timeout,
-        system_prompt=system_prompt
-    )
-
-    response = prompt_claude_code(request)
-    total_duration = time.time() - start_time
-
-    # Check if the session completed successfully
-    if response.success and "COMPLETED" in response.output:
-        logger.log(f"  [OK] Build passed via ralph-loop ({total_duration:.1f}s)")
+    if build_success:
+        total_duration = time.time() - start_time
+        logger.log(f"  [OK] Build passed on first attempt ({total_duration:.1f}s)")
         return True, [], total_duration
 
-    # Build failed or timed out
+    # Build failed - iterate with Claude troubleshooting
+    for iteration in range(1, max_iterations + 1):
+        elapsed = time.time() - start_time
+        if elapsed > build_timeout:
+            logger.log(f"  [TIMEOUT] Build validation exceeded {build_timeout}s timeout")
+            break
+
+        logger.log(f"  [FIX] Iteration {iteration}/{max_iterations} - Invoking Claude to fix build errors...")
+
+        # Create troubleshooting prompt
+        prompt = f"""The build failed. Fix the errors and output FIXED when done.
+
+## Build Output (ERROR):
+```
+{build_output[-3000:] if len(build_output) > 3000 else build_output}
+```
+
+## Modified Files:
+{modified_files}
+
+## Instructions:
+1. Analyze the build errors above
+2. Identify the root cause (missing imports, syntax errors, type errors, etc.)
+3. Fix the issues in the affected files using the Edit tool
+4. Output exactly "FIXED" when all fixes are applied
+
+Common issues:
+- Missing exports: A function was removed but still imported elsewhere
+- Import paths: Wrong relative path or file doesn't exist
+- Syntax errors: Incomplete edits or malformed code
+
+Fix the errors now. Do NOT run the build yourself - just fix the code.
+"""
+
+        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+        agent_dir = working_dir / "adws" / "agents" / "build_fix" / f"fix_{timestamp}"
+        agent_dir.mkdir(parents=True, exist_ok=True)
+        output_file = agent_dir / "raw_output.jsonl"
+
+        system_prompt = (
+            "You are a build error fixer. "
+            "Analyze errors and fix code. "
+            "Do NOT ask for confirmation. "
+            "Do NOT run build commands."
+        )
+
+        request = AgentPromptRequest(
+            prompt=prompt,
+            adw_id=f"build_fix_{timestamp}",
+            agent_name="build_fixer",
+            model="sonnet",
+            output_file=str(output_file),
+            working_dir=str(working_dir),
+            dangerously_skip_permissions=True,
+            timeout=60,  # 1 minute per fix iteration
+            system_prompt=system_prompt
+        )
+
+        response = prompt_claude_code(request)
+
+        if not response.success:
+            logger.log(f"  [WARN] Fix session failed: {response.output[:100]}")
+            continue
+
+        # Re-run build after fixes
+        logger.log(f"  [BUILD] Re-running build after fixes...")
+        build_success, build_output = _run_build_command(working_dir)
+
+        if build_success:
+            total_duration = time.time() - start_time
+            logger.log(f"  [OK] Build passed after {iteration} fix iteration(s) ({total_duration:.1f}s)")
+            return True, [], total_duration
+
+    # All iterations exhausted
+    total_duration = time.time() - start_time
     errors: List[ValidationError] = []
+    errors.append(ValidationError(
+        message=f"Build failed after {max_iterations} fix iterations"
+    ))
 
-    if not response.success:
-        errors.append(ValidationError(
-            message=f"Ralph-loop build validation failed: {response.output[:200]}"
-        ))
-        logger.log(f"  [FAIL] Ralph-loop session failed ({total_duration:.1f}s)")
-    else:
-        # Session completed but didn't output COMPLETED
-        errors.append(ValidationError(
-            message=f"Build did not pass after {max_iterations} iterations"
-        ))
-        logger.log(f"  [FAIL] Build failed after {max_iterations} iterations ({total_duration:.1f}s)")
-
-    # Try to parse any build errors from the output
-    if response.output:
-        parsed_errors = _parse_build_errors(response.output)
+    # Parse errors from final build output
+    if build_output:
+        parsed_errors = _parse_build_errors(build_output)
         if parsed_errors:
-            errors.extend(parsed_errors[:10])  # Limit to 10 additional errors
+            errors.extend(parsed_errors[:10])
 
+    logger.log(f"  [FAIL] Build failed after {max_iterations} iterations ({total_duration:.1f}s)")
     return False, errors, total_duration
-
-
-# =============================================================================
-# DEPRECATED FUNCTIONS (Removed 2026-01-22)
-# =============================================================================
-# The following functions have been removed and replaced by ralph-loop approach:
-#
-# - _run_build_debug_session(): Invoked Claude for each retry attempt separately
-# - _run_build_with_retry(): Manual loop with lint→typecheck→build steps
-# - _run_lint_check(): Ran ESLint separately to capture error output
-# - _parse_eslint_errors(): Parsed ESLint output into ValidationError objects
-#
-# New approach: _run_build_with_ralph_loop() uses a single persistent Claude
-# session with /ralph-loop to run `bun run build`, monitor outcomes, and
-# automatically troubleshoot failures. This maintains context across all
-# attempts and provides cleaner iteration tracking.
 
 
 def run_deferred_validation(
@@ -540,35 +546,35 @@ def run_deferred_validation(
     use_claude: bool = True,
     max_iterations: int = 5
 ) -> ValidationResult:
-    """Run validation after all chunks implemented.
+    """Run validation after all files implemented.
 
     Validation sequence:
-    1. Full production build with ralph-loop troubleshooting:
-       - Uses `/ralph-loop` to run `bun run build`
-       - Automatically troubleshoots failures up to max_iterations
-       - Maintains context across all attempts in a single session
+    1. Full production build with iterative troubleshooting:
+       - Runs `bun run build` directly
+       - On failure, invokes Claude to fix errors
+       - Repeats up to max_iterations
     2. Visual regression on affected pages (if build passes and not skipped)
     3. Return detailed result with error attribution
 
     Args:
-        batch: ValidationBatch containing chunks and affected files
+        batch: ValidationBatch containing files that were modified
         working_dir: Project working directory
         logger: RunLogger for output
         skip_visual: If True, skip visual regression testing
         build_timeout: Build timeout in seconds (default: 180)
         slack_channel: Optional Slack channel for visual regression notifications
         use_claude: Use Claude instead of Gemini for visual checks (default: True)
-        max_iterations: Maximum ralph-loop iterations for troubleshooting (default: 5)
+        max_iterations: Maximum fix iterations for troubleshooting (default: 5)
 
     Returns:
         ValidationResult with success status and any errors
     """
     result = ValidationResult(success=False)
 
-    # Phase 1: Build check with ralph-loop troubleshooting
-    logger.step(f"Running build validation via ralph-loop ({len(batch.implemented_files)} files changed)...")
+    # Phase 1: Build check with iterative troubleshooting
+    logger.step(f"Running build validation ({len(batch.implemented_files)} files changed)...")
 
-    build_passed, build_errors, build_duration = _run_build_with_ralph_loop(
+    build_passed, build_errors, build_duration = _run_build_with_troubleshooting(
         batch=batch,
         working_dir=working_dir,
         logger=logger,
@@ -582,7 +588,7 @@ def run_deferred_validation(
         result.affected_chunks = _attribute_errors_to_chunks(
             build_errors, batch.chunks
         )
-        logger.log(f"  [FAIL] Build failed after {max_iterations} ralph-loop iterations ({build_duration:.1f}s total)")
+        logger.log(f"  [FAIL] Build failed after {max_iterations} fix iterations ({build_duration:.1f}s total)")
         return result
 
     result.build_passed = True

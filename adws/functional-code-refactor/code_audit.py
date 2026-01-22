@@ -144,8 +144,7 @@ def run_code_audit_and_plan(
         )
     else:
         # Fallback to hardcoded prompt if file not found
-        prompt = f"""/ralph-loop:ralph-loop
-Audit the codebase at: {target_path_from_adws}
+        prompt = f"""Audit the codebase at: {target_path_from_adws}
 Create an implementation plan at: {plan_file}
 """
         # Run Opus session

@@ -1,7 +1,5 @@
 /prime {target_path}
 
-/ralph-loop:ralph-loop
-
 You are auditing the codebase at `{target_path}` for **{audit_type}** improvements.
 
 ## Dependency Analysis Context
@@ -109,7 +107,7 @@ If validation fails, reset these files:
 
 ## Progressive Disclosure
 
-Use `/ralph-loop` to iterate until the plan is complete:
+Iterate until the plan is complete:
 - First pass: Identify all files that need changes
 - Second pass: Write Current Code sections
 - Third pass: Write Refactored Code sections
