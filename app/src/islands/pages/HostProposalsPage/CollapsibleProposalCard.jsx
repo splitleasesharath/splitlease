@@ -31,6 +31,7 @@ export function CollapsibleProposalCard({
 }) {
   const variant = getCardVariant(proposal);
   const proposalId = proposal?._id || proposal?.id;
+  const contentId = `proposal-content-${proposalId}`;
 
   // Build class name
   let className = 'hp7-proposal-card';
@@ -41,13 +42,21 @@ export function CollapsibleProposalCard({
     <div
       className={className}
       data-proposal-id={proposalId}
+      role="listitem"
     >
       <ProposalCardHeader
         proposal={proposal}
         isExpanded={isExpanded}
         onToggle={onToggle}
+        contentId={contentId}
       />
-      <div className="hp7-card-body">
+      <div
+        id={contentId}
+        className="hp7-card-body"
+        role="region"
+        aria-label={`Details for proposal from ${proposal?.guest?.name || 'guest'}`}
+        hidden={!isExpanded}
+      >
         <ProposalCardBody
           proposal={proposal}
           handlers={handlers}
