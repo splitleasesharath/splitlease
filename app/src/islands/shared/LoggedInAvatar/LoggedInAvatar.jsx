@@ -117,6 +117,17 @@ export default function LoggedInAvatar({
     };
   }, []);
 
+  // Load Lottie player script for animated menu icons
+  useEffect(() => {
+    // Check if already loaded
+    if (document.querySelector('script[src*="lottie-player"]')) return;
+
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js';
+    script.async = true;
+    document.body.appendChild(script);
+  }, []);
+
   useEffect(() => {
     console.log('🔄 LoggedInAvatar dropdown state changed:', isOpen);
 
@@ -226,7 +237,7 @@ export default function LoggedInAvatar({
       items.push({
         id: 'proposals-suggested',
         label: 'Proposals Suggested',
-        icon: '/assets/icons/file-text-purple.svg',
+        lottieUrl: '/assets/lotties/proposals-suggested.json',
         path: suggestedPath,
       });
     }
@@ -507,7 +518,19 @@ export default function LoggedInAvatar({
                 className={`menu-item ${isActivePath(item.path) ? 'active' : ''}`}
                 onClick={() => handleMenuItemClick(item)}
               >
-                <img src={item.icon} alt="" className="menu-icon" />
+                {item.lottieUrl ? (
+                  <lottie-player
+                    src={item.lottieUrl}
+                    background="transparent"
+                    speed="1"
+                    style={{ width: '20px', height: '20px' }}
+                    loop
+                    autoplay
+                    className="menu-icon"
+                  ></lottie-player>
+                ) : (
+                  <img src={item.icon} alt="" className="menu-icon" />
+                )}
                 <span className="menu-label">{item.label}</span>
                 {item.badgeCount !== undefined && item.badgeCount > 0 && (
                   <span className={`notification-badge ${item.badgeColor}`}>
