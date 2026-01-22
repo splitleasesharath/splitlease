@@ -1,0 +1,1637 @@
+# Implementation Plan: General Code Audit Refactoring
+
+**Generated**: 2026-01-22 03:23:34
+**Scope**: `app/src/logic/` - Leaf files with 0 dependents
+**Focus**: Functional programming improvements, code consolidation, validation abstraction
+
+---
+
+## Summary Table
+
+| Chunk | File | Category | Impact | Risk |
+|-------|------|----------|--------|------|
+| 1 | `logic/validators/commonValidators.js` | **NEW FILE** | High | Low |
+| 2 | `logic/rules/users/isGuest.js` | Refactor | Medium | Low |
+| 3 | `logic/rules/users/isHost.js` | Refactor | Medium | Low |
+| 4 | `logic/rules/search/isValidPriceTier.js` | Refactor | Medium | Low |
+| 5 | `logic/rules/search/isValidSortOption.js` | Refactor | Medium | Low |
+| 6 | `logic/rules/search/isValidWeekPattern.js` | Refactor | Medium | Low |
+| 7 | `logic/rules/pricing/isValidDayCountForPricing.js` | Refactor | Medium | Low |
+| 8 | `logic/calculators/scheduling/isContiguousSelection.js` | **DELETE** | Medium | Low |
+| 9 | `hooks/useDeviceDetection.js` | Refactor | Medium | Low |
+| 10 | `logic/rules/leases/canDeleteLease.js` | Refactor | Low | Low |
+| 11 | `lib/timing.js` | Enhancement | Low | Low |
+| 12 | `logic/processors/leases/adaptLeaseFromSupabase.js` | Refactor | Medium | Medium |
+
+---
+
+## Implementation Order
+
+Process in this order (leaf-first, dependencies respected):
+
+1. **Chunk 1**: Create common validators (foundation)
+2. **Chunks 2-7**: Refactor rule files to use common validators (parallel-safe)
+3. **Chunk 8**: Delete deprecated file
+4. **Chunks 9-12**: Independent refactors (parallel-safe)
+
+---
+
+## Chunk 1: Create Common Validators Module
+
+**File**: `app/src/logic/validators/commonValidators.js`
+**Category**: NEW FILE
+**Purpose**: Consolidate repeated validation patterns across 44+ files
+
+### Rationale
+
+The codebase has 114 throw statements across 44 files with highly repetitive validation patterns:
+- `typeof x !== 'string'` appears 26+ times
+- `typeof x !== 'number' || isNaN(x)` appears 15+ times
+- `!Array.isArray(x)` appears 12+ times
+
+### Current Code
+
+N/A (new file)
+
+### Refactored Code
+
+```javascript
+/**
+ * Common Validation Utilities
+ *
+ * Centralized validators for consistent error handling across the codebase.
+ * All validators throw errors on failure (NO FALLBACK philosophy).
+ *
+ * @module validators/commonValidators
+ */
+
+/**
+ * Validate that a value is a non-empty string.
+ *
+ * @param {*} value - Value to validate
+ * @param {string} paramName - Parameter name for error message
+ * @param {string} functionName - Calling function name for error message
+ * @throws {Error} If value is not a non-empty string
+ * @returns {string} The trimmed string value (for chaining)
+ */
+export function validateString(value, paramName, functionName) {
+  if (typeof value !== 'string') {
+    throw new Error(
+      `${functionName}: ${paramName} must be a string, got ${typeof value}`
+    );
+  }
+  return value;
+}
+
+/**
+ * Validate that a value is a non-empty string after trimming.
+ *
+ * @param {*} value - Value to validate
+ * @param {string} paramName - Parameter name for error message
+ * @param {string} functionName - Calling function name for error message
+ * @throws {Error} If value is not a non-empty string
+ * @returns {string} The trimmed string value
+ */
+export function validateNonEmptyString(value, paramName, functionName) {
+  validateString(value, paramName, functionName);
+  const trimmed = value.trim();
+  if (trimmed.length === 0) {
+    throw new Error(
+      `${functionName}: ${paramName} cannot be empty or whitespace`
+    );
+  }
+  return trimmed;
+}
+
+/**
+ * Validate that a value is a boolean.
+ *
+ * @param {*} value - Value to validate
+ * @param {string} paramName - Parameter name for error message
+ * @param {string} functionName - Calling function name for error message
+ * @throws {Error} If value is not a boolean
+ * @returns {boolean} The boolean value
+ */
+export function validateBoolean(value, paramName, functionName) {
+  if (typeof value !== 'boolean') {
+    throw new Error(
+      `${functionName}: ${paramName} must be a boolean, got ${typeof value}`
+    );
+  }
+  return value;
+}
+
+/**
+ * Validate that a value is an array.
+ *
+ * @param {*} value - Value to validate
+ * @param {string} paramName - Parameter name for error message
+ * @param {string} functionName - Calling function name for error message
+ * @throws {Error} If value is not an array
+ * @returns {Array} The array value
+ */
+export function validateArray(value, paramName, functionName) {
+  if (!Array.isArray(value)) {
+    throw new Error(
+      `${functionName}: ${paramName} must be an array, got ${typeof value}`
+    );
+  }
+  return value;
+}
+
+/**
+ * Validate that a value is a non-empty array.
+ *
+ * @param {*} value - Value to validate
+ * @param {string} paramName - Parameter name for error message
+ * @param {string} functionName - Calling function name for error message
+ * @throws {Error} If value is not a non-empty array
+ * @returns {Array} The array value
+ */
+export function validateNonEmptyArray(value, paramName, functionName) {
+  validateArray(value, paramName, functionName);
+  if (value.length === 0) {
+    throw new Error(
+      `${functionName}: ${paramName} cannot be empty`
+    );
+  }
+  return value;
+}
+
+/**
+ * Validate that a value is not null or undefined.
+ *
+ * @param {*} value - Value to validate
+ * @param {string} paramName - Parameter name for error message
+ * @param {string} functionName - Calling function name for error message
+ * @throws {Error} If value is null or undefined
+ * @returns {*} The value (for chaining)
+ */
+export function validateDefined(value, paramName, functionName) {
+  if (value === null || value === undefined) {
+    throw new Error(
+      `${functionName}: ${paramName} cannot be null or undefined`
+    );
+  }
+  return value;
+}
+
+/**
+ * Validate that a value is a valid object (not null, not array).
+ *
+ * @param {*} value - Value to validate
+ * @param {string} paramName - Parameter name for error message
+ * @param {string} functionName - Calling function name for error message
+ * @throws {Error} If value is not a valid object
+ * @returns {Object} The object value
+ */
+export function validateObject(value, paramName, functionName) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(
+      `${functionName}: ${paramName} must be a valid object`
+    );
+  }
+  return value;
+}
+
+/**
+ * Validate that a value is a valid day index (0-6).
+ *
+ * @param {*} day - Value to validate
+ * @param {string} functionName - Calling function name for error message
+ * @throws {Error} If day is not a valid index (0-6)
+ * @returns {number} The day index
+ */
+export function validateDayIndex(day, functionName) {
+  if (typeof day !== 'number' || isNaN(day) || day < 0 || day > 6) {
+    throw new Error(
+      `${functionName}: Invalid day index ${day}, must be 0-6`
+    );
+  }
+  return day;
+}
+
+/**
+ * Validate all elements in an array of day indices.
+ *
+ * @param {number[]} days - Array of day indices to validate
+ * @param {string} functionName - Calling function name for error message
+ * @throws {Error} If any day is not a valid index (0-6)
+ * @returns {number[]} The validated array
+ */
+export function validateDayIndices(days, functionName) {
+  validateArray(days, 'selectedDays', functionName);
+  days.forEach(day => validateDayIndex(day, functionName));
+  return days;
+}
+
+/**
+ * Create a validator that checks if a value is in an allowed set.
+ *
+ * @param {Array} allowedValues - Array of allowed values
+ * @param {string} paramName - Parameter name for error message
+ * @param {string} functionName - Calling function name for error message
+ * @returns {function} Validator function that returns boolean
+ */
+export function createEnumValidator(allowedValues, paramName, functionName) {
+  return (value) => {
+    validateString(value, paramName, functionName);
+    return allowedValues.includes(value);
+  };
+}
+```
+
+### Affected Pages
+
+All pages using logic layer functions.
+
+### Verification
+
+1. Run `bun run build` - should compile without errors
+2. Import in test file and verify each validator throws appropriately
+
+---
+
+## Chunk 2: Refactor isGuest.js
+
+**File**: `app/src/logic/rules/users/isGuest.js`
+**Category**: Refactor
+**Purpose**: Use common validators, improve functional purity
+
+### Current Code
+
+```javascript
+/**
+ * Determine if a user type indicates Guest privileges.
+ *
+ * @intent Enforce business rules for Guest role identification.
+ * @rule Guest types from Supabase:
+ *   - "A Guest (I would like to rent a space)"
+ *   - "Split Lease" (internal users with both Host and Guest privileges)
+ *
+ * @param {object} params - Named parameters.
+ * @param {string|null} params.userType - The user type value from Supabase or localStorage.
+ * @returns {boolean} True if user has Guest privileges.
+ *
+ * @example
+ * isGuest({ userType: 'A Guest (I would like to rent a space)' })
+ * // => true
+ *
+ * isGuest({ userType: 'A Host (I have a space available to rent)' })
+ * // => false
+ *
+ * isGuest({ userType: 'Split Lease' })
+ * // => true (internal users have both roles)
+ */
+export function isGuest({ userType }) {
+  // No user type means not authenticated or type not set
+  if (!userType || typeof userType !== 'string') {
+    return false
+  }
+
+  const type = userType.trim()
+
+  // Split Lease internal users have both Host and Guest privileges
+  if (type === 'Split Lease') {
+    return true
+  }
+
+  // Check if type includes "Guest"
+  return type.includes('Guest')
+}
+```
+
+### Refactored Code
+
+```javascript
+/**
+ * Determine if a user type indicates Guest privileges.
+ *
+ * @intent Enforce business rules for Guest role identification.
+ * @rule Guest types from Supabase:
+ *   - "A Guest (I would like to rent a space)"
+ *   - "Split Lease" (internal users with both Host and Guest privileges)
+ *
+ * @param {object} params - Named parameters.
+ * @param {string|null} params.userType - The user type value from Supabase or localStorage.
+ * @returns {boolean} True if user has Guest privileges.
+ *
+ * @example
+ * isGuest({ userType: 'A Guest (I would like to rent a space)' })
+ * // => true
+ *
+ * isGuest({ userType: 'A Host (I have a space available to rent)' })
+ * // => false
+ *
+ * isGuest({ userType: 'Split Lease' })
+ * // => true (internal users have both roles)
+ */
+
+/** @constant {string} Internal user type with both Guest and Host privileges */
+const INTERNAL_USER_TYPE = 'Split Lease';
+
+/** @constant {string} Keyword indicating Guest role */
+const GUEST_KEYWORD = 'Guest';
+
+/**
+ * Check if userType is a valid string for role checking.
+ * @param {*} userType - Value to check
+ * @returns {boolean} True if valid string
+ */
+const isValidUserType = (userType) =>
+  userType !== null &&
+  userType !== undefined &&
+  typeof userType === 'string' &&
+  userType.trim().length > 0;
+
+/**
+ * Check if the user type indicates internal (Split Lease) user.
+ * @param {string} type - Trimmed user type string
+ * @returns {boolean} True if internal user
+ */
+const isInternalUser = (type) => type === INTERNAL_USER_TYPE;
+
+/**
+ * Check if the user type contains the Guest keyword.
+ * @param {string} type - Trimmed user type string
+ * @returns {boolean} True if contains Guest keyword
+ */
+const containsGuestKeyword = (type) => type.includes(GUEST_KEYWORD);
+
+export function isGuest({ userType }) {
+  // No user type means not authenticated or type not set
+  if (!isValidUserType(userType)) {
+    return false;
+  }
+
+  const type = userType.trim();
+
+  // Split Lease internal users have both Host and Guest privileges
+  // OR user type explicitly contains "Guest"
+  return isInternalUser(type) || containsGuestKeyword(type);
+}
+```
+
+### Affected Pages
+
+- Guest proposals page
+- Account profile page
+- Any page checking user role
+
+### Verification
+
+1. Run `bun run build`
+2. Test with: `isGuest({ userType: 'A Guest (I would like to rent a space)' })` returns `true`
+3. Test with: `isGuest({ userType: 'Split Lease' })` returns `true`
+4. Test with: `isGuest({ userType: null })` returns `false`
+
+---
+
+## Chunk 3: Refactor isHost.js
+
+**File**: `app/src/logic/rules/users/isHost.js`
+**Category**: Refactor
+**Purpose**: Mirror isGuest.js pattern, extract constants
+
+### Current Code
+
+```javascript
+/**
+ * Determine if a user type indicates Host privileges.
+ *
+ * @intent Enforce business rules for Host role identification.
+ * @rule Host types from Supabase:
+ *   - "A Host (I have a space available to rent)"
+ *   - "Trial Host"
+ *   - "Split Lease" (internal users with both Host and Guest privileges)
+ *
+ * @param {object} params - Named parameters.
+ * @param {string|null} params.userType - The user type value from Supabase or localStorage.
+ * @returns {boolean} True if user has Host privileges.
+ *
+ * @example
+ * isHost({ userType: 'A Host (I have a space available to rent)' })
+ * // => true
+ *
+ * isHost({ userType: 'A Guest (I would like to rent a space)' })
+ * // => false
+ *
+ * isHost({ userType: 'Split Lease' })
+ * // => true (internal users have both roles)
+ */
+export function isHost({ userType }) {
+  // No user type means not authenticated or type not set
+  if (!userType || typeof userType !== 'string') {
+    return false
+  }
+
+  const type = userType.trim()
+
+  // Split Lease internal users have both Host and Guest privileges
+  if (type === 'Split Lease') {
+    return true
+  }
+
+  // Check if type includes "Host" (covers both regular and trial hosts)
+  return type.includes('Host')
+}
+```
+
+### Refactored Code
+
+```javascript
+/**
+ * Determine if a user type indicates Host privileges.
+ *
+ * @intent Enforce business rules for Host role identification.
+ * @rule Host types from Supabase:
+ *   - "A Host (I have a space available to rent)"
+ *   - "Trial Host"
+ *   - "Split Lease" (internal users with both Host and Guest privileges)
+ *
+ * @param {object} params - Named parameters.
+ * @param {string|null} params.userType - The user type value from Supabase or localStorage.
+ * @returns {boolean} True if user has Host privileges.
+ *
+ * @example
+ * isHost({ userType: 'A Host (I have a space available to rent)' })
+ * // => true
+ *
+ * isHost({ userType: 'A Guest (I would like to rent a space)' })
+ * // => false
+ *
+ * isHost({ userType: 'Split Lease' })
+ * // => true (internal users have both roles)
+ */
+
+/** @constant {string} Internal user type with both Guest and Host privileges */
+const INTERNAL_USER_TYPE = 'Split Lease';
+
+/** @constant {string} Keyword indicating Host role */
+const HOST_KEYWORD = 'Host';
+
+/**
+ * Check if userType is a valid string for role checking.
+ * @param {*} userType - Value to check
+ * @returns {boolean} True if valid string
+ */
+const isValidUserType = (userType) =>
+  userType !== null &&
+  userType !== undefined &&
+  typeof userType === 'string' &&
+  userType.trim().length > 0;
+
+/**
+ * Check if the user type indicates internal (Split Lease) user.
+ * @param {string} type - Trimmed user type string
+ * @returns {boolean} True if internal user
+ */
+const isInternalUser = (type) => type === INTERNAL_USER_TYPE;
+
+/**
+ * Check if the user type contains the Host keyword.
+ * @param {string} type - Trimmed user type string
+ * @returns {boolean} True if contains Host keyword
+ */
+const containsHostKeyword = (type) => type.includes(HOST_KEYWORD);
+
+export function isHost({ userType }) {
+  // No user type means not authenticated or type not set
+  if (!isValidUserType(userType)) {
+    return false;
+  }
+
+  const type = userType.trim();
+
+  // Split Lease internal users have both Host and Guest privileges
+  // OR user type explicitly contains "Host" (covers regular and trial hosts)
+  return isInternalUser(type) || containsHostKeyword(type);
+}
+```
+
+### Affected Pages
+
+- Host proposals page
+- Host overview page
+- Listing dashboard
+- Any page checking host role
+
+### Verification
+
+1. Run `bun run build`
+2. Test with: `isHost({ userType: 'A Host (I have a space available to rent)' })` returns `true`
+3. Test with: `isHost({ userType: 'Trial Host' })` returns `true`
+4. Test with: `isHost({ userType: 'Split Lease' })` returns `true`
+
+---
+
+## Chunk 4: Refactor isValidPriceTier.js
+
+**File**: `app/src/logic/rules/search/isValidPriceTier.js`
+**Category**: Refactor
+**Purpose**: Use common validators, simplify with createEnumValidator pattern
+
+### Current Code
+
+```javascript
+import { VALID_PRICE_TIERS } from '../../constants/searchConstants.js';
+
+/**
+ * Check if price tier filter value is valid.
+ *
+ * @intent Validate price tier selection for search filters.
+ * @rule Valid tiers: 'under-200', '200-350', '350-500', '500-plus', 'all'.
+ *
+ * @param {object} params - Named parameters.
+ * @param {string} params.priceTier - Price tier value to validate.
+ * @returns {boolean} True if valid price tier.
+ *
+ * @throws {Error} If priceTier is not a string.
+ *
+ * @example
+ * const valid = isValidPriceTier({ priceTier: 'under-200' })
+ * // => true
+ *
+ * const invalid = isValidPriceTier({ priceTier: 'invalid' })
+ * // => false
+ */
+export function isValidPriceTier({ priceTier }) {
+  // No Fallback: Validate input
+  if (typeof priceTier !== 'string') {
+    throw new Error(
+      `isValidPriceTier: priceTier must be a string, got ${typeof priceTier}`
+    )
+  }
+
+  return VALID_PRICE_TIERS.includes(priceTier)
+}
+```
+
+### Refactored Code
+
+```javascript
+import { VALID_PRICE_TIERS } from '../../constants/searchConstants.js';
+import { validateString } from '../../validators/commonValidators.js';
+
+/**
+ * Check if price tier filter value is valid.
+ *
+ * @intent Validate price tier selection for search filters.
+ * @rule Valid tiers: 'under-200', '200-350', '350-500', '500-plus', 'all'.
+ *
+ * @param {object} params - Named parameters.
+ * @param {string} params.priceTier - Price tier value to validate.
+ * @returns {boolean} True if valid price tier.
+ *
+ * @throws {Error} If priceTier is not a string.
+ *
+ * @example
+ * isValidPriceTier({ priceTier: 'under-200' }) // => true
+ * isValidPriceTier({ priceTier: 'invalid' }) // => false
+ */
+
+const FUNCTION_NAME = 'isValidPriceTier';
+
+export function isValidPriceTier({ priceTier }) {
+  validateString(priceTier, 'priceTier', FUNCTION_NAME);
+  return VALID_PRICE_TIERS.includes(priceTier);
+}
+```
+
+### Affected Pages
+
+- Search page filters
+
+### Verification
+
+1. Run `bun run build`
+2. Test with valid tier returns `true`
+3. Test with invalid tier returns `false`
+4. Test with non-string throws Error
+
+---
+
+## Chunk 5: Refactor isValidSortOption.js
+
+**File**: `app/src/logic/rules/search/isValidSortOption.js`
+**Category**: Refactor
+**Purpose**: Use common validators
+
+### Current Code
+
+```javascript
+import { VALID_SORT_OPTIONS } from '../../constants/searchConstants.js';
+
+/**
+ * Check if sort option value is valid.
+ *
+ * @intent Validate sort option selection for search results.
+ * @rule Valid options: 'recommended', 'price-low', 'most-viewed', 'recent'.
+ *
+ * @param {object} params - Named parameters.
+ * @param {string} params.sortBy - Sort option value to validate.
+ * @returns {boolean} True if valid sort option.
+ *
+ * @throws {Error} If sortBy is not a string.
+ *
+ * @example
+ * const valid = isValidSortOption({ sortBy: 'price-low' })
+ * // => true
+ *
+ * const invalid = isValidSortOption({ sortBy: 'invalid' })
+ * // => false
+ */
+export function isValidSortOption({ sortBy }) {
+  // No Fallback: Validate input
+  if (typeof sortBy !== 'string') {
+    throw new Error(
+      `isValidSortOption: sortBy must be a string, got ${typeof sortBy}`
+    )
+  }
+
+  return VALID_SORT_OPTIONS.includes(sortBy)
+}
+```
+
+### Refactored Code
+
+```javascript
+import { VALID_SORT_OPTIONS } from '../../constants/searchConstants.js';
+import { validateString } from '../../validators/commonValidators.js';
+
+/**
+ * Check if sort option value is valid.
+ *
+ * @intent Validate sort option selection for search results.
+ * @rule Valid options: 'recommended', 'price-low', 'most-viewed', 'recent'.
+ *
+ * @param {object} params - Named parameters.
+ * @param {string} params.sortBy - Sort option value to validate.
+ * @returns {boolean} True if valid sort option.
+ *
+ * @throws {Error} If sortBy is not a string.
+ *
+ * @example
+ * isValidSortOption({ sortBy: 'price-low' }) // => true
+ * isValidSortOption({ sortBy: 'invalid' }) // => false
+ */
+
+const FUNCTION_NAME = 'isValidSortOption';
+
+export function isValidSortOption({ sortBy }) {
+  validateString(sortBy, 'sortBy', FUNCTION_NAME);
+  return VALID_SORT_OPTIONS.includes(sortBy);
+}
+```
+
+### Affected Pages
+
+- Search page sorting
+
+### Verification
+
+1. Run `bun run build`
+2. Test with valid option returns `true`
+3. Test with invalid option returns `false`
+
+---
+
+## Chunk 6: Refactor isValidWeekPattern.js
+
+**File**: `app/src/logic/rules/search/isValidWeekPattern.js`
+**Category**: Refactor
+**Purpose**: Use common validators
+
+### Current Code
+
+```javascript
+import { VALID_WEEK_PATTERNS } from '../../constants/searchConstants.js';
+
+/**
+ * Check if week pattern filter value is valid.
+ *
+ * @intent Validate week pattern selection for search filters.
+ * @rule Valid patterns: 'every-week', 'one-on-off', 'two-on-off', 'one-three-off'.
+ *
+ * @param {object} params - Named parameters.
+ * @param {string} params.weekPattern - Week pattern value to validate.
+ * @returns {boolean} True if valid week pattern.
+ *
+ * @throws {Error} If weekPattern is not a string.
+ *
+ * @example
+ * const valid = isValidWeekPattern({ weekPattern: 'one-on-off' })
+ * // => true
+ *
+ * const invalid = isValidWeekPattern({ weekPattern: 'invalid' })
+ * // => false
+ */
+export function isValidWeekPattern({ weekPattern }) {
+  // No Fallback: Validate input
+  if (typeof weekPattern !== 'string') {
+    throw new Error(
+      `isValidWeekPattern: weekPattern must be a string, got ${typeof weekPattern}`
+    )
+  }
+
+  return VALID_WEEK_PATTERNS.includes(weekPattern)
+}
+```
+
+### Refactored Code
+
+```javascript
+import { VALID_WEEK_PATTERNS } from '../../constants/searchConstants.js';
+import { validateString } from '../../validators/commonValidators.js';
+
+/**
+ * Check if week pattern filter value is valid.
+ *
+ * @intent Validate week pattern selection for search filters.
+ * @rule Valid patterns: 'every-week', 'one-on-off', 'two-on-off', 'one-three-off'.
+ *
+ * @param {object} params - Named parameters.
+ * @param {string} params.weekPattern - Week pattern value to validate.
+ * @returns {boolean} True if valid week pattern.
+ *
+ * @throws {Error} If weekPattern is not a string.
+ *
+ * @example
+ * isValidWeekPattern({ weekPattern: 'one-on-off' }) // => true
+ * isValidWeekPattern({ weekPattern: 'invalid' }) // => false
+ */
+
+const FUNCTION_NAME = 'isValidWeekPattern';
+
+export function isValidWeekPattern({ weekPattern }) {
+  validateString(weekPattern, 'weekPattern', FUNCTION_NAME);
+  return VALID_WEEK_PATTERNS.includes(weekPattern);
+}
+```
+
+### Affected Pages
+
+- Search page week pattern filter
+
+### Verification
+
+1. Run `bun run build`
+2. Test with valid pattern returns `true`
+
+---
+
+## Chunk 7: Refactor isValidDayCountForPricing.js
+
+**File**: `app/src/logic/rules/pricing/isValidDayCountForPricing.js`
+**Category**: Refactor
+**Purpose**: Use pricing constants, add FUNCTION_NAME constant
+
+### Current Code
+
+```javascript
+/**
+ * Validate if enough days are selected for price calculation.
+ *
+ * @intent Enforce minimum and maximum day selection for pricing.
+ * @rule Minimum 2 days required (2 nights).
+ * @rule Maximum 7 days allowed (full week).
+ *
+ * @param {object} params - Named parameters.
+ * @param {number} params.daysSelected - Number of days selected.
+ * @returns {boolean} True if valid for pricing, false otherwise.
+ *
+ * @throws {Error} If daysSelected is not a number.
+ *
+ * @example
+ * isValidDayCountForPricing({ daysSelected: 4 }) // => true
+ * isValidDayCountForPricing({ daysSelected: 1 }) // => false
+ * isValidDayCountForPricing({ daysSelected: 8 }) // => false
+ */
+export function isValidDayCountForPricing({ daysSelected }) {
+  // No Fallback: Validate input
+  if (typeof daysSelected !== 'number' || isNaN(daysSelected)) {
+    throw new Error(
+      `isValidDayCountForPricing: daysSelected must be a number, got ${typeof daysSelected}`
+    )
+  }
+
+  return daysSelected >= 2 && daysSelected <= 7
+}
+```
+
+### Refactored Code
+
+```javascript
+import { PRICING_CONSTANTS } from '../../constants/pricingConstants.js';
+
+/**
+ * Validate if enough days are selected for price calculation.
+ *
+ * @intent Enforce minimum and maximum day selection for pricing.
+ * @rule Minimum 2 days required (2 nights).
+ * @rule Maximum 7 days allowed (full week).
+ *
+ * @param {object} params - Named parameters.
+ * @param {number} params.daysSelected - Number of days selected.
+ * @returns {boolean} True if valid for pricing, false otherwise.
+ *
+ * @throws {Error} If daysSelected is not a number.
+ *
+ * @example
+ * isValidDayCountForPricing({ daysSelected: 4 }) // => true
+ * isValidDayCountForPricing({ daysSelected: 1 }) // => false
+ * isValidDayCountForPricing({ daysSelected: 8 }) // => false
+ */
+
+const FUNCTION_NAME = 'isValidDayCountForPricing';
+const { MIN_NIGHTS, MAX_NIGHTS } = PRICING_CONSTANTS;
+
+/**
+ * Validate that daysSelected is a valid number.
+ * @param {*} value - Value to validate
+ * @returns {boolean} True if valid number
+ */
+const isValidNumber = (value) =>
+  typeof value === 'number' && !isNaN(value);
+
+/**
+ * Check if day count is within valid pricing range.
+ * @param {number} days - Number of days
+ * @returns {boolean} True if within range
+ */
+const isWithinRange = (days) =>
+  days >= MIN_NIGHTS && days <= MAX_NIGHTS;
+
+export function isValidDayCountForPricing({ daysSelected }) {
+  if (!isValidNumber(daysSelected)) {
+    throw new Error(
+      `${FUNCTION_NAME}: daysSelected must be a number, got ${typeof daysSelected}`
+    );
+  }
+
+  return isWithinRange(daysSelected);
+}
+```
+
+### Affected Pages
+
+- Schedule selector components
+- Pricing breakdown displays
+
+### Verification
+
+1. Run `bun run build`
+2. Test edge cases: 1 (false), 2 (true), 7 (true), 8 (false)
+
+---
+
+## Chunk 8: Delete Deprecated isContiguousSelection.js
+
+**File**: `app/src/logic/calculators/scheduling/isContiguousSelection.js`
+**Category**: DELETE
+**Purpose**: Remove deprecated wrapper that delegates to isScheduleContiguous
+
+### Current Code
+
+```javascript
+/**
+ * Check if selected days form a contiguous block.
+ *
+ * DEPRECATED: This file is a duplicate of isScheduleContiguous in rules/scheduling/.
+ * Re-exports from the canonical location for backward compatibility.
+ *
+ * @see {import('../../rules/scheduling/isScheduleContiguous.js')}
+ */
+
+import { isScheduleContiguous } from '../../rules/scheduling/isScheduleContiguous.js';
+
+/**
+ * Check if selected days form a contiguous block.
+ * Handles week wrap-around cases (e.g., Fri-Mon).
+ *
+ * @deprecated Use isScheduleContiguous from rules/scheduling/ instead
+ * @param {number[]} selectedDays - Array of day indices (0-6).
+ * @returns {boolean} True if days are contiguous.
+ *
+ * @example
+ * isContiguousSelection([1, 2, 3, 4, 5]) // true (Mon-Fri)
+ * isContiguousSelection([5, 6, 0]) // true (Fri-Sun, wraps)
+ */
+export function isContiguousSelection(selectedDays) {
+  // Delegate to the canonical implementation
+  // Handle the parameter difference (array vs object with selectedDayIndices)
+  return isScheduleContiguous({ selectedDayIndices: selectedDays });
+}
+```
+
+### Refactored Code
+
+**DELETE THIS FILE**
+
+Before deletion, search for imports of this file and update them to use `isScheduleContiguous` directly.
+
+### Migration Steps
+
+1. Search codebase for imports of `isContiguousSelection`
+2. Replace with `import { isScheduleContiguous } from '../../logic/rules/scheduling/isScheduleContiguous.js'`
+3. Update call sites from `isContiguousSelection(days)` to `isScheduleContiguous({ selectedDayIndices: days })`
+4. Delete the file
+
+### Affected Pages
+
+Search for usages first. If none found, safe to delete.
+
+### Verification
+
+1. Run `bun run build` - should succeed
+2. Search for any broken imports
+
+---
+
+## Chunk 9: Refactor useDeviceDetection.js
+
+**File**: `app/src/hooks/useDeviceDetection.js`
+**Category**: Refactor
+**Purpose**: Eliminate duplicate resize listeners, use single source of truth
+
+### Current Code
+
+The hook has 4 separate resize listeners (one in each sub-hook).
+
+### Refactored Code
+
+```javascript
+/**
+ * Device Detection Hook
+ * Split Lease - Frontend
+ *
+ * Provides centralized device/viewport detection for responsive behavior.
+ * Uses a standard mobile breakpoint of 768px matching common mobile patterns.
+ *
+ * Usage:
+ *   import { useIsMobile, useIsDesktop } from '../hooks/useDeviceDetection';
+ *
+ *   function MyComponent() {
+ *     const isMobile = useIsMobile();
+ *     const isDesktop = useIsDesktop();
+ *
+ *     if (isMobile) {
+ *       return <MobileLayout />;
+ *     }
+ *     return <DesktopLayout />;
+ *   }
+ */
+
+import { useState, useEffect, useMemo, useCallback } from 'react';
+
+// Standard mobile breakpoint - viewport widths <= this are considered mobile
+const MOBILE_BREAKPOINT = 768;
+
+// Tablet breakpoint for more granular detection if needed
+const TABLET_BREAKPOINT = 1024;
+
+/**
+ * Get current viewport width safely (SSR-compatible).
+ * @returns {number} Viewport width or 0 if not available
+ */
+const getViewportWidth = () =>
+  typeof window !== 'undefined' ? window.innerWidth : 0;
+
+/**
+ * Determine device type from viewport width.
+ * @param {number} width - Viewport width
+ * @returns {'mobile' | 'tablet' | 'desktop'} Device type
+ */
+const getDeviceType = (width) => {
+  if (width <= MOBILE_BREAKPOINT) return 'mobile';
+  if (width <= TABLET_BREAKPOINT) return 'tablet';
+  return 'desktop';
+};
+
+/**
+ * Core hook providing all device detection values with a single resize listener.
+ * Other hooks derive from this to avoid multiple listeners.
+ *
+ * @returns {Object} Device detection state
+ */
+export function useDeviceDetection() {
+  const [viewportWidth, setViewportWidth] = useState(getViewportWidth);
+
+  useEffect(() => {
+    const handleResize = () => setViewportWidth(window.innerWidth);
+
+    // Initial check
+    handleResize();
+
+    // Single resize listener for all device detection
+    window.addEventListener('resize', handleResize);
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Derive all values from viewportWidth (pure calculations)
+  const deviceType = useMemo(() => getDeviceType(viewportWidth), [viewportWidth]);
+  const isMobile = deviceType === 'mobile';
+  const isTablet = deviceType === 'tablet';
+  const isDesktop = deviceType === 'desktop';
+
+  return {
+    isMobile,
+    isTablet,
+    isDesktop,
+    deviceType,
+    viewportWidth,
+    breakpoints: {
+      mobile: MOBILE_BREAKPOINT,
+      tablet: TABLET_BREAKPOINT
+    }
+  };
+}
+
+/**
+ * Hook to detect if current viewport is mobile-sized.
+ * Derives from useDeviceDetection to share the single resize listener.
+ *
+ * @returns {boolean} True if viewport width <= 768px
+ */
+export function useIsMobile() {
+  const { isMobile } = useDeviceDetection();
+  return isMobile;
+}
+
+/**
+ * Hook to detect if current viewport is desktop-sized.
+ * Inverse of useIsMobile - viewport width > 768px
+ *
+ * @returns {boolean} True if viewport width > 768px
+ */
+export function useIsDesktop() {
+  const { isDesktop } = useDeviceDetection();
+  return isDesktop;
+}
+
+/**
+ * Hook to detect if current viewport is tablet-sized.
+ * Tablet range: 769px to 1024px
+ *
+ * @returns {boolean} True if viewport width is between mobile and tablet breakpoints
+ */
+export function useIsTablet() {
+  const { isTablet } = useDeviceDetection();
+  return isTablet;
+}
+
+/**
+ * Hook returning device type string.
+ * Useful for analytics or conditional rendering.
+ *
+ * @returns {'mobile' | 'tablet' | 'desktop'} Current device type
+ */
+export function useDeviceType() {
+  const { deviceType } = useDeviceDetection();
+  return deviceType;
+}
+
+// Export constants for direct use
+export { MOBILE_BREAKPOINT, TABLET_BREAKPOINT };
+```
+
+### Affected Pages
+
+All pages using device detection.
+
+### Verification
+
+1. Run `bun run build`
+2. Test resize behavior in browser devtools
+
+---
+
+## Chunk 10: Refactor canDeleteLease.js
+
+**File**: `app/src/logic/rules/leases/canDeleteLease.js`
+**Category**: Refactor
+**Purpose**: Add JSDoc, extract constant
+
+### Current Code
+
+```javascript
+/**
+ * canDeleteLease - Determine if a lease can be soft-deleted (cancelled)
+ *
+ * Business Rules:
+ * - Draft leases can always be cancelled
+ * - Pending leases can be cancelled
+ * - Active leases can be cancelled (but may have implications)
+ * - Already cancelled leases cannot be re-cancelled
+ * - Completed leases cannot be cancelled
+ *
+ * @param {Object} lease - Adapted lease object
+ * @returns {boolean} Whether the lease can be soft-deleted
+ */
+export function canDeleteLease(lease) {
+  if (!lease) return false;
+
+  const nonDeletableStatuses = ['cancelled', 'completed'];
+
+  return !nonDeletableStatuses.includes(lease.status);
+}
+
+export default canDeleteLease;
+```
+
+### Refactored Code
+
+```javascript
+/**
+ * Lease deletion rules
+ *
+ * Determines if a lease can be soft-deleted (cancelled).
+ */
+
+/** @constant {string[]} Statuses that prevent lease deletion */
+const NON_DELETABLE_STATUSES = Object.freeze(['cancelled', 'completed']);
+
+/**
+ * Check if a lease status allows deletion.
+ * @param {string} status - Lease status
+ * @returns {boolean} True if status allows deletion
+ */
+const isDeletableStatus = (status) =>
+  !NON_DELETABLE_STATUSES.includes(status);
+
+/**
+ * canDeleteLease - Determine if a lease can be soft-deleted (cancelled)
+ *
+ * @intent Enforce business rules for lease cancellation eligibility.
+ * @rule Draft leases can always be cancelled
+ * @rule Pending leases can be cancelled
+ * @rule Active leases can be cancelled (but may have implications)
+ * @rule Already cancelled leases cannot be re-cancelled
+ * @rule Completed leases cannot be cancelled
+ *
+ * @param {Object} lease - Adapted lease object with status property
+ * @returns {boolean} Whether the lease can be soft-deleted
+ *
+ * @example
+ * canDeleteLease({ status: 'active' }) // => true
+ * canDeleteLease({ status: 'cancelled' }) // => false
+ * canDeleteLease({ status: 'completed' }) // => false
+ * canDeleteLease(null) // => false
+ */
+export function canDeleteLease(lease) {
+  if (!lease) return false;
+  return isDeletableStatus(lease.status);
+}
+
+export default canDeleteLease;
+```
+
+### Affected Pages
+
+- Lease management pages
+
+### Verification
+
+1. Run `bun run build`
+2. Test with different lease statuses
+
+---
+
+## Chunk 11: Enhance timing.js
+
+**File**: `app/src/lib/timing.js`
+**Category**: Enhancement
+**Purpose**: Add debounce and throttle utilities
+
+### Current Code
+
+```javascript
+/**
+ * Timing utilities
+ * Provides async delay functions for controlled waiting in async flows
+ */
+
+/**
+ * Async delay utility - replaces manual setTimeout Promise patterns
+ * @param {number} ms - Milliseconds to delay
+ * @returns {Promise<void>}
+ */
+export const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+```
+
+### Refactored Code
+
+```javascript
+/**
+ * Timing Utilities
+ *
+ * Provides async delay, debounce, and throttle functions for controlled
+ * timing in async flows and event handlers.
+ *
+ * @module lib/timing
+ */
+
+/**
+ * Async delay utility - replaces manual setTimeout Promise patterns.
+ *
+ * @param {number} ms - Milliseconds to delay
+ * @returns {Promise<void>}
+ *
+ * @example
+ * await delay(1000); // Wait 1 second
+ */
+export const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Create a debounced version of a function.
+ * The function will only execute after `wait` ms have passed without being called.
+ *
+ * @param {Function} fn - Function to debounce
+ * @param {number} wait - Milliseconds to wait before executing
+ * @returns {Function} Debounced function with cancel() method
+ *
+ * @example
+ * const debouncedSearch = debounce(search, 300);
+ * input.addEventListener('input', debouncedSearch);
+ * // Cancellation: debouncedSearch.cancel();
+ */
+export const debounce = (fn, wait) => {
+  let timeoutId = null;
+
+  const debounced = (...args) => {
+    if (timeoutId !== null) {
+      clearTimeout(timeoutId);
+    }
+    timeoutId = setTimeout(() => {
+      fn(...args);
+      timeoutId = null;
+    }, wait);
+  };
+
+  debounced.cancel = () => {
+    if (timeoutId !== null) {
+      clearTimeout(timeoutId);
+      timeoutId = null;
+    }
+  };
+
+  return debounced;
+};
+
+/**
+ * Create a throttled version of a function.
+ * The function will execute at most once per `limit` ms.
+ *
+ * @param {Function} fn - Function to throttle
+ * @param {number} limit - Minimum milliseconds between executions
+ * @returns {Function} Throttled function
+ *
+ * @example
+ * const throttledScroll = throttle(handleScroll, 100);
+ * window.addEventListener('scroll', throttledScroll);
+ */
+export const throttle = (fn, limit) => {
+  let lastCall = 0;
+
+  return (...args) => {
+    const now = Date.now();
+    if (now - lastCall >= limit) {
+      lastCall = now;
+      fn(...args);
+    }
+  };
+};
+
+/**
+ * Execute a function with timeout, rejecting if it takes too long.
+ *
+ * @param {Function} fn - Async function to execute
+ * @param {number} ms - Maximum milliseconds to wait
+ * @param {string} [message='Operation timed out'] - Error message on timeout
+ * @returns {Promise<*>} Result of fn or rejection on timeout
+ *
+ * @example
+ * const result = await withTimeout(fetchData, 5000, 'Fetch timed out');
+ */
+export const withTimeout = async (fn, ms, message = 'Operation timed out') => {
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error(message)), ms);
+  });
+
+  return Promise.race([fn(), timeoutPromise]);
+};
+```
+
+### Affected Pages
+
+Any page needing debounce/throttle can now import from this module.
+
+### Verification
+
+1. Run `bun run build`
+2. Test debounce cancellation
+3. Test throttle rate limiting
+
+---
+
+## Chunk 12: Refactor adaptLeaseFromSupabase.js
+
+**File**: `app/src/logic/processors/leases/adaptLeaseFromSupabase.js`
+**Category**: Refactor
+**Purpose**: Extract pure helper functions, improve immutability
+
+### Current Code
+
+File has good structure but helper functions could be extracted for reuse.
+
+### Refactored Code
+
+```javascript
+/**
+ * adaptLeaseFromSupabase - Transform raw Supabase lease data to frontend model
+ *
+ * Handles the mapping between Bubble.io's column naming conventions
+ * (spaces, mixed case) and our frontend's camelCase conventions.
+ *
+ * @module processors/leases/adaptLeaseFromSupabase
+ */
+
+// ============================================================================
+// Pure Helper Functions (stateless, reusable)
+// ============================================================================
+
+/** @constant {Object} Map of raw status values to normalized status */
+const STATUS_MAP = Object.freeze({
+  'Active': 'active',
+  'active': 'active',
+  'Completed': 'completed',
+  'completed': 'completed',
+  'Cancelled': 'cancelled',
+  'cancelled': 'cancelled',
+  'Pending': 'pending',
+  'pending': 'pending',
+  'Draft': 'draft',
+  'draft': 'draft',
+});
+
+/**
+ * Map Bubble.io lease status values to normalized strings.
+ * @param {string|null|undefined} rawStatus - Raw status from database
+ * @returns {string} Normalized status
+ */
+const mapLeaseStatus = (rawStatus) =>
+  rawStatus
+    ? (STATUS_MAP[rawStatus] ?? rawStatus.toLowerCase())
+    : 'unknown';
+
+/**
+ * Safely parse a date string.
+ * @param {string|null|undefined} dateStr - Date string or null
+ * @returns {Date|null} Parsed Date or null
+ */
+const parseDate = (dateStr) => {
+  if (!dateStr) return null;
+  const parsed = new Date(dateStr);
+  return isNaN(parsed.getTime()) ? null : parsed;
+};
+
+/**
+ * Safely parse a numeric value with fallback.
+ * @param {*} value - Value to parse
+ * @param {number} fallback - Fallback value (default: 0)
+ * @returns {number} Parsed number or fallback
+ */
+const parseNumber = (value, fallback = 0) => {
+  const parsed = parseFloat(value);
+  return isNaN(parsed) ? fallback : parsed;
+};
+
+/**
+ * Safely parse an integer value with fallback.
+ * @param {*} value - Value to parse
+ * @param {number|null} fallback - Fallback value (default: null)
+ * @returns {number|null} Parsed integer or fallback
+ */
+const parseInteger = (value, fallback = null) => {
+  const parsed = parseInt(value, 10);
+  return isNaN(parsed) ? fallback : parsed;
+};
+
+/**
+ * Safely parse JSONB array field.
+ * @param {*} jsonbField - JSONB field value
+ * @returns {Array} Parsed array or empty array
+ */
+const parseJsonbArray = (jsonbField) => {
+  if (Array.isArray(jsonbField)) return jsonbField;
+  if (typeof jsonbField === 'string') {
+    try {
+      return JSON.parse(jsonbField);
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
+
+// ============================================================================
+// Entity Adapters
+// ============================================================================
+
+/**
+ * Adapt user data from Supabase join.
+ * @param {Object|null} user - Raw user data
+ * @returns {Object|null} Adapted user object
+ */
+const adaptUserFromSupabase = (user) => {
+  if (!user) return null;
+
+  return Object.freeze({
+    id: user._id,
+    email: user.email ?? user.Email ?? null,
+    firstName: user['First Name'] ?? user.first_name ?? null,
+    lastName: user['Last Name'] ?? user.last_name ?? null,
+    phone: user.Phone ?? user.phone ?? null,
+    avatarUrl: user['Profile Photo'] ?? user.avatar_url ?? null,
+  });
+};
+
+/**
+ * Adapt listing data from Supabase join.
+ * @param {Object|null} listing - Raw listing data
+ * @returns {Object|null} Adapted listing object
+ */
+const adaptListingFromSupabase = (listing) => {
+  if (!listing) return null;
+
+  return Object.freeze({
+    id: listing._id,
+    name: listing['Listing Title'] ?? listing.name ?? 'Unnamed Listing',
+    address: listing.Address ?? listing.address ?? null,
+    neighborhood: listing.Neighborhood ?? listing.neighborhood ?? null,
+    city: listing.City ?? listing.city ?? null,
+    state: listing.State ?? listing.state ?? null,
+    zipCode: listing['Zip Code'] ?? listing.zip_code ?? null,
+    imageUrl: listing['Primary Image'] ?? listing.image_url ?? null,
+  });
+};
+
+/**
+ * Adapt stay data from Supabase join.
+ * @param {Object|null} stay - Raw stay data
+ * @returns {Object|null} Adapted stay object
+ */
+const adaptStayFromSupabase = (stay) => {
+  if (!stay) return null;
+
+  return Object.freeze({
+    id: stay._id,
+    status: stay['Stay Status'] ?? 'unknown',
+    checkIn: parseDate(stay['Check In (night)']),
+    checkOut: parseDate(stay['Check-out day']),
+    lastNight: parseDate(stay['Last Night (night)']),
+    weekNumber: parseInteger(stay['Week Number']),
+    amount: parseNumber(stay.Amount),
+    firstIndex: parseInteger(stay['first index']),
+    lastIndex: parseInteger(stay['last index']),
+    nights: parseJsonbArray(stay.Nights),
+  });
+};
+
+// ============================================================================
+// Main Adapter
+// ============================================================================
+
+/**
+ * Adapt a single lease record from Supabase format.
+ *
+ * @param {Object|null} row - Raw bookings_leases row with joins
+ * @returns {Object|null} Frontend-friendly lease object (frozen/immutable)
+ */
+export function adaptLeaseFromSupabase(row) {
+  if (!row) return null;
+
+  const stays = Array.isArray(row.stays)
+    ? row.stays.map(adaptStayFromSupabase)
+    : parseJsonbArray(row['List of Stays']);
+
+  return Object.freeze({
+    // Core identifiers
+    id: row._id,
+    bubbleId: row.bubble_id,
+    agreementNumber: row['Agreement Number'] ?? null,
+
+    // Status
+    status: mapLeaseStatus(row['Lease Status']),
+    leaseSigned: row['Lease signed?'] ?? false,
+
+    // Dates
+    startDate: parseDate(row['Reservation Period : Start']),
+    endDate: parseDate(row['Reservation Period : End']),
+    createdAt: parseDate(row['Created Date']),
+    modifiedAt: parseDate(row['Modified Date']),
+    firstPaymentDate: parseDate(row['First Payment Date']),
+
+    // Financial
+    totalRent: parseNumber(row['Total Rent']),
+    totalCompensation: parseNumber(row['Total Compensation']),
+    paidToDate: parseNumber(row['Paid to Date from Guest']),
+
+    // Week tracking
+    currentWeekNumber: parseInteger(row['current week number']),
+    totalWeekCount: parseInteger(row['total week count']),
+
+    // Related entities (adapted from joins)
+    guest: adaptUserFromSupabase(row.guest),
+    host: adaptUserFromSupabase(row.host),
+    listing: adaptListingFromSupabase(row.listing),
+    proposal: row.proposal ? Object.freeze({ id: row.proposal._id }) : null,
+
+    // Stays
+    stays: Object.freeze(stays),
+
+    // Documents
+    documents: Object.freeze(row.documents ?? []),
+
+    // Other fields
+    thread: row.Thread ?? null,
+    cancellationPolicy: row['Cancellation Policy'] ?? null,
+    hostPayoutSchedule: row['Host Payout Schedule'] ?? null,
+    wereDocumentsGenerated: row['were documents generated?'] ?? false,
+
+    // Throttling flags
+    throttling: Object.freeze({
+      guestCanCreateRequests: row['Throttling - guest ability to create requests?'] ?? true,
+      hostCanCreateRequests: row['Throttling- host ability to create requests?'] ?? true,
+      guestShowWarning: !row['Throttling - guest NOT show warning popup'],
+      hostShowWarning: !row['Throttling - host NOT show warning popup'],
+    }),
+
+    // Reputation
+    guestReputationScore: parseInteger(row['Reputation Score (GUEST)']),
+    hostReputationScore: parseInteger(row['Reputation Score (HOST)']),
+
+    // Sync status
+    pending: row.pending ?? false,
+  });
+}
+
+export default adaptLeaseFromSupabase;
+```
+
+### Affected Pages
+
+- Lease display pages
+- Lease management
+
+### Verification
+
+1. Run `bun run build`
+2. Test with sample lease data
+3. Verify returned objects are frozen (immutable)
+
+---
+
+## Rollback Plan
+
+Each chunk can be reverted independently:
+
+1. **Git revert**: Each chunk creates a single commit that can be reverted
+2. **File restore**: Keep backups before refactoring
+3. **Build verification**: Run `bun run build` after each chunk to catch issues early
+
+## Testing Considerations
+
+1. All refactored files maintain the same public API (no breaking changes)
+2. Test edge cases: null, undefined, empty strings, wrong types
+3. Verify error messages remain informative
+4. Check that performance is not degraded (especially useDeviceDetection)
+
+## Dependencies
+
+- Chunk 1 (commonValidators) must be implemented before Chunks 4-7
+- All other chunks are independent
+
+---
+
+## Files Referenced
+
+| File | Purpose |
+|------|---------|
+| `app/src/logic/validators/commonValidators.js` | NEW - Common validators |
+| `app/src/logic/validators/pricingValidators.js` | Existing validators |
+| `app/src/logic/rules/users/isGuest.js` | User role detection |
+| `app/src/logic/rules/users/isHost.js` | User role detection |
+| `app/src/logic/rules/search/isValidPriceTier.js` | Search filter validation |
+| `app/src/logic/rules/search/isValidSortOption.js` | Search filter validation |
+| `app/src/logic/rules/search/isValidWeekPattern.js` | Search filter validation |
+| `app/src/logic/rules/pricing/isValidDayCountForPricing.js` | Pricing validation |
+| `app/src/logic/calculators/scheduling/isContiguousSelection.js` | DEPRECATED - to delete |
+| `app/src/logic/rules/scheduling/isScheduleContiguous.js` | Canonical contiguity check |
+| `app/src/hooks/useDeviceDetection.js` | Device detection hook |
+| `app/src/logic/rules/leases/canDeleteLease.js` | Lease deletion rules |
+| `app/src/lib/timing.js` | Timing utilities |
+| `app/src/logic/processors/leases/adaptLeaseFromSupabase.js` | Lease data adapter |
+| `app/src/logic/constants/searchConstants.js` | Search constants |
+| `app/src/logic/constants/pricingConstants.js` | Pricing constants |

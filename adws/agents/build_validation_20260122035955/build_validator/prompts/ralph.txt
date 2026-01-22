@@ -1,0 +1,39 @@
+/ralph-loop:ralph-loop --max-iterations 5
+
+## Task: Build Validation with Troubleshooting
+
+Run `bun run build` from the `app/` directory and ensure it passes.
+
+### Modified Files (for context):
+
+
+### Instructions:
+
+1. **Run the build**: Execute `bun run build` from the `app/` directory
+2. **Monitor the outcome**: Wait for the build to complete
+3. **On SUCCESS**: Output "COMPLETED" to end the loop
+4. **On FAILURE**:
+   - Analyze the error output (lint errors, type errors, vite errors)
+   - Identify the root cause
+   - Fix the issues in the affected files
+   - Re-run `bun run build`
+5. **Repeat** until build succeeds or max iterations reached
+
+### Common Build Issues:
+- Import path errors (file doesn't exist, wrong relative path)
+- Missing exports (function was deleted but still imported elsewhere)
+- Type errors from refactoring changes
+- Circular dependencies
+- Syntax errors from incomplete edits
+
+### Working Directories:
+- Project root: C:\Users\Split Lease\Documents\Split Lease
+- App directory: C:\Users\Split Lease\Documents\Split Lease\app
+
+### Completion Criteria:
+When `bun run build` exits with code 0, output exactly:
+```
+COMPLETED
+```
+
+This signals successful build validation. Begin now.
