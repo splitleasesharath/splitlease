@@ -46,8 +46,8 @@ export default function HeaderSuggestedProposalTrigger({
         <lottie-player
           src="/assets/lotties/proposals-suggested.json"
           background="transparent"
-          speed="1"
-          style={{ width: '44px', height: '44px' }}
+          speed="0.6"
+          style={{ width: '88px', height: '88px' }}
           loop
           autoplay
         ></lottie-player>
