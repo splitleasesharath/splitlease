@@ -560,6 +560,38 @@ export const routes = [
     cloudflareInternal: false,
     internalName: 'modify-listings-view',
     hasDynamicSegment: false
+  },
+  {
+    path: '/_internal/message-curation',
+    file: 'message-curation.html',
+    aliases: ['/_internal/message-curation.html', '/message-curation'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'message-curation-view',
+    hasDynamicSegment: false
+  },
+  {
+    path: '/_internal/usability-data-management',
+    file: 'usability-data-management.html',
+    aliases: ['/_internal/usability-data-management.html', '/usability-data-management'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'usability-data-management-view',
+    hasDynamicSegment: false
+  },
+
+  // ===== AI TOOLS (ADMIN INTERNAL) =====
+  {
+    path: '/_internal/ai-tools',
+    file: 'ai-tools.html',
+    aliases: ['/_internal/ai-tools.html', '/ai-tools'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'ai-tools-view',
+    hasDynamicSegment: false
   }
 ];
 

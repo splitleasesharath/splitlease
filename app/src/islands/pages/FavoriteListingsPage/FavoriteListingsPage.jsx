@@ -33,7 +33,6 @@ import { calculateNextAvailableCheckIn } from '../../../logic/calculators/schedu
 import { shiftMoveInDateIfPast } from '../../../logic/calculators/scheduling/shiftMoveInDateIfPast.js';
 import { formatHostName } from '../../../logic/processors/display/formatHostName.js';
 import { useAuthenticatedUser } from '../../../hooks/useAuthenticatedUser.js';
-import PropertyCard from '../../shared/ListingCard/PropertyCard.jsx';
 import { isHost } from '../../../logic/rules/users/isHost.js';
 import './FavoriteListingsPage.css';
 import '../../../styles/create-proposal-flow-v2.css';
@@ -70,11 +69,14 @@ async function fetchInformationalTexts() {
 /**
  * ListingsGridV2 - Grid using pure inline styles (no CSS conflicts)
  */
-function ListingsGridV2({ listings, onOpenContactModal, isLoggedIn, onToggleFavorite, userId, proposalsByListingId, onCreateProposal, onPhotoClick }) {
+function ListingsGridV2({ listings, onOpenContactModal, isLoggedIn, onToggleFavorite, userId, proposalsByListingId, onCreateProposal, onPhotoClick, viewMode }) {
+  const isGrid = viewMode === 'grid';
+  
   return (
     <div style={{
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+      display: isGrid ? 'grid' : 'flex',
+      flexDirection: isGrid ? 'initial' : 'column',
+      gridTemplateColumns: isGrid ? 'repeat(auto-fill, minmax(320px, 1fr))' : 'none',
       gap: '20px',
       padding: '0',
     }}>
@@ -91,6 +93,7 @@ function ListingsGridV2({ listings, onOpenContactModal, isLoggedIn, onToggleFavo
             proposalForListing={proposalForListing}
             onOpenCreateProposalModal={onCreateProposal}
             onPhotoClick={onPhotoClick}
+            viewMode={viewMode}
           />
         );
       })}
@@ -101,12 +104,43 @@ function ListingsGridV2({ listings, onOpenContactModal, isLoggedIn, onToggleFavo
 /**
  * PageTitleSection - Page header with title and count badge
  */
-function PageTitleSection({ count }) {
+function PageTitleSection({ count, viewMode, onViewModeChange }) {
   return (
     <div className="favorites-page__title-section">
       <div className="favorites-page__title-row">
-        <h1 className="favorites-page__title">My Favorites</h1>
-        <span className="favorites-page__count-badge">{count} saved</span>
+        <div className="favorites-page__title-section-left">
+          <h1 className="favorites-page__title">My Favorites</h1>
+          <span className="favorites-page__count-badge">{count} saved</span>
+        </div>
+        
+        <div className="view-toggle">
+          <button 
+            className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
+            onClick={() => onViewModeChange('grid')}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="3" width="7" height="7"/>
+              <rect x="14" y="3" width="7" height="7"/>
+              <rect x="14" y="14" width="7" height="7"/>
+              <rect x="3" y="14" width="7" height="7"/>
+            </svg>
+            Grid
+          </button>
+          <button 
+            className={`view-btn ${viewMode === 'list' ? 'active' : ''}`}
+            onClick={() => onViewModeChange('list')}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="8" y1="6" x2="21" y2="6"/>
+              <line x1="8" y1="12" x2="21" y2="12"/>
+              <line x1="8" y1="18" x2="21" y2="18"/>
+              <line x1="3" y1="6" x2="3.01" y2="6"/>
+              <line x1="3" y1="12" x2="3.01" y2="12"/>
+              <line x1="3" y1="18" x2="3.01" y2="18"/>
+            </svg>
+            List
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -159,6 +193,7 @@ const FavoriteListingsPage = () => {
 
   // State management
   const [listings, setListings] = useState([]);
+  const [viewMode, setViewMode] = useState('grid');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [userId, setUserId] = useState(null);
@@ -934,244 +969,283 @@ const FavoriteListingsPage = () => {
       {/* Standard Site Header */}
       <Header />
 
+      {/* Sub-header: Title + Count + View Toggle (per mockup) */}
+      <div className="favorites-subheader">
+        <div className="favorites-subheader__inner">
+          <div className="favorites-subheader__left">
+            <h1 className="favorites-subheader__title">My Favorites</h1>
+            <span className="favorites-subheader__count">{listings.length} saved</span>
+          </div>
+          <div className="favorites-subheader__right">
+            <div className="view-toggle">
+              <button
+                className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
+                onClick={() => setViewMode('grid')}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="3" width="7" height="7"/>
+                  <rect x="14" y="3" width="7" height="7"/>
+                  <rect x="14" y="14" width="7" height="7"/>
+                  <rect x="3" y="14" width="7" height="7"/>
+                </svg>
+                Grid
+              </button>
+              <button
+                className={`view-btn ${viewMode === 'list' ? 'active' : ''}`}
+                onClick={() => setViewMode('list')}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="8" y1="6" x2="21" y2="6"/>
+                  <line x1="8" y1="12" x2="21" y2="12"/>
+                  <line x1="8" y1="18" x2="21" y2="18"/>
+                  <line x1="3" y1="6" x2="3.01" y2="6"/>
+                  <line x1="3" y1="12" x2="3.01" y2="12"/>
+                  <line x1="3" y1="18" x2="3.01" y2="18"/>
+                </svg>
+                List
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="favorites-page">
         {/* Toast Notification */}
-      {toast.show && (
-        <div className={`toast toast-${toast.type} show`}>
-          <span className="toast-icon">
-            {toast.type === 'success' && (
-              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-              </svg>
-            )}
-            {toast.type === 'info' && (
-              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
-              </svg>
-            )}
-            {toast.type === 'error' && (
-              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
-              </svg>
-            )}
-          </span>
-          <span className="toast-message">{toast.message}</span>
-        </div>
-      )}
+        {toast.show && (
+          <div className={`toast toast-${toast.type} show`}>
+            <span className="toast-icon">
+              {toast.type === 'success' && (
+                <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+              )}
+              {toast.type === 'info' && (
+                <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                </svg>
+              )}
+              {toast.type === 'error' && (
+                <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                </svg>
+              )}
+            </span>
+            <span className="toast-message">{toast.message}</span>
+          </div>
+        )}
 
-      {/* Two-column layout: Listings (left) + Map (right) */}
-      <main className="two-column-layout">
-        {/* LEFT COLUMN: Listings */}
-        <section className="listings-column">
-          {/* ROW 1: Mobile Header - Logo, Explore Rentals, Avatar */}
-          <div className="mobile-filter-bar mobile-header-row">
-            <a href="/" className="mobile-logo-link" aria-label="Go to homepage">
-              <img
-                src="/assets/images/split-lease-purple-circle.png"
-                alt="Split Lease Logo"
-                className="mobile-logo-icon"
-                width="28"
-                height="28"
-              />
-            </a>
-            <a href="/search" className="filter-toggle-btn explore-rentals-btn">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <circle cx="11" cy="11" r="8" strokeWidth="2" />
-                <path d="M21 21l-4.35-4.35" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-              <span>Explore Rentals</span>
-            </a>
+        {/* Two-column layout: Listings (left) + Map (right) */}
+        <main className="two-column-layout">
+          {/* LEFT COLUMN: Listings */}
+          <section className="listings-column">
+            {/* ROW 1: Mobile Header - Logo, Explore Rentals, Avatar */}
+            <div className="mobile-filter-bar mobile-header-row">
+              <a href="/" className="mobile-logo-link" aria-label="Go to homepage">
+                <img
+                  src="/assets/images/split-lease-purple-circle.png"
+                  alt="Split Lease Logo"
+                  className="mobile-logo-icon"
+                  width="28"
+                  height="28"
+                />
+              </a>
+              <a href="/search" className="filter-toggle-btn explore-rentals-btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <circle cx="11" cy="11" r="8" strokeWidth="2" />
+                  <path d="M21 21l-4.35-4.35" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+                <span>Explore Rentals</span>
+              </a>
 
-            {/* Mobile Header Actions - Auth-aware elements */}
-            <div className="mobile-header-actions">
-              {isLoggedIn && currentUser ? (
-                <>
-                  {/* Favorites Heart - Active state since we're on favorites page */}
-                  <a href="/favorite-listings" className="mobile-favorites-link active" aria-label="My Favorite Listings">
-                    <svg
-                      width="22"
-                      height="22"
-                      viewBox="0 0 24 24"
-                      fill="#FF6B35"
-                      stroke="#FF6B35"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              {/* Mobile Header Actions - Auth-aware elements */}
+              <div className="mobile-header-actions">
+                {isLoggedIn && currentUser ? (
+                  <>
+                    {/* Favorites Heart - Active state since we're on favorites page */}
+                    <a href="/favorite-listings" className="mobile-favorites-link active" aria-label="My Favorite Listings">
+                      <svg
+                        width="22"
+                        height="22"
+                        viewBox="0 0 24 24"
+                        fill="#FF6B35"
+                        stroke="#FF6B35"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                      </svg>
+                      {listings.length > 0 && (
+                        <span className="mobile-favorites-badge">{listings.length}</span>
+                      )}
+                    </a>
+
+                    {/* Logged In Avatar */}
+                    <LoggedInAvatar
+                      user={currentUser}
+                      currentPath="/favorite-listings"
+                      onNavigate={handleNavigate}
+                      onLogout={handleLogout}
+                      size="small"
+                    />
+                  </>
+                ) : (
+                  /* Hamburger menu for logged out users */
+                  <button
+                    className="hamburger-menu"
+                    onClick={() => setMenuOpen(!menuOpen)}
+                    aria-label="Toggle menu"
+                  >
+                    <span>Menu</span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="3" y1="12" x2="21" y2="12" />
+                      <line x1="3" y1="6" x2="21" y2="6" />
+                      <line x1="3" y1="18" x2="21" y2="18" />
                     </svg>
-                    {listings.length > 0 && (
-                      <span className="mobile-favorites-badge">{listings.length}</span>
-                    )}
-                  </a>
+                  </button>
+                )}
+              </div>
+            </div>
 
-                  {/* Logged In Avatar */}
-                  <LoggedInAvatar
-                    user={currentUser}
-                    currentPath="/favorite-listings"
-                    onNavigate={handleNavigate}
-                    onLogout={handleLogout}
-                    size="small"
-                  />
-                </>
-              ) : (
-                /* Hamburger menu for logged out users */
-                <button
-                  className="hamburger-menu"
-                  onClick={() => setMenuOpen(!menuOpen)}
-                  aria-label="Toggle menu"
-                >
-                  <span>Menu</span>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="3" y1="12" x2="21" y2="12" />
-                    <line x1="3" y1="6" x2="21" y2="6" />
-                    <line x1="3" y1="18" x2="21" y2="18" />
-                  </svg>
-                </button>
+            {/* ROW 2: Map Button Row */}
+            <div className="mobile-map-row">
+              <button className="map-toggle-btn" onClick={() => setMobileMapVisible(true)}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <rect x="3" y="3" width="18" height="18" rx="2" strokeWidth="2" />
+                  <path d="M9 3v18M15 3v18M3 9h18M3 15h18" strokeWidth="2" />
+                </svg>
+                <span>Map</span>
+              </button>
+            </div>
+
+            {/* ROW 3: Mobile Schedule Selector with Check-in/Check-out */}
+            <div className="mobile-schedule-selector">
+              <div className="filter-group schedule-selector-group" id="schedule-selector-mount-point-mobile">
+                {/* AuthAwareSearchScheduleSelector will be mounted here on mobile */}
+              </div>
+            </div>
+
+            {/* Desktop Schedule Selector */}
+            <div className="inline-filters">
+              <div className="filter-group schedule-selector-group" id="schedule-selector-mount-point">
+                {/* AuthAwareSearchScheduleSelector will be mounted here on desktop */}
+              </div>
+            </div>
+
+            {/* Listings content */}
+            <div className="listings-content">
+              {isLoading && <LoadingState />}
+
+              {!isLoading && error && (
+                <ErrorState message={error} onRetry={() => window.location.reload()} />
+              )}
+
+              {!isLoading && !error && listings.length === 0 && (
+                <EmptyState
+                  ctaText="Explore Rentals"
+                  ctaLink="/search"
+                />
+              )}
+
+              {!isLoading && !error && listings.length > 0 && (
+                <ListingsGridV2
+                  listings={listings}
+                  onOpenContactModal={handleOpenContactModal}
+                  isLoggedIn={isLoggedIn}
+                  onToggleFavorite={handleToggleFavorite}
+                  userId={userId}
+                  proposalsByListingId={proposalsByListingId}
+                  onCreateProposal={handleOpenProposalModal}
+                  onPhotoClick={handlePhotoGalleryOpen}
+                  viewMode={viewMode}
+                />
               )}
             </div>
-          </div>
+          </section>
 
-          {/* ROW 2: Map Button Row */}
-          <div className="mobile-map-row">
-            <button className="map-toggle-btn" onClick={() => setMobileMapVisible(true)}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <rect x="3" y="3" width="18" height="18" rx="2" strokeWidth="2" />
-                <path d="M9 3v18M15 3v18M3 9h18M3 15h18" strokeWidth="2" />
-              </svg>
-              <span>Map</span>
-            </button>
-          </div>
+          {/* RIGHT COLUMN: Map with integrated header */}
+          <section className="map-column">
+            {/* Integrated Logo and Menu */}
+            <div className="map-header">
+              <a href="/" className="map-logo">
+                <img
+                  src="/assets/images/split-lease-purple-circle.png"
+                  alt="Split Lease Logo"
+                  className="logo-icon"
+                  width="36"
+                  height="36"
+                />
+                <span className="logo-text">Split Lease</span>
+              </a>
 
-          {/* ROW 3: Mobile Schedule Selector with Check-in/Check-out */}
-          <div className="mobile-schedule-selector">
-            <div className="filter-group schedule-selector-group" id="schedule-selector-mount-point-mobile">
-              {/* AuthAwareSearchScheduleSelector will be mounted here on mobile */}
-            </div>
-          </div>
+              {/* Right side: Auth state */}
+              <div className="map-header-actions">
+                {isLoggedIn && currentUser ? (
+                  <>
+                    {/* Favorites Heart with Count */}
+                    <a href="/favorite-listings" className="favorites-link active" aria-label="My Favorite Listings">
+                      <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="#FF6B35"
+                        stroke="#FF6B35"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                      </svg>
+                      {listings.length > 0 && (
+                        <span className="favorites-badge">{listings.length}</span>
+                      )}
+                    </a>
 
-          {/* Desktop Schedule Selector */}
-          <div className="inline-filters">
-            <div className="filter-group schedule-selector-group" id="schedule-selector-mount-point">
-              {/* AuthAwareSearchScheduleSelector will be mounted here on desktop */}
-            </div>
-          </div>
-
-          {/* Page Title Section */}
-          <PageTitleSection count={listings.length} />
-
-          {/* Listings content */}
-          <div className="listings-content">
-            {isLoading && <LoadingState />}
-
-            {!isLoading && error && (
-              <ErrorState message={error} onRetry={() => window.location.reload()} />
-            )}
-
-            {!isLoading && !error && listings.length === 0 && (
-              <EmptyState
-                ctaText="Explore Rentals"
-                ctaLink="/search"
-              />
-            )}
-
-            {!isLoading && !error && listings.length > 0 && (
-              <ListingsGridV2
-                listings={listings}
-                onOpenContactModal={handleOpenContactModal}
-                isLoggedIn={isLoggedIn}
-                onToggleFavorite={handleToggleFavorite}
-                userId={userId}
-                proposalsByListingId={proposalsByListingId}
-                onCreateProposal={handleOpenProposalModal}
-                onPhotoClick={handlePhotoGalleryOpen}
-              />
-            )}
-          </div>
-        </section>
-
-        {/* RIGHT COLUMN: Map with integrated header */}
-        <section className="map-column">
-          {/* Integrated Logo and Menu */}
-          <div className="map-header">
-            <a href="/" className="map-logo">
-              <img
-                src="/assets/images/split-lease-purple-circle.png"
-                alt="Split Lease Logo"
-                className="logo-icon"
-                width="36"
-                height="36"
-              />
-              <span className="logo-text">Split Lease</span>
-            </a>
-
-            {/* Right side: Auth state */}
-            <div className="map-header-actions">
-              {isLoggedIn && currentUser ? (
-                <>
-                  {/* Favorites Heart with Count */}
-                  <a href="/favorite-listings" className="favorites-link active" aria-label="My Favorite Listings">
-                    <svg
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="#FF6B35"
-                      stroke="#FF6B35"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                    {/* Logged In Avatar */}
+                    <LoggedInAvatar
+                      user={currentUser}
+                      currentPath="/favorite-listings"
+                      onNavigate={handleNavigate}
+                      onLogout={handleLogout}
+                    />
+                  </>
+                ) : (
+                  <button
+                    className="hamburger-menu"
+                    onClick={() => setMenuOpen(!menuOpen)}
+                    aria-label="Toggle menu"
+                  >
+                    <span>Menu</span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="3" y1="12" x2="21" y2="12" />
+                      <line x1="3" y1="6" x2="21" y2="6" />
+                      <line x1="3" y1="18" x2="21" y2="18" />
                     </svg>
-                    {listings.length > 0 && (
-                      <span className="favorites-badge">{listings.length}</span>
-                    )}
-                  </a>
-
-                  {/* Logged In Avatar */}
-                  <LoggedInAvatar
-                    user={currentUser}
-                    currentPath="/favorite-listings"
-                    onNavigate={handleNavigate}
-                    onLogout={handleLogout}
-                  />
-                </>
-              ) : (
-                <button
-                  className="hamburger-menu"
-                  onClick={() => setMenuOpen(!menuOpen)}
-                  aria-label="Toggle menu"
-                >
-                  <span>Menu</span>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="3" y1="12" x2="21" y2="12" />
-                    <line x1="3" y1="6" x2="21" y2="6" />
-                    <line x1="3" y1="18" x2="21" y2="18" />
-                  </svg>
-                </button>
-              )}
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
 
-          <GoogleMap
-            ref={mapRef}
-            listings={[]} // No background listings on favorites page
-            filteredListings={listings}
-            selectedListing={null}
-            selectedBorough={null}
-            onMarkerClick={(listing) => {
-              console.log('Marker clicked:', listing.title);
-            }}
-            onMessageClick={(listing) => {
-              handleOpenContactModal(listing);
-            }}
-            isLoggedIn={isLoggedIn}
-            favoritedListingIds={favoritedListingIds}
-            onToggleFavorite={handleToggleFavorite}
-            showMessageButton={showMessageButton}
-          />
-        </section>
-      </main>
+            <GoogleMap
+              ref={mapRef}
+              listings={[]} // No background listings on favorites page
+              filteredListings={listings}
+              selectedListing={null}
+              selectedBorough={null}
+              onMarkerClick={(listing) => {
+                console.log('Marker clicked:', listing.title);
+              }}
+              onMessageClick={(listing) => {
+                handleOpenContactModal(listing);
+              }}
+              isLoggedIn={isLoggedIn}
+              favoritedListingIds={favoritedListingIds}
+              onToggleFavorite={handleToggleFavorite}
+              showMessageButton={showMessageButton}
+            />
+          </section>
+        </main>
+      </div>
 
       {/* Modals */}
       <ContactHostMessaging
@@ -1425,7 +1499,9 @@ const FavoriteListingsPage = () => {
           </button>
         </div>
       )}
-      </div>
+
+      {/* Pre-footer divider bar */}
+      <div className="favorites-prefooter-bar"></div>
 
       {/* Standard Site Footer */}
       <Footer />
@@ -1434,3 +1510,4 @@ const FavoriteListingsPage = () => {
 };
 
 export default FavoriteListingsPage;
+

@@ -1,60 +1,176 @@
 /**
  * FavoritesCardV2 Component
  *
- * A completely fresh card with isolated CSS using unique class prefix.
- * Same functionality as FavoritesCard but with clean, conflict-free styles.
+ * Matches the exact visual style of the mockup (Image 2).
+ * Refined heart button, host section, and button styles.
  */
 
-import { useState, useCallback } from 'react';
-import FavoriteButton from '../../../shared/FavoriteButton/FavoriteButton.jsx';
+import { useState, useRef, useEffect } from 'react';
+
+/**
+ * FavoriteButtonWithConfirm - Favorite button with confirmation popup
+ * Shows "Are you sure?" popup before removing from favorites
+ */
+const FavoriteButtonWithConfirm = ({ listingId, userId, onConfirmRemove }) => {
+  const [showConfirm, setShowConfirm] = useState(false);
+  const popupRef = useRef(null);
+  const buttonRef = useRef(null);
+
+  // Close popup when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (showConfirm && popupRef.current && !popupRef.current.contains(e.target) && !buttonRef.current.contains(e.target)) {
+        setShowConfirm(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showConfirm]);
+
+  const handleButtonClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowConfirm(true);
+  };
+
+  const handleConfirm = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowConfirm(false);
+    if (onConfirmRemove) {
+      onConfirmRemove();
+    }
+  };
+
+  const handleCancel = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowConfirm(false);
+  };
+
+  const styles = {
+    container: {
+      position: 'absolute',
+      top: '16px',
+      right: '16px',
+      zIndex: 10,
+    },
+    button: {
+      all: 'unset', // Reset ALL inherited/global styles
+      width: '40px',
+      height: '40px',
+      borderRadius: '50%',
+      background: 'white',
+      border: 'none',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '0', // Explicitly override global button padding
+      boxSizing: 'border-box',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+      transition: 'transform 0.2s',
+    },
+    popup: {
+      position: 'absolute',
+      top: '48px',
+      right: '0',
+      background: 'white',
+      borderRadius: '12px',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+      padding: '16px',
+      minWidth: '200px',
+      zIndex: 100,
+    },
+    popupText: {
+      fontSize: '14px',
+      fontWeight: 600,
+      color: '#1E293B',
+      marginBottom: '12px',
+      textAlign: 'center',
+    },
+    popupButtons: {
+      display: 'flex',
+      gap: '8px',
+    },
+    cancelBtn: {
+      flex: 1,
+      padding: '8px 12px',
+      borderRadius: '8px',
+      border: '1px solid #E2E8F0',
+      background: 'white',
+      color: '#64748B',
+      fontSize: '13px',
+      fontWeight: 600,
+      cursor: 'pointer',
+    },
+    removeBtn: {
+      flex: 1,
+      padding: '8px 12px',
+      borderRadius: '8px',
+      border: 'none',
+      background: '#EF4444',
+      color: 'white',
+      fontSize: '13px',
+      fontWeight: 600,
+      cursor: 'pointer',
+    },
+  };
+
+  return (
+    <div style={styles.container}>
+      <button
+        ref={buttonRef}
+        style={styles.button}
+        onClick={handleButtonClick}
+        aria-label="Remove from favorites"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="#EF4444" stroke="#EF4444" strokeWidth="2">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+        </svg>
+      </button>
+
+      {showConfirm && (
+        <div ref={popupRef} style={styles.popup}>
+          <div style={styles.popupText}>Remove from favorites?</div>
+          <div style={styles.popupButtons}>
+            <button style={styles.cancelBtn} onClick={handleCancel}>Cancel</button>
+            <button style={styles.removeBtn} onClick={handleConfirm}>Remove</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const FavoritesCardV2 = ({
   listing,
   onToggleFavorite,
-  onOpenContactModal,
   onOpenCreateProposalModal,
   onPhotoClick,
   proposalForListing,
-  userId,
-  isLoggedIn,
+  viewMode = 'grid',
+  userId
 }) => {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [imageError, setImageError] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
+  const isGrid = viewMode === 'grid';
   const photos = listing.images || [];
   const hasMultiplePhotos = photos.length > 1;
   const hasProposal = !!proposalForListing;
   const isNewListing = listing.isNew;
 
-  // Photo navigation
-  const handlePrevPhoto = useCallback((e) => {
-    e.stopPropagation();
-    setCurrentPhotoIndex(prev => (prev > 0 ? prev - 1 : photos.length - 1));
-  }, [photos.length]);
-
-  const handleNextPhoto = useCallback((e) => {
-    e.stopPropagation();
-    setCurrentPhotoIndex(prev => (prev < photos.length - 1 ? prev + 1 : 0));
-  }, [photos.length]);
-
-  const handleDotClick = useCallback((e, index) => {
-    e.stopPropagation();
-    setCurrentPhotoIndex(index);
-  }, []);
-
-  // Card click - open photo gallery
   const handleCardClick = () => {
     if (onPhotoClick && photos.length > 0) {
       onPhotoClick(listing, currentPhotoIndex);
     }
   };
 
-  // Action button handlers
   const handleCreateProposal = (e) => {
     e.stopPropagation();
-    if (onOpenCreateProposalModal) {
-      onOpenCreateProposalModal(listing);
-    }
+    if (onOpenCreateProposalModal) onOpenCreateProposalModal(listing);
   };
 
   const handleViewProposal = (e) => {
@@ -64,420 +180,285 @@ const FavoritesCardV2 = ({
     }
   };
 
-  const handleFavoriteToggle = (newState, listingId) => {
-    if (onToggleFavorite) {
-      onToggleFavorite(listingId, listing.title, newState);
-    }
-  };
 
-  // Format details string
-  const formatDetails = () => {
-    const parts = [];
-
-    if (listing.bedrooms === 0) {
-      parts.push('Studio');
-    } else if (listing.bedrooms) {
-      parts.push(`${listing.bedrooms} bed`);
-    }
-
-    if (listing.bathrooms) {
-      parts.push(`${listing.bathrooms} bath`);
-    }
-
-    if (listing.maxGuests) {
-      parts.push(`${listing.maxGuests} guests`);
-    }
-
-    return parts.join(' • ');
-  };
-
-  // Get host initial for avatar
   const getHostInitial = () => {
     const name = listing.host?.name || 'H';
     return name.charAt(0).toUpperCase();
   };
 
-  // Current photo URL
   const currentPhotoUrl = photos[currentPhotoIndex] || '';
 
-  // All styles defined inline - completely isolated from external CSS
+  // STYLES TO MATCH IMAGE 2
   const styles = {
     card: {
-      background: '#fff',
-      borderRadius: '12px',
+      all: 'unset', // RESET EVERYTHING
+      display: isGrid ? 'block' : 'flex',
+      background: 'white',
+      borderRadius: '24px',
       overflow: 'hidden',
-      border: '1px solid #e5e7eb',
+      boxShadow: isHovered ? '0 20px 40px rgba(0,0,0,0.08)' : '0 4px 12px rgba(0,0,0,0.03)',
+      transition: 'all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)',
       cursor: 'pointer',
-      transition: 'box-shadow 0.2s, transform 0.2s',
+      flexDirection: isGrid ? 'column' : 'row',
+      transform: isHovered ? 'translateY(-8px)' : 'none',
+      fontFamily: "'Inter', sans-serif",
+      border: '1px solid #D1D5DB',
+      padding: 0,
+      margin: 0,
+      boxSizing: 'border-box',
     },
-    photo: {
+    imageSection: {
       position: 'relative',
-      height: '180px',
-      background: '#f3f4f6',
+      height: isGrid ? '240px' : 'auto',
+      width: isGrid ? '100%' : '280px',
+      minWidth: isGrid ? 'auto' : '280px',
+      overflow: 'hidden',
     },
     image: {
       width: '100%',
       height: '100%',
       objectFit: 'cover',
     },
-    placeholder: {
-      width: '100%',
-      height: '100%',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      color: '#9ca3af',
-    },
-    badge: {
+    statusBadge: {
       position: 'absolute',
-      top: '8px',
-      left: '8px',
-      padding: '4px 8px',
-      borderRadius: '4px',
+      top: '16px',
+      left: '16px',
+      padding: '6px 12px',
+      borderRadius: '8px',
       fontSize: '11px',
-      fontWeight: '600',
+      fontWeight: 700,
       textTransform: 'uppercase',
-      color: '#fff',
+      zIndex: 1,
     },
     badgeProposal: {
-      background: 'linear-gradient(135deg, #6B4EE6, #8B6CF5)',
+      background: '#8B5CF6',
+      color: 'white',
     },
     badgeNew: {
       background: '#10B981',
+      color: 'white',
     },
-    favorite: {
+    photoDots: {
       position: 'absolute',
-      top: '8px',
-      right: '8px',
-    },
-    nav: {
-      position: 'absolute',
-      top: '0',
-      left: '0',
-      right: '0',
-      bottom: '0',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '0 6px',
-      opacity: '0',
-      transition: 'opacity 0.2s',
-      pointerEvents: 'none',
-    },
-    navBtn: {
-      width: '28px',
-      height: '28px',
-      borderRadius: '50%',
-      background: 'rgba(255,255,255,0.9)',
-      border: 'none',
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      color: '#374151',
-    },
-    dots: {
-      position: 'absolute',
-      bottom: '8px',
+      bottom: '16px',
       left: '50%',
       transform: 'translateX(-50%)',
       display: 'flex',
-      gap: '4px',
+      gap: '6px',
     },
-    dot: {
+    photoDot: {
       width: '6px',
       height: '6px',
       borderRadius: '50%',
       background: 'rgba(255,255,255,0.5)',
-      border: 'none',
-      padding: '0',
-      cursor: 'pointer',
     },
-    dotActive: {
-      background: '#fff',
+    photoDotActive: {
+      background: 'white',
       width: '16px',
-      borderRadius: '3px',
+      borderRadius: '4px',
     },
-    dotMore: {
-      fontSize: '10px',
-      color: '#fff',
+    cardContent: {
+      padding: '24px',
+      flex: 1,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '12px',
     },
-    content: {
-      padding: '6px 8px 8px',
-    },
-    location: {
+    cardLocation: {
       display: 'flex',
       alignItems: 'center',
-      gap: '4px',
-      fontSize: '12px',
-      fontWeight: '500',
-      color: '#6B4EE6',
-      margin: '0',
+      gap: '6px',
+      fontSize: '13px',
+      color: '#6366F1',
+      fontWeight: 600,
     },
-    title: {
-      margin: '2px 0',
-      fontSize: '14px',
-      fontWeight: '600',
-      color: '#1f2937',
-      lineHeight: '1.2',
-      overflow: 'hidden',
-      display: '-webkit-box',
-      WebkitLineClamp: '2',
-      WebkitBoxOrient: 'vertical',
+    cardTitle: {
+      fontSize: '18px',
+      fontWeight: 700,
+      color: '#0F172A',
+      margin: 0,
+      lineHeight: 1.4,
     },
-    host: {
+    hostBadge: {
       display: 'flex',
       alignItems: 'center',
-      gap: '4px',
-      margin: '2px 0',
+      gap: '10px',
+      margin: '4px 0',
     },
     hostAvatar: {
-      width: '18px',
-      height: '18px',
+      width: '32px',
+      height: '32px',
       borderRadius: '50%',
-      objectFit: 'cover',
-    },
-    hostAvatarPlaceholder: {
-      width: '18px',
-      height: '18px',
-      borderRadius: '50%',
-      background: 'linear-gradient(135deg, #6B4EE6, #8B6CF5)',
-      color: '#fff',
+      background: '#6366F1',
+      color: 'white',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      fontSize: '9px',
-      fontWeight: '600',
+      fontSize: '12px',
+      fontWeight: 700,
     },
     hostName: {
-      fontSize: '12px',
-      color: '#6b7280',
+      fontSize: '14px',
+      color: '#64748B',
     },
     hostNameStrong: {
-      color: '#1f2937',
-      fontWeight: '500',
+      color: '#1E293B',
+      fontWeight: 600,
     },
-    verified: {
+    verifiedBadge: {
       display: 'flex',
       alignItems: 'center',
-      gap: '2px',
-      fontSize: '10px',
+      gap: '4px',
+      fontSize: '12px',
       color: '#10B981',
-      fontWeight: '500',
+      fontWeight: 600,
+      marginLeft: '4px',
     },
-    details: {
-      fontSize: '11px',
-      color: '#6b7280',
-      margin: '2px 0',
+    cardDetails: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
+      fontSize: '14px',
+      color: '#94A3B8',
+      fontWeight: 500,
     },
-    pricing: {
+    detailDivider: {
+      width: '4px',
+      height: '4px',
+      borderRadius: '50%',
+      background: '#CBD5E1',
+    },
+    pricingFooter: {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      marginTop: '4px',
-    },
-    priceWrapper: {
-      display: 'flex',
-      flexDirection: 'column',
+      paddingTop: '20px',
+      marginTop: 'auto',
+      borderTop: '1px solid #D1D5DB',
     },
     priceLabel: {
-      fontSize: '10px',
-      color: '#6b7280',
+      fontSize: '12px',
+      color: '#94A3B8',
+      fontWeight: 500,
     },
-    price: {
-      fontSize: '16px',
-      fontWeight: '700',
-      color: '#1f2937',
+    priceValue: {
+      fontSize: '22px',
+      fontWeight: 800,
+      color: '#0F172A',
     },
     pricePeriod: {
-      fontSize: '12px',
-      fontWeight: '400',
-      color: '#6b7280',
+      fontSize: '14px',
+      fontWeight: 400,
+      color: '#64748B',
     },
-    btn: {
-      padding: '6px 12px',
-      borderRadius: '6px',
-      fontSize: '12px',
-      fontWeight: '600',
+    actionBtn: {
+      padding: '12px 24px',
+      borderRadius: '12px',
+      fontSize: '14px',
+      fontWeight: 700,
       cursor: 'pointer',
+      transition: 'all 0.2s ease',
       border: 'none',
-      transition: 'all 0.2s',
     },
-    btnPrimary: {
-      background: '#6B4EE6',
-      color: '#fff',
+    actionBtnPrimary: {
+      background: '#6366F1',
+      color: 'white',
+      boxShadow: '0 4px 12px rgba(99, 102, 241, 0.2)',
     },
-    btnSecondary: {
-      background: '#f0ebff',
-      color: '#6B4EE6',
+    actionBtnSecondary: {
+      background: '#EEF2FF',
+      color: '#6366F1',
     },
   };
 
   return (
-    <article style={styles.card} onClick={handleCardClick}>
-      {/* Photo Section */}
-      <div style={styles.photo}>
-        {!imageError && currentPhotoUrl ? (
-          <img
-            src={currentPhotoUrl}
-            alt={listing.title || 'Listing photo'}
-            style={styles.image}
-            onError={() => setImageError(true)}
-          />
-        ) : (
-          <div style={styles.placeholder}>
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <rect x="3" y="3" width="18" height="18" rx="2" />
-              <circle cx="8.5" cy="8.5" r="1.5" />
-              <path d="M21 15l-5-5L5 21" />
-            </svg>
-          </div>
-        )}
+    <div
+      className="favorites-card-wrapper"
+      style={styles.card}
+      onClick={handleCardClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div style={styles.imageSection}>
+        <img
+          src={imageError ? 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800' : currentPhotoUrl}
+          alt={listing.title}
+          style={styles.image}
+          onError={() => setImageError(true)}
+        />
+        
+        {hasProposal && <div style={{ ...styles.statusBadge, ...styles.badgeProposal }}>Proposal Sent</div>}
+        {!hasProposal && isNewListing && <div style={{ ...styles.statusBadge, ...styles.badgeNew }}>New</div>}
 
-        {/* Status Badge */}
-        {hasProposal && (
-          <div style={{ ...styles.badge, ...styles.badgeProposal }}>
-            Proposal Sent
-          </div>
-        )}
-        {!hasProposal && isNewListing && (
-          <div style={{ ...styles.badge, ...styles.badgeNew }}>
-            New
-          </div>
-        )}
+        <FavoriteButtonWithConfirm
+          listingId={listing.id}
+          userId={userId}
+          onConfirmRemove={() => {
+            if (onToggleFavorite) {
+              onToggleFavorite(listing.id, listing.title, false);
+            }
+          }}
+        />
 
-        {/* Favorite Button */}
-        <div style={styles.favorite}>
-          <FavoriteButton
-            listingId={listing.id}
-            userId={userId}
-            initialFavorited={true}
-            onToggle={handleFavoriteToggle}
-            size="medium"
-            variant="overlay"
-          />
+        {hasMultiplePhotos && (
+          <div style={styles.photoDots}>
+            {photos.slice(0, 4).map((_, i) => (
+              <span key={i} style={{ ...styles.photoDot, ...(i === currentPhotoIndex ? styles.photoDotActive : {}) }} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div style={styles.cardContent}>
+        <div style={styles.cardLocation}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
+          </svg>
+          {listing.location || 'New York, NY'}
         </div>
 
-        {/* Photo Navigation Arrows */}
-        {hasMultiplePhotos && (
-          <div style={styles.nav} className="fcv2-nav">
-            <button
-              style={styles.navBtn}
-              onClick={handlePrevPhoto}
-              aria-label="Previous photo"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M15 18l-6-6 6-6" />
-              </svg>
-            </button>
-            <button
-              style={styles.navBtn}
-              onClick={handleNextPhoto}
-              aria-label="Next photo"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M9 18l6-6-6-6" />
-              </svg>
-            </button>
-          </div>
-        )}
+        <h3 style={styles.cardTitle}>{listing.title}</h3>
 
-        {/* Photo Dots */}
-        {hasMultiplePhotos && (
-          <div style={styles.dots}>
-            {photos.slice(0, 5).map((_, index) => (
-              <button
-                key={index}
-                style={index === currentPhotoIndex ? { ...styles.dot, ...styles.dotActive } : styles.dot}
-                onClick={(e) => handleDotClick(e, index)}
-                aria-label={`Go to photo ${index + 1}`}
-              />
-            ))}
-            {photos.length > 5 && (
-              <span style={styles.dotMore}>+{photos.length - 5}</span>
+        <div style={styles.hostBadge}>
+          <div style={styles.hostAvatar}>
+            {listing.host?.image ? <img src={listing.host.image} style={{ width: '100%', height: '100%', borderRadius: '50%' }} /> : getHostInitial()}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <span style={styles.hostName}>Hosted by <strong style={styles.hostNameStrong}>{listing.host?.name || 'Host'}</strong></span>
+            {listing.host?.verified && (
+              <div style={styles.verifiedBadge}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" /></svg>
+                Verified
+              </div>
             )}
           </div>
-        )}
-      </div>
-
-      {/* Content Section */}
-      <div style={styles.content}>
-        {/* Location */}
-        <div style={styles.location}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-            <circle cx="12" cy="10" r="3" />
-          </svg>
-          <span>{listing.location || listing.neighborhood || 'New York, NY'}</span>
         </div>
 
-        {/* Title */}
-        <h3 style={styles.title}>{listing.title || 'Unnamed Listing'}</h3>
+        <div style={styles.cardDetails}>
+          <span>{listing.bedrooms === 0 ? 'Studio' : `${listing.bedrooms} bed`}</span>
+          <span style={styles.detailDivider}></span>
+          <span>{listing.bathrooms} bath</span>
+          <span style={styles.detailDivider}></span>
+          <span>{listing.maxGuests} guests</span>
+        </div>
 
-        {/* Host Info */}
-        <div style={styles.host}>
-          {listing.host?.image ? (
-            <img
-              src={listing.host.image}
-              alt={listing.host.name || 'Host'}
-              style={styles.hostAvatar}
-            />
-          ) : (
-            <div style={styles.hostAvatarPlaceholder}>
-              {getHostInitial()}
+        <div style={styles.pricingFooter}>
+          <div>
+            <div style={styles.priceLabel}>Starting at</div>
+            <div style={styles.priceValue}>
+              ${listing.price?.starting || listing['Starting nightly price'] || 0} <span style={styles.pricePeriod}>/ night</span>
             </div>
-          )}
-          <span style={styles.hostName}>
-            Hosted by <strong style={styles.hostNameStrong}>{listing.host?.name || 'Host'}</strong>
-          </span>
-          {listing.host?.verified && (
-            <span style={styles.verified}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
-              </svg>
-              Verified
-            </span>
-          )}
-        </div>
-
-        {/* Details */}
-        <div style={styles.details}>
-          {formatDetails()}
-        </div>
-
-        {/* Pricing with action button */}
-        <div style={styles.pricing}>
-          <div style={styles.priceWrapper}>
-            <span style={styles.priceLabel}>Starting at</span>
-            <span style={styles.price}>
-              ${listing.price?.starting || listing['Starting nightly price'] || 0}
-              <span style={styles.pricePeriod}> / night</span>
-            </span>
           </div>
-          {hasProposal ? (
-            <button
-              style={{ ...styles.btn, ...styles.btnSecondary }}
-              onClick={handleViewProposal}
-            >
-              View Proposal
-            </button>
-          ) : (
-            <button
-              style={{ ...styles.btn, ...styles.btnPrimary }}
-              onClick={handleCreateProposal}
-            >
-              Create Proposal
-            </button>
-          )}
+          
+          <button
+            style={{ ...styles.actionBtn, ...(hasProposal ? styles.actionBtnSecondary : styles.actionBtnPrimary) }}
+            onClick={hasProposal ? handleViewProposal : handleCreateProposal}
+          >
+            {hasProposal ? 'View Proposal' : 'Create Proposal'}
+          </button>
         </div>
       </div>
-
-      {/* Minimal CSS for hover states - injected once */}
-      <style>{`
-        .fcv2-nav { opacity: 0 !important; }
-        article:hover .fcv2-nav { opacity: 1 !important; pointer-events: auto !important; }
-      `}</style>
-    </article>
+    </div>
   );
 };
 

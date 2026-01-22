@@ -7,9 +7,9 @@
  *
  * UPDATE 2026-01-17: Added FavoriteButton to price display section
  */
-// FORCE RELOAD v4 - timestamp: 1768673500000
-console.log('🔄 ViewSplitLeasePage v4 - FavoriteButton ACTIVE - ' + new Date().toISOString());
-console.log('🔄 If you see this, the correct file is loaded!');
+// FORCE RELOAD v8 - timestamp: 1737561000000 - Custom Schedule DEBUG URGENT
+console.log('🔄 ViewSplitLeasePage v8 - Custom Schedule DEBUG URGENT - ' + Date.now());
+console.log('🔄 DEBUG: Checking isMobile and listing conditionals - URGENT FIX');
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Header from '../shared/Header.jsx';
@@ -1920,10 +1920,24 @@ export default function ViewSplitLeasePage() {
                 onPriceChange={handlePriceChange}
                 showPricing={false}
               />
+            </div>
+          )}
 
+          {/* Custom schedule section - decoupled from scheduleSelectorListing to ensure visibility */}
+          {(() => {
+            const shouldRender = !isMobile && listing;
+            logger.debug(`🎯 Custom Schedule Conditional Check: isMobile=${isMobile}, listing=${!!listing}, shouldRender=${shouldRender}`);
+            return shouldRender;
+          })() && (
+            <div style={{
+              marginBottom: '14px',
+              padding: '12px',
+              background: 'linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)',
+              borderRadius: '12px',
+              border: '1px solid #E5E7EB'
+            }}>
               {/* Listing's weekly pattern info + custom schedule option */}
               <div style={{
-                marginTop: '12px',
                 fontSize: '13px',
                 color: '#4B5563'
               }}>
@@ -2821,10 +2835,24 @@ export default function ViewSplitLeasePage() {
                       onPriceChange={handlePriceChange}
                       showPricing={false}
                     />
+                  </div>
+                )}
 
+                {/* Custom schedule section - decoupled from scheduleSelectorListing to ensure visibility (Mobile) */}
+                {(() => {
+                  const shouldRender = !!listing;
+                  logger.debug(`🎯 Custom Schedule Conditional Check (MOBILE): listing=${!!listing}, shouldRender=${shouldRender}`);
+                  return shouldRender;
+                })() && (
+                  <div style={{
+                    marginBottom: '16px',
+                    padding: '12px',
+                    background: '#f9fafb',
+                    borderRadius: '12px',
+                    border: '1px solid #E5E7EB'
+                  }}>
                     {/* Listing's weekly pattern info + custom schedule option (Mobile) */}
                     <div style={{
-                      marginTop: '12px',
                       fontSize: '13px',
                       color: '#4B5563'
                     }}>

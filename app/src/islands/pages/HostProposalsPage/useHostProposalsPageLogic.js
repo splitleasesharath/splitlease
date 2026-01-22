@@ -17,6 +17,7 @@ import { supabase } from '../../../lib/supabase.js';
 import { isHost } from '../../../logic/rules/users/isHost.js';
 import { getAllHouseRules } from '../../shared/EditListingDetails/services/houseRulesService.js';
 import { getVMStateInfo, VM_STATES } from '../../../logic/rules/proposals/virtualMeetingRules.js';
+import { DAYS_OF_WEEK, nightNamesToIndices } from '../../shared/HostEditingProposal/types.js';
 
 // ============================================================================
 // DATA NORMALIZERS
@@ -769,11 +770,27 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
   }, [handleAcceptProposal]);
 
   /**
+   * Convert day name to 0-based day index
+   * Handles string names ('Monday'), numeric indices (1), or undefined
+   * @param {string|number|undefined} dayName - Day name or index
+   * @returns {number|null} 0-based day index (0-6) or null if invalid
+   */
+  const dayNameToIndex = (dayName) => {
+    if (typeof dayName === 'number') return dayName;
+    if (typeof dayName !== 'string') return null;
+    const day = DAYS_OF_WEEK.find(d =>
+      d.name.toLowerCase() === dayName.toLowerCase()
+    );
+    return day?.dayIndex ?? null;
+  };
+
+  /**
    * Handle counteroffer submission from editing view
    *
    * Transforms frontend field names to Edge Function expected format:
    * - Frontend uses camelCase (numberOfWeeks, checkIn, etc.)
    * - Edge Function expects hc_ prefix snake_case (hc_reservation_span_weeks, hc_check_in, etc.)
+   * - Day/night values come as strings ('Monday', 'Monday Night') and must be converted to indices
    */
   const handleCounteroffer = useCallback(async (counterofferData) => {
     try {
@@ -788,6 +805,10 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
         moveInDate
       } = counterofferData;
 
+      console.log('[useHostProposalsPageLogic] Counteroffer input:', {
+        checkIn, checkOut, nightsSelected, daysSelected
+      });
+
       // Build the payload with properly named fields
       const payload = {
         proposal_id: selectedProposal._id || selectedProposal.id,
@@ -799,20 +820,30 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
         payload.hc_reservation_span_weeks = numberOfWeeks;
       }
       if (checkIn !== undefined) {
-        // checkIn is a day object like { index: 1, display: 'Monday' }
-        payload.hc_check_in = typeof checkIn === 'object' ? checkIn.index : checkIn;
+        // checkIn comes as day name string ('Monday') - convert to 0-based index
+        const checkInIndex = dayNameToIndex(checkIn);
+        if (checkInIndex !== null) {
+          payload.hc_check_in = checkInIndex;
+        }
       }
       if (checkOut !== undefined) {
-        // checkOut is a day object like { index: 5, display: 'Friday' }
-        payload.hc_check_out = typeof checkOut === 'object' ? checkOut.index : checkOut;
+        // checkOut comes as day name string ('Friday') - convert to 0-based index
+        const checkOutIndex = dayNameToIndex(checkOut);
+        if (checkOutIndex !== null) {
+          payload.hc_check_out = checkOutIndex;
+        }
       }
       if (nightsSelected !== undefined && Array.isArray(nightsSelected)) {
-        // nightsSelected is array of day indices [1, 2, 3, 4]
-        payload.hc_nights_selected = nightsSelected;
+        // nightsSelected comes as array of night names ['Monday Night', 'Tuesday Night']
+        // Convert to 0-based indices using nightNamesToIndices from types.js
+        payload.hc_nights_selected = nightNamesToIndices(nightsSelected);
       }
       if (daysSelected !== undefined && Array.isArray(daysSelected)) {
-        // daysSelected is array of day indices [1, 2, 3, 4, 5]
-        payload.hc_days_selected = daysSelected;
+        // daysSelected comes as array of day names ['Monday', 'Tuesday']
+        // Convert each to 0-based index
+        payload.hc_days_selected = daysSelected
+          .map(dayNameToIndex)
+          .filter(idx => idx !== null);
       }
       if (moveInDate !== undefined) {
         // moveInDate should be ISO string
@@ -821,7 +852,7 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
           : moveInDate;
       }
 
-      console.log('[useHostProposalsPageLogic] Sending counteroffer payload:', payload);
+      console.log('[useHostProposalsPageLogic] Converted payload:', payload);
 
       const { data, error } = await supabase.functions.invoke('proposal', {
         body: {
