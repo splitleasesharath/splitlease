@@ -364,8 +364,8 @@ def main():
             orchestration_result = OrchestrationResult(
                 success=False,
                 phase_reached="implement",
-                total_chunks=0,
-                chunks_implemented=0,
+                total_files=0,
+                files_implemented=0,
                 topological_levels=graph_result.level_count if graph_result else 0,
                 cycles_detected=graph_result.cycle_count if graph_result else 0,
                 edge_reduction_pct=graph_result.edge_reduction_pct if graph_result else 0,
@@ -453,8 +453,8 @@ def main():
                 orchestration_result = OrchestrationResult(
                     success=True,
                     phase_reached="validate",
-                    total_chunks=len(modified_files),  # Use file count instead of chunk count
-                    chunks_implemented=len(modified_files),
+                    total_files=len(modified_files),
+                    files_implemented=len(modified_files),
                     topological_levels=graph_result.level_count if graph_result else 0,
                     cycles_detected=graph_result.cycle_count if graph_result else 0,
                     edge_reduction_pct=graph_result.edge_reduction_pct if graph_result else 0,
@@ -484,8 +484,8 @@ def main():
                 orchestration_result = OrchestrationResult(
                     success=False,
                     phase_reached="validate",
-                    total_chunks=len(modified_files),
-                    chunks_implemented=len(modified_files),
+                    total_files=len(modified_files),
+                    files_implemented=len(modified_files),
                     topological_levels=graph_result.level_count if graph_result else 0,
                     cycles_detected=graph_result.cycle_count if graph_result else 0,
                     edge_reduction_pct=graph_result.edge_reduction_pct if graph_result else 0,
@@ -500,8 +500,8 @@ def main():
         # =====================================================================
         if orchestration_result:
             logger.summary(
-                total_chunks=orchestration_result.total_chunks,
-                chunks_implemented=orchestration_result.chunks_implemented,
+                total_files=orchestration_result.total_files,
+                files_implemented=orchestration_result.files_implemented,
                 topological_levels=orchestration_result.topological_levels,
                 cycles_detected=orchestration_result.cycles_detected,
                 edge_reduction_pct=f"{orchestration_result.edge_reduction_pct:.0%}",
@@ -534,8 +534,8 @@ def main():
         orchestration_result = OrchestrationResult(
             success=False,
             phase_reached="error",
-            total_chunks=0,
-            chunks_implemented=0,
+            total_files=0,
+            files_implemented=0,
             topological_levels=0,
             cycles_detected=0,
             edge_reduction_pct=0,

@@ -299,15 +299,15 @@ class OrchestrationResult:
     Attributes:
         success: True if pipeline completed successfully
         phase_reached: Last phase that was attempted
-        total_chunks: Total number of chunks planned
-        chunks_implemented: Number of chunks successfully implemented
+        total_files: Total number of files modified
+        files_implemented: Number of files successfully implemented
         topological_levels: Number of levels in dependency graph
         cycles_detected: Number of circular dependency cycles
         edge_reduction_pct: Percentage of edges removed by transitive reduction
         total_duration_seconds: Total pipeline runtime
         phase_durations: Duration of each phase in seconds
         errors: List of error messages
-        affected_chunks: Chunk numbers that caused failures
+        affected_files: File paths that caused failures
         plan_path: Path to the audit plan file
         changelog_path: Path to the generated changelog
     """
@@ -317,8 +317,8 @@ class OrchestrationResult:
     phase_reached: str  # "audit", "parse", "sort", "implement", "validate"
 
     # Metrics
-    total_chunks: int
-    chunks_implemented: int
+    total_files: int
+    files_implemented: int
     topological_levels: int
     cycles_detected: int
     edge_reduction_pct: float
@@ -329,7 +329,7 @@ class OrchestrationResult:
 
     # Errors (if any)
     errors: List[str] = field(default_factory=list)
-    affected_chunks: List[int] = field(default_factory=list)  # chunk numbers
+    affected_files: List[str] = field(default_factory=list)  # file paths
 
     # Artifacts
     plan_path: Optional[str] = None
@@ -344,7 +344,7 @@ class OrchestrationResult:
         status = "SUCCESS" if self.success else "FAILED"
         return (
             f"{status} | Phase: {self.phase_reached} | "
-            f"Chunks: {self.chunks_implemented}/{self.total_chunks} | "
+            f"Files: {self.files_implemented}/{self.total_files} | "
             f"Levels: {self.topological_levels} | "
             f"Cycles: {self.cycles_detected} | "
             f"Duration: {self.total_duration_seconds:.1f}s"
@@ -360,7 +360,7 @@ class OrchestrationResult:
         status = "SUCCESS" if self.success else "FAILED"
 
         msg = f":{emoji}: ADW Orchestration {status}\n"
-        msg += f"- Chunks: {self.chunks_implemented}/{self.total_chunks}\n"
+        msg += f"- Files: {self.files_implemented}/{self.total_files}\n"
         msg += f"- Levels: {self.topological_levels}, Cycles: {self.cycles_detected}\n"
         msg += f"- Duration: {self.total_duration_seconds:.1f}s\n"
 
@@ -476,7 +476,7 @@ This signals successful build validation. Begin now.
         agent_name="build_validator",
         model="sonnet",
         output_file=str(output_file),
-        working_dir=str(working_dir / "adws"),  # Run from adws/ for proper context
+        working_dir=str(working_dir),  # Run from project root so plugins load from .claude/settings.json
         dangerously_skip_permissions=True,
         timeout=build_timeout,
         system_prompt=system_prompt
