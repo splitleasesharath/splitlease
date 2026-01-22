@@ -53,8 +53,7 @@ Thumbs.db
 # Logs
 *.log
 
-# ADW orchestrator run logs
-adws/adw_run_logs/
+# (moved to ZEP deprecated section - entire adws/ directory is now ignored)
 
 # Worktrees directory
 trees/
@@ -112,6 +111,18 @@ Deprecated/
 ZEP - analysis/
 ZEP - tests/
 ZEP - refactor(previously barrel deletion related)/
+ZEP - scripts/
+
+# ADW orchestrator (deprecated)
+adws/
+
+# Ralph plans (deprecated)
+ralph-plans/
+
+# Test data
+test-data/
+
+# Windows system files
 desktop.ini
 nul
 
@@ -120,5 +131,3 @@ Implementation/
 .temp-cohost-request/
 .temp-host-editing-proposal/
 .claude/CLAUDE copy.md
-adws/agents/code_audit_20260116092350/raw_output.json
-adws/agents/visual_check/visual_check_a4c8139e.json
