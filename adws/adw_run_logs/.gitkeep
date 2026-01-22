@@ -1,9 +1,0 @@
-# ADW Run Logs
-
-This directory contains timestamped logs from ADW orchestrator runs.
-
-Each log file is named: YYYYMMDDHHMMSS_<adw_type>_run.log
-
-Example:
-- 20260111110537_fp_audit_run.log
-- 20260111123045_fp_audit_run.log

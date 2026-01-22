@@ -1,8 +1,0 @@
-{
-  "heroSection": {
-    "outerHTML": "<div class=\"container optly-banner-holder flex-column flex-md-row\">\n      <div class=\"banner-msg text-center text-md-start\" style=\"color: rgba(0, 0, 0, 1);\">\n        ⭐ New! Hire and pay employees and contractors globally with Skuad, a Payoneer company.\n      </div>\n      <div class=\"banner-cta  \">\n        <a href=\"https://www.skuad.io/hire-and-pay-with-payoneer?utm_source=payoneer&amp;utm_medium=referral&amp;utm_campaign=notification2\" target=\"_blank\"><button class=\"cta-btn\" style=\"background: linear-gradient(90deg, #9064da 0, #2171e0 49.37%, #844eb4 101.93%) !important;;\">Start now!</button></a>\n      </div>\n    </div>",
-    "classes": "container optly-banner-holder flex-column flex-md-row",
-    "styles": ""
-  },
-  "avatars": []
-}
