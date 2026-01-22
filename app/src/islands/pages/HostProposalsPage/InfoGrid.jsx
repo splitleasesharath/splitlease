@@ -75,6 +75,7 @@ function getNightsPerWeek(proposal) {
 
 /**
  * InfoGrid displays proposal details in a grid layout
+ * Uses semantic definition list (dl/dt/dd) for screen reader accessibility
  *
  * @param {Object} props
  * @param {Object} props.proposal - The proposal object
@@ -95,28 +96,28 @@ export function InfoGrid({ proposal }) {
   }
 
   return (
-    <div className="hp7-info-grid">
+    <dl className="hp7-info-grid">
       <div className="hp7-info-item">
-        <div className="hp7-info-label">Move-in</div>
-        <div className="hp7-info-value">{formatDate(moveIn)}</div>
+        <dt className="hp7-info-label">Move-in</dt>
+        <dd className="hp7-info-value">{formatDate(moveIn)}</dd>
       </div>
       <div className="hp7-info-item">
-        <div className="hp7-info-label">Move-out</div>
-        <div className="hp7-info-value">{formatDate(moveOut)}</div>
+        <dt className="hp7-info-label">Move-out</dt>
+        <dd className="hp7-info-value">{formatDate(moveOut)}</dd>
       </div>
       <div className="hp7-info-item">
-        <div className="hp7-info-label">Duration</div>
-        <div className="hp7-info-value">{duration ? `${duration} weeks` : 'TBD'}</div>
+        <dt className="hp7-info-label">Duration</dt>
+        <dd className="hp7-info-value">{duration ? `${duration} weeks` : 'TBD'}</dd>
       </div>
       <div className="hp7-info-item">
-        <div className="hp7-info-label">Schedule</div>
-        <div className="hp7-info-value">{formatScheduleRange(daysSelected)}</div>
+        <dt className="hp7-info-label">Schedule</dt>
+        <dd className="hp7-info-value">{formatScheduleRange(daysSelected)}</dd>
       </div>
       <div className="hp7-info-item">
-        <div className="hp7-info-label">Nights</div>
-        <div className="hp7-info-value">{getNightsPerWeek(proposal)}</div>
+        <dt className="hp7-info-label">Nights</dt>
+        <dd className="hp7-info-value">{getNightsPerWeek(proposal)}</dd>
       </div>
-    </div>
+    </dl>
   );
 }
 

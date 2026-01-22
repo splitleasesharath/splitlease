@@ -143,6 +143,7 @@ function getStatusBannerConfig(proposal) {
 
 /**
  * StatusBanner displays the status information banner
+ * Uses role="status" for polite announcements to screen readers
  *
  * @param {Object} props
  * @param {Object} props.proposal - The proposal object
@@ -151,13 +152,24 @@ export function StatusBanner({ proposal }) {
   const config = getStatusBannerConfig(proposal);
   const IconComponent = config.icon;
 
+  // Determine if this is an urgent status that needs immediate announcement
+  const isUrgent = config.variant === 'action-needed' || config.variant === 'warning';
+
   return (
-    <div className={`hp7-status-banner ${config.variant}`}>
-      <span className="hp7-status-icon">
+    <div
+      className={`hp7-status-banner ${config.variant}`}
+      role="status"
+      aria-live={isUrgent ? 'assertive' : 'polite'}
+      aria-atomic="true"
+    >
+      <span className="hp7-status-icon" aria-hidden="true">
         <IconComponent size={10} />
       </span>
       <div className="hp7-status-text">
-        <strong>{config.title}</strong> — {config.message}
+        <strong>{config.title}</strong>
+        <span aria-hidden="true"> — </span>
+        <span className="visually-hidden">: </span>
+        {config.message}
       </div>
     </div>
   );

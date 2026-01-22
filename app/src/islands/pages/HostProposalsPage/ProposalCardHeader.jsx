@@ -102,13 +102,16 @@ function formatTotalEarnings(proposal) {
 
 /**
  * ProposalCardHeader displays the collapsed state of a proposal card
+ * Acts as an accessible button controlling the expanded region
  *
  * @param {Object} props
  * @param {Object} props.proposal - The proposal object
  * @param {boolean} props.isExpanded - Whether the card is expanded
  * @param {Function} props.onToggle - Callback to toggle expansion
+ * @param {string} props.headerId - ID for ARIA labelling
+ * @param {string} props.bodyId - ID of the controlled region
  */
-export function ProposalCardHeader({ proposal, isExpanded, onToggle }) {
+export function ProposalCardHeader({ proposal, isExpanded, onToggle, headerId, bodyId }) {
   const guest = proposal?.guest || proposal?.user || {};
   const guestAvatar = getGuestAvatar(guest);
   const guestName = getGuestName(guest);
@@ -126,11 +129,11 @@ export function ProposalCardHeader({ proposal, isExpanded, onToggle }) {
   const metaLine = metaParts.join(' · ');
 
   return (
-    <div
+    <button
+      type="button"
+      id={headerId}
       className="hp7-card-header"
       onClick={onToggle}
-      role="button"
-      tabIndex={0}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
@@ -138,11 +141,12 @@ export function ProposalCardHeader({ proposal, isExpanded, onToggle }) {
         }
       }}
       aria-expanded={isExpanded}
+      aria-controls={bodyId}
     >
       <img
         src={guestAvatar}
         className="hp7-guest-avatar"
-        alt={`${guestName}'s avatar`}
+        alt={`${guestName}'s profile photo`}
         loading="lazy"
       />
 
@@ -150,11 +154,11 @@ export function ProposalCardHeader({ proposal, isExpanded, onToggle }) {
         <div className="hp7-proposal-name">
           {guestName}
           {isNew && (
-            <span className="hp7-new-badge">New</span>
+            <span className="hp7-new-badge" aria-label="New proposal">New</span>
           )}
           {isVerified && (
-            <span className="hp7-verified-badge">
-              <CheckCircle size={10} />
+            <span className="hp7-verified-badge" aria-label="Verified guest">
+              <CheckCircle size={10} aria-hidden="true" />
               Verified
             </span>
           )}
@@ -162,14 +166,17 @@ export function ProposalCardHeader({ proposal, isExpanded, onToggle }) {
         <div className="hp7-proposal-meta">{metaLine}</div>
       </div>
 
-      <div className={`hp7-proposal-status ${statusConfig.variant}`}>
+      <div
+        className={`hp7-proposal-status ${statusConfig.variant}`}
+        aria-label={`Status: ${statusConfig.text}`}
+      >
         {statusConfig.text}
       </div>
 
-      <div className="hp7-expand-icon">
+      <div className="hp7-expand-icon" aria-hidden="true">
         <ChevronDown size={16} />
       </div>
-    </div>
+    </button>
   );
 }
 

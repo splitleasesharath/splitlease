@@ -16,6 +16,7 @@ import React from 'react';
 import { getCheckInOutFromNights } from './types.js';
 
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 /**
  * DayPillsRow displays the visual night selection for hosts
@@ -40,27 +41,49 @@ export function DayPillsRow({ nightsSelected = [] }) {
     ? `${checkInShort} check-in, ${checkOutShort} check-out`
     : '';
 
+  // Build accessible description of selected nights
+  const selectedNightNames = normalizedNights.map(n => DAY_NAMES[n]).join(', ');
+  const ariaDescription = nightsCount > 0
+    ? `${nightsCount} ${nightsCount === 1 ? 'night' : 'nights'} selected: ${selectedNightNames}`
+    : 'No nights selected';
+
   return (
-    <div className="hp7-days-row">
-      <span className="hp7-days-label">Nights</span>
-      <div className="hp7-days-pills">
-        {DAY_LETTERS.map((letter, index) => (
-          <div
-            key={index}
-            className={`hp7-day-pill${normalizedNights.includes(index) ? ' selected' : ''}`}
-          >
-            {letter}
-          </div>
-        ))}
+    <div
+      className="hp7-days-row"
+      role="group"
+      aria-label="Weekly night schedule"
+      aria-describedby="days-row-summary"
+    >
+      <span className="hp7-days-label" id="days-row-label">Nights</span>
+      <div
+        className="hp7-days-pills"
+        role="list"
+        aria-labelledby="days-row-label"
+      >
+        {DAY_LETTERS.map((letter, index) => {
+          const isSelected = normalizedNights.includes(index);
+          const dayName = DAY_NAMES[index];
+          return (
+            <div
+              key={index}
+              role="listitem"
+              className={`hp7-day-pill${isSelected ? ' selected' : ''}`}
+              aria-label={`${dayName}${isSelected ? ' night, selected' : ' night, not selected'}`}
+            >
+              <span aria-hidden="true">{letter}</span>
+            </div>
+          );
+        })}
       </div>
-      <div className="hp7-days-info">
-        <div className="hp7-days-count">
+      <div className="hp7-days-info" id="days-row-summary">
+        <div className="hp7-days-count" aria-live="polite">
           {nightsCount} {nightsCount === 1 ? 'night' : 'nights'}
         </div>
         {rangeText && (
           <div className="hp7-days-range">{rangeText}</div>
         )}
       </div>
+      <span className="visually-hidden">{ariaDescription}</span>
     </div>
   );
 }

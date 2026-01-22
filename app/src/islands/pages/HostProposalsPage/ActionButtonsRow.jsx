@@ -87,30 +87,33 @@ export function ActionButtonsRow({
   // Guest Counteroffer - needs host response
   if (isGuestCounter) {
     return (
-      <div className="hp7-actions-row">
+      <div className="hp7-actions-row" role="group" aria-label="Respond to guest counteroffer">
         <button
           type="button"
           className="hp7-btn hp7-btn-success"
           onClick={onAccept}
+          aria-label="Accept guest's counteroffer"
         >
-          <Check size={14} />
-          Accept Counter
+          <Check size={14} aria-hidden="true" />
+          <span>Accept Counter</span>
         </button>
         <button
           type="button"
           className="hp7-btn hp7-btn-outline"
           onClick={onModify}
+          aria-label="Send another counteroffer to guest"
         >
-          <Repeat size={14} />
-          Counter Again
+          <Repeat size={14} aria-hidden="true" />
+          <span>Counter Again</span>
         </button>
         <button
           type="button"
           className="hp7-btn hp7-btn-danger"
           onClick={onDecline}
+          aria-label="Decline guest's counteroffer"
         >
-          <X size={14} />
-          Decline
+          <X size={14} aria-hidden="true" />
+          <span>Decline</span>
         </button>
       </div>
     );
@@ -119,30 +122,33 @@ export function ActionButtonsRow({
   // New proposal - needs review
   if (statusKey === 'proposal_submitted' || statusKey === 'host_review') {
     return (
-      <div className="hp7-actions-row">
+      <div className="hp7-actions-row" role="group" aria-label="Review new proposal">
         <button
           type="button"
           className="hp7-btn hp7-btn-success"
           onClick={onAccept}
+          aria-label="Accept this proposal"
         >
-          <Check size={14} />
-          Accept
+          <Check size={14} aria-hidden="true" />
+          <span>Accept</span>
         </button>
         <button
           type="button"
           className="hp7-btn hp7-btn-outline"
           onClick={onModify}
+          aria-label="Modify terms and send counteroffer"
         >
-          <SlidersHorizontal size={14} />
-          Modify
+          <SlidersHorizontal size={14} aria-hidden="true" />
+          <span>Modify</span>
         </button>
         <button
           type="button"
           className="hp7-btn hp7-btn-danger"
           onClick={onDecline}
+          aria-label="Decline this proposal"
         >
-          <X size={14} />
-          Decline
+          <X size={14} aria-hidden="true" />
+          <span>Decline</span>
         </button>
       </div>
     );
@@ -151,30 +157,33 @@ export function ActionButtonsRow({
   // Host counteroffer - waiting for guest
   if (statusKey === 'host_counteroffer') {
     return (
-      <div className="hp7-actions-row">
+      <div className="hp7-actions-row" role="group" aria-label="Manage your counteroffer">
         <button
           type="button"
           className="hp7-btn hp7-btn-ghost"
           onClick={onEditCounter}
+          aria-label="Edit your counteroffer"
         >
-          <Pencil size={14} />
-          Edit Counter
+          <Pencil size={14} aria-hidden="true" />
+          <span>Edit Counter</span>
         </button>
         <button
           type="button"
           className="hp7-btn hp7-btn-ghost"
           onClick={onMessage}
+          aria-label="Send message to guest"
         >
-          <MessageCircle size={14} />
-          Message
+          <MessageCircle size={14} aria-hidden="true" />
+          <span>Message</span>
         </button>
         <button
           type="button"
           className="hp7-btn hp7-btn-danger"
           onClick={onWithdraw}
+          aria-label="Withdraw your counteroffer"
         >
-          <XCircle size={14} />
-          Withdraw
+          <XCircle size={14} aria-hidden="true" />
+          <span>Withdraw</span>
         </button>
       </div>
     );
@@ -183,30 +192,33 @@ export function ActionButtonsRow({
   // Accepted - in progress
   if (statusKey === 'accepted' || statusKey.startsWith('lease_')) {
     return (
-      <div className="hp7-actions-row">
+      <div className="hp7-actions-row" role="group" aria-label="Manage accepted proposal">
         <button
           type="button"
           className="hp7-btn hp7-btn-primary"
           onClick={onRemindGuest}
+          aria-label="Send reminder to guest"
         >
-          <Bell size={14} />
-          Remind Guest
+          <Bell size={14} aria-hidden="true" />
+          <span>Remind Guest</span>
         </button>
         <button
           type="button"
           className="hp7-btn hp7-btn-outline"
           onClick={onScheduleMeeting}
+          aria-label="Schedule a video meeting"
         >
-          <Video size={14} />
-          Schedule Meeting
+          <Video size={14} aria-hidden="true" />
+          <span>Schedule Meeting</span>
         </button>
         <button
           type="button"
           className="hp7-btn hp7-btn-ghost"
           onClick={onMessage}
+          aria-label="Send message to guest"
         >
-          <MessageCircle size={14} />
-          Message
+          <MessageCircle size={14} aria-hidden="true" />
+          <span>Message</span>
         </button>
       </div>
     );
@@ -219,14 +231,15 @@ export function ActionButtonsRow({
     statusKey === 'cancelled_by_splitlease'
   ) {
     return (
-      <div className="hp7-actions-row">
+      <div className="hp7-actions-row" role="group" aria-label="Closed proposal actions">
         <button
           type="button"
           className="hp7-btn hp7-btn-ghost"
           onClick={onRemove}
+          aria-label="Remove this proposal from list"
         >
-          <Trash2 size={14} />
-          Remove
+          <Trash2 size={14} aria-hidden="true" />
+          <span>Remove</span>
         </button>
       </div>
     );
@@ -235,14 +248,15 @@ export function ActionButtonsRow({
   // Active lease - message only
   if (statusKey === 'payment_submitted') {
     return (
-      <div className="hp7-actions-row">
+      <div className="hp7-actions-row" role="group" aria-label="Active lease actions">
         <button
           type="button"
           className="hp7-btn hp7-btn-primary"
           onClick={onMessage}
+          aria-label="Send message to guest"
         >
-          <MessageCircle size={14} />
-          Message Guest
+          <MessageCircle size={14} aria-hidden="true" />
+          <span>Message Guest</span>
         </button>
       </div>
     );
@@ -250,14 +264,15 @@ export function ActionButtonsRow({
 
   // Default fallback
   return (
-    <div className="hp7-actions-row">
+    <div className="hp7-actions-row" role="group" aria-label="Proposal actions">
       <button
         type="button"
         className="hp7-btn hp7-btn-ghost"
         onClick={onMessage}
+        aria-label="Send message to guest"
       >
-        <MessageCircle size={14} />
-        Message
+        <MessageCircle size={14} aria-hidden="true" />
+        <span>Message</span>
       </button>
     </div>
   );
