@@ -7,44 +7,47 @@
  *
  * UPDATE 2026-01-17: Added FavoriteButton to price display section
  */
-// FORCE RELOAD v8 - timestamp: 1737561000000 - Custom Schedule DEBUG URGENT
-console.log('🔄 ViewSplitLeasePage v8 - Custom Schedule DEBUG URGENT - ' + Date.now());
-console.log('🔄 DEBUG: Checking isMobile and listing conditionals - URGENT FIX');
-
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import Header from '../shared/Header.jsx';
-import Footer from '../shared/Footer.jsx';
-import CreateProposalFlowV2, { clearProposalDraft } from '../shared/CreateProposalFlowV2.jsx';
-import ListingScheduleSelector from '../shared/ListingScheduleSelector.jsx';
-import GoogleMap from '../shared/GoogleMap.jsx';
-import ContactHostMessaging from '../shared/ContactHostMessaging.jsx';
-import InformationalText from '../shared/InformationalText.jsx';
-import SignUpLoginModal from '../shared/SignUpLoginModal.jsx';
-import ProposalSuccessModal from '../modals/ProposalSuccessModal.jsx';
-import FavoriteButton from '../shared/FavoriteButton/FavoriteButton.jsx';
-import { initializeLookups } from '../../lib/dataLookups.js';
-import { checkAuthStatus, validateTokenAndFetchUser, getSessionId } from '../../lib/auth.js';
-import { fetchListingComplete, getListingIdFromUrl, fetchZatPriceConfiguration } from '../../lib/listingDataFetcher.js';
+
+// FORCE RELOAD v9 - timestamp: 1737561500000 - NUCLEAR CACHE BUST
+if (typeof window !== 'undefined') {
+  window.__VSL_v9 = Date.now();
+  console.log('🔄🔄🔄 ViewSplitLeasePage v9 LOADED - NUCLEAR CACHE BUST - ' + window.__VSL_v9);
+  console.log('🔄🔄🔄 DEBUG: Module successfully re-evaluated at:', new Date().toISOString());
+}
+import Header from '../../shared/Header.jsx';
+import Footer from '../../shared/Footer.jsx';
+import CreateProposalFlowV2, { clearProposalDraft } from '../../shared/CreateProposalFlowV2.jsx';
+import ListingScheduleSelector from '../../shared/ListingScheduleSelector.jsx';
+import GoogleMap from '../../shared/GoogleMap.jsx';
+import ContactHostMessaging from '../../shared/ContactHostMessaging.jsx';
+import InformationalText from '../../shared/InformationalText.jsx';
+import SignUpLoginModal from '../../shared/SignUpLoginModal.jsx';
+import ProposalSuccessModal from '../../modals/ProposalSuccessModal.jsx';
+import FavoriteButton from '../../shared/FavoriteButton/FavoriteButton.jsx';
+import { initializeLookups } from '../../../lib/dataLookups.js';
+import { checkAuthStatus, validateTokenAndFetchUser, getSessionId } from '../../../lib/auth.js';
+import { fetchListingComplete, getListingIdFromUrl, fetchZatPriceConfiguration } from '../../../lib/listingDataFetcher.js';
 import {
   calculatePricingBreakdown,
   formatPrice,
   getPriceDisplayMessage
-} from '../../lib/priceCalculations.js';
+} from '../../../lib/priceCalculations.js';
 import {
   isContiguousSelection,
   validateScheduleSelection,
   calculateCheckInOutDays,
   getBlockedDatesList,
   calculateNightsFromDays
-} from '../../lib/availabilityValidation.js';
-import { DAY_ABBREVIATIONS, DEFAULTS, COLORS, SCHEDULE_PATTERNS } from '../../lib/constants.js';
-import { createDay } from '../../lib/scheduleSelector/dayHelpers.js';
-import { supabase } from '../../lib/supabase.js';
-import { fetchInformationalTexts } from '../../lib/informationalTextsFetcher.js';
-import { logger } from '../../lib/logger.js';
+} from '../../../lib/availabilityValidation.js';
+import { DAY_ABBREVIATIONS, DEFAULTS, COLORS, SCHEDULE_PATTERNS } from '../../../lib/constants.js';
+import { createDay } from '../../../lib/scheduleSelector/dayHelpers.js';
+import { supabase } from '../../../lib/supabase.js';
+import { fetchInformationalTexts } from '../../../lib/informationalTextsFetcher.js';
+import { logger } from '../../../lib/logger.js';
 // NOTE: adaptDaysToBubble removed - database now uses 0-indexed days natively
-import '../../styles/listing-schedule-selector.css';
-import '../../styles/components/toast.css';
+import '../../../styles/listing-schedule-selector.css';
+import '../../../styles/components/toast.css';
 import './ViewSplitLeasePage.css';
 
 import { LoadingState } from './components/LoadingState.jsx';
@@ -278,6 +281,10 @@ export default function ViewSplitLeasePage() {
   // ============================================================================
 
   useEffect(() => {
+    console.log('🔥🔥🔥 ViewSplitLeasePage v9 COMPONENT RENDERING - useEffect running');
+    console.log('🔥 isMobile state:', isMobile);
+    console.log('🔥 listing state:', listing);
+
     async function initialize() {
       try {
         // Initialize lookup caches
@@ -987,7 +994,8 @@ export default function ViewSplitLeasePage() {
           minWidth: 0,
           width: '100%',
           boxSizing: 'border-box',
-          overflow: 'hidden'
+          overflowX: 'hidden',
+          overflowY: 'visible'
         }}>
 
           {/* Photo Gallery - Magazine Editorial Style */}
