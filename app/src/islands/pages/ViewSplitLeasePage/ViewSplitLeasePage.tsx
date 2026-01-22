@@ -829,6 +829,41 @@ export default function ViewSplitLeasePage() {
         'Created Date': new Date().toISOString()
       });
 
+      // Create messaging thread and SplitBot messages for the proposal (non-blocking)
+      try {
+        logger.debug('Creating proposal messaging thread', { proposalId: newProposalId });
+
+        // Use the actual status returned from the Edge Function
+        const actualProposalStatus = data.data?.status || 'Host Review';
+        const actualHostId = data.data?.hostId || listing?.host?.userId;
+        // Extract AI-generated host summary from proposal response (if available)
+        const aiHostSummary = data.data?.aiHostSummary || null;
+
+        const threadResponse = await supabase.functions.invoke('messages', {
+          body: {
+            action: 'create_proposal_thread',
+            payload: {
+              proposalId: newProposalId,
+              guestId: guestId,
+              hostId: actualHostId,
+              listingId: proposalData.listingId,
+              proposalStatus: actualProposalStatus,
+              // Pass AI host summary so messages handler can use it for host message
+              customHostMessage: aiHostSummary
+            }
+          }
+        });
+
+        if (threadResponse.error) {
+          logger.warn('Thread creation failed (non-blocking):', threadResponse.error);
+        } else {
+          logger.debug('Proposal thread created', { threadId: threadResponse.data?.threadId });
+        }
+      } catch (threadError) {
+        // Non-blocking - don't fail the proposal if thread/message creation fails
+        logger.warn('Thread creation error (non-blocking):', threadError);
+      }
+
     } catch (error) {
       console.error('❌ Error submitting proposal:', error);
       showToast(error.message || 'Failed to submit proposal. Please try again.', 'error');

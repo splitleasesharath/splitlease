@@ -1239,13 +1239,27 @@ export default function ViewSplitLeasePage() {
       });
 
       // Create messaging thread for the proposal (non-blocking)
+      // DEBUG: Added diagnostic logging to investigate missing SplitBot messages regression
       try {
+        console.log('🔍 [DEBUG] Starting messages Edge Function call...');
+        console.log('🔍 [DEBUG] Proposal ID:', newProposalId);
+        console.log('🔍 [DEBUG] Guest ID:', guestId);
+
         logger.debug('💬 Creating proposal messaging thread...');
         // Use the actual status returned from the Edge Function
         const actualProposalStatus = data.data?.status || 'Host Review';
         const actualHostId = data.data?.hostId || listing.host?.userId;
         // Extract AI-generated host summary from proposal response
         const aiHostSummary = data.data?.aiHostSummary || null;
+
+        console.log('🔍 [DEBUG] Thread params prepared:', {
+          proposalId: newProposalId,
+          guestId: guestId,
+          hostId: actualHostId,
+          listingId: proposalData.listingId,
+          proposalStatus: actualProposalStatus,
+          hasAiHostSummary: !!aiHostSummary
+        });
 
         logger.debug('   Thread params:', {
           proposalId: newProposalId,
@@ -1255,6 +1269,8 @@ export default function ViewSplitLeasePage() {
           proposalStatus: actualProposalStatus,
           hasAiHostSummary: !!aiHostSummary
         });
+
+        console.log('🔍 [DEBUG] About to call supabase.functions.invoke("messages")...');
 
         const threadResponse = await supabase.functions.invoke('messages', {
           body: {
@@ -1271,13 +1287,26 @@ export default function ViewSplitLeasePage() {
           }
         });
 
+        console.log('🔍 [DEBUG] messages Edge Function returned:', {
+          hasError: !!threadResponse.error,
+          hasData: !!threadResponse.data,
+          error: threadResponse.error,
+          data: threadResponse.data
+        });
+
         if (threadResponse.error) {
+          console.error('🔍 [DEBUG] Thread creation FAILED:', threadResponse.error);
           logger.warn('⚠️ Thread creation failed (non-blocking):', threadResponse.error);
         } else {
+          console.log('🔍 [DEBUG] Thread creation SUCCEEDED:', threadResponse.data);
           logger.debug('✅ Proposal thread created:', threadResponse.data);
         }
       } catch (threadError) {
         // Non-blocking - don't fail the proposal if thread creation fails
+        console.error('🔍 [DEBUG] Thread creation EXCEPTION:', threadError);
+        console.error('🔍 [DEBUG] Exception name:', threadError?.name);
+        console.error('🔍 [DEBUG] Exception message:', threadError?.message);
+        console.error('🔍 [DEBUG] Exception stack:', threadError?.stack);
         logger.warn('⚠️ Thread creation error (non-blocking):', threadError);
       }
 
