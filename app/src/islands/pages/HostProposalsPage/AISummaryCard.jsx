@@ -35,14 +35,22 @@ function getSummaryText(proposal) {
 
 /**
  * Parse text with [b]...[/b] tags into React elements with bold formatting
+ * Also handles malformed tags like [/b> or [b> that may appear due to AI typos
  * @param {string} text - Text potentially containing [b]...[/b] tags
  * @returns {React.ReactNode} Parsed content with <strong> elements
  */
 function parseFormattedText(text) {
   if (!text) return null;
 
+  // First, clean up any malformed tags (e.g., [/b> → [/b], [b> → [b])
+  const cleanedText = text
+    .replace(/\[\/b>/g, '[/b]')
+    .replace(/\[b>/g, '[b]')
+    .replace(/\[\/b\]/g, '[/b]')  // normalize any variations
+    .replace(/\[b\]/g, '[b]');    // normalize any variations
+
   // Split by [b] and [/b] tags, keeping track of whether we're in a bold section
-  const parts = text.split(/\[b\]|\[\/b\]/);
+  const parts = cleanedText.split(/\[b\]|\[\/b\]/);
 
   // The pattern alternates: normal, bold, normal, bold, ...
   // First part is always normal (before any [b])
