@@ -16,7 +16,6 @@ import { getCardVariant } from './types.js';
 
 /**
  * CollapsibleProposalCard wraps the header and body with expansion logic
- * Uses ARIA accordion pattern for accessible expand/collapse
  *
  * @param {Object} props
  * @param {Object} props.proposal - The proposal object
@@ -32,8 +31,6 @@ export function CollapsibleProposalCard({
 }) {
   const variant = getCardVariant(proposal);
   const proposalId = proposal?._id || proposal?.id;
-  const headerId = `proposal-header-${proposalId}`;
-  const bodyId = `proposal-body-${proposalId}`;
 
   // Build class name
   let className = 'hp7-proposal-card';
@@ -41,31 +38,22 @@ export function CollapsibleProposalCard({
   if (isExpanded) className += ' expanded';
 
   return (
-    <article
+    <div
       className={className}
       data-proposal-id={proposalId}
-      data-expanded={isExpanded}
     >
       <ProposalCardHeader
         proposal={proposal}
         isExpanded={isExpanded}
         onToggle={onToggle}
-        headerId={headerId}
-        bodyId={bodyId}
       />
-      <div
-        className="hp7-card-body"
-        id={bodyId}
-        role="region"
-        aria-labelledby={headerId}
-        hidden={!isExpanded}
-      >
+      <div className="hp7-card-body">
         <ProposalCardBody
           proposal={proposal}
           handlers={handlers}
         />
       </div>
-    </article>
+    </div>
   );
 }
 

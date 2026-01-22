@@ -29,47 +29,43 @@ export function QuickLinksRow({
   showCompareTerms = false
 }) {
   return (
-    <nav className="hp7-links-row" aria-label="Quick actions">
+    <div className="hp7-links-row">
       <button
         type="button"
         className="hp7-link-item"
         onClick={onViewProfile}
-        aria-label="View guest's full profile"
       >
-        <User size={12} aria-hidden="true" />
-        <span>Full Profile</span>
+        <User size={12} />
+        Full Profile
       </button>
       <button
         type="button"
         className="hp7-link-item"
         onClick={onMessage}
-        aria-label="Send message to guest"
       >
-        <MessageCircle size={12} aria-hidden="true" />
-        <span>Message Guest</span>
+        <MessageCircle size={12} />
+        Message Guest
       </button>
       {showCompareTerms ? (
         <button
           type="button"
           className="hp7-link-item"
           onClick={onCompareTerms}
-          aria-label="Compare original and counter terms"
         >
-          <GitCompare size={12} aria-hidden="true" />
-          <span>Compare Terms</span>
+          <GitCompare size={12} />
+          Compare Terms
         </button>
       ) : (
         <button
           type="button"
           className="hp7-link-item"
           onClick={onScheduleMeeting}
-          aria-label="Schedule a video meeting with guest"
         >
-          <Video size={12} aria-hidden="true" />
-          <span>Schedule Meeting</span>
+          <Video size={12} />
+          Schedule Meeting
         </button>
       )}
-    </nav>
+    </div>
   );
 }
 

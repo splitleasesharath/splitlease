@@ -16,7 +16,6 @@ import React from 'react';
 import { getCheckInOutFromNights } from './types.js';
 
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 /**
  * DayPillsRow displays the visual night selection for hosts
@@ -41,36 +40,23 @@ export function DayPillsRow({ nightsSelected = [] }) {
     ? `${checkInShort} check-in, ${checkOutShort} check-out`
     : '';
 
-  // Build accessible description of selected nights
-  const selectedNightNames = normalizedNights.map(n => DAY_NAMES[n]).join(', ');
-  const ariaDescription = nightsCount > 0
-    ? `${nightsCount} ${nightsCount === 1 ? 'night' : 'nights'} selected: ${selectedNightNames}`
-    : 'No nights selected';
-
-  // Generate unique ID for this instance
-  const labelId = `days-label-${Math.random().toString(36).substr(2, 9)}`;
-
   return (
-    <div className="hp7-days-row" role="group" aria-label="Selected days of the week">
-      <span className="hp7-days-label" id={labelId}>Days</span>
-      <div className="hp7-days-pills" aria-labelledby={labelId}>
-        {DAY_LETTERS.map((letter, index) => {
-          const isSelected = normalizedNights.includes(index);
-          const dayName = DAY_NAMES[index];
-          return (
-            <span
-              key={index}
-              className={`hp7-day-pill${isSelected ? ' selected' : ''}`}
-              aria-pressed={isSelected}
-              aria-label={isSelected ? `${dayName}, selected` : dayName}
-            >
-              {letter}
-            </span>
-          );
-        })}
+    <div className="hp7-days-row">
+      <span className="hp7-days-label">Nights</span>
+      <div className="hp7-days-pills">
+        {DAY_LETTERS.map((letter, index) => (
+          <div
+            key={index}
+            className={`hp7-day-pill${normalizedNights.includes(index) ? ' selected' : ''}`}
+          >
+            {letter}
+          </div>
+        ))}
       </div>
       <div className="hp7-days-info">
-        <div className="hp7-days-count">{nightsCount} days, {Math.max(0, nightsCount - 1)} nights</div>
+        <div className="hp7-days-count">
+          {nightsCount} {nightsCount === 1 ? 'night' : 'nights'}
+        </div>
         {rangeText && (
           <div className="hp7-days-range">{rangeText}</div>
         )}

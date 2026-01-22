@@ -44,7 +44,6 @@ function getSectionTitle(sectionKey) {
 
 /**
  * ProposalListSection renders a section with its proposals
- * Uses semantic HTML section with proper heading hierarchy
  *
  * @param {Object} props
  * @param {string} props.sectionKey - Section identifier ('actionNeeded', 'inProgress', 'closed')
@@ -68,26 +67,16 @@ export function ProposalListSection({
   const IconComponent = getSectionIcon(sectionKey);
   const title = getSectionTitle(sectionKey);
   const isActionNeeded = sectionKey === 'actionNeeded';
-  const sectionId = `section-${sectionKey}`;
-  const headingId = `${sectionId}-heading`;
 
   return (
-    <section aria-labelledby={headingId}>
-      <h2
-        id={headingId}
-        className={`hp7-section-header${isActionNeeded ? ' action-needed' : ''}`}
-      >
-        <IconComponent className="icon" size={14} aria-hidden="true" />
+    <>
+      <div className={`hp7-section-header${isActionNeeded ? ' action-needed' : ''}`}>
+        <IconComponent className="icon" size={14} />
         {title}
-        <span
-          className="hp7-section-count"
-          aria-label={`${proposals.length} proposal${proposals.length !== 1 ? 's' : ''}`}
-        >
-          {proposals.length}
-        </span>
-      </h2>
+        <span className="hp7-section-count">{proposals.length}</span>
+      </div>
 
-      <div className="hp7-proposal-list" role="list">
+      <div className="hp7-proposal-list">
         {proposals.map((proposal) => {
           const proposalId = proposal?._id || proposal?.id;
           const isExpanded = expandedProposalId === proposalId;
@@ -104,8 +93,8 @@ export function ProposalListSection({
         })}
       </div>
 
-      <div className="hp7-list-divider" aria-hidden="true" />
-    </section>
+      <div className="hp7-list-divider" />
+    </>
   );
 }
 
