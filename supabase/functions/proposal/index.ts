@@ -274,7 +274,14 @@ async function authenticateFromHeaders(
 ): Promise<{ id: string; email: string } | null> {
   const authHeader = headers.get('Authorization');
 
+  console.log('[proposal:auth] Authorization header present:', !!authHeader);
+  if (authHeader) {
+    console.log('[proposal:auth] Header length:', authHeader.length);
+    console.log('[proposal:auth] Header starts with Bearer:', authHeader.startsWith('Bearer '));
+  }
+
   if (!authHeader) {
+    console.log('[proposal:auth] No Authorization header - returning null');
     return null;
   }
 
@@ -283,6 +290,15 @@ async function authenticateFromHeaders(
   });
 
   const { data: { user }, error } = await authClient.auth.getUser();
+
+  if (error) {
+    console.error('[proposal:auth] getUser error:', error.message, error.status);
+  }
+  console.log('[proposal:auth] User retrieved:', !!user);
+  if (user) {
+    console.log('[proposal:auth] User ID:', user.id);
+    console.log('[proposal:auth] User email:', user.email);
+  }
 
   if (error || !user) {
     return null;
