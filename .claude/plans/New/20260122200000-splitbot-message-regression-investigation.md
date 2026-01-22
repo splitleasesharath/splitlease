@@ -211,11 +211,14 @@ Based on logs: **Step 2 is not reaching the server**. The Edge Function is never
 
 ## Conclusion
 
-**This is NOT a regression in the message creation code.** The CTA configuration, status mapping, and message creation logic are all correct.
+**ROOT CAUSE CONFIRMED**: The issue was that `ViewSplitLeasePage/ViewSplitLeasePage.tsx` (the active file) was missing the `messages` Edge Function call that existed in the older `ViewSplitLeasePage.jsx` file.
 
-**The issue is that the proposal submission never reaches Supabase at all.** The data exists in Bubble.io but not in Supabase, indicating the frontend is either:
-1. Connected to a different Supabase project than we're querying
-2. Failing to invoke the Edge Function due to network/auth issues
-3. Still routing some requests to Bubble.io
+**FIX APPLIED**: Added the `messages` Edge Function call to `ViewSplitLeasePage.tsx` at lines 833-868, which:
+1. Calls `supabase.functions.invoke('messages')` with action `create_proposal_thread`
+2. Passes the proposal ID, guest ID, host ID, listing ID, proposal status, and AI host summary
+3. Is wrapped in try/catch to be non-blocking (proposal submission succeeds even if thread creation fails)
 
-**Next Step**: Ask the user to check their browser's Network tab during proposal submission to see where the request is actually going.
+**Files Modified**:
+- `app/src/islands/pages/ViewSplitLeasePage/ViewSplitLeasePage.tsx` - Added messages Edge Function call
+
+**Next Step**: User should retest proposal submission to verify SplitBot messages are now created for both host and guest.
