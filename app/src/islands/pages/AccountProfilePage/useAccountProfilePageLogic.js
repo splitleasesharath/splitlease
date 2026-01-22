@@ -265,7 +265,7 @@ export function useAccountProfilePageLogic() {
     needForSpace: '',
     specialNeeds: '',
     selectedDays: [], // 0-indexed day indices
-    transportationType: '',
+    transportationTypes: [], // Array of transport method values (multi-select)
     goodGuestReasons: [], // Array of IDs
     storageItems: [] // Array of IDs
   });
@@ -478,24 +478,74 @@ export function useAccountProfilePageLogic() {
         throw new Error('User not found');
       }
 
-      setProfileData(userData);
+      // Fetch job title and employment status from linked rental application (if exists)
+      let jobTitle = '';
+      let employmentStatus = '';
+      const rentalAppId = userData['Rental Application'];
+      if (rentalAppId) {
+        const { data: rentalAppData } = await supabase
+          .from('rentalapplication')
+          .select('"job title", "employment status"')
+          .eq('_id', rentalAppId)
+          .single();
+
+        if (rentalAppData) {
+          // Use job title if available, otherwise use employment status as display value
+          jobTitle = rentalAppData['job title'] || '';
+          employmentStatus = rentalAppData['employment status'] || '';
+
+          // If no job title but has employment status, format it nicely for display
+          if (!jobTitle && employmentStatus) {
+            // Convert kebab-case to Title Case (e.g., "business-owner" -> "Business Owner")
+            jobTitle = employmentStatus
+              .split('-')
+              .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(' ');
+          }
+        }
+      }
+
+      setProfileData({ ...userData, _jobTitle: jobTitle, _employmentStatus: employmentStatus, _rentalAppId: rentalAppId });
 
       // Initialize form data from profile
-      // Database columns use 'Name - First', 'Name - Last' naming convention
+      // Database columns use Bubble.io naming conventions
       // Date of Birth is stored as timestamp, convert to YYYY-MM-DD for date input
       const dobTimestamp = userData['Date of Birth'];
       const dateOfBirth = dobTimestamp ? dobTimestamp.split('T')[0] : '';
 
+      // Parse transportation medium - stored as JSON string in text column
+      const rawTransport = userData['transportation medium'];
+      let transportationTypes = [];
+      const validValues = ['car', 'public_transit', 'bicycle', 'walking', 'rideshare', 'other'];
+
+      if (rawTransport && typeof rawTransport === 'string') {
+        try {
+          // Try to parse as JSON array
+          const parsed = JSON.parse(rawTransport);
+          if (Array.isArray(parsed)) {
+            transportationTypes = parsed.filter(val => validValues.includes(val));
+          }
+        } catch {
+          // If not valid JSON, check if it's a single valid value
+          if (validValues.includes(rawTransport)) {
+            transportationTypes = [rawTransport];
+          }
+        }
+      } else if (Array.isArray(rawTransport)) {
+        // Handle case where it comes back as array (shouldn't happen with text column)
+        transportationTypes = rawTransport.filter(val => validValues.includes(val));
+      }
+
       setFormData({
         firstName: userData['Name - First'] || '',
         lastName: userData['Name - Last'] || '',
-        jobTitle: userData['Job Title'] || '',
+        jobTitle,
         dateOfBirth,
         bio: userData['About Me / Bio'] || '',
         needForSpace: userData['need for Space'] || '',
         specialNeeds: userData['special needs'] || '',
         selectedDays: dayNamesToIndices(userData['Recent Days Selected'] || []),
-        transportationType: userData['transportation medium'] || '',
+        transportationTypes,
         goodGuestReasons: userData['Reasons to Host me'] || [],
         storageItems: userData['About - Commonly Stored Items'] || []
       });
@@ -795,6 +845,49 @@ export function useAccountProfilePageLogic() {
   }, [isAuthenticated, profileUserId, fetchProfileData]);
 
   // ============================================================================
+  // RENTAL APPLICATION URL NAVIGATION (Guest-only)
+  // ============================================================================
+
+  /**
+   * Handle rental application deep link from messaging page or other CTAs
+   * Detects ?section=rental-application&openRentalApp=true URL params
+   * Auto-opens the wizard modal and scrolls to the section
+   */
+  useEffect(() => {
+    // Only process for guests viewing their own profile after loading completes
+    if (loading || !isEditorView || isHostUser) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const section = params.get('section');
+    const openRentalApp = params.get('openRentalApp');
+
+    // Only process rental application navigation
+    if (section !== 'rental-application') return;
+
+    console.log('[rental-app-navigation] Processing rental application deep link');
+
+    // Clean URL to prevent re-processing on state changes
+    const url = new URL(window.location.href);
+    url.searchParams.delete('section');
+    url.searchParams.delete('openRentalApp');
+    window.history.replaceState({}, '', url.toString());
+
+    // Scroll to the rental application section
+    // Use setTimeout to ensure DOM has rendered after state updates
+    setTimeout(() => {
+      const rentalAppSection = document.getElementById('rental-application-section');
+      if (rentalAppSection) {
+        rentalAppSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+
+      // Auto-open the wizard modal if requested
+      if (openRentalApp === 'true') {
+        setShowRentalWizardModal(true);
+      }
+    }, 100);
+  }, [loading, isEditorView, isHostUser]);
+
+  // ============================================================================
   // FORM HANDLERS
   // ============================================================================
 
@@ -835,17 +928,117 @@ export function useAccountProfilePageLogic() {
 
   /**
    * Handle chip selection toggle (for reasons and storage items)
+   * AUTOSAVE: Immediately saves to database and shows toast notification
+   *
+   * @param {string} field - 'goodGuestReasons' or 'storageItems'
+   * @param {string} id - The ID of the item being toggled
    */
-  const handleChipToggle = useCallback((field, id) => {
-    setFormData(prev => {
-      const currentItems = prev[field];
-      const newItems = currentItems.includes(id)
-        ? currentItems.filter(i => i !== id)
-        : [...currentItems, id];
+  const handleChipToggle = useCallback(async (field, id) => {
+    // Determine if we're adding or removing
+    const currentItems = formData[field];
+    const isRemoving = currentItems.includes(id);
+    const newItems = isRemoving
+      ? currentItems.filter(i => i !== id)
+      : [...currentItems, id];
 
-      return { ...prev, [field]: newItems };
+    // Update local state immediately for responsive UI
+    setFormData(prev => ({
+      ...prev,
+      [field]: newItems
+    }));
+    setIsDirty(true);
+
+    // Get the item name for the toast notification
+    let itemName = '';
+    if (field === 'goodGuestReasons') {
+      const reason = goodGuestReasonsList.find(r => r._id === id);
+      itemName = reason?.name || 'Reason';
+    } else if (field === 'storageItems') {
+      const item = storageItemsList.find(i => i._id === id);
+      itemName = item?.Name || 'Item';
+    }
+
+    // Map field name to database column
+    const dbColumn = field === 'goodGuestReasons'
+      ? 'Reasons to Host me'
+      : 'About - Commonly Stored Items';
+
+    // Autosave to database
+    if (!profileUserId) {
+      console.error('[handleChipToggle] Cannot autosave: no user ID');
+      return;
+    }
+
+    try {
+      const { error: updateError } = await supabase
+        .from('user')
+        .update({
+          [dbColumn]: newItems,
+          'Modified Date': new Date().toISOString()
+        })
+        .eq('_id', profileUserId);
+
+      if (updateError) {
+        console.error('[handleChipToggle] Autosave error:', updateError);
+        // Revert local state on error
+        setFormData(prev => ({
+          ...prev,
+          [field]: currentItems
+        }));
+        if (window.showToast) {
+          window.showToast({
+            title: 'Save Failed',
+            content: `Could not save "${itemName}". Please try again.`,
+            type: 'error',
+            duration: 3000
+          });
+        }
+        return;
+      }
+
+      // Show success toast
+      if (window.showToast) {
+        const action = isRemoving ? 'Removed' : 'Added';
+        window.showToast({
+          title: `${action}: ${itemName}`,
+          type: 'success',
+          duration: 2000
+        });
+      }
+    } catch (err) {
+      console.error('[handleChipToggle] Unexpected error:', err);
+      // Revert local state on error
+      setFormData(prev => ({
+        ...prev,
+        [field]: currentItems
+      }));
+      if (window.showToast) {
+        window.showToast({
+          title: 'Save Failed',
+          content: 'An unexpected error occurred. Please try again.',
+          type: 'error',
+          duration: 3000
+        });
+      }
+    }
+  }, [formData, goodGuestReasonsList, storageItemsList, profileUserId]);
+
+  /**
+   * Handle transportation method toggle (multi-select)
+   */
+  const handleTransportToggle = useCallback((transportValue) => {
+    console.log('[handleTransportToggle] Toggling transport:', transportValue);
+    setFormData(prev => {
+      const currentTypes = prev.transportationTypes;
+      const newTypes = currentTypes.includes(transportValue)
+        ? currentTypes.filter(t => t !== transportValue)
+        : [...currentTypes, transportValue];
+
+      console.log('[handleTransportToggle] Current:', currentTypes, '-> New:', newTypes);
+      return { ...prev, transportationTypes: newTypes };
     });
     setIsDirty(true);
+    console.log('[handleTransportToggle] isDirty set to true');
   }, []);
 
   /**
@@ -868,6 +1061,8 @@ export function useAccountProfilePageLogic() {
    * Save profile changes
    */
   const handleSave = useCallback(async () => {
+    console.log('[handleSave] Called. isEditorView:', isEditorView, 'profileUserId:', profileUserId);
+
     if (!isEditorView || !profileUserId) {
       console.error('Cannot save: not in editor view or no user ID');
       return { success: false, error: 'Cannot save changes' };
@@ -894,22 +1089,26 @@ export function useAccountProfilePageLogic() {
         ? new Date(formData.dateOfBirth + 'T00:00:00Z').toISOString()
         : null;
 
-      // Database columns use 'Name - First', 'Name - Last', 'Name - Full' naming convention
+      // Database columns use Bubble.io naming conventions
+      // Note: 'Job Title' column does not exist - removed from update
       const updateData = {
         'Name - First': firstName,
         'Name - Last': lastName,
         'Name - Full': fullName,
-        'Job Title': formData.jobTitle.trim(),
         'Date of Birth': dateOfBirthISO,
         'About Me / Bio': formData.bio.trim(),
         'need for Space': formData.needForSpace.trim(),
         'special needs': formData.specialNeeds.trim(),
         'Recent Days Selected': indicesToDayNames(formData.selectedDays),
-        'transportation medium': formData.transportationType,
+        'transportation medium': formData.transportationTypes.length > 0
+          ? JSON.stringify(formData.transportationTypes)
+          : null, // Store as JSON string
         'Reasons to Host me': formData.goodGuestReasons,
         'About - Commonly Stored Items': formData.storageItems,
         'Modified Date': new Date().toISOString()
       };
+
+      console.log('[handleSave] Update data:', updateData);
 
       const { error: updateError } = await supabase
         .from('user')
@@ -917,7 +1116,24 @@ export function useAccountProfilePageLogic() {
         .eq('_id', profileUserId);
 
       if (updateError) {
+        console.error('[handleSave] Update error:', updateError);
         throw updateError;
+      }
+
+      console.log('[handleSave] User data saved successfully');
+
+      // Save job title to rental application table (if user has one)
+      const rentalAppId = profileData?._rentalAppId;
+      if (rentalAppId && formData.jobTitle !== undefined) {
+        const { error: rentalAppError } = await supabase
+          .from('rentalapplication')
+          .update({ 'job title': formData.jobTitle.trim() })
+          .eq('_id', rentalAppId);
+
+        if (rentalAppError) {
+          console.error('Error saving job title to rental application:', rentalAppError);
+          // Don't throw - user data was saved successfully, job title is secondary
+        }
       }
 
       // Refresh profile data
@@ -949,21 +1165,41 @@ export function useAccountProfilePageLogic() {
    */
   const handleCancel = useCallback(() => {
     if (profileData) {
-      // Database columns use 'Name - First', 'Name - Last' naming convention
+      // Database columns use Bubble.io naming conventions
       // Date of Birth stored as timestamp, convert to YYYY-MM-DD
       const dobTimestamp = profileData['Date of Birth'];
       const dateOfBirth = dobTimestamp ? dobTimestamp.split('T')[0] : '';
 
+      // Parse transportation medium - stored as JSON string in text column
+      const rawTransport = profileData['transportation medium'];
+      let transportationTypes = [];
+      const validValues = ['car', 'public_transit', 'bicycle', 'walking', 'rideshare', 'other'];
+
+      if (rawTransport && typeof rawTransport === 'string') {
+        try {
+          const parsed = JSON.parse(rawTransport);
+          if (Array.isArray(parsed)) {
+            transportationTypes = parsed.filter(val => validValues.includes(val));
+          }
+        } catch {
+          if (validValues.includes(rawTransport)) {
+            transportationTypes = [rawTransport];
+          }
+        }
+      } else if (Array.isArray(rawTransport)) {
+        transportationTypes = rawTransport.filter(val => validValues.includes(val));
+      }
+
       setFormData({
         firstName: profileData['Name - First'] || '',
         lastName: profileData['Name - Last'] || '',
-        jobTitle: profileData['Job Title'] || '',
+        jobTitle: profileData._jobTitle || '', // Job title stored in linked rental application
         dateOfBirth,
         bio: profileData['About Me / Bio'] || '',
         needForSpace: profileData['need for Space'] || '',
         specialNeeds: profileData['special needs'] || '',
         selectedDays: dayNamesToIndices(profileData['Recent Days Selected'] || []),
-        transportationType: profileData['transportation medium'] || '',
+        transportationTypes,
         goodGuestReasons: profileData['Reasons to Host me'] || [],
         storageItems: profileData['About - Commonly Stored Items'] || []
       });
@@ -1342,6 +1578,7 @@ export function useAccountProfilePageLogic() {
     handleFieldChange,
     handleDayToggle,
     handleChipToggle,
+    handleTransportToggle,
 
     // Save/Cancel
     handleSave,

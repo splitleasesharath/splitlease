@@ -24,7 +24,7 @@
  *
  * @example
  * import { loadProposalDetailsWorkflow } from '../logic/workflows/booking/loadProposalDetailsWorkflow.js'
- * import { processProposalData } from '../logic/processors/proposal/processProposalData.js'
+ * import { processProposalData } from '../logic/processors/proposals/processProposalData.js'
  * import { processUserData } from '../logic/processors/user/processUserData.js'
  * import { processListingData } from '../logic/processors/listing/processListingData.js'
  * import { supabase } from '../lib/supabase.js'

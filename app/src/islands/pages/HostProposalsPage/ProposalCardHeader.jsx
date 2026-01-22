@@ -12,7 +12,7 @@
  */
 import React from 'react';
 import { ChevronDown, CheckCircle } from 'lucide-react';
-import { isNewProposal, getStatusTagConfig } from './types.js';
+import { isNewProposal, getStatusTagConfig, getCheckInOutFromDays } from './types.js';
 
 /**
  * Get guest avatar URL with fallback
@@ -48,22 +48,23 @@ function isGuestVerified(guest) {
 
 /**
  * Format schedule range from days selected
+ * Uses getCheckInOutFromDays to properly handle wrap-around schedules
+ * (e.g., Thu-Fri-Sat-Sun-Mon displays as "Thu-Mon" not "Sun-Sat")
+ *
  * @param {Array} daysSelected - Array of 0-indexed days
- * @returns {string} Schedule string like "Mon-Fri"
+ * @returns {string} Schedule string like "Thu-Mon"
  */
 function formatSchedule(daysSelected) {
   if (!Array.isArray(daysSelected) || daysSelected.length === 0) return '';
 
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const sorted = [...daysSelected].map(d => Number(d)).sort((a, b) => a - b);
+  const { checkInDay, checkOutDay } = getCheckInOutFromDays(daysSelected);
 
-  if (sorted.length === 1) {
-    return dayNames[sorted[0]] || '';
+  if (!checkInDay) return '';
+  if (!checkOutDay || checkInDay === checkOutDay) {
+    return checkInDay.slice(0, 3);
   }
 
-  const first = dayNames[sorted[0]] || '';
-  const last = dayNames[sorted[sorted.length - 1]] || '';
-  return `${first}-${last}`;
+  return `${checkInDay.slice(0, 3)}-${checkOutDay.slice(0, 3)}`;
 }
 
 /**

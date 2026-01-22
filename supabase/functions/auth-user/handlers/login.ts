@@ -20,6 +20,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { BubbleApiError, SupabaseSyncError } from '../../_shared/errors.ts';
 import { validateRequiredFields } from '../../_shared/validation.ts';
+import { sendLoginNotificationEmail } from '../../_shared/emailUtils.ts';
 
 export async function handleLogin(
   supabaseUrl: string,
@@ -102,6 +103,24 @@ export async function handleLogin(
 
     // ========== RETURN SESSION DATA ==========
     const { access_token, refresh_token, expires_in } = session;
+
+    // ========== SEND LOGIN NOTIFICATION EMAIL ==========
+    // Use EdgeRuntime.waitUntil() to send async (non-blocking)
+    // User gets immediate login response while email is sent in background
+    const loginTimestamp = new Date().toISOString();
+    const firstName = userProfile?.['Name - First'] || '';
+
+    EdgeRuntime.waitUntil(
+      sendLoginNotificationEmail(authUser.email!, firstName, loginTimestamp)
+        .then(result => {
+          if (!result.success) {
+            console.error('[login] Login notification email failed:', result.error);
+          } else {
+            console.log('[login] ✅ Login notification email sent');
+          }
+        })
+        .catch(err => console.error('[login] Login notification email error:', err))
+    );
 
     console.log(`[login] ========== LOGIN COMPLETE ==========`);
 

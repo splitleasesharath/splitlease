@@ -30,6 +30,7 @@ export default function EditorView({
   onFieldChange,
   onDayToggle,
   onChipToggle,
+  onTransportToggle,
   onVerifyEmail,
   onVerifyPhone,
   onVerifyGovId,
@@ -48,7 +49,8 @@ export default function EditorView({
   rentalApplicationProgress = 0,
   onOpenRentalWizard,
   // Email verification state
-  isVerifyingEmail = false
+  isVerifyingEmail = false,
+  verificationEmailSent = false
 }) {
   return (
     <>
@@ -86,12 +88,12 @@ export default function EditorView({
         />
       )}
 
-      {/* Guest-only: Transport */}
+      {/* Guest-only: Transport (multi-select) */}
       {!isHostUser && (
         <TransportCard
-          transportationType={formData.transportationType}
+          transportationTypes={formData.transportationTypes}
           transportationOptions={transportationOptions}
-          onFieldChange={onFieldChange}
+          onTransportToggle={onTransportToggle}
         />
       )}
 
@@ -106,6 +108,7 @@ export default function EditorView({
         onConnectLinkedIn={onConnectLinkedIn}
         onEditPhone={onEditPhone}
         isVerifyingEmail={isVerifyingEmail}
+        verificationEmailSent={verificationEmailSent}
       />
 
       {/* Guest-only: Reasons to Host Me */}

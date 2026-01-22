@@ -44,18 +44,6 @@ from modules.agent import prompt_claude_code
 from modules.data_types import AgentPromptRequest
 from modules.run_logger import create_run_logger, RunLogger
 from modules.dev_server import DevServerManager
-from modules.visual_regression import check_visual_parity
-from modules.page_classifier import (
-    ALL_PAGES,
-    get_page_info,
-    get_mcp_sessions_for_page,
-)
-from modules.concurrent_parity import (
-    create_parity_check_plan,
-    get_capture_config,
-    LIVE_BASE_URL,
-    DEV_BASE_URL,
-)
 from modules.chunk_parser import extract_page_groups, ChunkData
 from modules.graph_algorithms import (
     GraphAnalysisResult,
@@ -75,14 +63,8 @@ from modules.deferred_validation import (
 )
 from modules.ast_dependency_analyzer import analyze_dependencies
 from modules.scoped_git_ops import RefactorScope, create_refactor_scope
-from modules.test_driven_validation import (
-    generate_test_suite_for_chunk,
-    run_tests_until_predictable,
-    run_tests_before_refactor,
-    run_tests_after_refactor,
-    TestSuite,
-)
 from code_audit import run_code_audit_and_plan
+from modules.webhook import notify_started, notify_in_progress, notify_success, notify_failure
 
 
 def _cleanup_browser_processes(logger: RunLogger, silent: bool = False) -> None:
@@ -250,6 +232,9 @@ def main():
     parser.add_argument("--limit", type=int, help="Limit number of chunks to implement")
     parser.add_argument("--audit-type", default="general", help="Type of audit (default: general)")
     parser.add_argument("--skip-visual", action="store_true", help="Skip visual regression testing")
+    parser.add_argument("--slack-channel", default="test-bed", help="Slack channel for notifications (default: test-bed)")
+    parser.add_argument("--no-slack", action="store_true", help="Disable Slack notifications")
+    parser.add_argument("--use-gemini", action="store_true", help="Use Gemini instead of Claude for visual checks")
     parser.add_argument("--legacy", action="store_true", help="Use legacy per-chunk validation (slower)")
 
     args = parser.parse_args()
@@ -287,6 +272,9 @@ def main():
         logger.phase_start("PHASE 1: CODE AUDIT (Claude Opus)")
         logger.step(f"Target: {args.target_path}")
         logger.step(f"Audit type: {args.audit_type}")
+
+        # Webhook: Notify pipeline started
+        notify_started("FP Refactor", details=f"Target: {args.target_path}")
 
         plan_file_relative, graph_result = run_code_audit_and_plan(
             args.target_path,
@@ -478,6 +466,9 @@ def main():
             logger.step(f"Implemented {chunks_implemented}/{total_chunks} chunks")
             logger.phase_complete("PHASE 4: IMPLEMENTATION", success=True)
 
+            # Webhook: Notify implementation complete
+            notify_in_progress("Implementation", details=f"{chunks_implemented}/{total_chunks} chunks")
+
             # =================================================================
             # PHASE 5: DEFERRED VALIDATION
             # =================================================================
@@ -509,11 +500,15 @@ def main():
                 )
 
             # Run deferred validation
+            # Resolve slack_channel: None if --no-slack, otherwise use --slack-channel value
+            effective_slack_channel = None if args.no_slack else args.slack_channel
             validation_result = run_deferred_validation(
                 validation_batch,
                 project_root,
                 logger,
-                skip_visual=args.skip_visual
+                skip_visual=args.skip_visual,
+                slack_channel=effective_slack_channel,
+                use_claude=not args.use_gemini  # Default: use Claude
             )
 
             phase_durations["validate"] = time.time() - phase_start
@@ -538,6 +533,9 @@ def main():
 
                 logger.phase_complete("PHASE 5: DEFERRED VALIDATION", success=True)
                 run_success = True
+
+                # Webhook: Notify success
+                notify_success("FP Refactor", details=f"{chunks_implemented} chunks committed")
 
                 # Build final result
                 orchestration_result = OrchestrationResult(
@@ -573,6 +571,9 @@ def main():
                                      error=f"{len(validation_result.errors)} errors")
                 run_success = False
 
+                # Webhook: Notify failure
+                notify_failure("FP Refactor", error=f"{len(validation_result.errors)} validation errors")
+
                 # Build final result
                 orchestration_result = OrchestrationResult(
                     success=False,
@@ -605,8 +606,24 @@ def main():
 
             logger.log(f"\n{orchestration_result.to_summary()}")
 
+            # Send final result to Slack
+            try:
+                from modules.slack_client import create_slack_client_from_env
+                slack_client = create_slack_client_from_env(default_channel=args.slack_channel)
+                slack_msg = orchestration_result.to_slack_message()
+                slack_response = slack_client.send_message(text=slack_msg)
+                if slack_response.ok:
+                    logger.log("[Slack] Final result notification sent")
+                elif slack_response.error:
+                    logger.log(f"[Slack] Failed to send: {slack_response.error}")
+            except Exception as slack_err:
+                logger.log(f"[Slack] Failed to send notification: {slack_err}")
+
     except Exception as e:
         logger.error(e, context="Orchestrator crashed")
+
+        # Webhook: Notify crash
+        notify_failure("FP Refactor", error=str(e)[:100])
 
         # Build error result
         orchestration_result = OrchestrationResult(

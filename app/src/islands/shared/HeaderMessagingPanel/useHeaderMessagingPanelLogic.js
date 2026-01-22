@@ -518,6 +518,16 @@ export function useHeaderMessagingPanelLogic({
     setIsOtherUserTyping(false);
     setTypingUserName(null);
     fetchMessages(thread._id);
+
+    // Clear unread badge for this thread in local state
+    // The backend will mark messages as read; this keeps UI in sync
+    if (thread.unread_count > 0) {
+      setThreads((prevThreads) =>
+        prevThreads.map((t) =>
+          t._id === thread._id ? { ...t, unread_count: 0 } : t
+        )
+      );
+    }
   }, []);
 
   /**

@@ -17,24 +17,33 @@ const TRANSPORT_ICONS = {
 };
 
 export default function TransportCard({
-  transportationType,
+  transportationTypes = [], // Now an array for multi-select
   transportationOptions = [],
-  onFieldChange,
+  onTransportToggle, // New handler for toggle behavior
   readOnly = false
 }) {
+  console.log('[TransportCard] Rendered with transportationTypes:', transportationTypes, 'onTransportToggle:', typeof onTransportToggle);
   if (readOnly) {
-    const transportOption = transportationOptions.find(opt => opt.value === transportationType);
-    if (!transportationType || !transportOption) return null;
-
-    const TransportIcon = TRANSPORT_ICONS[transportationType] || Car;
+    // Filter to only selected transport options
+    const selectedOptions = transportationOptions.filter(opt =>
+      opt.value && transportationTypes.includes(opt.value)
+    );
+    if (selectedOptions.length === 0) return null;
 
     return (
       <ProfileCard title="Transport">
         <div className="public-schedule-section">
           <p className="public-schedule-label">How I Get to NYC</p>
-          <div className="public-transport-badge">
-            <TransportIcon size={20} />
-            <span>{transportOption.label}</span>
+          <div className="public-transport-badges">
+            {selectedOptions.map(option => {
+              const TransportIcon = TRANSPORT_ICONS[option.value] || Car;
+              return (
+                <div key={option.value} className="public-transport-badge">
+                  <TransportIcon size={20} />
+                  <span>{option.label}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
       </ProfileCard>
@@ -47,18 +56,22 @@ export default function TransportCard({
         <label className="profile-form-label">
           How do you get to your Split Lease?
         </label>
+        <p className="profile-form-hint">Select all that apply</p>
         <div className="transport-icon-selector">
           {transportationOptions
             .filter(option => option.value) // Exclude empty placeholder option
             .map(option => {
               const IconComponent = TRANSPORT_ICONS[option.value] || Compass;
-              const isSelected = transportationType === option.value;
+              const isSelected = transportationTypes.includes(option.value);
               return (
                 <button
                   key={option.value}
                   type="button"
                   className={`transport-icon-btn ${isSelected ? 'transport-icon-btn--selected' : ''}`}
-                  onClick={() => onFieldChange('transportationType', option.value)}
+                  onClick={() => {
+                    console.log('[TransportCard] Button clicked for:', option.value);
+                    onTransportToggle(option.value);
+                  }}
                   title={option.label}
                 >
                   <IconComponent size={24} />

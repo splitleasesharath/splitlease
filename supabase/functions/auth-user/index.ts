@@ -59,6 +59,7 @@ import { handleGenerateMagicLink } from './handlers/generateMagicLink.ts';
 import { handleOAuthSignup } from './handlers/oauthSignup.ts';
 import { handleOAuthLogin } from './handlers/oauthLogin.ts';
 import { handleSendMagicLinkSms } from './handlers/sendMagicLinkSms.ts';
+import { handleVerifyEmail } from './handlers/verifyEmail.ts';
 
 // ─────────────────────────────────────────────────────────────
 // Configuration (Immutable)
@@ -75,6 +76,7 @@ const ALLOWED_ACTIONS = [
   'oauth_signup',
   'oauth_login',
   'send_magic_link_sms',
+  'verify_email',
 ] as const;
 
 type Action = typeof ALLOWED_ACTIONS[number];
@@ -95,6 +97,7 @@ const handlers: Readonly<Record<Action, Function>> = {
   oauth_signup: handleOAuthSignup,
   oauth_login: handleOAuthLogin,
   send_magic_link_sms: handleSendMagicLinkSms,
+  verify_email: handleVerifyEmail,
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -286,6 +289,10 @@ async function executeHandler(
 
     case 'send_magic_link_sms':
       // Generate magic link and send via SMS (atomic operation for usability testing)
+      return handler(supabaseUrl, supabaseServiceKey, payload);
+
+    case 'verify_email':
+      // Verify email via magic link token and update public.user.email_verified
       return handler(supabaseUrl, supabaseServiceKey, payload);
 
     default: {

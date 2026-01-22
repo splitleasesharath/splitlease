@@ -1,3 +1,5 @@
+import { validateNonNegativeNumber, validateRange } from '../../validators/pricingValidators.js'
+
 /**
  * Calculates the baseline rent for a standard 4-week period.
  *
@@ -19,30 +21,8 @@
  */
 export function calculateFourWeekRent({ nightlyRate, frequency }) {
   // No Fallback: Strict type validation
-  if (typeof nightlyRate !== 'number' || isNaN(nightlyRate)) {
-    throw new Error(
-      `calculateFourWeekRent: nightlyRate must be a number, got ${typeof nightlyRate}`
-    )
-  }
-
-  if (typeof frequency !== 'number' || isNaN(frequency)) {
-    throw new Error(
-      `calculateFourWeekRent: frequency must be a number, got ${typeof frequency}`
-    )
-  }
-
-  // Business rule validation
-  if (nightlyRate < 0) {
-    throw new Error(
-      `calculateFourWeekRent: nightlyRate cannot be negative, got ${nightlyRate}`
-    )
-  }
-
-  if (frequency < 2 || frequency > 7) {
-    throw new Error(
-      `calculateFourWeekRent: frequency must be between 2-7 nights, got ${frequency}`
-    )
-  }
+  validateNonNegativeNumber(nightlyRate, 'nightlyRate', 'calculateFourWeekRent')
+  validateRange(frequency, 2, 7, 'frequency', 'calculateFourWeekRent')
 
   // Pure calculation
   return nightlyRate * frequency * 4

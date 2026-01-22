@@ -49,6 +49,15 @@ export const routes = [
     internalName: 'search-view',
     hasDynamicSegment: false
   },
+  {
+    path: '/quick-match',
+    file: 'quick-match.html',
+    aliases: ['/quick-match.html'],
+    protected: false,
+    cloudflareInternal: true,
+    internalName: 'quick-match-view',
+    hasDynamicSegment: false
+  },
 
   // ===== DYNAMIC ROUTES (WITH ID PARAMS) =====
   {
@@ -386,6 +395,16 @@ export const routes = [
     hasDynamicSegment: false
   },
   {
+    path: '/_internal/leases-overview',
+    file: 'leases-overview.html',
+    aliases: ['/_internal/leases-overview.html'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'leases-overview-view',
+    hasDynamicSegment: false
+  },
+  {
     path: '/_email-sms-unit',
     file: '_email-sms-unit.html',
     aliases: ['/_email-sms-unit.html'],
@@ -403,6 +422,144 @@ export const routes = [
     cloudflareInternal: false,
     hasDynamicSegment: false,
     devOnly: true
+  },
+
+  // ===== SIMULATION PAGES =====
+  {
+    path: '/_internal/guest-simulation',
+    file: 'guest-simulation.html',
+    aliases: ['/_internal/guest-simulation.html', '/simulation-guest-proposals-mobile-day1'],
+    protected: false,  // Auth handled in-page for usability testing
+    cloudflareInternal: false,
+    hasDynamicSegment: false
+  },
+  {
+    path: '/simulation-guest-mobile',
+    file: 'simulation-guest-mobile.html',
+    aliases: ['/simulation-guest-mobile.html', '/simulation-guest-proposals-mobile-day2'],
+    protected: true,
+    cloudflareInternal: true,
+    internalName: 'simulation-guest-mobile-view',
+    hasDynamicSegment: false
+  },
+  {
+    path: '/simulation-guestside-demo',
+    file: 'simulation-guestside-demo.html',
+    aliases: ['/simulation-guestside-demo.html', '/usability-test'],
+    protected: true,
+    cloudflareInternal: true,
+    internalName: 'simulation-guestside-demo-view',
+    hasDynamicSegment: false
+  },
+  {
+    path: '/simulation-hostside-demo',
+    file: 'simulation-hostside-demo.html',
+    aliases: ['/simulation-hostside-demo.html', '/host-usability-test'],
+    protected: true,
+    cloudflareInternal: true,
+    internalName: 'simulation-hostside-demo-view',
+    hasDynamicSegment: false
+  },
+  {
+    path: '/simulation-host-mobile',
+    file: 'simulation-host-mobile.html',
+    aliases: ['/simulation-host-mobile.html', '/host-simulation'],
+    protected: true,
+    cloudflareInternal: true,
+    internalName: 'simulation-host-mobile-view',
+    hasDynamicSegment: false
+  },
+
+  // ===== CORPORATE INTERNAL TOOLS =====
+  {
+    path: '/_internal/guest-relationships',
+    file: 'guest-relationships.html',
+    aliases: ['/_internal/guest-relationships.html', '/guest-relationships'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'guest-relationships-view',
+    hasDynamicSegment: false
+  },
+  {
+    path: '/_internal/manage-virtual-meetings',
+    file: 'manage-virtual-meetings.html',
+    aliases: ['/_internal/manage-virtual-meetings.html', '/manage-virtual-meetings'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'manage-virtual-meetings-view',
+    hasDynamicSegment: false
+  },
+  {
+    path: '/_internal/manage-informational-texts',
+    file: 'manage-informational-texts.html',
+    aliases: ['/_internal/manage-informational-texts.html', '/manage-informational-texts'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'manage-informational-texts-view',
+    hasDynamicSegment: false
+  },
+  {
+    path: '/_internal/quick-price',
+    file: 'quick-price.html',
+    aliases: ['/_internal/quick-price.html', '/quick-price'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'quick-price-view',
+    hasDynamicSegment: false
+  },
+  {
+    path: '/_internal/verify-users',
+    file: 'verify-users.html',
+    aliases: ['/_internal/verify-users.html', '/verify-users'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'verify-users-view',
+    hasDynamicSegment: false
+  },
+  {
+    path: '/_internal/co-host-requests',
+    file: 'co-host-requests.html',
+    aliases: ['/_internal/co-host-requests.html', '/co-host-requests'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'co-host-requests-view',
+    hasDynamicSegment: false
+  },
+  {
+    path: '/_internal/simulation-admin',
+    file: 'simulation-admin.html',
+    aliases: ['/_internal/simulation-admin.html', '/simulation-admin'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'simulation-admin-view',
+    hasDynamicSegment: false
+  },
+  {
+    path: '/_internal/send-magic-login-links',
+    file: 'send-magic-login-links.html',
+    aliases: ['/_internal/send-magic-login-links.html', '/send-magic-login-links'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'send-magic-login-links-view',
+    hasDynamicSegment: false
+  },
+  {
+    path: '/_internal/modify-listings',
+    file: 'modify-listings.html',
+    aliases: ['/_internal/modify-listings.html', '/modify-listings'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'modify-listings-view',
+    hasDynamicSegment: false
   }
 ];
 

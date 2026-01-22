@@ -159,7 +159,8 @@ def generate_test_suite_for_chunk(
     # Generate tests based on the type of change
     for func_name in func_names:
         # Test 1: Import test (should always pass if export exists)
-        import_path = _resolve_import_path(chunk.file_path, working_dir)
+        # Tests run from app/.test_temp/ so need from_test_temp=True
+        import_path = _resolve_import_path(chunk.file_path, working_dir, from_test_temp=True)
         suite.add_passing_test(
             name=f"import_{func_name}",
             code=_generate_import_test(func_name, import_path)
@@ -173,16 +174,20 @@ def generate_test_suite_for_chunk(
         )
 
     if _is_magic_number_extraction(current, refactored):
+        # Use the correct import path for the actual file being tested
+        constants_import_path = _resolve_import_path(chunk.file_path, working_dir, from_test_temp=True)
         suite.add_passing_test(
             name="constants_exported",
-            code=_generate_constants_test(refactored)
+            code=_generate_constants_test(refactored, constants_import_path)
         )
 
     if _is_function_signature_change(current, refactored):
         # The function should still work with old inputs
+        # Use the correct import path for the actual file being tested
+        compat_import_path = _resolve_import_path(chunk.file_path, working_dir, from_test_temp=True)
         suite.add_passing_test(
             name="backward_compatible",
-            code=_generate_backward_compat_test(func_names, current)
+            code=_generate_backward_compat_test(func_names, current, compat_import_path)
         )
 
     # Always add a basic syntax/parse test
@@ -406,22 +411,36 @@ def _extract_function_names(code: str) -> List[str]:
     return list(set(names))
 
 
-def _resolve_import_path(file_path: str, working_dir: Path) -> str:
-    """Convert file path to a relative import path."""
+def _resolve_import_path(file_path: str, working_dir: Path, from_test_temp: bool = False) -> str:
+    """Convert file path to a relative import path.
+
+    Args:
+        file_path: The file path to convert
+        working_dir: Project root directory
+        from_test_temp: If True, generates path relative to app/.test_temp/
+                       If False, generates path relative to app/
+    """
     # Remove backticks if present
     file_path = file_path.strip('`').strip()
 
     # Convert Windows paths
     file_path = file_path.replace('\\', '/')
 
-    # Handle src/ prefix
-    if file_path.startswith('src/'):
-        return './' + file_path[4:]  # Remove 'src/'
-
-    if file_path.startswith('app/src/'):
-        return './' + file_path[8:]  # Remove 'app/src/'
-
-    return './' + file_path
+    # Handle src/ prefix - tests run from app/.test_temp/ so need ../src/
+    if from_test_temp:
+        if file_path.startswith('src/'):
+            return '../' + file_path  # ../src/logic/...
+        if file_path.startswith('app/src/'):
+            return '../' + file_path[4:]  # Remove 'app/' -> ../src/logic/...
+        # If no src prefix, assume it's relative to app/src
+        return '../src/' + file_path
+    else:
+        # Legacy behavior for backward compatibility
+        if file_path.startswith('src/'):
+            return './' + file_path[4:]  # Remove 'src/'
+        if file_path.startswith('app/src/'):
+            return './' + file_path[8:]  # Remove 'app/src/'
+        return './' + file_path
 
 
 def _is_console_log_removal(current: str, refactored: str) -> bool:
@@ -445,8 +464,14 @@ def _is_function_signature_change(current: str, refactored: str) -> bool:
     return current_sigs != refactored_sigs
 
 
-def _generate_import_test(func_name: str, import_path: str) -> str:
-    """Generate a test that verifies the function can be imported."""
+def _generate_import_test(func_name: str, import_path: str, from_test_temp: bool = True) -> str:
+    """Generate a test that verifies the function can be imported.
+
+    Args:
+        func_name: Name of the function to import
+        import_path: The import path (should be relative to app/.test_temp/ if from_test_temp)
+        from_test_temp: Whether the test runs from app/.test_temp/
+    """
     return f"""
 // Test: Can import {func_name}
 import {{ {func_name} }} from '{import_path}';
@@ -486,21 +511,28 @@ process.exit(0);
 """
 
 
-def _generate_constants_test(refactored: str) -> str:
-    """Generate a test that verifies constants are exported."""
+def _generate_constants_test(refactored: str, import_path: str = None) -> str:
+    """Generate a test that verifies constants are exported.
+
+    Args:
+        refactored: The refactored source code
+        import_path: Import path relative to app/.test_temp/ (should start with ../src/)
+    """
     # Find constant names
     const_names = re.findall(r'export\s+const\s+([A-Z_]+)\s*=', refactored)
     if not const_names:
         const_names = ['SOME_CONSTANT']
 
     const_imports = ', '.join(const_names[:3])  # Limit to 3
+    # Use provided import_path or a default
+    actual_path = import_path if import_path else '../src/lib/constants.js'
 
     return f"""
 // Test: Constants should be exported
 // This test verifies that magic numbers were extracted to named constants
 
 try {{
-    const module = await import('./lib/constants.js');
+    const module = await import('{actual_path}');
     console.log('Constants module loaded');
     process.exit(0);
 }} catch (e) {{
@@ -510,9 +542,17 @@ try {{
 """
 
 
-def _generate_backward_compat_test(func_names: List[str], current: str) -> str:
-    """Generate a test for backward compatibility."""
+def _generate_backward_compat_test(func_names: List[str], current: str, import_path: str = None) -> str:
+    """Generate a test for backward compatibility.
+
+    Args:
+        func_names: List of function names in the module
+        current: Current source code
+        import_path: Import path relative to app/.test_temp/ (should start with ../src/)
+    """
     func_name = func_names[0] if func_names else "unknownFunction"
+    # Use provided import_path or a default
+    actual_path = import_path if import_path else '../src/lib/scheduleSelector/priceCalculations.js'
 
     return f"""
 // Test: Function should still be callable
@@ -520,7 +560,7 @@ def _generate_backward_compat_test(func_names: List[str], current: str) -> str:
 
 try {{
     // Just verify the module loads without error
-    const module = await import('./lib/scheduleSelector/priceCalculations.js');
+    const module = await import('{actual_path}');
     console.log('Module loaded successfully');
     process.exit(0);
 }} catch (e) {{
@@ -531,8 +571,12 @@ try {{
 
 
 def _generate_parse_test(file_path: str, working_dir: Path) -> str:
-    """Generate a test that verifies the file parses correctly."""
-    import_path = _resolve_import_path(file_path, working_dir)
+    """Generate a test that verifies the file parses correctly.
+
+    Tests are written to app/.test_temp/ so imports need ../src/ prefix.
+    """
+    # Use from_test_temp=True since tests run from app/.test_temp/
+    import_path = _resolve_import_path(file_path, working_dir, from_test_temp=True)
 
     return f"""
 // Test: File should parse without syntax errors

@@ -17,15 +17,16 @@ export default function CompactScheduleIndicator({ isVisible }) {
   // Day names for display
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-  // Calculate check-in and check-out days
-  const checkInOut = calculateCheckInOutFromDays(selectedDaysArray);
+  // Calculate check-in and check-out days (only when we have at least 2 days)
+  const hasEnoughDays = selectedDaysArray.length >= 2;
+  const checkInOut = hasEnoughDays ? calculateCheckInOutFromDays(selectedDaysArray) : null;
   const checkInText = checkInOut ? dayNames[checkInOut.checkIn] : '';
   const checkOutText = checkInOut ? dayNames[checkInOut.checkOut] : '';
 
   return (
     <div className={`compact-schedule-indicator ${isVisible ? 'compact-schedule-indicator--visible' : ''}`}>
       <span className="compact-schedule-text">
-        {selectedDaysArray.length >= 2 ? (
+        {hasEnoughDays ? (
           <>
             <span className="compact-label">Check-in:</span> {checkInText} • <span className="compact-label">Check-out:</span> {checkOutText}
           </>

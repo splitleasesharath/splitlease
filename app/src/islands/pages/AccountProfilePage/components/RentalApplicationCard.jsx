@@ -23,7 +23,7 @@ export default function RentalApplicationCard({
   // Submitted state - success card with Review & Edit option
   if (applicationStatus === 'submitted') {
     return (
-      <ProfileCard title="Rental Application" className="rental-app-card rental-app-card--success">
+      <ProfileCard id="rental-application-section" title="Rental Application" className="rental-app-card rental-app-card--success">
         <div className="rental-app-card__success">
           <div className="rental-app-card__success-icon">
             <CheckCircle size={32} />
@@ -50,7 +50,7 @@ export default function RentalApplicationCard({
   // In progress state - show progress bar
   if (applicationStatus === 'in_progress') {
     return (
-      <ProfileCard title="Rental Application" className="rental-app-card">
+      <ProfileCard id="rental-application-section" title="Rental Application" className="rental-app-card">
         <div className="rental-app-card__content">
           <div className="rental-app-card__icon">
             <FileText size={24} />
@@ -85,7 +85,7 @@ export default function RentalApplicationCard({
 
   // Not started state - default
   return (
-    <ProfileCard title="Rental Application" className="rental-app-card">
+    <ProfileCard id="rental-application-section" title="Rental Application" className="rental-app-card">
       <div className="rental-app-card__content">
         <div className="rental-app-card__icon">
           <FileText size={24} />

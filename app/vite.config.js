@@ -217,6 +217,7 @@ export default defineConfig({
   publicDir: 'public', // Enable public directory serving for static assets
   server: {
     host: true, // Listen on all addresses (127.0.0.1 and localhost)
+    port: 3000, // Match Supabase Auth Site URL for local development
     // Proxy /api routes to handle Cloudflare Pages Functions locally
     // Note: FAQ inquiries now use Supabase Edge Functions (slack function)
     // This proxy is for any remaining Cloudflare Pages Functions
@@ -279,7 +280,22 @@ export default defineConfig({
           return 'assets/[name]-[hash][extname]';
         },
         chunkFileNames: 'assets/[name]-[hash].js',
-        entryFileNames: 'assets/[name]-[hash].js'
+        entryFileNames: 'assets/[name]-[hash].js',
+
+        /**
+         * Manual chunk splitting DISABLED due to circular dependency issues.
+         * Vite's automatic code splitting handles module dependencies correctly.
+         *
+         * Previous manual chunking caused circular imports between:
+         * - vendor-react (React core)
+         * - vendor (other node_modules that React depends on like tslib)
+         *
+         * This resulted in "Cannot access 'React' before initialization" errors.
+         *
+         * TODO: Re-enable manual chunking with proper dependency analysis
+         * to avoid circular imports while still optimizing bundle sizes.
+         */
+        // manualChunks disabled - using Vite's automatic splitting
       }
     },
     // Copy HTML files to root of dist, not preserving directory structure

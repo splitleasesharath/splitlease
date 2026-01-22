@@ -491,7 +491,8 @@ def prompt_claude_code(request: AgentPromptRequest) -> AgentPromptResponse:
             model = "gemini-3-pro-preview"
             
         cmd.extend(["--model", model])
-        cmd.extend(["--output-format", "stream-json"])
+        # Note: Gemini CLI does not support --output-format flag
+        # Output parsing will handle Gemini's native text output
 
         # Add MCP session support for Gemini CLI
         # Use --allowed-mcp-server-names to enable specific MCP server(s)
@@ -506,6 +507,7 @@ def prompt_claude_code(request: AgentPromptRequest) -> AgentPromptResponse:
         cmd.extend(["--model", request.model])
         cmd.extend(["--output-format", "stream-json"])
         cmd.append("--verbose")
+        cmd.extend(["--output-style", "concise"])
 
         # Add dangerous skip permissions flag if enabled
         if request.dangerously_skip_permissions:

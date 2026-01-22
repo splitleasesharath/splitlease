@@ -18,6 +18,7 @@ import {
   getDefaultGuests,
   getListingPhotos,
   getUserProposalsForListing,
+  getUserMostRecentProposal,
   createSuggestedProposal
 } from './suggestedProposalService.js';
 
@@ -43,6 +44,27 @@ const MOVE_IN_RANGE_OPTIONS = [
   { value: 21, label: '3 weeks' },
   { value: 30, label: '1 month' }
 ];
+
+// Standard reservation span weeks that map directly to dropdown options
+const STANDARD_RESERVATION_SPANS = [6, 7, 8, 9, 10, 12, 13, 16, 17, 20, 22, 26, 52];
+
+/**
+ * Map numeric weeks to reservation span dropdown value
+ * @param {number} weeks - Number of weeks from proposal
+ * @returns {{ reservationSpan: string, customWeeks: number|null }}
+ */
+function mapWeeksToReservationSpan(weeks) {
+  if (!weeks || weeks <= 0) {
+    return { reservationSpan: '', customWeeks: null };
+  }
+
+  if (STANDARD_RESERVATION_SPANS.includes(weeks)) {
+    return { reservationSpan: String(weeks), customWeeks: null };
+  }
+
+  // Non-standard value: use custom option
+  return { reservationSpan: 'custom', customWeeks: weeks };
+}
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -443,15 +465,59 @@ export function useCreateSuggestedProposalLogic() {
   }, [guestSearchResults.length, selectedGuest]);
 
   const handleGuestSelect = useCallback(async (guest) => {
+    console.log('[PREFILL DEBUG] handleGuestSelect called with full guest object:', guest);
+    console.log('[PREFILL DEBUG] Guest _id:', guest._id);
+    console.log('[PREFILL DEBUG] Guest email:', guest.email);
+
     setSelectedGuest(guest);
     setGuestSearchTerm('');
     setGuestSearchResults([]);
     setIsGuestConfirmed(false);
 
-    // Check for existing proposals
+    // Check for existing proposals on THIS listing (for warning display)
     if (selectedListing) {
-      const { data } = await getUserProposalsForListing(guest._id, selectedListing._id);
-      setExistingProposalsCount(data?.length || 0);
+      const { data: listingProposals } = await getUserProposalsForListing(guest._id, selectedListing._id);
+      setExistingProposalsCount(listingProposals?.length || 0);
+    }
+
+    // Prefill from guest's most recent proposal across ALL listings
+    console.log('[PREFILL DEBUG] About to call getUserMostRecentProposal for guest:', guest._id);
+    const { data: mostRecentProposal, error: prefillError } = await getUserMostRecentProposal(guest._id);
+    console.log('[PREFILL DEBUG] Result:', { mostRecentProposal, prefillError });
+
+    if (mostRecentProposal) {
+      console.log('[PREFILL DEBUG] Prefilling from proposal:', mostRecentProposal._id);
+
+      // Prefill days selected (0-indexed, no conversion needed)
+      const daysSelected = mostRecentProposal['Days Selected'];
+      if (Array.isArray(daysSelected) && daysSelected.length > 0) {
+        setSelectedDays(daysSelected);
+      }
+
+      // Prefill reservation span
+      const weeksValue = mostRecentProposal['Reservation Span (Weeks)'];
+      if (weeksValue && weeksValue > 0) {
+        const { reservationSpan: spanValue, customWeeks: customValue } = mapWeeksToReservationSpan(weeksValue);
+        setReservationSpan(spanValue);
+        if (customValue !== null) {
+          setCustomWeeks(customValue);
+        }
+      }
+
+      // Prefill move-in date (ensure not in the past)
+      const moveInStart = mostRecentProposal['Move in range start'];
+      if (moveInStart) {
+        const proposalDate = new Date(moveInStart);
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+
+        // Use proposal date if in future, otherwise use tomorrow
+        if (proposalDate >= tomorrow) {
+          setMoveInDate(proposalDate.toISOString().split('T')[0]);
+        }
+        // If past date, leave default (tomorrow) in place
+      }
     }
 
     // Pre-fill guest profile fields if available

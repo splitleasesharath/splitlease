@@ -35,7 +35,11 @@ Deno.serve(async (req: Request) => {
     console.log(`[proposal] Action: ${action}`);
 
     // Validate action
-    const validActions = ['create', 'update', 'get', 'suggest', 'create_suggested', 'create_mockup'];
+    const validActions = [
+      'create', 'update', 'get', 'suggest', 'create_suggested', 'create_mockup', 'get_prefill_data',
+      // Usability test simulation actions
+      'createTestProposal', 'createTestRentalApplication', 'acceptProposal', 'createCounteroffer', 'acceptCounteroffer'
+    ];
     if (!validActions.includes(action)) {
       return new Response(
         JSON.stringify({ success: false, error: `Invalid action: ${action}` }),
@@ -134,6 +138,107 @@ Deno.serve(async (req: Request) => {
         // No authentication required - internal service call only
         // Access control via service role key from listing edge function
         result = await handleCreateMockup(payload, supabase);
+        break;
+      }
+
+      case 'get_prefill_data': {
+        console.log('[proposal] Loading get_prefill_data handler...');
+        const { handleGetPrefillData } = await import("./actions/get_prefill_data.ts");
+        console.log('[proposal] Get_prefill_data handler loaded');
+
+        // No authentication required - internal tool only
+        // Service role bypasses RLS so hosts can query other users' proposals
+        result = await handleGetPrefillData(payload, supabase);
+        break;
+      }
+
+      // ========================================================================
+      // USABILITY TEST SIMULATION ACTIONS
+      // These actions support the guest-side usability simulation flow
+      // ========================================================================
+
+      case 'createTestProposal': {
+        console.log('[proposal] Loading createTestProposal handler...');
+        const { handleCreateTestProposal } = await import("./actions/create_test_proposal.ts");
+        console.log('[proposal] createTestProposal handler loaded');
+
+        // Authentication required - must be logged in as the tester
+        const user = await authenticateFromHeaders(req.headers, supabaseUrl, supabaseAnonKey);
+        if (!user) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'Authentication required' }),
+            { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        result = await handleCreateTestProposal(payload, supabase);
+        break;
+      }
+
+      case 'createTestRentalApplication': {
+        console.log('[proposal] Loading createTestRentalApplication handler...');
+        const { handleCreateTestRentalApplication } = await import("./actions/create_test_rental_application.ts");
+        console.log('[proposal] createTestRentalApplication handler loaded');
+
+        // Authentication required
+        const user = await authenticateFromHeaders(req.headers, supabaseUrl, supabaseAnonKey);
+        if (!user) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'Authentication required' }),
+            { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        result = await handleCreateTestRentalApplication(payload, supabase);
+        break;
+      }
+
+      case 'acceptProposal': {
+        console.log('[proposal] Loading acceptProposal handler...');
+        const { handleAcceptProposal } = await import("./actions/accept_proposal.ts");
+        console.log('[proposal] acceptProposal handler loaded');
+
+        // Authentication required
+        const user = await authenticateFromHeaders(req.headers, supabaseUrl, supabaseAnonKey);
+        if (!user) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'Authentication required' }),
+            { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        result = await handleAcceptProposal(payload, supabase);
+        break;
+      }
+
+      case 'createCounteroffer': {
+        console.log('[proposal] Loading createCounteroffer handler...');
+        const { handleCreateCounteroffer } = await import("./actions/create_counteroffer.ts");
+        console.log('[proposal] createCounteroffer handler loaded');
+
+        // Authentication required
+        const user = await authenticateFromHeaders(req.headers, supabaseUrl, supabaseAnonKey);
+        if (!user) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'Authentication required' }),
+            { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        result = await handleCreateCounteroffer(payload, supabase);
+        break;
+      }
+
+      case 'acceptCounteroffer': {
+        console.log('[proposal] Loading acceptCounteroffer handler...');
+        const { handleAcceptCounteroffer } = await import("./actions/accept_counteroffer.ts");
+        console.log('[proposal] acceptCounteroffer handler loaded');
+
+        // Authentication required
+        const user = await authenticateFromHeaders(req.headers, supabaseUrl, supabaseAnonKey);
+        if (!user) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'Authentication required' }),
+            { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        result = await handleAcceptCounteroffer(payload, supabase);
         break;
       }
 

@@ -147,6 +147,7 @@ export default function AccountProfilePage() {
                 onFieldChange={logic.handleFieldChange}
                 onDayToggle={logic.handleDayToggle}
                 onChipToggle={logic.handleChipToggle}
+                onTransportToggle={logic.handleTransportToggle}
                 onVerifyEmail={logic.handleVerifyEmail}
                 onVerifyPhone={logic.handleVerifyPhone}
                 onVerifyGovId={logic.handleVerifyGovId}
@@ -166,6 +167,7 @@ export default function AccountProfilePage() {
                 onOpenRentalWizard={logic.handleOpenRentalWizard}
                 // Email verification state
                 isVerifyingEmail={logic.isVerifyingEmail}
+                verificationEmailSent={logic.verificationEmailSent}
               />
             ) : (
               <PublicView

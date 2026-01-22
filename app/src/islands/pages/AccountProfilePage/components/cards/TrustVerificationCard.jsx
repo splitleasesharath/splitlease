@@ -50,7 +50,8 @@ export default function TrustVerificationCard({
   onConnectLinkedIn,
   onEditPhone,
   readOnly = false,
-  isVerifyingEmail = false
+  isVerifyingEmail = false,
+  verificationEmailSent = false
 }) {
   // Map display values for items that show user data
   const displayValues = {
@@ -150,11 +151,15 @@ export default function TrustVerificationCard({
                 {!isVerified && handleVerify && (
                   <button
                     type="button"
-                    className="verification-btn"
+                    className={`verification-btn${item.key === 'email' && verificationEmailSent ? ' verification-btn--success' : ''}`}
                     onClick={handleVerify}
-                    disabled={item.key === 'email' && isVerifyingEmail}
+                    disabled={item.key === 'email' && (isVerifyingEmail || verificationEmailSent)}
                   >
-                    {item.key === 'email' && isVerifyingEmail ? 'Sending...' : item.verifyLabel}
+                    {item.key === 'email' && isVerifyingEmail
+                      ? 'Sending...'
+                      : item.key === 'email' && verificationEmailSent
+                        ? 'Email Sent ✓'
+                        : item.verifyLabel}
                   </button>
                 )}
               </div>

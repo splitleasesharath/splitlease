@@ -44,7 +44,27 @@ export default function PublicView({
   const needForSpace = profileData?.['need for Space'] || '';
   const specialNeeds = profileData?.['special needs'] || '';
   const selectedDays = dayNamesToIndices(profileData?.['Recent Days Selected'] || []);
-  const transportationType = profileData?.['Transportation'] || '';
+
+  // Parse transportation medium - stored as JSON string in text column
+  const rawTransport = profileData?.['transportation medium'];
+  let transportationTypes = [];
+  const validValues = ['car', 'public_transit', 'bicycle', 'walking', 'rideshare', 'other'];
+
+  if (rawTransport && typeof rawTransport === 'string') {
+    try {
+      const parsed = JSON.parse(rawTransport);
+      if (Array.isArray(parsed)) {
+        transportationTypes = parsed.filter(val => validValues.includes(val));
+      }
+    } catch {
+      if (validValues.includes(rawTransport)) {
+        transportationTypes = [rawTransport];
+      }
+    }
+  } else if (Array.isArray(rawTransport)) {
+    transportationTypes = rawTransport.filter(val => validValues.includes(val));
+  }
+
   const goodGuestReasons = profileData?.['Good Guest Reasons'] || [];
   const storageItems = profileData?.['storage'] || [];
   const firstName = profileData?.['Name - First'] || 'this guest';
@@ -88,10 +108,10 @@ export default function PublicView({
         />
       )}
 
-      {/* Guest-only: Transport */}
-      {!isHostUser && transportationType && (
+      {/* Guest-only: Transport (multi-select) */}
+      {!isHostUser && transportationTypes.length > 0 && (
         <TransportCard
-          transportationType={transportationType}
+          transportationTypes={transportationTypes}
           transportationOptions={transportationOptions}
           readOnly={true}
         />

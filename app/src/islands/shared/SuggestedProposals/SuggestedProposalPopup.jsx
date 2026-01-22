@@ -120,8 +120,9 @@ export default function SuggestedProposalPopup({
   const neighborhood = isBubbleFkId(rawNeighborhood) ? '' : rawNeighborhood;
 
   // Negotiation summary (AI explanation)
+  // Column name is 'Summary' (capital S) - Bubble.io naming convention
   const summaries = proposal._negotiationSummaries || [];
-  const latestSummary = summaries[0]?.summary || null;
+  const latestSummary = summaries[0]?.Summary || null;
 
   // Format dates
   const startDate = proposal['Move in range start']

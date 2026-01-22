@@ -1,0 +1,33 @@
+INVESTIGATION TASK: Find the mysterious $220.22 price pin at Null Island (0, 0)
+
+Database: supabase-dev (development)
+
+QUERIES NEEDED:
+
+1. Find listings with the exact price $220.22:
+   SELECT _id, "Name", "Active", "Standarized Minimum Nightly Price (Filter)", "Location - Coordinates", "Location - Address" 
+   FROM listing 
+   WHERE "Standarized Minimum Nightly Price (Filter)" = 220.22
+   OR "Standarized Minimum Nightly Price (Filter)" BETWEEN 220 AND 221
+
+2. Find listings with coordinates near (0, 0) - latitude/longitude between -5 and 5:
+   SELECT _id, "Name", "Active", "Location - Coordinates", "Location - Address", "Standarized Minimum Nightly Price (Filter)"
+   FROM listing 
+   WHERE "Location - Coordinates" IS NOT NULL
+   AND ("Location - Coordinates"->>'lat')::numeric BETWEEN -5 AND 5
+   AND ("Location - Coordinates"->>'lng')::numeric BETWEEN -5 AND 5
+
+3. Find Active listings with NULL/empty location data:
+   SELECT _id, "Name", "Active", "Location - Coordinates", "Location - Address", "Location - Borough", "Location - Hood"
+   FROM listing 
+   WHERE "Active" = true 
+   AND ("Location - Coordinates" IS NULL OR "Location - Address" IS NULL)
+
+Return fields for suspicious listings:
+- _id (unique identifier)
+- Name (listing name)
+- Active (status)
+- Standarized Minimum Nightly Price (Filter) (the price)
+- Location - Coordinates (lat/lng values)
+- Location - Address (full address object)
+- Location - Borough (if relevant)

@@ -1,3 +1,5 @@
+import { validateNonNegativeNumber, validatePositiveNumber } from '../../validators/pricingValidators.js'
+
 /**
  * Calculate estimated reservation total for the full stay period.
  *
@@ -19,30 +21,8 @@
  */
 export function calculateReservationTotal({ fourWeekRent, totalWeeks }) {
   // No Fallback: Strict type validation
-  if (typeof fourWeekRent !== 'number' || isNaN(fourWeekRent)) {
-    throw new Error(
-      `calculateReservationTotal: fourWeekRent must be a number, got ${typeof fourWeekRent}`
-    )
-  }
-
-  if (typeof totalWeeks !== 'number' || isNaN(totalWeeks)) {
-    throw new Error(
-      `calculateReservationTotal: totalWeeks must be a number, got ${typeof totalWeeks}`
-    )
-  }
-
-  // Business rule validation
-  if (fourWeekRent < 0) {
-    throw new Error(
-      `calculateReservationTotal: fourWeekRent cannot be negative, got ${fourWeekRent}`
-    )
-  }
-
-  if (totalWeeks <= 0) {
-    throw new Error(
-      `calculateReservationTotal: totalWeeks must be positive, got ${totalWeeks}`
-    )
-  }
+  validateNonNegativeNumber(fourWeekRent, 'fourWeekRent', 'calculateReservationTotal')
+  validatePositiveNumber(totalWeeks, 'totalWeeks', 'calculateReservationTotal')
 
   // Pure calculation
   return fourWeekRent * (totalWeeks / 4)

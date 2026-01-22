@@ -107,6 +107,11 @@ plan/
 
 # Deprecated code
 Deprecated/
+
+# ZEP directories (deprecated/obsolete - see CLAUDE.md deprecation convention)
+ZEP - analysis/
+ZEP - tests/
+ZEP - refactor(previously barrel deletion related)/
 desktop.ini
 nul
 

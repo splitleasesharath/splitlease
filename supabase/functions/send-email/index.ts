@@ -49,6 +49,7 @@ const ALLOWED_ACTIONS = ["send", "health"] as const;
 // Templates that can be sent without user authentication
 const PUBLIC_TEMPLATES: ReadonlySet<string> = new Set([
   '1757433099447x202755280527849400', // Security 2 - Magic Login Link
+  '1560447575939x331870423481483500', // Basic - Welcome emails, internal notifications
 ]);
 
 type Action = typeof ALLOWED_ACTIONS[number];

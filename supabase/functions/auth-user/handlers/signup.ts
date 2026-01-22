@@ -32,6 +32,11 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { BubbleApiError } from '../../_shared/errors.ts';
 import { validateRequiredFields } from '../../_shared/validation.ts';
 import { enqueueSignupSync, triggerQueueProcessing } from '../../_shared/queueSync.ts';
+import {
+  sendWelcomeEmail,
+  sendInternalSignupNotification,
+  sendWelcomeSms
+} from '../../_shared/emailUtils.ts';
 
 interface SignupAdditionalData {
   firstName?: string;
@@ -321,6 +326,73 @@ export async function handleSignup(
       // Log but don't fail signup - the queue item can be processed later by pg_cron
       console.error('[signup] Failed to queue Bubble sync (non-blocking):', syncQueueError);
     }
+
+    // ========== SEND WELCOME EMAILS & SMS ==========
+    // Use EdgeRuntime.waitUntil() to send async (non-blocking)
+    // This matches Bubble's "Schedule API Workflow" pattern
+    // Emails/SMS are sent after response returns, but before function terminates
+    console.log('[signup] Triggering welcome emails and SMS (async)...');
+
+    // Generate email verification magic link
+    const siteUrl = Deno.env.get('SITE_URL') || 'https://split.lease';
+    let verificationLink = `${siteUrl}/email-verified`;
+
+    try {
+      const { data: linkData } = await supabaseAdmin.auth.admin.generateLink({
+        type: 'magiclink',
+        email: email.toLowerCase(),
+        options: {
+          redirectTo: `${siteUrl}/email-verified`,
+        },
+      });
+      verificationLink = linkData?.properties?.action_link || verificationLink;
+      console.log('[signup] ✅ Verification magic link generated');
+    } catch (linkError) {
+      console.error('[signup] Failed to generate verification link (non-blocking):', linkError);
+    }
+
+    // Send welcome email with verification link (async, non-blocking)
+    EdgeRuntime.waitUntil(
+      sendWelcomeEmail(userType as 'Host' | 'Guest', email.toLowerCase(), firstName, verificationLink)
+        .then(result => {
+          if (!result.success) {
+            console.error('[signup] Welcome email failed:', result.error);
+          } else {
+            console.log('[signup] ✅ Welcome email sent');
+          }
+        })
+        .catch(err => console.error('[signup] Welcome email error:', err))
+    );
+
+    // Send internal notification (async, non-blocking)
+    EdgeRuntime.waitUntil(
+      sendInternalSignupNotification(generatedUserId, email.toLowerCase(), firstName, lastName, userType as 'Host' | 'Guest')
+        .then(result => {
+          if (!result.success) {
+            console.error('[signup] Internal notification failed:', result.error);
+          } else {
+            console.log('[signup] ✅ Internal notification sent');
+          }
+        })
+        .catch(err => console.error('[signup] Internal notification error:', err))
+    );
+
+    // Send welcome SMS to Guests with phone numbers (async, non-blocking)
+    if (userType === 'Guest' && phoneNumber) {
+      EdgeRuntime.waitUntil(
+        sendWelcomeSms(phoneNumber, firstName)
+          .then(result => {
+            if (!result.success) {
+              console.error('[signup] Welcome SMS failed:', result.error);
+            } else {
+              console.log('[signup] ✅ Welcome SMS sent');
+            }
+          })
+          .catch(err => console.error('[signup] Welcome SMS error:', err))
+      );
+    }
+
+    console.log('[signup] Email/SMS triggers dispatched');
 
     // Return session and user data
     return {

@@ -201,54 +201,6 @@ function autoCorrectEmail(email) {
 // ============ COMMUNICATION FUNCTIONS ============
 
 /**
- * Generate a magic login link via Supabase Auth
- * This creates a one-time login URL that allows passwordless authentication
- *
- * @param {string} email - User's email address
- * @returns {Promise<{success: boolean, action_link?: string, error?: string}>}
- */
-async function generateMagicLink(email) {
-  console.log('[AiSignupMarketReport] Generating magic login link for:', email);
-
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://qcfifybkaddcoimjroca.supabase.co';
-  const edgeFunctionUrl = `${supabaseUrl}/functions/v1/auth-user`;
-
-  try {
-    const response = await fetch(edgeFunctionUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        action: 'generate_magic_link',
-        payload: {
-          email: email,
-          redirectTo: 'https://splitlease.com/search' // Redirect to search after login
-        }
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[AiSignupMarketReport] Magic link generation failed:', errorText);
-      return { success: false, error: errorText };
-    }
-
-    const result = await response.json();
-
-    if (result.success && result.data?.action_link) {
-      console.log('[AiSignupMarketReport] ✅ Magic link generated successfully');
-      return { success: true, action_link: result.data.action_link };
-    }
-
-    return { success: false, error: 'No action_link in response' };
-  } catch (error) {
-    console.error('[AiSignupMarketReport] Magic link error:', error.message);
-    return { success: false, error: error.message };
-  }
-}
-
-/**
  * Send welcome email to new user (Step 7 from Bubble workflow)
  * Uses the send-email Edge Function with template placeholders
  *
@@ -505,55 +457,37 @@ function sendWelcomeSms(data) {
  * @param {string} data.password - Generated password (SL{Name}77)
  * @param {string} data.freeformText - Original freeform text
  */
-async function sendWelcomeCommunications(data) {
+function sendWelcomeCommunications(data) {
   console.log('[AiSignupMarketReport] ========== SENDING WELCOME COMMUNICATIONS ==========');
   console.log('[AiSignupMarketReport] Email:', data.email);
   console.log('[AiSignupMarketReport] Phone:', data.phone || 'Not provided');
   console.log('[AiSignupMarketReport] Name:', data.name || 'Not extracted');
 
-  // Step 1: Generate magic link with a timeout to avoid blocking
-  // If it takes too long, we'll use the fallback URL
-  let magicLink = 'https://splitlease.com/login'; // Default fallback
+  // CRITICAL: Send communications IMMEDIATELY with fallback URL
+  // DO NOT await magic link - page reloads at 4 seconds and async awaits won't complete
+  // The fetch({ keepalive: true }) survives page reload, but only if initiated!
+  const fallbackLoginUrl = 'https://splitlease.com/login';
 
-  try {
-    // Race between magic link generation and a 3-second timeout
-    const magicLinkPromise = generateMagicLink(data.email);
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Magic link timeout')), 3000)
-    );
+  console.log('[AiSignupMarketReport] 🚀 Firing communications IMMEDIATELY (no await)');
 
-    const magicLinkResult = await Promise.race([magicLinkPromise, timeoutPromise]);
-    if (magicLinkResult.success && magicLinkResult.action_link) {
-      magicLink = magicLinkResult.action_link;
-      console.log('[AiSignupMarketReport] ✅ Magic link generated');
-    } else {
-      console.warn('[AiSignupMarketReport] ⚠️ Magic link generation failed, using fallback URL');
-    }
-  } catch (error) {
-    console.warn('[AiSignupMarketReport] ⚠️ Magic link error/timeout, using fallback URL:', error.message);
-  }
-
-  // Step 2: Send all communications using fetch with keepalive (survives page reload)
-  // These are initiated immediately and browser keeps them alive during navigation
-
-  // Welcome email to user (Step 7)
+  // Welcome email to user (Step 7) - FIRE IMMEDIATELY
   sendWelcomeEmail({
     email: data.email,
     password: data.password,
-    magicLink: magicLink
+    magicLink: fallbackLoginUrl // Use login URL - user has password
   });
 
-  // Welcome SMS to user (Steps 8/9) - only if phone provided
+  // Welcome SMS to user (Steps 8/9) - only if phone provided - FIRE IMMEDIATELY
   if (data.phone) {
     sendWelcomeSms({
       phone: data.phone,
       email: data.email,
       password: data.password,
-      magicLink: magicLink
+      magicLink: fallbackLoginUrl
     });
   }
 
-  // Internal notification to team (Step 5)
+  // Internal notification to team (Step 5) - FIRE IMMEDIATELY
   sendInternalNotificationEmail({
     email: data.email,
     phone: data.phone,
@@ -791,22 +725,20 @@ async function submitSignup(data) {
       console.warn('[AiSignupMarketReport] ⚠️ No user ID for queuing profile parsing');
     }
 
-    // ========== STEP 4: Send Welcome Communications (ASYNC - Non-blocking) ==========
-    // User doesn't wait for emails/SMS - they happen in background
-    console.log('[AiSignupMarketReport] Step 4: Sending welcome communications (async)...');
+    // ========== STEP 4: Send Welcome Communications (SYNCHRONOUS - Fire Immediately) ==========
+    // CRITICAL: This MUST be synchronous - page reloads at 4 seconds
+    // fetch({ keepalive: true }) only survives if the fetch is INITIATED before reload
+    console.log('[AiSignupMarketReport] Step 4: Sending welcome communications (synchronous)...');
 
-    // Fire-and-forget: send welcome email, SMS, and internal notification
+    // Fire immediately - all fetch calls use keepalive:true to survive page reload
     sendWelcomeCommunications({
       email: data.email,
       phone: data.phone,
       name: extractedName,
       password: generatedPassword,
       freeformText: data.marketResearchText,
-    }).then(() => {
-      console.log('[AiSignupMarketReport] ✅ Welcome communications initiated successfully');
-    }).catch(err => {
-      console.warn('[AiSignupMarketReport] ⚠️ Welcome communications error (non-fatal):', err.message);
     });
+    console.log('[AiSignupMarketReport] ✅ Welcome communications fired (fetch requests initiated)');
 
     return {
       success: true,

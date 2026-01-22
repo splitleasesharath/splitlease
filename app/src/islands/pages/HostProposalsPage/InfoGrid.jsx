@@ -13,6 +13,7 @@
  * Part of the Host Proposals V7 redesign.
  */
 import React from 'react';
+import { getCheckInOutFromDays } from './types.js';
 
 /**
  * Format date for display
@@ -32,30 +33,40 @@ function formatDate(date) {
 
 /**
  * Format schedule range from days selected
+ * Uses getCheckInOutFromDays to properly handle wrap-around schedules
+ * Shows checkout day with "(check-out)" indicator
+ *
  * @param {Array} daysSelected - Array of 0-indexed days
- * @returns {string} Schedule string like "Mon - Fri"
+ * @returns {string} Schedule string like "Thu - Mon (check-out)"
  */
 function formatScheduleRange(daysSelected) {
   if (!Array.isArray(daysSelected) || daysSelected.length === 0) return 'TBD';
 
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const sorted = [...daysSelected].map(d => Number(d)).sort((a, b) => a - b);
+  const { checkInDay, checkOutDay } = getCheckInOutFromDays(daysSelected);
 
-  if (sorted.length === 1) {
-    return dayNames[sorted[0]] || 'TBD';
+  if (!checkInDay) return 'TBD';
+  if (!checkOutDay || checkInDay === checkOutDay) {
+    return checkInDay.slice(0, 3);
   }
 
-  const first = dayNames[sorted[0]] || '';
-  const last = dayNames[sorted[sorted.length - 1]] || '';
-  return `${first} - ${last}`;
+  return `${checkInDay.slice(0, 3)} - ${checkOutDay.slice(0, 3)} (check-out)`;
 }
 
 /**
- * Calculate nights per week from days selected
- * @param {Array} daysSelected - Array of 0-indexed days
+ * Get nights per week count
+ * Uses nights_selected directly if available, otherwise calculates from days
+ * @param {Object} proposal - The proposal object
  * @returns {string} Nights string like "4/week"
  */
-function calculateNights(daysSelected) {
+function getNightsPerWeek(proposal) {
+  // Try to get nights directly from the proposal
+  const nightsSelected = proposal?.nights_selected || proposal?.['Nights Selected (Nights list)'] || [];
+  if (Array.isArray(nightsSelected) && nightsSelected.length > 0) {
+    return `${nightsSelected.length}/week`;
+  }
+
+  // Fall back to calculating from days_selected
+  const daysSelected = proposal?.days_selected || proposal?.Days_Selected || [];
   if (!Array.isArray(daysSelected) || daysSelected.length === 0) return 'TBD';
   // Nights = days - 1 (guest leaves on last day)
   const nights = Math.max(0, daysSelected.length - 1);
@@ -103,7 +114,7 @@ export function InfoGrid({ proposal }) {
       </div>
       <div className="hp7-info-item">
         <div className="hp7-info-label">Nights</div>
-        <div className="hp7-info-value">{calculateNights(daysSelected)}</div>
+        <div className="hp7-info-value">{getNightsPerWeek(proposal)}</div>
       </div>
     </div>
   );
