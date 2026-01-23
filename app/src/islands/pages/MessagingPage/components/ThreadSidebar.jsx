@@ -6,7 +6,7 @@
  * - Full-screen list view on mobile (hidden when conversation is open)
  *
  * Features:
- * - Header with title
+ * - Header with title and action buttons (new message, more options)
  * - Rounded search box with filter icon
  * - Thread list with avatars, badges, and purple pill selection
  */
@@ -18,6 +18,7 @@ export default function ThreadSidebar({
   threads,
   selectedThreadId,
   onThreadSelect,
+  onAction,
   className = ''
 }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -36,9 +37,36 @@ export default function ThreadSidebar({
 
   return (
     <aside className={`thread-sidebar ${className}`.trim()}>
-      {/* Header */}
+      {/* Header with Title and Action Buttons */}
       <div className="sidebar-header">
-        <h2 className="sidebar-header__title">Messages</h2>
+        <h1 className="sidebar-title">Messages</h1>
+        <div className="sidebar-header__actions">
+          {/* New Message Button */}
+          <button
+            className="sidebar-header__btn"
+            onClick={() => onAction?.('new')}
+            aria-label="New message"
+            title="New message"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </button>
+          {/* More Options Button */}
+          <button
+            className="sidebar-header__btn"
+            onClick={() => onAction?.('more')}
+            aria-label="More options"
+            title="More options"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="1" />
+              <circle cx="19" cy="12" r="1" />
+              <circle cx="5" cy="12" r="1" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* Search Bar - Upwork style with rounded input */}

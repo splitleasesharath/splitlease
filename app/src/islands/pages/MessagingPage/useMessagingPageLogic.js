@@ -730,12 +730,13 @@ export function useMessagingPageLogic() {
   }
 
   /**
-   * Handle quick action button clicks from the right panel
+   * Handle action button clicks from sidebar, header, and right panel
    */
   const handlePanelAction = useCallback((actionType) => {
-    console.log('[RightPanel] Action clicked:', actionType);
+    console.log('[MessagingPage] Action clicked:', actionType);
 
     switch (actionType) {
+      // === Proposal Actions (Right Panel) ===
       case 'accept':
         // Open proposal acceptance modal/flow
         handleOpenModal('accept_proposal', {
@@ -752,14 +753,6 @@ export function useMessagingPageLogic() {
         });
         break;
 
-      case 'video':
-        // Open video call scheduling modal
-        handleOpenModal('schedule_video', {
-          threadId: selectedThread?._id,
-          contactName: threadInfo?.contact_name,
-        });
-        break;
-
       case 'decline':
         // Open decline confirmation modal
         handleOpenModal('decline_proposal', {
@@ -768,9 +761,31 @@ export function useMessagingPageLogic() {
         });
         break;
 
+      // === Communication Actions (Thread Header) ===
+      case 'video':
+        // Open video call scheduling modal
+        handleOpenModal('schedule_video', {
+          threadId: selectedThread?._id,
+          contactName: threadInfo?.contact_name,
+        });
+        break;
+
+      case 'phone':
+        // Placeholder: Phone call functionality
+        console.log('[ThreadHeader] Phone call clicked - functionality coming soon');
+        break;
+
+      case 'schedule':
+        // Open meeting scheduling modal
+        handleOpenModal('schedule_meeting', {
+          threadId: selectedThread?._id,
+          contactName: threadInfo?.contact_name,
+        });
+        break;
+
+      // === Navigation Actions ===
       case 'view_profile':
         // Navigate to contact's profile (if we have the ID)
-        // For now, log - implementation depends on routing
         console.log('[RightPanel] View profile clicked');
         break;
 
@@ -781,8 +796,20 @@ export function useMessagingPageLogic() {
         }
         break;
 
+      // === Sidebar Actions ===
+      case 'new':
+        // Placeholder: New message/conversation functionality
+        console.log('[Sidebar] New message clicked - functionality coming soon');
+        break;
+
+      // === Common Actions ===
+      case 'more':
+        // Placeholder: More options menu
+        console.log('[MessagingPage] More options clicked - functionality coming soon');
+        break;
+
       default:
-        console.warn('[RightPanel] Unknown action:', actionType);
+        console.warn('[MessagingPage] Unknown action:', actionType);
     }
   }, [threadInfo, proposalData, listingData, selectedThread, handleOpenModal]);
 

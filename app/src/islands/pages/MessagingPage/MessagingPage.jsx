@@ -326,6 +326,7 @@ export default function MessagingPage() {
                 threads={threads}
                 selectedThreadId={selectedThread?._id}
                 onThreadSelect={handleMobileThreadSelect}
+                onAction={handlePanelAction}
                 className={isMobile && mobileView === 'conversation' ? 'thread-sidebar--hidden' : ''}
               />
 
