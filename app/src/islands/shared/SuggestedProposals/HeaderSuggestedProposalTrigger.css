@@ -19,20 +19,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
+  width: 88px;
   height: 44px;
   padding: 0;
-  margin-right: 12px;
+  margin-right: 8px;
+  overflow: visible;
 
-  /* Visual */
-  border-radius: 50%;
-  background: linear-gradient(135deg, rgba(255, 193, 7, 0.25) 0%, rgba(255, 152, 0, 0.2) 100%);
-  border: 2px solid rgba(255, 193, 7, 0.7);
+  /* Visual - no circle, transparent background */
+  border-radius: 0;
+  background: transparent;
+  border: none;
   cursor: pointer;
 
   /* Animation */
   transition: all 0.2s ease;
-  animation: header-sp-glow 2s ease-in-out infinite;
 }
 
 /* Glowing pulse animation on the button */
@@ -50,39 +50,29 @@
 }
 
 .header-sp-trigger:hover {
-  background: linear-gradient(135deg, rgba(255, 193, 7, 0.4) 0%, rgba(255, 152, 0, 0.3) 100%);
-  border-color: rgba(255, 193, 7, 1);
-  transform: scale(1.15) !important;
-  animation: none;
-  box-shadow: 0 0 25px rgba(255, 193, 7, 0.8), 0 0 50px rgba(255, 193, 7, 0.5);
+  transform: scale(1.1);
 }
 
 .header-sp-trigger:active {
-  transform: scale(0.95) !important;
+  transform: scale(0.95);
 }
 
 .header-sp-trigger--active {
-  background: linear-gradient(135deg, rgba(255, 193, 7, 0.45) 0%, rgba(255, 152, 0, 0.35) 100%);
-  border-color: rgba(255, 193, 7, 1);
-  animation: none;
-  box-shadow: 0 0 20px rgba(255, 193, 7, 0.7);
+  /* No special styling when active - let Lottie animation speak for itself */
 }
 
-/* Lightbulb emoji icon */
+/* Lottie animation icon */
 .header-sp-trigger__icon {
-  font-size: 22px;
-  line-height: 1;
-  filter: drop-shadow(0 0 4px rgba(255, 193, 7, 0.8));
-  /* Ensure emoji is visible */
-  display: inline-block;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Count badge */
 .header-sp-trigger__badge {
   position: absolute;
-  top: -6px;
-  right: -6px;
+  top: -14px;
+  right: 8px;
   min-width: 22px;
   height: 22px;
   background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
@@ -113,20 +103,16 @@
 /* Mobile adjustments */
 @media (max-width: 768px) {
   .header-sp-trigger {
-    width: 40px;
-    height: 40px;
-    margin-right: 8px;
-  }
-
-  .header-sp-trigger__icon {
-    font-size: 20px;
+    width: 72px;
+    height: 36px;
+    margin-right: 4px;
   }
 
   .header-sp-trigger__badge {
     min-width: 20px;
     height: 20px;
     font-size: 11px;
-    top: -5px;
-    right: -5px;
+    top: -12px;
+    right: 6px;
   }
 }

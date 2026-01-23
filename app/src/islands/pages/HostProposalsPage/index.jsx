@@ -116,8 +116,8 @@ import VirtualMeetingManager from '../../shared/VirtualMeetingManager/VirtualMee
 
 function LoadingState() {
   return (
-    <div className="loading-state">
-      <div className="spinner"></div>
+    <div className="loading-state" role="status" aria-live="polite">
+      <div className="spinner" aria-hidden="true"></div>
       <p>Loading your proposals...</p>
     </div>
   );
@@ -129,8 +129,8 @@ function LoadingState() {
 
 function ErrorState({ error, onRetry }) {
   return (
-    <div className="hp7-empty-state">
-      <div className="hp7-empty-state-icon" style={{ color: '#dc2626' }}>!</div>
+    <div className="hp7-empty-state" role="alert">
+      <div className="hp7-empty-state-icon" style={{ color: '#dc2626' }} aria-hidden="true">!</div>
       <h2 className="hp7-empty-state-title">Something went wrong</h2>
       <p className="hp7-empty-state-text">{error}</p>
       <button className="hp7-btn hp7-btn-primary" onClick={onRetry}>
@@ -147,7 +147,7 @@ function ErrorState({ error, onRetry }) {
 function EmptyStateV7({ listingName }) {
   return (
     <div className="hp7-empty-state">
-      <div className="hp7-empty-state-icon">
+      <div className="hp7-empty-state-icon" aria-hidden="true">
         <Inbox size={48} strokeWidth={1.5} />
       </div>
       <h2 className="hp7-empty-state-title">No proposals yet</h2>
@@ -355,22 +355,27 @@ export default function HostProposalsPage() {
     <>
       <Header />
 
-      <main className="main-content">
+      <main className="main-content" role="main" id="main-content">
+        <h1 className="sr-only">Host Proposals Dashboard</h1>
         <div className="hp7-page">
           {/* Page Header */}
           <div className="hp7-page-header">
             <div className="hp7-page-header-top">
-              <h1 className="hp7-page-title">Proposals</h1>
+              <h2 className="hp7-page-title" aria-label={`Proposals${selectedListingName ? ` for ${selectedListingName}` : ''}`}>
+                Proposals
+              </h2>
             </div>
 
             {/* Listing Pill Selector */}
             {!isLoading && !error && listings && listings.length > 0 && (
-              <ListingPillSelector
-                listings={listings}
-                selectedListingId={selectedListingId}
-                onListingChange={handleListingChangeV7}
-                proposalCounts={proposalCountsByListing}
-              />
+              <nav aria-label="Listing filter">
+                <ListingPillSelector
+                  listings={listings}
+                  selectedListingId={selectedListingId}
+                  onListingChange={handleListingChangeV7}
+                  proposalCounts={proposalCountsByListing}
+                />
+              </nav>
             )}
           </div>
 
@@ -386,7 +391,7 @@ export default function HostProposalsPage() {
           {!isLoading && !error && (
             <>
               {hasProposals ? (
-                <>
+                <div className="hp7-sections">
                   {/* Action Needed Section */}
                   <ProposalListSection
                     sectionKey="actionNeeded"
@@ -413,7 +418,7 @@ export default function HostProposalsPage() {
                     onToggleExpand={handleToggleExpand}
                     handlers={cardHandlers}
                   />
-                </>
+                </div>
               ) : (
                 <EmptyStateV7 listingName={selectedListingName} />
               )}

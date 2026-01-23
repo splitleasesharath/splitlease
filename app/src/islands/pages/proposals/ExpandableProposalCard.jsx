@@ -295,22 +295,36 @@ function getStageColor(stageIndex, status, usualOrder, isTerminal, proposal = {}
  */
 function InlineProgressTracker({ status, usualOrder = 0, isTerminal = false, proposal = {} }) {
   const stages = getProgressStageLabels();
+  // Calculate current step for screen readers (1-indexed)
+  const currentStep = Math.min(usualOrder + 1, stages.length);
 
   return (
-    <div className="epc-progress-row">
+    <div
+      className="epc-progress-row"
+      role="progressbar"
+      aria-label="Proposal progress"
+      aria-valuenow={currentStep}
+      aria-valuemin={1}
+      aria-valuemax={stages.length}
+      aria-valuetext={`Step ${currentStep} of ${stages.length}: ${stages[currentStep - 1] || stages[0]}`}
+    >
       {stages.map((label, index) => {
         const stageColor = getStageColor(index, status, usualOrder, isTerminal, proposal);
         const isLast = index === stages.length - 1;
+        const isCompleted = index < usualOrder;
+        const isCurrent = index === usualOrder;
 
         return (
           <div key={index} className="epc-progress-step">
             <div
               className="epc-progress-dot"
               style={{ backgroundColor: stageColor }}
+              aria-hidden="true"
             />
             <span
               className="epc-progress-label"
               style={{ color: stageColor !== PROGRESS_COLORS.gray ? stageColor : PROGRESS_COLORS.labelGray }}
+              aria-label={`${label}${isCompleted ? ', completed' : isCurrent ? ', current step' : ''}`}
             >
               {label}
             </span>
@@ -318,6 +332,7 @@ function InlineProgressTracker({ status, usualOrder = 0, isTerminal = false, pro
               <div
                 className="epc-progress-line"
                 style={{ backgroundColor: stageColor === PROGRESS_COLORS.purple ? PROGRESS_COLORS.purple : PROGRESS_COLORS.gray }}
+                aria-hidden="true"
               />
             )}
           </div>
@@ -373,9 +388,16 @@ function StatusBanner({ status, cancelReason, isCounteroffer }) {
     strongText = getStatusConfig(normalizedStatus)?.label || normalizedStatus;
   }
 
+  // Use role="alert" for attention-required statuses, role="status" for informational
+  const isUrgent = variant === 'attention' || variant === 'cancelled';
+
   return (
-    <div className={`epc-status-banner ${variant}`}>
-      <span className="epc-status-icon">{icon}</span>
+    <div
+      className={`epc-status-banner ${variant}`}
+      role={isUrgent ? 'alert' : 'status'}
+      aria-live={isUrgent ? 'assertive' : 'polite'}
+    >
+      <span className="epc-status-icon" aria-hidden="true">{icon}</span>
       <div className="epc-status-text">
         <strong>{strongText}</strong>
         {detailText && ` — ${detailText}`}
@@ -570,20 +592,34 @@ export default function ExpandableProposalCard({
   const metaText = buildMetaText(daysSelected, reservationWeeks);
   const currentUser = { _id: currentUserId, typeUserSignup: 'guest' };
 
+  // Generate unique ID for ARIA relationships
+  const contentId = `proposal-content-${proposal._id}`;
+
   return (
-    <div className={`epc-card ${isExpanded ? 'expanded' : ''} ${isSuggested ? 'suggested' : ''}`}>
-      {/* Collapsed Header Row */}
+    <div
+      className={`epc-card ${isExpanded ? 'expanded' : ''} ${isSuggested ? 'suggested' : ''}`}
+      role="listitem"
+    >
+      {/* Collapsed Header Row - Accessible Accordion Trigger */}
       <div
         className="epc-header"
         onClick={onToggle}
         role="button"
         tabIndex={0}
-        onKeyDown={(e) => e.key === 'Enter' && onToggle()}
+        aria-expanded={isExpanded}
+        aria-controls={contentId}
+        aria-label={`${listingName}, ${shortStatusLabel}. ${isExpanded ? 'Collapse' : 'Expand'} to ${isExpanded ? 'hide' : 'view'} details`}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onToggle();
+          }
+        }}
       >
         {photoUrl ? (
-          <img src={photoUrl} alt="" className="epc-thumb" />
+          <img src={photoUrl} alt="" className="epc-thumb" aria-hidden="true" />
         ) : (
-          <div className="epc-thumb epc-thumb--placeholder" />
+          <div className="epc-thumb epc-thumb--placeholder" aria-hidden="true" />
         )}
 
         <div className="epc-info">
@@ -591,7 +627,7 @@ export default function ExpandableProposalCard({
           <div className="epc-meta">{metaText}</div>
         </div>
 
-        <div className={`epc-status ${statusBadgeClass}`}>
+        <div className={`epc-status ${statusBadgeClass}`} aria-label={`Status: ${shortStatusLabel}`}>
           {shortStatusLabel}
         </div>
 
@@ -600,8 +636,12 @@ export default function ExpandableProposalCard({
 
       {/* Expandable Content Panel */}
       <div
+        id={contentId}
         className="epc-content-wrapper"
         style={{ height: contentHeight }}
+        role="region"
+        aria-labelledby={`proposal-header-${proposal._id}`}
+        hidden={!isExpanded && contentHeight === 0}
       >
         <div ref={contentRef} className="epc-content">
           {/* Match Reason Card for SL-suggested proposals */}
@@ -695,10 +735,20 @@ export default function ExpandableProposalCard({
 
           {/* Days Row */}
           <div className="epc-days-row">
-            <span className="epc-days-label">Schedule</span>
-            <div className="epc-days-pills">
+            <span className="epc-days-label" id={`days-label-${proposal._id}`}>Schedule</span>
+            <div
+              className="epc-days-pills"
+              role="group"
+              aria-labelledby={`days-label-${proposal._id}`}
+              aria-label="Selected days of the week"
+            >
               {allDays.map((day) => (
-                <div key={day.index} className={`epc-day-pill ${day.selected ? 'selected' : ''}`}>
+                <div
+                  key={day.index}
+                  className={`epc-day-pill ${day.selected ? 'selected' : ''}`}
+                  aria-label={`${DAY_NAMES[day.index]}${day.selected ? ', selected' : ''}`}
+                  aria-pressed={day.selected}
+                >
                   {day.letter}
                 </div>
               ))}

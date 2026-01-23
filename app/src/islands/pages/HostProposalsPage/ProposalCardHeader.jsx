@@ -107,8 +107,9 @@ function formatTotalEarnings(proposal) {
  * @param {Object} props.proposal - The proposal object
  * @param {boolean} props.isExpanded - Whether the card is expanded
  * @param {Function} props.onToggle - Callback to toggle expansion
+ * @param {string} props.contentId - ID of the expandable content for aria-controls
  */
-export function ProposalCardHeader({ proposal, isExpanded, onToggle }) {
+export function ProposalCardHeader({ proposal, isExpanded, onToggle, contentId }) {
   const guest = proposal?.guest || proposal?.user || {};
   const guestAvatar = getGuestAvatar(guest);
   const guestName = getGuestName(guest);
@@ -138,11 +139,14 @@ export function ProposalCardHeader({ proposal, isExpanded, onToggle }) {
         }
       }}
       aria-expanded={isExpanded}
+      aria-controls={contentId}
+      aria-label={`${guestName}, ${statusConfig.text}. ${isExpanded ? 'Collapse' : 'Expand'} to ${isExpanded ? 'hide' : 'view'} details`}
     >
       <img
         src={guestAvatar}
         className="hp7-guest-avatar"
-        alt={`${guestName}'s avatar`}
+        alt=""
+        aria-hidden="true"
         loading="lazy"
       />
 
@@ -154,7 +158,7 @@ export function ProposalCardHeader({ proposal, isExpanded, onToggle }) {
           )}
           {isVerified && (
             <span className="hp7-verified-badge">
-              <CheckCircle size={10} />
+              <CheckCircle size={10} aria-hidden="true" />
               Verified
             </span>
           )}
@@ -162,11 +166,11 @@ export function ProposalCardHeader({ proposal, isExpanded, onToggle }) {
         <div className="hp7-proposal-meta">{metaLine}</div>
       </div>
 
-      <div className={`hp7-proposal-status ${statusConfig.variant}`}>
+      <div className={`hp7-proposal-status ${statusConfig.variant}`} aria-label={`Status: ${statusConfig.text}`}>
         {statusConfig.text}
       </div>
 
-      <div className="hp7-expand-icon">
+      <div className="hp7-expand-icon" aria-hidden="true">
         <ChevronDown size={16} />
       </div>
     </div>

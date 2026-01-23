@@ -7,39 +7,72 @@
    - Section grouping (Action Needed, In Progress, Closed)
    - Status-based card variants
    - Smooth expand/collapse animations
+
+   V7.1 Accessibility Update (WCAG AAA):
+   - Elderly-friendly base font 17px
+   - 48px minimum touch targets
+   - WCAG AAA high contrast text colors
+   - Clear focus states for keyboard navigation
+   - Reduced motion support
 */
 
 /* ========================================
    V7 DESIGN TOKENS (extends variables.css)
    ======================================== */
 :root {
-  /* Status Colors */
+  /* Status Colors - High Contrast */
   --hp7-purple-dark: #31135D;
   --hp7-purple-primary: #6D31C2;
   --hp7-purple-light: #8C68EE;
   --hp7-purple-bg: #f8f5ff;
   --hp7-purple-border: #E9E0F7;
 
-  --hp7-green-bg: #ecfdf5;
-  --hp7-green-text: #059669;
+  --hp7-green-bg: #d1fae5;
+  --hp7-green-text: #047857;           /* Darker green for contrast */
   --hp7-green-border: #a7f3d0;
 
-  --hp7-red-bg: #fef2f2;
-  --hp7-red-text: #dc2626;
+  --hp7-red-bg: #fee2e2;
+  --hp7-red-text: #b91c1c;             /* Darker red for contrast */
   --hp7-red-border: #fca5a5;
 
-  --hp7-yellow-bg: #fefce8;
-  --hp7-yellow-text: #ca8a04;
+  --hp7-yellow-bg: #fef3c7;
+  --hp7-yellow-text: #b45309;          /* Darker orange for contrast */
   --hp7-yellow-border: #fde047;
 
-  /* Layout */
-  --hp7-text: #1a1a1a;
-  --hp7-text-secondary: #666;
-  --hp7-text-muted: #999;
+  /* Text Colors - WCAG AAA High Contrast */
+  --hp7-text: #111111;                 /* Near black for maximum contrast */
+  --hp7-text-secondary: #374151;       /* Dark gray, 4.5:1+ contrast */
+  --hp7-text-muted: #4b5563;           /* Medium gray, meets AA */
   --hp7-border: #e5e5e5;
   --hp7-border-light: #f0f0f0;
   --hp7-bg: #fafafa;
   --hp7-white: #fff;
+
+  /* Typography - ELDERLY-FRIENDLY SIZES */
+  --hp7-font-size-sm: 15px;            /* Minimum readable size */
+  --hp7-font-size-base: 17px;          /* Comfortable reading for elderly */
+  --hp7-font-size-md: 18px;
+  --hp7-font-size-lg: 22px;
+  --hp7-font-size-xl: 28px;
+  --hp7-font-size-2xl: 36px;
+  --hp7-font-size-label: 14px;         /* Labels never below 14px */
+
+  /* Line Heights - Relaxed for readability */
+  --hp7-line-height-tight: 1.3;
+  --hp7-line-height-normal: 1.6;
+  --hp7-line-height-relaxed: 1.8;
+
+  /* Touch Targets - WCAG 2.2 Enhanced */
+  --hp7-min-touch-target: 48px;
+
+  /* Focus States - Visible 3px outline */
+  --hp7-focus-ring: 0 0 0 4px rgba(109, 49, 194, 0.5);
+  --hp7-focus-outline: 3px solid var(--hp7-purple-primary);
+  --hp7-focus-outline-offset: 3px;
+
+  /* Transitions */
+  --hp7-transition-fast: 150ms ease;
+  --hp7-transition-normal: 200ms ease;
 }
 
 /* ========================================
@@ -64,7 +97,7 @@
 }
 
 .hp7-page-title {
-  font-size: 22px;
+  font-size: var(--hp7-font-size-xl);
   font-weight: 700;
   color: var(--hp7-purple-dark);
 }
@@ -107,7 +140,7 @@
 }
 
 .hp7-listing-pill-name {
-  font-size: 12px;
+  font-size: var(--hp7-font-size-label);
   font-weight: 500;
   color: var(--hp7-text);
 }
@@ -139,7 +172,7 @@
   align-items: center;
   gap: 8px;
   margin-bottom: 12px;
-  font-size: 12px;
+  font-size: var(--hp7-font-size-label);
   font-weight: 600;
   color: var(--hp7-text-muted);
   text-transform: uppercase;
@@ -237,8 +270,8 @@
 
 /* Guest Avatar */
 .hp7-guest-avatar {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
@@ -256,7 +289,7 @@
 
 .hp7-proposal-name {
   font-weight: 600;
-  font-size: 14px;
+  font-size: var(--hp7-font-size-base);
   color: var(--hp7-text);
   display: flex;
   align-items: center;
@@ -265,17 +298,17 @@
 }
 
 .hp7-proposal-meta {
-  font-size: 13px;
+  font-size: var(--hp7-font-size-sm);
   color: var(--hp7-text-secondary);
   margin-top: 1px;
 }
 
 /* Status Tags */
 .hp7-proposal-status {
-  font-size: 11px;
+  font-size: var(--hp7-font-size-label);
   font-weight: 500;
   color: var(--hp7-text-muted);
-  padding: 4px 10px;
+  padding: 6px 12px;
   background: var(--hp7-border-light);
   border-radius: 6px;
   flex-shrink: 0;
@@ -800,17 +833,18 @@
 }
 
 .hp7-btn {
-  padding: 8px 14px;
-  font-size: 12px;
+  padding: 12px 18px;
+  min-height: var(--hp7-min-touch-target);
+  font-size: var(--hp7-font-size-sm);
   font-weight: 600;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--hp7-transition-fast);
   text-decoration: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .hp7-btn svg {
@@ -889,16 +923,17 @@
 }
 
 .hp7-empty-state-title {
-  font-size: 16px;
+  font-size: var(--hp7-font-size-lg);
   font-weight: 600;
   color: var(--hp7-text);
-  margin-bottom: 4px;
+  margin-bottom: 8px;
 }
 
 .hp7-empty-state-text {
-  font-size: 13px;
+  font-size: var(--hp7-font-size-base);
   color: var(--hp7-text-secondary);
   margin-bottom: 16px;
+  line-height: var(--hp7-line-height-relaxed);
 }
 
 /* ========================================
@@ -985,28 +1020,148 @@
 
 @media (max-width: 640px) {
   .hp7-page-title {
-    font-size: 20px;
+    font-size: var(--hp7-font-size-lg);
   }
 
   .hp7-card-header {
     padding: 12px 14px;
     gap: 10px;
+    min-height: var(--hp7-min-touch-target);
   }
 
   .hp7-guest-avatar {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
   }
 
   .hp7-proposal-name {
-    font-size: 13px;
+    font-size: var(--hp7-font-size-sm);
   }
 
   .hp7-proposal-meta {
-    font-size: 12px;
+    font-size: var(--hp7-font-size-label);
   }
 
   .hp7-pricing-total {
-    font-size: 18px;
+    font-size: var(--hp7-font-size-md);
+  }
+}
+
+/* ========================================
+   ACCESSIBILITY UTILITIES
+   ======================================== */
+
+/* Screen Reader Only - Visually hidden but accessible */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Skip Link - Keyboard navigation bypass */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 16px;
+  padding: 16px 24px;
+  background: var(--hp7-purple-primary);
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: var(--hp7-font-size-base);
+  border-radius: 12px;
+  z-index: 1000;
+  transition: top var(--hp7-transition-fast);
+}
+
+.skip-link:focus {
+  top: 16px;
+  outline: none;
+  box-shadow: var(--hp7-focus-ring);
+}
+
+/* ========================================
+   FOCUS STATES - Visible keyboard navigation
+   ======================================== */
+
+/* Global focus-visible styles for all interactive elements */
+.hp7-card-header:focus-visible,
+.hp7-btn:focus-visible,
+.hp7-listing-pill:focus-visible,
+.hp7-link-item:focus-visible,
+[role="button"]:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: var(--hp7-focus-outline);
+  outline-offset: var(--hp7-focus-outline-offset);
+}
+
+/* Remove default outline when using focus-visible */
+.hp7-card-header:focus:not(:focus-visible),
+.hp7-btn:focus:not(:focus-visible),
+button:focus:not(:focus-visible),
+a:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ========================================
+   REDUCED MOTION - Respect user preferences
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+
+  .hp7-card-body {
+    transition: none;
+  }
+
+  .hp7-expand-icon {
+    transition: none;
+  }
+}
+
+/* ========================================
+   HIGH CONTRAST MODE - Enhanced visibility
+   ======================================== */
+
+@media (prefers-contrast: high) {
+  :root {
+    --hp7-border: #000;
+    --hp7-text-muted: #374151;
+  }
+
+  .hp7-proposal-card {
+    border-width: 3px;
+  }
+
+  .hp7-btn {
+    border-width: 3px;
+  }
+
+  .hp7-listing-pill {
+    border-width: 2px;
+  }
+
+  .hp7-card-header:focus-visible,
+  .hp7-btn:focus-visible,
+  button:focus-visible,
+  a:focus-visible {
+    outline-width: 4px;
   }
 }

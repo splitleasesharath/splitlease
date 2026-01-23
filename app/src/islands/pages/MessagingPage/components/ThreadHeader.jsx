@@ -34,11 +34,11 @@ export default function ThreadHeader({
 
       {/* Avatar */}
       <img
-        src={info.contact_avatar || '/assets/images/default-avatar.svg'}
+        src={info.contact_avatar || '/assets/images/default-avatar.jpg'}
         alt={info.contact_name || 'Contact'}
         className="thread-header__avatar"
         onError={(e) => {
-          e.target.src = '/assets/images/default-avatar.svg';
+          e.target.src = '/assets/images/default-avatar.jpg';
         }}
       />
 

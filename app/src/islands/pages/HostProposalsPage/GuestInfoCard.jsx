@@ -13,20 +13,6 @@ import React from 'react';
 import { CheckCircle, Briefcase, Star, Calendar } from 'lucide-react';
 
 /**
- * Get guest avatar URL with fallback
- * @param {Object} guest - The guest object
- * @returns {string} The avatar URL
- */
-function getGuestAvatar(guest) {
-  if (guest?.profilePhoto) return guest.profilePhoto;
-  if (guest?.avatar) return guest.avatar;
-  if (guest?.photo) return guest.photo;
-  if (guest?.picture_url) return guest.picture_url;
-  const name = guest?.name || guest?.full_name || 'Guest';
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=E9E0F7&color=6D31C2&rounded=true&size=112`;
-}
-
-/**
  * Get guest display name
  * @param {Object} guest - The guest object
  * @returns {string} The display name
@@ -65,7 +51,6 @@ function getMemberSinceYear(guest) {
 export function GuestInfoCard({ guest }) {
   if (!guest) return null;
 
-  const avatar = getGuestAvatar(guest);
   const name = getGuestName(guest);
   const bio = getGuestBio(guest);
 
@@ -76,12 +61,6 @@ export function GuestInfoCard({ guest }) {
 
   return (
     <div className="hp7-guest-info-card">
-      <img
-        src={avatar}
-        className="hp7-guest-avatar-large"
-        alt={`${name}'s profile`}
-        loading="lazy"
-      />
       <div className="hp7-guest-details">
         <div className="hp7-guest-name-large">{name}</div>
         <div className="hp7-guest-bio">{bio}</div>

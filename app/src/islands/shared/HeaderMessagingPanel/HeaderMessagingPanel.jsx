@@ -165,11 +165,11 @@ export default function HeaderMessagingPanel({
             </button>
             <div className="header-messaging-panel__contact">
               <img
-                src={selectedThread.contact_avatar || '/assets/images/default-avatar.svg'}
+                src={selectedThread.contact_avatar || '/assets/images/default-avatar.jpg'}
                 alt=""
                 className="header-messaging-panel__contact-avatar"
                 onError={(e) => {
-                  e.target.src = '/assets/images/default-avatar.svg';
+                  e.target.src = '/assets/images/default-avatar.jpg';
                 }}
               />
               <div className="header-messaging-panel__contact-info">
