@@ -482,32 +482,29 @@
   background: rgba(255, 255, 255, 0.35);
 }
 
-/* Add button - dashed circle with "+" */
+/* Add button - solid circle with "+" (matches empty state icon) */
 .hep-rules-add-btn {
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
-  min-height: 32px;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px dashed var(--color-gray-300);
-  background: var(--color-white);
+  border: none;
+  background: var(--color-gray-100);
   border-radius: 50%;
   color: var(--color-gray-500);
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 400;
   cursor: pointer;
   transition: all var(--transition-fast);
-  box-sizing: border-box;
-  aspect-ratio: 1 / 1;
 }
 
 .hep-rules-add-btn:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
   background: var(--color-primary-light);
+  color: var(--color-primary);
 }
 
 /* Empty state button - shows when no rules selected */
