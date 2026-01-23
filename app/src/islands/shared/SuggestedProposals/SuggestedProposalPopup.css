@@ -884,11 +884,24 @@
     padding-bottom: var(--sp-spacing-xl);
   }
 
-  /* Smaller header icons on mobile */
-  .sp-popup-close-btn svg,
+  /* Navigation icons slightly smaller on mobile */
   .sp-popup-nav-btn svg {
     width: 20px;
     height: 20px;
+  }
+
+  /* Close button - larger and more prominent on mobile */
+  .sp-popup-close-btn {
+    width: 40px;
+    height: 40px;
+    background: rgba(0, 0, 0, 0.08);
+    border-radius: 50%;
+  }
+
+  .sp-popup-close-btn svg {
+    width: 28px;
+    height: 28px;
+    stroke-width: 2.5;
   }
 }
 
