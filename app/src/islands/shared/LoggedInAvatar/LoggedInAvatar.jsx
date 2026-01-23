@@ -226,21 +226,8 @@ export default function LoggedInAvatar({
       });
     }
 
-    // 3. Proposals Suggested - GUEST only
-    //    Links to guest-proposals page with the most recent suggestion pre-selected
-    if (menuVisibility.myProposalsSuggested) {
-      // Build path with proposal ID query param if available for deep-linking
-      const suggestedPath = effectiveLastSuggestedProposalId
-        ? `/guest-proposals?proposal=${effectiveLastSuggestedProposalId}`
-        : '/guest-proposals';
-
-      items.push({
-        id: 'proposals-suggested',
-        label: 'Proposals Suggested',
-        lottieUrl: '/assets/lotties/proposals-suggested.json',
-        path: suggestedPath,
-      });
-    }
+    // 3. Proposals Suggested - REMOVED
+    //    Now shown via HeaderSuggestedProposalTrigger in mobile header instead of dropdown menu
 
     // 4. My Listings - HOST and TRIAL_HOST only
     if (menuVisibility.myListings) {
