@@ -63,13 +63,49 @@ app/src/
 └── islands/pages/ListingsOverviewPage/
     ├── index.jsx                    # Hollow component (UI only)
     ├── useListingsOverviewPageLogic.js  # All business logic
+    ├── api.js                       # Supabase queries with reference table JOINs
     ├── components/
-    │   ├── ListingsHeader.jsx       # Action buttons
-    │   ├── ListingsFilterPanel.jsx  # Filter controls
+    │   ├── ListingsHeader.jsx       # Action buttons + bulk price controls
+    │   ├── ListingsFilterPanel.jsx  # Filter controls (borough/hood from reference tables)
     │   ├── ListingsTable.jsx        # Table wrapper
-    │   └── ListingRow.jsx           # Individual row
-    ├── constants.js                 # Status enums, error codes
+    │   ├── ListingRow.jsx           # Individual row with inline toggles
+    │   └── ErrorManagementModal.jsx # Preset errors + custom text input
+    ├── constants.js                 # Status enums, preset error codes, price multipliers
     └── ListingsOverviewPage.css     # Merged styles
+```
+
+### Constants File Preview
+
+```javascript
+// constants.js - Error codes and pricing configuration
+
+export const PRESET_ERROR_CODES = [
+  { code: 'CONTACT_IN_DESC', label: 'Sharing Contact Information in Description' },
+  { code: 'MISSING_PHOTOS', label: 'Insufficient Photos (< 5)' },
+  { code: 'PRICING_ISSUE', label: 'Pricing Below Market Rate' },
+  { code: 'INCOMPLETE_PROFILE', label: 'Host Profile Incomplete' },
+  { code: 'ADDRESS_MISMATCH', label: 'Address Verification Failed' },
+  { code: 'DUPLICATE_LISTING', label: 'Possible Duplicate Listing' },
+];
+
+export const PRICE_MULTIPLIERS = {
+  DEFAULT: 1.75,  // Quick button default
+  MIN: 1.0,
+  MAX: 3.0,
+};
+
+export const LISTING_STATUS = {
+  COMPLETED: 'Completed',
+  IN_PROGRESS: 'InProgress',
+  DRAFT: 'Draft',
+  ARCHIVED: 'Archived',
+};
+
+export const AVAILABILITY_STATUS = {
+  AVAILABLE: 'Available',
+  UNAVAILABLE: 'Unavailable',
+  PENDING: 'Pending',
+};
 ```
 
 ### Route Configuration Addition
@@ -103,10 +139,10 @@ app/src/
 | `host.id` | `Host User` | Bubble ID reference |
 | `host.email` | `Host email` | Direct map |
 | `host.name` | `host name` | Direct map |
-| `location.borough.id` | `Location - Borough` | **Bubble ID** - needs lookup |
-| `location.borough.display` | N/A | **Must fetch from Bubble** |
-| `location.neighborhood.id` | `Location - Hood` | **Bubble ID** - needs lookup |
-| `location.neighborhood.display` | N/A | **Must fetch from Bubble** |
+| `location.borough.id` | `Location - Borough` | **Bubble ID** - JOIN to lookup |
+| `location.borough.display` | `reference_table.zat_geo_borough_toplevel."Display Borough"` | **JOIN** |
+| `location.neighborhood.id` | `Location - Hood` | **Bubble ID** - JOIN to lookup |
+| `location.neighborhood.display` | `reference_table.zat_geo_hood_mediumlevel."Display"` | **JOIN** |
 | `pricing.nightly` | `Nightly Host Rate for 1 night` | Direct map |
 | `pricing.override` | `Price Override` | Direct map |
 | `pricing.calculated3Night` | `Nightly Host Rate for 3 nights` | Direct map |
@@ -119,28 +155,42 @@ app/src/
 | `amenities` | `Features - Amenities In-Unit` | JSONB array |
 | `errors[]` | `Errors` | JSONB array (already exists!) |
 
-### Borough/Neighborhood Resolution Problem
+### Borough/Neighborhood Resolution - SOLVED ✅
 
-**Issue**: The source app has hardcoded borough/neighborhood data. Split Lease stores **Bubble.io IDs** in `Location - Borough` and `Location - Hood` columns.
+**Discovery**: The Supabase database already contains complete geographic reference tables!
 
-**Solution Options**:
+| Reference Table | Records | Key Columns |
+|-----------------|---------|-------------|
+| `reference_table.zat_geo_borough_toplevel` | 8 | `_id`, `Display Borough` |
+| `reference_table.zat_geo_hood_mediumlevel` | 293 | `_id`, `Display`, `Geo-Borough` |
+| `reference_table.zat_location` | 8 | `_id`, `cityName`, `Short Name` |
 
-1. **Option A: Create lookup tables in Supabase** (Recommended)
-   - Create `borough` and `neighborhood` tables with ID→Name mappings
-   - One-time data migration from Bubble
-   - Fast local lookups, no external API calls
+**Borough Data Available**:
+| Bubble ID | Display Name |
+|-----------|--------------|
+| `1607041299687x679479834266385900` | Manhattan |
+| `1607041299637x913970439175620100` | Brooklyn |
+| `1607041299828x406969561802059650` | Queens |
+| `1607041299715x741251947580746200` | Bronx |
+| `1734531600000x514268093014903501` | Staten Island |
+| `1686599616073x348655546878883200` | Hudson County NJ |
+| `1686596333255x514268093014903500` | Bergen County NJ |
+| `1686674905048x436838997624262400` | Essex County NJ |
 
-2. **Option B: Fetch from Bubble on demand**
-   - Use bubble-proxy Edge Function to resolve names
-   - Slower, adds external dependency
-   - No schema changes needed
+**Solution**: JOIN directly to reference tables - **NO NEW MIGRATIONS NEEDED**
 
-3. **Option C: Denormalize into listing table**
-   - Add `borough_name` and `neighborhood_name` columns
-   - Update via trigger on write
-   - Redundant data but simplest queries
-
-**Recommendation**: Option A - Create lookup tables
+```sql
+SELECT
+  l."_id",
+  l."Name",
+  b."Display Borough" AS borough_name,
+  h."Display" AS neighborhood_name
+FROM listing l
+LEFT JOIN reference_table.zat_geo_borough_toplevel b
+  ON l."Location - Borough" = b._id
+LEFT JOIN reference_table.zat_geo_hood_mediumlevel h
+  ON l."Location - Hood" = h._id
+```
 
 ### Status Computation Logic
 
@@ -173,13 +223,13 @@ function computeAvailability(listing) {
 
 | Source Method | Edge Function | Action | Notes |
 |---------------|---------------|--------|-------|
-| `getListings(filters, page)` | Direct Supabase | N/A | Query `listing` table |
-| `getBoroughs()` | Direct Supabase | N/A | Query `borough` table (new) |
-| `getNeighborhoods()` | Direct Supabase | N/A | Query `neighborhood` table (new) |
-| `getErrorOptions()` | Constants file | N/A | Static list |
+| `getListings(filters, page)` | Direct Supabase | N/A | Query `listing` with JOINs to reference tables |
+| `getBoroughs()` | Direct Supabase | N/A | Query `reference_table.zat_geo_borough_toplevel` |
+| `getNeighborhoods(boroughId)` | Direct Supabase | N/A | Query `reference_table.zat_geo_hood_mediumlevel` filtered by `Geo-Borough` |
+| `getErrorOptions()` | Constants + Manual | N/A | Preset list + custom text input |
 | `updateListing(id, updates)` | `listing` | `update` | **Use changed-fields-only pattern** |
 | `deleteListing(id)` | `listing` | `delete` | Soft delete (set Deleted=true) |
-| `incrementPrices(ids, multiplier)` | New function | `bulk-price` | Batch update |
+| `incrementPrices(ids, multiplier)` | New function | `bulk-price` | Default 1.75× OR custom multiplier |
 | `addError(id, errorCode)` | Direct Supabase | N/A | JSONB array append |
 | `clearErrors(id)` | Direct Supabase | N/A | Set `Errors` to `[]` |
 
@@ -310,9 +360,9 @@ export const listingsApi = {
 
 ### Phase 1: Infrastructure Setup (Prerequisites)
 
-- [ ] **1.1** Create `borough` lookup table in Supabase
-- [ ] **1.2** Create `neighborhood` lookup table in Supabase
-- [ ] **1.3** Populate lookup tables from Bubble.io data
+- [x] ~~**1.1** Create `borough` lookup table in Supabase~~ → **ALREADY EXISTS**: `reference_table.zat_geo_borough_toplevel`
+- [x] ~~**1.2** Create `neighborhood` lookup table in Supabase~~ → **ALREADY EXISTS**: `reference_table.zat_geo_hood_mediumlevel`
+- [x] ~~**1.3** Populate lookup tables from Bubble.io data~~ → **ALREADY POPULATED**: 8 boroughs, 293 neighborhoods
 - [ ] **1.4** Add route to `routes.config.js`
 - [ ] **1.5** Create HTML shell (`listings-overview.html`)
 - [ ] **1.6** Create entry point (`listings-overview.jsx`)
@@ -481,53 +531,41 @@ function normalizeListingFromSupabase(row) {
 
 ## Part 7: Database Migrations Required
 
-### Migration 1: Create Borough Lookup Table
+### ✅ NO NEW MIGRATIONS NEEDED
+
+The geographic reference tables already exist in the `reference_table` schema:
+
+| Table | Purpose | Records |
+|-------|---------|---------|
+| `reference_table.zat_geo_borough_toplevel` | Borough lookup | 8 |
+| `reference_table.zat_geo_hood_mediumlevel` | Neighborhood lookup | 293 |
+| `reference_table.zat_location` | City lookup | 8 |
+
+**Query Pattern** (replaces planned migration):
 
 ```sql
--- Migration: create_borough_lookup_table
-CREATE TABLE IF NOT EXISTS borough (
-  bubble_id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
-  display_order INTEGER DEFAULT 0,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
+-- Fetch boroughs for filter dropdown
+SELECT _id, "Display Borough" AS name
+FROM reference_table.zat_geo_borough_toplevel
+ORDER BY "Display Borough";
 
--- Insert NYC boroughs (Bubble IDs to be filled from actual data)
-INSERT INTO borough (bubble_id, name, display_order) VALUES
-  ('BUBBLE_ID_MANHATTAN', 'Manhattan', 1),
-  ('BUBBLE_ID_BROOKLYN', 'Brooklyn', 2),
-  ('BUBBLE_ID_QUEENS', 'Queens', 3),
-  ('BUBBLE_ID_BRONX', 'The Bronx', 4),
-  ('BUBBLE_ID_STATEN_ISLAND', 'Staten Island', 5);
+-- Fetch neighborhoods filtered by borough
+SELECT _id, "Display" AS name
+FROM reference_table.zat_geo_hood_mediumlevel
+WHERE "Geo-Borough" = $1  -- borough Bubble ID
+ORDER BY "Display";
 
--- Enable RLS
-ALTER TABLE borough ENABLE ROW LEVEL SECURITY;
-
--- Public read access
-CREATE POLICY "Borough lookup is public"
-  ON borough FOR SELECT
-  USING (true);
-```
-
-### Migration 2: Create Neighborhood Lookup Table
-
-```sql
--- Migration: create_neighborhood_lookup_table
-CREATE TABLE IF NOT EXISTS neighborhood (
-  bubble_id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
-  borough_id TEXT REFERENCES borough(bubble_id),
-  display_order INTEGER DEFAULT 0,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Enable RLS
-ALTER TABLE neighborhood ENABLE ROW LEVEL SECURITY;
-
--- Public read access
-CREATE POLICY "Neighborhood lookup is public"
-  ON neighborhood FOR SELECT
-  USING (true);
+-- Fetch listings with resolved names
+SELECT
+  l.*,
+  b."Display Borough" AS borough_name,
+  h."Display" AS neighborhood_name
+FROM listing l
+LEFT JOIN reference_table.zat_geo_borough_toplevel b
+  ON l."Location - Borough" = b._id
+LEFT JOIN reference_table.zat_geo_hood_mediumlevel h
+  ON l."Location - Hood" = h._id
+WHERE COALESCE(l."Deleted", false) = false;
 ```
 
 ---
@@ -586,13 +624,24 @@ CREATE POLICY "Neighborhood lookup is public"
 ## Approval Checklist
 
 Before implementation:
-- [ ] Confirm borough/neighborhood lookup table approach
-- [ ] Obtain Bubble.io IDs for all 5 boroughs + neighborhoods
-- [ ] Confirm error code authoritative list
-- [ ] Decide on price multiplier configurability (hardcode 1.75× or make editable?)
+- [x] ~~Confirm borough/neighborhood lookup table approach~~ → **RESOLVED**: Use existing `reference_table` schema
+- [x] ~~Obtain Bubble.io IDs for all 5 boroughs + neighborhoods~~ → **RESOLVED**: Already in Supabase (8 boroughs, 293 neighborhoods)
+- [x] ~~Confirm error code authoritative list~~ → **RESOLVED**: Preset common errors + manual text input field
+- [x] ~~Decide on price multiplier configurability~~ → **RESOLVED**: Default 1.75× button + custom multiplier input
 
 ---
 
-**Plan Status**: Ready for Review
-**Estimated Effort**: 2-3 days
-**Dependencies**: Bubble.io ID extraction for lookup tables
+## Design Decisions Summary
+
+| Decision | Resolution |
+|----------|------------|
+| **Borough/Neighborhood Data** | JOIN to existing `reference_table.zat_geo_*` tables - no new migrations |
+| **Error Management** | Preset dropdown with common errors (e.g., "Sharing Contact Information") + free-text input for custom errors |
+| **Price Multiplier** | Two options: (1) Quick 1.75× button, (2) Custom multiplier input field |
+| **Database Migrations** | NONE required - all reference data already exists |
+
+---
+
+**Plan Status**: ✅ Ready for Implementation
+**Estimated Effort**: 1.5-2 days (reduced from 2-3 days, no migrations needed)
+**Dependencies**: None - all data structures already exist
