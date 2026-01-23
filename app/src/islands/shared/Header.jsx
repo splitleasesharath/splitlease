@@ -569,29 +569,26 @@ export default function Header({ autoShowLogin = false }) {
           </a>
         </div>
 
-        {/* Mobile Header Actions - Suggested Proposals + Hamburger */}
-        <div className="mobile-header-actions">
-          {/* Mobile Suggested Proposal Trigger - visible only on mobile */}
-          {currentUser && isGuest() && pendingProposalCount > 0 && window.location.pathname !== '/guest-proposals' && (
-            <HeaderSuggestedProposalTrigger
-              onClick={handleSuggestedTriggerClick}
-              isActive={showSuggestedPopup}
-              proposalCount={pendingProposalCount}
-              className="mobile-only"
-            />
-          )}
+        {/* Mobile Suggested Proposal Trigger - visible only on mobile, positioned before hamburger */}
+        {currentUser && isGuest() && pendingProposalCount > 0 && window.location.pathname !== '/guest-proposals' && (
+          <HeaderSuggestedProposalTrigger
+            onClick={handleSuggestedTriggerClick}
+            isActive={showSuggestedPopup}
+            proposalCount={pendingProposalCount}
+            className="mobile-sp-trigger"
+          />
+        )}
 
-          {/* Mobile Hamburger Menu */}
-          <button
-            className={`hamburger-menu ${mobileMenuActive ? 'active' : ''}`}
-            aria-label="Toggle navigation menu"
-            onClick={toggleMobileMenu}
-          >
-            <span className="hamburger-line"></span>
-            <span className="hamburger-line"></span>
-            <span className="hamburger-line"></span>
-          </button>
-        </div>
+        {/* Mobile Hamburger Menu */}
+        <button
+          className={`hamburger-menu ${mobileMenuActive ? 'active' : ''}`}
+          aria-label="Toggle navigation menu"
+          onClick={toggleMobileMenu}
+        >
+          <span className="hamburger-line"></span>
+          <span className="hamburger-line"></span>
+          <span className="hamburger-line"></span>
+        </button>
 
         {/* Center Navigation with Dropdowns */}
         <div className={`nav-center ${mobileMenuActive ? 'mobile-active' : ''}`}>
