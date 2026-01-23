@@ -153,22 +153,21 @@
 }
 
 .hep-header-back {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-gray-100);
+  background: none;
   border: none;
-  border-radius: var(--radius-md);
-  color: var(--color-gray-700);
+  padding: 0;
   cursor: pointer;
   flex-shrink: 0;
-  transition: background var(--transition-fast);
 }
 
 .hep-header-back:hover {
-  background: var(--color-gray-200);
+  opacity: 0.7;
 }
 
 .hep-header-title {
@@ -208,6 +207,39 @@
 .hep-header-close:focus-visible {
   outline: var(--focus-outline);
   outline-offset: var(--focus-offset);
+}
+
+/* ========================================
+   Back Link - Below Header Navigation
+   ======================================== */
+
+.hep-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) 0;
+  margin-bottom: var(--spacing-lg);
+  background: none;
+  border: none;
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-primary);
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+}
+
+.hep-back-link:hover {
+  opacity: 0.7;
+}
+
+.hep-back-link:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-offset);
+}
+
+.hep-back-link svg {
+  flex-shrink: 0;
 }
 
 /* ========================================
@@ -1080,69 +1112,97 @@
 
 /* ========================================
    Reservation Price Breakdown (General View)
+   Mockup-matched design: clean rows, "Changed" badges
    ======================================== */
 
-.hep-breakdown-container {
-  background: var(--color-gray-50);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-lg);
+.hep-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
 .hep-breakdown-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--spacing-sm) 0;
+  padding: var(--spacing-md) 0;
 }
 
-.hep-breakdown-row-label {
-  font-size: 14px;
-  color: var(--color-gray-600);
+.hep-breakdown-label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-label);
+  font-weight: 400;
+  color: var(--color-text-secondary);
 }
 
-.hep-breakdown-row-value {
-  font-size: 14px;
+.hep-breakdown-value {
+  font-size: var(--font-size-label);
   font-weight: 500;
-  color: var(--color-gray-900);
+  color: var(--color-text);
+  text-align: right;
 }
 
-/* Changed values use Action Purple (NOT green!) */
-.hep-breakdown-row-changed {
-  background: var(--color-primary-tint);
-  margin: 0 calc(-1 * var(--spacing-lg));
-  padding-left: var(--spacing-lg);
-  padding-right: var(--spacing-lg);
-  border-left: 3px solid var(--color-primary-action);
+/* Changed values: original struck through + new in Action Purple */
+.hep-breakdown-value--changed {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
 }
 
-.hep-breakdown-row-changed .hep-breakdown-row-value {
+.hep-breakdown-original {
+  color: var(--color-gray-400);
+  text-decoration: line-through;
+  font-size: var(--font-size-xs, 12px);
+  font-weight: 400;
+}
+
+.hep-breakdown-new {
   color: var(--color-primary-action);
   font-weight: 600;
 }
 
-.hep-original-value {
-  font-size: 12px;
-  color: var(--color-gray-400);
-  text-decoration: line-through;
-  margin-right: var(--spacing-sm);
+/* "Changed" badge - compact pill next to label */
+.hep-change-badge {
+  display: inline-flex;
+  align-items: center;
+  background: var(--color-primary-light);
+  color: var(--color-primary-action);
+  padding: 2px var(--spacing-sm);
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
-.hep-breakdown-edit-btn {
-  background: none;
+/* Divider between sections */
+.hep-breakdown-divider {
   border: none;
-  padding: var(--spacing-xs);
-  cursor: pointer;
-  color: var(--color-gray-400);
-  opacity: 0;
-  transition: opacity var(--transition-fast);
+  border-top: 1px solid var(--color-gray-200);
+  margin: var(--spacing-md) 0;
 }
 
-.hep-breakdown-row:hover .hep-breakdown-edit-btn {
-  opacity: 1;
+/* Total row - emphasized styling */
+.hep-breakdown-total {
+  padding-top: var(--spacing-lg);
 }
 
-.hep-breakdown-edit-btn:hover {
+.hep-breakdown-total .hep-breakdown-label {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.hep-breakdown-total .hep-breakdown-value {
+  font-size: var(--font-size-base);
+  font-weight: 600;
   color: var(--color-primary);
+}
+
+.hep-breakdown-total .hep-breakdown-new {
+  font-size: var(--font-size-base);
 }
 
 /* ========================================

@@ -389,20 +389,10 @@ export function HostEditingProposal({
       )
     }
 
-    // General header: Back button + Document icon + "Review Changes" title
+    // General header: Document icon + "Review Changes" title
     return (
       <div className="hep-header">
         <div className="hep-header-left">
-          <button
-            type="button"
-            className="hep-header-back"
-            onClick={() => setView('editing')}
-            aria-label="Back to editing"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M19 12H5M12 19l-7-7 7-7"/>
-            </svg>
-          </button>
           <div className="hep-header-icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
@@ -645,23 +635,35 @@ export function HostEditingProposal({
         {view === 'editing' && renderEditingView()}
 
         {view === 'general' && (
-          <ReservationPriceBreakdown
-            moveInDate={editedMoveInDate}
-            checkInDay={editedCheckInDay}
-            checkOutDay={editedCheckOutDay}
-            reservationSpan={editedReservationSpan}
-            weeksReservationSpan={editedWeeks}
-            houseRules={editedHouseRules}
-            nightsSelected={editedNightsSelected}
-            nightlyCompensation={nightlyCompensation}
-            totalCompensation={totalCompensation}
-            hostCompensationPer4Weeks={compensationPer4Weeks}
-            originalTotalCompensation={originalTotalCompensation}
-            originalCompensationPer4Weeks={originalCompensationPer4Weeks}
-            isVisible={true}
-            originalValues={originalValues}
-            onEditField={handleEditField}
-          />
+          <>
+            <button
+              type="button"
+              className="hep-back-link"
+              onClick={() => setView('editing')}
+              aria-label="Back to editing"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15 18L9 12L15 6"/>
+              </svg>
+            </button>
+            <ReservationPriceBreakdown
+              moveInDate={editedMoveInDate}
+              checkInDay={editedCheckInDay}
+              checkOutDay={editedCheckOutDay}
+              reservationSpan={editedReservationSpan}
+              weeksReservationSpan={editedWeeks}
+              houseRules={editedHouseRules}
+              nightsSelected={editedNightsSelected}
+              nightlyCompensation={nightlyCompensation}
+              totalCompensation={totalCompensation}
+              hostCompensationPer4Weeks={compensationPer4Weeks}
+              originalTotalCompensation={originalTotalCompensation}
+              originalCompensationPer4Weeks={originalCompensationPer4Weeks}
+              isVisible={true}
+              originalValues={originalValues}
+              onEditField={handleEditField}
+            />
+          </>
         )}
       </div>
 
