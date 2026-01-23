@@ -153,6 +153,9 @@ export default function SuggestedProposalPopup({
         aria-labelledby="sp-popup-title"
       >
         <div className="sp-popup-card">
+          {/* Mobile grab handle - visible only on mobile via CSS */}
+          <div className="sp-popup-grab-handle" aria-hidden="true" />
+
           {/* Header */}
           <div className="sp-popup-header">
             <div className="sp-popup-header-left">
