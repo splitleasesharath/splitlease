@@ -9,6 +9,12 @@
  * - get_messages: Get messages for a specific thread (requires auth)
  * - get_threads: Get all threads for authenticated user (requires auth)
  * - send_guest_inquiry: Contact host without auth (name/email required)
+ * - create_proposal_thread: Create thread for proposal (internal service call)
+ *
+ * Admin Actions (require auth + admin role):
+ * - admin_get_all_threads: Fetch ALL threads across platform
+ * - admin_delete_thread: Soft-delete a thread and its messages
+ * - admin_send_reminder: Send reminder email/SMS to participants
  *
  * NOTE: get_threads uses service role to bypass RLS (supports legacy auth)
  *
@@ -47,11 +53,26 @@ import { handleGetThreads } from './handlers/getThreads.ts';
 import { handleSendGuestInquiry } from './handlers/sendGuestInquiry.ts';
 import { handleCreateProposalThread } from './handlers/createProposalThread.ts';
 
+// Admin handlers
+import { handleAdminGetAllThreads } from './handlers/adminGetAllThreads.ts';
+import { handleAdminDeleteThread } from './handlers/adminDeleteThread.ts';
+import { handleAdminSendReminder } from './handlers/adminSendReminder.ts';
+
 // ─────────────────────────────────────────────────────────────
 // Configuration (Immutable)
 // ─────────────────────────────────────────────────────────────
 
-const ALLOWED_ACTIONS = ['send_message', 'get_messages', 'get_threads', 'send_guest_inquiry', 'create_proposal_thread'] as const;
+const ALLOWED_ACTIONS = [
+  'send_message',
+  'get_messages',
+  'get_threads',
+  'send_guest_inquiry',
+  'create_proposal_thread',
+  // Admin actions
+  'admin_get_all_threads',
+  'admin_delete_thread',
+  'admin_send_reminder',
+] as const;
 
 // Actions that don't require authentication
 // - send_guest_inquiry: Public form submission
@@ -67,6 +88,10 @@ const handlers: Readonly<Record<Action, Function>> = {
   get_threads: handleGetThreads,
   send_guest_inquiry: handleSendGuestInquiry,
   create_proposal_thread: handleCreateProposalThread,
+  // Admin handlers
+  admin_get_all_threads: handleAdminGetAllThreads,
+  admin_delete_thread: handleAdminDeleteThread,
+  admin_send_reminder: handleAdminSendReminder,
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -313,6 +338,16 @@ async function executeHandler(
     case 'create_proposal_thread':
       // Internal action - no user auth needed (service-level call)
       return handler(supabaseAdmin, payload);
+
+    // Admin actions - require auth (admin verification happens in handler)
+    case 'admin_get_all_threads':
+      return handler(supabaseAdmin, payload, user!);
+
+    case 'admin_delete_thread':
+      return handler(supabaseAdmin, payload, user!);
+
+    case 'admin_send_reminder':
+      return handler(supabaseAdmin, payload, user!);
 
     default: {
       // Exhaustive check - TypeScript ensures all cases are handled

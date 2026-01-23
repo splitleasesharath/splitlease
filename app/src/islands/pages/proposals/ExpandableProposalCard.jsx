@@ -14,6 +14,7 @@
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import MatchReasonCard from './MatchReasonCard.jsx';
+import NegotiationSummarySection from './NegotiationSummarySection.jsx';
 import {
   DAY_ABBREVS,
   DAY_NAMES,
@@ -486,6 +487,9 @@ export default function ExpandableProposalCard({
   const houseRules = proposal?.houseRules || [];
   const hasHouseRules = Array.isArray(houseRules) && houseRules.length > 0;
 
+  // Negotiation summaries
+  const negotiationSummaries = proposal?.negotiationSummaries || [];
+
   // Status flags
   const isSuggested = isSLSuggested(status);
   const isPending = isPendingConfirmation(status);
@@ -642,6 +646,11 @@ export default function ExpandableProposalCard({
         <div ref={contentRef} className="epc-content">
           {/* Match Reason Card for SL-suggested proposals */}
           {isSuggested && <MatchReasonCard proposal={proposal} />}
+
+          {/* Negotiation Summary Section - for all proposals with summaries */}
+          {negotiationSummaries.length > 0 && (
+            <NegotiationSummarySection summaries={negotiationSummaries} />
+          )}
 
           {/* Status Banner */}
           <StatusBanner status={status} cancelReason={cancelReason} isCounteroffer={isCounteroffer} />

@@ -430,7 +430,8 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
         setSelectedListing(listingToSelect);
 
         // Fetch proposals for the selected listing
-        const proposalsResult = await fetchProposalsForListing(listingToSelect._id || listingToSelect.id);
+        // Pass userId explicitly since user state may not be set yet (async state update)
+        const proposalsResult = await fetchProposalsForListing(listingToSelect._id || listingToSelect.id, userId);
         setProposals(proposalsResult);
       } else {
         setListings([]);
@@ -479,8 +480,10 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
   /**
    * Fetch proposals for a specific listing directly from Supabase
    * Includes guest information for display
+   * @param {string} listingId - The listing ID to fetch proposals for
+   * @param {string} [hostUserIdOverride] - Optional host user ID (used when user state isn't set yet)
    */
-  const fetchProposalsForListing = async (listingId) => {
+  const fetchProposalsForListing = async (listingId, hostUserIdOverride = null) => {
     try {
       console.log('[useHostProposalsPageLogic] Fetching proposals for listing:', listingId);
 
@@ -603,6 +606,42 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
               };
             }
           });
+        }
+
+        // Enrich proposals with negotiation summaries (host-directed)
+        console.log('[useHostProposalsPageLogic] DEBUG: About to fetch negotiation summaries');
+        const proposalIds = proposals.map(p => p._id);
+        // Use override if provided (needed when called before user state is set), otherwise fall back to user state
+        const hostUserId = hostUserIdOverride || user?._id || user?.userId;
+        console.log('[useHostProposalsPageLogic] DEBUG: proposalIds:', proposalIds, 'hostUserId:', hostUserId, 'override:', hostUserIdOverride);
+
+        if (proposalIds.length > 0 && hostUserId) {
+          const { data: summariesData, error: summariesError } = await supabase
+            .from('negotiationsummary')
+            .select('*')
+            .in('"Proposal associated"', proposalIds)
+            .eq('"To Account"', hostUserId)
+            .order('"Created Date"', { ascending: false });
+
+          if (summariesError) {
+            console.error('[useHostProposalsPageLogic] Error fetching negotiation summaries:', summariesError);
+          } else {
+            const summaryMap = {};
+            summariesData?.forEach(summary => {
+              const proposalId = summary['Proposal associated'];
+              if (!summaryMap[proposalId]) {
+                summaryMap[proposalId] = [];
+              }
+              summaryMap[proposalId].push(summary);
+            });
+
+            // Attach summaries to proposals
+            proposals.forEach(p => {
+              p.negotiationSummaries = summaryMap[p._id] || [];
+            });
+
+            console.log('[useHostProposalsPageLogic] Fetched negotiation summaries for', summariesData?.length || 0, 'proposals');
+          }
         }
       }
 
@@ -854,7 +893,35 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
 
       console.log('[useHostProposalsPageLogic] Converted payload:', payload);
 
+      // Validate session exists before Edge Function call
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.error('[useHostProposalsPageLogic] Session error:', sessionError);
+      }
+      console.log('[useHostProposalsPageLogic] Session exists:', !!session);
+      console.log('[useHostProposalsPageLogic] Access token exists:', !!session?.access_token);
+
+      if (!session?.access_token) {
+        // Try to refresh the session
+        console.log('[useHostProposalsPageLogic] No active session, attempting refresh...');
+        const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError || !refreshedSession) {
+          throw new Error('Session expired. Please refresh the page and try again.');
+        }
+        console.log('[useHostProposalsPageLogic] Session refreshed successfully');
+      }
+
+      // Get the latest session (might have been refreshed above)
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      const authToken = currentSession?.access_token;
+
+      console.log('[useHostProposalsPageLogic] Auth token length:', authToken?.length);
+      console.log('[useHostProposalsPageLogic] Invoking Edge Function with explicit auth...');
+
       const { data, error } = await supabase.functions.invoke('proposal', {
+        headers: {
+          Authorization: `Bearer ${authToken}`
+        },
         body: {
           action: 'update',
           payload
@@ -876,7 +943,10 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
 
     } catch (err) {
       console.error('Failed to send counteroffer:', err);
-      alert('Failed to send counteroffer. Please try again.');
+      // Extract proper error message, avoiding [object Object] display
+      const errorMessage = err?.message || err?.error?.message || err?.error ||
+        (typeof err === 'string' ? err : 'Failed to send counteroffer. Please try again.');
+      alert(typeof errorMessage === 'string' ? errorMessage : 'Failed to send counteroffer. Please try again.');
     }
   }, [selectedProposal, selectedListing]);
 
@@ -918,10 +988,20 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
 
   /**
    * Handle alert notifications from editing component
+   * Supports both (message, type) and (title, content, type) signatures
    */
-  const handleEditingAlert = useCallback((message, type = 'info') => {
+  const handleEditingAlert = useCallback((titleOrMessage, contentOrType = 'info', type) => {
     // For now, use simple alert. Can be replaced with toast system later.
-    alert(message);
+    // Handle both (message, type) and (title, content, type) call signatures
+    if (type !== undefined) {
+      // Called with (title, content, type) - combine title and content
+      const title = titleOrMessage;
+      const content = contentOrType;
+      alert(`${title}\n\n${content}`);
+    } else {
+      // Called with (message, type) - just show message
+      alert(titleOrMessage);
+    }
   }, []);
 
   /**

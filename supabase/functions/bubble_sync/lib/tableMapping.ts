@@ -51,6 +51,9 @@ export const TABLE_MAPPING = {
         'narration': 'narration',
         'ratingdetail_reviews_': 'ratingdetail_reviews_',
         'reviewslistingsexternal': 'reviewslistingsexternal',
+
+        // AI Tools tables
+        'heygen_deepfake': 'heygen_deepfake',
     } as Record<string, string>,
 
     // Reverse mapping: Bubble name → Supabase name
@@ -95,6 +98,9 @@ export const TABLE_MAPPING = {
         'narration': 'narration',
         'ratingdetail_reviews_': 'ratingdetail_reviews_',
         'reviewslistingsexternal': 'reviewslistingsexternal',
+
+        // AI Tools tables
+        'heygen_deepfake': 'heygen_deepfake',
     } as Record<string, string>,
 };
 

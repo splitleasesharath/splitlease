@@ -284,10 +284,14 @@ export function useHeaderMessagingPanelLogic({
 
         if (contacts) {
           contactMap = contacts.reduce((acc, contact) => {
+            // Format name as "FirstName L." (first name + last initial)
+            const firstName = contact['Name - First'] || '';
+            const lastName = contact['Name - Last'] || '';
+            const lastInitial = lastName ? ` ${lastName.charAt(0)}.` : '';
+            const displayName = firstName ? `${firstName}${lastInitial}` : 'Unknown User';
+
             acc[contact._id] = {
-              name:
-                `${contact['Name - First'] || ''} ${contact['Name - Last'] || ''}`.trim() ||
-                'Unknown User',
+              name: displayName,
               avatar: contact['Profile Photo'],
             };
             return acc;

@@ -78,7 +78,7 @@ export function extractProposalIds(user) {
  * @param {Array<string>} proposalIds - Array of proposal IDs from user's list
  * @returns {Promise<Array<Object>>} Array of proposal objects with nested data
  */
-export async function fetchProposalsByIds(proposalIds) {
+export async function fetchProposalsByIds(proposalIds, currentUserId = null) {
   if (!proposalIds || proposalIds.length === 0) {
     console.warn('fetchProposalsByIds: No proposal IDs to fetch');
     return [];
@@ -448,6 +448,45 @@ export async function fetchProposalsByIds(proposalIds) {
   // Create virtual meeting lookup map
   const vmMap = new Map(virtualMeetings.map(vm => [vm.proposal, vm]));
 
+  // Step 6.5: Fetch negotiation summaries for all proposals
+  // IMPORTANT: Filter by "To Account" to ensure users only see summaries intended for them
+  // - Guests see summaries where "To Account" = guest ID (why this listing was suggested)
+  // - Hosts see summaries where "To Account" = host ID (proposal terms summary)
+  const proposalIdsForSummaries = validProposals.map(p => p._id);
+  let negotiationSummaries = [];
+
+  if (proposalIdsForSummaries.length > 0) {
+    let summariesQuery = supabase
+      .from('negotiationsummary')
+      .select('*')
+      .in('"Proposal associated"', proposalIdsForSummaries)
+      .order('"Created Date"', { ascending: false });
+
+    // Filter by "To Account" if currentUserId is provided
+    if (currentUserId) {
+      summariesQuery = summariesQuery.eq('"To Account"', currentUserId);
+    }
+
+    const { data: summariesData, error: summariesError } = await summariesQuery;
+
+    if (summariesError) {
+      console.error('fetchProposalsByIds: Error fetching negotiation summaries:', summariesError);
+    } else {
+      negotiationSummaries = summariesData || [];
+      console.log(`fetchProposalsByIds: Fetched ${negotiationSummaries.length} negotiation summaries for user ${currentUserId || 'unknown'}`);
+    }
+  }
+
+  // Create summary lookup map
+  const summaryMap = new Map();
+  negotiationSummaries.forEach(summary => {
+    const proposalId = summary['Proposal associated'];
+    if (!summaryMap.has(proposalId)) {
+      summaryMap.set(proposalId, []);
+    }
+    summaryMap.get(proposalId).push(summary);
+  });
+
   // Step 7: Create lookup maps for efficient joining
   const listingMap = new Map((listings || []).map(l => [l._id, l]));
   // Key hosts by their _id (Host User column now contains user._id directly)
@@ -481,6 +520,8 @@ export async function fetchProposalsByIds(proposalIds) {
     const virtualMeeting = vmMap.get(proposal._id) || null;
     // Lookup rental application
     const rentalApplication = rentalAppMap.get(proposal['rental application']) || null;
+    // Lookup negotiation summaries
+    const negotiationSummaries = summaryMap.get(proposal._id) || [];
 
     // Resolve house rules IDs to names (from proposal, not listing)
     // House Rules field is stored as a JSON string array: "[\"id1\", \"id2\"]"
@@ -514,7 +555,8 @@ export async function fetchProposalsByIds(proposalIds) {
       guest: guest || null,
       virtualMeeting,
       rentalApplication,
-      houseRules: houseRulesResolved
+      houseRules: houseRulesResolved,
+      negotiationSummaries
     };
   });
 
@@ -554,8 +596,8 @@ export async function fetchUserProposalsFromUrl() {
     };
   }
 
-  // Step 4: Fetch proposals by those specific IDs
-  const proposals = await fetchProposalsByIds(proposalIds);
+  // Step 4: Fetch proposals by those specific IDs (pass userId for summary filtering)
+  const proposals = await fetchProposalsByIds(proposalIds, userId);
 
   if (proposals.length === 0) {
     console.log('fetchUserProposalsFromUrl: No valid proposals found (all IDs may be orphaned)');

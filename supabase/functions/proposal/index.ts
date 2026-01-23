@@ -19,7 +19,7 @@ console.log("[proposal] Edge Function initializing...");
 
 Deno.serve(async (req: Request) => {
   try {
-    console.log(`[proposal] Request: ${req.method}`);
+    console.log(`[proposal] ${req.method} request received`);
 
     // Handle CORS preflight FIRST
     if (req.method === 'OPTIONS') {
@@ -267,6 +267,7 @@ Deno.serve(async (req: Request) => {
 });
 
 // Helper function for authentication
+// Looks up user by email (matches pattern in auth-user/handlers/login.ts)
 async function authenticateFromHeaders(
   headers: Headers,
   supabaseUrl: string,
@@ -275,20 +276,40 @@ async function authenticateFromHeaders(
   const authHeader = headers.get('Authorization');
 
   if (!authHeader) {
+    console.log('[proposal:auth] No Authorization header');
     return null;
   }
 
-  const authClient = createClient(supabaseUrl, supabaseAnonKey, {
-    global: { headers: { Authorization: authHeader } },
-  });
+  try {
+    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
 
-  const { data: { user }, error } = await authClient.auth.getUser();
+    const { data: { user }, error } = await authClient.auth.getUser();
 
-  if (error || !user) {
+    if (error || !user) {
+      console.error('[proposal:auth] getUser failed:', error?.message);
+      return null;
+    }
+
+    // Lookup application user ID by email (user table doesn't have Supabase Auth UUID column)
+    const { data: appUser, error: appUserError } = await authClient
+      .from('user')
+      .select('_id')
+      .eq('email', user.email?.toLowerCase())
+      .maybeSingle();
+
+    if (appUserError || !appUser) {
+      console.error('[proposal:auth] User lookup failed:', appUserError?.message);
+      return null;
+    }
+
+    return { id: appUser._id, email: user.email ?? '' };
+
+  } catch (err) {
+    console.error('[proposal:auth] Exception:', (err as Error).message);
     return null;
   }
-
-  return { id: user.id, email: user.email ?? '' };
 }
 
 console.log("[proposal] Edge Function ready");

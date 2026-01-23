@@ -127,26 +127,96 @@ export function nightNamesToIndices(nightNames) {
 }
 
 /**
+ * Find the first night in a contiguous block, handling week wrap-around.
+ * For example, [0, 4, 5, 6] (Sun, Thu, Fri, Sat) is actually Thu-Fri-Sat-Sun,
+ * so the first night is Thursday (4), not Sunday (0).
+ *
+ * @param {number[]} selectedNights - Array of 0-based night indices
+ * @returns {number|null} The first night index in the contiguous sequence
+ */
+function findFirstNightInSequence(selectedNights) {
+  if (!selectedNights || selectedNights.length === 0) return null
+  if (selectedNights.length === 1) return selectedNights[0]
+
+  const sorted = [...selectedNights].sort((a, b) => a - b)
+
+  // Check if the selection wraps around (includes both 0 and 6)
+  const hasZero = sorted.includes(0)
+  const hasSix = sorted.includes(6)
+
+  if (hasZero && hasSix) {
+    // Find the gap in the sequence - the first night is after the gap
+    for (let i = 0; i < sorted.length - 1; i++) {
+      if (sorted[i + 1] - sorted[i] > 1) {
+        // Gap found - first night is after the gap
+        return sorted[i + 1]
+      }
+    }
+    // No gap found means all 7 nights selected - first is 0
+    return sorted[0]
+  }
+
+  // No wrap-around, first night is simply the smallest
+  return sorted[0]
+}
+
+/**
+ * Find the last night in a contiguous block, handling week wrap-around.
+ *
+ * @param {number[]} selectedNights - Array of 0-based night indices
+ * @returns {number|null} The last night index in the contiguous sequence
+ */
+function findLastNightInSequence(selectedNights) {
+  if (!selectedNights || selectedNights.length === 0) return null
+  if (selectedNights.length === 1) return selectedNights[0]
+
+  const sorted = [...selectedNights].sort((a, b) => a - b)
+
+  // Check if the selection wraps around (includes both 0 and 6)
+  const hasZero = sorted.includes(0)
+  const hasSix = sorted.includes(6)
+
+  if (hasZero && hasSix) {
+    // Find the gap in the sequence - the last night is before the gap
+    for (let i = 0; i < sorted.length - 1; i++) {
+      if (sorted[i + 1] - sorted[i] > 1) {
+        // Gap found - last night is before the gap
+        return sorted[i]
+      }
+    }
+    // No gap found means all 7 nights selected - last is 6
+    return sorted[sorted.length - 1]
+  }
+
+  // No wrap-around, last night is simply the largest
+  return sorted[sorted.length - 1]
+}
+
+/**
  * Get check-in day from selected nights (first night's check-in)
+ * Handles wrap-around schedules where nights span the week boundary.
+ *
  * @param {number[]} selectedNights - Array of 0-based night indices
  * @returns {number|null} 0-based day index for check-in
  */
 export function getCheckInDay(selectedNights) {
-  if (!selectedNights || selectedNights.length === 0) return null
-  const sortedNights = [...selectedNights].sort((a, b) => a - b)
-  const firstNight = NIGHTS_CONFIG.find(n => n.id === sortedNights[0])
+  const firstNightIndex = findFirstNightInSequence(selectedNights)
+  if (firstNightIndex === null) return null
+  const firstNight = NIGHTS_CONFIG.find(n => n.id === firstNightIndex)
   return firstNight?.checkInDay ?? null
 }
 
 /**
  * Get check-out day from selected nights (last night's check-out)
+ * Handles wrap-around schedules where nights span the week boundary.
+ *
  * @param {number[]} selectedNights - Array of 0-based night indices
  * @returns {number|null} 0-based day index for check-out
  */
 export function getCheckOutDay(selectedNights) {
-  if (!selectedNights || selectedNights.length === 0) return null
-  const sortedNights = [...selectedNights].sort((a, b) => a - b)
-  const lastNight = NIGHTS_CONFIG.find(n => n.id === sortedNights[sortedNights.length - 1])
+  const lastNightIndex = findLastNightInSequence(selectedNights)
+  if (lastNightIndex === null) return null
+  const lastNight = NIGHTS_CONFIG.find(n => n.id === lastNightIndex)
   return lastNight?.checkOutDay ?? null
 }
 

@@ -560,6 +560,122 @@ export const routes = [
     cloudflareInternal: false,
     internalName: 'modify-listings-view',
     hasDynamicSegment: false
+  },
+  {
+    path: '/_internal/message-curation',
+    file: 'message-curation.html',
+    aliases: ['/_internal/message-curation.html', '/message-curation'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'message-curation-view',
+    hasDynamicSegment: false
+  },
+  {
+    path: '/_internal/usability-data-management',
+    file: 'usability-data-management.html',
+    aliases: ['/_internal/usability-data-management.html', '/usability-data-management'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'usability-data-management-view',
+    hasDynamicSegment: false
+  },
+
+  // ===== AI TOOLS (ADMIN INTERNAL) =====
+  {
+    path: '/_internal/ai-tools',
+    file: 'ai-tools.html',
+    aliases: ['/_internal/ai-tools.html', '/ai-tools'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'ai-tools-view',
+    hasDynamicSegment: false
+  },
+
+  // ===== EMERGENCY MANAGEMENT (ADMIN INTERNAL) =====
+  {
+    path: '/_internal/emergency',
+    file: 'internal-emergency.html',
+    aliases: ['/_internal/emergency.html', '/internal-emergency'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'internal-emergency-view',
+    hasDynamicSegment: false
+  },
+
+  // ===== ADMIN THREADS MANAGEMENT =====
+  {
+    path: '/_internal/admin-threads',
+    file: 'admin-threads.html',
+    aliases: ['/_internal/admin-threads.html', '/admin-threads'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'admin-threads-view',
+    hasDynamicSegment: false
+  },
+
+  // ===== MANAGE RENTAL APPLICATIONS (ADMIN INTERNAL) =====
+  {
+    path: '/_internal/manage-rental-applications',
+    file: 'manage-rental-applications.html',
+    aliases: ['/_internal/manage-rental-applications.html', '/manage-rental-applications'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'manage-rental-applications-view',
+    hasDynamicSegment: true,
+    dynamicPattern: '/_internal/manage-rental-applications/:id'
+  },
+
+  // ===== CREATE DOCUMENT (ADMIN INTERNAL) =====
+  {
+    path: '/_internal/create-document',
+    file: 'create-document.html',
+    aliases: ['/_internal/create-document.html', '/create-document'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'create-document-view',
+    hasDynamicSegment: false
+  },
+
+  // ===== PROPOSAL MANAGEMENT (ADMIN INTERNAL) =====
+  {
+    path: '/_internal/proposal-manage',
+    file: 'proposal-manage.html',
+    aliases: ['/_internal/proposal-manage.html', '/proposal-manage'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'proposal-manage-view',
+    hasDynamicSegment: false
+  },
+
+  // ===== LISTINGS OVERVIEW (ADMIN INTERNAL) =====
+  {
+    path: '/_internal/listings-overview',
+    file: 'listings-overview.html',
+    aliases: ['/_internal/listings-overview.html', '/listings-overview'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'listings-overview-view',
+    hasDynamicSegment: false
+  },
+
+  // ===== GUEST EMERGENCY SUBMISSION (PUBLIC) =====
+  {
+    path: '/report-emergency',
+    file: 'report-emergency.html',
+    aliases: ['/report-emergency.html', '/emergency-form'],
+    protected: false,
+    cloudflareInternal: true,
+    internalName: 'report-emergency-view',
+    hasDynamicSegment: false
   }
 ];
 

@@ -31,6 +31,7 @@ export const STATUS_TO_CTA: Record<string, { guest?: string; host?: string }> = 
   // Pre-submission states
   'Proposal Submitted by guest - Awaiting Rental Application': {
     guest: 'fill_out_rental_application',
+    host: 'view_proposal_host', // Host can view proposal details while waiting for rental app
   },
   'Proposal Submitted for guest by Split Lease - Awaiting Rental Application': {
     guest: 'fill_out_rental_application',

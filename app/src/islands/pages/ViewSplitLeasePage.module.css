@@ -272,6 +272,7 @@
     grid-template-columns: 1fr;
     padding: var(--spacing-md);
     padding-top: calc(80px + 1rem);
+    padding-bottom: 160px; /* Space for fixed mobile booking bar */
     gap: var(--spacing-lg);
   }
 }

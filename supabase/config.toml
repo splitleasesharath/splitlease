@@ -485,3 +485,9 @@ entrypoint = "./functions/house-manual/index.ts"
 enabled = true
 verify_jwt = false
 entrypoint = "./functions/cohost-request-slack-callback/index.ts"
+
+[functions.message-curation]
+enabled = true
+verify_jwt = false
+import_map = "./functions/message-curation/deno.json"
+entrypoint = "./functions/message-curation/index.ts"

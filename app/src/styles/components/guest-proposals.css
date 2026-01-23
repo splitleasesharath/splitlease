@@ -2438,6 +2438,98 @@
 }
 
 /* ============================================================================
+   NEGOTIATION SUMMARY SECTION
+   ============================================================================ */
+
+.negotiation-summary-section {
+  border: 1px solid var(--gp-border-light);
+  border-radius: 10px;
+  margin: 12px 0;
+  overflow: hidden;
+}
+
+.negotiation-summary-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--gp-bg);
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.negotiation-summary-toggle:hover {
+  background: var(--gp-purple-bg);
+}
+
+.negotiation-summary-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.negotiation-summary-label {
+  flex: 1;
+  text-align: left;
+  font-size: var(--gp-font-size-sm);
+  font-weight: 600;
+  color: var(--gp-purple-primary);
+}
+
+.negotiation-summary-chevron {
+  font-size: 10px;
+  color: var(--gp-text-muted);
+  transition: transform 0.2s ease-out;
+}
+
+.negotiation-summary-chevron.expanded {
+  transform: rotate(180deg);
+}
+
+.negotiation-summary-content {
+  padding: 16px;
+  background: var(--gp-white);
+  border-top: 1px solid var(--gp-border-light);
+  animation: slideDown 0.2s ease-out;
+}
+
+.negotiation-summary-content p {
+  font-size: var(--gp-font-size-sm);
+  color: var(--gp-text-secondary);
+  line-height: var(--gp-line-height-relaxed);
+  margin: 0;
+}
+
+.negotiation-summary-content strong {
+  color: var(--gp-text);
+  font-weight: 600;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .negotiation-summary-toggle {
+    padding: 10px 14px;
+  }
+
+  .negotiation-summary-content {
+    padding: 14px;
+  }
+}
+
+/* ============================================================================
    EXPANDABLE PROPOSAL CARD (EPC) - Main Component
    ============================================================================ */
 

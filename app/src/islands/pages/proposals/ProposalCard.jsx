@@ -28,6 +28,7 @@ import CancelProposalModal from '../../modals/CancelProposalModal.jsx';
 import NotInterestedModal from '../../shared/SuggestedProposals/components/NotInterestedModal.jsx';
 import VirtualMeetingManager from '../../shared/VirtualMeetingManager/VirtualMeetingManager.jsx';
 import FullscreenProposalMapModal from '../../modals/FullscreenProposalMapModal.jsx';
+import NegotiationSummarySection from './NegotiationSummarySection.jsx';
 import { showToast } from '../../shared/Toast.jsx';
 import { supabase } from '../../../lib/supabase.js';
 import { canConfirmSuggestedProposal, getNextStatusAfterConfirmation } from '../../../logic/rules/proposals/proposalRules.js';
@@ -967,6 +968,9 @@ export default function ProposalCard({ proposal, statusConfig, buttonConfig, all
   const houseRules = proposal.houseRules || [];
   const hasHouseRules = Array.isArray(houseRules) && houseRules.length > 0;
 
+  // Negotiation summaries
+  const negotiationSummaries = proposal?.negotiationSummaries || [];
+
   // Status and progress - derive dynamically from statusConfig
   const currentStatusConfig = statusConfig || getStatusConfig(status);
   const _currentStageIndex = (currentStatusConfig?.stage || 1) - 1; // Convert 1-indexed to 0-indexed
@@ -1208,6 +1212,13 @@ export default function ProposalCard({ proposal, statusConfig, buttonConfig, all
                 {rule}
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Negotiation Summary Section */}
+        {negotiationSummaries.length > 0 && (
+          <div style={{ padding: '0 24px' }}>
+            <NegotiationSummarySection summaries={negotiationSummaries} />
           </div>
         )}
 

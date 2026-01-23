@@ -1,0 +1,842 @@
+/**
+ * Internal Emergency Page Styles
+ * Split Lease - Emergency Management Dashboard
+ */
+
+/* ============================================================================
+   Page Layout
+   ============================================================================ */
+
+.internal-emergency-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f8f9fa;
+}
+
+.emergency-main {
+  flex: 1;
+  padding: 2rem 1rem;
+}
+
+.emergency-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* ============================================================================
+   Page Header
+   ============================================================================ */
+
+.emergency-header {
+  margin-bottom: 1.5rem;
+}
+
+.emergency-header h1 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin: 0 0 0.5rem 0;
+}
+
+.emergency-subtitle {
+  color: #6c757d;
+  margin: 0;
+}
+
+/* ============================================================================
+   Alert Banner
+   ============================================================================ */
+
+.alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.alert--success {
+  background-color: #d1e7dd;
+  color: #0f5132;
+  border: 1px solid #badbcc;
+}
+
+.alert--error {
+  background-color: #f8d7da;
+  color: #842029;
+  border: 1px solid #f5c2c7;
+}
+
+.alert--warning {
+  background-color: #fff3cd;
+  color: #664d03;
+  border: 1px solid #ffecb5;
+}
+
+.alert__close {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  opacity: 0.7;
+}
+
+.alert__close:hover {
+  opacity: 1;
+}
+
+/* ============================================================================
+   Main Layout (Sidebar + Content)
+   ============================================================================ */
+
+.emergency-layout {
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .emergency-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================================================
+   Sidebar
+   ============================================================================ */
+
+.emergency-sidebar {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+/* Filter Controls */
+.filter-controls {
+  padding: 1rem;
+  border-bottom: 1px solid #e9ecef;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.filter-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #495057;
+}
+
+.filter-select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background-color: #fff;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.15);
+}
+
+/* ============================================================================
+   Emergency List
+   ============================================================================ */
+
+.emergency-list {
+  max-height: calc(100vh - 300px);
+  overflow-y: auto;
+}
+
+.emergency-list--empty {
+  padding: 2rem;
+  text-align: center;
+  color: #6c757d;
+}
+
+.emergency-list__title {
+  padding: 1rem;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.emergency-list__items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.emergency-list__item {
+  border-bottom: 1px solid #e9ecef;
+}
+
+.emergency-list__item:last-child {
+  border-bottom: none;
+}
+
+/* Emergency Card */
+.emergency-card {
+  width: 100%;
+  padding: 1rem;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.emergency-card:hover {
+  background-color: #f8f9fa;
+}
+
+.emergency-card--selected {
+  background-color: #e7f1ff;
+  border-left: 3px solid #0d6efd;
+}
+
+.emergency-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.emergency-card__status {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #fff;
+  text-transform: uppercase;
+}
+
+.emergency-card__time {
+  font-size: 0.75rem;
+  color: #6c757d;
+}
+
+.emergency-card__type {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin: 0 0 0.25rem 0;
+}
+
+.emergency-card__description {
+  font-size: 0.85rem;
+  color: #495057;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.4;
+}
+
+.emergency-card__footer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.emergency-card__agreement {
+  background-color: #e9ecef;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+}
+
+.emergency-card__assigned {
+  font-size: 0.75rem;
+  color: #0d6efd;
+  margin-top: 0.5rem;
+}
+
+/* ============================================================================
+   Main Panel
+   ============================================================================ */
+
+.emergency-main-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ============================================================================
+   Empty State
+   ============================================================================ */
+
+.empty-state {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.empty-state__icon {
+  color: #adb5bd;
+  margin-bottom: 1.5rem;
+}
+
+.empty-state h2 {
+  font-size: 1.25rem;
+  color: #1a1a2e;
+  margin: 0 0 0.5rem 0;
+}
+
+.empty-state p {
+  color: #6c757d;
+  margin: 0;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+/* ============================================================================
+   Loading & Error States
+   ============================================================================ */
+
+.loading-state,
+.error-state {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e9ecef;
+  border-top-color: #0d6efd;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 1rem auto;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.error-icon {
+  font-size: 3rem;
+  color: #dc3545;
+  margin-bottom: 1rem;
+}
+
+.error-state h2 {
+  font-size: 1.25rem;
+  color: #1a1a2e;
+  margin: 0 0 0.5rem 0;
+}
+
+.error-message {
+  color: #6c757d;
+  margin: 0 0 1.5rem 0;
+}
+
+/* ============================================================================
+   Emergency Details Panel
+   ============================================================================ */
+
+.emergency-details {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 1.5rem;
+}
+
+.emergency-details__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.emergency-details__title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin: 0;
+}
+
+.emergency-details__section {
+  margin-bottom: 1.5rem;
+}
+
+.emergency-details__section h3 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #495057;
+  margin: 0 0 0.75rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.emergency-details__description {
+  color: #212529;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Photos */
+.emergency-details__photos {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.emergency-details__photos img {
+  max-width: 200px;
+  max-height: 150px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.emergency-details__photos a:hover img {
+  opacity: 0.9;
+}
+
+/* Info Grid */
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.info-item label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #6c757d;
+  text-transform: uppercase;
+}
+
+.info-item span {
+  font-size: 0.9rem;
+  color: #212529;
+}
+
+/* Assignment Form */
+.assignment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.current-assignment {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background-color: #e7f1ff;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.current-assignment p {
+  margin: 0;
+}
+
+.current-assignment .text-muted {
+  margin-top: 0.25rem;
+}
+
+/* Status Update */
+.status-update {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+/* Visibility Toggle */
+.visibility-toggle {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.visibility-toggle .text-muted {
+  font-size: 0.85rem;
+}
+
+/* Timestamps */
+.emergency-details__timestamps {
+  padding-top: 1rem;
+  border-top: 1px solid #e9ecef;
+  font-size: 0.85rem;
+}
+
+.emergency-details__timestamps p {
+  margin: 0 0 0.25rem 0;
+  color: #6c757d;
+}
+
+.emergency-details__id {
+  font-family: monospace;
+  font-size: 0.75rem;
+}
+
+/* ============================================================================
+   Status Badges
+   ============================================================================ */
+
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-badge--reported {
+  background-color: #dc3545;
+  color: #fff;
+}
+
+.status-badge--assigned {
+  background-color: #fd7e14;
+  color: #fff;
+}
+
+.status-badge--in_progress {
+  background-color: #0d6efd;
+  color: #fff;
+}
+
+.status-badge--resolved {
+  background-color: #198754;
+  color: #fff;
+}
+
+.status-badge--closed {
+  background-color: #6c757d;
+  color: #fff;
+}
+
+/* ============================================================================
+   Communication Panel
+   ============================================================================ */
+
+.communication-panel {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 1.5rem;
+}
+
+.communication-panel__title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin: 0 0 1rem 0;
+}
+
+/* Tabs */
+.communication-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #e9ecef;
+  padding-bottom: 0.5rem;
+}
+
+.tab-button {
+  padding: 0.5rem 1rem;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #6c757d;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tab-button:hover {
+  background-color: #f8f9fa;
+  color: #495057;
+}
+
+.tab-button--active {
+  background-color: #0d6efd;
+  color: #fff;
+}
+
+.tab-button--active:hover {
+  background-color: #0b5ed7;
+  color: #fff;
+}
+
+/* Tab Content */
+.tab-content {
+  padding-top: 0.5rem;
+}
+
+/* Communication Form */
+.communication-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Preset Buttons */
+.preset-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.preset-button {
+  padding: 0.35rem 0.75rem;
+  background-color: #e9ecef;
+  border: none;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  color: #495057;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.preset-button:hover {
+  background-color: #dee2e6;
+  color: #212529;
+}
+
+/* Character Count */
+.char-count {
+  display: block;
+  text-align: right;
+  font-size: 0.75rem;
+  color: #6c757d;
+  margin-top: 0.25rem;
+}
+
+/* Communication History */
+.communication-history h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #495057;
+  margin: 1.5rem 0 0.75rem 0;
+}
+
+.communication-history h3:first-child {
+  margin-top: 0;
+}
+
+.history-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.history-item {
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 0.75rem;
+  background-color: #f8f9fa;
+  border-left: 3px solid #e9ecef;
+}
+
+.history-item--sent,
+.history-item--delivered {
+  border-left-color: #198754;
+}
+
+.history-item--failed,
+.history-item--bounced {
+  border-left-color: #dc3545;
+}
+
+.history-item--pending,
+.history-item--queued {
+  border-left-color: #fd7e14;
+}
+
+.history-item__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.history-item__direction {
+  font-weight: 500;
+  text-transform: uppercase;
+  color: #495057;
+}
+
+.history-item__status {
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status--sent,
+.status--delivered {
+  background-color: #d1e7dd;
+  color: #0f5132;
+}
+
+.status--failed,
+.status--bounced {
+  background-color: #f8d7da;
+  color: #842029;
+}
+
+.status--pending,
+.status--queued {
+  background-color: #fff3cd;
+  color: #664d03;
+}
+
+.history-item__time {
+  color: #6c757d;
+  margin-left: auto;
+}
+
+.history-item__recipient,
+.history-item__subject {
+  font-size: 0.85rem;
+  color: #495057;
+  margin-bottom: 0.25rem;
+}
+
+.history-item__body {
+  font-size: 0.9rem;
+  color: #212529;
+  margin: 0.5rem 0 0 0;
+  white-space: pre-wrap;
+}
+
+.history-item__error {
+  font-size: 0.8rem;
+  color: #dc3545;
+  margin: 0.5rem 0 0 0;
+}
+
+/* ============================================================================
+   Form Elements
+   ============================================================================ */
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.form-group label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #495057;
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background-color: #fff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.15);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* ============================================================================
+   Buttons
+   ============================================================================ */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn--primary {
+  background-color: #0d6efd;
+  color: #fff;
+}
+
+.btn--primary:hover:not(:disabled) {
+  background-color: #0b5ed7;
+}
+
+.btn--secondary {
+  background-color: #6c757d;
+  color: #fff;
+}
+
+.btn--secondary:hover:not(:disabled) {
+  background-color: #5c636a;
+}
+
+.btn--outline {
+  background-color: transparent;
+  border: 1px solid #ced4da;
+  color: #495057;
+}
+
+.btn--outline:hover:not(:disabled) {
+  background-color: #f8f9fa;
+  border-color: #adb5bd;
+}
+
+.btn--small {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+}
+
+/* ============================================================================
+   Utility Classes
+   ============================================================================ */
+
+.text-muted {
+  color: #6c757d;
+}

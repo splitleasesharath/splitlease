@@ -70,7 +70,7 @@ export async function getUserProfile(
 ): Promise<{ _id: string; firstName: string; lastName: string; avatar?: string } | null> {
   const { data, error } = await supabase
     .from('user')
-    .select('_id, "First Name", "Last Name", "Profile Photo"')
+    .select('_id, "Name - First", "Name - Last", "Profile Photo"')
     .eq('_id', userId)
     .single();
 
@@ -80,8 +80,8 @@ export async function getUserProfile(
 
   return {
     _id: data._id,
-    firstName: data['First Name'] || '',
-    lastName: data['Last Name'] || '',
+    firstName: data['Name - First'] || '',
+    lastName: data['Name - Last'] || '',
     avatar: data['Profile Photo'],
   };
 }

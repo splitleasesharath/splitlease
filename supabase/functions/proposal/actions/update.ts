@@ -88,16 +88,28 @@ export async function handleUpdate(
   // AUTHORIZATION CHECK
   // ================================================
 
+  console.log('[proposal:update] ═══════════════════════════════════');
+  console.log('[proposal:update] Checking authorization...');
+  console.log('[proposal:update] User ID from auth:', user.id);
+  console.log('[proposal:update] Proposal Guest ID:', proposalData.Guest);
+  console.log('[proposal:update] Proposal Host User ID:', proposalData["Host User"]);
+
   const isGuest = proposalData.Guest === user.id;
   const isHost = await checkIsHost(supabase, proposalData["Host User"], user.id);
   const isAdmin = await checkIsAdmin(supabase, user.id);
 
+  console.log('[proposal:update] Is guest?', isGuest);
+  console.log('[proposal:update] Is host?', isHost);
+  console.log('[proposal:update] Is admin?', isAdmin);
+  console.log('[proposal:update] ═══════════════════════════════════');
+
   if (!isGuest && !isHost && !isAdmin) {
+    console.log('[proposal:update] ❌ Authorization failed - user is neither guest nor host nor admin');
     console.error(`[proposal:update] Unauthorized: user ${user.id} is not guest, host, or admin`);
     throw new AuthenticationError("You do not have permission to update this proposal");
   }
 
-  console.log(`[proposal:update] Authorized as: ${isAdmin ? "admin" : isHost ? "host" : "guest"}`);
+  console.log(`[proposal:update] ✅ Authorized as: ${isAdmin ? "admin" : isHost ? "host" : "guest"}`);
 
   // ================================================
   // CHECK TERMINAL STATUS

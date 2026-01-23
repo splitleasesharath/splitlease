@@ -107,4 +107,36 @@
 /* Inline variant - for use in flexbox layouts (not overlaid on images) */
 .favorite-button-shared.favorite-button--inline {
   position: static;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid #E5E7EB;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.favorite-button-shared.favorite-button--inline:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 1);
+  border-color: #31135d;
+  box-shadow: 0 2px 6px rgba(49, 19, 93, 0.15);
+}
+
+/* Inline variant icon colors - dark icons on light background */
+.favorite-button-shared.favorite-button--inline:not(.favorited) .favorite-button-icon {
+  color: #6B7280;
+  stroke: #6B7280;
+}
+
+.favorite-button-shared.favorite-button--inline:not(.favorited):hover .favorite-button-icon {
+  color: #FF6B35;
+  stroke: #FF6B35;
+}
+
+.favorite-button-shared.favorite-button--inline.favorited .favorite-button-icon {
+  color: #FF6B35;
+  stroke: #FF6B35;
+  fill: #FF6B35;
+}
+
+.favorite-button-shared.favorite-button--inline.favorited:hover .favorite-button-icon {
+  color: #e55a2b;
+  stroke: #e55a2b;
+  fill: #e55a2b;
 }

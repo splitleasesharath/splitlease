@@ -1,6 +1,6 @@
 # Cloudflare Pages redirects and rewrites
 # AUTO-GENERATED from routes.config.js - DO NOT EDIT MANUALLY
-# Routes: 6 dynamic, 47 static
+# Routes: 7 dynamic, 56 static
 #
 # See: https://developers.cloudflare.com/pages/configuration/redirects/
 
@@ -34,6 +34,9 @@
 /host-proposals  /_internal/host-proposals-view  200
 /host-proposals/  /_internal/host-proposals-view  200
 /host-proposals/*  /_internal/host-proposals-view  200
+
+# /_internal/manage-rental-applications → manage-rental-applications.html
+/_internal/manage-rental-applications/*  /manage-rental-applications.html  200
 
 # ===== STATIC PAGES =====
 
@@ -239,6 +242,50 @@
 /_internal/modify-listings  /modify-listings.html  200
 /_internal/modify-listings/  /modify-listings.html  200
 /_internal/modify-listings.html  /modify-listings.html  200
+
+# /_internal/message-curation
+/_internal/message-curation  /message-curation.html  200
+/_internal/message-curation/  /message-curation.html  200
+/_internal/message-curation.html  /message-curation.html  200
+
+# /_internal/usability-data-management
+/_internal/usability-data-management  /usability-data-management.html  200
+/_internal/usability-data-management/  /usability-data-management.html  200
+/_internal/usability-data-management.html  /usability-data-management.html  200
+
+# /_internal/ai-tools
+/_internal/ai-tools  /ai-tools.html  200
+/_internal/ai-tools/  /ai-tools.html  200
+/_internal/ai-tools.html  /ai-tools.html  200
+
+# /_internal/emergency
+/_internal/emergency  /internal-emergency.html  200
+/_internal/emergency/  /internal-emergency.html  200
+/_internal/emergency.html  /internal-emergency.html  200
+
+# /_internal/admin-threads
+/_internal/admin-threads  /admin-threads.html  200
+/_internal/admin-threads/  /admin-threads.html  200
+/_internal/admin-threads.html  /admin-threads.html  200
+
+# /_internal/create-document
+/_internal/create-document  /create-document.html  200
+/_internal/create-document/  /create-document.html  200
+/_internal/create-document.html  /create-document.html  200
+
+# /_internal/proposal-manage
+/_internal/proposal-manage  /proposal-manage.html  200
+/_internal/proposal-manage/  /proposal-manage.html  200
+/_internal/proposal-manage.html  /proposal-manage.html  200
+
+# /_internal/listings-overview
+/_internal/listings-overview  /listings-overview.html  200
+/_internal/listings-overview/  /listings-overview.html  200
+/_internal/listings-overview.html  /listings-overview.html  200
+
+# /report-emergency → report-emergency.html
+/report-emergency  /_internal/report-emergency-view  200
+/report-emergency/  /_internal/report-emergency-view  200
 
 # Note: Cloudflare Pages automatically serves /404.html for not found routes
 # No explicit catch-all rule needed - native 404.html support handles this
