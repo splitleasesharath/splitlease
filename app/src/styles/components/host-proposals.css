@@ -380,6 +380,77 @@
 }
 
 /* ========================================
+   INLINE PROGRESS TRACKER (Card View)
+   Matches guest proposals page design
+   ======================================== */
+.hp-card-progress-row {
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+  gap: 2px;
+  margin: var(--spacing-sm) 0;
+}
+
+.hp-card-progress-step {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex: 1;
+}
+
+.hp-card-progress-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.hp-card-progress-label {
+  font-size: 9px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.hp-card-progress-line {
+  flex: 1;
+  height: 1px;
+  min-width: 4px;
+}
+
+/* Responsive adjustments for smaller cards */
+@media (max-width: 1024px) {
+  .hp-card-progress-label {
+    font-size: 8px;
+  }
+
+  .hp-card-progress-dot {
+    width: 5px;
+    height: 5px;
+  }
+}
+
+@media (max-width: 768px) {
+  .hp-card-progress-row {
+    padding: 10px 0;
+  }
+
+  .hp-card-progress-label {
+    font-size: 8px;
+  }
+}
+
+@media (max-width: 640px) {
+  .hp-card-progress-label {
+    font-size: 9px;
+  }
+
+  .hp-card-progress-dot {
+    width: 6px;
+    height: 6px;
+  }
+}
+
+/* ========================================
    DAY INDICATOR
    ======================================== */
 
