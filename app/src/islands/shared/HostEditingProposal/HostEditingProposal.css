@@ -1,63 +1,58 @@
 /**
- * Host Editing Proposal Styles
+ * Host Editing Proposal - Simplified Styles
  *
- * Updated to follow POPUP_REPLICATION_PROTOCOL.md design system.
- * Features:
- * - Monochromatic purple color scheme (no green/yellow)
- * - Pill-shaped buttons (100px radius)
- * - Mobile bottom-sheet behavior (<480px)
- * - Protocol grab handle (36x4px, #E7E0EC)
- * - Inter font family for buttons
- *
- * Color Tokens:
- * - Primary: #31135D
- * - Hover: #4A2F7C
- * - Light BG: #F7F2FA
- * - Border: #E7E0EC
- * - Danger: #DC3545 (outlined only)
+ * 3-state view machine: pristine | editing | general
+ * Based on Split Lease Design System v1.0
  */
 
 /* ========================================
-   CSS Variables / Design Tokens
+   CSS Variables - Design System Tokens
    ======================================== */
 
 .hep-container {
-  --hep-primary-purple: #31135D;
-  --hep-primary-white: #FFFFFF;
-  --hep-surface-purple: #8C97C7;
+  /* Primary Colors */
+  --color-primary: #2563EB;
+  --color-primary-hover: #1D4ED8;
+  --color-primary-light: #DBEAFE;
+  --color-success: #10B981;
+  --color-success-light: #D1FAE5;
+  --color-error: #EF4444;
+  --color-error-light: #FEE2E2;
 
-  --hep-text-dark: #000000;
-  --hep-text-primary: #424242;
-  --hep-text-secondary: #252525;
-  --hep-text-tertiary: #4D4D4D;
-  --hep-text-placeholder: #B5B5B5;
-  --hep-text-placeholder-light: #9C9C9C;
+  /* Neutrals */
+  --color-white: #FFFFFF;
+  --color-gray-50: #F9FAFB;
+  --color-gray-100: #F3F4F6;
+  --color-gray-200: #E5E7EB;
+  --color-gray-300: #D1D5DB;
+  --color-gray-400: #9CA3AF;
+  --color-gray-500: #6B7280;
+  --color-gray-600: #4B5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1F2937;
+  --color-gray-900: #111827;
 
-  --hep-input-border-purple: #4B47CE;
-  --hep-reject-red: #C82333;
-  --hep-tag-background: #E4E4E4;
-  --hep-gray-border: #6B6B6B;
-  --hep-shadow-gray: #AAAAAA;
-  --hep-tag-border: #C9C9C9;
+  /* Typography */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
-  --hep-font-serif: 'Martel', Georgia, serif;
-  --hep-font-sans: 'Lato', 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  --hep-font-dm-sans: 'DM Sans', 'Lato', sans-serif;
-}
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 20px;
+  --spacing-2xl: 24px;
 
-/* ========================================
-   Mobile Grab Handle
-   - 36x4px centered bar for mobile bottom sheet
-   - Hidden on desktop, visible on mobile (<480px)
-   ======================================== */
-.hep-grab-handle {
-  display: none;
-  width: 36px;
-  height: 4px;
-  background: #E7E0EC;
-  border-radius: 2px;
-  margin: 8px auto 0;
-  flex-shrink: 0;
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-base: 200ms ease;
 }
 
 /* ========================================
@@ -65,16 +60,12 @@
    ======================================== */
 
 .hep-container {
-  background-color: var(--hep-primary-white);
-  min-width: 40px;
-  min-height: 40px;
+  background: var(--color-white);
+  border-radius: var(--radius-xl);
   display: flex;
   flex-direction: column;
-  font-family: var(--hep-font-sans);
-  box-sizing: border-box;
-  padding: 16px;
-  border-radius: 16px;
-  max-height: 92vh;
+  font-family: var(--font-family);
+  max-height: 90vh;
   overflow: hidden;
 }
 
@@ -85,522 +76,35 @@
 }
 
 /* ========================================
-   Scrollable Body
-   - Fills available space and scrolls
-   - Allows footer to stay fixed at bottom
-   - Consistent vertical padding per protocol
+   Mobile Grab Handle
    ======================================== */
 
-.hep-body {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
-  padding-top: 16px;
-  padding-bottom: 8px;
+.hep-grab-handle {
+  width: 36px;
+  height: 4px;
+  background: var(--color-gray-300);
+  border-radius: var(--radius-full);
+  margin: var(--spacing-sm) auto var(--spacing-xs);
+  display: none;
 }
 
 /* ========================================
-   Typography
-   ======================================== */
-
-.hep-title-main {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-weight: 500;
-  font-size: 18px;
-  color: #1C1B1F;
-  line-height: 1.4;
-  letter-spacing: 0;
-  margin: 0;
-}
-
-.hep-title-section {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-weight: 600;
-  font-size: 16px;
-  color: #1C1B1F;
-  line-height: 1.5;
-  margin: 0;
-}
-
-.hep-label {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-weight: 500;
-  font-size: 14px;
-  color: #1C1B1F;
-  line-height: 1.4;
-  letter-spacing: 0;
-}
-
-.hep-row-label {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-weight: 500;
-  font-size: 14px;
-  color: #49454F;
-  line-height: 1.4;
-  letter-spacing: 0;
-}
-
-.hep-description {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-weight: 400;
-  font-size: 14px;
-  color: #49454F;
-  line-height: 1.5;
-}
-
-.hep-text-value {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-weight: 400;
-  font-size: 14px;
-  color: #49454F;
-}
-
-/* ========================================
-   Buttons
-   ======================================== */
-
-/* Buttons - Updated per POPUP_REPLICATION_PROTOCOL.md */
-.hep-btn {
-  border-radius: 100px; /* Pill-shaped per protocol */
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  border: none;
-}
-
-.hep-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* Primary button - Protocol purple */
-.hep-btn-primary {
-  background-color: #31135D;
-  color: #FFFFFF;
-  font-weight: 600;
-  font-size: 14px;
-  border: none;
-  height: 44px;
-  padding: 0 24px;
-  min-width: fit-content;
-  white-space: nowrap;
-}
-
-.hep-btn-primary:hover:not(:disabled) {
-  background-color: #4A2F7C;
-  box-shadow: 0 4px 12px rgba(49, 19, 93, 0.2);
-}
-
-/* Secondary button - Outlined style per protocol */
-.hep-btn-secondary {
-  background-color: transparent;
-  color: #31135D;
-  font-weight: 600;
-  font-size: 14px;
-  border: 1px solid #E7E0EC;
-  height: 44px;
-  padding: 0 24px;
-}
-
-.hep-btn-secondary:hover:not(:disabled) {
-  background-color: #F7F2FA;
-  border-color: #31135D;
-}
-
-.hep-btn-destructive {
-  background-color: var(--hep-reject-red);
-  color: var(--hep-primary-white);
-  font-family: var(--hep-font-dm-sans);
-  font-weight: 500;
-  font-size: 14px;
-  border: none;
-  width: 128px;
-  height: 32px;
-  transition: box-shadow 500ms ease, color 500ms ease;
-}
-
-.hep-btn-destructive:hover:not(:disabled) {
-  box-shadow: 0 4px 12px rgba(200, 35, 51, 0.3);
-}
-
-/* Cancel/Secondary button - Outlined style per protocol */
-.hep-btn-cancel {
-  background-color: transparent;
-  border: 2px solid #E7E0EC;
-  color: #49454F;
-  font-weight: 600;
-  font-size: 14px;
-  height: 44px;
-  padding: 0 24px;
-}
-
-.hep-btn-cancel:hover:not(:disabled) {
-  background-color: #F7F2FA;
-  border-color: #31135D;
-}
-
-.hep-btn-reject {
-  color: var(--hep-reject-red);
-  border-color: var(--hep-reject-red);
-}
-
-/* Success button - Green for final submit action */
-.hep-btn-success {
-  background-color: #10B981;
-  color: #FFFFFF;
-  font-weight: 600;
-  font-size: 14px;
-  border: none;
-  height: 44px;
-  padding: 0 24px;
-  min-width: fit-content;
-  white-space: nowrap;
-}
-
-.hep-btn-success:hover:not(:disabled) {
-  background-color: #059669;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
-}
-
-/* ========================================
-   Form Inputs
-   ======================================== */
-
-.hep-input-base {
-  font-family: var(--hep-font-sans);
-  font-weight: 400;
-  font-size: 16px;
-  color: var(--hep-text-secondary);
-  background-color: var(--hep-primary-white);
-  border: 1px solid var(--hep-text-tertiary);
-  border-radius: 2px;
-  box-shadow: inset -2px -2px 4px var(--hep-shadow-gray);
-  padding: 8px 12px;
-  height: 42px;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.hep-input-base::placeholder {
-  color: var(--hep-text-placeholder);
-}
-
-.hep-input-base:focus {
-  outline: none;
-  border-color: var(--hep-primary-purple);
-}
-
-.hep-input-date {
-  padding-right: 40px;
-}
-
-.hep-date-input-wrapper {
-  position: relative;
-  width: 100%;
-}
-
-.hep-date-icon {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--hep-primary-purple);
-  pointer-events: none;
-}
-
-.hep-dropdown {
-  font-size: 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-  height: 42px;
-}
-
-.hep-dropdown:disabled {
-  cursor: not-allowed;
-}
-
-.hep-placeholder {
-  color: var(--hep-text-placeholder-light);
-}
-
-.hep-dropdown-wrapper {
-  position: relative;
-  width: 100%;
-}
-
-.hep-dropdown-chevron {
-  transition: transform 200ms ease;
-}
-
-.hep-dropdown-chevron--open {
-  transform: rotate(180deg);
-}
-
-.hep-dropdown-menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background-color: var(--hep-primary-white);
-  border: 1px solid var(--hep-text-tertiary);
-  border-radius: 2px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  z-index: 100;
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-.hep-dropdown-option {
-  padding: 10px 12px;
-  cursor: pointer;
-  transition: background-color 200ms ease;
-}
-
-.hep-dropdown-option:hover {
-  background-color: rgba(49, 19, 93, 0.05);
-}
-
-.hep-dropdown-option--selected {
-  background-color: rgba(49, 19, 93, 0.1);
-}
-
-.hep-input-number {
-  width: 100%;
-  height: 42px;
-}
-
-/* Multi-select */
-.hep-multiselect-wrapper {
-  position: relative;
-}
-
-.hep-multiselect {
-  font-family: var(--hep-font-sans);
-  font-weight: 400;
-  font-size: 14px;
-  color: var(--hep-text-secondary);
-  background-color: var(--hep-primary-white);
-  border: 1px solid var(--hep-input-border-purple);
-  border-radius: 4px;
-  padding: 5px 8px;
-  min-height: 40px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  align-items: center;
-  cursor: pointer;
-}
-
-.hep-multiselect--disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.hep-multiselect-menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background-color: var(--hep-primary-white);
-  border: 1px solid var(--hep-input-border-purple);
-  border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  z-index: 100;
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-.hep-multiselect-option {
-  padding: 10px 12px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: background-color 200ms ease;
-}
-
-.hep-multiselect-option:hover {
-  background-color: rgba(75, 71, 206, 0.05);
-}
-
-.hep-multiselect-option--selected {
-  background-color: rgba(75, 71, 206, 0.1);
-}
-
-.hep-checkbox {
-  accent-color: var(--hep-input-border-purple);
-}
-
-/* Tags */
-.hep-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background-color: var(--hep-tag-background);
-  border: 1px solid var(--hep-tag-border);
-  border-radius: 2px;
-  padding: 2px 8px;
-  font-size: 14px;
-  color: var(--hep-text-secondary);
-}
-
-.hep-tag-remove {
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  color: #999;
-  display: flex;
-  align-items: center;
-}
-
-.hep-tag-remove:hover {
-  color: var(--hep-reject-red);
-}
-
-/* ========================================
-   Containers & Groups
-   - Per protocol spacing scale: 8px, 16px, 24px
-   ======================================== */
-
-.hep-editing-terms {
-  width: 100%;
-  padding: 16px 0 8px;
-}
-
-.hep-proposal-row {
-  width: 100%;
-  min-height: 27px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-}
-
-/* ========================================
-   Collapsible Section
-   - Per protocol: 8px spacing between adjacent elements
-   ======================================== */
-
-.hep-collapsible {
-  background-color: var(--hep-primary-purple);
-  border: 1px solid var(--hep-surface-purple);
-  border-radius: 10px;
-  width: 100%;
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
-  cursor: pointer;
-  transition: background-color 200ms ease;
-  margin-bottom: 16px;
-}
-
-.hep-collapsible:hover {
-  background-color: #3d1a70;
-}
-
-.hep-collapsible-title {
-  font-family: var(--hep-font-sans);
-  font-weight: 400;
-  font-size: 20px;
-  color: var(--hep-primary-white);
-  line-height: 1.25;
-}
-
-.hep-collapsible-icon {
-  color: var(--hep-primary-white);
-  transition: transform 200ms ease;
-}
-
-.hep-collapsible-icon--expanded {
-  transform: rotate(180deg);
-}
-
-/* ========================================
-   Icons - Updated per POPUP_REPLICATION_PROTOCOL.md
-   ======================================== */
-
-.hep-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  border-radius: 8px;
-  transition: background-color 0.2s ease;
-}
-
-.hep-icon:hover {
-  background-color: #F7F2FA;
-}
-
-.hep-icon-edit {
-  width: 32px;
-  height: 32px;
-  color: #31135D;
-}
-
-.hep-icon-edit svg {
-  width: 18px;
-  height: 18px;
-}
-
-.hep-icon-close {
-  width: 32px;
-  height: 32px;
-  color: #49454F;
-}
-
-.hep-icon-close svg {
-  width: 20px;
-  height: 20px;
-}
-
-.hep-icon-reject {
-  color: var(--hep-reject-red);
-}
-
-.hep-header-actions {
-  display: flex;
-  gap: 4px;
-}
-
-/* ========================================
-   3-State View Header Styles
-   - pristine: Document icon + title
-   - editing: Back button + title
-   - general: Check icon + title
+   Header
    ======================================== */
 
 .hep-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  padding-bottom: 16px;
-  margin-bottom: 0;
-  margin-left: -16px;
-  margin-right: -16px;
-  padding-left: 16px;
-  padding-right: 16px;
-  border-bottom: 1px solid #E7E0EC;
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-bottom: 1px solid var(--color-gray-100);
   flex-shrink: 0;
 }
 
 .hep-header-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--spacing-md);
   flex: 1;
   min-width: 0;
 }
@@ -611,92 +115,98 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #F7F2FA;
-  border-radius: 8px;
-  color: #31135D;
+  background: var(--color-primary-light);
+  border-radius: var(--radius-md);
+  color: var(--color-primary);
   flex-shrink: 0;
 }
 
 .hep-header-icon--success {
-  background-color: rgba(16, 185, 129, 0.1);
-  color: #10B981;
+  background: var(--color-success-light);
+  color: var(--color-success);
 }
 
 .hep-header-back {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: transparent;
-  border: 1px solid #E7E0EC;
-  border-radius: 8px;
-  color: #31135D;
+  background: var(--color-gray-100);
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--color-gray-700);
   cursor: pointer;
   flex-shrink: 0;
-  transition: all 0.2s ease;
+  transition: background var(--transition-fast);
 }
 
 .hep-header-back:hover {
-  background-color: #F7F2FA;
-  border-color: #31135D;
+  background: var(--color-gray-200);
 }
 
 .hep-header-title {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-weight: 600;
   font-size: 18px;
-  color: #1C1B1F;
-  line-height: 1.4;
+  font-weight: 600;
+  color: var(--color-gray-900);
+  line-height: 1.3;
   margin: 0;
 }
 
 .hep-header-subtitle {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-weight: 400;
   font-size: 14px;
-  color: #49454F;
-  line-height: 1.4;
-  margin: 0;
+  font-weight: 400;
+  color: var(--color-gray-500);
+  line-height: 1.3;
+  margin-top: 2px;
 }
 
 .hep-header-close {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: transparent;
   border: none;
-  border-radius: 8px;
-  color: #49454F;
+  border-radius: var(--radius-md);
+  color: var(--color-gray-400);
   cursor: pointer;
   flex-shrink: 0;
-  transition: all 0.2s ease;
+  transition: all var(--transition-fast);
 }
 
 .hep-header-close:hover {
-  background-color: #F7F2FA;
-  color: #1C1B1F;
+  background: var(--color-gray-100);
+  color: var(--color-gray-600);
 }
 
 /* ========================================
-   Pristine View - Readonly Detail Rows
-   - Similar to guest modal lines 1063-1127
+   Body - Scrollable Content
+   ======================================== */
+
+.hep-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-xl);
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ========================================
+   Pristine View - Readonly Details
    ======================================== */
 
 .hep-pristine-view {
   display: flex;
   flex-direction: column;
-  gap: 0;
 }
 
 .hep-detail-row {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding: 12px 0;
-  border-bottom: 1px solid #E7E0EC;
+  align-items: center;
+  padding: var(--spacing-md) 0;
+  border-bottom: 1px solid var(--color-gray-100);
 }
 
 .hep-detail-row:last-of-type {
@@ -704,122 +214,101 @@
 }
 
 .hep-detail-label {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-weight: 500;
   font-size: 14px;
-  color: #49454F;
-  line-height: 1.4;
+  font-weight: 400;
+  color: var(--color-gray-600);
 }
 
 .hep-detail-value {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-weight: 400;
   font-size: 14px;
-  color: #1C1B1F;
+  font-weight: 500;
+  color: var(--color-gray-900);
   text-align: right;
 }
 
-/* Pricing Section within Pristine View */
+/* Pricing Section */
 .hep-pricing-section {
-  margin-top: 16px;
-  padding: 16px;
-  background-color: #F7F2FA;
-  border-radius: 12px;
+  background: var(--color-gray-50);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  margin-top: var(--spacing-lg);
 }
 
 .hep-pricing-title {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-weight: 600;
   font-size: 14px;
-  color: #1C1B1F;
-  margin-bottom: 12px;
+  font-weight: 600;
+  color: var(--color-gray-700);
+  margin-bottom: var(--spacing-md);
 }
 
 .hep-pricing-row {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding: 6px 0;
+  align-items: center;
+  padding: var(--spacing-sm) 0;
 }
 
 .hep-pricing-row--total {
-  margin-top: 8px;
-  padding-top: 12px;
-  border-top: 1px solid #E7E0EC;
+  border-top: 1px solid var(--color-gray-200);
+  margin-top: var(--spacing-sm);
+  padding-top: var(--spacing-md);
 }
 
 .hep-pricing-label {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-weight: 400;
   font-size: 14px;
-  color: #49454F;
-}
-
-.hep-pricing-row--total .hep-pricing-label {
-  font-weight: 600;
-  color: #1C1B1F;
+  font-weight: 400;
+  color: var(--color-gray-600);
 }
 
 .hep-pricing-value {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-weight: 500;
   font-size: 14px;
-  color: #1C1B1F;
+  font-weight: 600;
+  color: var(--color-gray-900);
 }
 
+.hep-pricing-row--total .hep-pricing-label,
 .hep-pricing-row--total .hep-pricing-value {
-  font-weight: 700;
   font-size: 16px;
-  color: #31135D;
+  font-weight: 600;
+  color: var(--color-primary);
 }
 
 /* ========================================
-   Editing View - Form Section Styles
+   Editing View - Form Fields
    ======================================== */
 
 .hep-editing-view {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--spacing-xl);
 }
 
 .hep-form-section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--spacing-sm);
 }
 
 .hep-form-section--inline {
-  margin-top: 8px;
+  margin-top: var(--spacing-sm);
 }
 
 .hep-form-label {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-weight: 500;
   font-size: 14px;
-  color: #1C1B1F;
-  line-height: 1.4;
+  font-weight: 500;
+  color: var(--color-gray-700);
 }
 
 /* ========================================
-   Footer Styles
-   - Common footer for all 3 views
-   - Vertical layout option for pristine view
+   Footer - Action Buttons
    ======================================== */
 
 .hep-footer {
   display: flex;
-  flex-direction: row;
-  gap: 12px;
-  justify-content: center;
-  align-items: center;
-  margin-top: 0;
-  padding: 16px 20px 8px;
-  background-color: #FFFFFF;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-top: 1px solid var(--color-gray-100);
   flex-shrink: 0;
-  border-top: 1px solid #E7E0EC;
-  margin-left: -16px;
-  margin-right: -16px;
 }
 
 .hep-footer--vertical {
@@ -831,319 +320,150 @@
 }
 
 /* ========================================
-   Reservation Price Breakdown
+   Buttons
    ======================================== */
 
-.hep-breakdown-container {
-  width: 100%;
-}
-
-.hep-breakdown-title {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-weight: 600;
+.hep-btn {
+  flex: 1;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  font-family: var(--font-family);
   font-size: 14px;
-  color: #1C1B1F;
-  line-height: 1.5;
-  margin-bottom: 4px;
-}
-
-.hep-breakdown-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: 4px 0;
-  min-height: 24px;
-}
-
-.hep-breakdown-row-label {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-weight: 500;
-  font-size: 14px;
-  color: #49454F;
-}
-
-.hep-breakdown-edit-btn {
-  background: none;
-  border: none;
-  padding: 4px;
-  margin-left: 8px;
   cursor: pointer;
-  color: var(--hep-primary-purple);
-  opacity: 0.5;
-  transition: opacity 200ms ease, transform 200ms ease;
+  transition: all var(--transition-fast);
+  border: none;
+  text-align: center;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
-  vertical-align: middle;
+  min-height: 44px;
 }
 
-.hep-breakdown-edit-btn:hover {
-  opacity: 1;
-  transform: scale(1.1);
-  background-color: rgba(49, 19, 93, 0.08);
+.hep-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
-.hep-breakdown-row:hover .hep-breakdown-edit-btn {
-  opacity: 0.8;
+.hep-btn-primary {
+  background: var(--color-primary);
+  color: var(--color-white);
 }
 
-.hep-breakdown-row-value {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-weight: 400;
-  font-size: 14px;
-  color: #1C1B1F;
-  text-align: right;
+.hep-btn-primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
 }
 
-.hep-breakdown-row-highlight {
-  background-color: rgba(49, 19, 93, 0.05);
+.hep-btn-secondary {
+  background: var(--color-white);
+  color: var(--color-gray-700);
+  border: 1px solid var(--color-gray-300);
 }
 
-/* Changed row indicator - uses protocol purple instead of yellow */
-.hep-breakdown-row-changed {
-  background-color: rgba(49, 19, 93, 0.08);
-  border-left: 3px solid #31135D;
+.hep-btn-secondary:hover:not(:disabled) {
+  background: var(--color-gray-50);
+  border-color: var(--color-gray-400);
 }
 
-.hep-breakdown-row-changed .hep-breakdown-row-value {
-  font-weight: 700;
-  color: #31135D;
+.hep-btn-success {
+  background: var(--color-success);
+  color: var(--color-white);
 }
 
-.hep-original-value {
-  display: block;
-  font-size: 12px;
-  font-weight: 400;
-  color: #888;
-  text-decoration: line-through;
-  margin-top: 2px;
+.hep-btn-success:hover:not(:disabled) {
+  background: #059669;
 }
 
-/* Changes indicator - uses protocol purple instead of yellow */
-.hep-changes-indicator {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  margin-bottom: 8px;
-  background-color: #F7F2FA;
-  border: 1px solid #E7E0EC;
-  border-radius: 8px;
+.hep-btn-reject-outline {
+  background: var(--color-white);
+  color: var(--color-error);
+  border: 1px solid var(--color-error);
 }
 
-/* Changes badge - uses protocol purple instead of yellow */
-.hep-changes-badge {
-  background-color: #31135D;
-  color: #FFFFFF;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 100px; /* Pill-shaped per protocol */
-  text-transform: uppercase;
-}
-
-.hep-changes-text {
-  font-size: 13px;
-  color: var(--hep-text-tertiary);
-}
-
-.hep-breakdown-footnote {
-  font-size: 12px;
-  color: var(--hep-text-primary);
-  text-align: center;
-  margin-top: 16px;
+.hep-btn-reject-outline:hover:not(:disabled) {
+  background: var(--color-error-light);
 }
 
 /* ========================================
-   House Rules Expandable Display
+   Form Inputs (Base styles for sub-components)
    ======================================== */
 
-.hep-house-rules-value {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+.hep-input-base {
+  width: 100%;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-md);
+  font-family: var(--font-family);
+  font-size: 16px;
+  color: var(--color-gray-900);
+  transition: border-color var(--transition-fast);
 }
 
-.hep-house-rules-summary {
+.hep-input-base:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+.hep-input-base::placeholder {
+  color: var(--color-gray-400);
+}
+
+/* Select/Dropdown */
+.hep-dropdown {
+  width: 100%;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-md);
+  font-family: var(--font-family);
+  font-size: 16px;
+  color: var(--color-gray-900);
+  background: var(--color-white);
+  cursor: pointer;
+}
+
+.hep-dropdown:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+/* Multi-select tags */
+.hep-multiselect {
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm);
+  min-height: 44px;
+}
+
+.hep-tag {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  user-select: none;
-}
-
-.hep-house-rules-summary:hover {
-  opacity: 0.8;
-}
-
-.hep-house-rules-count {
-  font-weight: 600;
-  color: var(--hep-primary-purple);
-}
-
-.hep-house-rules-toggle {
+  gap: var(--spacing-xs);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
   font-size: 12px;
-  color: var(--hep-text-tertiary);
-  transition: color 200ms ease;
+  font-weight: 500;
 }
 
-.hep-house-rules-summary:hover .hep-house-rules-toggle {
-  color: var(--hep-primary-purple);
-}
-
-.hep-house-rules-list {
-  list-style: none;
-  margin: 8px 0 0 0;
-  padding: 8px 12px;
-  background-color: rgba(49, 19, 93, 0.04);
-  border-radius: 6px;
-  text-align: left;
-  width: 100%;
-}
-
-.hep-house-rules-item {
-  font-size: 14px;
-  color: var(--hep-text-primary);
-  padding: 4px 0;
-  border-bottom: 1px solid rgba(49, 19, 93, 0.08);
-}
-
-.hep-house-rules-item:last-child {
-  border-bottom: none;
-}
-
-/* ========================================
-   Reject Proposal Section
-   ======================================== */
-
-.hep-reject-section {
-  background-color: rgba(200, 35, 51, 0.05);
-  border-radius: 8px;
-  padding: 16px;
-  margin-top: 16px;
-}
-
-.hep-reject-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.hep-reject-title {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-weight: 600;
-  font-size: 16px;
-  color: #DC3545;
-}
-
-.hep-reject-warning {
-  font-size: 12px;
-  color: var(--hep-text-primary);
-  margin-bottom: 12px;
-}
-
-.hep-reject-confirmation {
-  font-size: 14px;
-  color: var(--hep-text-primary);
-  margin-bottom: 16px;
-}
-
-.hep-reject-reasons {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-.hep-reject-reason-option {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  cursor: pointer;
-  padding: 8px 0;
-}
-
-.hep-reject-reason-option input[type="radio"] {
-  width: 18px;
-  height: 18px;
-  margin: 0;
-  margin-top: 2px;
-  cursor: pointer;
-  accent-color: var(--hep-reject-red);
-  flex-shrink: 0;
-}
-
-.hep-reject-reason-label {
-  font-size: 14px;
-  color: var(--hep-text-primary);
-  line-height: 1.4;
-}
-
-.hep-reject-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-}
-
-/* Reject-only mode styles */
-.hep-reject-close {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  background: none;
+.hep-tag-remove {
+  width: 14px;
+  height: 14px;
   border: none;
-  font-size: 24px;
-  color: var(--hep-text-secondary);
+  background: transparent;
+  color: var(--color-primary);
   cursor: pointer;
-  padding: 4px 8px;
-  line-height: 1;
-}
-
-.hep-reject-close:hover {
-  color: var(--hep-text-primary);
-}
-
-.hep-reject-section {
-  position: relative;
-}
-
-.hep-reject-details {
-  background-color: var(--hep-primary-white);
-  border: 1px solid var(--hep-border-light);
-  border-radius: 8px;
-  padding: 12px 16px;
-  margin-bottom: 16px;
-}
-
-.hep-reject-detail-row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 6px 0;
+  justify-content: center;
+  opacity: 0.7;
+  padding: 0;
 }
 
-.hep-reject-detail-row:not(:last-child) {
-  border-bottom: 1px solid var(--hep-border-light);
-}
-
-.hep-reject-detail-label {
-  font-size: 13px;
-  color: var(--hep-text-secondary);
-}
-
-.hep-reject-detail-value {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--hep-text-primary);
-}
-
-/* Total highlight - uses protocol purple instead of green */
-.hep-reject-detail-total {
-  font-size: 16px;
-  color: #31135D;
+.hep-tag-remove:hover {
+  opacity: 1;
 }
 
 /* ========================================
@@ -1156,522 +476,197 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  overflow: hidden;
-  padding: 20px;
+  padding: var(--spacing-xl);
 }
 
 .hep-popup {
-  background-color: var(--hep-primary-white);
-  border-radius: 10px;
-  padding: 24px;
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-2xl);
   max-width: 400px;
   width: 100%;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-  overflow: hidden;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
 }
 
 .hep-popup-title {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 18px;
   font-weight: 600;
-  font-size: 16px;
-  color: #1C1B1F;
-  margin-bottom: 16px;
+  color: var(--color-gray-900);
+  margin: 0 0 var(--spacing-lg) 0;
 }
 
 .hep-popup-content {
   font-size: 14px;
-  color: var(--hep-text-primary);
-  margin-bottom: 24px;
+  color: var(--color-gray-600);
   line-height: 1.5;
+  margin: 0 0 var(--spacing-2xl) 0;
 }
 
 .hep-popup-actions {
   display: flex;
-  gap: 12px;
+  gap: var(--spacing-md);
   justify-content: flex-end;
-  flex-wrap: wrap;
-}
-
-.hep-popup-actions .hep-btn {
-  min-width: auto;
-  max-width: none;
 }
 
 /* ========================================
-   Form Groups
-   - Per protocol: 8px label-to-input, 16px between groups
-   ======================================== */
-
-.hep-form-group {
-  margin-bottom: 16px;
-}
-
-.hep-form-group:last-child {
-  margin-bottom: 0;
-}
-
-.hep-form-group label {
-  display: block;
-  margin-bottom: 8px;
-}
-
-.hep-form-row {
-  display: flex;
-  gap: 16px;
-  align-items: flex-start;
-}
-
-.hep-form-row > * {
-  flex: 1;
-}
-
-/* ========================================
-   Section Headers
-   - Border spans full width by using negative margins
-   - Protocol border color: #E7E0EC
-   ======================================== */
-
-.hep-section-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  padding-bottom: 16px;
-  margin-bottom: 0;
-  margin-left: -16px;
-  margin-right: -16px;
-  padding-left: 16px;
-  padding-right: 16px;
-  border-bottom: 1px solid #E7E0EC;
-  flex-shrink: 0;
-}
-
-.hep-header-content {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  flex: 1;
-  min-width: 0;
-}
-
-.hep-header-subtext {
-  margin: 0;
-}
-
-/* ========================================
-   Actions Row (Edit State)
-   Per protocol: matches footer button styling
-   ======================================== */
-
-.hep-actions-row {
-  display: flex;
-  flex-direction: row;
-  gap: 12px;
-  justify-content: center;
-  align-items: center;
-  margin-top: 16px;
-  padding: 16px 0 8px;
-  border-top: 1px solid #E7E0EC;
-}
-
-/* ========================================
-   Primary Actions (Footer)
-   Per protocol: 16px 20px padding, centered buttons
-   border-top separates footer from body
-   ======================================== */
-
-.hep-primary-actions {
-  display: flex;
-  flex-direction: row;
-  gap: 12px;
-  justify-content: center;
-  align-items: center;
-  margin-top: 0;
-  padding: 16px 20px 8px;
-  background-color: #FFFFFF;
-  flex-shrink: 0;
-  border-top: 1px solid #E7E0EC;
-  margin-left: -16px;
-  margin-right: -16px;
-}
-
-/* Reject outline button - Red outlined per protocol
-   Matches hep-btn-cancel sizing for consistency */
-.hep-btn-reject-outline {
-  background-color: transparent;
-  border: 2px solid #DC3545;
-  color: #DC3545;
-  font-weight: 600;
-  font-size: 14px;
-  height: 44px;
-  padding: 0 24px;
-}
-
-.hep-btn-reject-outline:hover:not(:disabled) {
-  background-color: rgba(220, 53, 69, 0.08);
-}
-
-/* Primary large - extends hep-btn-primary without changing size
-   Just inherits from hep-btn-primary, no flex expansion */
-.hep-btn-primary-large {
-  /* Inherits all from hep-btn-primary via class combination */
-}
-
-/* ========================================
-   Schedule Selector (Host)
+   Schedule Selector (ScheduleSelector.jsx)
    ======================================== */
 
 .hss-host-schedule-selector {
-  padding: 16px;
-  background-color: rgba(49, 19, 93, 0.03);
-  border-radius: 8px;
+  padding: var(--spacing-lg);
+  background: var(--color-gray-50);
+  border-radius: var(--radius-md);
 }
 
 .hss-nights-grid {
   display: flex;
-  gap: 8px;
+  gap: var(--spacing-xs);
   justify-content: center;
-  flex-wrap: wrap;
-  margin-bottom: 16px;
+  margin-bottom: var(--spacing-md);
 }
 
 .hss-night-cell {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border: 2px solid var(--color-gray-200);
+  background: var(--color-white);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-gray-500);
+  cursor: pointer;
+  transition: all var(--transition-fast);
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  font-family: var(--hep-font-sans);
-  font-weight: 600;
-  font-size: 14px;
-  color: var(--hep-text-primary);
-  background-color: var(--hep-primary-white);
-  border: 2px solid var(--hep-tag-border);
-  transition: all 200ms ease;
 }
 
 .hss-night-cell:hover:not(.hss-unavailable):not(.hss-disabled) {
-  border-color: var(--hep-primary-purple);
-  background-color: rgba(49, 19, 93, 0.05);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 .hss-night-cell.hss-selected {
-  background-color: var(--hep-primary-purple);
-  color: var(--hep-primary-white);
-  border-color: var(--hep-primary-purple);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-white);
 }
 
-.hss-night-cell.hss-unavailable {
-  background-color: var(--hep-tag-background);
-  color: var(--hep-text-placeholder);
-  border-color: var(--hep-tag-border);
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
+.hss-night-cell.hss-unavailable,
 .hss-night-cell.hss-disabled {
+  opacity: 0.4;
   cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.hss-night-letter {
-  pointer-events: none;
 }
 
 .hss-selection-summary {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 12px;
-  background-color: rgba(49, 19, 93, 0.03);
-  border-radius: 4px;
-  border: 1px solid var(--hep-tag-border);
+  background: var(--color-gray-50);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
 }
 
 .hss-summary-item {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  font-family: var(--hep-font-sans);
   font-size: 14px;
+  padding: var(--spacing-xs) 0;
 }
 
 .hss-summary-label {
-  color: var(--hep-text-tertiary);
-  font-weight: 500;
+  color: var(--color-gray-500);
 }
 
 .hss-summary-value {
-  color: var(--hep-text-primary);
+  font-weight: 500;
+  color: var(--color-gray-800);
+}
+
+/* ========================================
+   Reservation Price Breakdown (General View)
+   ======================================== */
+
+.hep-breakdown-container {
+  background: var(--color-gray-50);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+}
+
+.hep-breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm) 0;
+}
+
+.hep-breakdown-row-label {
+  font-size: 14px;
+  color: var(--color-gray-600);
+}
+
+.hep-breakdown-row-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-gray-900);
+}
+
+.hep-breakdown-row-changed {
+  background: rgba(16, 185, 129, 0.1);
+  margin: 0 calc(-1 * var(--spacing-lg));
+  padding-left: var(--spacing-lg);
+  padding-right: var(--spacing-lg);
+  border-left: 3px solid var(--color-success);
+}
+
+.hep-breakdown-row-changed .hep-breakdown-row-value {
+  color: var(--color-success);
   font-weight: 600;
 }
 
-/* Check-in highlight - uses protocol purple instead of green */
-.hss-summary-value.hss-checkin {
-  color: #31135D;
+.hep-original-value {
+  font-size: 12px;
+  color: var(--color-gray-400);
+  text-decoration: line-through;
+  margin-right: var(--spacing-sm);
 }
 
-.hss-summary-value.hss-checkout {
-  color: var(--hep-reject-red);
-}
-
-/* ========================================
-   Animation Classes
-   ======================================== */
-
-.hep-animate-collapse {
-  overflow: hidden;
-  transition: max-height 300ms ease, opacity 300ms ease;
-}
-
-.hep-animate-collapse.collapsed {
-  max-height: 0;
+.hep-breakdown-edit-btn {
+  background: none;
+  border: none;
+  padding: var(--spacing-xs);
+  cursor: pointer;
+  color: var(--color-gray-400);
   opacity: 0;
+  transition: opacity var(--transition-fast);
 }
 
-.hep-animate-collapse.expanded {
-  max-height: none;
+.hep-breakdown-row:hover .hep-breakdown-edit-btn {
   opacity: 1;
-  overflow: visible;
+}
+
+.hep-breakdown-edit-btn:hover {
+  color: var(--color-primary);
 }
 
 /* ========================================
-   Utility Classes
-   - Per protocol spacing scale: 8px, 12px, 16px, 24px
+   Responsive - Mobile
    ======================================== */
 
-.hep-hidden {
-  display: none !important;
-}
-
-.hep-flex-center {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.hep-text-center {
-  text-align: center;
-}
-
-.hep-mt-8 {
-  margin-top: 8px;
-}
-
-.hep-mt-12 {
-  margin-top: 12px;
-}
-
-.hep-mt-16 {
-  margin-top: 16px;
-}
-
-.hep-mt-24 {
-  margin-top: 24px;
-}
-
-.hep-mb-8 {
-  margin-bottom: 8px;
-}
-
-.hep-mb-12 {
-  margin-bottom: 12px;
-}
-
-.hep-mb-16 {
-  margin-bottom: 16px;
-}
-
-.hep-mb-24 {
-  margin-bottom: 24px;
-}
-
-.hep-p-16 {
-  padding: 16px;
-}
-
-.hep-py-16 {
-  padding-top: 16px;
-  padding-bottom: 16px;
-}
-
-/* ========================================
-   Responsive Adjustments
-   ======================================== */
-
-@media (max-width: 900px) {
-  .hep-btn-primary {
-    min-width: 100%;
-    max-width: 100%;
-  }
-
-  .hep-form-row {
-    flex-direction: column;
-  }
-
-  .hep-collapsible {
-    width: 100%;
-  }
-
-  .hep-proposal-row,
-  .hep-breakdown-row {
-    width: 100%;
-  }
-
-  .hep-title-main {
-    font-size: 18px;
-  }
-}
-
-@media (max-width: 600px) {
-  .hep-container {
-    padding: 12px;
-  }
-
-  .hep-title-main {
-    font-size: 20px;
-  }
-
-  .hep-popup {
-    padding: 16px;
-    max-width: calc(100vw - 32px);
-  }
-
-  .hep-popup-actions {
-    flex-direction: column;
-  }
-
-  .hep-popup-actions .hep-btn {
-    width: 100%;
-  }
-}
-
-/* ========================================
-   RESPONSIVE - MOBILE BOTTOM SHEET
-   - Screen width < 480px triggers slide-up mode per protocol
-   - Border radius: 24px 24px 0 0
-   - Grab handle visible
-   - Fixed footer with safe-area padding
-   - Consistent spacing: 12px mobile adjustments
-   ======================================== */
 @media (max-width: 480px) {
   .hep-grab-handle {
     display: block;
   }
 
   .hep-container {
-    border-radius: 24px 24px 0 0;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
     max-height: 90vh;
-    padding: 0 16px 0;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
   }
 
-  .hep-section-header {
-    padding: 12px 16px 12px;
-    margin-left: -16px;
-    margin-right: -16px;
-    flex-shrink: 0;
-  }
-
-  .hep-title-main {
-    font-size: 18px;
-    font-weight: 500;
-  }
-
-  /* Scrollable body */
-  .hep-body {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    padding-top: 12px;
-    padding-bottom: 8px;
-  }
-
-  /* Collapsible section tighter on mobile */
-  .hep-collapsible {
-    margin-bottom: 12px;
-    min-height: 40px;
-  }
-
-  /* Primary actions - fixed at bottom with safe area */
-  .hep-primary-actions {
-    flex-shrink: 0;
-    flex-direction: column-reverse;
-    padding: 12px 16px;
-    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-    margin-top: 0;
-    margin-left: -16px;
-    margin-right: -16px;
-    gap: 10px;
-    border-top: 1px solid #E7E0EC;
-    background-color: #FFFFFF;
-  }
-
-  .hep-primary-actions .hep-btn {
-    width: 100%;
-    font-size: 14px;
-    height: 44px;
-    min-width: unset;
-  }
-
-  .hep-primary-actions .hep-btn-reject-outline {
-    width: 100%;
-    min-width: unset;
-  }
-
-  .hep-primary-actions .hep-btn-primary-large {
-    width: 100%;
-    flex: none;
-  }
-
-  /* Tighter form spacing on mobile */
-  .hep-form-group {
-    margin-bottom: 12px;
-  }
-
-  .hep-editing-terms {
-    padding: 12px 0;
-  }
-
-  /* Footer styles on mobile */
-  .hep-footer {
-    flex-shrink: 0;
-    flex-direction: column-reverse;
-    padding: 12px 16px;
-    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-    margin-top: 0;
-    margin-left: -16px;
-    margin-right: -16px;
-    gap: 10px;
-    border-top: 1px solid #E7E0EC;
-    background-color: #FFFFFF;
-  }
-
-  .hep-footer .hep-btn {
-    width: 100%;
-    font-size: 14px;
-    height: 44px;
-    min-width: unset;
-  }
-
-  .hep-footer--vertical {
-    flex-direction: column;
-  }
-
-  /* Header adjustments for mobile */
   .hep-header {
-    padding: 12px 16px 12px;
-    margin-left: -16px;
-    margin-right: -16px;
+    padding: var(--spacing-md) var(--spacing-lg);
   }
 
   .hep-header-title {
@@ -1688,12 +683,30 @@
     height: 36px;
   }
 
-  /* Pristine view on mobile */
-  .hep-detail-row {
-    padding: 10px 0;
+  .hep-body {
+    padding: var(--spacing-lg);
   }
 
-  .hep-pricing-section {
-    padding: 12px;
+  .hep-footer {
+    flex-direction: column;
+    padding: var(--spacing-lg);
+    padding-bottom: calc(var(--spacing-lg) + env(safe-area-inset-bottom, 0px));
+  }
+
+  .hep-footer .hep-btn {
+    width: 100%;
+  }
+
+  .hep-popup {
+    padding: var(--spacing-lg);
+    max-width: calc(100vw - 32px);
+  }
+
+  .hep-popup-actions {
+    flex-direction: column;
+  }
+
+  .hep-popup-actions .hep-btn {
+    width: 100%;
   }
 }
