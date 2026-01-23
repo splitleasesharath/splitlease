@@ -359,20 +359,18 @@ export function HostEditingProposal({
     }
 
     if (view === 'editing') {
-      // Editing header: Back button + "Edit Proposal" title
+      // Editing header: Document icon + "Edit Proposal" title
       return (
         <div className="hep-header">
           <div className="hep-header-left">
-            <button
-              type="button"
-              className="hep-header-back"
-              onClick={handleCancelEdits}
-              aria-label="Back"
-            >
+            <div className="hep-header-icon">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M15 18L9 12L15 6" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                <polyline points="14,2 14,8 20,8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
               </svg>
-            </button>
+            </div>
             <div>
               <div className="hep-header-title">Edit Proposal</div>
               <div className="hep-header-subtitle">{listingTitle}</div>
@@ -393,14 +391,16 @@ export function HostEditingProposal({
       )
     }
 
-    // General header: Check icon + "Review Changes" title
+    // General header: Document icon + "Review Changes" title
     return (
       <div className="hep-header">
         <div className="hep-header-left">
-          <div className="hep-header-icon hep-header-icon--success">
+          <div className="hep-header-icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 12l2 2 4-4"/>
-              <circle cx="12" cy="12" r="10"/>
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14,2 14,8 20,8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
             </svg>
           </div>
           <div>
