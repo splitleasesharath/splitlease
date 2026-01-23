@@ -1120,9 +1120,9 @@ dd.gep-detail-value {
 
 .reservation-price-breakdown {
   width: 100%;
-  min-height: 80px;
+  min-height: 60px;
   max-height: 750px;
-  padding: 16px;
+  padding: 12px;
   background-color: var(--gep-bg-primary);
   border: none;
   border-radius: var(--gep-roundness);
@@ -1133,27 +1133,27 @@ dd.gep-detail-value {
 .rpb-header {
   font-family: var(--rpb-font-primary);
   font-weight: 600;
-  font-size: 16px;
+  font-size: 15px;
   color: var(--rpb-text-header);
   text-align: left;
-  line-height: 1.4;
+  line-height: 1.3;
   letter-spacing: 0;
-  margin: 0 0 12px 0;
+  margin: 0 0 8px 0;
   width: 100%;
-  padding-bottom: 10px;
+  padding-bottom: 8px;
   border-bottom: 1px solid var(--gep-border-light);
 }
 
 .rpb-row {
   width: 100%;
   margin: 0 0 0 0;
-  min-height: 22px;
+  min-height: 20px;
   display: flex;
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
   border-radius: 0;
-  padding: 8px 0;
+  padding: 5px 0;
   box-sizing: border-box;
   border-bottom: 1px solid var(--gep-border-light);
 }
@@ -1165,16 +1165,16 @@ dd.gep-detail-value {
 .rpb-row--white {
   background-color: var(--rpb-bg-primary);
   border-radius: var(--gep-roundness);
-  padding: 16px;
-  margin: 8px 0;
+  padding: 10px;
+  margin: 6px 0;
 }
 
 .rpb-label {
   font-family: var(--rpb-font-primary);
   font-weight: 500;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--rpb-text-secondary);
-  line-height: 1.4;
+  line-height: 1.3;
   letter-spacing: 0;
   word-spacing: 0;
   flex: 0 1 auto;
@@ -1201,9 +1201,9 @@ dd.gep-detail-value {
 .rpb-value {
   font-family: var(--rpb-font-primary);
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--rpb-text-primary);
-  line-height: 1.4;
+  line-height: 1.3;
   letter-spacing: 0;
   text-align: right;
   flex: 0 1 auto;
@@ -1216,7 +1216,7 @@ dd.gep-detail-value {
 }
 
 .rpb-value--large {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--gep-primary-color);
 }
@@ -1241,25 +1241,25 @@ dd.gep-detail-value {
   width: 100%;
   height: 1px;
   background: var(--gep-border-color);
-  margin: 8px 0;
+  margin: 5px 0;
   border: none;
 }
 
 .rpb-divider--thick {
   height: 1px;
-  margin: 16px 0;
+  margin: 10px 0;
 }
 
 .rpb-disclaimer {
   font-family: var(--rpb-font-primary);
   font-weight: 400;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--gep-text-muted);
-  line-height: 1.5;
+  line-height: 1.4;
   letter-spacing: 0;
   word-spacing: 0;
   width: 100%;
-  margin: 16px 0 0 0;
+  margin: 10px 0 0 0;
   padding: 0;
   font-style: italic;
 }
