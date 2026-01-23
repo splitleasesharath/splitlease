@@ -254,7 +254,8 @@
   outline-offset: var(--sp-focus-offset);
 }
 
-.sp-popup-close-btn svg {
+/* Close icon - base styles (desktop) */
+.sp-popup-close-icon {
   width: 24px;
   height: 24px;
   stroke: var(--sp-text-muted);
@@ -890,16 +891,23 @@
     height: 20px;
   }
 
-  /* Close button - larger icon on mobile (no background container) */
-  .sp-popup-close-btn svg {
-    width: 28px;
-    height: 28px;
+  /* Close icon - larger on mobile for better tap target */
+  .sp-popup-close-icon {
+    width: 36px;
+    height: 36px;
     stroke-width: 2.5;
   }
 }
 
 /* Tablet breakpoint */
 @media (min-width: 481px) and (max-width: 768px) {
+  /* Close icon - larger on tablet for better tap target */
+  .sp-popup-close-icon {
+    width: 36px;
+    height: 36px;
+    stroke-width: 2.5;
+  }
+
   .sp-popup-overlay {
     width: calc(100% - 32px);
     max-width: 600px;

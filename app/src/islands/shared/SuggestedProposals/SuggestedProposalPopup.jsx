@@ -216,8 +216,11 @@ export default function SuggestedProposalPopup({
                 aria-label="Close popup"
                 type="button"
               >
-                {/* Feather: x */}
+                {/* Feather: x - explicit size for mobile visibility */}
                 <svg
+                  className="sp-popup-close-icon"
+                  width="24"
+                  height="24"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
