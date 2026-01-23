@@ -206,7 +206,11 @@
 .hep-header-close svg {
   width: 20px;
   height: 20px;
-  stroke-width: 2.5;                          /* Slightly thicker stroke */
+}
+
+.hep-header-close svg line {
+  stroke: #111111;                            /* Explicit dark stroke color */
+  stroke-width: 2.5;                          /* Thicker for visibility */
 }
 
 .hep-header-close:hover {
