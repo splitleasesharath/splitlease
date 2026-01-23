@@ -208,7 +208,7 @@
   height: 20px;
 }
 
-.hep-header-close svg line {
+.hep-header-close svg path {
   stroke: #111111;                            /* Explicit dark stroke color */
   stroke-width: 2.5;                          /* Thicker for visibility */
 }
