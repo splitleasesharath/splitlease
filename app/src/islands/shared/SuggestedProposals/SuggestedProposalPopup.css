@@ -704,7 +704,22 @@
 }
 
 .sp-why-icon {
-  font-size: var(--sp-font-size-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--sp-font-size-md);
+  height: var(--sp-font-size-md);
+}
+
+/* Feather icon SVG inside why icon container */
+.sp-why-icon-svg {
+  width: 100%;
+  height: 100%;
+  stroke: var(--sp-primary-purple);
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .sp-why-text {
