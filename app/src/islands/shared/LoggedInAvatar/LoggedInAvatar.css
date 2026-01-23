@@ -28,7 +28,7 @@
   height: 40px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #5B21B6;
+  border: none;
   flex-shrink: 0;
 }
 
