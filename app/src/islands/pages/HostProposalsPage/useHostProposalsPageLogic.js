@@ -988,10 +988,20 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
 
   /**
    * Handle alert notifications from editing component
+   * Supports both (message, type) and (title, content, type) signatures
    */
-  const handleEditingAlert = useCallback((message, type = 'info') => {
+  const handleEditingAlert = useCallback((titleOrMessage, contentOrType = 'info', type) => {
     // For now, use simple alert. Can be replaced with toast system later.
-    alert(message);
+    // Handle both (message, type) and (title, content, type) call signatures
+    if (type !== undefined) {
+      // Called with (title, content, type) - combine title and content
+      const title = titleOrMessage;
+      const content = contentOrType;
+      alert(`${title}\n\n${content}`);
+    } else {
+      // Called with (message, type) - just show message
+      alert(titleOrMessage);
+    }
   }, []);
 
   /**
