@@ -3068,6 +3068,45 @@
 }
 
 /* ============================================================================
+   EPC COUNTEROFFER VALUE COMPARISON (Strikethrough & Changed Values)
+   Shows original value struck through and new value highlighted
+   ============================================================================ */
+
+.epc-strikethrough {
+  color: var(--gp-text-muted);
+  text-decoration: line-through;
+  margin-right: 8px;
+  font-size: 0.9em;
+}
+
+.epc-changed-value {
+  color: #B45309;
+  font-weight: 600;
+}
+
+.epc-info-value .epc-strikethrough {
+  display: inline-block;
+}
+
+.epc-info-value .epc-changed-value {
+  display: inline-block;
+}
+
+/* Nightly price strikethrough in pricing breakdown */
+.epc-pricing-breakdown .epc-strikethrough {
+  margin-right: 4px;
+}
+
+.epc-pricing-breakdown .epc-changed-value {
+  color: #B45309;
+}
+
+/* Total price when changed */
+.epc-pricing-total.epc-changed-value {
+  color: #B45309;
+}
+
+/* ============================================================================
    EPC PROGRESS ROW
    ============================================================================ */
 

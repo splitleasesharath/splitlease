@@ -459,30 +459,53 @@ export default function ExpandableProposalCard({
   const hostName = getHostDisplayName(host);
   const hostPhoto = getHostProfilePhoto(host);
 
-  // Schedule
-  let daysSelected = proposal?.['Days Selected'] || proposal?.hcDaysSelected || [];
-  if (typeof daysSelected === 'string') {
-    try { daysSelected = JSON.parse(daysSelected); } catch (e) { daysSelected = []; }
-  }
-  const allDays = getAllDaysWithSelection(daysSelected);
-  const nightsPerWeek = proposal?.['nights per week (num)'] || daysSelected.length;
-  const reservationWeeks = proposal?.['Reservation Span (Weeks)'] || proposal?.['hc reservation span (weeks)'] || 4;
-  const checkInOutRange = getCheckInOutRange(proposal);
-
-  // Pricing
+  // Counteroffer flag
   const isCounteroffer = proposal?.['counter offer happened'];
-  const nightlyPrice = isCounteroffer
-    ? proposal?.['hc nightly price']
-    : proposal?.['proposal nightly price'];
-  const totalPrice = isCounteroffer
-    ? proposal?.['hc total price']
-    : proposal?.['Total Price for Reservation (guest)'];
-  const originalTotalPrice = isCounteroffer ? proposal?.['Total Price for Reservation (guest)'] : null;
+
+  // Original values (guest's proposal)
+  let originalDaysSelected = proposal?.['Days Selected'] || [];
+  if (typeof originalDaysSelected === 'string') {
+    try { originalDaysSelected = JSON.parse(originalDaysSelected); } catch (e) { originalDaysSelected = []; }
+  }
+  const originalNightsPerWeek = proposal?.['nights per week (num)'] || originalDaysSelected.length;
+  const originalReservationWeeks = proposal?.['Reservation Span (Weeks)'] || 4;
+  const originalNightlyPrice = proposal?.['proposal nightly price'] || 0;
+  const originalTotalPrice = proposal?.['Total Price for Reservation (guest)'] || 0;
+  const originalMoveInStart = proposal?.['Move in range start'];
+
+  // HC values (host counteroffer) - only if counteroffer happened
+  let hcDaysSelected = proposal?.['hc days selected'] || [];
+  if (typeof hcDaysSelected === 'string') {
+    try { hcDaysSelected = JSON.parse(hcDaysSelected); } catch (e) { hcDaysSelected = []; }
+  }
+  const hcNightsPerWeek = proposal?.['hc nights per week'] || hcDaysSelected.length;
+  const hcReservationWeeks = proposal?.['hc reservation span (weeks)'];
+  const hcNightlyPrice = proposal?.['hc nightly price'];
+  const hcTotalPrice = proposal?.['hc total price'];
+  const hcMoveInDate = proposal?.['hc move in date'];
+
+  // Active values (what to display as current - prefer HC if counteroffer)
+  const daysSelected = isCounteroffer && hcDaysSelected.length > 0 ? hcDaysSelected : originalDaysSelected;
+  const allDays = getAllDaysWithSelection(daysSelected);
+  const nightsPerWeek = isCounteroffer && hcNightsPerWeek ? hcNightsPerWeek : originalNightsPerWeek;
+  const reservationWeeks = isCounteroffer && hcReservationWeeks ? hcReservationWeeks : originalReservationWeeks;
+  const nightlyPrice = isCounteroffer && hcNightlyPrice != null ? hcNightlyPrice : originalNightlyPrice;
+  const totalPrice = isCounteroffer && hcTotalPrice != null ? hcTotalPrice : originalTotalPrice;
+  const checkInOutRange = getCheckInOutRange(proposal);
   const cleaningFee = proposal?.['cleaning fee'] || 0;
 
+  // Comparison flags - detect which values changed
+  const durationChanged = isCounteroffer && hcReservationWeeks != null && hcReservationWeeks !== originalReservationWeeks;
+  const nightlyPriceChanged = isCounteroffer && hcNightlyPrice != null && hcNightlyPrice !== originalNightlyPrice;
+  const totalPriceChanged = isCounteroffer && hcTotalPrice != null && hcTotalPrice !== originalTotalPrice;
+  const moveInChanged = isCounteroffer && hcMoveInDate && hcMoveInDate !== originalMoveInStart;
+  const daysChanged = isCounteroffer && hcDaysSelected.length > 0 &&
+    JSON.stringify([...hcDaysSelected].sort()) !== JSON.stringify([...originalDaysSelected].sort());
+
   // Dates
-  const moveInStart = proposal?.['Move in range start'];
+  const moveInStart = isCounteroffer && hcMoveInDate ? hcMoveInDate : originalMoveInStart;
   const anticipatedMoveIn = formatDate(moveInStart);
+  const originalMoveInDisplay = moveInChanged ? formatDate(originalMoveInStart) : null;
   const checkInTime = listing?.['Check in time'] || '2:00 pm';
   const checkOutTime = listing?.['Check Out time'] || '11:00 am';
 
@@ -728,11 +751,25 @@ export default function ExpandableProposalCard({
           <div className="epc-info-grid">
             <div className="epc-info-item">
               <div className="epc-info-label">Ideal Move-in</div>
-              <div className="epc-info-value">{anticipatedMoveIn || 'TBD'}</div>
+              <div className="epc-info-value">
+                {moveInChanged && originalMoveInDisplay && (
+                  <span className="epc-strikethrough">{originalMoveInDisplay}</span>
+                )}
+                <span className={moveInChanged ? 'epc-changed-value' : ''}>
+                  {anticipatedMoveIn || 'TBD'}
+                </span>
+              </div>
             </div>
             <div className="epc-info-item">
               <div className="epc-info-label">Duration</div>
-              <div className="epc-info-value">{reservationWeeks} weeks</div>
+              <div className="epc-info-value">
+                {durationChanged && (
+                  <span className="epc-strikethrough">{originalReservationWeeks} weeks</span>
+                )}
+                <span className={durationChanged ? 'epc-changed-value' : ''}>
+                  {reservationWeeks} weeks
+                </span>
+              </div>
             </div>
             <div className="epc-info-item">
               <div className="epc-info-label">Schedule</div>
@@ -740,7 +777,14 @@ export default function ExpandableProposalCard({
             </div>
             <div className="epc-info-item">
               <div className="epc-info-label">Nights/week</div>
-              <div className="epc-info-value">{nightsPerWeek} nights</div>
+              <div className="epc-info-value">
+                {daysChanged && (
+                  <span className="epc-strikethrough">{originalNightsPerWeek} nights</span>
+                )}
+                <span className={daysChanged ? 'epc-changed-value' : ''}>
+                  {nightsPerWeek} nights
+                </span>
+              </div>
             </div>
           </div>
 
@@ -778,7 +822,15 @@ export default function ExpandableProposalCard({
           {/* Pricing Row */}
           <div className="epc-pricing-row">
             <div className="epc-pricing-breakdown">
-              <span>{formatPrice(nightlyPrice)}/night</span>
+              <span>
+                {nightlyPriceChanged && (
+                  <span className="epc-strikethrough">{formatPrice(originalNightlyPrice)}</span>
+                )}
+                <span className={nightlyPriceChanged ? 'epc-changed-value' : ''}>
+                  {formatPrice(nightlyPrice)}
+                </span>
+                /night
+              </span>
               <span>×</span>
               <span>{nightsPerWeek} nights</span>
               <span>×</span>
@@ -793,11 +845,13 @@ export default function ExpandableProposalCard({
             <div className="epc-pricing-total-area">
               <div className="epc-pricing-total-label">
                 Estimated Total
-                {originalTotalPrice && (
+                {totalPriceChanged && (
                   <span className="epc-pricing-original">{formatPrice(originalTotalPrice)}</span>
                 )}
               </div>
-              <div className="epc-pricing-total">{formatPrice(totalPrice)}</div>
+              <div className={`epc-pricing-total ${totalPriceChanged ? 'epc-changed-value' : ''}`}>
+                {formatPrice(totalPrice)}
+              </div>
             </div>
           </div>
 
