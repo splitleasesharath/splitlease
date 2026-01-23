@@ -569,16 +569,29 @@ export default function Header({ autoShowLogin = false }) {
           </a>
         </div>
 
-        {/* Mobile Hamburger Menu */}
-        <button
-          className={`hamburger-menu ${mobileMenuActive ? 'active' : ''}`}
-          aria-label="Toggle navigation menu"
-          onClick={toggleMobileMenu}
-        >
-          <span className="hamburger-line"></span>
-          <span className="hamburger-line"></span>
-          <span className="hamburger-line"></span>
-        </button>
+        {/* Mobile Header Actions - Suggested Proposals + Hamburger */}
+        <div className="mobile-header-actions">
+          {/* Mobile Suggested Proposal Trigger - visible only on mobile */}
+          {currentUser && isGuest() && pendingProposalCount > 0 && window.location.pathname !== '/guest-proposals' && (
+            <HeaderSuggestedProposalTrigger
+              onClick={handleSuggestedTriggerClick}
+              isActive={showSuggestedPopup}
+              proposalCount={pendingProposalCount}
+              className="mobile-only"
+            />
+          )}
+
+          {/* Mobile Hamburger Menu */}
+          <button
+            className={`hamburger-menu ${mobileMenuActive ? 'active' : ''}`}
+            aria-label="Toggle navigation menu"
+            onClick={toggleMobileMenu}
+          >
+            <span className="hamburger-line"></span>
+            <span className="hamburger-line"></span>
+            <span className="hamburger-line"></span>
+          </button>
+        </div>
 
         {/* Center Navigation with Dropdowns */}
         <div className={`nav-center ${mobileMenuActive ? 'mobile-active' : ''}`}>
@@ -880,13 +893,13 @@ export default function Header({ autoShowLogin = false }) {
 
         {/* Right Navigation - Auth Buttons */}
         <div className={`nav-right ${mobileMenuActive ? 'mobile-active' : ''}`}>
-          {/* Suggested Proposal Trigger - shows for guest users with pending proposals */}
-          {/* Hidden on /guest-proposals page since suggestions are already shown in the list */}
+          {/* Suggested Proposal Trigger - Desktop only (mobile version is near hamburger) */}
           {currentUser && isGuest() && pendingProposalCount > 0 && window.location.pathname !== '/guest-proposals' && (
             <HeaderSuggestedProposalTrigger
               onClick={handleSuggestedTriggerClick}
               isActive={showSuggestedPopup}
               proposalCount={pendingProposalCount}
+              className="desktop-only"
             />
           )}
 

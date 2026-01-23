@@ -14,11 +14,13 @@ import './HeaderSuggestedProposalTrigger.css';
  * @param {function} props.onClick - Handler when trigger is clicked
  * @param {boolean} props.isActive - Whether popup is currently open
  * @param {number} props.proposalCount - Number of available suggestions
+ * @param {string} [props.className] - Additional CSS classes
  */
 export default function HeaderSuggestedProposalTrigger({
   onClick,
   isActive = false,
-  proposalCount = 0
+  proposalCount = 0,
+  className = ''
 }) {
   const lottieRef = useRef(null);
 
@@ -63,7 +65,7 @@ export default function HeaderSuggestedProposalTrigger({
 
   return (
     <button
-      className={`header-sp-trigger ${isActive ? 'header-sp-trigger--active' : ''}`}
+      className={`header-sp-trigger ${isActive ? 'header-sp-trigger--active' : ''} ${className}`.trim()}
       onClick={onClick}
       onMouseEnter={handleMouseEnter}
       aria-label={`View ${proposalCount} suggested proposal${proposalCount !== 1 ? 's' : ''}`}

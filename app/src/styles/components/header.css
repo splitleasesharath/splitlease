@@ -619,6 +619,20 @@
     gap: 4px;
 }
 
+/* Mobile header actions container - hidden on desktop */
+.mobile-header-actions {
+    display: none;
+}
+
+/* Desktop/mobile visibility utilities */
+.desktop-only {
+    display: flex;
+}
+
+.mobile-only {
+    display: none;
+}
+
 /* Show hamburger menu and hide desktop navigation on mobile */
 @media (max-width: 768px) {
     .main-header {
@@ -629,6 +643,22 @@
         padding: 1rem 1rem;
         max-width: 100%;
         box-sizing: border-box;
+    }
+
+    /* Mobile header actions - show on mobile */
+    .mobile-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* Visibility utilities on mobile */
+    .desktop-only {
+        display: none !important;
+    }
+
+    .mobile-only {
+        display: flex !important;
     }
 
     .hamburger-menu {
