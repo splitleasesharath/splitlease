@@ -39,6 +39,7 @@ import { goToRentalApplication, getListingUrlWithProposalContext } from '../../.
 import HostProfileModal from '../../modals/HostProfileModal.jsx';
 import GuestEditingProposalModal from '../../modals/GuestEditingProposalModal.jsx';
 import CancelProposalModal from '../../modals/CancelProposalModal.jsx';
+import CompareTermsModal from '../../modals/CompareTermsModal.jsx';
 import NotInterestedModal from '../../shared/SuggestedProposals/components/NotInterestedModal.jsx';
 import VirtualMeetingManager from '../../shared/VirtualMeetingManager/VirtualMeetingManager.jsx';
 import FullscreenProposalMapModal from '../../modals/FullscreenProposalMapModal.jsx';
@@ -431,6 +432,7 @@ export default function ExpandableProposalCard({
   const [showMapModal, setShowMapModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showNotInterestedModal, setShowNotInterestedModal] = useState(false);
+  const [showCompareTermsModal, setShowCompareTermsModal] = useState(false);
   const [isNotInterestedProcessing, setIsNotInterestedProcessing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
@@ -842,6 +844,16 @@ export default function ExpandableProposalCard({
               </button>
             )}
 
+            {/* Review Host Terms button - for proposals with counteroffer */}
+            {isCounteroffer && !isTerminal && !isCompleted && (
+              <button
+                className="epc-btn epc-btn--attention"
+                onClick={() => setShowCompareTermsModal(true)}
+              >
+                Review Host Terms
+              </button>
+            )}
+
             {/* Guest Action 2 */}
             {buttonConfig?.guestAction2?.visible && (
               <button
@@ -961,6 +973,18 @@ export default function ExpandableProposalCard({
         currentProposalId={proposal._id}
         onProposalSelect={onProposalSelect}
       />
+
+      {/* Compare Terms Modal - for proposals with counteroffer */}
+      {showCompareTermsModal && isCounteroffer && (
+        <CompareTermsModal
+          proposal={proposal}
+          onClose={() => setShowCompareTermsModal(false)}
+          onAcceptCounteroffer={() => {
+            setShowCompareTermsModal(false);
+            window.location.reload();
+          }}
+        />
+      )}
     </div>
   );
 }
