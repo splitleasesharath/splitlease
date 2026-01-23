@@ -452,7 +452,7 @@ export async function generateStays(
  * Phase 3: Auxiliary Setups (reservation dates, permissions, magic links)
  * Phase 4: Multi-Channel Communications (email, SMS, in-app)
  * Phase 5: User Association
- * Phase 6: Payment Records
+ * Phase 6: Payment Records (via existing Edge Functions)
  * Phase 7: Additional Setups (agreement number, stays, house manual, reminders)
  */
 
@@ -470,8 +470,7 @@ import { generateStays } from '../lib/staysGenerator.ts';
 import type { CreateLeasePayload, CreateLeaseResponse, ProposalData, LeaseData } from '../lib/types.ts';
 
 // Import sub-function handlers
-import { generateGuestPaymentRecords } from './paymentRecords.ts';
-import { generateHostPaymentRecords } from './paymentRecords.ts';
+import { triggerGuestPaymentRecords, triggerHostPaymentRecords } from './paymentRecords.ts';
 import { sendLeaseNotifications } from './notifications.ts';
 import { generateMagicLinks } from './magicLinks.ts';
 import { grantListingPermission } from './permissions.ts';
@@ -677,25 +676,28 @@ export async function handleCreate(
 
   console.log('[lease:create] Phase 6: Creating payment records...');
 
-  const guestPaymentResult = await generateGuestPaymentRecords(supabase, {
-    leaseId,
-    rentalType: proposalData['rental type'],
-    moveInDate: activeTerms.moveInDate,
-    reservationSpanWeeks: activeTerms.reservationWeeks,
-    fourWeekRent: activeTerms.fourWeekRent,
-    maintenanceFee: activeTerms.maintenanceFee,
-    damageDeposit: activeTerms.damageDeposit,
-  });
+  // Trigger EXISTING Edge Functions for payment record creation
+  // These functions handle all the calculation logic internally
 
-  const hostPaymentResult = await generateHostPaymentRecords(supabase, {
+  // Build payment payload from proposal data
+  const paymentPayload = {
     leaseId,
-    rentalType: proposalData['rental type'],
+    rentalType: proposalData['rental type'],  // "Monthly" | "Weekly" | "Nightly"
     moveInDate: activeTerms.moveInDate,
     reservationSpanWeeks: activeTerms.reservationWeeks,
+    reservationSpanMonths: proposalData['hc duration in months'] || proposalData['duration in months'],
+    weekPattern: proposalData['hc weeks schedule']?.Display || proposalData['week selection']?.Display || 'Every week',
     fourWeekRent: activeTerms.fourWeekRent,
+    rentPerMonth: proposalData['hc host compensation (per period)'] || proposalData['host compensation'],
     maintenanceFee: activeTerms.maintenanceFee,
     damageDeposit: activeTerms.damageDeposit,
-  });
+  };
+
+  // Call guest-payment-records Edge Function
+  const guestPaymentResult = await triggerGuestPaymentRecords(paymentPayload);
+
+  // Call host-payment-records Edge Function
+  const hostPaymentResult = await triggerHostPaymentRecords(paymentPayload);
 
   console.log('[lease:create] Phase 6 complete');
 
@@ -1158,7 +1160,204 @@ async function auditMagicLink(
 
 ---
 
-### Step 10: Create Permissions Handler
+### Step 10: Create Payment Records Handler (Edge Function Integration)
+
+**File:** `supabase/functions/lease/handlers/paymentRecords.ts`
+
+**Details:**
+
+```typescript
+/**
+ * Payment Records Handler
+ *
+ * Triggers the EXISTING guest-payment-records and host-payment-records
+ * Edge Functions to create payment schedules for the lease.
+ *
+ * IMPORTANT: This does NOT duplicate the payment calculation logic.
+ * Instead, it calls the existing Edge Functions via HTTP.
+ *
+ * Existing Edge Functions:
+ * - guest-payment-records: Creates guest payment records (first payment 3 days BEFORE move-in)
+ * - host-payment-records: Creates host payment records (first payment 2 days AFTER move-in)
+ */
+
+interface PaymentPayload {
+  leaseId: string;
+  rentalType: string;        // "Monthly" | "Weekly" | "Nightly"
+  moveInDate: string;        // ISO date string
+  reservationSpanWeeks?: number;
+  reservationSpanMonths?: number;
+  weekPattern: string;       // "Every week" | "One week on, one week off" | etc.
+  fourWeekRent?: number;     // For Weekly/Nightly
+  rentPerMonth?: number;     // For Monthly
+  maintenanceFee: number;
+  damageDeposit?: number;
+}
+
+interface PaymentResult {
+  success: boolean;
+  recordCount: number;
+  totalAmount: number;
+  error?: string;
+}
+
+/**
+ * Trigger the guest-payment-records Edge Function
+ *
+ * KEY BUSINESS RULES (from Bubble workflow):
+ * - First payment: 3 days BEFORE move-in date
+ * - Payment interval: 28 days (4-week cycles)
+ * - Damage deposit: Added to FIRST payment only
+ * - Total Rent: Sum of all payments MINUS damage deposit (it's refundable)
+ */
+export async function triggerGuestPaymentRecords(
+  payload: PaymentPayload
+): Promise<PaymentResult> {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+  console.log('[lease:paymentRecords] Triggering guest-payment-records...');
+  console.log('[lease:paymentRecords] Payload:', JSON.stringify(payload, null, 2));
+
+  try {
+    const response = await fetch(`${supabaseUrl}/functions/v1/guest-payment-records`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${serviceRoleKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'generate',
+        payload: {
+          leaseId: payload.leaseId,
+          rentalType: payload.rentalType,
+          moveInDate: payload.moveInDate,
+          reservationSpanWeeks: payload.reservationSpanWeeks,
+          reservationSpanMonths: payload.reservationSpanMonths,
+          weekPattern: payload.weekPattern,
+          fourWeekRent: payload.fourWeekRent,
+          rentPerMonth: payload.rentPerMonth,
+          maintenanceFee: payload.maintenanceFee,
+          damageDeposit: payload.damageDeposit,
+        },
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!result.success) {
+      console.error('[lease:paymentRecords] Guest payment records failed:', result.error);
+      return {
+        success: false,
+        recordCount: 0,
+        totalAmount: 0,
+        error: result.error,
+      };
+    }
+
+    console.log('[lease:paymentRecords] Guest payment records created:', result.data);
+
+    return {
+      success: true,
+      recordCount: result.data?.recordCount || 0,
+      totalAmount: result.data?.totalRent || 0,
+    };
+
+  } catch (error) {
+    console.error('[lease:paymentRecords] Guest payment records exception:', error);
+    return {
+      success: false,
+      recordCount: 0,
+      totalAmount: 0,
+      error: (error as Error).message,
+    };
+  }
+}
+
+/**
+ * Trigger the host-payment-records Edge Function
+ *
+ * KEY BUSINESS RULES (from Bubble workflow):
+ * - First payment: 2 days AFTER move-in date
+ * - Payment interval: 28 days for Weekly/Nightly, 31 days for Monthly
+ * - Maintenance fee: Added to each payment
+ * - Week pattern: Affects proration for partial cycles
+ * - Total Compensation: Sum of all host payments
+ */
+export async function triggerHostPaymentRecords(
+  payload: PaymentPayload
+): Promise<PaymentResult> {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+  console.log('[lease:paymentRecords] Triggering host-payment-records...');
+  console.log('[lease:paymentRecords] Payload:', JSON.stringify(payload, null, 2));
+
+  try {
+    const response = await fetch(`${supabaseUrl}/functions/v1/host-payment-records`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${serviceRoleKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'generate',
+        payload: {
+          leaseId: payload.leaseId,
+          rentalType: payload.rentalType,
+          moveInDate: payload.moveInDate,
+          reservationSpanWeeks: payload.reservationSpanWeeks,
+          reservationSpanMonths: payload.reservationSpanMonths,
+          weekPattern: payload.weekPattern,
+          fourWeekRent: payload.fourWeekRent,
+          rentPerMonth: payload.rentPerMonth,
+          maintenanceFee: payload.maintenanceFee,
+          // Note: damageDeposit NOT passed to host - it's guest-only
+        },
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!result.success) {
+      console.error('[lease:paymentRecords] Host payment records failed:', result.error);
+      return {
+        success: false,
+        recordCount: 0,
+        totalAmount: 0,
+        error: result.error,
+      };
+    }
+
+    console.log('[lease:paymentRecords] Host payment records created:', result.data);
+
+    return {
+      success: true,
+      recordCount: result.data?.recordCount || 0,
+      totalAmount: result.data?.totalCompensation || 0,
+    };
+
+  } catch (error) {
+    console.error('[lease:paymentRecords] Host payment records exception:', error);
+    return {
+      success: false,
+      recordCount: 0,
+      totalAmount: 0,
+      error: (error as Error).message,
+    };
+  }
+}
+```
+
+**Validation:**
+- Successfully calls existing `guest-payment-records` Edge Function
+- Successfully calls existing `host-payment-records` Edge Function
+- Handles errors gracefully (non-blocking)
+- Returns record counts and totals for response
+
+---
+
+### Step 11: Create Permissions Handler
 
 **File:** `supabase/functions/lease/handlers/permissions.ts`
 
@@ -1582,6 +1781,76 @@ fetch(`${supabaseUrl}/functions/v1/lease`, {
 
 ---
 
+## Payment Records Edge Function Integration
+
+### Existing Edge Functions (DO NOT RECREATE)
+
+The lease creation workflow **orchestrates** the following existing Edge Functions for payment records:
+
+| Edge Function | Purpose | Trigger From Lease |
+|---------------|---------|-------------------|
+| `guest-payment-records` | Creates guest payment schedule | HTTP POST with `action: 'generate'` |
+| `host-payment-records` | Creates host payment schedule | HTTP POST with `action: 'generate'` |
+
+### Integration Flow
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    LEASE EDGE FUNCTION                          │
+│                         (Phase 6)                               │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  1. Build paymentPayload from proposal HC values                │
+│                                                                 │
+│  2. Call guest-payment-records Edge Function ───────────────►   │
+│     POST /functions/v1/guest-payment-records                    │
+│     {                                                           │
+│       "action": "generate",                                     │
+│       "payload": {                                              │
+│         "leaseId": "...",                                       │
+│         "rentalType": "Weekly",                                 │
+│         "moveInDate": "2026-02-01",                             │
+│         "reservationSpanWeeks": 12,                             │
+│         "weekPattern": "Every week",                            │
+│         "fourWeekRent": 2000,                                   │
+│         "maintenanceFee": 100,                                  │
+│         "damageDeposit": 500                                    │
+│       }                                                         │
+│     }                                                           │
+│                                                                 │
+│  3. Call host-payment-records Edge Function ────────────────►   │
+│     POST /functions/v1/host-payment-records                     │
+│     {                                                           │
+│       "action": "generate",                                     │
+│       "payload": { ... same but NO damageDeposit }              │
+│     }                                                           │
+│                                                                 │
+│  4. Collect results for response                                │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Key Business Rules (from Bubble Workflow Analysis)
+
+| Rule | Guest Payments | Host Payments |
+|------|----------------|---------------|
+| **First Payment Date** | 3 days BEFORE move-in | 2 days AFTER move-in |
+| **Payment Interval** | 28 days (4-week cycles) | 28 days (Weekly/Nightly) or 31 days (Monthly) |
+| **Damage Deposit** | Added to FIRST payment only | Not applicable |
+| **Maintenance Fee** | Added to each payment | Added to each payment |
+| **Total Calculation** | Total Rent = Sum - Damage Deposit | Total Compensation = Sum of all |
+
+### Week Pattern Proration (Weekly Rentals)
+
+| Pattern | Last Cycle Proration |
+|---------|---------------------|
+| "Every week" | `remainingWeeks / 4` |
+| "One week on, one week off" | 50% if ≤2 remaining weeks |
+| "Two weeks on, two weeks off" | 50% if only 1 remaining week |
+| "One week on, three weeks off" | No proration (full payment) |
+
+---
+
 ## File Summary
 
 ### Files to Create
@@ -1590,11 +1859,11 @@ fetch(`${supabaseUrl}/functions/v1/lease`, {
 |------|---------|
 | `supabase/functions/lease/index.ts` | Main router |
 | `supabase/functions/lease/deno.json` | Import map |
-| `supabase/functions/lease/handlers/create.ts` | Main create handler |
+| `supabase/functions/lease/handlers/create.ts` | Main create handler (7 phases) |
 | `supabase/functions/lease/handlers/notifications.ts` | Email/SMS/in-app notifications |
 | `supabase/functions/lease/handlers/magicLinks.ts` | Magic link generation |
 | `supabase/functions/lease/handlers/permissions.ts` | Listing permission grants |
-| `supabase/functions/lease/handlers/paymentRecords.ts` | Payment record generation wrapper |
+| `supabase/functions/lease/handlers/paymentRecords.ts` | **HTTP wrapper to call existing payment Edge Functions** |
 | `supabase/functions/lease/handlers/get.ts` | Get lease details |
 | `supabase/functions/lease/lib/types.ts` | TypeScript interfaces |
 | `supabase/functions/lease/lib/validators.ts` | Input validation |
@@ -1610,18 +1879,25 @@ fetch(`${supabaseUrl}/functions/v1/lease`, {
 | `app/src/logic/workflows/proposals/counterofferWorkflow.js` | Trigger lease creation after acceptance |
 | `supabase/config.toml` | Add `lease` function entry |
 
-### Files Referenced (Read-Only)
+### Existing Edge Functions to INVOKE (via HTTP)
+
+| Path | Purpose | How It's Used |
+|------|---------|---------------|
+| `supabase/functions/guest-payment-records/` | Guest payment record creation | Called via HTTP POST from `paymentRecords.ts` |
+| `supabase/functions/host-payment-records/` | Host payment record creation | Called via HTTP POST from `paymentRecords.ts` |
+| `supabase/functions/send-email/` | Email delivery | Called via HTTP POST from `notifications.ts` |
+| `supabase/functions/send-sms/` | SMS delivery | Called via HTTP POST from `notifications.ts` |
+| `supabase/functions/messages/` | In-app messaging | Called via HTTP POST from `notifications.ts` |
+| `supabase/functions/auth-user/` | Magic link generation | Called via HTTP POST from `magicLinks.ts` |
+
+### Files Referenced (Read-Only, Pattern Reference)
 
 | Path | Purpose |
 |------|---------|
-| `supabase/functions/proposal/index.ts` | Pattern reference |
-| `supabase/functions/guest-payment-records/` | Payment logic reference |
-| `supabase/functions/host-payment-records/` | Payment logic reference |
-| `supabase/functions/send-email/` | Email infrastructure |
-| `supabase/functions/send-sms/` | SMS infrastructure |
-| `supabase/functions/messages/` | Messaging infrastructure |
-| `supabase/functions/auth-user/handlers/generateMagicLink.ts` | Magic link reference |
+| `supabase/functions/proposal/index.ts` | Action-based routing pattern |
 | `supabase/functions/_shared/queueSync.ts` | Bubble sync utilities |
+| `supabase/functions/_shared/cors.ts` | CORS headers |
+| `supabase/functions/_shared/errors.ts` | Error handling utilities |
 
 ---
 
