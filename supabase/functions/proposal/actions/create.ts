@@ -698,11 +698,13 @@ export async function handleCreate(
       const resolvedListingName = listingName || "this listing";
 
       // Build template context for CTA message rendering
+      console.log(`[proposal:create] Profiles - host: ${JSON.stringify(hostProfile)}, guest: ${JSON.stringify(guestProfile)}`);
       const templateContext = buildTemplateContext(
         hostProfile?.firstName || 'Host',
         guestProfile?.firstName || 'Guest',
         resolvedListingName
       );
+      console.log(`[proposal:create] Template context: ${JSON.stringify(templateContext)}`);
 
       // Get CTAs for guest and host based on proposal status
       const [guestCTA, hostCTA] = await Promise.all([
