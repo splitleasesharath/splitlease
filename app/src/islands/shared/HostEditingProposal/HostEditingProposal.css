@@ -779,7 +779,7 @@
 .hss-nights-grid {
   display: flex;
   gap: var(--spacing-xs);
-  justify-content: center;
+  justify-content: flex-start;
   margin-bottom: var(--spacing-md);
 }
 
