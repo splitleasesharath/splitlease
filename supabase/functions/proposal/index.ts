@@ -18,6 +18,14 @@ const corsHeaders = {
 console.log("[proposal] Edge Function initializing...");
 
 Deno.serve(async (req: Request) => {
+  // DIAGNOSTIC: Log every incoming request with full details
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('[proposal] REQUEST RECEIVED');
+  console.log('[proposal] Method:', req.method);
+  console.log('[proposal] URL:', req.url);
+  console.log('[proposal] Headers:', JSON.stringify(Object.fromEntries(req.headers.entries())));
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
   try {
     console.log(`[proposal] Request: ${req.method}`);
 
@@ -52,6 +60,11 @@ Deno.serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
 
+    console.log('[proposal] Environment check:');
+    console.log('  SUPABASE_URL:', supabaseUrl ? 'SET' : 'MISSING');
+    console.log('  SUPABASE_SERVICE_ROLE_KEY:', supabaseServiceKey ? `SET (length: ${supabaseServiceKey.length})` : 'MISSING');
+    console.log('  SUPABASE_ANON_KEY:', supabaseAnonKey ? `SET (length: ${supabaseAnonKey.length})` : 'MISSING');
+
     if (!supabaseUrl || !supabaseServiceKey || !supabaseAnonKey) {
       throw new Error('Missing Supabase configuration');
     }
@@ -77,18 +90,26 @@ Deno.serve(async (req: Request) => {
       }
 
       case 'update': {
+        console.log('[proposal] Processing UPDATE action');
         console.log('[proposal] Loading update handler...');
         const { handleUpdate } = await import("./actions/update.ts");
         console.log('[proposal] Update handler loaded');
 
         // Authentication required
+        console.log('[proposal] Attempting authentication...');
         const user = await authenticateFromHeaders(req.headers, supabaseUrl, supabaseAnonKey);
+        console.log('[proposal] Authentication result:', user ? `SUCCESS (${user.id})` : 'FAILED (null)');
+
         if (!user) {
+          console.log('[proposal] ❌ Returning 401 - no authenticated user');
           return new Response(
             JSON.stringify({ success: false, error: 'Authentication required' }),
             { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
+
+        console.log('[proposal] ✅ User authenticated, proceeding with update');
+        console.log('[proposal] Calling handleUpdate with user:', user.id);
         result = await handleUpdate(payload, user, supabase);
         break;
       }
@@ -266,60 +287,101 @@ Deno.serve(async (req: Request) => {
   }
 });
 
-// Helper function for authentication
+// Helper function for authentication - ENHANCED DIAGNOSTIC VERSION
 async function authenticateFromHeaders(
   headers: Headers,
   supabaseUrl: string,
   supabaseAnonKey: string
 ): Promise<{ id: string; email: string } | null> {
-  const authHeader = headers.get('Authorization');
+  console.log('[proposal:auth] ═══════════════════════════════════');
+  console.log('[proposal:auth] Starting authentication');
 
+  const authHeader = headers.get('Authorization');
   console.log('[proposal:auth] Authorization header present:', !!authHeader);
+
   if (authHeader) {
     console.log('[proposal:auth] Header length:', authHeader.length);
-    console.log('[proposal:auth] Header starts with Bearer:', authHeader.startsWith('Bearer '));
+    console.log('[proposal:auth] Header format:', authHeader.substring(0, 20) + '...');
+    console.log('[proposal:auth] Starts with "Bearer ":', authHeader.startsWith('Bearer '));
   }
 
   if (!authHeader) {
-    console.log('[proposal:auth] No Authorization header - returning null');
+    console.log('[proposal:auth] ❌ No Authorization header - returning null');
+    console.log('[proposal:auth] ═══════════════════════════════════');
     return null;
   }
 
-  const authClient = createClient(supabaseUrl, supabaseAnonKey, {
-    global: { headers: { Authorization: authHeader } },
-  });
+  console.log('[proposal:auth] Creating auth client...');
+  console.log('[proposal:auth] Using URL:', supabaseUrl);
+  console.log('[proposal:auth] Using anon key length:', supabaseAnonKey.length);
 
-  const { data: { user }, error } = await authClient.auth.getUser();
+  try {
+    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    console.log('[proposal:auth] ✅ Auth client created');
 
-  if (error) {
-    console.error('[proposal:auth] getUser error:', error.message, error.status);
-  }
-  console.log('[proposal:auth] User retrieved:', !!user);
-  if (user) {
-    console.log('[proposal:auth] Supabase Auth UUID:', user.id);
-    console.log('[proposal:auth] User email:', user.email);
-  }
+    console.log('[proposal:auth] Calling authClient.auth.getUser()...');
+    const { data: { user }, error } = await authClient.auth.getUser();
 
-  if (error || !user) {
+    console.log('[proposal:auth] getUser() completed');
+    console.log('[proposal:auth] Error:', error ? JSON.stringify(error) : 'null');
+    console.log('[proposal:auth] User:', user ? 'FOUND' : 'null');
+
+    if (user) {
+      console.log('[proposal:auth] User ID (Supabase Auth UUID):', user.id);
+      console.log('[proposal:auth] User email:', user.email);
+    }
+
+    if (error || !user) {
+      console.log('[proposal:auth] ❌ Authentication failed - getUser returned error or null user');
+      console.log('[proposal:auth] ═══════════════════════════════════');
+      return null;
+    }
+
+    // Lookup application user ID from Supabase Auth UUID
+    console.log('[proposal:auth] Looking up application user ID...');
+    console.log('[proposal:auth] Querying user table with Supabase UUID:', user.id);
+
+    const { data: appUser, error: appUserError } = await authClient
+      .from('user')
+      .select('_id')
+      .eq('id', user.id)
+      .single();
+
+    console.log('[proposal:auth] User table query completed');
+    console.log('[proposal:auth] Query error:', appUserError ? JSON.stringify(appUserError) : 'null');
+    console.log('[proposal:auth] App user found:', appUser ? 'YES' : 'NO');
+
+    if (appUser) {
+      console.log('[proposal:auth] Application user ID (_id):', appUser._id);
+    }
+
+    if (appUserError || !appUser) {
+      console.log('[proposal:auth] ❌ Failed to lookup application user ID');
+      if (appUserError) {
+        console.log('[proposal:auth] Error code:', appUserError.code);
+        console.log('[proposal:auth] Error message:', appUserError.message);
+        console.log('[proposal:auth] Error details:', appUserError.details);
+        console.log('[proposal:auth] Error hint:', appUserError.hint);
+      }
+      console.log('[proposal:auth] ═══════════════════════════════════');
+      return null;
+    }
+
+    console.log('[proposal:auth] ✅ Authentication successful');
+    console.log('[proposal:auth] Returning:', { id: appUser._id, email: user.email ?? '' });
+    console.log('[proposal:auth] ═══════════════════════════════════');
+    return { id: appUser._id, email: user.email ?? '' };
+
+  } catch (err) {
+    console.error('[proposal:auth] ❌ EXCEPTION during authentication:');
+    console.error('[proposal:auth] Exception type:', (err as Error).constructor.name);
+    console.error('[proposal:auth] Exception message:', (err as Error).message);
+    console.error('[proposal:auth] Exception stack:', (err as Error).stack);
+    console.log('[proposal:auth] ═══════════════════════════════════');
     return null;
   }
-
-  // Look up the application user ID from the user table
-  // The user table stores the Bubble-style _id that's used throughout the app
-  // CRITICAL: Use authClient (which has the Authorization header) instead of creating a new unauthenticated client
-  const { data: appUser, error: appUserError } = await authClient
-    .from('user')
-    .select('_id')
-    .eq('id', user.id)  // id is the Supabase Auth UUID foreign key
-    .single();
-
-  if (appUserError || !appUser) {
-    console.error('[proposal:auth] Failed to lookup application user ID:', appUserError?.message);
-    return null;
-  }
-
-  console.log('[proposal:auth] Application user ID:', appUser._id);
-  return { id: appUser._id, email: user.email ?? '' };
 }
 
 console.log("[proposal] Edge Function ready");

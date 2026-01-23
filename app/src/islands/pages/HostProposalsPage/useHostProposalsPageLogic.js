@@ -943,7 +943,10 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
 
     } catch (err) {
       console.error('Failed to send counteroffer:', err);
-      alert('Failed to send counteroffer. Please try again.');
+      // Extract proper error message, avoiding [object Object] display
+      const errorMessage = err?.message || err?.error?.message || err?.error ||
+        (typeof err === 'string' ? err : 'Failed to send counteroffer. Please try again.');
+      alert(typeof errorMessage === 'string' ? errorMessage : 'Failed to send counteroffer. Please try again.');
     }
   }, [selectedProposal, selectedListing]);
 
