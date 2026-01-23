@@ -890,16 +890,6 @@ export default function Header({ autoShowLogin = false }) {
 
         {/* Right Navigation - Auth Buttons */}
         <div className={`nav-right ${mobileMenuActive ? 'mobile-active' : ''}`}>
-          {/* Suggested Proposal Trigger - Desktop only (mobile version is near hamburger) */}
-          {currentUser && isGuest() && pendingProposalCount > 0 && window.location.pathname !== '/guest-proposals' && (
-            <HeaderSuggestedProposalTrigger
-              onClick={handleSuggestedTriggerClick}
-              isActive={showSuggestedPopup}
-              proposalCount={pendingProposalCount}
-              className="desktop-only"
-            />
-          )}
-
           {currentUser && isHost() ? (
             <a href={HOST_OVERVIEW_URL} className="explore-rentals-btn">
               Host Overview

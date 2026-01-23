@@ -619,9 +619,9 @@
     gap: 4px;
 }
 
-/* Mobile suggested proposal trigger - hidden on desktop */
+/* Suggested proposal trigger - hidden on desktop (shown only on mobile) */
 .mobile-sp-trigger {
-    display: none !important;
+    display: none;
 }
 
 /* Desktop/mobile visibility utilities */
