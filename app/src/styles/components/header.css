@@ -645,11 +645,12 @@
         box-sizing: border-box;
     }
 
-    /* Mobile header actions - show on mobile */
+    /* Mobile header actions - show on mobile, push to right side */
     .mobile-header-actions {
         display: flex;
         align-items: center;
         gap: 0.5rem;
+        margin-left: auto;
     }
 
     /* Visibility utilities on mobile */
