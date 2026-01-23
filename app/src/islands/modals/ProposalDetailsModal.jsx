@@ -232,14 +232,21 @@ export default function ProposalDetailsModal({ proposal, listing, onClose }) {
             </div>
           </div>
 
-          {/* Footer */}
+          {/* Footer - Side by side buttons */}
           <div className="proposal-details-footer">
             <button
               type="button"
               onClick={onClose}
-              className="proposal-details-footer-btn"
+              className="proposal-details-footer-btn proposal-details-footer-btn--secondary"
             >
               Close
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="proposal-details-footer-btn proposal-details-footer-btn--primary"
+            >
+              Got It
             </button>
           </div>
         </div>
