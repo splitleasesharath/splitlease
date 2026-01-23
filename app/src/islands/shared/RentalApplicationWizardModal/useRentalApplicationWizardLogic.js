@@ -14,6 +14,7 @@ import { useRentalApplicationStore } from '../../pages/RentalApplicationPage/sto
 import { mapDatabaseToFormData } from '../../pages/RentalApplicationPage/utils/rentalApplicationFieldMapper.ts';
 
 // Required fields (same as RentalApplicationPage)
+// Note: 'renting' removed - low-value information that adds friction
 const REQUIRED_FIELDS = [
   'fullName',
   'dob',
@@ -22,22 +23,22 @@ const REQUIRED_FIELDS = [
   'currentAddress',
   'lengthResided',
   'employmentStatus',
-  'signature',
-  'renting'
+  'signature'
 ];
 
 // Conditional required fields based on employment status
+// Note: employerPhone, businessYear, businessState are optional to reduce form friction
 const CONDITIONAL_REQUIRED_FIELDS = {
-  'full-time': ['employerName', 'employerPhone', 'jobTitle', 'monthlyIncome'],
-  'part-time': ['employerName', 'employerPhone', 'jobTitle', 'monthlyIncome'],
-  'intern': ['employerName', 'employerPhone', 'jobTitle', 'monthlyIncome'],
-  'business-owner': ['businessName', 'businessYear', 'businessState']
+  'full-time': ['employerName', 'jobTitle', 'monthlyIncome'],
+  'part-time': ['employerName', 'jobTitle', 'monthlyIncome'],
+  'intern': ['employerName', 'jobTitle', 'monthlyIncome'],
+  'business-owner': ['businessName']
 };
 
 // Fields required by each step
 const STEP_FIELDS = {
   1: ['fullName', 'dob', 'email', 'phone'],           // Personal Info
-  2: ['currentAddress', 'lengthResided', 'renting'],   // Address
+  2: ['currentAddress', 'lengthResided'],              // Address (renting now optional)
   3: [],                                                // Occupants (optional)
   4: ['employmentStatus'],                              // Employment (conditional fields added dynamically)
   5: [],                                                // Requirements (all optional)

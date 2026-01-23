@@ -71,20 +71,16 @@ export default function EmploymentStep({
 
           <div className="wizard-form-group">
             <label htmlFor="employerPhone" className="wizard-label">
-              Employer Phone <span className="required">*</span>
+              Employer Phone
             </label>
             <input
               type="tel"
               id="employerPhone"
-              className={`wizard-input ${fieldErrors.employerPhone ? 'wizard-input--error' : ''}`}
+              className="wizard-input"
               value={formData.employerPhone || ''}
               onChange={(e) => onFieldChange('employerPhone', e.target.value)}
-              onBlur={() => onFieldBlur('employerPhone')}
-              placeholder="(555) 123-4567"
+              placeholder="(555) 123-4567 (optional)"
             />
-            {fieldErrors.employerPhone && (
-              <span className="wizard-error">{fieldErrors.employerPhone}</span>
-            )}
           </div>
 
           <div className="wizard-form-group">
@@ -149,40 +145,32 @@ export default function EmploymentStep({
 
           <div className="wizard-form-group">
             <label htmlFor="businessYear" className="wizard-label">
-              Year Established <span className="required">*</span>
+              Year Established
             </label>
             <input
               type="number"
               id="businessYear"
-              className={`wizard-input ${fieldErrors.businessYear ? 'wizard-input--error' : ''}`}
+              className="wizard-input"
               value={formData.businessYear || ''}
               onChange={(e) => onFieldChange('businessYear', e.target.value)}
-              onBlur={() => onFieldBlur('businessYear')}
-              placeholder="2020"
+              placeholder="2020 (optional)"
               min="1900"
               max={new Date().getFullYear()}
             />
-            {fieldErrors.businessYear && (
-              <span className="wizard-error">{fieldErrors.businessYear}</span>
-            )}
           </div>
 
           <div className="wizard-form-group">
             <label htmlFor="businessState" className="wizard-label">
-              State Registered <span className="required">*</span>
+              State Registered
             </label>
             <input
               type="text"
               id="businessState"
-              className={`wizard-input ${fieldErrors.businessState ? 'wizard-input--error' : ''}`}
+              className="wizard-input"
               value={formData.businessState || ''}
               onChange={(e) => onFieldChange('businessState', e.target.value)}
-              onBlur={() => onFieldBlur('businessState')}
-              placeholder="e.g., New York"
+              placeholder="e.g., New York (optional)"
             />
-            {fieldErrors.businessState && (
-              <span className="wizard-error">{fieldErrors.businessState}</span>
-            )}
           </div>
         </>
       )}

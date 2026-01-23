@@ -196,22 +196,18 @@ export default function AddressStep({
 
       <div className="wizard-form-group">
         <label htmlFor="renting" className="wizard-label">
-          Are you currently renting? <span className="required">*</span>
+          Are you currently renting?
         </label>
         <select
           id="renting"
-          className={`wizard-select ${fieldErrors.renting ? 'wizard-input--error' : ''} ${fieldValid.renting ? 'wizard-input--valid' : ''}`}
+          className="wizard-select"
           value={formData.renting || ''}
           onChange={(e) => onFieldChange('renting', e.target.value)}
-          onBlur={() => onFieldBlur('renting')}
         >
-          <option value="">Select an option</option>
+          <option value="">Select an option (optional)</option>
           <option value="yes">Yes</option>
           <option value="no">No</option>
         </select>
-        {fieldErrors.renting && (
-          <span className="wizard-error">{fieldErrors.renting}</span>
-        )}
       </div>
     </div>
   );

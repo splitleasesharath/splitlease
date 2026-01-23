@@ -482,24 +482,23 @@
   background: rgba(255, 255, 255, 0.35);
 }
 
-/* Add button - solid circle with "+" (matches empty state icon) */
+/* Add button - solid circle with "+" (matches neighborhood-add-btn pattern) */
 .hep-rules-add-btn {
-  width: 24px;
-  height: 24px;
-  min-width: 24px;
-  min-height: 24px;
-  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
   border: none;
   background: var(--color-gray-100);
-  border-radius: 50%;
+  border-radius: 9999px;
+  font-size: 18px;
+  font-weight: 500;
   color: var(--color-gray-500);
-  font-size: 16px;
-  font-weight: 400;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all 0.15s;
+  flex-shrink: 0;
 }
 
 .hep-rules-add-btn:hover {
