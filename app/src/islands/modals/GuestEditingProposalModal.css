@@ -39,22 +39,22 @@
   --gep-roundness: 10px;
   --gep-roundness-large: 16px;
 
-  /* Accessibility - Typography (Elderly-Friendly) */
-  --gep-font-size-sm: 15px;         /* Small text minimum */
-  --gep-font-size-base: 17px;       /* Body text minimum */
-  --gep-font-size-md: 18px;         /* Medium emphasis */
-  --gep-font-size-lg: 22px;         /* Section titles */
-  --gep-font-size-xl: 28px;         /* Page titles */
-  --gep-font-size-2xl: 36px;        /* Prominent values */
-  --gep-font-size-label: 14px;      /* Form labels (uppercase) */
+  /* Typography - Balanced for readability and compactness */
+  --gep-font-size-sm: 13px;         /* Small text */
+  --gep-font-size-base: 14px;       /* Body text */
+  --gep-font-size-md: 15px;         /* Medium emphasis */
+  --gep-font-size-lg: 18px;         /* Section titles */
+  --gep-font-size-xl: 22px;         /* Page titles */
+  --gep-font-size-2xl: 28px;        /* Prominent values */
+  --gep-font-size-label: 12px;      /* Form labels (uppercase) */
 
-  /* Accessibility - Line Heights */
-  --gep-line-height-tight: 1.3;     /* Headings */
-  --gep-line-height-normal: 1.6;    /* Body text */
-  --gep-line-height-relaxed: 1.8;   /* Long paragraphs */
+  /* Line Heights - Compact */
+  --gep-line-height-tight: 1.2;     /* Headings */
+  --gep-line-height-normal: 1.4;    /* Body text */
+  --gep-line-height-relaxed: 1.5;   /* Long paragraphs */
 
-  /* Accessibility - Touch Targets */
-  --gep-min-touch-target: 48px;     /* Minimum 48px for all interactive elements */
+  /* Touch Targets - Standard minimum */
+  --gep-min-touch-target: 44px;     /* Standard 44px touch targets */
 
   /* Accessibility - Focus States */
   --gep-focus-ring: 0 0 0 4px rgba(109, 49, 194, 0.5);
@@ -157,17 +157,17 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--gep-border-light);
   background-color: var(--gep-bg-primary);
 }
 
 .gep-back-button,
 .gep-close-button {
-  width: var(--gep-min-touch-target);
-  height: var(--gep-min-touch-target);
-  min-width: var(--gep-min-touch-target);
-  min-height: var(--gep-min-touch-target);
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -200,8 +200,8 @@
 }
 
 .gep-header-icon {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   background: var(--gep-primary-bg);
   border-radius: 8px;
   display: flex;
@@ -211,10 +211,10 @@
 }
 
 .gep-header-back-btn {
-  width: var(--gep-min-touch-target);
-  height: var(--gep-min-touch-target);
-  min-width: var(--gep-min-touch-target);
-  min-height: var(--gep-min-touch-target);
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
   background: var(--gep-bg-secondary);
   border-radius: 8px;
   border: none;
@@ -237,7 +237,7 @@
 }
 
 .gep-header-title-text {
-  font-size: var(--gep-font-size-lg);
+  font-size: 16px;
   font-weight: 700;
   color: var(--gep-text-header);
   line-height: var(--gep-line-height-tight);
@@ -271,9 +271,9 @@
    ===================================================== */
 
 .gep-guest-comment {
-  padding: 12px 16px;
+  padding: 10px 12px;
   background-color: var(--gep-bg-secondary);
-  margin: 16px;
+  margin: 12px;
   border-radius: var(--gep-roundness);
 }
 
@@ -289,7 +289,7 @@
    ===================================================== */
 
 .gep-document-view {
-  padding: 16px 20px;
+  padding: 12px 16px;
 }
 
 /* Semantic definition list for proposal details */
@@ -303,9 +303,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 0;
+  padding: 6px 0;
   border-bottom: 1px solid var(--gep-border-light);
-  min-height: 44px;
+  min-height: 32px;
 }
 
 .gep-detail-row:last-of-type {
@@ -334,8 +334,8 @@ dd.gep-detail-value {
 .gep-pricing-section {
   background: var(--gep-bg-secondary);
   border-radius: var(--gep-roundness);
-  padding: 12px 14px;
-  margin-top: 12px;
+  padding: 10px 12px;
+  margin-top: 10px;
 }
 
 .gep-pricing-title {
@@ -344,21 +344,21 @@ dd.gep-detail-value {
   color: var(--gep-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .gep-pricing-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 0;
-  min-height: 32px;
+  padding: 4px 0;
+  min-height: 28px;
 }
 
 .gep-pricing-row--total {
   border-top: 1px solid var(--gep-border-color);
-  margin-top: 8px;
-  padding-top: 12px;
+  margin-top: 6px;
+  padding-top: 8px;
 }
 
 .gep-pricing-label {
@@ -388,8 +388,8 @@ dd.gep-detail-value {
 
 /* Fees section */
 .gep-fees-section {
-  margin-top: 16px;
-  padding-top: 16px;
+  margin-top: 10px;
+  padding-top: 10px;
   border-top: 1px solid var(--gep-border-light);
 }
 
@@ -397,8 +397,8 @@ dd.gep-detail-value {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 0;
-  min-height: 32px;
+  padding: 4px 0;
+  min-height: 26px;
 }
 
 .gep-fee-label {
@@ -422,7 +422,7 @@ dd.gep-detail-value {
 .gep-disclaimer {
   font-size: var(--gep-font-size-sm);
   color: var(--gep-text-muted);
-  margin-top: 12px;
+  margin-top: 8px;
   font-style: italic;
   line-height: var(--gep-line-height-normal);
 }
@@ -432,8 +432,8 @@ dd.gep-detail-value {
    ===================================================== */
 
 .gep-editing-portion {
-  padding: 16px;
-  margin: 0 16px 16px;
+  padding: 12px;
+  margin: 0 12px 12px;
   border-radius: var(--gep-roundness);
   background-color: var(--gep-bg-secondary);
 }
@@ -443,17 +443,17 @@ dd.gep-detail-value {
    ===================================================== */
 
 .gep-form-section {
-  margin-bottom: 20px;
+  margin-bottom: 14px;
 }
 
 .gep-form-label {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   font-weight: 700;
   font-size: var(--gep-font-size-base);
   color: var(--gep-text-primary);
-  margin-bottom: 10px;
+  margin-bottom: 6px;
   line-height: var(--gep-line-height-normal);
 }
 
@@ -498,8 +498,8 @@ dd.gep-detail-value {
 
 .gep-date-input {
   flex: 1;
-  padding: 12px 14px;
-  min-height: var(--gep-min-touch-target);
+  padding: 10px 12px;
+  min-height: 38px;
   border: 1px solid var(--gep-border-color);
   border-radius: var(--gep-roundness);
   font-size: var(--gep-font-size-base);
@@ -522,10 +522,10 @@ dd.gep-detail-value {
 }
 
 .gep-calendar-button {
-  width: var(--gep-min-touch-target);
-  height: var(--gep-min-touch-target);
-  min-width: var(--gep-min-touch-target);
-  min-height: var(--gep-min-touch-target);
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  min-height: 38px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -557,14 +557,14 @@ dd.gep-detail-value {
 /* Textarea */
 .gep-textarea {
   width: 100%;
-  padding: 12px 14px;
+  padding: 10px 12px;
   border: 1px solid var(--gep-border-color);
   border-radius: var(--gep-roundness);
   font-size: var(--gep-font-size-base);
   font-family: var(--gep-font-primary);
   color: var(--gep-text-primary);
   resize: vertical;
-  min-height: 80px;
+  min-height: 60px;
   box-sizing: border-box;
   background-color: var(--gep-bg-primary);
   line-height: var(--gep-line-height-relaxed);
@@ -585,8 +585,8 @@ dd.gep-detail-value {
 /* Select dropdown */
 .gep-select {
   width: 100%;
-  padding: 12px 14px;
-  min-height: var(--gep-min-touch-target);
+  padding: 10px 12px;
+  min-height: 38px;
   border: 1px solid var(--gep-border-color);
   border-radius: var(--gep-roundness);
   font-size: var(--gep-font-size-base);
@@ -597,8 +597,8 @@ dd.gep-detail-value {
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%23374151' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 14px center;
-  padding-right: 40px;
+  background-position: right 12px center;
+  padding-right: 36px;
   line-height: var(--gep-line-height-normal);
   transition: border-color var(--gep-transition-fast);
 }
@@ -617,14 +617,14 @@ dd.gep-detail-value {
 /* Number input */
 .gep-number-input {
   width: 100%;
-  padding: 12px 14px;
-  min-height: var(--gep-min-touch-target);
+  padding: 10px 12px;
+  min-height: 38px;
   border: 1px solid var(--gep-border-color);
   border-radius: var(--gep-roundness);
   font-size: var(--gep-font-size-base);
   font-family: var(--gep-font-primary);
   color: var(--gep-text-primary);
-  margin-top: 10px;
+  margin-top: 6px;
   box-sizing: border-box;
   background-color: var(--gep-bg-primary);
   line-height: var(--gep-line-height-normal);
@@ -740,8 +740,8 @@ dd.gep-detail-value {
 
 .gep-buttons {
   display: flex;
-  gap: 12px;
-  padding: 16px 20px;
+  gap: 10px;
+  padding: 12px 16px;
   justify-content: center;
   background: var(--gep-bg-secondary);
   border-top: 1px solid var(--gep-border-light);
@@ -761,15 +761,15 @@ dd.gep-detail-value {
 }
 
 .gep-button {
-  padding: 14px 24px;
-  min-height: var(--gep-min-touch-target);
+  padding: 10px 20px;
+  min-height: 38px;
   border-radius: var(--gep-roundness);
   font-family: var(--gep-font-primary);
   font-size: var(--gep-font-size-base);
   font-weight: 600;
   cursor: pointer;
   transition: all var(--gep-transition-fast);
-  min-width: 140px;
+  min-width: 120px;
   line-height: var(--gep-line-height-tight);
 }
 
@@ -839,7 +839,7 @@ dd.gep-detail-value {
    ===================================================== */
 
 .day-night-selector {
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 
 /* Day grid - simple flex row of 7 buttons */
@@ -849,16 +849,16 @@ dd.gep-detail-value {
   flex-wrap: wrap;
 }
 
-/* Day button - 52x52px minimum touch target for toggles */
+/* Day button - compact 44px touch targets */
 .dns-day-btn {
-  width: 52px;
-  height: 52px;
-  min-width: 52px;
-  min-height: 52px;
-  border: 2px solid var(--gep-border-color);
-  border-radius: 10px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--gep-border-color);
+  border-radius: 8px;
   background: var(--gep-bg-primary);
-  font-size: var(--gep-font-size-base);
+  font-size: var(--gep-font-size-sm);
   font-weight: 600;
   color: var(--gep-text-secondary);
   cursor: pointer;
@@ -893,11 +893,11 @@ dd.gep-detail-value {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 16px;
-  margin-top: 16px;
-  padding: 14px 18px;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 10px 12px;
   background: var(--gep-bg-secondary);
-  border-radius: 10px;
+  border-radius: 8px;
 }
 
 .dns-schedule-info-row {
@@ -1120,9 +1120,9 @@ dd.gep-detail-value {
 
 .reservation-price-breakdown {
   width: 100%;
-  min-height: 100px;
+  min-height: 80px;
   max-height: 750px;
-  padding: 24px;
+  padding: 16px;
   background-color: var(--gep-bg-primary);
   border: none;
   border-radius: var(--gep-roundness);
@@ -1133,27 +1133,27 @@ dd.gep-detail-value {
 .rpb-header {
   font-family: var(--rpb-font-primary);
   font-weight: 600;
-  font-size: 18px;
+  font-size: 16px;
   color: var(--rpb-text-header);
   text-align: left;
-  line-height: 1.5;
+  line-height: 1.4;
   letter-spacing: 0;
-  margin: 0 0 20px 0;
+  margin: 0 0 12px 0;
   width: 100%;
-  padding-bottom: 16px;
+  padding-bottom: 10px;
   border-bottom: 1px solid var(--gep-border-light);
 }
 
 .rpb-row {
   width: 100%;
   margin: 0 0 0 0;
-  min-height: 24px;
+  min-height: 22px;
   display: flex;
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
   border-radius: 0;
-  padding: 12px 0;
+  padding: 8px 0;
   box-sizing: border-box;
   border-bottom: 1px solid var(--gep-border-light);
 }
