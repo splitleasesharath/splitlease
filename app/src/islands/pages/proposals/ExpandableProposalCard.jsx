@@ -15,6 +15,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import MatchReasonCard from './MatchReasonCard.jsx';
 import NegotiationSummarySection from './NegotiationSummarySection.jsx';
+import CounterofferSummarySection from './CounterofferSummarySection.jsx';
 import {
   DAY_ABBREVS,
   DAY_NAMES,
@@ -492,6 +493,9 @@ export default function ExpandableProposalCard({
   // Negotiation summaries
   const negotiationSummaries = proposal?.negotiationSummaries || [];
 
+  // Counteroffer summary (SplitBot message explaining what changed)
+  const counterofferSummary = proposal?.counterofferSummary || null;
+
   // Status flags
   const isSuggested = isSLSuggested(status);
   const isPending = isPendingConfirmation(status);
@@ -652,6 +656,11 @@ export default function ExpandableProposalCard({
           {/* Negotiation Summary Section - for all proposals with summaries */}
           {negotiationSummaries.length > 0 && (
             <NegotiationSummarySection summaries={negotiationSummaries} />
+          )}
+
+          {/* Counteroffer Summary Section - for proposals with host counteroffer */}
+          {isCounteroffer && counterofferSummary && (
+            <CounterofferSummarySection summary={counterofferSummary} />
           )}
 
           {/* Status Banner */}
