@@ -7,6 +7,79 @@
 import DayIndicator from './DayIndicator.jsx';
 import { getStatusTagInfo, getNightsAsDayNames, getCheckInOutFromDays } from './types.js';
 import { formatCurrency, formatDate } from './formatters.js';
+import { getStatusConfig } from '../../../logic/constants/proposalStatuses.js';
+
+/**
+ * Progress stage labels for host view
+ * Matches guest proposals page structure
+ */
+const PROGRESS_STAGES = ['Submitted', 'Application', 'Review', 'Accepted', 'Signing', 'Active'];
+
+/**
+ * Progress bar colors
+ */
+const PROGRESS_COLORS = {
+  purple: '#6D31C2',
+  green: '#1F8E16',
+  red: '#DB2E2E',
+  gray: '#DEDEDE',
+  labelGray: '#9CA3AF'
+};
+
+/**
+ * Calculate stage color based on status
+ */
+function getStageColor(stageIndex, usualOrder, isTerminal) {
+  if (isTerminal) return PROGRESS_COLORS.red;
+
+  // Completed stages (before current)
+  if (stageIndex < usualOrder) return PROGRESS_COLORS.purple;
+
+  // Current stage
+  if (stageIndex === usualOrder) return PROGRESS_COLORS.green;
+
+  // Future stages
+  return PROGRESS_COLORS.gray;
+}
+
+/**
+ * Inline Progress Tracker for proposal cards
+ */
+function InlineProgressTracker({ statusId }) {
+  const statusConfig = getStatusConfig(statusId);
+  const usualOrder = statusConfig?.usualOrder ?? 0;
+  const isTerminal = usualOrder === 99;
+
+  return (
+    <div className="hp-card-progress-row">
+      {PROGRESS_STAGES.map((label, index) => {
+        const stageColor = getStageColor(index, usualOrder, isTerminal);
+        const isLast = index === PROGRESS_STAGES.length - 1;
+
+        return (
+          <div key={index} className="hp-card-progress-step">
+            <div
+              className="hp-card-progress-dot"
+              style={{ backgroundColor: stageColor }}
+            />
+            <span
+              className="hp-card-progress-label"
+              style={{ color: stageColor !== PROGRESS_COLORS.gray ? stageColor : PROGRESS_COLORS.labelGray }}
+            >
+              {label}
+            </span>
+            {!isLast && (
+              <div
+                className="hp-card-progress-line"
+                style={{ backgroundColor: stageColor === PROGRESS_COLORS.purple ? PROGRESS_COLORS.purple : PROGRESS_COLORS.gray }}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 /**
  * Status icon SVG components
@@ -136,6 +209,9 @@ export default function ProposalCard({ proposal, onClick, onDelete }) {
         {/* Day Indicator */}
         <DayIndicator activeDays={activeDays} />
       </div>
+
+      {/* Progress Tracker */}
+      <InlineProgressTracker statusId={statusId} />
 
       {/* Details Section */}
       <div className="proposal-card-details">
