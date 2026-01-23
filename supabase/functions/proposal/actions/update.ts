@@ -212,8 +212,13 @@ export async function handleUpdate(
 
   if (input.hc_nightly_price !== undefined) {
     updates["hc nightly price"] = input.hc_nightly_price;
-    updates["counter offer happened"] = true;
     updatedFields.push("hc_nightly_price");
+  }
+
+  // Set "counter offer happened" flag when status changes to counteroffer
+  // This must be set regardless of which hc_ fields are provided
+  if (input.status === "Host Counteroffer Submitted / Awaiting Guest Review") {
+    updates["counter offer happened"] = true;
   }
   if (input.hc_days_selected !== undefined) {
     updates["hc days selected"] = input.hc_days_selected;
