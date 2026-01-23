@@ -256,8 +256,10 @@
 
 /* Close icon - base styles (desktop) */
 .sp-popup-close-icon {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
   stroke: var(--sp-text-muted);
   stroke-width: 2.5;
   fill: none;

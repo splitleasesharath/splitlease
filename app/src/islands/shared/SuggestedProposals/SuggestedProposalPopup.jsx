@@ -219,8 +219,8 @@ export default function SuggestedProposalPopup({
                 {/* Feather: x - explicit size for visibility */}
                 <svg
                   className="sp-popup-close-icon"
-                  width="28"
-                  height="28"
+                  width="32"
+                  height="32"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
