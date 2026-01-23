@@ -41,6 +41,7 @@ import {
   updateThreadLastMessage,
   getUserProfile,
   getListingName,
+  findOrCreateProposalThread,
 } from "../../_shared/messagingHelpers.ts";
 import {
   getCTAForProposalStatus,
@@ -554,54 +555,46 @@ export async function handleCreate(
   await addUserProposal(supabase, hostAccountData.User, proposalId, 'host');
 
   // ================================================
-  // CREATE THREAD FOR PROPOSAL
+  // CREATE OR FIND THREAD FOR PROPOSAL
   // ================================================
+  // Uses findOrCreateProposalThread to avoid duplicate threads.
+  // If a thread already exists for this guest+host+listing (from ContactHost flow),
+  // it will be reused and linked to this proposal.
 
-  // Generate Bubble-compatible ID for thread
-  const { data: threadId, error: threadIdError } = await supabase.rpc('generate_bubble_id');
-  if (threadIdError || !threadId) {
-    console.error(`[proposal:create] Thread ID generation failed:`, threadIdError);
-    // Non-blocking - proposal already created, thread can be created later
-  }
-
+  let threadId: string | null = null;
   let threadCreated = false;
-  if (threadId) {
-    const threadData = {
-      _id: threadId,
-      Proposal: proposalId,
-      Listing: input.listingId,
-      "-Guest User": input.guestId,
-      "-Host User": hostUserData._id,
-      "Created Date": now,
-      "Modified Date": now,
-    };
 
-    console.log(`[proposal:create] Inserting thread: ${threadId}`);
+  try {
+    // Fetch listing name for thread subject
+    const listingName = await getListingName(supabase, input.listingId);
+    const resolvedListingName = listingName || "this listing";
 
-    const { error: threadInsertError } = await supabase
-      .from("thread")
-      .insert(threadData);
+    const { threadId: resolvedThreadId, isNew } = await findOrCreateProposalThread(supabase, {
+      proposalId: proposalId,
+      hostUserId: hostUserData._id,
+      guestUserId: input.guestId,
+      listingId: input.listingId,
+      listingName: resolvedListingName,
+    });
 
-    if (threadInsertError) {
-      console.error(`[proposal:create] Thread insert failed:`, threadInsertError);
-      // Non-blocking - proposal created, thread creation failed
-    } else {
-      threadCreated = true;
-      console.log(`[proposal:create] Thread created successfully`);
-    }
+    threadId = resolvedThreadId;
+    threadCreated = isNew;
+
+    console.log(`[proposal:create] Thread ${isNew ? 'created' : 'found and linked'}: ${threadId}`);
+  } catch (threadError) {
+    console.error(`[proposal:create] Thread creation/lookup failed:`, threadError);
+    // Non-blocking - proposal already created, thread can be created later
   }
 
   // ================================================
   // GENERATE AI SUMMARY FOR HOST (Non-blocking)
   // ================================================
-  // NOTE: Messages are NO LONGER created here - they are created by the
-  // create_proposal_thread handler called by the frontend.
-  // We only generate the AI summary here and return it so the frontend
-  // can pass it to the messages handler.
+  // Generate AI summary regardless of whether thread is new or reused.
+  // The host needs this summary to understand the proposal details.
 
   let aiHostSummary: string | null = null;
 
-  if (threadCreated && threadId) {
+  if (threadId) {
     try {
       // Fetch listing name for AI summary
       const listingName = await getListingName(supabase, input.listingId);
@@ -680,12 +673,13 @@ export async function handleCreate(
   // ================================================
   // CREATE SPLITBOT MESSAGES (Non-blocking)
   // ================================================
-  // Create SplitBot notification messages for guest and host
-  // This replaces the unreliable frontend call to create_proposal_thread
+  // Create SplitBot notification messages for guest and host.
+  // These are sent whether the thread is new or reused - the host and guest
+  // need to be notified that a proposal was created in this thread.
 
-  if (threadCreated && threadId) {
+  if (threadId) {
     try {
-      console.log(`[proposal:create] Creating SplitBot messages for thread: ${threadId}`);
+      console.log(`[proposal:create] Creating SplitBot messages for ${threadCreated ? 'new' : 'existing'} thread: ${threadId}`);
 
       // Fetch guest and host names for message templates
       const [guestProfile, hostProfile] = await Promise.all([
