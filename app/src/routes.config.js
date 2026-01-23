@@ -643,6 +643,18 @@ export const routes = [
     hasDynamicSegment: false
   },
 
+  // ===== PROPOSAL MANAGEMENT (ADMIN INTERNAL) =====
+  {
+    path: '/_internal/proposal-manage',
+    file: 'proposal-manage.html',
+    aliases: ['/_internal/proposal-manage.html', '/proposal-manage'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'proposal-manage-view',
+    hasDynamicSegment: false
+  },
+
   // ===== GUEST EMERGENCY SUBMISSION (PUBLIC) =====
   {
     path: '/report-emergency',
