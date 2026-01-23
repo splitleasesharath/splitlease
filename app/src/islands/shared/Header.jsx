@@ -730,8 +730,9 @@ export default function Header({ autoShowLogin = false }) {
           )}
 
           {/* Stay with Us Dropdown - Only show if not logged in OR if logged in as Guest/Split Lease */}
+          {/* Hidden on mobile when suggested proposal icons are visible to reduce clutter */}
           {(!currentUser || !userType || isGuest()) && (
-          <div className="nav-dropdown">
+          <div className={`nav-dropdown${pendingProposalCount > 0 ? ' hide-on-mobile-with-suggestions' : ''}`}>
             <a
               href="#stay"
               className="nav-link dropdown-trigger"

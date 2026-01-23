@@ -734,6 +734,11 @@
     .menu-column {
         min-width: 100%;
     }
+
+    /* Hide guest dropdown on mobile when suggested proposal icons are visible */
+    .nav-dropdown.hide-on-mobile-with-suggestions {
+        display: none;
+    }
 }
 
 /* ========================================
