@@ -280,23 +280,30 @@
 .hep-editing-view {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xl);
+  gap: 0;
 }
 
 .hep-form-section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-xl);
+}
+
+.hep-form-section:last-child {
+  margin-bottom: 0;
 }
 
 .hep-form-section--inline {
-  margin-top: var(--spacing-sm);
+  margin-top: var(--spacing-md);
+  margin-bottom: 0;
 }
 
 .hep-form-label {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--color-gray-700);
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-gray-600);
+  margin-bottom: var(--spacing-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 /* ========================================
@@ -388,15 +395,22 @@
    Form Inputs (Base styles for sub-components)
    ======================================== */
 
+/* Base input styling */
 .hep-input-base {
   width: 100%;
-  padding: var(--spacing-md) var(--spacing-lg);
-  border: 1px solid var(--color-gray-300);
-  border-radius: var(--radius-md);
+  height: 48px;
+  padding: 0 var(--spacing-lg);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-lg);
   font-family: var(--font-family);
-  font-size: 16px;
+  font-size: 15px;
   color: var(--color-gray-900);
-  transition: border-color var(--transition-fast);
+  background: var(--color-white);
+  transition: all var(--transition-fast);
+}
+
+.hep-input-base:hover {
+  border-color: var(--color-gray-300);
 }
 
 .hep-input-base:focus {
@@ -409,23 +423,124 @@
   color: var(--color-gray-400);
 }
 
-/* Select/Dropdown */
+.hep-input-base:disabled {
+  background: var(--color-gray-50);
+  color: var(--color-gray-400);
+  cursor: not-allowed;
+}
+
+/* Date Input Wrapper */
+.hep-date-input-wrapper {
+  position: relative;
+}
+
+.hep-input-date {
+  padding-right: 48px;
+}
+
+.hep-date-icon {
+  position: absolute;
+  right: var(--spacing-lg);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-gray-400);
+  pointer-events: none;
+}
+
+/* Number Input */
+.hep-input-number {
+  -moz-appearance: textfield;
+}
+
+.hep-input-number::-webkit-outer-spin-button,
+.hep-input-number::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Dropdown Wrapper */
+.hep-dropdown-wrapper {
+  position: relative;
+}
+
+/* Dropdown Button (styled as input) */
 .hep-dropdown {
   width: 100%;
-  padding: var(--spacing-md) var(--spacing-lg);
-  border: 1px solid var(--color-gray-300);
-  border-radius: var(--radius-md);
+  height: 48px;
+  padding: 0 var(--spacing-lg);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-lg);
   font-family: var(--font-family);
-  font-size: 16px;
+  font-size: 15px;
   color: var(--color-gray-900);
   background: var(--color-white);
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+  transition: all var(--transition-fast);
+}
+
+.hep-dropdown:hover {
+  border-color: var(--color-gray-300);
 }
 
 .hep-dropdown:focus {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+.hep-placeholder {
+  color: var(--color-gray-400);
+}
+
+.hep-dropdown-chevron {
+  color: var(--color-gray-400);
+  transition: transform var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.hep-dropdown-chevron--open {
+  transform: rotate(180deg);
+}
+
+/* Dropdown Menu */
+.hep-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  background: var(--color-white);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+  z-index: 100;
+}
+
+.hep-dropdown-option {
+  padding: var(--spacing-md) var(--spacing-lg);
+  font-size: 15px;
+  color: var(--color-gray-700);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.hep-dropdown-option:hover {
+  background: var(--color-gray-50);
+}
+
+.hep-dropdown-option--selected {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.hep-dropdown-option:not(:last-child) {
+  border-bottom: 1px solid var(--color-gray-100);
 }
 
 /* ========================================
@@ -443,20 +558,23 @@
   flex-wrap: wrap;
   gap: var(--spacing-sm);
   align-items: center;
+  min-height: 48px;
+  padding: var(--spacing-sm) 0;
 }
 
-/* Individual rule chip - compact purple pill */
+/* Individual rule chip - compact blue pill */
 .hep-rule-chip {
   display: inline-flex;
   align-items: center;
-  gap: var(--spacing-xs);
-  padding: 6px 10px;
+  gap: 6px;
+  padding: 8px 12px;
   background: var(--color-primary);
   color: var(--color-white);
-  border-radius: var(--radius-full);
-  font-size: 13px;
+  border-radius: 9999px;
+  font-size: 14px;
   font-weight: 500;
   white-space: nowrap;
+  line-height: 1;
 }
 
 /* Remove button inside chip */
@@ -466,9 +584,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.25);
   border: none;
-  border-radius: 50%;
+  border-radius: 9999px;
   color: var(--color-white);
   font-size: 14px;
   font-weight: 400;
@@ -476,10 +594,11 @@
   transition: background var(--transition-fast);
   padding: 0;
   line-height: 1;
+  margin-left: 2px;
 }
 
 .hep-rule-chip-remove:hover {
-  background: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.4);
 }
 
 /* Add button - solid circle with "+" (matches neighborhood-add-btn pattern) */
@@ -509,41 +628,45 @@
 /* Empty state button - shows when no rules selected */
 .hep-rules-empty {
   width: 100%;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--spacing-md) var(--spacing-lg);
-  border: 1px solid var(--color-gray-300);
-  border-radius: var(--radius-md);
+  padding: 0 var(--spacing-lg);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-lg);
   background: var(--color-white);
   cursor: pointer;
-  transition: border-color var(--transition-fast);
+  transition: all var(--transition-fast);
 }
 
 .hep-rules-empty:hover {
-  border-color: var(--color-primary);
+  border-color: var(--color-gray-300);
 }
 
 .hep-rules-empty--disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  background: var(--color-gray-50);
 }
 
 .hep-rules-empty-text {
   color: var(--color-gray-400);
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .hep-rules-empty-icon {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--color-gray-100);
-  border-radius: 50%;
+  border-radius: 9999px;
   color: var(--color-gray-500);
-  font-size: 16px;
+  font-size: 18px;
+  font-weight: 500;
+  flex-shrink: 0;
 }
 
 .hep-rules-empty:hover .hep-rules-empty-icon {
@@ -557,12 +680,12 @@
   top: calc(100% + 4px);
   left: 0;
   right: 0;
-  max-height: 200px;
+  max-height: 240px;
   overflow-y: auto;
   background: var(--color-white);
   border: 1px solid var(--color-gray-200);
-  border-radius: var(--radius-md);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
   z-index: 100;
 }
 
@@ -574,14 +697,14 @@
   border: none;
   background: transparent;
   text-align: left;
-  font-size: 14px;
+  font-size: 15px;
   color: var(--color-gray-700);
   cursor: pointer;
   transition: background var(--transition-fast);
 }
 
 .hep-rules-option:hover {
-  background: var(--color-primary-light);
+  background: var(--color-gray-50);
 }
 
 .hep-rules-option:not(:last-child) {
@@ -590,7 +713,7 @@
 
 /* Empty dropdown state */
 .hep-rules-dropdown-empty {
-  padding: var(--spacing-lg);
+  padding: var(--spacing-xl);
   text-align: center;
   color: var(--color-gray-400);
   font-size: 14px;
