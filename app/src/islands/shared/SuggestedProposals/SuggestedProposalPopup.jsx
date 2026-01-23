@@ -175,7 +175,18 @@ export default function SuggestedProposalPopup({
                     aria-label="Previous proposal"
                     type="button"
                   >
-                    <span className="sp-nav-arrow">‹</span>
+                    {/* Feather: chevron-left */}
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <polyline points="15 18 9 12 15 6" />
+                    </svg>
                   </button>
                   <button
                     className="sp-popup-nav-btn"
@@ -183,7 +194,18 @@ export default function SuggestedProposalPopup({
                     aria-label="Next proposal"
                     type="button"
                   >
-                    <span className="sp-nav-arrow">›</span>
+                    {/* Feather: chevron-right */}
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
                   </button>
                 </div>
               )}
@@ -194,8 +216,18 @@ export default function SuggestedProposalPopup({
                 aria-label="Close popup"
                 type="button"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M18 6L6 18M6 6l12 12" />
+                {/* Feather: x */}
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
                 </svg>
               </button>
             </div>
