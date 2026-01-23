@@ -423,22 +423,22 @@ export function HostEditingProposal({
   // Render footer based on view state
   const renderFooter = () => {
     if (view === 'pristine') {
-      // Pristine: "Edit Proposal" (primary) + "Cancel" (secondary to close)
+      // Pristine: "Cancel" (secondary) + "Edit Proposal" (primary) - side by side
       return (
-        <div className="hep-footer hep-footer--vertical">
-          <button
-            type="button"
-            className="hep-btn hep-btn-primary"
-            onClick={handleStartEditing}
-          >
-            Edit Proposal
-          </button>
+        <div className="hep-footer">
           <button
             type="button"
             className="hep-btn hep-btn-secondary"
             onClick={handleClose}
           >
             Cancel
+          </button>
+          <button
+            type="button"
+            className="hep-btn hep-btn-primary"
+            onClick={handleStartEditing}
+          >
+            Edit Proposal
           </button>
         </div>
       )
