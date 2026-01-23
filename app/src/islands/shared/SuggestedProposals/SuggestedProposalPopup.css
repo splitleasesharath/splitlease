@@ -890,14 +890,7 @@
     height: 20px;
   }
 
-  /* Close button - larger and more prominent on mobile */
-  .sp-popup-close-btn {
-    width: 40px;
-    height: 40px;
-    background: rgba(0, 0, 0, 0.08);
-    border-radius: 50%;
-  }
-
+  /* Close button - larger icon on mobile (no background container) */
   .sp-popup-close-btn svg {
     width: 28px;
     height: 28px;
