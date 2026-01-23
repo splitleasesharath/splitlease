@@ -267,15 +267,41 @@ export function useCompareTermsModalLogic({
       const counterofferNightlyPrice = proposal['hc nightly price'] || originalNightlyPrice;
       const fourWeekRent = counterofferNightsPerWeek * 4 * counterofferNightlyPrice;
 
-      // Step 7: Log lease creation parameters
-      // TODO: Implement CORE-create-lease Edge Function
-      console.log('✅ Counteroffer accepted - Lease creation parameters:', {
+      // Step 7: Call lease creation Edge Function
+      console.log('[useCompareTermsModalLogic] Creating lease with parameters:', {
         proposalId: proposal._id,
         numberOfZeros,
         fourWeekRent,
         isCounteroffer: 'yes',
         fourWeekCompensation
       });
+
+      const leaseResponse = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/lease`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'create',
+            payload: {
+              proposalId: proposal._id,
+              isCounteroffer: 'yes',
+              fourWeekRent,
+              fourWeekCompensation,
+              numberOfZeros,
+            },
+          }),
+        }
+      );
+
+      const leaseResult = await leaseResponse.json();
+      if (!leaseResult.success) {
+        throw new Error(leaseResult.error || 'Failed to create lease');
+      }
+
+      console.log('[useCompareTermsModalLogic] Lease created:', leaseResult.data);
 
       // Step 1 (at end): Show success message
       alert('We will work on drafting a lease for you. Please give us 48 hours to finalize your lease with the terms proposed by your host.');

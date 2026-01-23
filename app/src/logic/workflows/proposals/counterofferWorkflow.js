@@ -70,8 +70,32 @@ export async function acceptCounteroffer(proposalId) {
 
   console.log('[counterofferWorkflow] Counteroffer accepted successfully:', proposalId);
 
-  // Note: In production, this would trigger the CORE-create-lease API workflow
-  // That functionality would need to be implemented via Edge Functions or backend
+  // Trigger lease creation via Edge Function (fire and forget)
+  // Note: When called from CompareTermsModal, the modal handles lease creation directly
+  // This is a fallback for other code paths that call acceptCounteroffer directly
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  if (supabaseUrl && proposal) {
+    const originalNightsPerWeek = proposal['nights per week (num)'] || 0;
+    const originalNightlyPrice = proposal['proposal nightly price'] || 0;
+    const fourWeekCompensation = originalNightsPerWeek * 4 * originalNightlyPrice;
+    const fourWeekRent = fourWeekCompensation; // Same for non-counteroffer flow
+
+    fetch(`${supabaseUrl}/functions/v1/lease`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'create',
+        payload: {
+          proposalId,
+          isCounteroffer: false,
+          fourWeekRent,
+          fourWeekCompensation,
+        },
+      }),
+    }).catch(err => {
+      console.warn('[counterofferWorkflow] Lease creation trigger failed (non-blocking):', err);
+    });
+  }
 
   return data;
 }
