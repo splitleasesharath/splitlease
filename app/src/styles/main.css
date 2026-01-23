@@ -45,7 +45,8 @@ html {
   text-rendering: optimizeLegibility;
   scroll-behavior: smooth;
   scroll-padding-top: 0;
-  max-width: 100vw;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 * {

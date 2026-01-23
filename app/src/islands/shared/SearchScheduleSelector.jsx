@@ -27,6 +27,8 @@ const SelectorRow = styled.div`
   justify-content: center;
   gap: 8px;
   margin: 0;
+  max-width: 100%;
+  overflow: hidden;
 `;
 
 const CalendarIcon = styled.div`
@@ -43,6 +45,12 @@ const CalendarIcon = styled.div`
     height: 100%;
     object-fit: contain;
   }
+
+  @media (max-width: 400px) {
+    width: 32px;
+    height: 32px;
+    margin-right: 4px;
+  }
 `;
 
 const DaysGrid = styled.div`
@@ -50,6 +58,8 @@ const DaysGrid = styled.div`
   gap: 4px;
   justify-content: center;
   align-items: center;
+  flex-shrink: 1;
+  min-width: 0;
 
   /* Attention animation on page load */
   animation: attention-pulse 0.6s ease-out 0.5s both;
@@ -74,6 +84,10 @@ const DaysGrid = styled.div`
 
   @media (max-width: 768px) {
     gap: 4px;
+  }
+
+  @media (max-width: 360px) {
+    gap: 2px;
   }
 `;
 
@@ -137,7 +151,17 @@ const DayCell = styled.button`
   @media (max-width: 480px) {
     width: 30px;
     height: 30px;
+    min-width: 30px;
+    min-height: 30px;
     font-size: 13px;
+  }
+
+  @media (max-width: 360px) {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+    font-size: 12px;
   }
 `;
 
