@@ -105,10 +105,9 @@
    ===================================================== */
 
 .guest-editing-proposal {
-  width: 100%;
-  max-width: 480px;
-  height: 780px; /* Fixed height - fits Proposal Details without scroll, Edit view scrolls */
-  max-height: calc(100vh - 120px); /* Fallback for small screens, ensures gap from header */
+  width: 90%;
+  max-width: 520px;  /* Match HostEditingProposal width */
+  max-height: 92vh;  /* Match HostEditingProposal max-height */
   background-color: var(--gep-bg-primary);
   border-radius: var(--gep-roundness-large);
   box-sizing: border-box;
@@ -1302,10 +1301,20 @@ dd.gep-detail-value {
 }
 
 /* =====================================================
-   RESPONSIVE STYLES
+   RESPONSIVE STYLES - Match HostEditingProposal breakpoints
    ===================================================== */
 
-@media (max-width: 900px) {
+/* Tablet breakpoint (481px - 768px) */
+@media (max-width: 768px) and (min-width: 481px) {
+  .guest-editing-proposal-modal-overlay {
+    padding: 16px;
+  }
+
+  .guest-editing-proposal {
+    max-width: 100%;
+    width: 100%;
+  }
+
   .gep-buttons {
     flex-direction: column;
     align-items: stretch;
@@ -1315,32 +1324,40 @@ dd.gep-detail-value {
     width: 100%;
     min-width: auto;
   }
-
-  .gep-schedule-financial-label {
-    font-size: 12px;
-  }
-
-  .dns-grid {
-    gap: 2px;
-  }
-
-  .dns-day-button {
-    width: 36px;
-    height: 36px;
-  }
-
-  .rpb-label--responsive {
-    font-size: 14px;
-  }
 }
 
-@media (max-width: 700px) {
-  .gep-title {
-    font-size: 18px;
+/* Mobile bottom sheet breakpoint (<= 480px) - Per Protocol */
+@media (max-width: 480px) {
+  .guest-editing-proposal-modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .guest-editing-proposal {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 24px 24px 0 0;
+    max-height: 90vh;
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
   }
 
   .gep-header {
-    padding: 12px;
+    padding: 12px 16px;
+  }
+
+  .gep-header-title-text {
+    font-size: var(--gep-font-size-md);
   }
 
   .gep-editing-portion {
@@ -1352,32 +1369,29 @@ dd.gep-detail-value {
     margin: 12px;
   }
 
-  .rpb-value--responsive-large {
-    font-size: 16px;
+  .gep-buttons {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px 16px;
   }
 
-  .rpb-label--responsive-large {
-    font-size: 16px;
-  }
-}
-
-@media (max-width: 380px) {
-  .guest-editing-proposal {
-    max-width: 100%;
-    margin: 10px;
+  .gep-button {
+    width: 100%;
+    min-width: auto;
   }
 
-  .gep-title {
-    font-size: 16px;
+  /* Day buttons - maintain touch targets on mobile */
+  .dns-day-btn {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    font-size: var(--gep-font-size-sm);
   }
 
-  .dns-day-button {
-    width: 32px;
-    height: 32px;
-  }
-
-  .dns-day-label {
-    font-size: 10px;
+  .dns-day-grid {
+    gap: 6px;
+    justify-content: space-between;
   }
 
   .cpm-title {
@@ -1385,36 +1399,40 @@ dd.gep-detail-value {
   }
 
   .rpb-label--large {
-    font-size: 16px;
+    font-size: var(--gep-font-size-base);
   }
 
   .rpb-value--large {
-    font-size: 16px;
+    font-size: var(--gep-font-size-base);
   }
 }
 
+/* Very small screens - maintain accessibility minimums */
 @media (max-width: 350px) {
   .gep-form-label {
-    font-size: 12px;
+    font-size: var(--gep-font-size-sm);
   }
 
   .gep-date-input,
   .gep-textarea,
   .gep-select,
   .gep-number-input {
-    font-size: 12px;
-    padding: 8px 10px;
+    font-size: var(--gep-font-size-sm);
+    padding: 10px 12px;
+    /* Maintain 48px touch target even on small screens */
+    min-height: var(--gep-min-touch-target);
   }
 
   .gep-button {
-    font-size: 12px;
-    padding: 10px 16px;
+    font-size: var(--gep-font-size-sm);
+    padding: 12px 16px;
+    min-height: var(--gep-min-touch-target);
   }
 
   .rpb-label--small,
   .rpb-value--small {
-    font-size: 12px;
-    line-height: 1;
+    font-size: var(--gep-font-size-sm);
+    line-height: var(--gep-line-height-normal);
   }
 }
 
