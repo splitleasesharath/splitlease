@@ -26,9 +26,7 @@ import {
   PROPOSAL_STATUSES,
   RESERVATION_SPANS,
   formatDate,
-  addWeeks,
-  findReservationSpanByWeeks,
-  getDayName
+  findReservationSpanByWeeks
 } from './types'
 import {
   parseProposalData,
@@ -200,9 +198,6 @@ export function HostEditingProposal({
     return dateChanged || weeksChanged || scheduleChanged || rulesChanged
   }, [proposal, listing, availableHouseRules, editedMoveInDate, editedWeeks, editedCheckInDay, editedCheckOutDay, editedHouseRules, houseRulesInitialized])
 
-  // Calculate approximate move-out date
-  const approxMoveOut = addWeeks(editedMoveInDate, editedWeeks)
-
   // Calculate host compensation (host-facing view, no guest pricing)
   const nightsPerWeek = editedNightsSelected.length
   const totalNights = nightsPerWeek * editedWeeks
@@ -243,11 +238,6 @@ export function HostEditingProposal({
   // Update Proposal button takes user to review (general) view
   const handleUpdateProposal = () => {
     setView('general')
-  }
-
-  // Handle back from general view to pristine
-  const handleBackFromGeneral = () => {
-    setView('pristine')
   }
 
   const handleConfirmProceed = async () => {
