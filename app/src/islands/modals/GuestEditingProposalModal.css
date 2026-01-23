@@ -688,7 +688,7 @@ dd.gep-detail-value {
    ===================================================== */
 
 .gep-breakdown-details {
-  margin: 16px;
+  margin: 10px 12px;
   border-radius: var(--gep-roundness);
   overflow: hidden;
 }
@@ -699,8 +699,8 @@ dd.gep-detail-value {
 
 .gep-schedule-financial {
   width: 95%;
-  margin: 16px auto;
-  min-height: 40px;
+  margin: 10px auto;
+  min-height: 36px;
   background-color: var(--gep-bg-surface);
   border: 1px solid var(--gep-bg-surface);
   border-radius: var(--gep-roundness-large);
@@ -716,7 +716,7 @@ dd.gep-detail-value {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
+  padding: 10px 14px;
 }
 
 .gep-schedule-financial-label {
