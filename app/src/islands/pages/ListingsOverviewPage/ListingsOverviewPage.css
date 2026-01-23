@@ -1,0 +1,1048 @@
+/**
+ * Listings Overview Page Styles
+ *
+ * All styles prefixed with 'lo-' to avoid conflicts with existing styles.
+ * Merged from _listings-overview source:
+ * - ListingsOverviewPage.css
+ * - FilterPanel.css
+ * - ListingsTable.css
+ * - ListingRow.css
+ * - Header.css
+ */
+
+/* ============================================================================
+   CSS VARIABLES
+   ============================================================================ */
+
+:root {
+  --lo-primary: #7c3aed;
+  --lo-primary-dark: #6d28d9;
+  --lo-danger: #ef4444;
+  --lo-danger-dark: #dc2626;
+  --lo-success: #10b981;
+  --lo-warning: #f59e0b;
+  --lo-gray-50: #f9fafb;
+  --lo-gray-100: #f3f4f6;
+  --lo-gray-200: #e5e7eb;
+  --lo-gray-300: #d1d5db;
+  --lo-gray-400: #9ca3af;
+  --lo-gray-500: #6b7280;
+  --lo-gray-600: #4b5563;
+  --lo-gray-700: #374151;
+  --lo-gray-800: #1f2937;
+  --lo-gray-900: #111827;
+  --lo-white: #ffffff;
+  --lo-radius: 6px;
+  --lo-radius-sm: 4px;
+  --lo-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --lo-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================================================
+   PAGE LAYOUT
+   ============================================================================ */
+
+.lo-main-content {
+  flex: 1;
+  min-height: calc(100vh - 140px);
+  background-color: var(--lo-gray-50);
+}
+
+.lo-page {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.lo-container {
+  padding: 0 24px 24px;
+}
+
+/* ============================================================================
+   PAGE HEADER
+   ============================================================================ */
+
+.lo-page-header {
+  padding: 20px 24px;
+  background-color: var(--lo-white);
+  border-bottom: 1px solid var(--lo-gray-200);
+}
+
+.lo-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.lo-page-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--lo-gray-900);
+  margin: 0;
+}
+
+.lo-header-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ============================================================================
+   BUTTONS
+   ============================================================================ */
+
+.lo-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border-radius: var(--lo-radius);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+}
+
+.lo-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.lo-btn-primary {
+  background-color: var(--lo-primary);
+  color: var(--lo-white);
+  border-color: var(--lo-primary);
+}
+
+.lo-btn-primary:hover:not(:disabled) {
+  background-color: var(--lo-primary-dark);
+}
+
+.lo-btn-secondary {
+  background-color: var(--lo-white);
+  color: var(--lo-gray-700);
+  border-color: var(--lo-gray-300);
+}
+
+.lo-btn-secondary:hover:not(:disabled) {
+  background-color: var(--lo-gray-50);
+}
+
+.lo-btn-outline {
+  background-color: transparent;
+  color: var(--lo-gray-700);
+  border-color: var(--lo-gray-300);
+}
+
+.lo-btn-outline:hover:not(:disabled) {
+  background-color: var(--lo-gray-50);
+}
+
+.lo-btn-danger {
+  background-color: var(--lo-danger);
+  color: var(--lo-white);
+  border-color: var(--lo-danger);
+}
+
+.lo-btn-danger:hover:not(:disabled) {
+  background-color: var(--lo-danger-dark);
+}
+
+.lo-btn-outline-danger {
+  background-color: transparent;
+  color: var(--lo-danger);
+  border-color: var(--lo-danger);
+}
+
+.lo-btn-outline-danger:hover:not(:disabled) {
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+.lo-btn-text {
+  background: none;
+  border: none;
+  color: var(--lo-primary);
+  padding: 8px;
+}
+
+.lo-btn-text:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.lo-btn-sm {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+/* ============================================================================
+   FILTER PANEL
+   ============================================================================ */
+
+.lo-filter-panel {
+  background-color: var(--lo-white);
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--lo-gray-200);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.lo-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+
+.lo-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Toggle Switch */
+.lo-toggle-group {
+  margin-right: 8px;
+}
+
+.lo-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.lo-toggle-input {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: var(--lo-gray-300);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.lo-toggle-input:checked {
+  background-color: var(--lo-primary);
+}
+
+.lo-toggle-input::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background-color: var(--lo-white);
+  border-radius: 50%;
+  transition: transform 0.2s ease;
+  box-shadow: var(--lo-shadow-sm);
+}
+
+.lo-toggle-input:checked::before {
+  transform: translateX(20px);
+}
+
+.lo-toggle-text {
+  font-size: 14px;
+  color: var(--lo-gray-700);
+  white-space: nowrap;
+}
+
+/* Select Dropdowns */
+.lo-filter-select {
+  min-width: 160px;
+  padding: 8px 32px 8px 12px;
+  border: 1px solid var(--lo-gray-300);
+  border-radius: var(--lo-radius);
+  font-size: 14px;
+  background-color: var(--lo-white);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 16px;
+  cursor: pointer;
+}
+
+.lo-filter-select:focus {
+  outline: none;
+  border-color: var(--lo-primary);
+}
+
+/* Search Input */
+.lo-search-group {
+  flex: 1;
+  min-width: 300px;
+  max-width: 500px;
+  position: relative;
+}
+
+.lo-search-input {
+  width: 100%;
+  padding: 8px 36px 8px 12px;
+  border: 1px solid var(--lo-gray-300);
+  border-radius: var(--lo-radius);
+  font-size: 14px;
+}
+
+.lo-search-input:focus {
+  outline: none;
+  border-color: var(--lo-primary);
+}
+
+.lo-search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: none;
+  color: var(--lo-gray-400);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.lo-search-clear:hover {
+  background-color: var(--lo-gray-100);
+  color: var(--lo-gray-600);
+}
+
+/* Checkbox Group */
+.lo-checkbox-group {
+  display: flex;
+  gap: 20px;
+}
+
+.lo-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--lo-gray-700);
+}
+
+.lo-checkbox-label input[type="checkbox"] {
+  margin: 0;
+  width: 16px;
+  height: 16px;
+}
+
+/* Date Range */
+.lo-date-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lo-date-label {
+  font-size: 14px;
+  color: var(--lo-gray-600);
+  white-space: nowrap;
+}
+
+.lo-date-input {
+  width: 140px;
+  padding: 8px;
+  border: 1px solid var(--lo-gray-300);
+  border-radius: var(--lo-radius);
+  font-size: 14px;
+}
+
+.lo-date-input:focus {
+  outline: none;
+  border-color: var(--lo-primary);
+}
+
+.lo-date-separator {
+  color: var(--lo-gray-500);
+}
+
+/* Results Count */
+.lo-results-count {
+  margin-left: auto;
+  font-weight: 600;
+  color: var(--lo-gray-700);
+  background-color: var(--lo-gray-100);
+  padding: 6px 12px;
+  border-radius: var(--lo-radius);
+}
+
+/* ============================================================================
+   LISTINGS TABLE
+   ============================================================================ */
+
+.lo-listings-section {
+  background-color: var(--lo-white);
+  border-radius: var(--lo-radius);
+  box-shadow: var(--lo-shadow);
+  margin-top: 16px;
+}
+
+.lo-listings-table {
+  width: 100%;
+  min-width: 1200px;
+}
+
+.lo-listings-header {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1fr 1.5fr 1.2fr 1fr 1.5fr;
+  gap: 12px;
+  padding: 12px 16px;
+  background-color: var(--lo-gray-100);
+  border-bottom: 1px solid var(--lo-gray-200);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--lo-gray-600);
+}
+
+.lo-header-col {
+  padding: 4px;
+}
+
+.lo-listings-body {
+  max-height: calc(100vh - 380px);
+  overflow-y: auto;
+}
+
+/* ============================================================================
+   LISTING ROW
+   ============================================================================ */
+
+.lo-listing-row {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1fr 1.5fr 1.2fr 1fr 1.5fr;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--lo-gray-200);
+  transition: background-color 0.15s ease;
+}
+
+.lo-listing-row:hover {
+  background-color: var(--lo-gray-50);
+}
+
+.lo-listing-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* Column 1: Listing Details */
+.lo-listing-details .lo-listing-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--lo-gray-900);
+  margin: 0 0 4px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lo-listing-details .lo-listing-host {
+  font-size: 13px;
+  color: var(--lo-gray-700);
+  margin: 0;
+}
+
+.lo-listing-details .lo-listing-contact {
+  font-size: 12px;
+  color: var(--lo-gray-500);
+  margin: 0;
+}
+
+.lo-listing-details .lo-listing-created {
+  font-size: 11px;
+  color: var(--lo-gray-400);
+  margin: 0;
+}
+
+.lo-listing-details .lo-listing-id {
+  font-size: 10px;
+  color: var(--lo-gray-400);
+  font-family: monospace;
+  margin: 0;
+}
+
+.lo-listing-details .lo-listing-photos {
+  font-size: 11px;
+  color: var(--lo-primary);
+  font-weight: 500;
+  margin: 0;
+}
+
+/* Column 2: Features & Photos */
+.lo-listing-features {
+  gap: 8px;
+}
+
+.lo-photo-thumbnails {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.lo-photo-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--lo-radius-sm);
+  overflow: hidden;
+  background-color: var(--lo-gray-200);
+}
+
+.lo-photo-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.lo-more-photos {
+  font-size: 11px;
+  color: var(--lo-gray-500);
+  padding: 4px 8px;
+  background-color: var(--lo-gray-100);
+  border-radius: var(--lo-radius-sm);
+}
+
+.lo-features-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.lo-feature-tag {
+  font-size: 10px;
+  padding: 2px 6px;
+  background-color: var(--lo-gray-100);
+  color: var(--lo-gray-600);
+  border-radius: var(--lo-radius-sm);
+  white-space: nowrap;
+}
+
+.lo-feature-more {
+  font-size: 10px;
+  color: var(--lo-gray-500);
+}
+
+/* Column 3: Status Toggles */
+.lo-listing-toggles {
+  gap: 8px;
+}
+
+.lo-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--lo-gray-600);
+}
+
+.lo-toggle-row input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+}
+
+.lo-status-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.lo-status-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: var(--lo-radius-sm);
+  font-weight: 500;
+}
+
+.lo-status-completed {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.lo-status-inprogress {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.lo-status-draft {
+  background-color: var(--lo-gray-100);
+  color: var(--lo-gray-600);
+}
+
+.lo-status-archived {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.lo-avail-available {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.lo-avail-unavailable {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.lo-avail-pending {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+/* Column 4: Location Selectors */
+.lo-listing-location {
+  gap: 8px;
+}
+
+.lo-location-select {
+  width: 100%;
+  padding: 6px 24px 6px 8px;
+  font-size: 12px;
+  border: 1px solid var(--lo-gray-300);
+  border-radius: var(--lo-radius-sm);
+  background-color: var(--lo-white);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 4px center;
+  background-size: 14px;
+}
+
+.lo-location-select:disabled {
+  background-color: var(--lo-gray-100);
+  cursor: not-allowed;
+}
+
+.lo-location-display {
+  font-size: 11px;
+  color: var(--lo-gray-500);
+  margin: 0;
+}
+
+/* Column 5: Pricing */
+.lo-listing-pricing {
+  gap: 8px;
+}
+
+.lo-price-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lo-price-field label {
+  font-size: 10px;
+  color: var(--lo-gray-500);
+  text-transform: uppercase;
+}
+
+.lo-price-input {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--lo-gray-800);
+  background-color: var(--lo-gray-50);
+  border: 1px solid var(--lo-gray-200);
+  border-radius: var(--lo-radius-sm);
+  cursor: default;
+}
+
+.lo-price-display {
+  font-size: 12px;
+  color: var(--lo-gray-600);
+}
+
+/* Column 6: Action Buttons */
+.lo-listing-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-content: flex-start;
+}
+
+.lo-listing-actions .lo-btn {
+  flex: 0 0 auto;
+}
+
+/* Column 7: Error Management */
+.lo-listing-errors {
+  gap: 8px;
+}
+
+.lo-error-select {
+  width: 100%;
+  padding: 6px 24px 6px 8px;
+  font-size: 12px;
+  border: 1px solid var(--lo-gray-300);
+  border-radius: var(--lo-radius-sm);
+  background-color: var(--lo-white);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 4px center;
+  background-size: 14px;
+}
+
+.lo-custom-error {
+  display: flex;
+  gap: 4px;
+}
+
+.lo-custom-error input {
+  flex: 1;
+  padding: 4px 8px;
+  font-size: 12px;
+  border: 1px solid var(--lo-gray-300);
+  border-radius: var(--lo-radius-sm);
+}
+
+.lo-error-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* ============================================================================
+   LOAD MORE
+   ============================================================================ */
+
+.lo-load-more {
+  padding: 16px;
+  display: flex;
+  justify-content: center;
+  border-top: 1px solid var(--lo-gray-200);
+}
+
+/* ============================================================================
+   LOADING / ERROR / EMPTY STATES
+   ============================================================================ */
+
+.lo-loading-state,
+.lo-error-state,
+.lo-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.lo-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--lo-gray-200);
+  border-top-color: var(--lo-primary);
+  border-radius: 50%;
+  animation: lo-spin 1s linear infinite;
+}
+
+@keyframes lo-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.lo-error-icon {
+  width: 48px;
+  height: 48px;
+  background-color: var(--lo-danger);
+  color: var(--lo-white);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 16px;
+}
+
+.lo-error-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--lo-gray-900);
+  margin: 0 0 8px 0;
+}
+
+.lo-error-text {
+  color: var(--lo-gray-600);
+  margin: 0 0 16px 0;
+}
+
+/* ============================================================================
+   MODALS
+   ============================================================================ */
+
+.lo-modal-description h4,
+.lo-modal-pricing h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--lo-gray-900);
+  margin: 16px 0 8px 0;
+}
+
+.lo-modal-description h4:first-child {
+  margin-top: 0;
+}
+
+.lo-modal-description p {
+  color: var(--lo-gray-700);
+  line-height: 1.5;
+}
+
+.lo-modal-pricing .lo-price-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--lo-gray-100);
+}
+
+.lo-modal-pricing .lo-price-row:last-child {
+  border-bottom: none;
+}
+
+.lo-modal-errors .lo-errors-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.lo-modal-errors .lo-error-item {
+  padding: 8px 12px;
+  background-color: #fee2e2;
+  color: #991b1b;
+  border-radius: var(--lo-radius-sm);
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.lo-modal-price-result p {
+  color: var(--lo-gray-700);
+  margin: 8px 0;
+}
+
+.lo-modal-price-result .lo-warning {
+  color: var(--lo-danger);
+}
+
+.lo-no-data {
+  color: var(--lo-gray-500);
+  font-style: italic;
+}
+
+/* Generic Modal */
+.lo-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.lo-modal {
+  background-color: var(--lo-white);
+  border-radius: var(--lo-radius);
+  max-width: 560px;
+  width: 90%;
+  max-height: 80vh;
+  overflow: hidden;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.lo-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--lo-gray-200);
+}
+
+.lo-modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--lo-gray-900);
+  margin: 0;
+}
+
+.lo-modal-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: none;
+  font-size: 24px;
+  color: var(--lo-gray-400);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--lo-radius-sm);
+  transition: all 0.15s ease;
+}
+
+.lo-modal-close:hover {
+  background-color: var(--lo-gray-100);
+  color: var(--lo-gray-600);
+}
+
+.lo-modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  max-height: calc(80vh - 60px);
+}
+
+/* Price Increment Modal */
+.lo-price-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.lo-price-modal {
+  background-color: var(--lo-white);
+  padding: 24px;
+  border-radius: var(--lo-radius);
+  max-width: 480px;
+  width: 90%;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.lo-price-modal h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--lo-gray-900);
+  margin: 0 0 8px 0;
+}
+
+.lo-price-modal > p {
+  color: var(--lo-gray-600);
+  margin: 0 0 24px 0;
+}
+
+.lo-price-options {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.lo-custom-multiplier {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.lo-custom-multiplier label {
+  font-size: 14px;
+  color: var(--lo-gray-700);
+}
+
+.lo-custom-multiplier input {
+  width: 80px;
+  padding: 8px;
+  border: 1px solid var(--lo-gray-300);
+  border-radius: var(--lo-radius);
+  font-size: 14px;
+}
+
+.lo-modal-actions {
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+
+@media (max-width: 1200px) {
+  .lo-filter-row {
+    gap: 12px;
+  }
+
+  .lo-filter-select {
+    min-width: 140px;
+  }
+
+  .lo-search-group {
+    min-width: 250px;
+  }
+}
+
+@media (max-width: 768px) {
+  .lo-header-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .lo-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .lo-filter-panel {
+    padding: 12px 16px;
+  }
+
+  .lo-filter-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .lo-filter-group {
+    width: 100%;
+  }
+
+  .lo-search-group {
+    max-width: none;
+  }
+
+  .lo-filter-select {
+    width: 100%;
+  }
+
+  .lo-date-group {
+    flex-wrap: wrap;
+  }
+
+  .lo-date-input {
+    flex: 1;
+  }
+
+  .lo-results-count {
+    margin-left: 0;
+    text-align: center;
+  }
+
+  .lo-container {
+    padding: 0 16px 16px;
+  }
+
+  .lo-listings-section {
+    overflow-x: auto;
+  }
+}

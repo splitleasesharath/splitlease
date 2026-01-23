@@ -655,6 +655,18 @@ export const routes = [
     hasDynamicSegment: false
   },
 
+  // ===== LISTINGS OVERVIEW (ADMIN INTERNAL) =====
+  {
+    path: '/_internal/listings-overview',
+    file: 'listings-overview.html',
+    aliases: ['/_internal/listings-overview.html', '/listings-overview'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'listings-overview-view',
+    hasDynamicSegment: false
+  },
+
   // ===== GUEST EMERGENCY SUBMISSION (PUBLIC) =====
   {
     path: '/report-emergency',
