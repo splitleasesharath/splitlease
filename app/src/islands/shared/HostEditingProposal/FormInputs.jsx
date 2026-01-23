@@ -170,16 +170,18 @@ export function NumberInput({
 
 // ============================================================================
 // HouseRulesMultiSelect Component
+// Chip-and-dropdown pattern (like NeighborhoodSearchFilter)
 // ============================================================================
 
 /**
- * Multi-select dropdown for house rules
+ * Multi-select with compact chips and "+" add button
+ * Pattern: Selected items as chips + add button to expand dropdown
  */
 export function HouseRulesMultiSelect({
   value = [],
   onChange,
   options = [],
-  placeholder = 'Choose some options...',
+  placeholder = 'Add house rules...',
   disabled = false
 }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -196,67 +198,92 @@ export function HouseRulesMultiSelect({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const handleToggleOption = (rule) => {
+  const handleAddRule = (rule) => {
     const isSelected = value.some((r) => r.id === rule.id)
-    if (isSelected) {
-      onChange(value.filter((r) => r.id !== rule.id))
-    } else {
+    if (!isSelected) {
       onChange([...value, rule])
     }
+    setIsOpen(false)
   }
 
-  const handleRemove = (rule, e) => {
-    e.stopPropagation()
+  const handleRemove = (rule) => {
     onChange(value.filter((r) => r.id !== rule.id))
   }
 
+  // Filter out already selected options from dropdown
+  const availableOptions = options.filter(
+    (option) => !value.some((r) => r.id === option.id)
+  )
+
   return (
-    <div ref={wrapperRef} className="hep-multiselect-wrapper">
-      <div
-        className={`hep-multiselect ${disabled ? 'hep-multiselect--disabled' : ''}`}
-        onClick={() => !disabled && setIsOpen(!isOpen)}
-      >
-        {value.length === 0 ? (
-          <span className="hep-placeholder">{placeholder}</span>
-        ) : (
-          value.map((rule) => (
-            <span key={rule.id} className="hep-tag">
+    <div ref={wrapperRef} className="hep-rules-selector">
+      {/* Selected rules as chips */}
+      {value.length > 0 && (
+        <div className="hep-rules-chips">
+          {value.map((rule) => (
+            <span key={rule.id} className="hep-rule-chip">
               {rule.name || rule.Display || rule}
               <button
                 type="button"
-                className="hep-tag-remove"
-                onClick={(e) => handleRemove(rule, e)}
+                className="hep-rule-chip-remove"
+                onClick={() => handleRemove(rule)}
+                disabled={disabled}
                 aria-label={`Remove ${rule.name || rule.Display || rule}`}
               >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
+                ×
               </button>
             </span>
-          ))
-        )}
-      </div>
+          ))}
 
-      {isOpen && (
-        <div className="hep-multiselect-menu">
-          {options.map((option) => {
-            const isSelected = value.some((r) => r.id === option.id)
-            return (
-              <div
-                key={option.id}
-                className={`hep-multiselect-option ${isSelected ? 'hep-multiselect-option--selected' : ''}`}
-                onClick={() => handleToggleOption(option)}
-              >
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={() => {}}
-                  className="hep-checkbox"
-                />
-                <span>{option.name || option.Display}</span>
-              </div>
-            )
-          })}
+          {/* Add button (only if there are more options) */}
+          {availableOptions.length > 0 && !disabled && (
+            <button
+              type="button"
+              className="hep-rules-add-btn"
+              onClick={() => setIsOpen(!isOpen)}
+              aria-label="Add house rule"
+            >
+              +
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Empty state - show placeholder with add button */}
+      {value.length === 0 && (
+        <button
+          type="button"
+          className={`hep-rules-empty ${disabled ? 'hep-rules-empty--disabled' : ''}`}
+          onClick={() => !disabled && setIsOpen(!isOpen)}
+          disabled={disabled}
+        >
+          <span className="hep-rules-empty-text">{placeholder}</span>
+          <span className="hep-rules-empty-icon">+</span>
+        </button>
+      )}
+
+      {/* Dropdown with available options */}
+      {isOpen && availableOptions.length > 0 && (
+        <div className="hep-rules-dropdown">
+          {availableOptions.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              className="hep-rules-option"
+              onClick={() => handleAddRule(option)}
+            >
+              {option.name || option.Display}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Dropdown empty state */}
+      {isOpen && availableOptions.length === 0 && (
+        <div className="hep-rules-dropdown">
+          <div className="hep-rules-dropdown-empty">
+            All rules selected
+          </div>
         </div>
       )}
     </div>

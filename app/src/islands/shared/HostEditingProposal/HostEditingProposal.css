@@ -428,42 +428,171 @@
   box-shadow: 0 0 0 3px var(--color-primary-light);
 }
 
-/* Multi-select tags */
-.hep-multiselect {
-  border: 1px solid var(--color-gray-300);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-sm);
-  min-height: 44px;
+/* ========================================
+   House Rules Selector (Chip + Add Pattern)
+   Like NeighborhoodSearchFilter
+   ======================================== */
+
+.hep-rules-selector {
+  position: relative;
 }
 
-.hep-tag {
+/* Chips row - wrapping container for selected rules */
+.hep-rules-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
+/* Individual rule chip - compact purple pill */
+.hep-rule-chip {
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-xs);
-  background: var(--color-primary-light);
-  color: var(--color-primary);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: var(--radius-sm);
-  font-size: 12px;
+  padding: 6px 10px;
+  background: var(--color-primary);
+  color: var(--color-white);
+  border-radius: var(--radius-full);
+  font-size: 13px;
   font-weight: 500;
+  white-space: nowrap;
 }
 
-.hep-tag-remove {
-  width: 14px;
-  height: 14px;
-  border: none;
-  background: transparent;
-  color: var(--color-primary);
-  cursor: pointer;
+/* Remove button inside chip */
+.hep-rule-chip-remove {
+  width: 18px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0.7;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 50%;
+  color: var(--color-white);
+  font-size: 14px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: background var(--transition-fast);
   padding: 0;
+  line-height: 1;
 }
 
-.hep-tag-remove:hover {
-  opacity: 1;
+.hep-rule-chip-remove:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+/* Add button - dashed circle with "+" */
+.hep-rules-add-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed var(--color-gray-300);
+  background: var(--color-white);
+  border-radius: 50%;
+  color: var(--color-gray-500);
+  font-size: 18px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.hep-rules-add-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+/* Empty state button - shows when no rules selected */
+.hep-rules-empty {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  cursor: pointer;
+  transition: border-color var(--transition-fast);
+}
+
+.hep-rules-empty:hover {
+  border-color: var(--color-primary);
+}
+
+.hep-rules-empty--disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.hep-rules-empty-text {
+  color: var(--color-gray-400);
+  font-size: 14px;
+}
+
+.hep-rules-empty-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-gray-100);
+  border-radius: 50%;
+  color: var(--color-gray-500);
+  font-size: 16px;
+}
+
+.hep-rules-empty:hover .hep-rules-empty-icon {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+/* Dropdown menu */
+.hep-rules-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  background: var(--color-white);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 100;
+}
+
+/* Option in dropdown */
+.hep-rules-option {
+  display: block;
+  width: 100%;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: none;
+  background: transparent;
+  text-align: left;
+  font-size: 14px;
+  color: var(--color-gray-700);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.hep-rules-option:hover {
+  background: var(--color-primary-light);
+}
+
+.hep-rules-option:not(:last-child) {
+  border-bottom: 1px solid var(--color-gray-100);
+}
+
+/* Empty dropdown state */
+.hep-rules-dropdown-empty {
+  padding: var(--spacing-lg);
+  text-align: center;
+  color: var(--color-gray-400);
+  font-size: 14px;
 }
 
 /* ========================================
