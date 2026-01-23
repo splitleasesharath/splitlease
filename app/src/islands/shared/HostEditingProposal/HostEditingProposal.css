@@ -188,23 +188,34 @@
 }
 
 .hep-header-close {
-  width: 36px;
-  height: 36px;
+  width: var(--min-touch-target);             /* 48px touch target */
+  height: var(--min-touch-target);
   display: flex;
   align-items: center;
   justify-content: center;
   background: transparent;
   border: none;
   border-radius: var(--radius-md);
-  color: var(--color-gray-400);
+  color: var(--color-text-secondary);         /* Darker gray for visibility */
   cursor: pointer;
   flex-shrink: 0;
   transition: all var(--transition-fast);
+  margin: -6px;                               /* Extend touch area beyond visual */
+}
+
+.hep-header-close svg {
+  width: 24px;
+  height: 24px;
 }
 
 .hep-header-close:hover {
-  background: var(--color-gray-100);
-  color: var(--color-gray-600);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.hep-header-close:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-offset);
 }
 
 /* ========================================
