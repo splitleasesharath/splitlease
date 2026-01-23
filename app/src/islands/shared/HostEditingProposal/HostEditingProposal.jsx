@@ -389,10 +389,20 @@ export function HostEditingProposal({
       )
     }
 
-    // General header: Document icon + "Review Changes" title
+    // General header: Back button + Document icon + "Review Changes" title
     return (
       <div className="hep-header">
         <div className="hep-header-left">
+          <button
+            type="button"
+            className="hep-header-back"
+            onClick={() => setView('editing')}
+            aria-label="Back to editing"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+          </button>
           <div className="hep-header-icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
@@ -423,7 +433,7 @@ export function HostEditingProposal({
   // Render footer based on view state
   const renderFooter = () => {
     if (view === 'pristine') {
-      // Pristine: "Edit Proposal" (primary) + "Reject Proposal" (reject)
+      // Pristine: "Edit Proposal" (primary) + "Cancel" (secondary to close)
       return (
         <div className="hep-footer hep-footer--vertical">
           <button
@@ -435,10 +445,10 @@ export function HostEditingProposal({
           </button>
           <button
             type="button"
-            className="hep-btn hep-btn-reject-outline"
-            onClick={() => setShowRejectModal(true)}
+            className="hep-btn hep-btn-secondary"
+            onClick={handleClose}
           >
-            Reject Proposal
+            Cancel
           </button>
         </div>
       )
@@ -466,15 +476,15 @@ export function HostEditingProposal({
       )
     }
 
-    // General: "Reject" (reject) + "Submit Edits" or "Accept As-Is" (success/primary)
+    // General (review): "Cancel Edits" (secondary) + "Submit" (success)
     return (
       <div className="hep-footer">
         <button
           type="button"
-          className="hep-btn hep-btn-reject-outline"
-          onClick={() => setShowRejectModal(true)}
+          className="hep-btn hep-btn-secondary"
+          onClick={handleCancelEdits}
         >
-          Reject
+          Cancel Edits
         </button>
         <button
           type="button"
@@ -482,7 +492,7 @@ export function HostEditingProposal({
           onClick={handleConfirmProceed}
           disabled={proceedButtonLocked}
         >
-          {hasChanges() ? 'Submit Edits' : 'Accept As-Is'}
+          Submit
         </button>
       </div>
     )
