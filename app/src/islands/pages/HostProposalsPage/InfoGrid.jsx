@@ -153,7 +153,14 @@ export function InfoGrid({ proposal }) {
       </div>
       <div className="hp7-info-item">
         <div className="hp7-info-label">Schedule</div>
-        <div className="hp7-info-value">{formatScheduleRange(daysSelected)}</div>
+        <div className="hp7-info-value">
+          {daysChanged && (
+            <span className="hp7-strikethrough">{formatScheduleRange(originalDays)}</span>
+          )}
+          <span className={daysChanged ? 'hp7-changed-value' : ''}>
+            {formatScheduleRange(daysSelected)}
+          </span>
+        </div>
       </div>
       <div className="hp7-info-item">
         <div className="hp7-info-label">Nights</div>

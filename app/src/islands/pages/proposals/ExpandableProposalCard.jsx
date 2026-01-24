@@ -187,6 +187,82 @@ function getCheckInOutRange(proposal) {
 }
 
 /**
+ * Get the ORIGINAL check-in to checkout day range string (before any counteroffer)
+ * Used for strikethrough comparison when a counteroffer changes the schedule
+ */
+function getOriginalCheckInOutRange(proposal) {
+  // Use original check-in/check-out day fields (not HC fields)
+  const checkInDay = proposal['check in day'];
+  const checkOutDay = proposal['check out day'];
+
+  if (checkInDay != null && checkOutDay != null) {
+    const checkInIndex = typeof checkInDay === 'number' ? checkInDay : parseInt(checkInDay, 10);
+    const checkOutIndex = typeof checkOutDay === 'number' ? checkOutDay : parseInt(checkOutDay, 10);
+
+    if (!isNaN(checkInIndex) && !isNaN(checkOutIndex) &&
+        checkInIndex >= 0 && checkInIndex <= 6 &&
+        checkOutIndex >= 0 && checkOutIndex <= 6) {
+      return `${DAY_NAMES[checkInIndex]} to ${DAY_NAMES[checkOutIndex]}`;
+    }
+  }
+
+  // Fall back to original Days Selected array
+  let daysSelected = proposal['Days Selected'] || [];
+  if (typeof daysSelected === 'string') {
+    try {
+      daysSelected = JSON.parse(daysSelected);
+    } catch (e) {
+      daysSelected = [];
+    }
+  }
+
+  if (!Array.isArray(daysSelected) || daysSelected.length === 0) return null;
+
+  const dayIndices = daysSelected.map(day => {
+    if (typeof day === 'number') return day;
+    if (typeof day === 'string') {
+      const trimmed = day.trim();
+      const numericValue = parseInt(trimmed, 10);
+      if (!isNaN(numericValue) && String(numericValue) === trimmed) {
+        return numericValue;
+      }
+      const jsIndex = DAY_NAMES.indexOf(trimmed);
+      return jsIndex >= 0 ? jsIndex : -1;
+    }
+    return -1;
+  }).filter(idx => idx >= 0 && idx <= 6);
+
+  if (dayIndices.length === 0) return null;
+
+  const sorted = [...dayIndices].sort((a, b) => a - b);
+
+  // Handle wrap-around case
+  const hasLowNumbers = sorted.some(d => d <= 2);
+  const hasHighNumbers = sorted.some(d => d >= 4);
+
+  if (hasLowNumbers && hasHighNumbers && sorted.length < 7) {
+    let gapIndex = -1;
+    for (let i = 1; i < sorted.length; i++) {
+      if (sorted[i] - sorted[i - 1] > 1) {
+        gapIndex = i;
+        break;
+      }
+    }
+
+    if (gapIndex !== -1) {
+      const checkInDayIndex = sorted[gapIndex];
+      const checkOutDayIndex = sorted[gapIndex - 1];
+      return `${DAY_NAMES[checkInDayIndex]} to ${DAY_NAMES[checkOutDayIndex]}`;
+    }
+  }
+
+  const checkInDayIndex = sorted[0];
+  const checkOutDayIndex = sorted[sorted.length - 1];
+
+  return `${DAY_NAMES[checkInDayIndex]} to ${DAY_NAMES[checkOutDayIndex]}`;
+}
+
+/**
  * Parse days selected for URL context
  */
 function parseDaysSelectedForContext(proposal) {
@@ -500,6 +576,7 @@ export default function ExpandableProposalCard({
   const nightlyPrice = isCounteroffer && hcNightlyPrice != null ? hcNightlyPrice : originalNightlyPrice;
   const totalPrice = isCounteroffer && hcTotalPrice != null ? hcTotalPrice : originalTotalPrice;
   const checkInOutRange = getCheckInOutRange(proposal);
+  const originalCheckInOutRange = getOriginalCheckInOutRange(proposal);
   const cleaningFee = proposal?.['cleaning fee'] || 0;
 
   // Comparison flags - detect which values changed
@@ -509,6 +586,7 @@ export default function ExpandableProposalCard({
   const moveInChanged = isCounteroffer && hcMoveInDate && hcMoveInDate !== originalMoveInStart;
   const daysChanged = isCounteroffer && hcDaysSelected.length > 0 &&
     JSON.stringify([...hcDaysSelected].sort()) !== JSON.stringify([...originalDaysSelected].sort());
+  const scheduleChanged = daysChanged && originalCheckInOutRange && checkInOutRange !== originalCheckInOutRange;
 
   // Dates
   const moveInStart = isCounteroffer && hcMoveInDate ? hcMoveInDate : originalMoveInStart;
@@ -781,7 +859,14 @@ export default function ExpandableProposalCard({
             </div>
             <div className="epc-info-item">
               <div className="epc-info-label">Schedule</div>
-              <div className="epc-info-value">{checkInOutRange || 'Flexible'}</div>
+              <div className="epc-info-value">
+                {scheduleChanged && (
+                  <span className="epc-strikethrough">{originalCheckInOutRange}</span>
+                )}
+                <span className={scheduleChanged ? 'epc-changed-value' : ''}>
+                  {checkInOutRange || 'Flexible'}
+                </span>
+              </div>
             </div>
             <div className="epc-info-item">
               <div className="epc-info-label">Nights/week</div>
