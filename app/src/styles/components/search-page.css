@@ -2561,6 +2561,244 @@
 }
 
 /* ========================================
+   MOBILE FILTER BOTTOM SHEET
+   Following POPUP_REPLICATION_PROTOCOL
+   ======================================== */
+
+/* Hide on desktop */
+.mobile-filter-backdrop,
+.mobile-filter-sheet {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  /* Backdrop */
+  .mobile-filter-backdrop {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 2999;
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* Bottom Sheet Container */
+  .mobile-filter-sheet {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-height: 92vh;
+    background: white;
+    border-radius: 24px 24px 0 0;
+    z-index: 3000;
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
+  }
+
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  /* Grab Handle */
+  .mobile-filter-handle {
+    width: 36px;
+    height: 4px;
+    background: #E7E0EC;
+    border-radius: 2px;
+    margin: 12px auto 0 auto;
+    flex-shrink: 0;
+  }
+
+  /* Header */
+  .mobile-filter-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #E7E0EC;
+    flex-shrink: 0;
+  }
+
+  .mobile-filter-header-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .mobile-filter-title {
+    font-size: 18px;
+    font-weight: 400;
+    color: #31135D;
+    margin: 0;
+  }
+
+  /* Close Button - 32x32px per protocol */
+  .mobile-filter-close {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    color: #49454F;
+    transition: background 0.2s ease;
+    padding: 0;
+  }
+
+  .mobile-filter-close:hover,
+  .mobile-filter-close:active {
+    background: #F7F2FA;
+  }
+
+  .mobile-filter-close svg {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+  }
+
+  /* Body - Scrollable */
+  .mobile-filter-body {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* Filter Group */
+  .mobile-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .mobile-filter-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #49454F;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .mobile-filter-select {
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 16px;
+    color: #1D1B20;
+    background: white;
+    border: 1px solid #E7E0EC;
+    border-radius: 12px;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2331135D' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .mobile-filter-select:focus {
+    outline: none;
+    border-color: #31135D;
+    box-shadow: 0 0 0 3px rgba(49, 19, 93, 0.1);
+  }
+
+  /* Neighborhood filter adjustments for mobile sheet */
+  .mobile-filter-group .neighborhood-search-group {
+    width: 100%;
+    max-width: 100%;
+    min-width: 100%;
+  }
+
+  .mobile-filter-group .neighborhood-search-input {
+    padding: 14px 16px;
+    font-size: 16px;
+    border-radius: 12px;
+  }
+
+  .mobile-filter-group .neighborhood-chips-row {
+    margin-top: 8px;
+  }
+
+  .mobile-filter-group .neighborhood-search-dropdown {
+    position: relative;
+    margin-top: 8px;
+    max-height: 200px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Footer */
+  .mobile-filter-footer {
+    display: flex;
+    gap: 12px;
+    padding: 16px 20px;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid #E7E0EC;
+    flex-shrink: 0;
+    background: white;
+  }
+
+  /* Buttons - Pill shaped per protocol */
+  .mobile-filter-btn-secondary,
+  .mobile-filter-btn-primary {
+    flex: 1;
+    padding: 14px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 100px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .mobile-filter-btn-secondary {
+    background: transparent;
+    border: 1px solid #31135D;
+    color: #31135D;
+  }
+
+  .mobile-filter-btn-secondary:hover,
+  .mobile-filter-btn-secondary:active {
+    background: #F7F2FA;
+  }
+
+  .mobile-filter-btn-primary {
+    background: #31135D;
+    border: 1px solid #31135D;
+    color: white;
+  }
+
+  .mobile-filter-btn-primary:hover,
+  .mobile-filter-btn-primary:active {
+    background: #4a1f8a;
+    border-color: #4a1f8a;
+  }
+}
+
+/* ========================================
    MOBILE MAP MODAL - Fullscreen Map View
    ======================================== */
 

@@ -1014,6 +1014,123 @@ export default function SearchPage() {
             <div className="filter-backdrop open" onClick={closeFilterPopup}></div>
           )}
 
+          {/* Mobile Filter Bottom Sheet */}
+          {filterPanelActive && (
+            <>
+              <div className="mobile-filter-backdrop" onClick={() => setFilterPanelActive(false)}></div>
+              <div className="mobile-filter-sheet">
+                {/* Grab Handle */}
+                <div className="mobile-filter-handle"></div>
+
+                {/* Header */}
+                <div className="mobile-filter-header">
+                  <div className="mobile-filter-header-content">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#31135D" strokeWidth="2">
+                      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                    </svg>
+                    <h2 className="mobile-filter-title">Filters</h2>
+                  </div>
+                  <button
+                    className="mobile-filter-close"
+                    onClick={() => setFilterPanelActive(false)}
+                    aria-label="Close filters"
+                  >
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <line x1="18" y1="6" x2="6" y2="18" strokeLinecap="round"/>
+                      <line x1="6" y1="6" x2="18" y2="18" strokeLinecap="round"/>
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Body - Scrollable */}
+                <div className="mobile-filter-body">
+                  {/* Borough Select */}
+                  <div className="mobile-filter-group">
+                    <label className="mobile-filter-label">BOROUGH</label>
+                    <select
+                      className="mobile-filter-select"
+                      value={selectedBorough}
+                      onChange={(e) => setSelectedBorough(e.target.value)}
+                    >
+                      {boroughs.length === 0 ? (
+                        <option value="">Loading...</option>
+                      ) : (
+                        <>
+                          <option value="all">All Boroughs</option>
+                          {boroughs.map(borough => (
+                            <option key={borough.id} value={borough.value}>
+                              {borough.name}
+                            </option>
+                          ))}
+                        </>
+                      )}
+                    </select>
+                  </div>
+
+                  {/* Week Pattern */}
+                  <div className="mobile-filter-group">
+                    <label className="mobile-filter-label">WEEK PATTERN</label>
+                    <select
+                      className="mobile-filter-select"
+                      value={weekPattern}
+                      onChange={(e) => setWeekPattern(e.target.value)}
+                    >
+                      <option value="every-week">Every week</option>
+                      <option value="one-on-off">One on, one off</option>
+                      <option value="two-on-off">Two on, two off</option>
+                      <option value="one-three-off">One on, three off</option>
+                    </select>
+                  </div>
+
+                  {/* Price Range */}
+                  <div className="mobile-filter-group">
+                    <label className="mobile-filter-label">PRICE RANGE</label>
+                    <select
+                      className="mobile-filter-select"
+                      value={priceTier}
+                      onChange={(e) => setPriceTier(e.target.value)}
+                    >
+                      <option value="all">All Prices</option>
+                      <option value="under-200">&lt; $200/night</option>
+                      <option value="200-350">$200-$350/night</option>
+                      <option value="350-500">$350-$500/night</option>
+                      <option value="500-plus">$500+/night</option>
+                    </select>
+                  </div>
+
+                  {/* Neighborhoods */}
+                  <div className="mobile-filter-group">
+                    <label className="mobile-filter-label">NEIGHBORHOODS</label>
+                    <NeighborhoodSearchFilter
+                      neighborhoods={neighborhoods}
+                      selectedNeighborhoods={selectedNeighborhoods}
+                      onNeighborhoodsChange={setSelectedNeighborhoods}
+                      neighborhoodSearch={neighborhoodSearch}
+                      onNeighborhoodSearchChange={setNeighborhoodSearch}
+                      searchInputId="neighborhoodSearchMobile"
+                    />
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="mobile-filter-footer">
+                  <button
+                    className="mobile-filter-btn-secondary"
+                    onClick={clearAllFilters}
+                  >
+                    Clear All
+                  </button>
+                  <button
+                    className="mobile-filter-btn-primary"
+                    onClick={() => setFilterPanelActive(false)}
+                  >
+                    Show {allListings.length} Results
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+
           {/* Results header */}
           <div className={`results-header ${mobileHeaderHidden ? 'results-header--hidden' : ''} ${desktopHeaderCollapsed ? 'results-header--desktop-hidden' : ''}`}>
             <span className="results-count">
