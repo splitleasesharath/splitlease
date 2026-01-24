@@ -135,7 +135,6 @@ function ReservationDetailsTable({ original, counteroffer, isExpanded = false })
     { label: 'Check-Out Day', originalVal: original.checkOutDayName, counterVal: counteroffer.checkOutDayName },
     { label: 'Price/Night', originalVal: original.nightlyPriceFormatted, counterVal: counteroffer.nightlyPriceFormatted },
     { label: 'Nights Reserved', originalVal: original.nightsReserved, counterVal: counteroffer.nightsReserved },
-    { label: 'Weeks Used', originalVal: `${original.reservationWeeks} weeks`, counterVal: `${counteroffer.reservationWeeks} weeks` },
     { label: 'Duration', originalVal: `${original.reservationWeeks} weeks`, counterVal: `${counteroffer.reservationWeeks} weeks` },
     { label: 'Total Price', originalVal: original.totalPriceFormatted, counterVal: counteroffer.totalPriceFormatted },
     { label: 'Price/4 Weeks', originalVal: original.pricePerFourWeeksFormatted, counterVal: counteroffer.pricePerFourWeeksFormatted },
