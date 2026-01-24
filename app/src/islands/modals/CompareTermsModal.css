@@ -380,7 +380,7 @@
 }
 
 /* ============================================
-   DOCUMENT LINK
+   DOCUMENT LINK / EXPAND BUTTON
    ============================================ */
 .compare-terms-document-link {
   text-align: center;
@@ -395,6 +395,29 @@
 
 .compare-terms-document-link a:hover {
   color: #374151;
+}
+
+.compare-terms-expand-btn {
+  font-size: 13px;
+  color: #6b7280;
+  background: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.compare-terms-expand-btn:hover:not(:disabled) {
+  color: #374151;
+  background-color: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.compare-terms-expand-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* ============================================

@@ -125,8 +125,9 @@ function HouseRulesDisplay({ rules = [] }) {
  * @param {Object} props
  * @param {Object} props.original - Original terms
  * @param {Object} props.counteroffer - Counteroffer terms
+ * @param {boolean} props.isExpanded - Whether to show all rows or only changed ones
  */
-function ReservationDetailsTable({ original, counteroffer }) {
+function ReservationDetailsTable({ original, counteroffer, isExpanded = false }) {
   if (!original || !counteroffer) return null;
 
   const rows = [
@@ -144,6 +145,14 @@ function ReservationDetailsTable({ original, counteroffer }) {
     { label: 'Initial Payment', originalVal: original.initialPaymentFormatted, counterVal: counteroffer.initialPaymentFormatted }
   ];
 
+  // Filter to only changed rows if not expanded
+  const displayRows = isExpanded
+    ? rows
+    : rows.filter(row => String(row.originalVal) !== String(row.counterVal));
+
+  // Don't render if collapsed and no changes
+  if (!isExpanded && displayRows.length === 0) return null;
+
   return (
     <div className="compare-terms-details-section">
       <h4 className="compare-terms-details-title">Reservation Details</h4>
@@ -153,7 +162,7 @@ function ReservationDetailsTable({ original, counteroffer }) {
           <div className="compare-terms-details-cell">Your Terms</div>
           <div className="compare-terms-details-cell">Host Terms</div>
         </div>
-        {rows.map((row, index) => {
+        {displayRows.map((row, index) => {
           const isChanged = String(row.originalVal) !== String(row.counterVal);
           return (
             <div key={index} className="compare-terms-details-row">
@@ -195,11 +204,13 @@ export default function CompareTermsModal({ proposal, onClose, onAcceptCounterof
     houseRules,
     listingInfo,
     showCancelModal,
+    isExpanded,
     handleAcceptCounteroffer,
     handleCancelProposal,
     handleCancelConfirm,
     handleClose,
-    handleCloseCancelModal
+    handleCloseCancelModal,
+    handleToggleExpanded
   } = useCompareTermsModalLogic({
     proposal,
     onClose,
@@ -297,7 +308,7 @@ export default function CompareTermsModal({ proposal, onClose, onAcceptCounterof
               <div className="compare-terms-row">
                 <span className="compare-terms-label">Days/Nights</span>
                 <span className="compare-terms-value">
-                  {originalTerms.daysSelected.length} days, {originalTerms.nightsPerWeek} nights
+                  {originalTerms.daysSelected.length + 1} days, {originalTerms.daysSelected.length} nights
                 </span>
               </div>
 
@@ -330,8 +341,8 @@ export default function CompareTermsModal({ proposal, onClose, onAcceptCounterof
 
               <div className="compare-terms-row">
                 <span className="compare-terms-label">Days/Nights</span>
-                <span className={`compare-terms-value ${counterofferTerms.nightsPerWeek !== originalTerms.nightsPerWeek ? 'compare-terms-value--highlight' : ''}`}>
-                  {counterofferTerms.daysSelected.length} days, {counterofferTerms.nightsPerWeek} nights
+                <span className={`compare-terms-value ${counterofferTerms.daysSelected.length !== originalTerms.daysSelected.length ? 'compare-terms-value--highlight' : ''}`}>
+                  {counterofferTerms.daysSelected.length + 1} days, {counterofferTerms.daysSelected.length} nights
                 </span>
               </div>
 
@@ -346,6 +357,7 @@ export default function CompareTermsModal({ proposal, onClose, onAcceptCounterof
           <ReservationDetailsTable
             original={originalTerms}
             counteroffer={counterofferTerms}
+            isExpanded={isExpanded}
           />
         </div>
 
@@ -375,15 +387,16 @@ export default function CompareTermsModal({ proposal, onClose, onAcceptCounterof
             </button>
           </div>
 
-          {/* Check the full document link */}
+          {/* Check the full document toggle */}
           <div className="compare-terms-document-link">
-            <a
-              href={`/proposal-details/${proposal._id}`}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={handleToggleExpanded}
+              className="compare-terms-expand-btn"
+              disabled={isLoading}
             >
-              Check the full document
-            </a>
+              {isExpanded ? 'Collapse to changes only' : 'Check the full document'}
+            </button>
           </div>
         </div>
       </div>

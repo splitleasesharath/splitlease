@@ -85,6 +85,7 @@ export function useCompareTermsModalLogic({
   const [isCancelling, setIsCancelling] = useState(false);
   const [error, setError] = useState(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   // Get terms comparison using workflow function
   const termsComparison = useMemo(() => {
@@ -373,6 +374,13 @@ export function useCompareTermsModalLogic({
     }
   }, [isCancelling]);
 
+  /**
+   * Toggle expanded/collapsed view of full document
+   */
+  const handleToggleExpanded = useCallback(() => {
+    setIsExpanded(prev => !prev);
+  }, []);
+
   return {
     // Loading states
     isAccepting,
@@ -391,12 +399,16 @@ export function useCompareTermsModalLogic({
     // Cancel modal state
     showCancelModal,
 
+    // Expanded state
+    isExpanded,
+
     // Handlers
     handleAcceptCounteroffer,
     handleCancelProposal,
     handleCancelConfirm,
     handleClose,
-    handleCloseCancelModal
+    handleCloseCancelModal,
+    handleToggleExpanded
   };
 }
 
