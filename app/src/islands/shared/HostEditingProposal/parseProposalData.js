@@ -43,9 +43,9 @@ export function getProposalValue(proposal, field, fallback) {
  */
 export function extractCheckInDay(proposal) {
   const value = proposal?.['check in day'] ?? proposal?.checkInDay
-  // If value is a number (day index), convert to day name
-  if (typeof value === 'number') {
-    return getDayName(value) || 'Monday'
+  // If value is a number or numeric string (day index), convert to day name
+  if (typeof value === 'number' || (typeof value === 'string' && /^\d$/.test(value))) {
+    return getDayName(Number(value)) || 'Monday'
   }
   return value || 'Monday'
 }
@@ -57,9 +57,9 @@ export function extractCheckInDay(proposal) {
  */
 export function extractCheckOutDay(proposal) {
   const value = proposal?.['check out day'] ?? proposal?.checkOutDay
-  // If value is a number (day index), convert to day name
-  if (typeof value === 'number') {
-    return getDayName(value) || 'Friday'
+  // If value is a number or numeric string (day index), convert to day name
+  if (typeof value === 'number' || (typeof value === 'string' && /^\d$/.test(value))) {
+    return getDayName(Number(value)) || 'Friday'
   }
   return value || 'Friday'
 }
