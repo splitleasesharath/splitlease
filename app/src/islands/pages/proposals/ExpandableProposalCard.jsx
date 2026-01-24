@@ -97,16 +97,24 @@ function getAllDaysWithSelection(daysSelected) {
  * Get check-in to checkout day range string
  *
  * Priority order:
- * 1. Use explicit check in/out day fields if available (most reliable)
- * 2. Fall back to deriving from Days Selected array
+ * 1. For counteroffers: Use HC (host counteroffer) fields first
+ * 2. Use explicit check in/out day fields if available
+ * 3. Fall back to deriving from Days Selected array
  *
  * Days Selected represents the range from check-in to checkout (inclusive).
  * Check-in = first day, Checkout = last day in the selection.
  */
 function getCheckInOutRange(proposal) {
-  // Priority 1: Use explicit check-in/check-out day fields if available
-  const checkInDay = proposal['check in day'] || proposal['hc check in day'];
-  const checkOutDay = proposal['check out day'] || proposal['hc check out day'];
+  const isCounteroffer = proposal['counter offer happened'];
+
+  // Priority 1: For counteroffers, prefer HC fields
+  // Priority 2: Use explicit check-in/check-out day fields
+  const checkInDay = isCounteroffer
+    ? (proposal['hc check in day'] ?? proposal['check in day'])
+    : (proposal['check in day'] ?? proposal['hc check in day']);
+  const checkOutDay = isCounteroffer
+    ? (proposal['hc check out day'] ?? proposal['check out day'])
+    : (proposal['check out day'] ?? proposal['hc check out day']);
 
   if (checkInDay != null && checkOutDay != null) {
     const checkInIndex = typeof checkInDay === 'number' ? checkInDay : parseInt(checkInDay, 10);
@@ -810,7 +818,7 @@ export default function ExpandableProposalCard({
             </div>
             <div className="epc-days-info">
               <div className="epc-days-count">
-                {daysSelected.length} days, {nightsPerWeek} nights
+                {nightsPerWeek + 1} days, {nightsPerWeek} nights
                 {someNightsUnavailable && (
                   <span className="epc-nights-warning" title="Some nights unavailable">⚠</span>
                 )}
@@ -907,20 +915,14 @@ export default function ExpandableProposalCard({
               </button>
             )}
 
-            {/* Review Host Terms button - for proposals with counteroffer */}
-            {isCounteroffer && !isTerminal && !isCompleted && (
-              <button
-                className="epc-btn epc-btn--attention"
-                onClick={() => setShowCompareTermsModal(true)}
-              >
-                Review Host Terms
-              </button>
-            )}
-
             {/* Guest Action 2 */}
             {buttonConfig?.guestAction2?.visible && (
               <button
-                className={`epc-btn ${buttonConfig.guestAction2.action === 'reject_suggestion' ? 'epc-btn--not-interested' : 'epc-btn--outline'}`}
+                className={`epc-btn ${
+                  buttonConfig.guestAction2.action === 'reject_suggestion' ? 'epc-btn--not-interested' :
+                  buttonConfig.guestAction2.action === 'review_counteroffer' ? 'epc-btn--attention' :
+                  'epc-btn--outline'
+                }`}
                 onClick={() => {
                   if (buttonConfig.guestAction2.action === 'see_details') {
                     setProposalDetailsModalInitialView('pristine');
@@ -929,6 +931,8 @@ export default function ExpandableProposalCard({
                     goToRentalApplication(proposal._id);
                   } else if (buttonConfig.guestAction2.action === 'reject_suggestion') {
                     setShowNotInterestedModal(true);
+                  } else if (buttonConfig.guestAction2.action === 'review_counteroffer') {
+                    setShowCompareTermsModal(true);
                   }
                 }}
               >

@@ -12,19 +12,51 @@
 import { useState } from 'react';
 
 /**
- * Parse markdown bold syntax (**text**) and return React elements
- * @param {string} text - Text potentially containing **bold** markers
+ * Parse BBCode formatting tags and return React elements
+ * Supports: [b][/b] for bold, [color=#XXXXXX][/color] for colored text
+ * @param {string} text - Text potentially containing BBCode markers
  * @returns {Array|string} - Array of React elements or original text
  */
-function parseMarkdownBold(text) {
+function parseBBCode(text) {
   if (!text) return text;
-  const parts = text.split(/\*\*([^*]+)\*\*/g);
-  return parts.map((part, index) => {
-    if (index % 2 === 1) {
-      return <strong key={index}>{part}</strong>;
+
+  const elements = [];
+  let remaining = text;
+  let keyIndex = 0;
+
+  // Regex to match [b]...[/b] and [color=#XXXXXX]...[/color]
+  const bbcodeRegex = /\[b\](.*?)\[\/b\]|\[color=(#[0-9a-fA-F]{6})\](.*?)\[\/color\]/g;
+
+  let lastIndex = 0;
+  let match;
+
+  while ((match = bbcodeRegex.exec(text)) !== null) {
+    // Add text before this match
+    if (match.index > lastIndex) {
+      elements.push(text.slice(lastIndex, match.index));
     }
-    return part;
-  });
+
+    if (match[1] !== undefined) {
+      // Bold tag: [b]text[/b]
+      elements.push(<strong key={keyIndex++}>{match[1]}</strong>);
+    } else if (match[2] !== undefined && match[3] !== undefined) {
+      // Color tag: [color=#XXXXXX]text[/color]
+      elements.push(
+        <span key={keyIndex++} style={{ color: match[2] }}>
+          {match[3]}
+        </span>
+      );
+    }
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Add remaining text after last match
+  if (lastIndex < text.length) {
+    elements.push(text.slice(lastIndex));
+  }
+
+  return elements.length > 0 ? elements : text;
 }
 
 /**
@@ -57,7 +89,7 @@ export default function CounterofferSummarySection({ summary }) {
 
       {isExpanded && (
         <div className="counteroffer-summary-content">
-          <p>{parseMarkdownBold(summary)}</p>
+          <p>{parseBBCode(summary)}</p>
         </div>
       )}
     </div>
