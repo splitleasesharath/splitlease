@@ -3,11 +3,10 @@ import LoggedInAvatar from '../../../shared/LoggedInAvatar/LoggedInAvatar.jsx';
 /**
  * MobileFilterBar - Sticky filter button for mobile
  * Includes auth-aware elements: favorites link and LoggedInAvatar for logged-in users
+ * Note: Map button moved to floating FAB at bottom of screen
  */
 export default function MobileFilterBar({
   onFilterClick,
-  onMapClick,
-  isMapVisible,
   isLoggedIn,
   currentUser,
   favoritesCount,
@@ -28,17 +27,10 @@ export default function MobileFilterBar({
         />
       </a>
       <button className="filter-toggle-btn" onClick={onFilterClick}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M4 6h16M4 12h16M4 18h16" strokeWidth="2" strokeLinecap="round" />
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
         </svg>
         <span>Filters</span>
-      </button>
-      <button className="map-toggle-btn" onClick={onMapClick}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <rect x="3" y="3" width="18" height="18" rx="2" strokeWidth="2" />
-          <path d="M9 3v18M15 3v18M3 9h18M3 15h18" strokeWidth="2" />
-        </svg>
-        <span>{isMapVisible ? 'Show Listings' : 'Map'}</span>
       </button>
 
       {/* Mobile Header Actions - Auth-aware elements */}
