@@ -521,7 +521,15 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
           "Comment",
           "Created Date",
           "Modified Date",
-          "virtual meeting"
+          "virtual meeting",
+          "counter offer happened",
+          "hc reservation span (weeks)",
+          "hc nightly price",
+          "hc total price",
+          "hc move in date",
+          "hc check in day",
+          "hc check out day",
+          "hc nights per week"
         `)
         .eq('Listing', listingId)
         .neq('Deleted', true)
