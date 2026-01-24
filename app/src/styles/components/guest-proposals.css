@@ -2271,28 +2271,48 @@
   margin-top: 8px;
 }
 
-/* Modal Footer */
+/* Modal Footer - Side by side buttons */
 .proposal-details-footer {
+  display: flex;
+  gap: 12px;
   padding: 16px 24px;
   background: var(--gp-bg);
   border-top: 1px solid var(--gp-border-light);
 }
 
 .proposal-details-footer-btn {
-  width: 100%;
-  padding: 12px 20px;
-  background: var(--gp-purple-primary);
-  color: white;
-  border: none;
-  border-radius: 10px;
+  flex: 1;
+  padding: 14px 24px;
+  border-radius: 100px;
   font-size: var(--gp-font-size-base);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
+  min-height: 48px;
+  text-align: center;
 }
 
-.proposal-details-footer-btn:hover {
+/* Secondary button - Outlined */
+.proposal-details-footer-btn--secondary {
+  background: transparent;
+  color: var(--gp-purple-primary);
+  border: 2px solid var(--gp-purple-primary);
+}
+
+.proposal-details-footer-btn--secondary:hover {
+  background: var(--gp-purple-bg, #f8f5ff);
+}
+
+/* Primary button - Solid */
+.proposal-details-footer-btn--primary {
+  background: var(--gp-purple-primary);
+  color: white;
+  border: 2px solid var(--gp-purple-primary);
+}
+
+.proposal-details-footer-btn--primary:hover {
   background: var(--gp-purple-dark);
+  border-color: var(--gp-purple-dark);
 }
 
 /* Responsive */

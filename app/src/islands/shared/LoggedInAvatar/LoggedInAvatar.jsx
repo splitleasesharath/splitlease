@@ -343,7 +343,7 @@ export default function LoggedInAvatar({
       items.push({
         id: 'reviews',
         label: 'Reviews Manager',
-        icon: '/assets/icons/star-purple.svg',
+        icon: '/assets/icons/star-purple.png',
         path: '/reviews-overview',
       });
     }

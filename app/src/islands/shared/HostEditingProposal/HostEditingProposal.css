@@ -1,63 +1,84 @@
 /**
- * Host Editing Proposal Styles
+ * Host Editing Proposal - Simplified Styles
  *
- * Updated to follow POPUP_REPLICATION_PROTOCOL.md design system.
- * Features:
- * - Monochromatic purple color scheme (no green/yellow)
- * - Pill-shaped buttons (100px radius)
- * - Mobile bottom-sheet behavior (<480px)
- * - Protocol grab handle (36x4px, #E7E0EC)
- * - Inter font family for buttons
- *
- * Color Tokens:
- * - Primary: #31135D
- * - Hover: #4A2F7C
- * - Light BG: #F7F2FA
- * - Border: #E7E0EC
- * - Danger: #DC3545 (outlined only)
+ * 3-state view machine: pristine | editing | general
+ * Based on Split Lease Design System v1.0
  */
 
 /* ========================================
-   CSS Variables / Design Tokens
+   CSS Variables - Design System Tokens
    ======================================== */
 
 .hep-container {
-  --hep-primary-purple: #31135D;
-  --hep-primary-white: #FFFFFF;
-  --hep-surface-purple: #8C97C7;
+  /* ===== SPLIT LEASE DESIGN SYSTEM - Purple Monochromatic ===== */
 
-  --hep-text-dark: #000000;
-  --hep-text-primary: #424242;
-  --hep-text-secondary: #252525;
-  --hep-text-tertiary: #4D4D4D;
-  --hep-text-placeholder: #B5B5B5;
-  --hep-text-placeholder-light: #9C9C9C;
+  /* Primary Purple Palette (NO GREEN, NO BLUE) */
+  --color-primary: #31135D;           /* Primary Purple - headers, buttons, icons */
+  --color-primary-hover: #250F4A;     /* Darker for hover states */
+  --color-primary-action: #5B5FCF;    /* Action Purple - success/positive states */
+  --color-primary-secondary: #6D31C2; /* Secondary Purple - accents, focus rings */
+  --color-primary-light: #F7F2FA;     /* Light Purple - backgrounds, hovers */
+  --color-primary-tint: #f8f5ff;      /* Subtle backgrounds */
 
-  --hep-input-border-purple: #4B47CE;
-  --hep-reject-red: #C82333;
-  --hep-tag-background: #E4E4E4;
-  --hep-gray-border: #6B6B6B;
-  --hep-shadow-gray: #AAAAAA;
-  --hep-tag-border: #C9C9C9;
+  /* Text Colors (WCAG AAA compliant) */
+  --color-text: #111111;              /* Primary body text */
+  --color-text-secondary: #374151;    /* Supporting content */
+  --color-text-muted: #4b5563;        /* Meta information */
+  --color-text-ghost: #49454F;        /* Ghost button text */
 
-  --hep-font-serif: 'Martel', Georgia, serif;
-  --hep-font-sans: 'Lato', 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  --hep-font-dm-sans: 'DM Sans', 'Lato', sans-serif;
-}
+  /* UI Colors */
+  --color-white: #FFFFFF;
+  --color-border: #E7E0EC;            /* Card borders, dividers */
+  --color-danger: #DC3545;            /* Error/danger - OUTLINED ONLY */
+  --color-danger-light: #fce8e8;      /* Danger background tint */
 
-/* ========================================
-   Mobile Grab Handle
-   - 36x4px centered bar for mobile bottom sheet
-   - Hidden on desktop, visible on mobile (<480px)
-   ======================================== */
-.hep-grab-handle {
-  display: none;
-  width: 36px;
-  height: 4px;
-  background: #E7E0EC;
-  border-radius: 2px;
-  margin: 8px auto 0;
-  flex-shrink: 0;
+  /* Legacy Neutrals (mapped to design system) */
+  --color-gray-50: #F7F2FA;           /* Maps to primary-light */
+  --color-gray-100: #E7E0EC;          /* Maps to border */
+  --color-gray-200: #E7E0EC;
+  --color-gray-300: #D1D5DB;
+  --color-gray-400: #9CA3AF;
+  --color-gray-500: #4b5563;          /* Maps to text-muted */
+  --color-gray-600: #374151;          /* Maps to text-secondary */
+  --color-gray-700: #374151;
+  --color-gray-800: #1F2937;
+  --color-gray-900: #111111;          /* Maps to text */
+
+  /* Typography */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-size-base: 17px;
+  --font-size-sm: 15px;
+  --font-size-label: 14px;
+  --font-size-md: 18px;
+  --line-height-tight: 1.3;
+  --line-height-normal: 1.6;
+
+  /* Spacing (8/16/24 scale) */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 20px;
+  --spacing-2xl: 24px;
+
+  /* Touch Targets */
+  --min-touch-target: 48px;
+
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 24px;
+  --radius-pill: 100px;               /* Pill-shaped buttons */
+  --radius-full: 9999px;
+
+  /* Focus States */
+  --focus-outline: 3px solid var(--color-primary-secondary);
+  --focus-offset: 3px;
+  --focus-ring: 0 0 0 4px rgba(109, 49, 194, 0.5);
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-base: 200ms ease;
 }
 
 /* ========================================
@@ -65,16 +86,12 @@
    ======================================== */
 
 .hep-container {
-  background-color: var(--hep-primary-white);
-  min-width: 40px;
-  min-height: 40px;
+  background: var(--color-white);
+  border-radius: var(--radius-lg);  /* 24px per design system */
   display: flex;
   flex-direction: column;
-  font-family: var(--hep-font-sans);
-  box-sizing: border-box;
-  padding: 16px;
-  border-radius: 16px;
-  max-height: 92vh;
+  font-family: var(--font-family);
+  max-height: 92vh;  /* Design system modal max height */
   overflow: hidden;
 }
 
@@ -85,793 +102,893 @@
 }
 
 /* ========================================
-   Scrollable Body
-   - Fills available space and scrolls
-   - Allows footer to stay fixed at bottom
-   - Consistent vertical padding per protocol
+   Mobile Grab Handle
+   ======================================== */
+
+.hep-grab-handle {
+  width: 36px;
+  height: 4px;
+  background: var(--color-border);  /* Design system border color */
+  border-radius: var(--radius-full);
+  margin: var(--spacing-sm) auto var(--spacing-xs);
+  display: none;
+}
+
+/* ========================================
+   Header
+   ======================================== */
+
+.hep-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-bottom: 1px solid var(--color-gray-100);
+  flex-shrink: 0;
+}
+
+.hep-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex: 1;
+  min-width: 0;
+}
+
+.hep-header-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary-light);
+  border-radius: var(--radius-md);
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.hep-header-icon--success {
+  background: var(--color-primary-light);      /* Purple light background */
+  color: var(--color-primary-action);          /* Action Purple (not green!) */
+}
+
+.hep-header-back {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.hep-header-back:hover {
+  opacity: 0.7;
+}
+
+.hep-header-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-gray-900);
+  line-height: 1.3;
+  margin: 0;
+}
+
+.hep-header-subtitle {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-gray-500);
+  line-height: 1.3;
+  margin-top: 2px;
+}
+
+.hep-header-close {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.hep-header-close:hover {
+  opacity: 0.7;
+}
+
+.hep-header-close:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-offset);
+}
+
+/* ========================================
+   Back Link - Below Header Navigation
+   ======================================== */
+
+.hep-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) 0;
+  margin-bottom: var(--spacing-lg);
+  background: none;
+  border: none;
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-primary);
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+}
+
+.hep-back-link:hover {
+  opacity: 0.7;
+}
+
+.hep-back-link:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-offset);
+}
+
+.hep-back-link svg {
+  flex-shrink: 0;
+}
+
+/* ========================================
+   Body - Scrollable Content
    ======================================== */
 
 .hep-body {
   flex: 1;
   overflow-y: auto;
-  overflow-x: hidden;
+  padding: var(--spacing-xl);
   -webkit-overflow-scrolling: touch;
-  padding-top: 16px;
-  padding-bottom: 8px;
 }
 
 /* ========================================
-   Typography
+   Pristine View - Readonly Details
    ======================================== */
 
-.hep-title-main {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-weight: 500;
-  font-size: 18px;
-  color: #1C1B1F;
-  line-height: 1.4;
-  letter-spacing: 0;
-  margin: 0;
+.hep-pristine-view {
+  display: flex;
+  flex-direction: column;
 }
 
-.hep-title-section {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+.hep-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md) 0;
+  border-bottom: 1px solid var(--color-gray-100);
+}
+
+.hep-detail-row:last-of-type {
+  border-bottom: none;
+}
+
+.hep-detail-label {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-gray-600);
+}
+
+.hep-detail-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-gray-900);
+  text-align: right;
+}
+
+/* Pricing Section */
+.hep-pricing-section {
+  background: var(--color-gray-50);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  margin-top: var(--spacing-lg);
+}
+
+.hep-pricing-title {
+  font-size: 14px;
   font-weight: 600;
+  color: var(--color-gray-700);
+  margin-bottom: var(--spacing-md);
+}
+
+.hep-pricing-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm) 0;
+}
+
+.hep-pricing-row--total {
+  border-top: 1px solid var(--color-gray-200);
+  margin-top: var(--spacing-sm);
+  padding-top: var(--spacing-md);
+}
+
+.hep-pricing-label {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-gray-600);
+}
+
+.hep-pricing-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-gray-900);
+}
+
+.hep-pricing-row--total .hep-pricing-label,
+.hep-pricing-row--total .hep-pricing-value {
   font-size: 16px;
-  color: #1C1B1F;
-  line-height: 1.5;
-  margin: 0;
-}
-
-.hep-label {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-weight: 500;
-  font-size: 14px;
-  color: #1C1B1F;
-  line-height: 1.4;
-  letter-spacing: 0;
-}
-
-.hep-row-label {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-weight: 500;
-  font-size: 14px;
-  color: #49454F;
-  line-height: 1.4;
-  letter-spacing: 0;
-}
-
-.hep-description {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-weight: 400;
-  font-size: 14px;
-  color: #49454F;
-  line-height: 1.5;
-}
-
-.hep-text-value {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-weight: 400;
-  font-size: 14px;
-  color: #49454F;
+  font-weight: 600;
+  color: var(--color-primary);
 }
 
 /* ========================================
-   Buttons
+   Editing View - Form Fields
    ======================================== */
 
-/* Buttons - Updated per POPUP_REPLICATION_PROTOCOL.md */
+.hep-editing-view {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.hep-form-section {
+  margin-bottom: var(--spacing-xl);
+}
+
+.hep-form-section:last-child {
+  margin-bottom: 0;
+}
+
+.hep-form-section--inline {
+  margin-top: var(--spacing-md);
+  margin-bottom: 0;
+}
+
+.hep-form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-gray-600);
+  margin-bottom: var(--spacing-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ========================================
+   Footer - Action Buttons
+   ======================================== */
+
+.hep-footer {
+  display: flex;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-top: 1px solid var(--color-gray-100);
+  flex-shrink: 0;
+}
+
+.hep-footer--vertical {
+  flex-direction: column;
+}
+
+.hep-footer--vertical .hep-btn {
+  width: 100%;
+}
+
+/* ========================================
+   Buttons - Pill-Shaped per Design System
+   ======================================== */
+
 .hep-btn {
-  border-radius: 100px; /* Pill-shaped per protocol */
+  flex: 1;
+  padding: var(--spacing-lg) var(--spacing-2xl);  /* 16px 24px */
+  border-radius: var(--radius-pill);              /* 100px - always pill-shaped */
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);               /* 17px */
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  transition: all var(--transition-fast);
+  border: 2px solid transparent;
+  text-align: center;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  text-align: center;
-  border: none;
+  min-height: var(--min-touch-target);            /* 48px minimum */
+  min-width: 120px;
+}
+
+.hep-btn:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-offset);
 }
 
 .hep-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
-/* Primary button - Protocol purple */
+/* Primary Button - Solid purple */
 .hep-btn-primary {
-  background-color: #31135D;
-  color: #FFFFFF;
-  font-weight: 600;
-  font-size: 14px;
-  border: none;
-  height: 44px;
-  padding: 0 24px;
-  min-width: fit-content;
-  white-space: nowrap;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-white);
 }
 
 .hep-btn-primary:hover:not(:disabled) {
-  background-color: #4A2F7C;
-  box-shadow: 0 4px 12px rgba(49, 19, 93, 0.2);
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
 }
 
-/* Secondary button - Outlined style per protocol */
+/* Secondary Button - Outlined purple */
 .hep-btn-secondary {
-  background-color: transparent;
-  color: #31135D;
-  font-weight: 600;
-  font-size: 14px;
-  border: 1px solid #E7E0EC;
-  height: 44px;
-  padding: 0 24px;
+  background: transparent;
+  color: var(--color-primary);
+  border: 2px solid var(--color-primary);
 }
 
 .hep-btn-secondary:hover:not(:disabled) {
-  background-color: #F7F2FA;
-  border-color: #31135D;
+  background: var(--color-primary-light);
 }
 
-.hep-btn-destructive {
-  background-color: var(--hep-reject-red);
-  color: var(--hep-primary-white);
-  font-family: var(--hep-font-dm-sans);
-  font-weight: 500;
-  font-size: 14px;
-  border: none;
-  width: 128px;
-  height: 32px;
-  transition: box-shadow 500ms ease, color 500ms ease;
+/* Success Button - Uses Action Purple (NOT green!) */
+.hep-btn-success {
+  background: var(--color-primary-action);
+  border-color: var(--color-primary-action);
+  color: var(--color-white);
 }
 
-.hep-btn-destructive:hover:not(:disabled) {
-  box-shadow: 0 4px 12px rgba(200, 35, 51, 0.3);
+.hep-btn-success:hover:not(:disabled) {
+  background: #4A4EB8;  /* Slightly darker action purple */
+  border-color: #4A4EB8;
 }
 
-/* Cancel/Secondary button - Outlined style per protocol */
-.hep-btn-cancel {
-  background-color: transparent;
-  border: 2px solid #E7E0EC;
-  color: #49454F;
-  font-weight: 600;
-  font-size: 14px;
-  height: 44px;
-  padding: 0 24px;
+/* Danger/Reject Button - OUTLINED ONLY per design system */
+.hep-btn-reject-outline {
+  background: transparent;
+  color: var(--color-danger);
+  border: 2px solid var(--color-danger);
 }
 
-.hep-btn-cancel:hover:not(:disabled) {
-  background-color: #F7F2FA;
-  border-color: #31135D;
-}
-
-.hep-btn-reject {
-  color: var(--hep-reject-red);
-  border-color: var(--hep-reject-red);
+.hep-btn-reject-outline:hover:not(:disabled) {
+  background: var(--color-danger-light);
 }
 
 /* ========================================
-   Form Inputs
+   Form Inputs (Base styles for sub-components)
    ======================================== */
 
+/* Base input styling - Design System compliant */
 .hep-input-base {
-  font-family: var(--hep-font-sans);
-  font-weight: 400;
-  font-size: 16px;
-  color: var(--hep-text-secondary);
-  background-color: var(--hep-primary-white);
-  border: 1px solid var(--hep-text-tertiary);
-  border-radius: 2px;
-  box-shadow: inset -2px -2px 4px var(--hep-shadow-gray);
-  padding: 8px 12px;
-  height: 42px;
   width: 100%;
-  box-sizing: border-box;
+  height: var(--min-touch-target);              /* 48px minimum touch target */
+  padding: 0 var(--spacing-lg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);              /* 12px */
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);             /* 17px minimum readable */
+  color: var(--color-text);
+  background: var(--color-white);
+  transition: all var(--transition-fast);
 }
 
-.hep-input-base::placeholder {
-  color: var(--hep-text-placeholder);
+.hep-input-base:hover {
+  border-color: var(--color-primary-secondary);
 }
 
 .hep-input-base:focus {
   outline: none;
-  border-color: var(--hep-primary-purple);
+  border-color: var(--color-primary);
+  box-shadow: var(--focus-ring);
+}
+
+.hep-input-base:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-offset);
+}
+
+.hep-input-base::placeholder {
+  color: var(--color-text-muted);
+}
+
+.hep-input-base:disabled {
+  background: var(--color-primary-light);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+/* Date Input Wrapper */
+.hep-date-input-wrapper {
+  position: relative;
 }
 
 .hep-input-date {
-  padding-right: 40px;
-}
-
-.hep-date-input-wrapper {
-  position: relative;
-  width: 100%;
+  padding-right: 48px;
 }
 
 .hep-date-icon {
   position: absolute;
-  right: 12px;
+  right: var(--spacing-lg);
   top: 50%;
   transform: translateY(-50%);
-  color: var(--hep-primary-purple);
+  color: var(--color-gray-400);
   pointer-events: none;
 }
 
-.hep-dropdown {
-  font-size: 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-  height: 42px;
+/* Number Input */
+.hep-input-number {
+  -moz-appearance: textfield;
 }
 
-.hep-dropdown:disabled {
-  cursor: not-allowed;
+.hep-input-number::-webkit-outer-spin-button,
+.hep-input-number::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Dropdown Wrapper */
+.hep-dropdown-wrapper {
+  position: relative;
+}
+
+/* Dropdown Button (styled as input) */
+.hep-dropdown {
+  width: 100%;
+  height: 48px;
+  padding: 0 var(--spacing-lg);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-lg);
+  font-family: var(--font-family);
+  font-size: 15px;
+  color: var(--color-gray-900);
+  background: var(--color-white);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+  transition: all var(--transition-fast);
+}
+
+.hep-dropdown:hover {
+  border-color: var(--color-gray-300);
+}
+
+.hep-dropdown:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
 }
 
 .hep-placeholder {
-  color: var(--hep-text-placeholder-light);
-}
-
-.hep-dropdown-wrapper {
-  position: relative;
-  width: 100%;
+  color: var(--color-gray-400);
 }
 
 .hep-dropdown-chevron {
-  transition: transform 200ms ease;
+  color: var(--color-gray-400);
+  transition: transform var(--transition-fast);
+  flex-shrink: 0;
 }
 
 .hep-dropdown-chevron--open {
   transform: rotate(180deg);
 }
 
+/* Dropdown Menu */
 .hep-dropdown-menu {
   position: absolute;
-  top: 100%;
+  top: calc(100% + 4px);
   left: 0;
   right: 0;
-  background-color: var(--hep-primary-white);
-  border: 1px solid var(--hep-text-tertiary);
-  border-radius: 2px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  z-index: 100;
-  max-height: 200px;
+  max-height: 240px;
   overflow-y: auto;
+  background: var(--color-white);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+  z-index: 100;
 }
 
 .hep-dropdown-option {
-  padding: 10px 12px;
+  padding: var(--spacing-md) var(--spacing-lg);
+  font-size: 15px;
+  color: var(--color-gray-700);
   cursor: pointer;
-  transition: background-color 200ms ease;
+  transition: background var(--transition-fast);
 }
 
 .hep-dropdown-option:hover {
-  background-color: rgba(49, 19, 93, 0.05);
+  background: var(--color-gray-50);
 }
 
 .hep-dropdown-option--selected {
-  background-color: rgba(49, 19, 93, 0.1);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-weight: 500;
 }
 
-.hep-input-number {
-  width: 100%;
-  height: 42px;
+.hep-dropdown-option:not(:last-child) {
+  border-bottom: 1px solid var(--color-gray-100);
 }
 
-/* Multi-select */
-.hep-multiselect-wrapper {
+/* ========================================
+   House Rules Selector (Chip + Add Pattern)
+   Like NeighborhoodSearchFilter
+   ======================================== */
+
+.hep-rules-selector {
   position: relative;
 }
 
-.hep-multiselect {
-  font-family: var(--hep-font-sans);
-  font-weight: 400;
-  font-size: 14px;
-  color: var(--hep-text-secondary);
-  background-color: var(--hep-primary-white);
-  border: 1px solid var(--hep-input-border-purple);
-  border-radius: 4px;
-  padding: 5px 8px;
-  min-height: 40px;
+/* Chips row - wrapping container for selected rules */
+.hep-rules-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: var(--spacing-sm);
   align-items: center;
+  min-height: 48px;
+  padding: var(--spacing-sm) 0;
+}
+
+/* Individual rule chip - compact blue pill */
+.hep-rule-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--color-primary);
+  color: var(--color-white);
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+/* Remove button inside chip */
+.hep-rule-chip-remove {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.25);
+  border: none;
+  border-radius: 9999px;
+  color: var(--color-white);
+  font-size: 14px;
+  font-weight: 400;
   cursor: pointer;
+  transition: background var(--transition-fast);
+  padding: 0;
+  line-height: 1;
+  margin-left: 2px;
 }
 
-.hep-multiselect--disabled {
-  cursor: not-allowed;
+.hep-rule-chip-remove:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+/* Add button - solid circle with "+" (matches neighborhood-add-btn pattern) */
+.hep-rules-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: var(--color-gray-100);
+  border-radius: 9999px;
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--color-gray-500);
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.hep-rules-add-btn:hover {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+/* Empty state button - shows when no rules selected */
+.hep-rules-empty {
+  width: 100%;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--spacing-lg);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-lg);
+  background: var(--color-white);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.hep-rules-empty:hover {
+  border-color: var(--color-gray-300);
+}
+
+.hep-rules-empty--disabled {
   opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--color-gray-50);
 }
 
-.hep-multiselect-menu {
+.hep-rules-empty-text {
+  color: var(--color-gray-400);
+  font-size: 15px;
+}
+
+.hep-rules-empty-icon {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-gray-100);
+  border-radius: 9999px;
+  color: var(--color-gray-500);
+  font-size: 18px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.hep-rules-empty:hover .hep-rules-empty-icon {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+/* Dropdown menu */
+.hep-rules-dropdown {
   position: absolute;
-  top: 100%;
+  top: calc(100% + 4px);
   left: 0;
   right: 0;
-  background-color: var(--hep-primary-white);
-  border: 1px solid var(--hep-input-border-purple);
-  border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  z-index: 100;
-  max-height: 200px;
+  max-height: 240px;
   overflow-y: auto;
+  background: var(--color-white);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+  z-index: 100;
 }
 
-.hep-multiselect-option {
-  padding: 10px 12px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: background-color 200ms ease;
-}
-
-.hep-multiselect-option:hover {
-  background-color: rgba(75, 71, 206, 0.05);
-}
-
-.hep-multiselect-option--selected {
-  background-color: rgba(75, 71, 206, 0.1);
-}
-
-.hep-checkbox {
-  accent-color: var(--hep-input-border-purple);
-}
-
-/* Tags */
-.hep-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background-color: var(--hep-tag-background);
-  border: 1px solid var(--hep-tag-border);
-  border-radius: 2px;
-  padding: 2px 8px;
-  font-size: 14px;
-  color: var(--hep-text-secondary);
-}
-
-.hep-tag-remove {
-  background: none;
+/* Option in dropdown */
+.hep-rules-option {
+  display: block;
+  width: 100%;
+  padding: var(--spacing-md) var(--spacing-lg);
   border: none;
-  padding: 0;
+  background: transparent;
+  text-align: left;
+  font-size: 15px;
+  color: var(--color-gray-700);
   cursor: pointer;
-  color: #999;
-  display: flex;
-  align-items: center;
+  transition: background var(--transition-fast);
 }
 
-.hep-tag-remove:hover {
-  color: var(--hep-reject-red);
+.hep-rules-option:hover {
+  background: var(--color-gray-50);
+}
+
+.hep-rules-option:not(:last-child) {
+  border-bottom: 1px solid var(--color-gray-100);
+}
+
+/* Empty dropdown state */
+.hep-rules-dropdown-empty {
+  padding: var(--spacing-xl);
+  text-align: center;
+  color: var(--color-gray-400);
+  font-size: 14px;
 }
 
 /* ========================================
-   Containers & Groups
-   - Per protocol spacing scale: 8px, 16px, 24px
+   House Rules Popup Modal
+   Design System compliant centered modal
    ======================================== */
 
-.hep-editing-terms {
-  width: 100%;
-  padding: 16px 0 8px;
+/* Popup overlay - dark backdrop with click-to-close */
+.hep-rules-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--spacing-2xl);
 }
 
-.hep-proposal-row {
+/* Popup container - 24px border radius per design system */
+.hep-rules-popup {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);               /* 24px */
   width: 100%;
-  min-height: 27px;
+  max-width: 360px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+              0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Popup header */
+.hep-rules-popup-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
+  padding: var(--spacing-lg);                    /* 16px */
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
 }
 
-/* ========================================
-   Collapsible Section
-   - Per protocol: 8px spacing between adjacent elements
-   ======================================== */
+.hep-rules-popup-title {
+  font-size: var(--font-size-md);                /* 18px */
+  font-weight: 600;
+  color: var(--color-text);
+}
 
-.hep-collapsible {
-  background-color: var(--hep-primary-purple);
-  border: 1px solid var(--hep-surface-purple);
-  border-radius: 10px;
-  width: 100%;
-  min-height: 44px;
+.hep-rules-popup-close {
+  width: var(--min-touch-target);                /* 48px touch target */
+  height: var(--min-touch-target);
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
-  cursor: pointer;
-  transition: background-color 200ms ease;
-  margin-bottom: 16px;
-}
-
-.hep-collapsible:hover {
-  background-color: #3d1a70;
-}
-
-.hep-collapsible-title {
-  font-family: var(--hep-font-sans);
-  font-weight: 400;
-  font-size: 20px;
-  color: var(--hep-primary-white);
-  line-height: 1.25;
-}
-
-.hep-collapsible-icon {
-  color: var(--hep-primary-white);
-  transition: transform 200ms ease;
-}
-
-.hep-collapsible-icon--expanded {
-  transform: rotate(180deg);
-}
-
-/* ========================================
-   Icons - Updated per POPUP_REPLICATION_PROTOCOL.md
-   ======================================== */
-
-.hep-icon {
-  display: inline-flex;
   align-items: center;
   justify-content: center;
   background: transparent;
   border: none;
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
   cursor: pointer;
-  padding: 0;
-  border-radius: 8px;
-  transition: background-color 0.2s ease;
+  transition: all var(--transition-fast);
+  margin: -8px;                                  /* Extend touch area */
 }
 
-.hep-icon:hover {
-  background-color: #F7F2FA;
+.hep-rules-popup-close:hover {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
 }
 
-.hep-icon-edit {
-  width: 32px;
-  height: 32px;
-  color: #31135D;
+.hep-rules-popup-close:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-offset);
 }
 
-.hep-icon-edit svg {
-  width: 18px;
-  height: 18px;
+/* Popup body - scrollable options list */
+.hep-rules-popup-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-sm) 0;
+  -webkit-overflow-scrolling: touch;
 }
 
-.hep-icon-close {
-  width: 32px;
-  height: 32px;
-  color: #49454F;
-}
-
-.hep-icon-close svg {
-  width: 20px;
-  height: 20px;
-}
-
-.hep-icon-reject {
-  color: var(--hep-reject-red);
-}
-
-.hep-header-actions {
-  display: flex;
-  gap: 4px;
-}
-
-/* ========================================
-   Reservation Price Breakdown
-   ======================================== */
-
-.hep-breakdown-container {
-  width: 100%;
-}
-
-.hep-breakdown-title {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-weight: 600;
-  font-size: 14px;
-  color: #1C1B1F;
-  line-height: 1.5;
-  margin-bottom: 4px;
-}
-
-.hep-breakdown-row {
+/* Individual option button - 48px minimum height */
+.hep-rules-popup-option {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 4px 0;
-  min-height: 24px;
-}
-
-.hep-breakdown-row-label {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-weight: 500;
-  font-size: 14px;
-  color: #49454F;
-}
-
-.hep-breakdown-edit-btn {
-  background: none;
+  min-height: var(--min-touch-target);           /* 48px touch target */
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: transparent;
   border: none;
-  padding: 4px;
-  margin-left: 8px;
+  text-align: left;
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);              /* 17px */
+  color: var(--color-text-secondary);
   cursor: pointer;
-  color: var(--hep-primary-purple);
-  opacity: 0.5;
-  transition: opacity 200ms ease, transform 200ms ease;
-  display: inline-flex;
+  transition: background var(--transition-fast);
+}
+
+.hep-rules-popup-option:hover {
+  background: var(--color-primary-tint);
+}
+
+.hep-rules-popup-option:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: -3px;
+}
+
+.hep-rules-popup-option--selected {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.hep-rules-popup-option--selected:hover {
+  background: var(--color-primary-light);
+}
+
+.hep-rules-popup-option-text {
+  flex: 1;
+  font-weight: 400;
+}
+
+.hep-rules-popup-option--selected .hep-rules-popup-option-text {
+  font-weight: 500;
+}
+
+/* Checkbox indicator */
+.hep-rules-popup-checkbox {
+  width: 24px;
+  height: 24px;
+  display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
-  vertical-align: middle;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+  margin-left: var(--spacing-md);
+  transition: all var(--transition-fast);
 }
 
-.hep-breakdown-edit-btn:hover {
-  opacity: 1;
-  transform: scale(1.1);
-  background-color: rgba(49, 19, 93, 0.08);
+.hep-rules-popup-checkbox--checked {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-white);
 }
 
-.hep-breakdown-row:hover .hep-breakdown-edit-btn {
-  opacity: 0.8;
-}
-
-.hep-breakdown-row-value {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-weight: 400;
-  font-size: 14px;
-  color: #1C1B1F;
-  text-align: right;
-}
-
-.hep-breakdown-row-highlight {
-  background-color: rgba(49, 19, 93, 0.05);
-}
-
-/* Changed row indicator - uses protocol purple instead of yellow */
-.hep-breakdown-row-changed {
-  background-color: rgba(49, 19, 93, 0.08);
-  border-left: 3px solid #31135D;
-}
-
-.hep-breakdown-row-changed .hep-breakdown-row-value {
-  font-weight: 700;
-  color: #31135D;
-}
-
-.hep-original-value {
-  display: block;
-  font-size: 12px;
-  font-weight: 400;
-  color: #888;
-  text-decoration: line-through;
-  margin-top: 2px;
-}
-
-/* Changes indicator - uses protocol purple instead of yellow */
-.hep-changes-indicator {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  margin-bottom: 8px;
-  background-color: #F7F2FA;
-  border: 1px solid #E7E0EC;
-  border-radius: 8px;
-}
-
-/* Changes badge - uses protocol purple instead of yellow */
-.hep-changes-badge {
-  background-color: #31135D;
-  color: #FFFFFF;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 100px; /* Pill-shaped per protocol */
-  text-transform: uppercase;
-}
-
-.hep-changes-text {
-  font-size: 13px;
-  color: var(--hep-text-tertiary);
-}
-
-.hep-breakdown-footnote {
-  font-size: 12px;
-  color: var(--hep-text-primary);
-  text-align: center;
-  margin-top: 16px;
-}
-
-/* ========================================
-   House Rules Expandable Display
-   ======================================== */
-
-.hep-house-rules-value {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-}
-
-.hep-house-rules-summary {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  user-select: none;
-}
-
-.hep-house-rules-summary:hover {
-  opacity: 0.8;
-}
-
-.hep-house-rules-count {
-  font-weight: 600;
-  color: var(--hep-primary-purple);
-}
-
-.hep-house-rules-toggle {
-  font-size: 12px;
-  color: var(--hep-text-tertiary);
-  transition: color 200ms ease;
-}
-
-.hep-house-rules-summary:hover .hep-house-rules-toggle {
-  color: var(--hep-primary-purple);
-}
-
-.hep-house-rules-list {
-  list-style: none;
-  margin: 8px 0 0 0;
-  padding: 8px 12px;
-  background-color: rgba(49, 19, 93, 0.04);
-  border-radius: 6px;
-  text-align: left;
-  width: 100%;
-}
-
-.hep-house-rules-item {
-  font-size: 14px;
-  color: var(--hep-text-primary);
-  padding: 4px 0;
-  border-bottom: 1px solid rgba(49, 19, 93, 0.08);
-}
-
-.hep-house-rules-item:last-child {
-  border-bottom: none;
-}
-
-/* ========================================
-   Reject Proposal Section
-   ======================================== */
-
-.hep-reject-section {
-  background-color: rgba(200, 35, 51, 0.05);
-  border-radius: 8px;
-  padding: 16px;
-  margin-top: 16px;
-}
-
-.hep-reject-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.hep-reject-title {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-weight: 600;
-  font-size: 16px;
-  color: #DC3545;
-}
-
-.hep-reject-warning {
-  font-size: 12px;
-  color: var(--hep-text-primary);
-  margin-bottom: 12px;
-}
-
-.hep-reject-confirmation {
-  font-size: 14px;
-  color: var(--hep-text-primary);
-  margin-bottom: 16px;
-}
-
-.hep-reject-reasons {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-.hep-reject-reason-option {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  cursor: pointer;
-  padding: 8px 0;
-}
-
-.hep-reject-reason-option input[type="radio"] {
-  width: 18px;
-  height: 18px;
-  margin: 0;
-  margin-top: 2px;
-  cursor: pointer;
-  accent-color: var(--hep-reject-red);
+/* Popup footer */
+.hep-rules-popup-footer {
+  padding: var(--spacing-lg);                    /* 16px */
+  border-top: 1px solid var(--color-border);
   flex-shrink: 0;
 }
 
-.hep-reject-reason-label {
-  font-size: 14px;
-  color: var(--hep-text-primary);
-  line-height: 1.4;
-}
-
-.hep-reject-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-}
-
-/* Reject-only mode styles */
-.hep-reject-close {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  background: none;
-  border: none;
-  font-size: 24px;
-  color: var(--hep-text-secondary);
-  cursor: pointer;
-  padding: 4px 8px;
-  line-height: 1;
-}
-
-.hep-reject-close:hover {
-  color: var(--hep-text-primary);
-}
-
-.hep-reject-section {
-  position: relative;
-}
-
-.hep-reject-details {
-  background-color: var(--hep-primary-white);
-  border: 1px solid var(--hep-border-light);
-  border-radius: 8px;
-  padding: 12px 16px;
-  margin-bottom: 16px;
-}
-
-.hep-reject-detail-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6px 0;
-}
-
-.hep-reject-detail-row:not(:last-child) {
-  border-bottom: 1px solid var(--hep-border-light);
-}
-
-.hep-reject-detail-label {
-  font-size: 13px;
-  color: var(--hep-text-secondary);
-}
-
-.hep-reject-detail-value {
-  font-size: 14px;
+/* Done button - pill-shaped per design system */
+.hep-rules-popup-done {
+  width: 100%;
+  min-height: var(--min-touch-target);           /* 48px */
+  padding: var(--spacing-lg) var(--spacing-2xl);
+  background: var(--color-primary);
+  color: var(--color-white);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius-pill);             /* 100px - pill shaped */
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);              /* 17px */
   font-weight: 600;
-  color: var(--hep-text-primary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
 }
 
-/* Total highlight - uses protocol purple instead of green */
-.hep-reject-detail-total {
-  font-size: 16px;
-  color: #31135D;
+.hep-rules-popup-done:hover {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+}
+
+.hep-rules-popup-done:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-offset);
 }
 
 /* ========================================
@@ -884,390 +1001,273 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  overflow: hidden;
-  padding: 20px;
+  padding: var(--spacing-xl);
 }
 
 .hep-popup {
-  background-color: var(--hep-primary-white);
-  border-radius: 10px;
-  padding: 24px;
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-2xl);
   max-width: 400px;
   width: 100%;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-  overflow: hidden;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
 }
 
 .hep-popup-title {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 18px;
   font-weight: 600;
-  font-size: 16px;
-  color: #1C1B1F;
-  margin-bottom: 16px;
+  color: var(--color-gray-900);
+  margin: 0 0 var(--spacing-lg) 0;
 }
 
 .hep-popup-content {
   font-size: 14px;
-  color: var(--hep-text-primary);
-  margin-bottom: 24px;
+  color: var(--color-gray-600);
   line-height: 1.5;
+  margin: 0 0 var(--spacing-2xl) 0;
 }
 
 .hep-popup-actions {
   display: flex;
-  gap: 12px;
+  gap: var(--spacing-md);
   justify-content: flex-end;
-  flex-wrap: wrap;
-}
-
-.hep-popup-actions .hep-btn {
-  min-width: auto;
-  max-width: none;
 }
 
 /* ========================================
-   Form Groups
-   - Per protocol: 8px label-to-input, 16px between groups
-   ======================================== */
-
-.hep-form-group {
-  margin-bottom: 16px;
-}
-
-.hep-form-group:last-child {
-  margin-bottom: 0;
-}
-
-.hep-form-group label {
-  display: block;
-  margin-bottom: 8px;
-}
-
-.hep-form-row {
-  display: flex;
-  gap: 16px;
-  align-items: flex-start;
-}
-
-.hep-form-row > * {
-  flex: 1;
-}
-
-/* ========================================
-   Section Headers
-   - Border spans full width by using negative margins
-   - Protocol border color: #E7E0EC
-   ======================================== */
-
-.hep-section-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  padding-bottom: 16px;
-  margin-bottom: 0;
-  margin-left: -16px;
-  margin-right: -16px;
-  padding-left: 16px;
-  padding-right: 16px;
-  border-bottom: 1px solid #E7E0EC;
-  flex-shrink: 0;
-}
-
-.hep-header-content {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  flex: 1;
-  min-width: 0;
-}
-
-.hep-header-subtext {
-  margin: 0;
-}
-
-/* ========================================
-   Actions Row (Edit State)
-   Per protocol: matches footer button styling
-   ======================================== */
-
-.hep-actions-row {
-  display: flex;
-  flex-direction: row;
-  gap: 12px;
-  justify-content: center;
-  align-items: center;
-  margin-top: 16px;
-  padding: 16px 0 8px;
-  border-top: 1px solid #E7E0EC;
-}
-
-/* ========================================
-   Primary Actions (Footer)
-   Per protocol: 16px 20px padding, centered buttons
-   border-top separates footer from body
-   ======================================== */
-
-.hep-primary-actions {
-  display: flex;
-  flex-direction: row;
-  gap: 12px;
-  justify-content: center;
-  align-items: center;
-  margin-top: 0;
-  padding: 16px 20px 8px;
-  background-color: #FFFFFF;
-  flex-shrink: 0;
-  border-top: 1px solid #E7E0EC;
-  margin-left: -16px;
-  margin-right: -16px;
-}
-
-/* Reject outline button - Red outlined per protocol
-   Matches hep-btn-cancel sizing for consistency */
-.hep-btn-reject-outline {
-  background-color: transparent;
-  border: 2px solid #DC3545;
-  color: #DC3545;
-  font-weight: 600;
-  font-size: 14px;
-  height: 44px;
-  padding: 0 24px;
-}
-
-.hep-btn-reject-outline:hover:not(:disabled) {
-  background-color: rgba(220, 53, 69, 0.08);
-}
-
-/* Primary large - extends hep-btn-primary without changing size
-   Just inherits from hep-btn-primary, no flex expansion */
-.hep-btn-primary-large {
-  /* Inherits all from hep-btn-primary via class combination */
-}
-
-/* ========================================
-   Schedule Selector (Host)
+   Schedule Selector (ScheduleSelector.jsx)
    ======================================== */
 
 .hss-host-schedule-selector {
-  padding: 16px;
-  background-color: rgba(49, 19, 93, 0.03);
-  border-radius: 8px;
+  padding: var(--spacing-lg);
+  background: var(--color-gray-50);
+  border-radius: var(--radius-md);
 }
 
 .hss-nights-grid {
   display: flex;
-  gap: 8px;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-bottom: 16px;
+  gap: var(--spacing-xs);
+  justify-content: flex-start;
+  margin-bottom: var(--spacing-md);
 }
 
 .hss-night-cell {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border: 2px solid var(--color-gray-200);
+  background: var(--color-white);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-gray-500);
+  cursor: pointer;
+  transition: all var(--transition-fast);
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  font-family: var(--hep-font-sans);
-  font-weight: 600;
-  font-size: 14px;
-  color: var(--hep-text-primary);
-  background-color: var(--hep-primary-white);
-  border: 2px solid var(--hep-tag-border);
-  transition: all 200ms ease;
 }
 
 .hss-night-cell:hover:not(.hss-unavailable):not(.hss-disabled) {
-  border-color: var(--hep-primary-purple);
-  background-color: rgba(49, 19, 93, 0.05);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 .hss-night-cell.hss-selected {
-  background-color: var(--hep-primary-purple);
-  color: var(--hep-primary-white);
-  border-color: var(--hep-primary-purple);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-white);
 }
 
-.hss-night-cell.hss-unavailable {
-  background-color: var(--hep-tag-background);
-  color: var(--hep-text-placeholder);
-  border-color: var(--hep-tag-border);
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
+.hss-night-cell.hss-unavailable,
 .hss-night-cell.hss-disabled {
+  opacity: 0.4;
   cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.hss-night-letter {
-  pointer-events: none;
 }
 
 .hss-selection-summary {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 12px;
-  background-color: rgba(49, 19, 93, 0.03);
-  border-radius: 4px;
-  border: 1px solid var(--hep-tag-border);
+  background: var(--color-gray-50);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
 }
 
 .hss-summary-item {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  font-family: var(--hep-font-sans);
   font-size: 14px;
+  padding: var(--spacing-xs) 0;
 }
 
 .hss-summary-label {
-  color: var(--hep-text-tertiary);
-  font-weight: 500;
+  color: var(--color-gray-500);
 }
 
 .hss-summary-value {
-  color: var(--hep-text-primary);
+  font-weight: 500;
+  color: var(--color-gray-800);
+}
+
+/* ========================================
+   Reservation Price Breakdown (General View)
+   Mockup-matched design: clean rows, "Changed" badges
+   ======================================== */
+
+.hep-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.hep-breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md) 0;
+}
+
+.hep-breakdown-label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-label);
+  font-weight: 400;
+  color: var(--color-text-secondary);
+}
+
+.hep-breakdown-value {
+  font-size: var(--font-size-label);
+  font-weight: 500;
+  color: var(--color-text);
+  text-align: right;
+}
+
+/* Changed values: original struck through + new in Action Purple */
+.hep-breakdown-value--changed {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.hep-breakdown-original {
+  color: var(--color-gray-400);
+  text-decoration: line-through;
+  font-size: var(--font-size-xs, 12px);
+  font-weight: 400;
+}
+
+.hep-breakdown-new {
+  color: var(--color-primary-action);
   font-weight: 600;
 }
 
-/* Check-in highlight - uses protocol purple instead of green */
-.hss-summary-value.hss-checkin {
-  color: #31135D;
-}
-
-.hss-summary-value.hss-checkout {
-  color: var(--hep-reject-red);
-}
-
-/* ========================================
-   Animation Classes
-   ======================================== */
-
-.hep-animate-collapse {
-  overflow: hidden;
-  transition: max-height 300ms ease, opacity 300ms ease;
-}
-
-.hep-animate-collapse.collapsed {
-  max-height: 0;
-  opacity: 0;
-}
-
-.hep-animate-collapse.expanded {
-  max-height: none;
-  opacity: 1;
-  overflow: visible;
-}
-
-/* ========================================
-   Utility Classes
-   - Per protocol spacing scale: 8px, 12px, 16px, 24px
-   ======================================== */
-
-.hep-hidden {
-  display: none !important;
-}
-
-.hep-flex-center {
-  display: flex;
+/* "Changed" badge - compact pill next to label */
+.hep-change-badge {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
+  background: var(--color-primary-light);
+  color: var(--color-primary-action);
+  padding: 2px var(--spacing-sm);
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
-.hep-text-center {
-  text-align: center;
+/* Divider between sections */
+.hep-breakdown-divider {
+  border: none;
+  border-top: 1px solid var(--color-gray-200);
+  margin: var(--spacing-md) 0;
 }
 
-.hep-mt-8 {
-  margin-top: 8px;
+/* Total row - emphasized styling */
+.hep-breakdown-total {
+  padding-top: var(--spacing-lg);
 }
 
-.hep-mt-12 {
-  margin-top: 12px;
+.hep-breakdown-total .hep-breakdown-label {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--color-text);
 }
 
-.hep-mt-16 {
-  margin-top: 16px;
+.hep-breakdown-total .hep-breakdown-value {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--color-primary);
 }
 
-.hep-mt-24 {
-  margin-top: 24px;
-}
-
-.hep-mb-8 {
-  margin-bottom: 8px;
-}
-
-.hep-mb-12 {
-  margin-bottom: 12px;
-}
-
-.hep-mb-16 {
-  margin-bottom: 16px;
-}
-
-.hep-mb-24 {
-  margin-bottom: 24px;
-}
-
-.hep-p-16 {
-  padding: 16px;
-}
-
-.hep-py-16 {
-  padding-top: 16px;
-  padding-bottom: 16px;
+.hep-breakdown-total .hep-breakdown-new {
+  font-size: var(--font-size-base);
 }
 
 /* ========================================
-   Responsive Adjustments
+   Responsive - Mobile (Bottom Sheet Pattern)
+   Per Split Lease Design System v1.0
    ======================================== */
 
-@media (max-width: 900px) {
-  .hep-btn-primary {
-    min-width: 100%;
-    max-width: 100%;
+@media (max-width: 480px) {
+  /* Show grab handle on mobile */
+  .hep-grab-handle {
+    display: block;
   }
 
-  .hep-form-row {
-    flex-direction: column;
-  }
-
-  .hep-collapsible {
-    width: 100%;
-  }
-
-  .hep-proposal-row,
-  .hep-breakdown-row {
-    width: 100%;
-  }
-
-  .hep-title-main {
-    font-size: 18px;
-  }
-}
-
-@media (max-width: 600px) {
+  /* Container becomes bottom sheet with rounded top corners */
   .hep-container {
-    padding: 12px;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;  /* 24px 24px 0 0 */
+    max-height: 92vh;
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  .hep-title-main {
-    font-size: 20px;
+  /* Header: 16px padding, 18px title weight 400 per spec */
+  .hep-header {
+    padding: var(--spacing-lg);                  /* 16px */
   }
 
+  .hep-header-title {
+    font-size: var(--font-size-md);              /* 18px */
+    font-weight: 400;                            /* Mobile: NOT bold per design system */
+  }
+
+  .hep-header-subtitle {
+    font-size: var(--font-size-sm);              /* 15px minimum */
+  }
+
+  /* Mobile header icons smaller */
+  .hep-header-icon,
+  .hep-header-back {
+    width: 20px;
+    height: 20px;
+  }
+
+  .hep-header-icon svg,
+  .hep-header-back svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .hep-body {
+    padding: var(--spacing-lg);                  /* 16px */
+  }
+
+  /* Footer: 12px top, 20px bottom for safe area */
+  .hep-footer {
+    flex-direction: column;
+    padding: var(--spacing-md) var(--spacing-lg) var(--spacing-xl);
+    padding-bottom: calc(var(--spacing-xl) + env(safe-area-inset-bottom, 0px));
+  }
+
+  .hep-footer .hep-btn {
+    width: 100%;
+  }
+
+  /* Confirmation Popup */
   .hep-popup {
-    padding: 16px;
+    padding: var(--spacing-lg);
     max-width: calc(100vw - 32px);
   }
 
@@ -1278,95 +1278,86 @@
   .hep-popup-actions .hep-btn {
     width: 100%;
   }
+
+  /* House Rules Popup - Mobile Bottom Sheet */
+  .hep-rules-popup-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .hep-rules-popup {
+    max-width: 100%;
+    max-height: 85vh;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;  /* 24px 24px 0 0 */
+    animation: slideUpFull 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes slideUpFull {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .hep-rules-popup-header {
+    padding: var(--spacing-lg);                  /* 16px */
+  }
+
+  .hep-rules-popup-title {
+    font-size: var(--font-size-md);              /* 18px */
+    font-weight: 400;                            /* Mobile: NOT bold per design system */
+  }
+
+  .hep-rules-popup-option {
+    padding: var(--spacing-md) var(--spacing-lg);
+  }
+
+  .hep-rules-popup-footer {
+    padding: var(--spacing-md) var(--spacing-lg) var(--spacing-xl);
+    padding-bottom: calc(var(--spacing-xl) + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 /* ========================================
-   RESPONSIVE - MOBILE BOTTOM SHEET
-   - Screen width < 480px triggers slide-up mode per protocol
-   - Border radius: 24px 24px 0 0
-   - Grab handle visible
-   - Fixed footer with safe-area padding
-   - Consistent spacing: 12px mobile adjustments
+   Reduced Motion Preference
    ======================================== */
-@media (max-width: 480px) {
-  .hep-grab-handle {
-    display: block;
-  }
 
+@media (prefers-reduced-motion: reduce) {
+  .hep-container,
+  .hep-rules-popup,
+  .hep-btn,
+  .hep-input-base,
+  .hep-dropdown,
+  .hep-dropdown-chevron {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ========================================
+   High Contrast Mode
+   ======================================== */
+
+@media (prefers-contrast: high) {
   .hep-container {
-    border-radius: 24px 24px 0 0;
-    max-height: 90vh;
-    padding: 0 16px 0;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
+    --color-border: #000;
+    --color-text-muted: #374151;
   }
 
-  .hep-section-header {
-    padding: 12px 16px 12px;
-    margin-left: -16px;
-    margin-right: -16px;
-    flex-shrink: 0;
+  .hep-btn {
+    border-width: 3px;
   }
 
-  .hep-title-main {
-    font-size: 18px;
-    font-weight: 500;
+  .hep-input-base {
+    border-width: 2px;
   }
 
-  /* Scrollable body */
-  .hep-body {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    padding-top: 12px;
-    padding-bottom: 8px;
-  }
-
-  /* Collapsible section tighter on mobile */
-  .hep-collapsible {
-    margin-bottom: 12px;
-    min-height: 40px;
-  }
-
-  /* Primary actions - fixed at bottom with safe area */
-  .hep-primary-actions {
-    flex-shrink: 0;
-    flex-direction: column-reverse;
-    padding: 12px 16px;
-    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-    margin-top: 0;
-    margin-left: -16px;
-    margin-right: -16px;
-    gap: 10px;
-    border-top: 1px solid #E7E0EC;
-    background-color: #FFFFFF;
-  }
-
-  .hep-primary-actions .hep-btn {
-    width: 100%;
-    font-size: 14px;
-    height: 44px;
-    min-width: unset;
-  }
-
-  .hep-primary-actions .hep-btn-reject-outline {
-    width: 100%;
-    min-width: unset;
-  }
-
-  .hep-primary-actions .hep-btn-primary-large {
-    width: 100%;
-    flex: none;
-  }
-
-  /* Tighter form spacing on mobile */
-  .hep-form-group {
-    margin-bottom: 12px;
-  }
-
-  .hep-editing-terms {
-    padding: 12px 0;
+  .hep-rules-popup-checkbox {
+    border-width: 3px;
   }
 }

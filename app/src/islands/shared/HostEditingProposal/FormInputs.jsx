@@ -170,33 +170,23 @@ export function NumberInput({
 
 // ============================================================================
 // HouseRulesMultiSelect Component
+// Chip-and-popup pattern for selecting house rules
 // ============================================================================
 
 /**
- * Multi-select dropdown for house rules
+ * Multi-select with compact chips and centered popup for selection
+ * Pattern: Selected items as chips + add button to open popup modal
  */
 export function HouseRulesMultiSelect({
   value = [],
   onChange,
   options = [],
-  placeholder = 'Choose some options...',
+  placeholder = 'Add house rules...',
   disabled = false
 }) {
   const [isOpen, setIsOpen] = useState(false)
-  const wrapperRef = useRef(null)
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
-        setIsOpen(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-
-  const handleToggleOption = (rule) => {
+  const handleToggleRule = (rule) => {
     const isSelected = value.some((r) => r.id === rule.id)
     if (isSelected) {
       onChange(value.filter((r) => r.id !== rule.id))
@@ -205,58 +195,112 @@ export function HouseRulesMultiSelect({
     }
   }
 
-  const handleRemove = (rule, e) => {
-    e.stopPropagation()
+  const handleRemove = (rule) => {
     onChange(value.filter((r) => r.id !== rule.id))
   }
 
+  const handleDone = () => {
+    setIsOpen(false)
+  }
+
   return (
-    <div ref={wrapperRef} className="hep-multiselect-wrapper">
-      <div
-        className={`hep-multiselect ${disabled ? 'hep-multiselect--disabled' : ''}`}
-        onClick={() => !disabled && setIsOpen(!isOpen)}
-      >
-        {value.length === 0 ? (
-          <span className="hep-placeholder">{placeholder}</span>
-        ) : (
-          value.map((rule) => (
-            <span key={rule.id} className="hep-tag">
+    <div className="hep-rules-selector">
+      {/* Selected rules as chips */}
+      {value.length > 0 && (
+        <div className="hep-rules-chips">
+          {value.map((rule) => (
+            <span key={rule.id} className="hep-rule-chip">
               {rule.name || rule.Display || rule}
               <button
                 type="button"
-                className="hep-tag-remove"
-                onClick={(e) => handleRemove(rule, e)}
+                className="hep-rule-chip-remove"
+                onClick={() => handleRemove(rule)}
+                disabled={disabled}
                 aria-label={`Remove ${rule.name || rule.Display || rule}`}
               >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
+                ×
               </button>
             </span>
-          ))
-        )}
-      </div>
+          ))}
 
+          {/* Add button */}
+          {!disabled && (
+            <button
+              type="button"
+              className="hep-rules-add-btn"
+              onClick={() => setIsOpen(true)}
+              aria-label="Add house rule"
+            >
+              +
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Empty state - show placeholder with add button */}
+      {value.length === 0 && (
+        <button
+          type="button"
+          className={`hep-rules-empty ${disabled ? 'hep-rules-empty--disabled' : ''}`}
+          onClick={() => !disabled && setIsOpen(true)}
+          disabled={disabled}
+        >
+          <span className="hep-rules-empty-text">{placeholder}</span>
+          <span className="hep-rules-empty-icon">+</span>
+        </button>
+      )}
+
+      {/* Popup modal for selecting rules */}
       {isOpen && (
-        <div className="hep-multiselect-menu">
-          {options.map((option) => {
-            const isSelected = value.some((r) => r.id === option.id)
-            return (
-              <div
-                key={option.id}
-                className={`hep-multiselect-option ${isSelected ? 'hep-multiselect-option--selected' : ''}`}
-                onClick={() => handleToggleOption(option)}
+        <div className="hep-rules-popup-overlay" onClick={handleDone}>
+          <div className="hep-rules-popup" onClick={(e) => e.stopPropagation()}>
+            <div className="hep-rules-popup-header">
+              <span className="hep-rules-popup-title">House Rules</span>
+              <button
+                type="button"
+                className="hep-rules-popup-close"
+                onClick={handleDone}
+                aria-label="Close"
               >
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={() => {}}
-                  className="hep-checkbox"
-                />
-                <span>{option.name || option.Display}</span>
-              </div>
-            )
-          })}
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <div className="hep-rules-popup-body">
+              {options.map((option) => {
+                const isSelected = value.some((r) => r.id === option.id)
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    className={`hep-rules-popup-option ${isSelected ? 'hep-rules-popup-option--selected' : ''}`}
+                    onClick={() => handleToggleRule(option)}
+                  >
+                    <span className="hep-rules-popup-option-text">
+                      {option.name || option.Display}
+                    </span>
+                    <span className={`hep-rules-popup-checkbox ${isSelected ? 'hep-rules-popup-checkbox--checked' : ''}`}>
+                      {isSelected && (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                      )}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+            <div className="hep-rules-popup-footer">
+              <button
+                type="button"
+                className="hep-rules-popup-done"
+                onClick={handleDone}
+              >
+                Done
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

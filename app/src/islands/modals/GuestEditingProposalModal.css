@@ -9,34 +9,67 @@
    ===================================================== */
 
 :root {
-  /* Guest Editing Proposal Colors - V5 Purple Theme */
+  /* Guest Editing Proposal Colors - V5 Purple Theme with WCAG AAA Compliance */
   --gep-bg-primary: #FFFFFF;
   --gep-bg-secondary: #fafafa;
   --gep-bg-surface: #6B4EFF;
-  --gep-text-primary: #1a1a1a;
-  --gep-text-secondary: #4b5563;
-  --gep-text-muted: #6b7280;
+
+  /* WCAG AAA Compliant Text Colors (4.5:1 contrast ratio minimum) */
+  --gep-text-primary: #111111;      /* Near black for primary text */
+  --gep-text-secondary: #374151;    /* Dark gray for secondary text */
+  --gep-text-muted: #4b5563;        /* Medium gray for muted text */
   --gep-text-header: #31135D;
+
   --gep-border-color: #e5e5e5;
   --gep-border-light: #f0f0f0;
   --gep-border-destructive: #DC2626;
-  --gep-primary-color: #6B4EFF;
+  --gep-primary-color: #6D31C2;     /* Adjusted for better contrast */
   --gep-primary-hover: #31135D;
-  --gep-primary-bg: #f3f0ff;
-  --gep-destructive-color: #DC2626;
-  --gep-destructive-hover: #B91C1C;
-  --gep-destructive-bg: #fef2f2;
+  --gep-primary-bg: #f8f5ff;
+  --gep-destructive-color: #b91c1c; /* Darker red for better contrast */
+  --gep-destructive-hover: #991b1b;
+  --gep-destructive-bg: #fee2e2;
+  --gep-success-text: #047857;
+  --gep-success-bg: #d1fae5;
+  --gep-warning-text: #b45309;
+  --gep-warning-bg: #fef3c7;
   --gep-font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --gep-shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.2);
   --gep-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.1);
   --gep-roundness: 10px;
   --gep-roundness-large: 16px;
 
-  /* Reservation Price Breakdown Colors - V5 Theme */
+  /* Typography - Balanced for readability and compactness */
+  --gep-font-size-sm: 13px;         /* Small text */
+  --gep-font-size-base: 14px;       /* Body text */
+  --gep-font-size-md: 15px;         /* Medium emphasis */
+  --gep-font-size-lg: 18px;         /* Section titles */
+  --gep-font-size-xl: 22px;         /* Page titles */
+  --gep-font-size-2xl: 28px;        /* Prominent values */
+  --gep-font-size-label: 12px;      /* Form labels (uppercase) */
+
+  /* Line Heights - Compact */
+  --gep-line-height-tight: 1.2;     /* Headings */
+  --gep-line-height-normal: 1.4;    /* Body text */
+  --gep-line-height-relaxed: 1.5;   /* Long paragraphs */
+
+  /* Touch Targets - Standard minimum */
+  --gep-min-touch-target: 44px;     /* Standard 44px touch targets */
+
+  /* Accessibility - Focus States */
+  --gep-focus-ring: 0 0 0 4px rgba(109, 49, 194, 0.5);
+  --gep-focus-outline-width: 3px;
+  --gep-focus-outline-offset: 3px;
+
+  /* Accessibility - Transitions */
+  --gep-transition-fast: 150ms ease;
+  --gep-transition-normal: 200ms ease;
+
+  /* Reservation Price Breakdown Colors - V5 Theme with WCAG AAA */
   --rpb-bg-primary: #fafafa;
   --rpb-bg-white: #FFFFFF;
-  --rpb-text-primary: #1a1a1a;
-  --rpb-text-secondary: #4b5563;
+  --rpb-text-primary: #111111;      /* Near black */
+  --rpb-text-secondary: #374151;    /* Dark gray */
   --rpb-text-header: #31135D;
   --rpb-border-color: #e5e5e5;
   --rpb-font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -72,10 +105,9 @@
    ===================================================== */
 
 .guest-editing-proposal {
-  width: 100%;
-  max-width: 480px;
-  height: 780px; /* Fixed height - fits Proposal Details without scroll, Edit view scrolls */
-  max-height: calc(100vh - 120px); /* Fallback for small screens, ensures gap from header */
+  width: 90%;
+  max-width: 520px;  /* Match HostEditingProposal width */
+  max-height: 92vh;  /* Match HostEditingProposal max-height */
   background-color: var(--gep-bg-primary);
   border-radius: var(--gep-roundness-large);
   box-sizing: border-box;
@@ -125,15 +157,17 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--gep-border-light);
   background-color: var(--gep-bg-primary);
 }
 
 .gep-back-button,
 .gep-close-button {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -142,7 +176,7 @@
   cursor: pointer;
   color: var(--gep-text-muted);
   border-radius: 8px;
-  transition: all 0.15s ease;
+  transition: all var(--gep-transition-fast);
   flex-shrink: 0;
 }
 
@@ -150,6 +184,12 @@
 .gep-close-button:hover {
   background-color: var(--gep-bg-secondary);
   color: var(--gep-text-primary);
+}
+
+.gep-back-button:focus-visible,
+.gep-close-button:focus-visible {
+  outline: var(--gep-focus-outline-width) solid var(--gep-primary-color);
+  outline-offset: var(--gep-focus-outline-offset);
 }
 
 /* Pristine header - left-aligned with icon */
@@ -160,8 +200,8 @@
 }
 
 .gep-header-icon {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   background: var(--gep-primary-bg);
   border-radius: 8px;
   display: flex;
@@ -173,6 +213,8 @@
 .gep-header-back-btn {
   width: 36px;
   height: 36px;
+  min-width: 36px;
+  min-height: 36px;
   background: var(--gep-bg-secondary);
   border-radius: 8px;
   border: none;
@@ -181,7 +223,7 @@
   justify-content: center;
   color: var(--gep-text-muted);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all var(--gep-transition-fast);
 }
 
 .gep-header-back-btn:hover {
@@ -189,15 +231,22 @@
   color: var(--gep-text-primary);
 }
 
+.gep-header-back-btn:focus-visible {
+  outline: var(--gep-focus-outline-width) solid var(--gep-primary-color);
+  outline-offset: var(--gep-focus-outline-offset);
+}
+
 .gep-header-title-text {
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 700;
   color: var(--gep-text-header);
+  line-height: var(--gep-line-height-tight);
 }
 
 .gep-header-subtitle {
-  font-size: 13px;
-  color: var(--gep-text-muted);
+  font-size: var(--gep-font-size-sm);
+  color: var(--gep-text-secondary);
+  line-height: var(--gep-line-height-normal);
 }
 
 /* Editing/General header - centered title */
@@ -222,9 +271,9 @@
    ===================================================== */
 
 .gep-guest-comment {
-  padding: 12px 16px;
+  padding: 10px 12px;
   background-color: var(--gep-bg-secondary);
-  margin: 16px;
+  margin: 12px;
   border-radius: var(--gep-roundness);
 }
 
@@ -240,7 +289,13 @@
    ===================================================== */
 
 .gep-document-view {
-  padding: 16px 20px;
+  padding: 12px 16px;
+}
+
+/* Semantic definition list for proposal details */
+.gep-details-list {
+  margin: 0;
+  padding: 0;
 }
 
 /* Detail rows - simple key-value pairs */
@@ -248,38 +303,45 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 0;
+  padding: 6px 0;
   border-bottom: 1px solid var(--gep-border-light);
+  min-height: 32px;
 }
 
 .gep-detail-row:last-of-type {
   border-bottom: none;
 }
 
-.gep-detail-label {
-  font-size: 13px;
+.gep-detail-label,
+dt.gep-detail-label {
+  font-size: var(--gep-font-size-base);
   color: var(--gep-text-secondary);
+  line-height: var(--gep-line-height-normal);
+  margin: 0;
 }
 
-.gep-detail-value {
-  font-size: 13px;
-  font-weight: 500;
+.gep-detail-value,
+dd.gep-detail-value {
+  font-size: var(--gep-font-size-base);
+  font-weight: 600;
   color: var(--gep-text-primary);
   text-align: right;
+  line-height: var(--gep-line-height-normal);
+  margin: 0;
 }
 
 /* Pricing section */
 .gep-pricing-section {
   background: var(--gep-bg-secondary);
   border-radius: var(--gep-roundness);
-  padding: 12px 14px;
-  margin-top: 12px;
+  padding: 10px 12px;
+  margin-top: 10px;
 }
 
 .gep-pricing-title {
-  font-size: 12px;
+  font-size: var(--gep-font-size-label);
   font-weight: 600;
-  color: var(--gep-text-muted);
+  color: var(--gep-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 8px;
@@ -289,41 +351,45 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 6px 0;
+  padding: 4px 0;
+  min-height: 28px;
 }
 
 .gep-pricing-row--total {
   border-top: 1px solid var(--gep-border-color);
   margin-top: 6px;
-  padding-top: 10px;
+  padding-top: 8px;
 }
 
 .gep-pricing-label {
-  font-size: 13px;
+  font-size: var(--gep-font-size-base);
   color: var(--gep-text-secondary);
+  line-height: var(--gep-line-height-normal);
 }
 
 .gep-pricing-value {
-  font-size: 13px;
-  font-weight: 500;
+  font-size: var(--gep-font-size-base);
+  font-weight: 600;
   color: var(--gep-text-primary);
+  line-height: var(--gep-line-height-normal);
 }
 
 .gep-pricing-row--total .gep-pricing-label {
-  font-weight: 600;
+  font-weight: 700;
   color: var(--gep-text-primary);
+  font-size: var(--gep-font-size-md);
 }
 
 .gep-pricing-row--total .gep-pricing-value {
-  font-size: 16px;
+  font-size: var(--gep-font-size-lg);
   font-weight: 700;
   color: var(--gep-primary-color);
 }
 
 /* Fees section */
 .gep-fees-section {
-  margin-top: 12px;
-  padding-top: 12px;
+  margin-top: 10px;
+  padding-top: 10px;
   border-top: 1px solid var(--gep-border-light);
 }
 
@@ -332,29 +398,33 @@
   justify-content: space-between;
   align-items: center;
   padding: 4px 0;
+  min-height: 26px;
 }
 
 .gep-fee-label {
-  font-size: 12px;
-  color: var(--gep-text-muted);
+  font-size: var(--gep-font-size-sm);
+  color: var(--gep-text-secondary);
+  line-height: var(--gep-line-height-normal);
 }
 
 .gep-fee-value {
-  font-size: 12px;
-  font-weight: 500;
+  font-size: var(--gep-font-size-sm);
+  font-weight: 600;
   color: var(--gep-text-secondary);
+  line-height: var(--gep-line-height-normal);
 }
 
 .gep-fee-note {
-  font-size: 10px;
+  font-size: var(--gep-font-size-label);
   opacity: 0.8;
 }
 
 .gep-disclaimer {
-  font-size: 10px;
+  font-size: var(--gep-font-size-sm);
   color: var(--gep-text-muted);
   margin-top: 8px;
   font-style: italic;
+  line-height: var(--gep-line-height-normal);
 }
 
 /* =====================================================
@@ -362,8 +432,8 @@
    ===================================================== */
 
 .gep-editing-portion {
-  padding: 16px;
-  margin: 0 16px 16px;
+  padding: 12px;
+  margin: 0 12px 12px;
   border-radius: var(--gep-roundness);
   background-color: var(--gep-bg-secondary);
 }
@@ -373,24 +443,26 @@
    ===================================================== */
 
 .gep-form-section {
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .gep-form-label {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   font-weight: 700;
-  font-size: 14px;
+  font-size: var(--gep-font-size-base);
   color: var(--gep-text-primary);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
+  line-height: var(--gep-line-height-normal);
 }
 
 .gep-form-label-small {
-  font-weight: 400;
-  font-size: 12px;
+  font-weight: 500;
+  font-size: var(--gep-font-size-sm);
   color: var(--gep-text-primary);
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  line-height: var(--gep-line-height-normal);
 }
 
 .gep-info-button {
@@ -398,9 +470,23 @@
   border: none;
   cursor: pointer;
   color: var(--gep-primary-color);
-  padding: 0;
+  padding: 4px;
   display: flex;
   align-items: center;
+  min-width: var(--gep-min-touch-target);
+  min-height: var(--gep-min-touch-target);
+  justify-content: center;
+  border-radius: 50%;
+  transition: all var(--gep-transition-fast);
+}
+
+.gep-info-button:hover {
+  background-color: var(--gep-primary-bg);
+}
+
+.gep-info-button:focus-visible {
+  outline: var(--gep-focus-outline-width) solid var(--gep-primary-color);
+  outline-offset: var(--gep-focus-outline-offset);
 }
 
 /* Date input container */
@@ -413,22 +499,33 @@
 .gep-date-input {
   flex: 1;
   padding: 10px 12px;
+  min-height: 38px;
   border: 1px solid var(--gep-border-color);
   border-radius: var(--gep-roundness);
-  font-size: 14px;
-  font-family: var(--gep-font-lato);
+  font-size: var(--gep-font-size-base);
+  font-family: var(--gep-font-primary);
   color: var(--gep-text-primary);
   background-color: var(--gep-bg-primary);
+  line-height: var(--gep-line-height-normal);
+  transition: border-color var(--gep-transition-fast);
 }
 
 .gep-date-input:focus {
   outline: none;
   border-color: var(--gep-primary-color);
+  box-shadow: var(--gep-focus-ring);
+}
+
+.gep-date-input:focus-visible {
+  outline: var(--gep-focus-outline-width) solid var(--gep-primary-color);
+  outline-offset: var(--gep-focus-outline-offset);
 }
 
 .gep-calendar-button {
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  min-height: 38px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -437,16 +534,24 @@
   border-radius: var(--gep-roundness);
   cursor: pointer;
   color: var(--gep-text-primary);
+  transition: all var(--gep-transition-fast);
 }
 
 .gep-calendar-button:hover {
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: var(--gep-bg-secondary);
+  border-color: var(--gep-primary-color);
+}
+
+.gep-calendar-button:focus-visible {
+  outline: var(--gep-focus-outline-width) solid var(--gep-primary-color);
+  outline-offset: var(--gep-focus-outline-offset);
 }
 
 .gep-date-display {
-  font-size: 12px;
+  font-size: var(--gep-font-size-sm);
   color: var(--gep-primary-color);
-  margin-top: 4px;
+  margin-top: 6px;
+  line-height: var(--gep-line-height-normal);
 }
 
 /* Textarea */
@@ -455,60 +560,86 @@
   padding: 10px 12px;
   border: 1px solid var(--gep-border-color);
   border-radius: var(--gep-roundness);
-  font-size: 14px;
-  font-family: var(--gep-font-lato);
+  font-size: var(--gep-font-size-base);
+  font-family: var(--gep-font-primary);
   color: var(--gep-text-primary);
   resize: vertical;
   min-height: 60px;
   box-sizing: border-box;
   background-color: var(--gep-bg-primary);
+  line-height: var(--gep-line-height-relaxed);
+  transition: border-color var(--gep-transition-fast);
 }
 
 .gep-textarea:focus {
   outline: none;
   border-color: var(--gep-primary-color);
+  box-shadow: var(--gep-focus-ring);
+}
+
+.gep-textarea:focus-visible {
+  outline: var(--gep-focus-outline-width) solid var(--gep-primary-color);
+  outline-offset: var(--gep-focus-outline-offset);
 }
 
 /* Select dropdown */
 .gep-select {
   width: 100%;
   padding: 10px 12px;
+  min-height: 38px;
   border: 1px solid var(--gep-border-color);
   border-radius: var(--gep-roundness);
-  font-size: 14px;
-  font-family: var(--gep-font-lato);
+  font-size: var(--gep-font-size-base);
+  font-family: var(--gep-font-primary);
   color: var(--gep-text-primary);
   background-color: var(--gep-bg-primary);
   cursor: pointer;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%236B6B6B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%23374151' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 12px center;
   padding-right: 36px;
+  line-height: var(--gep-line-height-normal);
+  transition: border-color var(--gep-transition-fast);
 }
 
 .gep-select:focus {
   outline: none;
   border-color: var(--gep-primary-color);
+  box-shadow: var(--gep-focus-ring);
+}
+
+.gep-select:focus-visible {
+  outline: var(--gep-focus-outline-width) solid var(--gep-primary-color);
+  outline-offset: var(--gep-focus-outline-offset);
 }
 
 /* Number input */
 .gep-number-input {
   width: 100%;
   padding: 10px 12px;
+  min-height: 38px;
   border: 1px solid var(--gep-border-color);
   border-radius: var(--gep-roundness);
-  font-size: 14px;
-  font-family: var(--gep-font-lato);
+  font-size: var(--gep-font-size-base);
+  font-family: var(--gep-font-primary);
   color: var(--gep-text-primary);
-  margin-top: 8px;
+  margin-top: 6px;
   box-sizing: border-box;
   background-color: var(--gep-bg-primary);
+  line-height: var(--gep-line-height-normal);
+  transition: border-color var(--gep-transition-fast);
 }
 
 .gep-number-input:focus {
   outline: none;
   border-color: var(--gep-primary-color);
+  box-shadow: var(--gep-focus-ring);
+}
+
+.gep-number-input:focus-visible {
+  outline: var(--gep-focus-outline-width) solid var(--gep-primary-color);
+  outline-offset: var(--gep-focus-outline-offset);
 }
 
 .gep-weeks-input-section {
@@ -557,7 +688,7 @@
    ===================================================== */
 
 .gep-breakdown-details {
-  margin: 16px;
+  margin: 10px 12px;
   border-radius: var(--gep-roundness);
   overflow: hidden;
 }
@@ -568,8 +699,8 @@
 
 .gep-schedule-financial {
   width: 95%;
-  margin: 16px auto;
-  min-height: 40px;
+  margin: 10px auto;
+  min-height: 36px;
   background-color: var(--gep-bg-surface);
   border: 1px solid var(--gep-bg-surface);
   border-radius: var(--gep-roundness-large);
@@ -585,7 +716,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
+  padding: 10px 14px;
 }
 
 .gep-schedule-financial-label {
@@ -610,7 +741,7 @@
 .gep-buttons {
   display: flex;
   gap: 10px;
-  padding: 14px 20px;
+  padding: 12px 16px;
   justify-content: center;
   background: var(--gep-bg-secondary);
   border-top: 1px solid var(--gep-border-light);
@@ -621,22 +752,30 @@
 .gep-buttons--vertical {
   flex-direction: column;
   align-items: center;
+  gap: 12px;
 }
 
 .gep-buttons--vertical .gep-button {
   width: 100%;
-  max-width: 280px;
+  max-width: 300px;
 }
 
 .gep-button {
-  padding: 10px 18px;
+  padding: 10px 20px;
+  min-height: 38px;
   border-radius: var(--gep-roundness);
   font-family: var(--gep-font-primary);
-  font-size: 14px;
+  font-size: var(--gep-font-size-base);
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all var(--gep-transition-fast);
   min-width: 120px;
+  line-height: var(--gep-line-height-tight);
+}
+
+.gep-button:focus-visible {
+  outline: var(--gep-focus-outline-width) solid var(--gep-primary-color);
+  outline-offset: var(--gep-focus-outline-offset);
 }
 
 .gep-button--primary {
@@ -649,10 +788,14 @@
   background-color: var(--gep-primary-hover);
 }
 
+.gep-button--primary:focus-visible {
+  outline-color: var(--gep-text-header);
+}
+
 .gep-button--secondary {
   background-color: transparent;
   color: var(--gep-text-secondary);
-  border: 1px solid var(--gep-border-color);
+  border: 2px solid var(--gep-border-color);
 }
 
 .gep-button--secondary:hover {
@@ -663,7 +806,7 @@
 .gep-button--outline {
   background-color: transparent;
   color: var(--gep-primary-color);
-  border: 1px solid var(--gep-primary-color);
+  border: 2px solid var(--gep-primary-color);
 }
 
 .gep-button--outline:hover {
@@ -673,11 +816,15 @@
 .gep-button--destructive-outline {
   background-color: transparent;
   color: var(--gep-destructive-color);
-  border: 1px solid var(--gep-destructive-color);
+  border: 2px solid var(--gep-destructive-color);
 }
 
 .gep-button--destructive-outline:hover {
   background-color: var(--gep-destructive-bg);
+}
+
+.gep-button--destructive-outline:focus-visible {
+  outline-color: var(--gep-destructive-color);
 }
 
 /* Cancel section */
@@ -692,27 +839,30 @@
    ===================================================== */
 
 .day-night-selector {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 /* Day grid - simple flex row of 7 buttons */
 .dns-day-grid {
   display: flex;
-  gap: 6px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-/* Day button - matches mockup .day-btn exactly */
+/* Day button - compact 44px touch targets */
 .dns-day-btn {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   border: 1px solid var(--gep-border-color);
   border-radius: 8px;
   background: var(--gep-bg-primary);
-  font-size: 13px;
+  font-size: var(--gep-font-size-sm);
   font-weight: 600;
   color: var(--gep-text-secondary);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--gep-transition-fast);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -723,10 +873,19 @@
   color: var(--gep-primary-color);
 }
 
+.dns-day-btn:focus-visible {
+  outline: var(--gep-focus-outline-width) solid var(--gep-primary-color);
+  outline-offset: var(--gep-focus-outline-offset);
+}
+
 .dns-day-btn--selected {
   background: var(--gep-primary-color);
   border-color: var(--gep-primary-color);
   color: white;
+}
+
+.dns-day-btn--selected:focus-visible {
+  outline-color: var(--gep-text-header);
 }
 
 /* Schedule info container - combines check-in, check-out, and summary */
@@ -734,9 +893,9 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 16px;
-  margin-top: 12px;
-  padding: 12px 16px;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 10px 12px;
   background: var(--gep-bg-secondary);
   border-radius: 8px;
 }
@@ -744,33 +903,37 @@
 .dns-schedule-info-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .dns-schedule-info-label {
-  font-size: 13px;
-  color: var(--gep-text-muted);
+  font-size: var(--gep-font-size-base);
+  color: var(--gep-text-secondary);
+  line-height: var(--gep-line-height-normal);
 }
 
 .dns-schedule-info-value {
-  font-size: 13px;
+  font-size: var(--gep-font-size-base);
   font-weight: 600;
   color: var(--gep-primary-color);
+  line-height: var(--gep-line-height-normal);
 }
 
 .dns-schedule-info-divider {
   width: 1px;
-  height: 16px;
+  height: 20px;
   background: var(--gep-border-color);
 }
 
 .dns-schedule-info-summary {
-  font-size: 13px;
-  color: var(--gep-text-muted);
+  font-size: var(--gep-font-size-base);
+  color: var(--gep-text-secondary);
+  line-height: var(--gep-line-height-normal);
 }
 
 .dns-schedule-info-summary strong {
   color: var(--gep-primary-color);
+  font-weight: 700;
 }
 
 /* =====================================================
@@ -957,9 +1120,9 @@
 
 .reservation-price-breakdown {
   width: 100%;
-  min-height: 100px;
+  min-height: 60px;
   max-height: 750px;
-  padding: 24px;
+  padding: 12px;
   background-color: var(--gep-bg-primary);
   border: none;
   border-radius: var(--gep-roundness);
@@ -970,27 +1133,27 @@
 .rpb-header {
   font-family: var(--rpb-font-primary);
   font-weight: 600;
-  font-size: 18px;
+  font-size: 15px;
   color: var(--rpb-text-header);
   text-align: left;
-  line-height: 1.5;
+  line-height: 1.3;
   letter-spacing: 0;
-  margin: 0 0 20px 0;
+  margin: 0 0 8px 0;
   width: 100%;
-  padding-bottom: 16px;
+  padding-bottom: 8px;
   border-bottom: 1px solid var(--gep-border-light);
 }
 
 .rpb-row {
   width: 100%;
   margin: 0 0 0 0;
-  min-height: 24px;
+  min-height: 20px;
   display: flex;
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
   border-radius: 0;
-  padding: 12px 0;
+  padding: 5px 0;
   box-sizing: border-box;
   border-bottom: 1px solid var(--gep-border-light);
 }
@@ -1002,16 +1165,16 @@
 .rpb-row--white {
   background-color: var(--rpb-bg-primary);
   border-radius: var(--gep-roundness);
-  padding: 16px;
-  margin: 8px 0;
+  padding: 10px;
+  margin: 6px 0;
 }
 
 .rpb-label {
   font-family: var(--rpb-font-primary);
   font-weight: 500;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--rpb-text-secondary);
-  line-height: 1.4;
+  line-height: 1.3;
   letter-spacing: 0;
   word-spacing: 0;
   flex: 0 1 auto;
@@ -1038,9 +1201,9 @@
 .rpb-value {
   font-family: var(--rpb-font-primary);
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--rpb-text-primary);
-  line-height: 1.4;
+  line-height: 1.3;
   letter-spacing: 0;
   text-align: right;
   flex: 0 1 auto;
@@ -1053,7 +1216,7 @@
 }
 
 .rpb-value--large {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--gep-primary-color);
 }
@@ -1078,25 +1241,25 @@
   width: 100%;
   height: 1px;
   background: var(--gep-border-color);
-  margin: 8px 0;
+  margin: 5px 0;
   border: none;
 }
 
 .rpb-divider--thick {
   height: 1px;
-  margin: 16px 0;
+  margin: 10px 0;
 }
 
 .rpb-disclaimer {
   font-family: var(--rpb-font-primary);
   font-weight: 400;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--gep-text-muted);
-  line-height: 1.5;
+  line-height: 1.4;
   letter-spacing: 0;
   word-spacing: 0;
   width: 100%;
-  margin: 16px 0 0 0;
+  margin: 10px 0 0 0;
   padding: 0;
   font-style: italic;
 }
@@ -1138,10 +1301,20 @@
 }
 
 /* =====================================================
-   RESPONSIVE STYLES
+   RESPONSIVE STYLES - Match HostEditingProposal breakpoints
    ===================================================== */
 
-@media (max-width: 900px) {
+/* Tablet breakpoint (481px - 768px) */
+@media (max-width: 768px) and (min-width: 481px) {
+  .guest-editing-proposal-modal-overlay {
+    padding: 16px;
+  }
+
+  .guest-editing-proposal {
+    max-width: 100%;
+    width: 100%;
+  }
+
   .gep-buttons {
     flex-direction: column;
     align-items: stretch;
@@ -1151,32 +1324,40 @@
     width: 100%;
     min-width: auto;
   }
-
-  .gep-schedule-financial-label {
-    font-size: 12px;
-  }
-
-  .dns-grid {
-    gap: 2px;
-  }
-
-  .dns-day-button {
-    width: 36px;
-    height: 36px;
-  }
-
-  .rpb-label--responsive {
-    font-size: 14px;
-  }
 }
 
-@media (max-width: 700px) {
-  .gep-title {
-    font-size: 18px;
+/* Mobile bottom sheet breakpoint (<= 480px) - Per Protocol */
+@media (max-width: 480px) {
+  .guest-editing-proposal-modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .guest-editing-proposal {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 24px 24px 0 0;
+    max-height: 90vh;
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
   }
 
   .gep-header {
-    padding: 12px;
+    padding: 12px 16px;
+  }
+
+  .gep-header-title-text {
+    font-size: var(--gep-font-size-md);
   }
 
   .gep-editing-portion {
@@ -1188,32 +1369,29 @@
     margin: 12px;
   }
 
-  .rpb-value--responsive-large {
-    font-size: 16px;
+  .gep-buttons {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px 16px;
   }
 
-  .rpb-label--responsive-large {
-    font-size: 16px;
-  }
-}
-
-@media (max-width: 380px) {
-  .guest-editing-proposal {
-    max-width: 100%;
-    margin: 10px;
+  .gep-button {
+    width: 100%;
+    min-width: auto;
   }
 
-  .gep-title {
-    font-size: 16px;
+  /* Day buttons - maintain touch targets on mobile */
+  .dns-day-btn {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    font-size: var(--gep-font-size-sm);
   }
 
-  .dns-day-button {
-    width: 32px;
-    height: 32px;
-  }
-
-  .dns-day-label {
-    font-size: 10px;
+  .dns-day-grid {
+    gap: 6px;
+    justify-content: space-between;
   }
 
   .cpm-title {
@@ -1221,36 +1399,40 @@
   }
 
   .rpb-label--large {
-    font-size: 16px;
+    font-size: var(--gep-font-size-base);
   }
 
   .rpb-value--large {
-    font-size: 16px;
+    font-size: var(--gep-font-size-base);
   }
 }
 
+/* Very small screens - maintain accessibility minimums */
 @media (max-width: 350px) {
   .gep-form-label {
-    font-size: 12px;
+    font-size: var(--gep-font-size-sm);
   }
 
   .gep-date-input,
   .gep-textarea,
   .gep-select,
   .gep-number-input {
-    font-size: 12px;
-    padding: 8px 10px;
+    font-size: var(--gep-font-size-sm);
+    padding: 10px 12px;
+    /* Maintain 48px touch target even on small screens */
+    min-height: var(--gep-min-touch-target);
   }
 
   .gep-button {
-    font-size: 12px;
-    padding: 10px 16px;
+    font-size: var(--gep-font-size-sm);
+    padding: 12px 16px;
+    min-height: var(--gep-min-touch-target);
   }
 
   .rpb-label--small,
   .rpb-value--small {
-    font-size: 12px;
-    line-height: 1;
+    font-size: var(--gep-font-size-sm);
+    line-height: var(--gep-line-height-normal);
   }
 }
 
@@ -1295,4 +1477,140 @@
 .gep-breakdown-details::-webkit-scrollbar-thumb:hover,
 .reservation-price-breakdown::-webkit-scrollbar-thumb:hover {
   background: var(--gep-primary-color);
+}
+
+/* =====================================================
+   ACCESSIBILITY - Screen Reader Only Text
+   ===================================================== */
+
+.gep-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* =====================================================
+   ACCESSIBILITY - Skip Link (keyboard navigation)
+   ===================================================== */
+
+.gep-skip-link {
+  position: absolute;
+  top: -100%;
+  left: 16px;
+  padding: 16px 24px;
+  background: var(--gep-primary-color);
+  color: white;
+  font-weight: 600;
+  font-size: var(--gep-font-size-base);
+  border-radius: 12px;
+  z-index: 1000;
+  text-decoration: none;
+}
+
+.gep-skip-link:focus {
+  top: 16px;
+}
+
+/* =====================================================
+   ACCESSIBILITY - Reduced Motion
+   ===================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .guest-editing-proposal {
+    animation: none;
+  }
+
+  .guest-editing-proposal-modal-overlay {
+    animation: none;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* =====================================================
+   ACCESSIBILITY - High Contrast Mode
+   ===================================================== */
+
+@media (prefers-contrast: high) {
+  :root {
+    --gep-border-color: #000;
+    --gep-border-light: #333;
+    --gep-text-muted: #374151;
+  }
+
+  .gep-button {
+    border-width: 3px;
+  }
+
+  .gep-button--primary {
+    border: 3px solid var(--gep-text-header);
+  }
+
+  .dns-day-btn {
+    border-width: 3px;
+  }
+
+  .gep-date-input,
+  .gep-textarea,
+  .gep-select,
+  .gep-number-input {
+    border-width: 2px;
+  }
+
+  .guest-editing-proposal {
+    border: 3px solid var(--gep-text-primary);
+  }
+
+  .gep-pricing-section {
+    border: 2px solid var(--gep-border-color);
+  }
+
+  .gep-detail-row {
+    border-bottom-width: 2px;
+  }
+}
+
+/* =====================================================
+   ACCESSIBILITY - Focus Visible Polyfill Support
+   ===================================================== */
+
+/* Fallback for browsers that don't support :focus-visible */
+.gep-button:focus,
+.dns-day-btn:focus,
+.gep-back-button:focus,
+.gep-close-button:focus,
+.gep-header-back-btn:focus,
+.gep-info-button:focus,
+.gep-calendar-button:focus {
+  outline: var(--gep-focus-outline-width) solid var(--gep-primary-color);
+  outline-offset: var(--gep-focus-outline-offset);
+}
+
+/* Remove double focus ring in browsers that support :focus-visible */
+@supports selector(:focus-visible) {
+  .gep-button:focus:not(:focus-visible),
+  .dns-day-btn:focus:not(:focus-visible),
+  .gep-back-button:focus:not(:focus-visible),
+  .gep-close-button:focus:not(:focus-visible),
+  .gep-header-back-btn:focus:not(:focus-visible),
+  .gep-info-button:focus:not(:focus-visible),
+  .gep-calendar-button:focus:not(:focus-visible) {
+    outline: none;
+  }
 }

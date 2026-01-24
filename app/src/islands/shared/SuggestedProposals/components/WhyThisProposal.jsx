@@ -3,7 +3,31 @@
  *
  * Displays AI-generated explanation for why this proposal
  * was suggested to the guest.
+ *
+ * Icons: All icons from Feather Icons (https://feathericons.com)
+ * - info: "Why This Listing?" header icon
  */
+
+/**
+ * Feather: info icon
+ * Source: https://feathericons.com/?query=info
+ */
+const InfoIcon = () => (
+  <svg
+    className="sp-why-icon-svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <circle cx="12" cy="12" r="10" />
+    <line x1="12" y1="16" x2="12" y2="12" />
+    <line x1="12" y1="8" x2="12.01" y2="8" />
+  </svg>
+);
 
 /**
  * Parse markdown bold syntax (**text**) and return React elements
@@ -34,7 +58,9 @@ export default function WhyThisProposal({ summary }) {
     return (
       <div className="sp-why-section">
         <h3 className="sp-why-title">
-          <span className="sp-why-icon">💡</span>
+          <span className="sp-why-icon">
+            <InfoIcon />
+          </span>
           Why This Listing?
         </h3>
         <p className="sp-why-text sp-why-text--placeholder">
@@ -47,7 +73,9 @@ export default function WhyThisProposal({ summary }) {
   return (
     <div className="sp-why-section">
       <h3 className="sp-why-title">
-        <span className="sp-why-icon">💡</span>
+        <span className="sp-why-icon">
+          <InfoIcon />
+        </span>
         Why This Listing?
       </h3>
       <p className="sp-why-text">{parseMarkdownBold(summary)}</p>

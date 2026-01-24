@@ -2,13 +2,23 @@
  * HostEditingProposal - Host interface for reviewing, editing, and counteroffering proposals
  *
  * Features:
- * - Review proposal terms from guests
- * - Edit/counteroffer proposal terms (move-in date, schedule, duration, house rules)
- * - Real-time price breakdown preview
+ * - 3-state view machine: 'pristine' | 'editing' | 'general'
+ * - Review proposal terms from guests (pristine view)
+ * - Edit/counteroffer proposal terms (editing view)
+ * - Real-time price breakdown preview (general view)
  * - Accept proposal as-is or with modifications
  * - Reject proposals with optional reason
  *
- * Based on the external host-editing-proposal repository pattern
+ * View States & Flow:
+ * - 'pristine': Initial readonly view showing proposal summary
+ * - 'editing': User is actively editing fields
+ * - 'general': Review changes with price breakdown before submit
+ *
+ * State Transitions:
+ * pristine -> editing (click "Edit Proposal")
+ * editing -> pristine (click "Cancel Edits")
+ * editing -> general (click "Update Proposal")
+ * general -> closed (click "Submit Edits" or "Accept As-Is")
  */
 
 import { useState, useEffect, useCallback } from 'react'
@@ -16,15 +26,19 @@ import {
   PROPOSAL_STATUSES,
   RESERVATION_SPANS,
   formatDate,
-  addWeeks,
-  findReservationSpanByWeeks,
-  getDayName,
-  getCheckInDay,
-  getCheckOutDay,
-  nightsToDays,
-  nightNamesToIndices,
-  nightIndicesToNames
+  findReservationSpanByWeeks
 } from './types'
+import {
+  parseProposalData,
+  extractNightsSelected,
+  extractReservationSpanWeeks,
+  extractCheckInDay,
+  extractCheckOutDay,
+  getProposalDate,
+  getProposalValue,
+  extractHouseRules,
+  formatDateDisplay
+} from './parseProposalData'
 import { ReservationPriceBreakdown } from './ReservationPriceBreakdown'
 import { ScheduleSelector } from './ScheduleSelector'
 import { DateInput, ReservationSpanDropdown, NumberInput, HouseRulesMultiSelect } from './FormInputs'
@@ -38,7 +52,7 @@ import './HostEditingProposal.css'
  * @param {Object} props.proposal - The proposal data
  * @param {Array} props.availableHouseRules - List of available house rules
  * @param {boolean} props.isInternalUsage - Flag for internal usage mode
- * @param {boolean} props.initialShowReject - If true, open directly to the reject section
+ * @param {boolean} props.initialShowReject - If true, open directly to the reject modal
  * @param {function} props.onAcceptAsIs - Callback when proposal is accepted without changes
  * @param {function} props.onCounteroffer - Callback when counteroffer is submitted
  * @param {function} props.onReject - Callback when proposal is rejected
@@ -56,143 +70,43 @@ export function HostEditingProposal({
   onCancel,
   onAlert
 }) {
-  // State management
-  const [view, setView] = useState('general') // 'general' | 'editing'
+  // 3-state view machine: 'pristine' | 'editing' | 'general'
+  const [view, setView] = useState('pristine')
   const [isFirstOpen, setIsFirstOpen] = useState(true)
   const [proceedButtonLocked, setProceedButtonLocked] = useState(false)
 
-  // Extract proposal data with fallbacks
-  // Handles both camelCase and database field names (with spaces)
-  const getProposalDate = (field, fallback = null) => {
-    const value = proposal?.[field] || proposal?.[field.replace(/([A-Z])/g, ' $1').trim()]
-    if (!value) return fallback ? new Date(fallback) : new Date()
-    return new Date(value)
-  }
-
-  const getProposalValue = (field, fallback) => {
-    return proposal?.[field] ??
-           proposal?.[field.replace(/([A-Z])/g, ' $1').trim()] ??
-           fallback
-  }
-
-  /**
-   * Extract and normalize house rules from proposal or listing
-   * Handles multiple formats:
-   * - Array of strings (rule names): ["No Smoking", "No Parties"]
-   * - Array of IDs (Bubble format): ["1556151847445x748291628265310200"]
-   * - Array of objects: [{id, name}, ...]
-   * Returns array of {id, name} objects matching availableHouseRules format
-   */
-  const extractHouseRules = () => {
-    // Try proposal first, then listing
-    const rawRules = proposal?.houseRules ||
-                     proposal?.['House Rules'] ||
-                     proposal?.['Features - House Rules'] ||
-                     listing?.houseRules ||
-                     listing?.['Features - House Rules'] ||
-                     []
-
-    if (!Array.isArray(rawRules) || rawRules.length === 0) {
-      return []
-    }
-
-    // If already in correct format (objects with id and name)
-    if (rawRules[0] && typeof rawRules[0] === 'object' && rawRules[0].id) {
-      return rawRules
-    }
-
-    // If array of strings, try to match with availableHouseRules
-    if (typeof rawRules[0] === 'string') {
-      // Check if they look like Bubble IDs (long numeric strings with x)
-      const looksLikeIds = rawRules[0].includes('x') && rawRules[0].length > 20
-
-      if (looksLikeIds) {
-        // Match by ID
-        return rawRules
-          .map(id => availableHouseRules.find(r => r.id === id))
-          .filter(Boolean)
-      } else {
-        // Match by name (case-insensitive)
-        return rawRules
-          .map(name => availableHouseRules.find(r =>
-            r.name?.toLowerCase() === name?.toLowerCase()
-          ))
-          .filter(Boolean)
-      }
-    }
-
-    return []
-  }
-
-  /**
-   * Extract nights selected from proposal, handling multiple formats:
-   * - Database: "Nights Selected (Nights list)" = [0, 5] (indices)
-   * - Alternative: "nightsSelected" = ['Sunday Night', 'Friday Night'] (names)
-   * Returns array of night names for component use
-   */
-  const extractNightsSelected = () => {
-    // Try database format first: array of indices
-    const nightIndices = proposal?.['Nights Selected (Nights list)']
-    if (Array.isArray(nightIndices) && nightIndices.length > 0 && typeof nightIndices[0] === 'number') {
-      return nightIndicesToNames(nightIndices)
-    }
-    // Try camelCase format (already names)
-    const nightNames = proposal?.nightsSelected
-    if (Array.isArray(nightNames) && nightNames.length > 0) {
-      return nightNames
-    }
-    // Default fallback
-    return ['Monday Night', 'Tuesday Night', 'Wednesday Night', 'Thursday Night']
-  }
-
-  /**
-   * Extract check-in day from proposal
-   */
-  const extractCheckInDay = () => {
-    return proposal?.['check in day'] || proposal?.checkInDay || 'Monday'
-  }
-
-  /**
-   * Extract check-out day from proposal
-   */
-  const extractCheckOutDay = () => {
-    return proposal?.['check out day'] || proposal?.checkOutDay || 'Friday'
-  }
-
-  /**
-   * Extract reservation span weeks from proposal
-   */
-  const extractReservationSpanWeeks = () => {
-    return proposal?.['Reservation Span (Weeks)'] || proposal?.reservationSpanWeeks || 8
-  }
+  // Get guest and listing info - handle both Bubble and Supabase field formats
+  const guest = proposal?.guest || proposal?.Guest || proposal?._guest || proposal?.['Created By'] || {}
+  const listing = proposal?.listing || proposal?._listing || {}
+  const guestName = guest?.firstName || guest?.['Name - First'] || guest?.['First Name'] || guest?.first_name || 'Guest'
+  const listingTitle = listing?.title || listing?.Name || 'Listing'
 
   // Form state - holds edited values
   const [editedMoveInDate, setEditedMoveInDate] = useState(() =>
-    getProposalDate('moveInRangeStart', proposal?.['Move in range start'])
+    getProposalDate(proposal, 'moveInRangeStart', proposal?.['Move in range start'])
   )
   const [editedReservationSpan, setEditedReservationSpan] = useState(() => {
-    const weeks = extractReservationSpanWeeks()
+    const weeks = extractReservationSpanWeeks(proposal)
     const span = findReservationSpanByWeeks(weeks)
-    // If weeks doesn't match any standard span, use 'other'
     if (!span) {
       return RESERVATION_SPANS.find(s => s.value === 'other')
     }
     return span
   })
   const [editedWeeks, setEditedWeeks] = useState(() =>
-    extractReservationSpanWeeks()
+    extractReservationSpanWeeks(proposal)
   )
   const [editedCheckInDay, setEditedCheckInDay] = useState(() =>
-    extractCheckInDay()
+    extractCheckInDay(proposal)
   )
   const [editedCheckOutDay, setEditedCheckOutDay] = useState(() =>
-    extractCheckOutDay()
+    extractCheckOutDay(proposal)
   )
   const [editedNightsSelected, setEditedNightsSelected] = useState(() =>
-    extractNightsSelected()
+    extractNightsSelected(proposal)
   )
   const [editedDaysSelected, setEditedDaysSelected] = useState(() =>
-    getProposalValue('daysSelected', ['Monday', 'Tuesday', 'Wednesday', 'Thursday'])
+    getProposalValue(proposal, 'daysSelected', ['Monday', 'Tuesday', 'Wednesday', 'Thursday'])
   )
   const [editedHouseRules, setEditedHouseRules] = useState([])
   const [houseRulesInitialized, setHouseRulesInitialized] = useState(false)
@@ -200,21 +114,17 @@ export function HostEditingProposal({
   // Initialize house rules when availableHouseRules becomes available
   useEffect(() => {
     if (availableHouseRules.length > 0 && !houseRulesInitialized) {
-      const normalizedRules = extractHouseRules()
+      const normalizedRules = extractHouseRules(proposal, listing, availableHouseRules)
       setEditedHouseRules(normalizedRules)
       setHouseRulesInitialized(true)
-      console.log('[HostEditingProposal] Initialized house rules:', normalizedRules)
     }
-  }, [availableHouseRules, houseRulesInitialized])
+  }, [availableHouseRules, houseRulesInitialized, proposal, listing])
 
   // Popup states
   const [showConfirmPopup, setShowConfirmPopup] = useState(false)
   const [showRejectModal, setShowRejectModal] = useState(initialShowReject)
 
-  // Collapsible state
-  const [isEditSectionExpanded, setIsEditSectionExpanded] = useState(false)
-
-  // Initialize values based on proposal status
+  // Initialize values based on proposal status (for counteroffer values)
   useEffect(() => {
     if (isFirstOpen && proposal) {
       const status = proposal?.status || proposal?.Status
@@ -267,97 +177,55 @@ export function HostEditingProposal({
     }
   }, [proposal, isFirstOpen])
 
-  // Check if any values have changed
-  // Uses the same extraction functions as initialization to ensure consistent comparison
+  // Check if any values have changed - simplified version
   const hasChanges = useCallback(() => {
-    const originalMoveIn = getProposalDate('moveInRangeStart', proposal?.['Move in range start'])
-    const dateChanged = formatDate(originalMoveIn, 'short') !== formatDate(editedMoveInDate, 'short')
+    const original = parseProposalData(proposal, listing, availableHouseRules)
 
-    const originalWeeks = extractReservationSpanWeeks()
-    // Use same fallback logic as initialization: if no matching span, use 'other'
-    const originalSpan = findReservationSpanByWeeks(originalWeeks) ||
-                         RESERVATION_SPANS.find(s => s.value === 'other')
-    const spanChanged = originalWeeks !== editedWeeks ||
-                        originalSpan?.value !== editedReservationSpan?.value
+    const dateChanged = formatDate(original.moveInDate, 'short') !== formatDate(editedMoveInDate, 'short')
+    const weeksChanged = original.reservationSpanWeeks !== editedWeeks
+    const scheduleChanged = original.checkInDay !== editedCheckInDay ||
+                           original.checkOutDay !== editedCheckOutDay
 
-    // Use extraction functions for consistent field name handling
-    const originalCheckIn = extractCheckInDay()
-    const originalCheckOut = extractCheckOutDay()
-    const scheduleChanged = originalCheckIn !== editedCheckInDay ||
-                           originalCheckOut !== editedCheckOutDay
-
-    // Only compare house rules if they have been initialized
-    // Before initialization, editedHouseRules is [] which would cause false positives
+    // Only compare house rules if initialized
     let rulesChanged = false
-    if (houseRulesInitialized) {
-      const originalRules = getProposalValue('houseRules', [])
-      const originalRuleIds = new Set(originalRules.map(r => r.id))
+    if (houseRulesInitialized && original.houseRules.length > 0) {
+      const originalRuleIds = new Set(original.houseRules.map(r => r.id))
       const editedRuleIds = new Set(editedHouseRules.map(r => r.id))
       rulesChanged = originalRuleIds.size !== editedRuleIds.size ||
                     [...originalRuleIds].some(id => !editedRuleIds.has(id))
     }
 
-    // Debug logging
-    console.log('[hasChanges] Comparison:', {
-      dateChanged,
-      originalMoveIn: formatDate(originalMoveIn, 'short'),
-      editedMoveIn: formatDate(editedMoveInDate, 'short'),
-      spanChanged,
-      originalWeeks,
-      editedWeeks,
-      originalSpanValue: originalSpan?.value,
-      editedSpanValue: editedReservationSpan?.value,
-      scheduleChanged,
-      originalCheckIn,
-      editedCheckInDay,
-      originalCheckOut,
-      editedCheckOutDay,
-      rulesChanged,
-      houseRulesInitialized,
-      editedRulesCount: editedHouseRules.length,
-      result: dateChanged || spanChanged || scheduleChanged || rulesChanged
-    })
-
-    return dateChanged || spanChanged || scheduleChanged || rulesChanged
-  }, [proposal, editedMoveInDate, editedWeeks, editedReservationSpan, editedCheckInDay, editedCheckOutDay, editedHouseRules, houseRulesInitialized])
-
-  // Calculate approximate move-out date
-  const approxMoveOut = addWeeks(editedMoveInDate, editedWeeks)
+    return dateChanged || weeksChanged || scheduleChanged || rulesChanged
+  }, [proposal, listing, availableHouseRules, editedMoveInDate, editedWeeks, editedCheckInDay, editedCheckOutDay, editedHouseRules, houseRulesInitialized])
 
   // Calculate host compensation (host-facing view, no guest pricing)
   const nightsPerWeek = editedNightsSelected.length
   const totalNights = nightsPerWeek * editedWeeks
-  const nightlyPrice = getProposalValue('proposalNightlyPrice', 0) ||
-                       getProposalValue('proposal nightly price', 0) || 100
+  const nightlyPrice = getProposalValue(proposal, 'proposalNightlyPrice', 0) ||
+                       getProposalValue(proposal, 'proposal nightly price', 0) || 100
   const nightlyCompensation = nightlyPrice * 0.85 // 85% goes to host
   const totalCompensation = nightlyCompensation * totalNights
   const compensationPer4Weeks = editedWeeks > 0 ? (totalCompensation / editedWeeks) * 4 : 0
 
   // Calculate original compensation values for comparison
-  const originalNightsPerWeek = extractNightsSelected().length
-  const originalWeeksValue = extractReservationSpanWeeks()
+  const originalNightsPerWeek = extractNightsSelected(proposal).length
+  const originalWeeksValue = extractReservationSpanWeeks(proposal)
   const originalTotalNights = originalNightsPerWeek * originalWeeksValue
   const originalTotalCompensation = nightlyCompensation * originalTotalNights
   const originalCompensationPer4Weeks = originalWeeksValue > 0
     ? (originalTotalCompensation / originalWeeksValue) * 4
     : 0
 
+  // Get original values for comparison display
+  const originalValues = parseProposalData(proposal, listing, availableHouseRules)
+
   // Handlers
-  const handleToggleView = () => {
-    setView(view === 'general' ? 'editing' : 'general')
-  }
-
-  const handleToggleEditSection = () => {
-    const willExpand = !isEditSectionExpanded
-    setIsEditSectionExpanded(willExpand)
-    setView(willExpand ? 'editing' : 'general')
-  }
-
-  // Handler for edit button clicks from breakdown - opens edit section
-  const handleEditField = (field) => {
-    setIsEditSectionExpanded(true)
+  const handleStartEditing = () => {
     setView('editing')
-    // Could add logic to scroll to specific field if needed
+  }
+
+  const handleCancelEdits = () => {
+    setView('pristine')
   }
 
   const handleScheduleChange = (data) => {
@@ -367,15 +235,9 @@ export function HostEditingProposal({
     setEditedDaysSelected(data.daysSelected)
   }
 
-  // Update Proposal button takes user to preview (breakdown) view
+  // Update Proposal button takes user to review (general) view
   const handleUpdateProposal = () => {
     setView('general')
-    setIsEditSectionExpanded(false)
-  }
-
-  // From preview, user can confirm to show the final popup
-  const handleConfirmFromPreview = () => {
-    setShowConfirmPopup(true)
   }
 
   const handleConfirmProceed = async () => {
@@ -416,7 +278,8 @@ export function HostEditingProposal({
       }
 
       setShowConfirmPopup(false)
-      setView('general')
+      setView('pristine')
+      onCancel?.()
     } catch (error) {
       onAlert?.({
         type: 'error',
@@ -438,6 +301,7 @@ export function HostEditingProposal({
           content: 'The proposal has been rejected.'
         })
         setShowRejectModal(false)
+        onCancel?.()
       } catch (error) {
         onAlert?.({
           type: 'error',
@@ -448,38 +312,299 @@ export function HostEditingProposal({
     }
   }
 
-  const handleCancel = () => {
-    setView('general')
+  const handleClose = () => {
+    setView('pristine')
     setIsFirstOpen(true)
     onCancel?.()
   }
 
-  // Get guest and listing info - handle both Bubble and Supabase field formats
-  const guest = proposal?.guest || proposal?.Guest || proposal?._guest || proposal?.['Created By'] || {}
-  const listing = proposal?.listing || proposal?._listing || {}
-  // Extract first name only using all possible field variations
-  const guestName = guest?.firstName || guest?.['Name - First'] || guest?.['First Name'] || guest?.first_name || 'Guest'
-  const listingTitle = listing?.title || listing?.Name || 'Listing'
-
-  // Get original values for comparison (using the same extraction functions as form initialization)
-  const originalWeeks = extractReservationSpanWeeks()
-  const originalSpanMatch = findReservationSpanByWeeks(originalWeeks)
-  const originalValues = {
-    moveInDate: getProposalDate('moveInRangeStart', proposal?.['Move in range start']),
-    checkInDay: extractCheckInDay(),
-    checkOutDay: extractCheckOutDay(),
-    reservationSpan: originalSpanMatch || RESERVATION_SPANS.find(s => s.value === 'other'),
-    weeksReservationSpan: originalWeeks,
-    houseRules: getProposalValue('houseRules', []),
-    nightsSelected: extractNightsSelected()
+  // Handle edit button click from breakdown - goes to editing view
+  const handleEditField = () => {
+    setView('editing')
   }
 
-  // Determine if we're in reject-only mode
-  const isRejectOnlyMode = initialShowReject && showRejectModal
+  // Render header based on view state
+  const renderHeader = () => {
+    if (view === 'pristine') {
+      // Pristine header: Document icon + "Review Proposal" title
+      return (
+        <div className="hep-header">
+          <div className="hep-header-left">
+            <div className="hep-header-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                <polyline points="14,2 14,8 20,8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+              </svg>
+            </div>
+            <div>
+              <div className="hep-header-title">Review Proposal</div>
+              <div className="hep-header-subtitle">From {guestName} for {listingTitle}</div>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="hep-header-close"
+            onClick={handleClose}
+            aria-label="Close"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+      )
+    }
 
-  // In reject-only mode, render ONLY the CancelProposalModal (no container)
-  // This prevents the white container box from appearing behind the modal
-  if (isRejectOnlyMode) {
+    if (view === 'editing') {
+      // Editing header: Document icon + "Edit Proposal" title
+      return (
+        <div className="hep-header">
+          <div className="hep-header-left">
+            <div className="hep-header-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                <polyline points="14,2 14,8 20,8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+              </svg>
+            </div>
+            <div>
+              <div className="hep-header-title">Edit Proposal</div>
+              <div className="hep-header-subtitle">{listingTitle}</div>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="hep-header-close"
+            onClick={handleClose}
+            aria-label="Close"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+      )
+    }
+
+    // General header: Document icon + "Review Changes" title
+    return (
+      <div className="hep-header">
+        <div className="hep-header-left">
+          <div className="hep-header-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14,2 14,8 20,8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+          </div>
+          <div>
+            <div className="hep-header-title">Review Changes</div>
+            <div className="hep-header-subtitle">{listingTitle}</div>
+          </div>
+        </div>
+        <button
+          type="button"
+          className="hep-header-close"
+          onClick={handleClose}
+          aria-label="Close"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+    )
+  }
+
+  // Render footer based on view state
+  const renderFooter = () => {
+    if (view === 'pristine') {
+      // Pristine: "Cancel" (secondary) + "Edit Proposal" (primary) - side by side
+      return (
+        <div className="hep-footer">
+          <button
+            type="button"
+            className="hep-btn hep-btn-secondary"
+            onClick={handleClose}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="hep-btn hep-btn-primary"
+            onClick={handleStartEditing}
+          >
+            Edit Proposal
+          </button>
+        </div>
+      )
+    }
+
+    if (view === 'editing') {
+      // Editing: "Cancel Edits" (secondary) + "Update Proposal" (primary)
+      return (
+        <div className="hep-footer">
+          <button
+            type="button"
+            className="hep-btn hep-btn-secondary"
+            onClick={handleCancelEdits}
+          >
+            Cancel Edits
+          </button>
+          <button
+            type="button"
+            className="hep-btn hep-btn-primary"
+            onClick={handleUpdateProposal}
+          >
+            Update Proposal
+          </button>
+        </div>
+      )
+    }
+
+    // General (review): "Cancel Edits" (secondary) + "Submit" (success)
+    return (
+      <div className="hep-footer">
+        <button
+          type="button"
+          className="hep-btn hep-btn-secondary"
+          onClick={handleCancelEdits}
+        >
+          Cancel Edits
+        </button>
+        <button
+          type="button"
+          className="hep-btn hep-btn-success"
+          onClick={handleConfirmProceed}
+          disabled={proceedButtonLocked}
+        >
+          Submit
+        </button>
+      </div>
+    )
+  }
+
+  // Render pristine view (readonly details)
+  const renderPristineView = () => (
+    <div className="hep-pristine-view">
+      <div className="hep-detail-row">
+        <span className="hep-detail-label">Move-in</span>
+        <span className="hep-detail-value">{formatDateDisplay(originalValues.moveInDate, 'full')}</span>
+      </div>
+      <div className="hep-detail-row">
+        <span className="hep-detail-label">Check-in</span>
+        <span className="hep-detail-value">{originalValues.checkInDay}</span>
+      </div>
+      <div className="hep-detail-row">
+        <span className="hep-detail-label">Check-out</span>
+        <span className="hep-detail-value">{originalValues.checkOutDay}</span>
+      </div>
+      <div className="hep-detail-row">
+        <span className="hep-detail-label">Reservation Length</span>
+        <span className="hep-detail-value">{originalValues.reservationSpanWeeks} weeks</span>
+      </div>
+      <div className="hep-detail-row">
+        <span className="hep-detail-label">Weekly Pattern</span>
+        <span className="hep-detail-value">
+          {originalValues.checkInDay?.substring(0, 3)} - {originalValues.checkOutDay?.substring(0, 3)} ({originalValues.nightsSelected.length} nights/week)
+        </span>
+      </div>
+      <div className="hep-detail-row">
+        <span className="hep-detail-label">House Rules</span>
+        <span className="hep-detail-value">{originalValues.houseRules.length} rules</span>
+      </div>
+
+      {/* Compensation Breakdown */}
+      <div className="hep-pricing-section">
+        <div className="hep-pricing-title">Compensation Breakdown</div>
+        <div className="hep-pricing-row">
+          <span className="hep-pricing-label">Compensation /night</span>
+          <span className="hep-pricing-value">${nightlyCompensation.toFixed(2)}</span>
+        </div>
+        <div className="hep-pricing-row">
+          <span className="hep-pricing-label">Nights reserved</span>
+          <span className="hep-pricing-value">x {originalTotalNights}</span>
+        </div>
+        <div className="hep-pricing-row hep-pricing-row--total">
+          <span className="hep-pricing-label">Total Compensation</span>
+          <span className="hep-pricing-value">${originalTotalCompensation.toFixed(2)}</span>
+        </div>
+      </div>
+    </div>
+  )
+
+  // Render editing view (form fields)
+  const renderEditingView = () => (
+    <div className="hep-editing-view">
+      {/* Schedule Selector */}
+      <div className="hep-form-section">
+        <label className="hep-form-label">Schedule Selection</label>
+        <ScheduleSelector
+          initialNightsSelected={editedNightsSelected}
+          availableNights={listing?.nightsAvailable || listing?.['Nights Available']}
+          onChange={handleScheduleChange}
+          disabled={isInternalUsage || listing?.rentalType === 'Weekly'}
+        />
+      </div>
+
+      {/* Move-in Date */}
+      <div className="hep-form-section">
+        <label className="hep-form-label">Move-in Date</label>
+        <DateInput
+          value={editedMoveInDate}
+          onChange={setEditedMoveInDate}
+          placeholder="Move-in"
+          minDate={new Date()}
+        />
+      </div>
+
+      {/* Reservation Span */}
+      <div className="hep-form-section">
+        <label className="hep-form-label">Reservation Span</label>
+        <ReservationSpanDropdown
+          value={editedReservationSpan}
+          onChange={(span) => {
+            setEditedReservationSpan(span)
+            if (span.value !== 'other') {
+              setEditedWeeks(span.weeks)
+            }
+          }}
+          options={RESERVATION_SPANS}
+          placeholder="Select reservation span"
+        />
+        {editedReservationSpan?.value === 'other' && (
+          <div className="hep-form-section hep-form-section--inline">
+            <label className="hep-form-label"># of weeks</label>
+            <NumberInput
+              value={editedWeeks}
+              onChange={setEditedWeeks}
+              placeholder="Enter # Weeks"
+              min={1}
+              max={52}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* House Rules */}
+      <div className="hep-form-section">
+        <label className="hep-form-label">House Rules</label>
+        <HouseRulesMultiSelect
+          value={editedHouseRules}
+          onChange={setEditedHouseRules}
+          options={availableHouseRules}
+          placeholder="Choose some options..."
+        />
+      </div>
+    </div>
+  )
+
+  // If initialShowReject is true, render only the CancelProposalModal
+  if (initialShowReject && showRejectModal) {
     return (
       <CancelProposalModal
         isOpen={showRejectModal}
@@ -497,220 +622,62 @@ export function HostEditingProposal({
 
   return (
     <div className="hep-container">
-      {/* Mobile Grab Handle - per POPUP_REPLICATION_PROTOCOL.md */}
+      {/* Mobile Grab Handle */}
       <div className="hep-grab-handle" aria-hidden="true" />
 
-      {/* Header - hidden in reject-only mode */}
-      {!isRejectOnlyMode && (
-        <div className="hep-section-header">
-          <div className="hep-header-content">
-            <h2 className="hep-title-main">Review Proposal Terms</h2>
-            <div className="hep-description hep-header-subtext">
-              Reviewing proposal from <strong>{guestName}</strong> for <strong>{listingTitle}</strong>
-            </div>
-          </div>
-          <div className="hep-header-actions">
-            <button
-              type="button"
-              className="hep-icon hep-icon-edit"
-              onClick={handleToggleView}
-              title="Edit proposal"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
-            <button
-              type="button"
-              className="hep-icon hep-icon-close"
-              onClick={handleCancel}
-              title="Close"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Header */}
+      {renderHeader()}
 
       {/* Scrollable Body */}
       <div className="hep-body">
+        {view === 'pristine' && renderPristineView()}
 
-        {/* Collapsible Edit Section - hidden in reject-only mode */}
-        {!isRejectOnlyMode && (
-          <div
-            className="hep-collapsible"
-            onClick={handleToggleEditSection}
-          >
-            <span className="hep-collapsible-title">Edit Proposal Terms</span>
-            <svg
-              className={`hep-collapsible-icon ${isEditSectionExpanded ? 'hep-collapsible-icon--expanded' : ''}`}
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
+        {view === 'editing' && renderEditingView()}
+
+        {view === 'general' && (
+          <>
+            <button
+              type="button"
+              className="hep-back-link"
+              onClick={() => setView('editing')}
+              aria-label="Back to editing"
             >
-              <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
-        )}
-
-        {/* Editing Form */}
-        <div className={`hep-animate-collapse ${isEditSectionExpanded && view === 'editing' ? 'expanded' : 'collapsed'}`}>
-          <div className="hep-editing-terms">
-            <h3 className="hep-title-section hep-mb-16">Proposal Details</h3>
-
-            {/* Schedule Selector */}
-            <div className="hep-form-group">
-              <label className="hep-label">Schedule Selection</label>
-              <ScheduleSelector
-                initialNightsSelected={editedNightsSelected}
-                availableNights={listing?.nightsAvailable || listing?.['Nights Available']}
-                onChange={handleScheduleChange}
-                disabled={isInternalUsage || listing?.rentalType === 'Weekly'}
-              />
-            </div>
-
-            {/* Move-in Date */}
-            <div className="hep-form-group">
-              <label className="hep-label">Your convenient move-in date</label>
-              <DateInput
-                value={editedMoveInDate}
-                onChange={setEditedMoveInDate}
-                placeholder="Move-in"
-                minDate={new Date()}
-              />
-              <div className="hep-text-value hep-mt-8">
-                Move-in suggestion: {formatDate(originalValues.moveInDate)}
-              </div>
-            </div>
-
-            {/* Reservation Span */}
-            <div className="hep-form-row">
-              <div className="hep-form-group">
-                <label className="hep-label">Reservation Span</label>
-                <ReservationSpanDropdown
-                  value={editedReservationSpan}
-                  onChange={(span) => {
-                    setEditedReservationSpan(span)
-                    if (span.value !== 'other') {
-                      setEditedWeeks(span.weeks)
-                    }
-                  }}
-                  options={RESERVATION_SPANS}
-                  placeholder="Select reservation span"
-                />
-              </div>
-              {editedReservationSpan?.value === 'other' && (
-                <div className="hep-form-group">
-                  <label className="hep-label"># of weeks</label>
-                  <NumberInput
-                    value={editedWeeks}
-                    onChange={setEditedWeeks}
-                    placeholder="Enter # Weeks"
-                    min={1}
-                    max={52}
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* House Rules */}
-            <div className="hep-form-group">
-              <label className="hep-label">House Rules</label>
-              <HouseRulesMultiSelect
-                value={editedHouseRules}
-                onChange={setEditedHouseRules}
-                options={availableHouseRules}
-                placeholder="Choose some options..."
-              />
-            </div>
-
-            {/* Approximate Move-out */}
-            <div className="hep-proposal-row hep-mt-16">
-              <span className="hep-row-label">Approximate Move-out</span>
-              <span className="hep-text-value">{formatDate(approxMoveOut)}</span>
-            </div>
-
-            {/* Actions */}
-            <div className="hep-actions-row">
-              <button
-                type="button"
-                className="hep-btn hep-btn-cancel"
-                onClick={handleCancel}
-              >
-                Cancel edits
-              </button>
-              <button
-                type="button"
-                className="hep-btn hep-btn-primary"
-                onClick={handleUpdateProposal}
-              >
-                Update Proposal
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Reservation Price Breakdown - shown in general view, hidden in reject-only mode */}
-        {view === 'general' && !isRejectOnlyMode && (
-          <ReservationPriceBreakdown
-            moveInDate={editedMoveInDate}
-            checkInDay={editedCheckInDay}
-            checkOutDay={editedCheckOutDay}
-            reservationSpan={editedReservationSpan}
-            weeksReservationSpan={editedWeeks}
-            houseRules={editedHouseRules}
-            nightsSelected={editedNightsSelected}
-            nightlyCompensation={nightlyCompensation}
-            totalCompensation={totalCompensation}
-            hostCompensationPer4Weeks={compensationPer4Weeks}
-            originalTotalCompensation={originalTotalCompensation}
-            originalCompensationPer4Weeks={originalCompensationPer4Weeks}
-            isVisible={true}
-            originalValues={originalValues}
-            onEditField={handleEditField}
-          />
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15 18L9 12L15 6"/>
+              </svg>
+              Back to editing
+            </button>
+            <ReservationPriceBreakdown
+              moveInDate={editedMoveInDate}
+              checkInDay={editedCheckInDay}
+              checkOutDay={editedCheckOutDay}
+              reservationSpan={editedReservationSpan}
+              weeksReservationSpan={editedWeeks}
+              houseRules={editedHouseRules}
+              nightsSelected={editedNightsSelected}
+              nightlyCompensation={nightlyCompensation}
+              totalCompensation={totalCompensation}
+              hostCompensationPer4Weeks={compensationPer4Weeks}
+              originalTotalCompensation={originalTotalCompensation}
+              originalCompensationPer4Weeks={originalCompensationPer4Weeks}
+              isVisible={true}
+              originalValues={originalValues}
+              onEditField={handleEditField}
+            />
+          </>
         )}
       </div>
-      {/* End Scrollable Body */}
 
-      {/* Primary Actions Row - Submit/Accept and Reject side by side - hidden in reject-only mode */}
-      {view === 'general' && !isRejectOnlyMode && (
-        <div className="hep-primary-actions">
-          <button
-            type="button"
-            className="hep-btn hep-btn-reject-outline"
-            onClick={() => setShowRejectModal(true)}
-          >
-            Reject Proposal
-          </button>
-          <button
-            type="button"
-            className="hep-btn hep-btn-primary hep-btn-primary-large"
-            onClick={handleConfirmFromPreview}
-            disabled={proceedButtonLocked}
-          >
-            {hasChanges() ? 'Submit Edits' : 'Accept As-Is'}
-          </button>
-        </div>
-      )}
+      {/* Footer */}
+      {renderFooter()}
 
-      {/* Reject Proposal Modal - using shared component */}
+      {/* Reject Proposal Modal */}
       <CancelProposalModal
         isOpen={showRejectModal}
         proposal={proposal}
         userType="host"
         buttonText="Reject Proposal"
-        onClose={() => {
-          setShowRejectModal(false)
-          if (isRejectOnlyMode) {
-            onCancel?.()
-          }
-        }}
+        onClose={() => setShowRejectModal(false)}
         onConfirm={handleReject}
       />
 
@@ -729,7 +696,7 @@ export function HostEditingProposal({
             <div className="hep-popup-actions">
               <button
                 type="button"
-                className="hep-btn hep-btn-cancel"
+                className="hep-btn hep-btn-secondary"
                 onClick={() => setShowConfirmPopup(false)}
               >
                 No, Go Back

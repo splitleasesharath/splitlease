@@ -3,17 +3,14 @@
  *
  * Shows proposal details with highlighting for changed values.
  * Host-focused: displays compensation only, not guest pricing.
+ *
+ * Design matches mockup: clean rows, no edit icons, "Changed" badges
  */
 
-import { useState } from 'react'
 import { formatCurrency, formatDate, getDayName } from './types'
 
 /**
  * Convert day index (string or number) to day name
- * Handles multiple formats:
- * - Day name strings: "Sunday", "Monday", etc. → returned as-is
- * - JavaScript 0-based index: 0-6 (Sunday=0) → converted via getDayName
- * - Bubble 1-based index: 1-7 (Sunday=1) → converted with offset
  */
 function formatDayDisplay(dayValue) {
   if (dayValue === null || dayValue === undefined) return ''
@@ -32,117 +29,19 @@ function formatDayDisplay(dayValue) {
 
   // Try Bubble format (1-7) - convert to JS format by subtracting 1
   if (index >= 1 && index <= 7) {
-    const bubbleToJs = index === 7 ? 6 : index - 1 // Bubble 7 (Sat) → JS 6, Bubble 1-6 → JS 0-5
+    const bubbleToJs = index === 7 ? 6 : index - 1
     const bubbleResult = getDayName(bubbleToJs)
     if (bubbleResult) return bubbleResult
   }
 
-  // Fallback: return original value
   return dayValue
-}
-
-/**
- * Edit icon button for editable fields
- */
-function EditButton({ onClick, label }) {
-  return (
-    <button
-      type="button"
-      className="hep-breakdown-edit-btn"
-      onClick={onClick}
-      title={`Edit ${label}`}
-      aria-label={`Edit ${label}`}
-    >
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    </button>
-  )
-}
-
-/**
- * Collapsible house rules display
- * Shows count + click to expand into full list
- */
-function HouseRulesDisplay({ rules, originalRules, hasChanged, onEditField }) {
-  const [isExpanded, setIsExpanded] = useState(false)
-
-  const getRuleName = (rule) => rule.name || rule.Display || rule
-  const count = rules.length
-  const originalCount = originalRules?.length || 0
-
-  if (count === 0) {
-    return (
-      <span className="hep-breakdown-row-value">
-        None specified
-        {onEditField && <EditButton onClick={() => onEditField('houseRules')} label="house rules" />}
-        {hasChanged && originalCount > 0 && (
-          <span className="hep-original-value">
-            was: {originalRules.map(getRuleName).join(', ')}
-          </span>
-        )}
-      </span>
-    )
-  }
-
-  return (
-    <span className="hep-breakdown-row-value hep-house-rules-value">
-      <span
-        className="hep-house-rules-summary"
-        onClick={() => setIsExpanded(!isExpanded)}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => e.key === 'Enter' && setIsExpanded(!isExpanded)}
-      >
-        <span className="hep-house-rules-count">{count} rule{count !== 1 ? 's' : ''}</span>
-        <span className="hep-house-rules-toggle">
-          {isExpanded ? '▲ collapse' : '▼ expand'}
-        </span>
-      </span>
-      {onEditField && <EditButton onClick={() => onEditField('houseRules')} label="house rules" />}
-
-      {isExpanded && (
-        <ul className="hep-house-rules-list">
-          {rules.map((rule, idx) => (
-            <li key={rule.id || idx} className="hep-house-rules-item">
-              {getRuleName(rule)}
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {hasChanged && originalRules && (
-        <span className="hep-original-value">
-          was: {originalCount > 0 ? `${originalCount} rule${originalCount !== 1 ? 's' : ''}` : 'None'}
-        </span>
-      )}
-    </span>
-  )
 }
 
 /**
  * ReservationPriceBreakdown Component
  *
  * Host-focused breakdown showing compensation details only.
- * Guest pricing (price per night, total price, etc.) is intentionally excluded.
- *
- * @param {Object} props
- * @param {Date} props.moveInDate - Move-in date
- * @param {string|number} props.checkInDay - Check-in day (name or 0-based index)
- * @param {string|number} props.checkOutDay - Check-out day (name or 0-based index)
- * @param {Object} props.reservationSpan - Reservation span object
- * @param {number} props.weeksReservationSpan - Number of weeks
- * @param {Array} props.houseRules - Array of house rules
- * @param {string[]} props.nightsSelected - Array of selected night names
- * @param {number} props.nightlyCompensation - Nightly compensation amount
- * @param {number} props.totalCompensation - Total compensation
- * @param {number} props.hostCompensationPer4Weeks - Host compensation per 4 weeks
- * @param {number} props.originalTotalCompensation - Original total compensation for comparison
- * @param {number} props.originalCompensationPer4Weeks - Original compensation per 4 weeks for comparison
- * @param {boolean} props.isVisible - Whether component is visible
- * @param {Object} props.originalValues - Original values for comparison
- * @param {function} props.onEditField - Callback when edit button clicked (field: string) => void
+ * Matches mockup design: changed values show original struck through + new in green
  */
 export function ReservationPriceBreakdown({
   moveInDate,
@@ -158,16 +57,16 @@ export function ReservationPriceBreakdown({
   originalTotalCompensation,
   originalCompensationPer4Weeks,
   isVisible = true,
-  originalValues,
-  onEditField
+  originalValues
 }) {
   if (!isVisible) return null
 
   const nightsCount = nightsSelected.length * weeksReservationSpan
+  const originalNightsCount = originalValues?.nightsSelected
+    ? originalValues.nightsSelected.length * (originalValues.weeksReservationSpan || 0)
+    : 0
 
   // Helper to check if a value changed
-  // For day fields, normalize both values to day names before comparing
-  // This prevents false positives when values are in different formats (e.g., 6 vs "Saturday")
   const hasChanged = {
     moveInDate: originalValues?.moveInDate
       ? formatDate(originalValues.moveInDate, 'short') !== formatDate(moveInDate, 'short')
@@ -177,9 +76,6 @@ export function ReservationPriceBreakdown({
       : false,
     checkOutDay: originalValues?.checkOutDay !== undefined
       ? formatDayDisplay(originalValues.checkOutDay) !== formatDayDisplay(checkOutDay)
-      : false,
-    reservationSpan: originalValues?.reservationSpan
-      ? originalValues.reservationSpan?.value !== reservationSpan?.value
       : false,
     weeksReservationSpan: originalValues?.weeksReservationSpan
       ? originalValues.weeksReservationSpan !== weeksReservationSpan
@@ -202,142 +98,132 @@ export function ReservationPriceBreakdown({
       : false
   }
 
-  // Check if any schedule-related field changed (affects pricing)
+  // Check if scheduling changed (affects pricing)
   const schedulingChanged = hasChanged.nightsSelected || hasChanged.weeksReservationSpan
 
-  // Helper to get row class with change highlight
-  const getRowClass = (changed) => {
-    return `hep-breakdown-row${changed ? ' hep-breakdown-row-changed' : ''}`
-  }
-
-  // Check if any changes exist
-  const anyChanges = originalValues && Object.values(hasChanged).some(Boolean)
-
   return (
-    <div className="hep-breakdown-container">
-      <h3 className="hep-breakdown-title">Proposal Details</h3>
-
-      {/* Show change indicator if any changes exist */}
-      {anyChanges && (
-        <div className="hep-changes-indicator">
-          <span className="hep-changes-badge">Modified</span>
-          <span className="hep-changes-text">Changed items are highlighted</span>
-        </div>
-      )}
-
-      <div className={getRowClass(hasChanged.moveInDate)}>
-        <span className="hep-breakdown-row-label">Move-in</span>
-        <span className="hep-breakdown-row-value">
-          {formatDate(moveInDate)}
-          {onEditField && <EditButton onClick={() => onEditField('moveInDate')} label="move-in date" />}
-          {hasChanged.moveInDate && originalValues?.moveInDate && (
-            <span className="hep-original-value">
-              was: {formatDate(originalValues.moveInDate, 'short')}
-            </span>
-          )}
-        </span>
-      </div>
-
-      <div className={getRowClass(hasChanged.checkInDay)}>
-        <span className="hep-breakdown-row-label">Check-in</span>
-        <span className="hep-breakdown-row-value">
-          {formatDayDisplay(checkInDay)}
-          {onEditField && <EditButton onClick={() => onEditField('schedule')} label="schedule" />}
-          {hasChanged.checkInDay && originalValues?.checkInDay && (
-            <span className="hep-original-value">was: {formatDayDisplay(originalValues.checkInDay)}</span>
-          )}
-        </span>
-      </div>
-
-      <div className={getRowClass(hasChanged.checkOutDay)}>
-        <span className="hep-breakdown-row-label">Check-out</span>
-        <span className="hep-breakdown-row-value">
-          {formatDayDisplay(checkOutDay)}
-          {onEditField && <EditButton onClick={() => onEditField('schedule')} label="schedule" />}
-          {hasChanged.checkOutDay && originalValues?.checkOutDay && (
-            <span className="hep-original-value">was: {formatDayDisplay(originalValues.checkOutDay)}</span>
-          )}
-        </span>
-      </div>
-
-      <div className={getRowClass(hasChanged.reservationSpan || hasChanged.weeksReservationSpan)}>
-        <span className="hep-breakdown-row-label">Reservation Length</span>
-        <span className="hep-breakdown-row-value">
-          {weeksReservationSpan} weeks
-          {onEditField && <EditButton onClick={() => onEditField('reservationSpan')} label="reservation length" />}
-          {(hasChanged.reservationSpan || hasChanged.weeksReservationSpan) &&
-            originalValues?.weeksReservationSpan && (
-              <span className="hep-original-value">
-                was: {originalValues.weeksReservationSpan} weeks
-              </span>
-            )}
-        </span>
-      </div>
-
-      <div className={getRowClass(hasChanged.houseRules)}>
-        <span className="hep-breakdown-row-label">Your House Rules</span>
-        <HouseRulesDisplay
-          rules={houseRules}
-          originalRules={originalValues?.houseRules}
-          hasChanged={hasChanged.houseRules}
-          onEditField={onEditField}
-        />
-      </div>
-
-      <div className={getRowClass(hasChanged.nightsSelected)}>
-        <span className="hep-breakdown-row-label">Weekly Pattern</span>
-        <span className="hep-breakdown-row-value">
-          {nightsSelected.length} nights/week
-          {onEditField && <EditButton onClick={() => onEditField('schedule')} label="weekly pattern" />}
-          {hasChanged.nightsSelected && originalValues?.nightsSelected && (
-            <span className="hep-original-value">
-              was: {originalValues.nightsSelected.length} nights/week
-            </span>
-          )}
-        </span>
-      </div>
-
-      <div className={getRowClass(schedulingChanged)}>
-        <span className="hep-breakdown-row-label">Nights reserved</span>
-        <span className="hep-breakdown-row-value">
-          {nightsCount}
-          {schedulingChanged && originalValues?.nightsSelected && originalValues?.weeksReservationSpan && (
-            <span className="hep-original-value">
-              was: {originalValues.nightsSelected.length * originalValues.weeksReservationSpan}
-            </span>
-          )}
-        </span>
-      </div>
-
+    <div className="hep-breakdown">
+      {/* Move-in Date */}
       <div className="hep-breakdown-row">
-        <span className="hep-breakdown-row-label">Compensation/night</span>
-        <span className="hep-breakdown-row-value">
-          {formatCurrency(nightlyCompensation)}
-        </span>
+        <span className="hep-breakdown-label">Move-in</span>
+        {hasChanged.moveInDate ? (
+          <span className="hep-breakdown-value hep-breakdown-value--changed">
+            <span className="hep-breakdown-original">{formatDate(originalValues.moveInDate, 'short')}</span>
+            <span className="hep-breakdown-new">{formatDate(moveInDate)}</span>
+          </span>
+        ) : (
+          <span className="hep-breakdown-value">{formatDate(moveInDate)}</span>
+        )}
       </div>
 
-      <div className={getRowClass(schedulingChanged)}>
-        <span className="hep-breakdown-row-label">Total Compensation</span>
-        <span className="hep-breakdown-row-value">
-          {formatCurrency(totalCompensation)}
-          {schedulingChanged && originalTotalCompensation !== undefined && (
-            <span className="hep-original-value">
-              was: {formatCurrency(originalTotalCompensation)}
-            </span>
-          )}
-        </span>
+      {/* Check-in */}
+      <div className="hep-breakdown-row">
+        <span className="hep-breakdown-label">Check-in</span>
+        {hasChanged.checkInDay ? (
+          <span className="hep-breakdown-value hep-breakdown-value--changed">
+            <span className="hep-breakdown-original">{formatDayDisplay(originalValues.checkInDay)}</span>
+            <span className="hep-breakdown-new">{formatDayDisplay(checkInDay)}</span>
+          </span>
+        ) : (
+          <span className="hep-breakdown-value">{formatDayDisplay(checkInDay)}</span>
+        )}
       </div>
 
-      <div className={`hep-breakdown-row hep-breakdown-row-highlight${schedulingChanged ? ' hep-breakdown-row-changed' : ''}`}>
-        <span className="hep-breakdown-row-label">Compensation / 4 weeks</span>
-        <span className="hep-breakdown-row-value">
-          {formatCurrency(hostCompensationPer4Weeks)}
-          {schedulingChanged && originalCompensationPer4Weeks !== undefined && (
-            <span className="hep-original-value">
-              was: {formatCurrency(originalCompensationPer4Weeks)}
-            </span>
-          )}
+      {/* Check-out */}
+      <div className="hep-breakdown-row">
+        <span className="hep-breakdown-label">Check-out</span>
+        {hasChanged.checkOutDay ? (
+          <span className="hep-breakdown-value hep-breakdown-value--changed">
+            <span className="hep-breakdown-original">{formatDayDisplay(originalValues.checkOutDay)}</span>
+            <span className="hep-breakdown-new">{formatDayDisplay(checkOutDay)}</span>
+          </span>
+        ) : (
+          <span className="hep-breakdown-value">{formatDayDisplay(checkOutDay)}</span>
+        )}
+      </div>
+
+      {/* Reservation Length */}
+      <div className="hep-breakdown-row">
+        <span className="hep-breakdown-label">
+          Reservation Length
+          {hasChanged.weeksReservationSpan && <span className="hep-change-badge">Changed</span>}
         </span>
+        {hasChanged.weeksReservationSpan ? (
+          <span className="hep-breakdown-value hep-breakdown-value--changed">
+            <span className="hep-breakdown-original">{originalValues.weeksReservationSpan} wks</span>
+            <span className="hep-breakdown-new">{weeksReservationSpan} weeks</span>
+          </span>
+        ) : (
+          <span className="hep-breakdown-value">{weeksReservationSpan} weeks</span>
+        )}
+      </div>
+
+      {/* Nights/week */}
+      <div className="hep-breakdown-row">
+        <span className="hep-breakdown-label">
+          Nights/week
+          {hasChanged.nightsSelected && <span className="hep-change-badge">Changed</span>}
+        </span>
+        {hasChanged.nightsSelected ? (
+          <span className="hep-breakdown-value hep-breakdown-value--changed">
+            <span className="hep-breakdown-original">{originalValues.nightsSelected.length} nights</span>
+            <span className="hep-breakdown-new">{nightsSelected.length} nights</span>
+          </span>
+        ) : (
+          <span className="hep-breakdown-value">{nightsSelected.length} nights</span>
+        )}
+      </div>
+
+      {/* House Rules */}
+      <div className="hep-breakdown-row">
+        <span className="hep-breakdown-label">
+          House Rules
+          {hasChanged.houseRules && <span className="hep-change-badge">Changed</span>}
+        </span>
+        {hasChanged.houseRules ? (
+          <span className="hep-breakdown-value hep-breakdown-value--changed">
+            <span className="hep-breakdown-original">{originalValues.houseRules?.length || 0} rules</span>
+            <span className="hep-breakdown-new">{houseRules.length} rules</span>
+          </span>
+        ) : (
+          <span className="hep-breakdown-value">{houseRules.length} rules</span>
+        )}
+      </div>
+
+      <hr className="hep-breakdown-divider" />
+
+      {/* Compensation/night */}
+      <div className="hep-breakdown-row">
+        <span className="hep-breakdown-label">Compensation /night</span>
+        <span className="hep-breakdown-value">{formatCurrency(nightlyCompensation)}</span>
+      </div>
+
+      {/* Nights reserved */}
+      <div className="hep-breakdown-row">
+        <span className="hep-breakdown-label">Nights reserved</span>
+        {schedulingChanged ? (
+          <span className="hep-breakdown-value hep-breakdown-value--changed">
+            <span className="hep-breakdown-original">x {originalNightsCount}</span>
+            <span className="hep-breakdown-new">x {nightsCount}</span>
+          </span>
+        ) : (
+          <span className="hep-breakdown-value">x {nightsCount}</span>
+        )}
+      </div>
+
+      <hr className="hep-breakdown-divider" />
+
+      {/* Total Compensation */}
+      <div className="hep-breakdown-row hep-breakdown-total">
+        <span className="hep-breakdown-label">Total Compensation</span>
+        {schedulingChanged && originalTotalCompensation !== undefined ? (
+          <span className="hep-breakdown-value hep-breakdown-value--changed">
+            <span className="hep-breakdown-original">{formatCurrency(originalTotalCompensation)}</span>
+            <span className="hep-breakdown-new">{formatCurrency(totalCompensation)}</span>
+          </span>
+        ) : (
+          <span className="hep-breakdown-value">{formatCurrency(totalCompensation)}</span>
+        )}
       </div>
     </div>
   )

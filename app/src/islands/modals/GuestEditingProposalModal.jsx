@@ -197,9 +197,10 @@ function DayNightSelector({
   const selectedNightsCount = selectedNights.length
 
   return (
-    <div className="day-night-selector">
+    <div className="day-night-selector" role="group" aria-labelledby="dns-heading">
+      <span id="dns-heading" className="gep-sr-only">Select days of the week for your stay</span>
       {/* Day buttons grid - matches mockup exactly */}
-      <div className="dns-day-grid">
+      <div className="dns-day-grid" role="group" aria-label="Days of the week">
         {days.map((day) => (
           <button
             key={day.id}
@@ -208,6 +209,8 @@ function DayNightSelector({
             onClick={() => handleDayClick(day.id)}
             disabled={disabled}
             title={day.name}
+            aria-label={`${day.name}${isDaySelected(day.id) ? ', selected' : ''}`}
+            aria-pressed={isDaySelected(day.id)}
           >
             {day.singleLetter}
           </button>
@@ -872,8 +875,18 @@ export default function GuestEditingProposalModal({
   }
 
   return (
-    <div className="guest-editing-proposal-modal-overlay" onClick={handleClose}>
-      <div className="guest-editing-proposal" onClick={(e) => e.stopPropagation()}>
+    <div
+      className="guest-editing-proposal-modal-overlay"
+      onClick={handleClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="gep-modal-title"
+    >
+      <div
+        className="guest-editing-proposal"
+        onClick={(e) => e.stopPropagation()}
+        role="document"
+      >
         {/* Main view for editing and reviewing */}
         {showMainView && (
           <div className={`gep-main-view ${view === 'editing' ? 'gep-main-view--editing' : ''}`}>
@@ -883,7 +896,7 @@ export default function GuestEditingProposalModal({
                 /* Pristine header: icon + title/subtitle on left, close on right */
                 <>
                   <div className="gep-header-left">
-                    <div className="gep-header-icon">
+                    <div className="gep-header-icon" aria-hidden="true">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
                         <polyline points="14,2 14,8 20,8"/>
@@ -892,15 +905,15 @@ export default function GuestEditingProposalModal({
                       </svg>
                     </div>
                     <div>
-                      <div className="gep-header-title-text">Proposal Details</div>
-                      <div className="gep-header-subtitle">{listing?.title || listing?.Title || proposal?._listing?.title || 'Listing'}</div>
+                      <h2 id="gep-modal-title" className="gep-header-title-text">Proposal Details</h2>
+                      <p className="gep-header-subtitle">{listing?.title || listing?.Title || proposal?._listing?.title || 'Listing'}</p>
                     </div>
                   </div>
                   <button
                     type="button"
                     className="gep-close-button"
                     onClick={handleClose}
-                    aria-label="Close"
+                    aria-label="Close modal"
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <line x1="18" y1="6" x2="6" y2="18"/>
@@ -916,22 +929,22 @@ export default function GuestEditingProposalModal({
                       type="button"
                       className="gep-header-back-btn"
                       onClick={handleBack}
-                      aria-label="Back"
+                      aria-label="Go back to previous view"
                     >
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                         <path d="M15 18L9 12L15 6" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                     </button>
                     <div>
-                      <div className="gep-header-title-text">Edit Proposal</div>
-                      <div className="gep-header-subtitle">{listing?.title || listing?.Title || proposal?._listing?.title || 'Listing'}</div>
+                      <h2 id="gep-modal-title" className="gep-header-title-text">Edit Proposal</h2>
+                      <p className="gep-header-subtitle">{listing?.title || listing?.Title || proposal?._listing?.title || 'Listing'}</p>
                     </div>
                   </div>
                   <button
                     type="button"
                     className="gep-close-button"
                     onClick={handleClose}
-                    aria-label="Close"
+                    aria-label="Close modal"
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <line x1="18" y1="6" x2="6" y2="18"/>
@@ -979,19 +992,20 @@ export default function GuestEditingProposalModal({
 
                 {/* Move-In Date Section */}
                 <div className="gep-form-section">
-                  <label className="gep-form-label">Move-In Date</label>
+                  <label htmlFor="gep-move-in-date" className="gep-form-label">Move-In Date</label>
                   <div className="gep-date-input-container">
                     <input
                       type="date"
+                      id="gep-move-in-date"
                       className="gep-date-input"
                       value={formState.moveInDate instanceof Date && !isNaN(formState.moveInDate)
                         ? formState.moveInDate.toISOString().split('T')[0]
                         : ''}
                       onChange={handleMoveInDateChange}
-                      placeholder="Move-in"
+                      aria-describedby="gep-move-in-display"
                     />
-                    <button type="button" className="gep-calendar-button" aria-label="Open calendar">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <button type="button" className="gep-calendar-button" aria-label="Open calendar picker">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                         <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2"/>
                         <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" strokeWidth="2"/>
                         <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
@@ -999,40 +1013,45 @@ export default function GuestEditingProposalModal({
                       </svg>
                     </button>
                   </div>
-                  <p className="gep-date-display">
+                  <p id="gep-move-in-display" className="gep-date-display" aria-live="polite">
                     Move-in: {formatDate(formState.moveInDate, isSmallScreen)}
                   </p>
                 </div>
 
                 {/* Flexible Move-In Date Section */}
                 <div className="gep-form-section">
-                  <label className="gep-form-label">
+                  <label htmlFor="gep-flexible-move-in" className="gep-form-label">
                     Flexible move-in date?
-                    <button type="button" className="gep-info-button" aria-label="More info">
-                      <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <button type="button" className="gep-info-button" aria-label="More information about flexible move-in dates">
+                      <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                         <circle cx="10" cy="10" r="9" stroke="currentColor" strokeWidth="2"/>
                         <text x="10" y="14" textAnchor="middle" fontSize="12" fill="currentColor" fontWeight="bold">?</text>
                       </svg>
                     </button>
                   </label>
                   <textarea
+                    id="gep-flexible-move-in"
                     className="gep-textarea"
                     value={formState.flexibleMoveInRange}
                     onChange={handleFlexibleMoveInChange}
                     placeholder="Type here your move-in range..."
                     rows={2}
+                    aria-describedby="gep-flexible-hint"
                   />
+                  <span id="gep-flexible-hint" className="gep-sr-only">Optionally describe a range of dates when you could move in</span>
                 </div>
 
                 {/* Reservation Span Section */}
                 <div className="gep-form-section">
-                  <label className="gep-form-label">Reservation Span</label>
+                  <label htmlFor="gep-reservation-span" className="gep-form-label">Reservation Span</label>
                   <select
+                    id="gep-reservation-span"
                     className="gep-select"
                     value={formState.reservationSpan?.id || ''}
                     onChange={handleReservationSpanChange}
+                    aria-describedby={formState.reservationSpan?.type === 'other' ? 'gep-weeks-section' : undefined}
                   >
-                    <option value="" disabled>Reservation Span</option>
+                    <option value="" disabled>Select reservation length</option>
                     {RESERVATION_SPAN_OPTIONS.map(option => (
                       <option key={option.id} value={option.id}>
                         {option.display}
@@ -1042,15 +1061,17 @@ export default function GuestEditingProposalModal({
 
                   {/* Number of weeks - shown when "Other" is selected */}
                   {formState.reservationSpan?.type === 'other' && (
-                    <div className="gep-weeks-input-section">
-                      <label className="gep-form-label-small"># of Weeks</label>
+                    <div id="gep-weeks-section" className="gep-weeks-input-section">
+                      <label htmlFor="gep-num-weeks" className="gep-form-label-small"># of Weeks</label>
                       <input
                         type="number"
+                        id="gep-num-weeks"
                         className="gep-number-input"
                         value={formState.numberOfWeeks}
                         onChange={handleNumberOfWeeksChange}
                         placeholder="Enter # of Weeks"
                         min={1}
+                        aria-label="Number of weeks for reservation"
                       />
                     </div>
                   )}
@@ -1061,34 +1082,36 @@ export default function GuestEditingProposalModal({
 
             {/* Pristine document view - matches mockup exactly */}
             {view === 'pristine' && (
-              <div className="gep-document-view">
-                {/* Detail rows */}
-                <div className="gep-detail-row">
-                  <span className="gep-detail-label">Move-in</span>
-                  <span className="gep-detail-value">{formatDate(formState.moveInDate, false)}</span>
-                </div>
-                <div className="gep-detail-row">
-                  <span className="gep-detail-label">Check-in</span>
-                  <span className="gep-detail-value">{formState.checkInDay?.display || 'Not set'}</span>
-                </div>
-                <div className="gep-detail-row">
-                  <span className="gep-detail-label">Check-out</span>
-                  <span className="gep-detail-value">{formState.checkOutDay?.display || 'Not set'}</span>
-                </div>
-                <div className="gep-detail-row">
-                  <span className="gep-detail-label">Reservation Length</span>
-                  <span className="gep-detail-value">{reservationSpan.display}</span>
-                </div>
-                <div className="gep-detail-row">
-                  <span className="gep-detail-label">Weekly Pattern</span>
-                  <span className="gep-detail-value">
-                    {formState.checkInDay?.first3Letters || 'Mon'} - {formState.checkOutDay?.first3Letters || 'Fri'} ({formState.selectedNights.length} nights/week)
-                  </span>
-                </div>
-                <div className="gep-detail-row">
-                  <span className="gep-detail-label">House Rules</span>
-                  <span className="gep-detail-value">{houseRulesToDisplay.length}</span>
-                </div>
+              <div className="gep-document-view" role="region" aria-label="Proposal details">
+                {/* Detail rows using semantic definition list */}
+                <dl className="gep-details-list">
+                  <div className="gep-detail-row">
+                    <dt className="gep-detail-label">Move-in</dt>
+                    <dd className="gep-detail-value">{formatDate(formState.moveInDate, false)}</dd>
+                  </div>
+                  <div className="gep-detail-row">
+                    <dt className="gep-detail-label">Check-in</dt>
+                    <dd className="gep-detail-value">{formState.checkInDay?.display || 'Not set'}</dd>
+                  </div>
+                  <div className="gep-detail-row">
+                    <dt className="gep-detail-label">Check-out</dt>
+                    <dd className="gep-detail-value">{formState.checkOutDay?.display || 'Not set'}</dd>
+                  </div>
+                  <div className="gep-detail-row">
+                    <dt className="gep-detail-label">Reservation Length</dt>
+                    <dd className="gep-detail-value">{reservationSpan.display}</dd>
+                  </div>
+                  <div className="gep-detail-row">
+                    <dt className="gep-detail-label">Weekly Pattern</dt>
+                    <dd className="gep-detail-value">
+                      {formState.checkInDay?.first3Letters || 'Mon'} - {formState.checkOutDay?.first3Letters || 'Fri'} ({formState.selectedNights.length} nights/week)
+                    </dd>
+                  </div>
+                  <div className="gep-detail-row">
+                    <dt className="gep-detail-label">House Rules</dt>
+                    <dd className="gep-detail-value">{houseRulesToDisplay.length}</dd>
+                  </div>
+                </dl>
 
                 {/* Pricing Breakdown section */}
                 <div className="gep-pricing-section">

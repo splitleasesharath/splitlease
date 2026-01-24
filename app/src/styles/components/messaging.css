@@ -120,14 +120,15 @@ main.main-content:has(.messaging-page) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 16px 12px;
+  padding: 20px 16px 12px;
 }
 
 .sidebar-title {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 600;
   color: var(--text-primary);
   margin: 0;
+  letter-spacing: -0.3px;
 }
 
 .sidebar-header__actions {
@@ -170,18 +171,19 @@ main.main-content:has(.messaging-page) {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 16px 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .sidebar-search__input-wrapper {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  background: var(--bg-white);
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg-gray-50, #fafafa);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 20px;
   transition: all 0.15s;
 }
 
