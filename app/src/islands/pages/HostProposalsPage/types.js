@@ -623,7 +623,19 @@ export function getStatusTagConfig(proposal) {
     return { text: 'Guest Counter', variant: 'counteroffer' };
   }
 
-  // Map status to display config
+  // Check for "Awaiting Rental Application" states (full Bubble status strings)
+  if (statusKey === 'Proposal Submitted by guest - Awaiting Rental Application' ||
+      statusKey === 'Proposal Submitted for guest by Split Lease - Awaiting Rental Application') {
+    return { text: 'Awaiting Rental App', variant: 'default' };
+  }
+
+  // Check for pending confirmation state
+  if (statusKey === 'Proposal Submitted for guest by Split Lease - Pending Confirmation' ||
+      statusKey === 'Pending Confirmation') {
+    return { text: 'Pending Confirmation', variant: 'default' };
+  }
+
+  // Map status to display config (normalized keys)
   const statusMap = {
     proposal_submitted: { text: 'Review', variant: 'attention' },
     host_review: { text: 'Review', variant: 'attention' },
