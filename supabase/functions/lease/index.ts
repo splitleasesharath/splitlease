@@ -41,7 +41,7 @@ import {
 
 console.log('[lease] Edge Function initializing...');
 
-const ALLOWED_ACTIONS = ['create', 'get'] as const;
+const ALLOWED_ACTIONS = ['create', 'get', 'generate_dates'] as const;
 type Action = (typeof ALLOWED_ACTIONS)[number];
 
 // Actions that require authentication
@@ -118,6 +118,13 @@ Deno.serve(async (req: Request) => {
         console.log('[lease] Loading get handler...');
         const { handleGet } = await import('./handlers/get.ts');
         result = await handleGet(payload, user, supabase);
+        break;
+      }
+
+      case 'generate_dates': {
+        console.log('[lease] Loading generate_dates handler...');
+        const { handleGenerateDates } = await import('./handlers/generateDates.ts');
+        result = await handleGenerateDates(payload, user, supabase);
         break;
       }
 

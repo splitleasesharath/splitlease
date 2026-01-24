@@ -2,18 +2,20 @@
  * Stays Generator for Lease Edge Function
  * Split Lease - Supabase Edge Functions
  *
- * Generates weekly stay records for a lease.
- * Each stay represents one week of the reservation.
+ * Generates weekly stay records for a lease using pre-generated dates
+ * from the dateGenerator module. Each stay represents one check-in period.
+ *
+ * NO FALLBACK PRINCIPLE: Fails fast on invalid input.
  */
 
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { addDays, addWeeks, eachDayOfInterval } from './calculations.ts';
 import type { StayData } from './types.ts';
+import type { DateGenerationResult } from './dateGenerator.ts';
 
 /**
  * Generate weekly stay records for a lease
  *
- * Each stay represents one week of the reservation with:
+ * Each stay represents one check-in period of the reservation with:
  * - The specific dates the guest is staying
  * - Check-in and check-out times
  * - Links to lease, guest, host, and listing
@@ -23,9 +25,7 @@ import type { StayData } from './types.ts';
  * @param guestId - ID of the guest
  * @param hostId - ID of the host
  * @param listingId - ID of the listing
- * @param moveInDate - Move-in date (ISO string)
- * @param reservationWeeks - Number of weeks in the reservation
- * @param daysSelected - Array of day indices (0-6, where 0=Sunday)
+ * @param dateResult - Pre-generated dates from dateGenerator
  * @returns Array of created stay IDs
  */
 export async function generateStays(
@@ -34,33 +34,36 @@ export async function generateStays(
   guestId: string,
   hostId: string,
   listingId: string,
-  moveInDate: string,
-  reservationWeeks: number,
-  daysSelected: number[]
+  dateResult: DateGenerationResult
 ): Promise<string[]> {
   console.log('[lease:stays] Generating stays for lease:', leaseId);
-  console.log('[lease:stays] Parameters:', {
-    reservationWeeks,
-    daysSelected,
-    moveInDate,
+  console.log('[lease:stays] Date result:', {
+    checkInDatesCount: dateResult.checkInDates.length,
+    checkOutDatesCount: dateResult.checkOutDates.length,
+    allBookedDatesCount: dateResult.allBookedDates.length,
+    totalNights: dateResult.totalNights,
   });
 
   const stayIds: string[] = [];
   const now = new Date().toISOString();
-  const moveIn = new Date(moveInDate);
 
-  // Validate days selected
-  const validDays = (daysSelected || []).filter(
-    (day) => typeof day === 'number' && day >= 0 && day <= 6
-  );
+  // Parse dates from the pre-generated result
+  const allDates = dateResult.allBookedDates.map((d) => new Date(d));
+  const checkInDates = dateResult.checkInDates.map((d) => new Date(d));
+  const checkOutDates = dateResult.checkOutDates.map((d) => new Date(d));
 
-  if (validDays.length === 0) {
-    console.warn('[lease:stays] No valid days selected, defaulting to all days');
-    // Default to all days if none selected
-    validDays.push(0, 1, 2, 3, 4, 5, 6);
+  // If no check-in dates, no stays to create
+  if (checkInDates.length === 0) {
+    console.warn('[lease:stays] No check-in dates provided, no stays will be created');
+    return stayIds;
   }
 
-  for (let week = 0; week < reservationWeeks; week++) {
+  // Create one stay per check-in date
+  for (let i = 0; i < checkInDates.length; i++) {
+    const checkInDate = checkInDates[i];
+    const checkOutDate = checkOutDates[i]; // Corresponding check-out
+    const nextCheckIn = checkInDates[i + 1]; // Next check-in (undefined for last stay)
+
     // Generate bubble-compatible ID using the RPC function
     const { data: stayId, error: idError } = await supabase.rpc('generate_bubble_id');
 
@@ -69,56 +72,49 @@ export async function generateStays(
       throw new Error(`Failed to generate stay ID: ${idError?.message}`);
     }
 
-    // Calculate week boundaries
-    const weekStart = addWeeks(moveIn, week);
-    const weekEnd = addDays(weekStart, 6);
+    // Find all booked dates for this stay period
+    // Dates between this check-in and the next check-in (or end of reservation)
+    const stayDates = allDates.filter((d) => {
+      // Date must be on or after this check-in
+      if (d < checkInDate) return false;
+      // Date must be before the next check-in (if there is one)
+      if (nextCheckIn && d >= nextCheckIn) return false;
+      return true;
+    });
 
-    // Get all dates in this week
-    const allDates = eachDayOfInterval(weekStart, weekEnd);
-
-    // Filter to only selected days
-    const selectedDates = allDates
-      .filter((date) => validDays.includes(date.getDay()))
-      .map((date) => date.toISOString());
-
-    // Determine check-in and last night
-    const checkInNight =
-      selectedDates.length > 0 ? selectedDates[0] : weekStart.toISOString();
-    const lastNight =
-      selectedDates.length > 0
-        ? selectedDates[selectedDates.length - 1]
-        : weekEnd.toISOString();
+    // Determine check-in night and last night
+    const checkInNight = stayDates.length > 0 ? stayDates[0] : checkInDate;
+    const lastNight = stayDates.length > 0 ? stayDates[stayDates.length - 1] : checkInDate;
 
     // Build stay record
     const stayRecord: Partial<StayData> = {
       _id: stayId,
       Lease: leaseId,
-      'Week Number': week + 1, // 1-indexed
+      'Week Number': i + 1, // 1-indexed
       Guest: guestId,
       Host: hostId,
       listing: listingId,
-      'Dates - List of dates in this period': selectedDates,
-      'Check In (night)': checkInNight,
-      'Last Night (night)': lastNight,
+      'Dates - List of dates in this period': stayDates.map((d) => d.toISOString().split('T')[0]),
+      'Check In (night)': checkInNight.toISOString().split('T')[0],
+      'Last Night (night)': lastNight.toISOString().split('T')[0],
       'Stay Status': 'Upcoming',
       'Created Date': now,
       'Modified Date': now,
     };
 
     // Insert stay record
-    const { error: insertError } = await supabase
-      .from('bookings_stays')
-      .insert(stayRecord);
+    const { error: insertError } = await supabase.from('bookings_stays').insert(stayRecord);
 
     if (insertError) {
-      console.error(
-        `[lease:stays] Failed to create stay ${week + 1}:`,
-        insertError.message
-      );
-      throw new Error(`Failed to create stay ${week + 1}: ${insertError.message}`);
+      console.error(`[lease:stays] Failed to create stay ${i + 1}:`, insertError.message);
+      throw new Error(`Failed to create stay ${i + 1}: ${insertError.message}`);
     }
 
-    console.log(`[lease:stays] Created stay ${week + 1}/${reservationWeeks}:`, stayId);
+    console.log(
+      `[lease:stays] Created stay ${i + 1}/${checkInDates.length}:`,
+      stayId,
+      `(${stayDates.length} nights)`
+    );
     stayIds.push(stayId);
   }
 
@@ -127,7 +123,7 @@ export async function generateStays(
 }
 
 /**
- * Calculate the dates for a single week stay
+ * Calculate the dates for a single week stay (utility function)
  *
  * @param weekStart - Start date of the week
  * @param daysSelected - Array of day indices (0-6)
@@ -141,19 +137,23 @@ export function calculateWeekDates(
   checkInNight: string;
   lastNight: string;
 } {
-  const weekEnd = addDays(weekStart, 6);
-  const allDates = eachDayOfInterval(weekStart, weekEnd);
+  const dates: Date[] = [];
+  const current = new Date(weekStart);
 
-  const selectedDates = allDates
-    .filter((date) => daysSelected.includes(date.getDay()))
-    .map((date) => date.toISOString());
+  // Get all 7 days of this week
+  for (let i = 0; i < 7; i++) {
+    if (daysSelected.includes(current.getDay())) {
+      dates.push(new Date(current));
+    }
+    current.setDate(current.getDate() + 1);
+  }
 
-  const checkInNight =
-    selectedDates.length > 0 ? selectedDates[0] : weekStart.toISOString();
+  const selectedDates = dates.map((d) => d.toISOString().split('T')[0]);
+  const checkInNight = selectedDates.length > 0 ? selectedDates[0] : weekStart.toISOString().split('T')[0];
   const lastNight =
     selectedDates.length > 0
       ? selectedDates[selectedDates.length - 1]
-      : weekEnd.toISOString();
+      : weekStart.toISOString().split('T')[0];
 
   return {
     selectedDates,

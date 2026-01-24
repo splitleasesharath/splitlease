@@ -62,6 +62,13 @@ export interface LeaseData {
   'House Manual': string | null;
   'Created Date': string;
   'Modified Date': string;
+  // Date fields (populated by date generation)
+  'List of Booked Dates'?: string[];
+  'Check-In Dates'?: string[];
+  'Check-Out Dates'?: string[];
+  'total nights'?: number;
+  'Reservation Period: Start'?: string;
+  'Reservation Period: End'?: string;
 }
 
 export interface ProposalData {
@@ -84,6 +91,9 @@ export interface ProposalData {
   'Days Selected': number[];
   'week selection': { Display: string } | null;
   'host compensation': number;
+  // Check-in/check-out days (can be string or { Display: string })
+  'check in day': string | { Display: string };
+  'check out day': string | { Display: string };
   // HC (Historical Copy) fields for counteroffers
   'hc move in date': string;
   'hc reservation span (weeks)': number;
@@ -98,9 +108,17 @@ export interface ProposalData {
   'hc weeks schedule': { Display: string } | null;
   'hc host compensation (per period)': number;
   'hc days selected': number[];
+  'hc nights selected': number[];
+  'hc check in day': string | { Display: string };
+  'hc check out day': string | { Display: string };
   // Computed fields
   '4 week rent': number;
   '4 week compensation': number;
+  // Date fields (populated by date generation)
+  'List of Booked Dates'?: string[];
+  'Check-In Dates'?: string[];
+  'Check-Out Dates'?: string[];
+  'total nights'?: number;
   // Nested listing data
   listing?: {
     _id: string;

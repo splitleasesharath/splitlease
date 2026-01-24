@@ -14,11 +14,12 @@
  *   - Set participants, cancellation policy, compensation
  *   - Calculate first payment date
  *
- * Phase 3: Auxiliary Setups (reservation dates, permissions, magic links)
+ * Phase 3: Auxiliary Setups (permissions, magic links)
  * Phase 4: Multi-Channel Communications (email, SMS, in-app)
  * Phase 5: User Association
  * Phase 6: Payment Records (via existing Edge Functions)
- * Phase 7: Additional Setups (agreement number, stays, house manual, reminders)
+ * Phase 6B: Date Generation (booked dates, check-in/out dates)
+ * Phase 7: Additional Setups (stays, house manual, reminders)
  */
 
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -34,6 +35,11 @@ import {
 } from '../lib/calculations.ts';
 import { generateAgreementNumber } from '../lib/agreementNumber.ts';
 import { generateStays } from '../lib/staysGenerator.ts';
+import {
+  generateLeaseDates,
+  normalizeFullWeekProposal,
+  DateGenerationResult,
+} from '../lib/dateGenerator.ts';
 import { triggerGuestPaymentRecords, triggerHostPaymentRecords } from './paymentRecords.ts';
 import { sendLeaseNotifications } from './notifications.ts';
 import { generateMagicLinks } from './magicLinks.ts';
@@ -289,22 +295,161 @@ export async function handleCreate(
   console.log('[lease:create] Phase 6 complete');
 
   // ═══════════════════════════════════════════════════════════════
+  // PHASE 6B: DATE GENERATION
+  // ═══════════════════════════════════════════════════════════════
+
+  console.log('[lease:create] Phase 6B: Generating reservation dates...');
+
+  // Get check-in/check-out days from proposal (HC if counteroffer)
+  let checkInDay: string;
+  let checkOutDay: string;
+  let weeksSchedule: string;
+
+  if (input.isCounteroffer) {
+    const hcCheckInDay = proposalData['hc check in day'];
+    const hcCheckOutDay = proposalData['hc check out day'];
+    const hcWeeksSchedule = proposalData['hc weeks schedule'];
+
+    checkInDay =
+      (typeof hcCheckInDay === 'object' && (hcCheckInDay as { Display?: string })?.Display) ||
+      (hcCheckInDay as string);
+    checkOutDay =
+      (typeof hcCheckOutDay === 'object' && (hcCheckOutDay as { Display?: string })?.Display) ||
+      (hcCheckOutDay as string);
+    weeksSchedule =
+      (typeof hcWeeksSchedule === 'object' && hcWeeksSchedule?.Display) ||
+      (hcWeeksSchedule as string) ||
+      'Every week';
+  } else {
+    const checkInDayVal = proposalData['check in day'];
+    const checkOutDayVal = proposalData['check out day'];
+    const weekSelectionVal = proposalData['week selection'];
+
+    checkInDay =
+      (typeof checkInDayVal === 'object' && (checkInDayVal as { Display?: string })?.Display) ||
+      (checkInDayVal as string);
+    checkOutDay =
+      (typeof checkOutDayVal === 'object' && (checkOutDayVal as { Display?: string })?.Display) ||
+      (checkOutDayVal as string);
+    weeksSchedule =
+      (typeof weekSelectionVal === 'object' && weekSelectionVal?.Display) ||
+      (weekSelectionVal as string) ||
+      'Every week';
+  }
+
+  // Get nights selected
+  const nightsSelected = input.isCounteroffer
+    ? proposalData['hc days selected'] || proposalData['hc nights selected']
+    : proposalData['Days Selected'];
+
+  // Handle full-week normalization
+  const nightsCount = Array.isArray(nightsSelected) ? nightsSelected.length : 0;
+  const normalizedDays = normalizeFullWeekProposal(activeTerms.moveInDate, nightsCount);
+
+  if (normalizedDays) {
+    checkInDay = normalizedDays.checkInDay;
+    checkOutDay = normalizedDays.checkOutDay;
+    console.log('[lease:create] Applied full-week normalization');
+  }
+
+  // Generate dates
+  let dateResult: DateGenerationResult;
+
+  try {
+    dateResult = generateLeaseDates({
+      checkInDay,
+      checkOutDay,
+      reservationSpanWeeks: activeTerms.reservationWeeks,
+      moveInDate: activeTerms.moveInDate,
+      weeksSchedule,
+      nightsSelected: Array.isArray(nightsSelected) ? nightsSelected : undefined,
+    });
+
+    console.log('[lease:create] Generated dates:', {
+      totalNights: dateResult.totalNights,
+      checkInDatesCount: dateResult.checkInDates.length,
+      checkOutDatesCount: dateResult.checkOutDates.length,
+    });
+
+    // Update proposal with generated dates
+    const proposalDateUpdate = {
+      'List of Booked Dates': dateResult.allBookedDates,
+      'Check-In Dates': dateResult.checkInDates,
+      'Check-Out Dates': dateResult.checkOutDates,
+      'total nights': dateResult.totalNights,
+      'Modified Date': now,
+    };
+
+    await supabase.from('proposal').update(proposalDateUpdate).eq('_id', input.proposalId);
+
+    // Update lease with generated dates (Step 10 from Bubble workflow)
+    const leaseDateUpdate = {
+      'List of Booked Dates': dateResult.allBookedDates,
+      'Check-In Dates': dateResult.checkInDates,
+      'Check-Out Dates': dateResult.checkOutDates,
+      'total nights': dateResult.totalNights,
+      'Reservation Period: Start': dateResult.firstCheckIn,
+      'Reservation Period: End': dateResult.lastCheckOut,
+    };
+
+    await supabase.from('bookings_leases').update(leaseDateUpdate).eq('_id', leaseId);
+
+    // Error handling: Notify if no dates generated (Steps 11-12 from Bubble)
+    if (dateResult.totalNights === 0) {
+      console.error('[lease:create] WARNING: No dates generated!');
+
+      // Trigger notification to ops team
+      try {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL');
+        const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+        if (supabaseUrl && supabaseServiceKey) {
+          await fetch(`${supabaseUrl}/functions/v1/slack-notify`, {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${supabaseServiceKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              channel: '#ops-alerts',
+              text: `:warning: Lease date generation produced 0 dates!\nLease ID: ${leaseId}\nProposal ID: ${input.proposalId}\nWeeks Schedule: ${weeksSchedule}`,
+            }),
+          });
+        }
+      } catch (notifyError) {
+        console.warn('[lease:create] Failed to notify ops:', notifyError);
+      }
+    }
+  } catch (dateError) {
+    console.error('[lease:create] Date generation failed:', dateError);
+    // Date generation is not critical enough to fail the entire lease creation
+    // Log and continue with empty dates
+    dateResult = {
+      checkInDates: [],
+      checkOutDates: [],
+      allBookedDates: [],
+      totalNights: 0,
+      firstCheckIn: activeTerms.moveInDate,
+      lastCheckOut: moveOutDate,
+    };
+  }
+
+  console.log('[lease:create] Phase 6B complete: Dates generated and stored');
+
+  // ═══════════════════════════════════════════════════════════════
   // PHASE 7: ADDITIONAL SETUPS
   // ═══════════════════════════════════════════════════════════════
 
   console.log('[lease:create] Phase 7: Additional setups...');
 
-  // 7a: Create list of stays
-  const daysSelected = proposalData['hc days selected'] || proposalData['Days Selected'] || [];
+  // 7a: Create list of stays (using pre-generated dates)
   const stayIds = await generateStays(
     supabase,
     leaseId,
     proposalData.Guest,
     proposalData['Host User'],
     proposalData.Listing,
-    activeTerms.moveInDate,
-    activeTerms.reservationWeeks,
-    daysSelected
+    dateResult
   );
 
   // Update lease with stay IDs
