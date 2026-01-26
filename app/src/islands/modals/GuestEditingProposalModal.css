@@ -1483,8 +1483,8 @@ dd.gep-detail-value {
   }
 
   .dns-day-grid {
-    gap: 7px;
-    justify-content: center;
+    gap: 2px;
+    justify-content: flex-start;
   }
 
   .cpm-title {
