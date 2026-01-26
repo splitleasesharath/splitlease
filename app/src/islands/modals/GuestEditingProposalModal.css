@@ -796,18 +796,12 @@ dd.gep-detail-value {
   flex-shrink: 0 !important;
 }
 
-/* Pristine state buttons - side by side per protocol */
+/* Pristine state buttons - match other states per protocol */
 .gep-buttons--vertical {
   flex-direction: row !important;
   align-items: center !important;
-  justify-content: center !important;
+  justify-content: flex-end !important;
   gap: 12px !important;
-}
-
-.gep-buttons--vertical .gep-button {
-  flex: 1 !important;
-  max-width: 200px !important;
-  border-radius: 100px !important;
 }
 
 .gep-button {
