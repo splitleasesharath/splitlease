@@ -33,7 +33,9 @@
       "Bash(ping:*)",
       "Bash(bun run lint)",
       "Bash(start:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(bun --version:*)",
+      "Bash(where:*)"
     ],
     "deny": [],
     "ask": []
