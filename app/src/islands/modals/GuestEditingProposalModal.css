@@ -12,7 +12,7 @@
   /* Guest Editing Proposal Colors - V5 Purple Theme with WCAG AAA Compliance */
   --gep-bg-primary: #FFFFFF;
   --gep-bg-secondary: #fafafa;
-  --gep-bg-surface: #6B4EFF;
+  --gep-bg-surface: #31135D;
 
   /* WCAG AAA Compliant Text Colors (4.5:1 contrast ratio minimum) */
   --gep-text-primary: #111111;      /* Near black for primary text */
@@ -23,7 +23,7 @@
   --gep-border-color: #e5e5e5;
   --gep-border-light: #f0f0f0;
   --gep-border-destructive: #DC2626;
-  --gep-primary-color: #6D31C2;     /* Adjusted for better contrast */
+  --gep-primary-color: #31135D;     /* Main purple per design system */
   --gep-primary-hover: #31135D;
   --gep-primary-bg: #f8f5ff;
   --gep-destructive-color: #b91c1c; /* Darker red for better contrast */
@@ -235,7 +235,7 @@
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  color: #5B5FCF !important;
+  color: #31135D !important;
   flex-shrink: 0 !important;
 }
 
@@ -275,7 +275,7 @@
 }
 
 .gep-header-back-btn:focus-visible {
-  outline: 2px solid #5B5FCF !important;
+  outline: 2px solid #31135D !important;
   outline-offset: 2px !important;
 }
 
@@ -837,12 +837,12 @@ dd.gep-detail-value {
 }
 
 .gep-button--primary:hover {
-  background-color: #5B5FCF !important;
-  border-color: #5B5FCF !important;
+  background-color: #4A2680 !important;
+  border-color: #4A2680 !important;
 }
 
 .gep-button--primary:focus-visible {
-  outline-color: #6D31C2 !important;
+  outline-color: #31135D !important;
 }
 
 /* Secondary button: outline style per design system */
@@ -948,7 +948,7 @@ dd.gep-detail-value {
 }
 
 .dns-day-btn:focus-visible {
-  outline: var(--gep-focus-outline-width) solid #6D31C2;
+  outline: var(--gep-focus-outline-width) solid #31135D;
   outline-offset: var(--gep-focus-outline-offset);
 }
 
@@ -960,7 +960,7 @@ dd.gep-detail-value {
 }
 
 .dns-day-btn--selected:focus-visible {
-  outline-color: #6D31C2;
+  outline-color: #31135D;
 }
 
 /* Schedule info container - combines check-in, check-out, and summary */
