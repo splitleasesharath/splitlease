@@ -914,23 +914,24 @@ dd.gep-detail-value {
   margin-bottom: 12px;
 }
 
-/* Day grid - simple flex row of 7 buttons */
+/* Day grid - single row of 7 buttons, no wrapping */
 .dns-day-grid {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 6px;
+  flex-wrap: nowrap;
+  justify-content: space-between;
 }
 
-/* Day button - per design system: 52x52px, 17px font, 700 weight, 12px radius */
+/* Day button - per design system: 12px radius, 700 weight, flexible width for single row */
 .dns-day-btn {
-  width: 52px;
-  height: 52px;
-  min-width: 52px;
-  min-height: 52px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   border: 2px solid #E7E0EC;
   border-radius: 12px;
   background: var(--gep-bg-primary);
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--gep-text-secondary);
   cursor: pointer;
@@ -938,6 +939,7 @@ dd.gep-detail-value {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .dns-day-btn:hover {
