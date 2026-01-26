@@ -50,15 +50,24 @@ const SparklesIcon = () => (
   </svg>
 );
 
+// Protocol: NO GREEN - use Positive Purple (#5B5FCF)
 const SuccessIcon = () => (
-  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
+  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#5B5FCF" strokeWidth="2" aria-hidden="true">
     <circle cx="12" cy="12" r="10" />
     <path d="m9 12 2 2 4-4" />
   </svg>
 );
 
-// Confetti colors - brand purple, green success, gold, pink, blue
-const CONFETTI_COLORS = ['#6b4fbb', '#22c55e', '#fbbf24', '#f472b6', '#60a5fa', '#31135d', '#10b981'];
+// Protocol: Close icon - 32x32, strokeWidth 2.5
+const CloseIcon = () => (
+  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+
+// Confetti colors - Protocol: NO GREEN, use purple tones
+const CONFETTI_COLORS = ['#31135D', '#6D31C2', '#5B5FCF', '#F7F2FA', '#f472b6', '#60a5fa', '#fbbf24'];
 const CONFETTI_SHAPES = ['circle', 'square', 'ribbon'];
 
 /**
@@ -217,6 +226,9 @@ const AIImportAssistantModal = ({
         className="ai-import-modal-container"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Mobile grab handle - Protocol Section 1 */}
+        <div className="ai-import-grab-handle" aria-hidden="true" />
+
         {/* Header */}
         <div className="ai-import-header">
           <div className="ai-import-header-content">
@@ -224,7 +236,12 @@ const AIImportAssistantModal = ({
               <SparklesIcon />
             </span>
             <h2 id="ai-import-title" className="ai-import-title">
-              {isComplete ? 'AI Import Complete!' : 'AI Import Assistant'}
+              <span className="ai-import-title-desktop">
+                {isComplete ? 'AI Import Complete!' : 'AI Import Assistant'}
+              </span>
+              <span className="ai-import-title-mobile">
+                {isComplete ? 'Complete!' : 'AI Import'}
+              </span>
             </h2>
           </div>
           {!isGenerating && (
@@ -234,7 +251,7 @@ const AIImportAssistantModal = ({
               aria-label="Close modal"
               type="button"
             >
-              &times;
+              <CloseIcon />
             </button>
           )}
         </div>

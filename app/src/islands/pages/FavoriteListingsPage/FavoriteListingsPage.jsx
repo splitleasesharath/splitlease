@@ -1,15 +1,13 @@
 /**
  * FavoriteListingsPage Component
  * Displays user's favorited listings with same layout/style as SearchPage
- * Includes Google Map with pins and AuthAwareSearchScheduleSelector
+ * Includes Google Map with pins
  */
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { createRoot } from 'react-dom/client';
 import Header from '../../shared/Header.jsx';
 import Footer from '../../shared/Footer.jsx';
 import GoogleMap from '../../shared/GoogleMap.jsx';
-import AuthAwareSearchScheduleSelector from '../../shared/AuthAwareSearchScheduleSelector.jsx';
 import ContactHostMessaging from '../../shared/ContactHostMessaging.jsx';
 import InformationalText from '../../shared/InformationalText.jsx';
 import LoggedInAvatar from '../../shared/LoggedInAvatar/LoggedInAvatar.jsx';
@@ -925,36 +923,6 @@ const FavoriteListingsPage = () => {
     }
   };
 
-  // Mount AuthAwareSearchScheduleSelector in mount points
-  useEffect(() => {
-    const mountPointDesktop = document.getElementById('schedule-selector-mount-point');
-    const mountPointMobile = document.getElementById('schedule-selector-mount-point-mobile');
-    const roots = [];
-
-    const selectorProps = {
-      onSelectionChange: (days) => {
-        console.log('Schedule selector changed:', days);
-      },
-      onError: (error) => console.error('AuthAwareSearchScheduleSelector error:', error)
-    };
-
-    if (mountPointDesktop) {
-      const rootDesktop = createRoot(mountPointDesktop);
-      rootDesktop.render(<AuthAwareSearchScheduleSelector {...selectorProps} />);
-      roots.push(rootDesktop);
-    }
-
-    if (mountPointMobile) {
-      const rootMobile = createRoot(mountPointMobile);
-      rootMobile.render(<AuthAwareSearchScheduleSelector {...selectorProps} />);
-      roots.push(rootMobile);
-    }
-
-    return () => {
-      roots.forEach(root => root.unmount());
-    };
-  }, []);
-
   // Determine if "Message" button should be visible on listing cards
   // Hidden for logged-in host users (hosts shouldn't message other hosts)
   const showMessageButton = useMemo(() => {
@@ -1116,20 +1084,6 @@ const FavoriteListingsPage = () => {
                 </svg>
                 <span>Map</span>
               </button>
-            </div>
-
-            {/* ROW 3: Mobile Schedule Selector with Check-in/Check-out */}
-            <div className="mobile-schedule-selector">
-              <div className="filter-group schedule-selector-group" id="schedule-selector-mount-point-mobile">
-                {/* AuthAwareSearchScheduleSelector will be mounted here on mobile */}
-              </div>
-            </div>
-
-            {/* Desktop Schedule Selector */}
-            <div className="inline-filters">
-              <div className="filter-group schedule-selector-group" id="schedule-selector-mount-point">
-                {/* AuthAwareSearchScheduleSelector will be mounted here on desktop */}
-              </div>
             </div>
 
             {/* Listings content */}

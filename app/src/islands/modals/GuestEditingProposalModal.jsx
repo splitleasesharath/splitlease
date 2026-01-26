@@ -25,6 +25,7 @@
  */
 
 import { useState, useCallback, useMemo, useEffect } from 'react'
+import { X, ChevronLeft, ChevronRight, FileText, Calendar, HelpCircle } from 'lucide-react'
 import { executeCancelProposal } from '../../logic/workflows/proposals/cancelProposalWorkflow.js'
 import CancelProposalModal from './CancelProposalModal.jsx'
 import './GuestEditingProposalModal.css'
@@ -897,12 +898,7 @@ export default function GuestEditingProposalModal({
                 <>
                   <div className="gep-header-left">
                     <div className="gep-header-icon" aria-hidden="true">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                        <polyline points="14,2 14,8 20,8"/>
-                        <line x1="16" y1="13" x2="8" y2="13"/>
-                        <line x1="16" y1="17" x2="8" y2="17"/>
-                      </svg>
+                      <FileText size={20} strokeWidth={2} />
                     </div>
                     <div>
                       <h2 id="gep-modal-title" className="gep-header-title-text">Proposal Details</h2>
@@ -915,10 +911,7 @@ export default function GuestEditingProposalModal({
                     onClick={handleClose}
                     aria-label="Close modal"
                   >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <line x1="18" y1="6" x2="6" y2="18"/>
-                      <line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
+                    <X size={20} strokeWidth={2} />
                   </button>
                 </>
               ) : (
@@ -931,9 +924,7 @@ export default function GuestEditingProposalModal({
                       onClick={handleBack}
                       aria-label="Go back to previous view"
                     >
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                        <path d="M15 18L9 12L15 6" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
+                      <ChevronLeft size={20} strokeWidth={2} aria-hidden="true" />
                     </button>
                     <div>
                       <h2 id="gep-modal-title" className="gep-header-title-text">Edit Proposal</h2>
@@ -946,10 +937,7 @@ export default function GuestEditingProposalModal({
                     onClick={handleClose}
                     aria-label="Close modal"
                   >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <line x1="18" y1="6" x2="6" y2="18"/>
-                      <line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
+                    <X size={20} strokeWidth={2} />
                   </button>
                 </>
               )}
@@ -1005,12 +993,7 @@ export default function GuestEditingProposalModal({
                       aria-describedby="gep-move-in-display"
                     />
                     <button type="button" className="gep-calendar-button" aria-label="Open calendar picker">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                        <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2"/>
-                        <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" strokeWidth="2"/>
-                        <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                        <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                      </svg>
+                      <Calendar size={20} strokeWidth={2} aria-hidden="true" />
                     </button>
                   </div>
                   <p id="gep-move-in-display" className="gep-date-display" aria-live="polite">
@@ -1023,10 +1006,7 @@ export default function GuestEditingProposalModal({
                   <label htmlFor="gep-flexible-move-in" className="gep-form-label">
                     Flexible move-in date?
                     <button type="button" className="gep-info-button" aria-label="More information about flexible move-in dates">
-                      <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                        <circle cx="10" cy="10" r="9" stroke="currentColor" strokeWidth="2"/>
-                        <text x="10" y="14" textAnchor="middle" fontSize="12" fill="currentColor" fontWeight="bold">?</text>
-                      </svg>
+                      <HelpCircle size={16} strokeWidth={2} aria-hidden="true" />
                     </button>
                   </label>
                   <textarea
@@ -1186,16 +1166,11 @@ export default function GuestEditingProposalModal({
                   <span className="gep-schedule-financial-label">
                     Edit Proposal Terms (Nights, Weeks, Move-in date)
                   </span>
-                  <svg
+                  <ChevronRight
                     className={`gep-expand-icon ${view === 'editing' ? 'gep-expand-icon--expanded' : ''}`}
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
+                    size={24}
+                    strokeWidth={2}
+                  />
                 </div>
               </div>
             )}

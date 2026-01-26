@@ -1029,10 +1029,20 @@ export function EditListingDetails({ listing, editSection, focusField, onClose, 
   return (
     <div className="eld-popup-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="eld-popup-container">
+        {/* Mobile grab handle - Protocol Section 1 */}
+        <div className="eld-grab-handle" aria-hidden="true" />
+
         <div className="eld-popup-header">
-          <h2>{sectionTitle}</h2>
-          <button className="eld-popup-close" onClick={onClose} aria-label="Close">
-            ×
+          <h2>
+            <span className="eld-popup-header-desktop">{sectionTitle}</span>
+            <span className="eld-popup-header-mobile">{sectionTitle.split(' ').slice(0, 2).join(' ')}</span>
+          </h2>
+          {/* Protocol: Close icon - 32x32, strokeWidth 2.5 */}
+          <button className="eld-popup-close" onClick={onClose} aria-label="Close modal">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
           </button>
         </div>
         {sectionSubtitle && (

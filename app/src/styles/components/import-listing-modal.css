@@ -113,6 +113,16 @@
   margin: 0;
 }
 
+/* Desktop title - shown by default */
+.import-listing-title-desktop {
+  display: inline;
+}
+
+/* Mobile title - hidden by default */
+.import-listing-title-mobile {
+  display: none;
+}
+
 .import-listing-close-btn {
   width: 32px;
   height: 32px;
@@ -398,6 +408,15 @@
   .import-listing-title {
     font-size: 18px;
     font-weight: 400;
+  }
+
+  /* Show short title on mobile */
+  .import-listing-title-desktop {
+    display: none;
+  }
+
+  .import-listing-title-mobile {
+    display: inline;
   }
 
   .import-listing-icon svg {

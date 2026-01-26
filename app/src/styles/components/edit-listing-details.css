@@ -1,67 +1,103 @@
 /**
  * Edit Listing Details - Component Styles
  * Design System for Split Lease Edit Listing Details Modal
+ * POPUP REPLICATION PROTOCOL - Compliant
  * Prefixed with 'eld-' to avoid style conflicts
  */
 
-/* Popup Overlay */
+/* Protocol Color Variables */
+:root {
+  --eld-primary-purple: #31135D;
+  --eld-secondary-purple: #6D31C2;
+  --eld-positive-purple: #5B5FCF;
+  --eld-light-purple-bg: #F7F2FA;
+  --eld-border: #E7E0EC;
+  --eld-text-primary: #1a202c;
+  --eld-text-secondary: #49454F;
+  --eld-text-muted: #6b7280;
+  --eld-emergency-red: #DC3545;
+}
+
+/* Popup Overlay - Protocol Section 1 */
 .eld-popup-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: var(--spacing-xl, 24px);
-  overflow: hidden; /* Prevent overlay from scrolling - only popup body should scroll */
-  z-index: 10000; /* Above header (z-index: 9999) */
+  padding: 20px;
+  overflow: hidden;
+  z-index: 9999;
+  animation: eld-fadeIn 0.2s ease;
 }
 
-/* Popup Container */
+@keyframes eld-fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Popup Container - Protocol Section 1: Core Architecture */
 .eld-popup-container {
   width: 100%;
   max-width: 720px;
-  max-height: calc(100vh - 48px); /* Constrain height to viewport minus padding */
-  background: white;
-  border-radius: var(--radius-lg, 10px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-  animation: eld-slideIn 300ms ease;
+  max-height: 92vh; /* Protocol: 92vh max-height */
+  background: #FFFFFF;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: eld-slideIn 0.3s ease;
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* Prevent container from overflowing */
+  overflow: hidden;
+  position: relative;
 }
 
 @keyframes eld-slideIn {
   from {
     opacity: 0;
-    transform: translateY(-20px);
+    transform: translateY(-30px) scale(0.95);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 
-/* Popup Header */
+/* Mobile grab handle - hidden on desktop */
+.eld-grab-handle {
+  display: none;
+}
+
+/* Popup Header - Protocol Section 4A */
 .eld-popup-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--spacing-lg, 16px);
-  border-bottom: 1px solid var(--color-border, #E5E7EB);
-  flex-shrink: 0; /* Prevent header from shrinking */
+  padding: 16px;
+  background: var(--eld-light-purple-bg, #F7F2FA);
+  border-bottom: 1px solid var(--eld-border, #E7E0EC);
+  flex-shrink: 0;
 }
 
 .eld-popup-header h2 {
   font-size: 18px;
   font-weight: 600;
-  color: var(--color-text-primary, #1F2937);
+  color: var(--eld-text-primary, #1a202c);
   margin: 0;
+  line-height: 1.4;
 }
 
+/* Desktop title - shown by default */
+.eld-popup-header-desktop {
+  display: inline;
+}
+
+/* Mobile title - hidden by default */
+.eld-popup-header-mobile {
+  display: none;
+}
+
+/* Close button - Protocol Section 3: 32x32, strokeWidth 2.5 */
 .eld-popup-close {
   display: flex;
   align-items: center;
@@ -70,18 +106,20 @@
   height: 32px;
   background: transparent;
   border: none;
-  border-radius: var(--radius-sm, 6px);
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 24px;
-  font-weight: 300;
-  color: #6B7280;
-  line-height: 1;
-  transition: background-color 150ms ease, color 150ms ease;
+  padding: 0;
+  color: var(--eld-primary-purple, #31135D);
+  transition: all 0.2s ease;
 }
 
 .eld-popup-close:hover {
-  background-color: #F3F4F6;
-  color: #1F2937;
+  background-color: rgba(49, 19, 93, 0.1);
+}
+
+.eld-popup-close svg {
+  width: 32px;
+  height: 32px;
 }
 
 /* Popup Subtitle */
@@ -143,8 +181,8 @@
 .eld-form-textarea:focus,
 .eld-form-select:focus {
   outline: none;
-  border-color: var(--color-primary, #4F46E5);
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+  border-color: var(--eld-primary-purple, #31135D);
+  box-shadow: 0 0 0 3px rgba(49, 19, 93, 0.1);
 }
 
 .eld-form-input::placeholder,
@@ -180,7 +218,7 @@
 
 /* Collapsible Section */
 .eld-collapsible-section {
-  border: 1px solid var(--color-border, #E5E7EB);
+  border: 1px solid var(--eld-border, #E7E0EC);
   border-radius: var(--radius-md, 8px);
   margin-bottom: var(--spacing-md, 12px);
   overflow: hidden;
@@ -191,13 +229,13 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--spacing-md, 12px) var(--spacing-lg, 16px);
-  background-color: var(--color-background-light, #F7F8F9);
+  background-color: var(--eld-light-purple-bg, #F7F2FA);
   cursor: pointer;
   transition: background-color 150ms ease;
 }
 
 .eld-collapsible-header:hover {
-  background-color: #EBEDEF;
+  background-color: #EDE9F3;
 }
 
 .eld-collapsible-header-left {
@@ -237,64 +275,73 @@
 .eld-collapsible-content {
   padding: var(--spacing-lg, 16px);
   background-color: white;
-  border-top: 1px solid var(--color-border, #E5E7EB);
+  border-top: 1px solid var(--eld-border, #E7E0EC);
 }
 
 .eld-collapsible-content.collapsed {
   display: none;
 }
 
-/* Button Group */
+/* Button Group - Protocol Section 4B */
 .eld-button-group {
   display: flex;
-  gap: var(--spacing-md, 12px);
+  gap: 12px;
   justify-content: flex-end;
-  padding: var(--spacing-lg, 16px);
-  border-top: 1px solid var(--color-border, #E5E7EB);
-  flex-shrink: 0; /* Prevent button group from shrinking */
-  background: white; /* Ensure background when scrolling */
+  padding: 16px;
+  background: var(--eld-light-purple-bg, #F7F2FA);
+  border-top: 1px solid var(--eld-border, #E7E0EC);
+  flex-shrink: 0;
 }
 
-/* Buttons */
+/* Buttons - Protocol Section 4B: pill-shaped (100px radius) */
 .eld-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--spacing-sm, 8px);
-  padding: var(--spacing-sm, 8px) var(--spacing-xl, 24px);
-  height: 36px;
-  border-radius: 20px;
+  gap: 8px;
+  min-width: 120px;
+  height: 44px;
+  padding: 0 24px;
+  border-radius: 100px; /* Protocol: pill-shaped */
   font-family: inherit;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 200ms ease;
+  transition: all 0.2s ease;
   border: none;
 }
 
 .eld-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
+/* Primary button - Protocol */
 .eld-btn-primary {
-  background-color: var(--color-primary, #321662);
-  color: white;
+  background: var(--eld-primary-purple, #31135D);
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(49, 19, 93, 0.25);
 }
 
 .eld-btn-primary:hover:not(:disabled) {
-  background-color: #271250;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: var(--eld-secondary-purple, #6D31C2);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(49, 19, 93, 0.35);
 }
 
+.eld-btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Secondary button - Protocol */
 .eld-btn-secondary {
-  background-color: transparent;
-  color: var(--color-primary, #4F46E5);
-  border: 1px solid var(--color-primary, #4F46E5);
+  background: transparent;
+  color: var(--eld-primary-purple, #31135D);
+  border: 1px solid var(--eld-primary-purple, #31135D);
 }
 
 .eld-btn-secondary:hover:not(:disabled) {
-  background-color: rgba(79, 70, 229, 0.05);
+  background: rgba(49, 19, 93, 0.05);
 }
 
 /* Checkbox Grid */
@@ -335,7 +382,7 @@
 .eld-checkbox-item input[type="checkbox"] {
   width: 16px;
   height: 16px;
-  accent-color: var(--color-primary, #321662);
+  accent-color: var(--eld-primary-purple, #31135D);
   cursor: pointer;
 }
 
@@ -382,16 +429,17 @@
   }
 }
 
+/* Protocol: NO GREEN - use Positive Purple for success */
 .eld-toast-success {
-  border-left: 4px solid var(--color-success, #059669);
+  border-left: 4px solid var(--eld-positive-purple, #5B5FCF);
 }
 
 .eld-toast-error {
-  border-left: 4px solid var(--color-error, #DC2626);
+  border-left: 4px solid var(--eld-emergency-red, #DC3545);
 }
 
 .eld-toast-info {
-  border-left: 4px solid var(--color-primary, #4F46E5);
+  border-left: 4px solid var(--eld-primary-purple, #31135D);
 }
 
 .eld-toast-close {
@@ -506,8 +554,8 @@
 }
 
 .eld-add-rule-btn:hover {
-  border-color: var(--color-primary, #321662);
-  color: var(--color-primary, #321662);
+  border-color: var(--eld-primary-purple, #31135D);
+  color: var(--eld-primary-purple, #31135D);
 }
 
 /* Label with Action (e.g., "generate with AI" link) */
@@ -522,7 +570,7 @@
   margin-bottom: 0;
 }
 
-/* Link-style Button */
+/* Link-style Button - Protocol colors */
 .eld-btn-link {
   background: none;
   border: none;
@@ -530,14 +578,14 @@
   font-family: inherit;
   font-size: 13px;
   font-weight: 500;
-  color: var(--color-primary, #321662);
+  color: var(--eld-primary-purple, #31135D);
   cursor: pointer;
   text-decoration: none;
   transition: color 150ms ease, opacity 150ms ease;
 }
 
 .eld-btn-link:hover:not(:disabled) {
-  color: #271250;
+  color: var(--eld-secondary-purple, #6D31C2);
   text-decoration: underline;
 }
 
@@ -589,7 +637,7 @@
 }
 
 .eld-photo-item.drag-over {
-  box-shadow: 0 0 0 2px var(--color-primary, #321662);
+  box-shadow: 0 0 0 2px var(--eld-primary-purple, #31135D);
   transform: scale(1.02);
 }
 
@@ -632,7 +680,7 @@
   bottom: var(--spacing-xs, 4px);
   left: var(--spacing-xs, 4px);
   padding: 2px 8px;
-  background: var(--color-primary, #321662);
+  background: var(--eld-primary-purple, #31135D);
   color: white;
   font-size: 10px;
   font-weight: 600;
@@ -656,8 +704,8 @@
 }
 
 .eld-photo-zone:hover:not(.uploading) {
-  border-color: var(--color-primary, #321662);
-  background-color: rgba(49, 22, 98, 0.02);
+  border-color: var(--eld-primary-purple, #31135D);
+  background-color: rgba(49, 19, 93, 0.02);
 }
 
 .eld-photo-zone.uploading {
@@ -692,8 +740,8 @@
 .eld-upload-spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid var(--color-border, #E5E7EB);
-  border-top-color: var(--color-primary, #321662);
+  border: 3px solid var(--eld-border, #E7E0EC);
+  border-top-color: var(--eld-primary-purple, #31135D);
   border-radius: 50%;
   animation: eld-spin 0.8s linear infinite;
   margin: 0 auto var(--spacing-sm, 8px);
@@ -740,58 +788,58 @@
   padding-right: 40px; /* Space for checkmark */
 }
 
-/* Address Valid State */
+/* Address Valid State - Protocol: NO GREEN - use Positive Purple */
 .eld-address-input.eld-address-valid {
-  border-color: var(--color-success, #059669);
+  border-color: var(--eld-positive-purple, #5B5FCF);
 }
 
 .eld-address-input.eld-address-valid:focus {
-  border-color: var(--color-success, #059669);
-  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+  border-color: var(--eld-positive-purple, #5B5FCF);
+  box-shadow: 0 0 0 3px rgba(91, 95, 207, 0.1);
 }
 
-/* Address Error State */
+/* Address Error State - Protocol: Emergency Red */
 .eld-address-input.eld-address-error {
-  border-color: var(--color-error, #DC2626);
+  border-color: var(--eld-emergency-red, #DC3545);
 }
 
 .eld-address-input.eld-address-error:focus {
-  border-color: var(--color-error, #DC2626);
-  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+  border-color: var(--eld-emergency-red, #DC3545);
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
 }
 
-/* Address Checkmark */
+/* Address Checkmark - Protocol: NO GREEN - use Positive Purple */
 .eld-address-checkmark {
   position: absolute;
   right: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-success, #059669);
+  color: var(--eld-positive-purple, #5B5FCF);
   pointer-events: none;
 }
 
-/* Address Success Message */
+/* Address Success Message - Protocol: NO GREEN - use Positive Purple */
 .eld-address-success {
   font-size: 12px;
-  color: var(--color-success, #059669);
+  color: var(--eld-positive-purple, #5B5FCF);
   margin-top: var(--spacing-xs, 4px);
   display: flex;
   align-items: center;
   gap: 4px;
 }
 
-/* Address Error Message */
+/* Address Error Message - Protocol: Emergency Red */
 .eld-address-error-message {
   display: flex;
   align-items: flex-start;
   gap: 6px;
   padding: var(--spacing-sm, 8px) var(--spacing-md, 12px);
-  background-color: rgba(220, 38, 38, 0.05);
-  border: 1px solid rgba(220, 38, 38, 0.2);
+  background-color: rgba(220, 53, 69, 0.05);
+  border: 1px solid rgba(220, 53, 69, 0.2);
   border-radius: var(--radius-sm, 6px);
   margin-top: var(--spacing-sm, 8px);
-  color: var(--color-error, #DC2626);
+  color: var(--eld-emergency-red, #DC3545);
   font-size: 13px;
   line-height: 1.4;
 }
@@ -836,7 +884,7 @@
 }
 
 .eld-manual-hint svg {
-  color: var(--color-primary, #321662);
+  color: var(--eld-primary-purple, #31135D);
 }
 
 /* Google Places Autocomplete Dropdown Override */
@@ -873,4 +921,98 @@
 
 .pac-matched {
   font-weight: 600;
+}
+
+/* ============================================
+   Mobile Bottom-Sheet Mode - Protocol Section 1
+   ============================================ */
+@media (max-width: 480px) {
+  .eld-popup-overlay {
+    align-items: flex-end; /* Protocol: bottom-sheet positioning */
+    padding: 0;
+  }
+
+  .eld-popup-container {
+    border-radius: 24px 24px 0 0; /* Protocol: top corners only */
+    max-width: 100%;
+    max-height: 92vh;
+    animation: eld-slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); /* Protocol: slide-up animation */
+  }
+
+  /* Mobile grab handle - visible on mobile */
+  .eld-grab-handle {
+    display: block;
+    width: 36px; /* Protocol: 36x4px */
+    height: 4px;
+    background: var(--eld-border, #E7E0EC);
+    border-radius: 2px;
+    margin: 8px auto 0;
+    flex-shrink: 0;
+  }
+
+  /* Mobile header adjustments */
+  .eld-popup-header {
+    padding: 12px 16px;
+  }
+
+  .eld-popup-header h2 {
+    font-size: 18px; /* Protocol: 18px */
+    font-weight: 400; /* Protocol: weight 400, NOT bold */
+  }
+
+  /* Show short title on mobile */
+  .eld-popup-header-desktop {
+    display: none;
+  }
+
+  .eld-popup-header-mobile {
+    display: inline;
+  }
+
+  /* Mobile close button - larger touch target */
+  .eld-popup-close {
+    width: 36px;
+    height: 36px;
+  }
+
+  .eld-popup-close svg {
+    width: 36px;
+    height: 36px;
+  }
+
+  /* Mobile content */
+  .eld-popup-body {
+    padding: 16px;
+  }
+
+  /* Mobile footer - extra bottom padding for safe area */
+  .eld-button-group {
+    padding: 12px 16px 20px; /* Protocol: 12px top, 20px bottom */
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .eld-btn {
+    width: 100%;
+    min-width: unset;
+    height: 40px;
+    font-size: 14px;
+  }
+}
+
+@keyframes eld-slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+/* Tablet breakpoint */
+@media (min-width: 481px) and (max-width: 640px) {
+  .eld-popup-container {
+    max-width: 100%;
+    margin: 0 16px;
+  }
+
+  .eld-popup-header h2 {
+    font-size: 16px;
+  }
 }

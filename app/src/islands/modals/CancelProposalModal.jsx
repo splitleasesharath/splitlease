@@ -1,13 +1,16 @@
 /**
- * CancelProposalModal Component - v2.0 REDESIGN
+ * CancelProposalModal Component - v3.0 PROTOCOL REDESIGN
  *
  * Unified modal for confirming proposal cancellation/rejection with reason selection.
  * Supports both guest cancellation and host rejection flows via userType prop.
  * Following the Hollow Component pattern - all business logic handled by parent.
+ *
+ * Design: POPUP_REPLICATION_PROTOCOL - Monochromatic purple, pill buttons, mobile bottom sheet
  */
 
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
+import { X, AlertTriangle } from 'lucide-react'
 import { getGuestCancellationReasons, getHostRejectionReasons } from '../../lib/dataLookups.js'
 
 // Fallback reasons if cache is empty
@@ -138,188 +141,54 @@ export default function CancelProposalModal({
     onClose()
   }
 
-  // Inline styles to ensure rendering works in portal (outside Tailwind scope)
-  const overlayStyle = {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 9999
-  }
-
-  const modalStyle = {
-    backgroundColor: '#ffffff',
-    borderRadius: '10px',
-    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-    width: '100%',
-    maxWidth: '460px',
-    margin: '0 20px',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-  }
-
-  const headerStyle = {
-    display: 'flex',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    padding: '20px',
-    borderBottom: '1px solid #e5e7eb'
-  }
-
-  const headerLeftStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px'
-  }
-
-  const titleStyle = {
-    fontSize: '18px',
-    fontWeight: '600',
-    color: '#111827',
-    margin: 0
-  }
-
-  const subtitleStyle = {
-    fontSize: '13px',
-    color: '#dc2626',
-    margin: 0
-  }
-
-  const closeButtonStyle = {
-    color: '#9ca3af',
-    fontSize: '24px',
-    lineHeight: 1,
-    padding: '4px',
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer'
-  }
-
-  const bodyStyle = {
-    padding: '20px'
-  }
-
-  const messageStyle = {
-    fontSize: '15px',
-    color: '#4b5563',
-    marginBottom: '20px',
-    textAlign: 'center'
-  }
-
-  const radioListStyle = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px'
-  }
-
-  const radioLabelStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    cursor: 'pointer',
-    padding: '6px',
-    borderRadius: '4px'
-  }
-
-  const radioInputStyle = {
-    width: '18px',
-    height: '18px',
-    accentColor: '#7c3aed'
-  }
-
-  const radioTextStyle = {
-    fontSize: '15px',
-    color: '#374151'
-  }
-
-  const textareaStyle = {
-    width: '100%',
-    padding: '10px',
-    fontSize: '15px',
-    border: '1px solid #d1d5db',
-    borderRadius: '6px',
-    resize: 'none',
-    marginTop: '14px',
-    boxSizing: 'border-box'
-  }
-
-  const footerStyle = {
-    display: 'flex',
-    gap: '14px',
-    padding: '20px',
-    borderTop: '1px solid #e5e7eb'
-  }
-
-  const cancelButtonStyle = {
-    flex: 1,
-    padding: '10px 20px',
-    backgroundColor: '#f3f4f6',
-    color: '#374151',
-    borderRadius: '6px',
-    border: 'none',
-    fontSize: '15px',
-    fontWeight: '500',
-    cursor: 'pointer'
-  }
-
-  const confirmButtonStyle = {
-    flex: 1,
-    padding: '10px 20px',
-    backgroundColor: '#b91c1c',
-    color: '#ffffff',
-    borderRadius: '6px',
-    border: 'none',
-    fontSize: '15px',
-    fontWeight: '500',
-    cursor: 'pointer',
-    opacity: isSubmitting ? 0.5 : 1
-  }
-
   const modalContent = (
-    <div style={overlayStyle} onClick={handleClose}>
-      <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
-        {/* Header with inline icon */}
-        <div style={headerStyle}>
-          <div style={headerLeftStyle}>
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#ef4444"
-              strokeWidth="2"
-            >
-              <path d="M19 7L5 7M14 11V17M10 11V17M5 7L6 19C6 20.1046 6.89543 21 8 21H16C17.1046 21 18 20.1046 18 19L19 7M9 7V4C9 3.44772 9.44772 3 10 3H14C14.5523 3 15 3.44772 15 4V7" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+    <div className="protocol-overlay" onClick={handleClose}>
+      <div className="protocol-modal" onClick={(e) => e.stopPropagation()}>
+        {/* Mobile Grab Handle */}
+        <div className="protocol-grab-handle" />
+
+        {/* Header */}
+        <div className="protocol-header">
+          <div className="protocol-header-left">
+            <AlertTriangle
+              size={24}
+              strokeWidth={2}
+              color="var(--protocol-danger)"
+              aria-hidden="true"
+            />
             <div>
-              <h2 style={titleStyle}>{getTitle()}?</h2>
-              <p style={subtitleStyle}>This action is irreversible</p>
+              <h2 className="protocol-title">{getTitle()}</h2>
+              <p className="cancel-modal-subtitle">This action is irreversible</p>
             </div>
           </div>
-          <button style={closeButtonStyle} onClick={handleClose}>×</button>
+          <button
+            className="protocol-close-btn"
+            onClick={handleClose}
+            aria-label="Close modal"
+          >
+            <X size={24} strokeWidth={2} />
+          </button>
         </div>
 
         {/* Body */}
-        <div style={bodyStyle}>
-          <p style={messageStyle}>{getConfirmationMessage()}</p>
+        <div className="protocol-body">
+          <p className="cancel-modal-message">{getConfirmationMessage()}</p>
 
           {/* Reason Selection */}
-          <div style={radioListStyle}>
+          <div className="protocol-radio-group">
             {reasonOptions.map((reason) => (
-              <label key={reason.id} style={radioLabelStyle}>
+              <label
+                key={reason.id}
+                className={`protocol-radio-option ${selectedReasonId === reason.id ? 'selected' : ''}`}
+              >
                 <input
                   type="radio"
                   name="cancellationReason"
                   value={reason.id}
                   checked={selectedReasonId === reason.id}
                   onChange={(e) => setSelectedReasonId(e.target.value)}
-                  style={radioInputStyle}
                 />
-                <span style={radioTextStyle}>{reason.label}</span>
+                <span className="protocol-radio-label">{reason.label}</span>
               </label>
             ))}
           </div>
@@ -327,26 +196,26 @@ export default function CancelProposalModal({
           {/* Custom Reason Input */}
           {showCustomInput && (
             <textarea
+              className="cancel-modal-textarea"
               value={customReason}
               onChange={(e) => setCustomReason(e.target.value)}
               rows={2}
-              style={textareaStyle}
               placeholder="Please specify your reason..."
             />
           )}
         </div>
 
         {/* Footer */}
-        <div style={footerStyle}>
+        <div className="protocol-footer">
           <button
-            style={cancelButtonStyle}
+            className="protocol-btn protocol-btn-secondary"
             onClick={handleClose}
             disabled={isSubmitting}
           >
-            Cancel
+            Go Back
           </button>
           <button
-            style={confirmButtonStyle}
+            className="protocol-btn protocol-btn-danger"
             onClick={handleConfirm}
             disabled={isSubmitting}
           >

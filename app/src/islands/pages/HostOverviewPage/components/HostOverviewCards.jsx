@@ -36,74 +36,16 @@ function formatCurrency(amount) {
 }
 
 // Listing Card - For host's managed listings
-export function ListingCard({ listing, onEdit, onPreview, onDelete, onProposals, onCardClick, isMobile = false }) {
+// New horizontal design with thumbnail, title, actions, and proposals badge
+export function ListingCard({ listing, onEdit, onPreview, onDelete, onProposals, onCardClick, onCreateHouseManual, isMobile = false }) {
   const listingName = listing.name || listing.Name || 'Unnamed Listing';
   const borough = listing.location?.borough || listing['Location - Borough'] || 'Location not specified';
-  const isComplete = listing.complete || listing.Complete;
-  const leasesCount = listing.leasesCount || listing['Leases Count'] || 0;
   const proposalsCount = listing.proposalsCount || listing['Proposals Count'] || 0;
 
   // Extract photo URLs from the photos field - only need the cover photo (first image)
   const photosField = listing.photos || listing['Features - Photos'] || [];
   const photoUrls = extractPhotos(photosField, {}, listing.id || listing._id);
   const coverPhoto = photoUrls.length > 0 ? photoUrls[0] : null;
-
-  // Pricing data
-  const rentalType = listing.rental_type || listing['rental type'] || 'Nightly';
-  const monthlyRate = listing.monthly_rate || listing['💰Monthly Host Rate'];
-  const weeklyRate = listing.weekly_rate || listing['💰Weekly Host Rate'];
-  const cleaningFee = listing.cleaning_fee || listing['💰Cleaning Cost / Maintenance Fee'];
-  const damageDeposit = listing.damage_deposit || listing['💰Damage Deposit'];
-  const nightlyPricing = listing.nightly_pricing;
-
-  // Collect all nightly rates
-  const nightlyRates = [
-    listing.nightly_rate_2 || listing['💰Nightly Host Rate for 2 nights'],
-    listing.nightly_rate_3 || listing['💰Nightly Host Rate for 3 nights'],
-    listing.nightly_rate_4 || listing['💰Nightly Host Rate for 4 nights'],
-    listing.nightly_rate_5 || listing.rate_5_nights || listing['💰Nightly Host Rate for 5 nights'],
-    listing.nightly_rate_7 || listing['💰Nightly Host Rate for 7 nights']
-  ].filter(rate => rate != null && !isNaN(parseFloat(rate)));
-
-  // Calculate min and max nightly rates
-  const getMinMaxNightlyRates = () => {
-    if (nightlyRates.length === 0) return null;
-    const numericRates = nightlyRates.map(r => parseFloat(r));
-    return {
-      min: Math.min(...numericRates),
-      max: Math.max(...numericRates)
-    };
-  };
-
-  // Get the primary rate based on rental type
-  const getPrimaryRate = () => {
-    if (rentalType === 'Monthly' && monthlyRate) {
-      return { amount: formatCurrency(monthlyRate), period: '/month', label: 'Monthly Rate', isRange: false };
-    }
-    if (rentalType === 'Weekly' && weeklyRate) {
-      return { amount: formatCurrency(weeklyRate), period: '/week', label: 'Weekly Rate', isRange: false };
-    }
-    // For nightly listings, show min-max range
-    const minMax = getMinMaxNightlyRates();
-    if (minMax) {
-      if (minMax.min === minMax.max) {
-        return { amount: formatCurrency(minMax.min), period: '/night', label: 'Nightly Rate', isRange: false };
-      }
-      return {
-        amount: `${formatCurrency(minMax.min)} - ${formatCurrency(minMax.max)}`,
-        period: '/night',
-        label: 'Nightly Rate Range',
-        isRange: true
-      };
-    }
-    // Fallback to nightly_pricing if available
-    if (nightlyPricing?.oneNightPrice) {
-      return { amount: formatCurrency(nightlyPricing.oneNightPrice), period: '/night', label: 'Nightly Rate', isRange: false };
-    }
-    return null;
-  };
-
-  const primaryRate = getPrimaryRate();
 
   // Handle card click (navigate to listing dashboard)
   const handleCardClick = () => {
@@ -120,126 +62,104 @@ export function ListingCard({ listing, onEdit, onPreview, onDelete, onProposals,
     }
   };
 
+  // Handle create house manual click
+  const handleCreateHouseManualClick = (e) => {
+    e.stopPropagation();
+    if (onCreateHouseManual) {
+      onCreateHouseManual(listing);
+    }
+  };
+
   return (
-    <Card className="listing-card" hover onClick={handleCardClick}>
-      {/* Photo Section - Left side on desktop */}
-      <div className="listing-card__image-section">
-        {coverPhoto ? (
-          <div className="listing-card__images">
+    <Card className="listing-card listing-card--horizontal" hover onClick={handleCardClick}>
+      {/* Row 1: Thumbnail + Title + Delete */}
+      <div className="listing-card__header-row">
+        {/* Thumbnail */}
+        <div className="listing-card__thumbnail">
+          {coverPhoto ? (
             <img
               src={coverPhoto}
               alt={listingName}
-              className="listing-card__image"
+              className="listing-card__thumbnail-image"
             />
-          </div>
-        ) : (
-          <div className="listing-card__image-placeholder">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-              <circle cx="8.5" cy="8.5" r="1.5" />
-              <polyline points="21 15 16 10 5 21" />
-            </svg>
-            <span>No photos</span>
-          </div>
-        )}
-      </div>
-
-      {/* Content Section */}
-      <div className="listing-card__content">
-        {/* Middle - Info and actions */}
-        <div className="listing-card__left">
-          <div className="listing-card__header">
-            <div className="listing-card__info">
-              <h3 className="listing-card__name">{listingName}</h3>
-              <p className="listing-card__location">{borough}</p>
-              <p className="listing-card__status">
-                {isComplete ? 'Complete' : 'Draft'}
-              </p>
-            </div>
-            <button
-              className="listing-card__delete"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(listing);
-              }}
-              aria-label="Delete listing"
-            >
-              {/* Feather trash-2 icon - monochromatic per popup redesign protocol */}
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                <line x1="10" y1="11" x2="10" y2="17"></line>
-                <line x1="14" y1="11" x2="14" y2="17"></line>
+          ) : (
+            <div className="listing-card__thumbnail-placeholder">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <polyline points="21 15 16 10 5 21" />
               </svg>
-            </button>
-          </div>
-
-          {leasesCount > 0 && (
-            <div className="listing-card__badges">
-              <div className="badge badge--leases">
-                Leases: {leasesCount}
-              </div>
             </div>
           )}
-
-          <div className="listing-card__actions">
-            <button
-              className="btn btn--primary"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(listing);
-              }}
-            >
-              Manage
-            </button>
-            <button
-              className="btn btn--secondary"
-              onClick={(e) => {
-                e.stopPropagation();
-                onPreview(listing);
-              }}
-            >
-              Preview
-            </button>
-            {proposalsCount > 0 && (
-              <button
-                className="btn btn--proposals"
-                onClick={handleProposalsClick}
-              >
-                Proposals ({proposalsCount})
-              </button>
-            )}
-          </div>
         </div>
 
-        {/* Right side - Pricing */}
-        <div className="listing-card__right">
-          {primaryRate ? (
-            <div className="listing-card__pricing">
-              <div className="listing-card__pricing-main">
-                <span className="listing-card__price">{primaryRate.amount}</span>
-                <span className="listing-card__period">{primaryRate.period}</span>
-              </div>
-              <div className="listing-card__pricing-label">{rentalType} Lease</div>
-              <div className="listing-card__pricing-details">
-                {cleaningFee > 0 && (
-                  <div className="listing-card__pricing-item">
-                    <span className="label">Cleaning:</span>
-                    <span className="value">{formatCurrency(cleaningFee)}</span>
-                  </div>
-                )}
-                {damageDeposit > 0 && (
-                  <div className="listing-card__pricing-item">
-                    <span className="label">Deposit:</span>
-                    <span className="value">{formatCurrency(damageDeposit)}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="listing-card__pricing listing-card__pricing--empty">
-              <span className="listing-card__pricing-empty">No pricing</span>
-            </div>
+        {/* Title and Location */}
+        <div className="listing-card__title-section">
+          <h3 className="listing-card__name">{listingName}</h3>
+          <p className="listing-card__location">{borough}</p>
+        </div>
+
+        {/* Delete Button */}
+        <button
+          className="listing-card__delete"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(listing);
+          }}
+          aria-label="Delete listing"
+        >
+          {/* Feather trash-2 icon */}
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            <line x1="10" y1="11" x2="10" y2="17"></line>
+            <line x1="14" y1="11" x2="14" y2="17"></line>
+          </svg>
+        </button>
+      </div>
+
+      {/* Row 2: Actions */}
+      <div className="listing-card__actions-row">
+        {/* Left side: Manage and Preview buttons */}
+        <div className="listing-card__actions-left">
+          <button
+            className="btn btn--primary btn--small"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(listing);
+            }}
+          >
+            Manage Listing
+          </button>
+          <button
+            className="btn btn--secondary btn--small"
+            onClick={(e) => {
+              e.stopPropagation();
+              onPreview(listing);
+            }}
+          >
+            Preview
+          </button>
+        </div>
+
+        {/* Right side: Proposals badge and Create House Manual */}
+        <div className="listing-card__actions-right">
+          <button
+            className="listing-card__proposals-btn"
+            onClick={handleProposalsClick}
+          >
+            Proposals
+            {proposalsCount > 0 && (
+              <span className="listing-card__proposals-count">{proposalsCount}</span>
+            )}
+          </button>
+          {onCreateHouseManual && (
+            <button
+              className="listing-card__house-manual-link"
+              onClick={handleCreateHouseManualClick}
+            >
+              Create House Manual
+            </button>
           )}
         </div>
       </div>

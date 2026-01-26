@@ -128,29 +128,40 @@ const ImportListingReviewsModal = ({
         className="import-listing-modal-container"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Mobile grab handle - Protocol Section 1 */}
+        <div className="import-listing-grab-handle" aria-hidden="true" />
+
         {/* Header Section */}
         <div className="import-listing-header">
-          <div className="import-listing-header-top">
-            {/* Star/Review Icon */}
-            <span className="import-listing-icon" aria-hidden="true">⭐</span>
+          <div className="import-listing-header-content">
+            {/* Star/Review Icon - Feather star icon */}
+            <span className="import-listing-icon" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+              </svg>
+            </span>
 
             {/* Title */}
             <h2
               id="modal-title"
               className="import-listing-title"
             >
-              Import Listing Reviews
+              <span className="import-listing-title-desktop">Import Listing Reviews</span>
+              <span className="import-listing-title-mobile">Import Reviews</span>
             </h2>
           </div>
 
-          {/* Close Button */}
+          {/* Close Button - Protocol: 32x32, strokeWidth 2.5 */}
           <button
             onClick={onClose}
             className="import-listing-close-btn"
             aria-label="Close modal"
             type="button"
           >
-            ×
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
           </button>
         </div>
 
@@ -211,7 +222,13 @@ const ImportListingReviewsModal = ({
 
           {/* Info Box */}
           <div className="import-listing-info" role="note" aria-label="Import information">
-            <div className="info-icon">ℹ️</div>
+            <div className="info-icon" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg>
+            </div>
             <p className="import-listing-info-text">
               Our team will review your request and import your reviews within 24-48 hours. You'll receive an email confirmation once complete.
             </p>

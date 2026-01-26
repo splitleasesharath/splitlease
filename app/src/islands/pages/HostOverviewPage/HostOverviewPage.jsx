@@ -225,6 +225,7 @@ export default function HostOverviewPage({ requireAuth = false, isAuthenticated 
                     onProposals={handleViewProposals}
                     onCardClick={handleListingCardClick}
                     onDelete={() => handleDeleteClick(listing, 'listing')}
+                    onCreateHouseManual={handleCreateNewManual}
                   />
                 ))}
               </div>

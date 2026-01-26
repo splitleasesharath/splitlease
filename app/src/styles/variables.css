@@ -290,4 +290,41 @@
   --favorites-success: #10B981;
   --favorites-heart: #FF6B5B;
   --favorites-heart-hover: #e55a4a;
+
+  /* ========================================
+     POPUP REPLICATION PROTOCOL TOKENS
+     Monochromatic purple design system
+     STRICT: NO GREEN, NO YELLOW
+     ======================================== */
+
+  /* Protocol Colors */
+  --protocol-primary: #31135D;
+  --protocol-action: #5B5FCF;
+  --protocol-action-hover: #4A4EBF;
+  --protocol-action-disabled: #B8BAE0;
+  --protocol-secondary: #6D31C2;
+  --protocol-surface: #F7F2FA;
+  --protocol-danger: #DC3545;
+  --protocol-danger-hover: rgba(220, 53, 69, 0.1);
+  --protocol-white: #FFFFFF;
+  --protocol-overlay: rgba(0, 0, 0, 0.5);
+  --protocol-border: #E5E7EB;
+  --protocol-border-light: #E7E0EC;
+  --protocol-text-muted: #6B7280;
+  --protocol-text-secondary: #49454F;
+
+  /* Protocol Spacing (STRICT: 8px, 16px, 24px only) */
+  --protocol-space-sm: 8px;
+  --protocol-space-md: 16px;
+  --protocol-space-lg: 24px;
+
+  /* Protocol Radii */
+  --protocol-radius-button: 100px;
+  --protocol-radius-card: 8px;
+  --protocol-radius-modal: 16px;
+  --protocol-radius-modal-mobile: 24px;
+
+  /* Protocol Transitions */
+  --protocol-transition: 0.2s ease;
+  --protocol-transition-slow: 0.3s ease-out;
 }

@@ -1,9 +1,12 @@
 /**
- * FullscreenProposalMapModal Component
+ * FullscreenProposalMapModal Component - v2.0 PROTOCOL REDESIGN
  *
  * A fullscreen map modal that displays all user proposals with price pin markers.
  * The currently selected proposal is highlighted with a distinct purple pin and pulse animation.
- * Other proposals are shown with smaller, white pins.
+ * Other proposals are shown with smaller, lighter purple pins.
+ *
+ * Design: POPUP_REPLICATION_PROTOCOL - Monochromatic purple color scheme
+ * Note: Intentionally remains fullscreen (not bottom sheet) as maps need maximum viewing area.
  *
  * Features:
  * - Google Maps integration with custom price pin overlays
@@ -23,6 +26,7 @@
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { X, MapPin } from 'lucide-react';
 import { COLORS, getBoroughMapConfig } from '../../lib/constants.js';
 import { formatPrice } from '../../lib/proposals/dataTransformers.js';
 import { isTerminalStatus } from '../../logic/constants/proposalStatuses.js';
@@ -160,19 +164,19 @@ export default function FullscreenProposalMapModal({
     }
     onClose();
 
-    // Show brief toast notification
+    // Show brief toast notification using protocol colors
     const toast = document.createElement('div');
     toast.className = 'proposal-selected-toast';
     toast.innerHTML = `<span>✓</span> Viewing: ${listingName}`;
     toast.style.cssText = `
       position: fixed;
-      bottom: 24px;
+      bottom: var(--protocol-space-lg, 24px);
       left: 50%;
       transform: translateX(-50%);
-      background-color: #31135d;
-      color: white;
+      background-color: var(--protocol-primary, #31135D);
+      color: var(--protocol-white, #FFFFFF);
       padding: 12px 20px;
-      border-radius: 8px;
+      border-radius: var(--protocol-radius-card, 8px);
       font-family: 'Lato', 'Inter', sans-serif;
       font-size: 14px;
       font-weight: 500;
@@ -459,9 +463,7 @@ export default function FullscreenProposalMapModal({
             onClick={onClose}
             aria-label="Close map"
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            <X size={24} strokeWidth={2} />
           </button>
         </div>
 
@@ -479,10 +481,7 @@ export default function FullscreenProposalMapModal({
           {!isLoading && !hasValidProposals && (
             <div className="fullscreen-proposal-map-empty">
               <div className="fullscreen-proposal-map-empty-icon">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+                <MapPin size={48} strokeWidth={1.5} />
               </div>
               <p>No proposal locations available</p>
             </div>

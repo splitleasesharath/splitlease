@@ -1,14 +1,27 @@
-/* AI Import Assistant Modal Styles */
+/* ============================================
+   AI Import Assistant Modal Styles
+   POPUP REPLICATION PROTOCOL - Compliant
+   ============================================ */
 
-/* Modal Overlay */
+/* Protocol Color Variables */
+:root {
+  --ai-import-primary-purple: #31135D;
+  --ai-import-secondary-purple: #6D31C2;
+  --ai-import-positive-purple: #5B5FCF;
+  --ai-import-light-purple-bg: #F7F2FA;
+  --ai-import-border: #E7E0EC;
+  --ai-import-text-primary: #1a202c;
+  --ai-import-text-secondary: #49454F;
+  --ai-import-text-muted: #6b7280;
+  --ai-import-emergency-red: #DC3545;
+}
+
+/* Modal Overlay - Protocol Section 1 */
 .ai-import-modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   z-index: 9999;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -21,18 +34,19 @@
   to { opacity: 1; }
 }
 
-/* Modal Container */
+/* Modal Container - Protocol Section 1: Core Architecture */
 .ai-import-modal-container {
-  background-color: #FFFFFF;
-  border-radius: 16px;
-  width: 90%;
-  max-width: 480px;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.35);
-  animation: aiImportSlideIn 0.3s ease;
+  background-color: #FFFFFF;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 92vh; /* Protocol: 92vh max-height */
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   position: relative;
   overflow: hidden;
+  animation: aiImportSlideIn 0.3s ease;
 }
 
 @keyframes aiImportSlideIn {
@@ -46,14 +60,20 @@
   }
 }
 
-/* Header Section */
+/* Mobile grab handle - hidden on desktop */
+.ai-import-grab-handle {
+  display: none;
+}
+
+/* Header Section - Protocol Section 4A */
 .ai-import-header {
-  padding: 24px 24px 16px;
+  flex-shrink: 0; /* Protocol: fixed header */
+  padding: 16px; /* Protocol: reduced padding */
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  background: linear-gradient(135deg, #f8f7ff 0%, #f3f0ff 100%);
-  border-bottom: 1px solid #e5e7eb;
+  align-items: center;
+  background: var(--ai-import-light-purple-bg); /* Protocol: Light Purple Background */
+  border-bottom: 1px solid var(--ai-import-border);
 }
 
 .ai-import-header-content {
@@ -68,9 +88,10 @@
   justify-content: center;
   width: 40px;
   height: 40px;
-  background: linear-gradient(135deg, #6b4fbb 0%, #31135d 100%);
+  background: var(--ai-import-primary-purple); /* Protocol: Primary Purple solid */
   border-radius: 10px;
   color: white;
+  flex-shrink: 0;
 }
 
 .ai-import-icon svg {
@@ -79,20 +100,29 @@
 }
 
 .ai-import-title {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 600;
-  color: #1c274c;
+  color: var(--ai-import-text-primary);
   margin: 0;
+  line-height: 1.4;
 }
 
+/* Desktop title - shown by default */
+.ai-import-title-desktop {
+  display: inline;
+}
+
+/* Mobile title - hidden by default */
+.ai-import-title-mobile {
+  display: none;
+}
+
+/* Close button - Protocol Section 3: 32x32, strokeWidth 2.5 */
 .ai-import-close-btn {
-  position: absolute;
-  top: 16px;
-  right: 16px;
+  flex-shrink: 0;
   width: 32px;
   height: 32px;
-  background: rgba(255, 255, 255, 0.8);
+  background: none;
   border: none;
   cursor: pointer;
   padding: 0;
@@ -100,21 +130,26 @@
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  font-size: 24px;
-  color: #6b7280;
-  line-height: 1;
+  color: var(--ai-import-primary-purple); /* Protocol: Primary Purple */
   transition: all 0.2s ease;
 }
 
 .ai-import-close-btn:hover {
-  background-color: #f0f0f0;
-  color: #1c274c;
+  background-color: rgba(49, 19, 93, 0.1);
 }
 
-/* Content Section */
+.ai-import-close-btn svg {
+  width: 32px;
+  height: 32px;
+}
+
+/* Content Section - Scrollable body */
 .ai-import-content {
-  padding: 24px;
-  min-height: 300px;
+  flex-grow: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch; /* Protocol: smooth mobile scroll */
+  padding: 16px; /* Protocol: standardized spacing */
+  min-height: 280px;
   display: flex;
   flex-direction: column;
 }
@@ -128,16 +163,15 @@
 }
 
 .ai-import-loading-text {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 15px;
-  color: #4b5563;
+  color: var(--ai-import-text-secondary);
   margin: 0 0 24px;
+  line-height: 1.5;
 }
 
 .ai-import-loading-note {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 13px;
-  color: #9ca3af;
+  color: var(--ai-import-text-muted);
   margin: 24px 0 0;
 }
 
@@ -146,7 +180,7 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px; /* Protocol: 8px section gaps */
 }
 
 .ai-import-task {
@@ -154,8 +188,9 @@
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  background: #f9fafb;
-  border-radius: 10px;
+  background: var(--ai-import-light-purple-bg); /* Protocol: Light Purple Background */
+  border: 1px solid var(--ai-import-border);
+  border-radius: 8px;
   transition: all 0.3s ease;
 }
 
@@ -164,12 +199,15 @@
 }
 
 .ai-import-task--loading {
-  background: #f3f0ff;
+  background: var(--ai-import-light-purple-bg);
+  border-color: var(--ai-import-positive-purple); /* Protocol: Positive Purple border */
   opacity: 1;
 }
 
+/* Protocol: NO GREEN - use Positive Purple for complete state */
 .ai-import-task--complete {
-  background: #f0fdf4;
+  background: var(--ai-import-light-purple-bg);
+  border-color: var(--ai-import-positive-purple);
   opacity: 1;
 }
 
@@ -185,32 +223,33 @@
 .ai-import-task--pending .ai-import-task-icon {
   width: 20px;
   height: 20px;
-  background: #e5e7eb;
+  background: var(--ai-import-border);
   border-radius: 50%;
 }
 
 .ai-import-task--loading .ai-import-task-icon {
-  color: #6b4fbb;
+  color: var(--ai-import-primary-purple);
 }
 
+/* Protocol: NO GREEN - use Positive Purple */
 .ai-import-task--complete .ai-import-task-icon {
-  color: #22c55e;
+  color: var(--ai-import-positive-purple);
 }
 
 .ai-import-task-label {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 14px;
   font-weight: 500;
-  color: #374151;
+  color: var(--ai-import-text-secondary);
 }
 
 .ai-import-task--loading .ai-import-task-label {
-  color: #6b4fbb;
+  color: var(--ai-import-primary-purple);
   font-weight: 600;
 }
 
+/* Protocol: NO GREEN - use Primary Purple for complete text */
 .ai-import-task--complete .ai-import-task-label {
-  color: #166534;
+  color: var(--ai-import-primary-purple);
 }
 
 /* Spinner Animation */
@@ -223,7 +262,7 @@
   to { transform: rotate(360deg); }
 }
 
-/* Success State */
+/* Success State - Protocol: NO GREEN, use Positive Purple */
 .ai-import-success {
   display: flex;
   flex-direction: column;
@@ -243,18 +282,17 @@
   100% { transform: scale(1); }
 }
 
+/* Protocol: NO GREEN - use Positive Purple for success title */
 .ai-import-success-title {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 18px;
   font-weight: 600;
-  color: #166534;
+  color: var(--ai-import-primary-purple);
   margin: 0 0 8px;
 }
 
 .ai-import-success-text {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 14px;
-  color: #6b7280;
+  color: var(--ai-import-text-secondary);
   margin: 0 0 24px;
   line-height: 1.5;
 }
@@ -262,8 +300,9 @@
 /* Summary Section */
 .ai-import-summary {
   width: 100%;
-  background: #f9fafb;
-  border-radius: 12px;
+  background: var(--ai-import-light-purple-bg); /* Protocol: Light Purple Background */
+  border: 1px solid var(--ai-import-border);
+  border-radius: 8px;
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -278,41 +317,40 @@
 }
 
 .ai-import-summary-label {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 13px;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--ai-import-text-muted);
   flex-shrink: 0;
 }
 
 .ai-import-summary-value {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 13px;
   font-weight: 600;
-  color: #1c274c;
+  color: var(--ai-import-primary-purple);
   text-align: right;
   word-break: break-word;
 }
 
-/* Footer Section */
+/* Footer Section - Protocol Section 4B */
 .ai-import-footer {
-  padding: 16px 24px 24px;
+  flex-shrink: 0; /* Protocol: fixed footer */
+  padding: 16px; /* Protocol: equal to header */
   display: flex;
   justify-content: center;
   gap: 12px;
-  background: #f9fafb;
-  border-top: 1px solid #e5e7eb;
+  background: var(--ai-import-light-purple-bg);
+  border-top: 1px solid var(--ai-import-border);
 }
 
+/* Button - Protocol Section 4B: pill-shaped (100px radius) */
 .ai-import-btn {
   min-width: 160px;
   height: 44px;
   padding: 0 24px;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 15px;
   font-weight: 600;
   border: none;
-  border-radius: 22px;
+  border-radius: 100px; /* Protocol: pill-shaped */
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
@@ -321,13 +359,15 @@
   gap: 8px;
 }
 
+/* Primary button - Protocol */
 .ai-import-btn-primary {
   color: #FFFFFF;
-  background: linear-gradient(135deg, #6b4fbb 0%, #31135d 100%);
+  background: var(--ai-import-primary-purple);
   box-shadow: 0 4px 12px rgba(49, 19, 93, 0.25);
 }
 
 .ai-import-btn-primary:hover {
+  background: var(--ai-import-secondary-purple); /* Protocol: Secondary Purple for hover */
   transform: translateY(-1px);
   box-shadow: 0 6px 16px rgba(49, 19, 93, 0.35);
 }
@@ -336,41 +376,83 @@
   transform: translateY(0);
 }
 
+/* Disabled button */
 .ai-import-btn-disabled {
-  color: #9ca3af;
-  background: #e5e7eb;
+  color: var(--ai-import-text-muted);
+  background: var(--ai-import-border);
   cursor: not-allowed;
 }
 
-/* Responsive Design */
-@media (max-width: 600px) {
+/* ============================================
+   Mobile Bottom-Sheet Mode - Protocol Section 1
+   ============================================ */
+@media (max-width: 480px) {
   .ai-import-modal-overlay {
-    padding: 16px;
+    align-items: flex-end; /* Protocol: bottom-sheet positioning */
+    padding: 0;
   }
 
   .ai-import-modal-container {
+    border-radius: 24px 24px 0 0; /* Protocol: top corners only */
     max-width: 100%;
+    max-height: 92vh;
+    animation: aiImportSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); /* Protocol: slide-up animation */
   }
 
+  /* Mobile grab handle - visible on mobile */
+  .ai-import-grab-handle {
+    display: block;
+    width: 36px; /* Protocol: 36x4px */
+    height: 4px;
+    background: var(--ai-import-border);
+    border-radius: 2px;
+    margin: 8px auto 0;
+    flex-shrink: 0;
+  }
+
+  /* Mobile header adjustments */
   .ai-import-header {
-    padding: 20px 20px 14px;
+    padding: 12px 16px;
   }
 
   .ai-import-title {
-    font-size: 18px;
+    font-size: 18px; /* Protocol: 18px */
+    font-weight: 400; /* Protocol: weight 400, NOT bold */
   }
 
+  /* Show short title on mobile */
+  .ai-import-title-desktop {
+    display: none;
+  }
+
+  .ai-import-title-mobile {
+    display: inline;
+  }
+
+  /* Mobile close button - larger touch target */
+  .ai-import-close-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .ai-import-close-btn svg {
+    width: 36px;
+    height: 36px;
+  }
+
+  /* Mobile content */
   .ai-import-content {
-    padding: 20px;
-    min-height: 260px;
+    padding: 16px;
+    min-height: 240px;
   }
 
   .ai-import-task {
     padding: 10px 14px;
   }
 
+  /* Mobile footer - extra bottom padding for safe area */
   .ai-import-footer {
-    padding: 14px 20px 20px;
+    padding: 12px 16px 20px; /* Protocol: 12px top, 20px bottom */
   }
 
   .ai-import-btn {
@@ -380,11 +462,36 @@
   }
 }
 
+@keyframes aiImportSlideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+/* Tablet breakpoint */
+@media (min-width: 481px) and (max-width: 640px) {
+  .ai-import-modal-container {
+    max-width: 100%;
+    margin: 0 16px;
+  }
+
+  .ai-import-title {
+    font-size: 16px;
+  }
+}
+
 @media (max-width: 400px) {
   .ai-import-header-content {
-    flex-direction: column;
-    align-items: flex-start;
     gap: 8px;
+  }
+
+  .ai-import-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .ai-import-icon svg {
+    width: 18px;
+    height: 18px;
   }
 
   .ai-import-summary-item {
@@ -399,6 +506,7 @@
 
 /* =====================================================
    CONFETTI CELEBRATION ANIMATION
+   Protocol: Use purple tones instead of green
    ===================================================== */
 
 .ai-import-confetti-container {

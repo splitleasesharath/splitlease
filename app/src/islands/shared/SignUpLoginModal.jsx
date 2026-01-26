@@ -71,49 +71,81 @@ const USER_TYPES = {
 };
 
 // ============================================================================
-// Styles - Premium Design System (matching signup-mockup-v2.html)
+// Styles - POPUP REPLICATION PROTOCOL Compliant
 // ============================================================================
 
+// Protocol Color Constants
+const COLORS = {
+  primaryPurple: '#31135D',      // Protocol: Primary Purple
+  positivePurple: '#5B5FCF',     // Protocol: Positive/Action Purple (replaces green)
+  secondaryPurple: '#6D31C2',    // Protocol: Secondary Purple (accents)
+  lightPurpleBg: '#F7F2FA',      // Protocol: Light Purple Background
+  emergencyRed: '#DC3545',       // Protocol: Emergency Red (outlined only)
+  border: '#E7E0EC',             // Protocol: Standard border
+  textPrimary: '#1a1a1a',
+  textSecondary: '#49454F',      // Protocol: Ghost text color
+  textMuted: '#6b7280',
+  white: '#ffffff'
+};
+
 const styles = {
-  // Modal & Overlay
+  // Modal & Overlay - Protocol Section 1: Core Architecture
   overlay: {
     position: 'fixed',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '16px',
+    padding: '20px',
     zIndex: 10000
   },
   modal: {
-    backgroundColor: '#ffffff',
-    borderRadius: '12px',
-    padding: '24px',
+    display: 'flex',
+    flexDirection: 'column',
+    backgroundColor: COLORS.white,
+    borderRadius: '16px',
     maxWidth: '400px',
     width: '100%',
-    maxHeight: '90vh',
+    maxHeight: '92vh', // Protocol: 92vh max-height
+    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+    position: 'relative',
+    overflow: 'hidden'
+  },
+  modalContent: {
+    flex: 1,
     overflowY: 'auto',
-    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)',
-    position: 'relative'
+    WebkitOverflowScrolling: 'touch', // Protocol: smooth mobile scroll
+    padding: '16px' // Protocol: standardized spacing
+  },
+  // Mobile grab handle (hidden by default, shown via CSS)
+  grabHandle: {
+    display: 'none', // Will be shown via CSS on mobile
+    width: '36px',
+    height: '4px',
+    backgroundColor: COLORS.border,
+    borderRadius: '2px',
+    margin: '8px auto 0',
+    flexShrink: 0
   },
   closeBtn: {
     position: 'absolute',
-    top: '16px',
-    right: '16px',
-    width: '32px',
-    height: '32px',
+    top: '12px',
+    right: '12px',
+    width: '44px',
+    height: '44px',
     border: 'none',
     background: 'none',
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: '#9ca3af',
-    transition: 'color 0.2s ease',
+    color: COLORS.primaryPurple, // Protocol: Primary Purple
+    borderRadius: '8px',
+    transition: 'background 0.2s ease',
     zIndex: 10
   },
 
@@ -138,23 +170,23 @@ const styles = {
   title: {
     fontSize: '20px',
     fontWeight: '700',
-    color: '#1a1a1a',
+    color: COLORS.textPrimary,
     margin: '0 0 8px 0'
   },
   subtitle: {
     fontSize: '14px',
-    color: '#6b7280',
+    color: COLORS.textMuted,
     lineHeight: 1.5,
     margin: 0
   },
   subtitleAccent: {
-    color: '#6366F1',
+    color: COLORS.primaryPurple, // Protocol: Primary Purple
     fontWeight: '600'
   },
 
   // User type cards
   userTypeCard: {
-    border: '1px solid #e5e7eb',
+    border: `1px solid ${COLORS.border}`,
     borderRadius: '10px',
     padding: '16px',
     marginBottom: '12px',
@@ -163,22 +195,22 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '14px',
-    backgroundColor: '#f9fafb'
+    backgroundColor: COLORS.lightPurpleBg // Protocol: Light Purple Background
   },
   userTypeCardSelected: {
-    borderColor: '#6366F1',
-    backgroundColor: '#EEF2FF',
-    boxShadow: '0 8px 30px rgba(99, 102, 241, 0.15)'
+    borderColor: COLORS.positivePurple, // Protocol: Positive Purple
+    backgroundColor: COLORS.lightPurpleBg,
+    boxShadow: '0 8px 30px rgba(49, 19, 93, 0.15)' // Protocol purple shadow
   },
   userTypeIcon: {
     width: '48px',
     height: '48px',
     borderRadius: '10px',
-    backgroundColor: 'white',
+    backgroundColor: COLORS.white,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: '#6366F1',
+    color: COLORS.primaryPurple, // Protocol: Primary Purple
     flexShrink: 0,
     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)'
   },
@@ -188,12 +220,12 @@ const styles = {
   userTypeTitle: {
     fontSize: '14px',
     fontWeight: '600',
-    color: '#1a1a1a',
+    color: COLORS.textPrimary,
     marginBottom: '2px'
   },
   userTypeDesc: {
     fontSize: '13px',
-    color: '#6b7280',
+    color: COLORS.textMuted,
     margin: 0,
     lineHeight: 1.4
   },
@@ -211,7 +243,7 @@ const styles = {
     padding: '12px 16px',
     border: '1px solid #0a66c2',
     backgroundColor: '#0a66c2',
-    borderRadius: '10px',
+    borderRadius: '100px', // Protocol: pill-shaped
     cursor: 'pointer',
     transition: 'all 0.2s ease',
     display: 'flex',
@@ -251,9 +283,9 @@ const styles = {
   googleBtn: {
     flex: 1,
     padding: '12px 16px',
-    backgroundColor: '#f9fafb',
-    border: '1px solid #e5e7eb',
-    borderRadius: '10px',
+    backgroundColor: COLORS.lightPurpleBg, // Protocol: Light Purple Background
+    border: `1px solid ${COLORS.border}`,
+    borderRadius: '100px', // Protocol: pill-shaped
     cursor: 'pointer',
     transition: 'all 0.2s ease',
     display: 'flex',
@@ -262,15 +294,15 @@ const styles = {
     gap: '8px',
     fontSize: '14px',
     fontWeight: '500',
-    color: '#1a1a1a'
+    color: COLORS.textPrimary
   },
 
-  // LinkedIn connected state
+  // LinkedIn connected state - Protocol: NO GREEN, use Positive Purple
   linkedinConnected: {
     width: '100%',
     padding: '14px 16px',
-    border: '1px solid #10B981',
-    backgroundColor: 'rgba(16, 185, 129, 0.08)',
+    border: `1px solid ${COLORS.positivePurple}`, // Protocol: Positive Purple
+    backgroundColor: COLORS.lightPurpleBg, // Protocol: Light Purple Background
     borderRadius: '10px',
     display: 'flex',
     alignItems: 'center',
@@ -280,7 +312,7 @@ const styles = {
   linkedinConnectedCheck: {
     width: '32px',
     height: '32px',
-    backgroundColor: '#10B981',
+    backgroundColor: COLORS.positivePurple, // Protocol: Positive Purple (NO GREEN)
     borderRadius: '50%',
     display: 'flex',
     alignItems: 'center',
@@ -294,15 +326,15 @@ const styles = {
   linkedinConnectedName: {
     fontSize: '14px',
     fontWeight: '600',
-    color: '#1a1a1a'
+    color: COLORS.textPrimary
   },
   linkedinConnectedEmail: {
     fontSize: '12px',
-    color: '#6b7280'
+    color: COLORS.textMuted
   },
   linkedinConnectedChange: {
     fontSize: '13px',
-    color: '#6366F1',
+    color: COLORS.primaryPurple, // Protocol: Primary Purple
     cursor: 'pointer',
     textDecoration: 'none',
     fontWeight: '500',
@@ -321,11 +353,11 @@ const styles = {
   dividerLine: {
     flex: 1,
     height: '1px',
-    backgroundColor: '#e5e7eb'
+    backgroundColor: COLORS.border
   },
   dividerText: {
     fontSize: '13px',
-    color: '#9ca3af',
+    color: COLORS.textSecondary,
     fontWeight: '500'
   },
 
@@ -347,12 +379,12 @@ const styles = {
     display: 'block',
     fontSize: '13px',
     fontWeight: '500',
-    color: '#9ca3af',
+    color: COLORS.primaryPurple, // Protocol: Primary Purple for labels
     marginBottom: '6px'
   },
   prefillBadge: {
     fontSize: '11px',
-    color: '#10B981',
+    color: COLORS.positivePurple, // Protocol: Positive Purple (NO GREEN)
     marginLeft: '6px',
     fontWeight: '500',
     display: 'inline-flex',
@@ -362,33 +394,33 @@ const styles = {
   input: {
     width: '100%',
     padding: '10px 12px',
-    border: '1px solid #e5e7eb',
-    borderRadius: '10px',
+    border: `1px solid ${COLORS.border}`,
+    borderRadius: '8px',
     fontSize: '14px',
-    color: '#1a1a1a',
+    color: COLORS.textPrimary,
     transition: 'border-color 0.2s ease, background-color 0.2s ease',
     outline: 'none',
     boxSizing: 'border-box',
-    backgroundColor: '#f9fafb',
+    backgroundColor: COLORS.lightPurpleBg, // Protocol: Light Purple Background
     fontFamily: 'inherit'
   },
   inputFocused: {
-    borderColor: '#6366F1',
-    backgroundColor: 'white'
+    borderColor: COLORS.primaryPurple, // Protocol: Primary Purple
+    backgroundColor: COLORS.white
   },
   inputError: {
-    borderColor: '#dc2626'
+    borderColor: COLORS.emergencyRed // Protocol: Emergency Red
   },
   inputSuccess: {
-    borderColor: '#10B981'
+    borderColor: COLORS.positivePurple // Protocol: Positive Purple (NO GREEN)
   },
   inputPrefilled: {
-    backgroundColor: '#f9fafb',
-    borderColor: '#e5e7eb'
+    backgroundColor: COLORS.lightPurpleBg,
+    borderColor: COLORS.border
   },
   helperText: {
     fontSize: '12px',
-    color: '#6b7280',
+    color: COLORS.textMuted,
     marginTop: '6px',
     lineHeight: 1.4
   },
@@ -397,13 +429,13 @@ const styles = {
   select: {
     width: '100%',
     padding: '10px 12px',
-    border: '1px solid #e5e7eb',
-    borderRadius: '10px',
+    border: `1px solid ${COLORS.border}`,
+    borderRadius: '8px',
     fontSize: '14px',
-    color: '#1a1a1a',
+    color: COLORS.textPrimary,
     outline: 'none',
     boxSizing: 'border-box',
-    backgroundColor: '#f9fafb',
+    backgroundColor: COLORS.lightPurpleBg,
     cursor: 'pointer',
     transition: 'border-color 0.2s ease',
     fontFamily: 'inherit'
@@ -424,7 +456,7 @@ const styles = {
     background: 'none',
     border: 'none',
     cursor: 'pointer',
-    color: '#6b7280',
+    color: COLORS.textMuted,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -432,26 +464,27 @@ const styles = {
     transition: 'color 0.2s ease'
   },
 
-  // Password requirements
+  // Password requirements - Protocol: NO GREEN, use Positive Purple
   passwordRequirements: {
     marginTop: '12px',
     padding: '12px',
-    backgroundColor: '#f9fafb',
-    borderRadius: '10px'
+    backgroundColor: COLORS.lightPurpleBg, // Protocol: Light Purple Background
+    border: `1px solid ${COLORS.border}`,
+    borderRadius: '8px'
   },
   requirement: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
     fontSize: '13px',
-    color: '#6b7280',
+    color: COLORS.textMuted,
     marginBottom: '6px'
   },
   requirementLast: {
     marginBottom: 0
   },
   requirementMet: {
-    color: '#10B981'
+    color: COLORS.positivePurple // Protocol: Positive Purple (NO GREEN)
   },
   requirementIcon: {
     width: '16px',
@@ -461,16 +494,16 @@ const styles = {
     justifyContent: 'center'
   },
 
-  // Buttons
+  // Buttons - Protocol Section 4B: pill-shaped (100px radius)
   buttonPrimary: {
     width: '100%',
-    padding: '12px',
-    backgroundColor: '#6366F1',
+    padding: '12px 24px',
+    backgroundColor: COLORS.primaryPurple, // Protocol: Primary Purple
     color: 'white',
     border: 'none',
-    borderRadius: '10px',
+    borderRadius: '100px', // Protocol: pill-shaped
     fontSize: '14px',
-    fontWeight: '500',
+    fontWeight: '600',
     cursor: 'pointer',
     transition: 'background 0.2s ease, box-shadow 0.2s ease',
     marginTop: '8px',
@@ -480,23 +513,24 @@ const styles = {
     fontFamily: 'inherit'
   },
   buttonPrimaryHover: {
-    backgroundColor: '#4F46E5',
-    boxShadow: '0 4px 12px rgba(99, 102, 241, 0.25)'
+    backgroundColor: COLORS.secondaryPurple, // Protocol: Secondary Purple for hover
+    boxShadow: '0 4px 12px rgba(49, 19, 93, 0.25)'
   },
   buttonDisabled: {
-    backgroundColor: '#e5e7eb',
+    backgroundColor: COLORS.border,
     cursor: 'not-allowed',
     boxShadow: 'none'
   },
+  // Ghost button - Protocol Section 4B
   buttonSecondary: {
     width: '100%',
-    padding: '12px',
-    backgroundColor: '#f9fafb',
-    border: '1px solid #e5e7eb',
-    borderRadius: '10px',
+    padding: '12px 24px',
+    backgroundColor: 'transparent',
+    border: `1px solid ${COLORS.border}`,
+    borderRadius: '100px', // Protocol: pill-shaped
     fontSize: '14px',
     fontWeight: '500',
-    color: '#1a1a1a',
+    color: COLORS.textSecondary,
     cursor: 'pointer',
     transition: 'all 0.2s ease',
     fontFamily: 'inherit',
@@ -505,23 +539,24 @@ const styles = {
     justifyContent: 'center'
   },
 
-  // Back button
+  // Back button - Ghost style
   backBtn: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     gap: '6px',
     width: '100%',
-    background: 'none',
-    border: 'none',
-    color: '#6366F1',
+    background: 'transparent',
+    border: `1px solid ${COLORS.border}`, // Protocol: Ghost button
+    borderRadius: '100px', // Protocol: pill-shaped
+    color: COLORS.textSecondary,
     cursor: 'pointer',
     fontSize: '13px',
     fontWeight: '500',
     padding: '12px',
     marginTop: '8px',
     fontFamily: 'inherit',
-    transition: 'opacity 0.2s ease'
+    transition: 'all 0.2s ease'
   },
 
   // Footer link
@@ -529,12 +564,12 @@ const styles = {
     textAlign: 'center',
     marginTop: '20px',
     paddingTop: '16px',
-    borderTop: '1px solid #e5e7eb',
+    borderTop: `1px solid ${COLORS.border}`,
     fontSize: '13px',
-    color: '#6b7280'
+    color: COLORS.textMuted
   },
   link: {
-    color: '#6366F1',
+    color: COLORS.primaryPurple, // Protocol: Primary Purple
     textDecoration: 'none',
     cursor: 'pointer',
     background: 'none',
@@ -552,41 +587,41 @@ const styles = {
   // Legal text
   termsText: {
     fontSize: '12px',
-    color: '#6b7280',
+    color: COLORS.textMuted,
     textAlign: 'center',
     marginTop: '16px',
     lineHeight: 1.5
   },
 
-  // Success state
+  // Success state - Protocol: NO GREEN, use Positive Purple
   successIcon: {
     width: '80px',
     height: '80px',
-    background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(99, 102, 241, 0.1) 100%)',
+    background: `linear-gradient(135deg, ${COLORS.lightPurpleBg} 0%, rgba(91, 95, 207, 0.1) 100%)`,
     borderRadius: '50%',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     margin: '0 auto 20px',
-    color: '#10B981'
+    color: COLORS.positivePurple // Protocol: Positive Purple (NO GREEN)
   },
 
-  // Error box
+  // Error box - Protocol: Emergency Red outlined only
   errorBox: {
     padding: '12px',
-    backgroundColor: '#fee2e2',
-    border: '1px solid #fecaca',
-    borderRadius: '10px',
+    backgroundColor: COLORS.white, // Protocol: white/transparent bg for danger
+    border: `1px solid ${COLORS.emergencyRed}`, // Protocol: Emergency Red outlined
+    borderRadius: '8px',
     marginBottom: '16px'
   },
   errorText: {
     fontSize: '13px',
-    color: '#dc2626',
+    color: COLORS.emergencyRed,
     margin: 0
   },
   inlineError: {
     fontSize: '12px',
-    color: '#dc2626',
+    color: COLORS.emergencyRed,
     marginTop: '6px'
   },
 
@@ -598,11 +633,11 @@ const styles = {
   dateSelect: {
     flex: 1,
     padding: '10px 12px',
-    border: '1px solid #e5e7eb',
-    borderRadius: '10px',
+    border: `1px solid ${COLORS.border}`,
+    borderRadius: '8px',
     fontSize: '14px',
     outline: 'none',
-    backgroundColor: '#f9fafb',
+    backgroundColor: COLORS.lightPurpleBg,
     cursor: 'pointer',
     fontFamily: 'inherit'
   },
@@ -611,14 +646,14 @@ const styles = {
   sectionLabel: {
     fontSize: '13px',
     fontWeight: '500',
-    color: '#9ca3af',
+    color: COLORS.textSecondary,
     marginBottom: '12px'
   },
 
   // Required note
   requiredNote: {
     fontSize: '12px',
-    color: '#6b7280',
+    color: COLORS.textMuted,
     marginBottom: '16px'
   }
 };
@@ -670,9 +705,21 @@ const LoadingSpinner = ({ size = 18 }) => (
   </svg>
 );
 
-// Close icon (X)
-const CloseIcon = ({ size = 20 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+// Close icon (X) - Protocol: 32x32, strokeWidth 2.5
+const CloseIcon = ({ size = 32 }) => (
+  <svg
+    className="signup-modal-close-icon"
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+    style={{ width: size, height: size, minWidth: size, minHeight: size, flexShrink: 0 }}
+  >
     <line x1="18" y1="6" x2="6" y2="18" />
     <line x1="6" y1="6" x2="18" y2="18" />
   </svg>
@@ -1556,9 +1603,9 @@ export default function SignUpLoginModal({
     setIsLoading(false);
   };
 
-  // Inject keyframe animation for spinner
+  // Inject keyframe animations and mobile bottom-sheet styles
   useEffect(() => {
-    const styleId = 'signup-modal-spinner-styles';
+    const styleId = 'signup-modal-protocol-styles';
     if (!document.getElementById(styleId)) {
       const style = document.createElement('style');
       style.id = styleId;
@@ -1566,6 +1613,79 @@ export default function SignUpLoginModal({
         @keyframes spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
+        }
+
+        @keyframes signupModalSlideUp {
+          from { transform: translateY(100%); }
+          to { transform: translateY(0); }
+        }
+
+        /* Mobile bottom-sheet mode - Protocol Section 1 */
+        @media (max-width: 480px) {
+          .signup-modal-overlay {
+            align-items: flex-end !important;
+            padding: 0 !important;
+          }
+
+          .signup-modal-container {
+            border-radius: 24px 24px 0 0 !important;
+            max-width: 100% !important;
+            max-height: 92vh !important;
+            animation: signupModalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+          }
+
+          .signup-modal-grab-handle {
+            display: block !important;
+          }
+
+          .signup-modal-close-btn {
+            width: 48px !important;
+            height: 48px !important;
+            top: 8px !important;
+            right: 8px !important;
+          }
+
+          .signup-modal-close-btn svg,
+          .signup-modal-close-icon {
+            width: 36px !important;
+            height: 36px !important;
+            min-width: 36px !important;
+            min-height: 36px !important;
+            stroke-width: 2.5 !important;
+          }
+        }
+
+        /* Protocol: Explicit icon sizing to prevent CSS conflicts */
+        .signup-modal-close-icon {
+          width: 32px !important;
+          height: 32px !important;
+          min-width: 32px !important;
+          min-height: 32px !important;
+          flex-shrink: 0 !important;
+        }
+
+        /* Close button hover - Protocol */
+        .signup-modal-close-btn:hover {
+          background: #F7F2FA !important;
+        }
+
+        /* Back button hover - Ghost style */
+        .signup-modal-back-btn:hover {
+          background: #F7F2FA !important;
+          border-color: #31135D !important;
+          color: #31135D !important;
+        }
+
+        /* Primary button hover */
+        .signup-modal-btn-primary:hover:not(:disabled) {
+          background: #6D31C2 !important;
+        }
+
+        /* Secondary button hover */
+        .signup-modal-btn-secondary:hover {
+          background: #F7F2FA !important;
+          border-color: #31135D !important;
+          color: #31135D !important;
         }
       `;
       document.head.appendChild(style);
@@ -1708,7 +1828,7 @@ export default function SignUpLoginModal({
         </div>
       </div>
 
-      <button style={styles.backBtn} onClick={goToEntry}>
+      <button className="signup-modal-back-btn" style={styles.backBtn} onClick={goToEntry}>
         <ArrowLeftIcon /> Back
       </button>
     </>
@@ -1778,12 +1898,12 @@ export default function SignUpLoginModal({
             placeholder="john@example.com"
             style={styles.input}
             onFocus={(e) => {
-              e.target.style.borderColor = '#6366F1';
+              e.target.style.borderColor = '#31135D';
               e.target.style.backgroundColor = 'white';
             }}
             onBlur={(e) => {
-              e.target.style.borderColor = '#e5e7eb';
-              e.target.style.backgroundColor = '#f9fafb';
+              e.target.style.borderColor = '#E7E0EC';
+              e.target.style.backgroundColor = '#F7F2FA';
             }}
           />
         </div>
@@ -1799,12 +1919,12 @@ export default function SignUpLoginModal({
               placeholder="Enter your password"
               style={{ ...styles.input, ...styles.inputWithIcon }}
               onFocus={(e) => {
-                e.target.style.borderColor = '#6366F1';
+                e.target.style.borderColor = '#31135D';
                 e.target.style.backgroundColor = 'white';
               }}
               onBlur={(e) => {
-                e.target.style.borderColor = '#e5e7eb';
-                e.target.style.backgroundColor = '#f9fafb';
+                e.target.style.borderColor = '#E7E0EC';
+                e.target.style.backgroundColor = '#F7F2FA';
               }}
             />
             <button
@@ -1925,12 +2045,12 @@ export default function SignUpLoginModal({
               placeholder="John"
               style={styles.input}
               onFocus={(e) => {
-                e.target.style.borderColor = '#6366F1';
+                e.target.style.borderColor = '#31135D';
                 e.target.style.backgroundColor = 'white';
               }}
               onBlur={(e) => {
-                e.target.style.borderColor = '#e5e7eb';
-                e.target.style.backgroundColor = '#f9fafb';
+                e.target.style.borderColor = '#E7E0EC';
+                e.target.style.backgroundColor = '#F7F2FA';
               }}
             />
           </div>
@@ -1944,12 +2064,12 @@ export default function SignUpLoginModal({
               placeholder="Smith"
               style={styles.input}
               onFocus={(e) => {
-                e.target.style.borderColor = '#6366F1';
+                e.target.style.borderColor = '#31135D';
                 e.target.style.backgroundColor = 'white';
               }}
               onBlur={(e) => {
-                e.target.style.borderColor = '#e5e7eb';
-                e.target.style.backgroundColor = '#f9fafb';
+                e.target.style.borderColor = '#E7E0EC';
+                e.target.style.backgroundColor = '#F7F2FA';
               }}
             />
           </div>
@@ -1965,12 +2085,12 @@ export default function SignUpLoginModal({
             placeholder="john@example.com"
             style={styles.input}
             onFocus={(e) => {
-              e.target.style.borderColor = '#6366F1';
+              e.target.style.borderColor = '#31135D';
               e.target.style.backgroundColor = 'white';
             }}
             onBlur={(e) => {
-              e.target.style.borderColor = '#e5e7eb';
-              e.target.style.backgroundColor = '#f9fafb';
+              e.target.style.borderColor = '#E7E0EC';
+              e.target.style.backgroundColor = '#F7F2FA';
             }}
           />
           <p style={styles.helperText}>We'll use this for login and important updates</p>
@@ -2030,7 +2150,7 @@ export default function SignUpLoginModal({
           Continue
         </button>
 
-        <button type="button" style={styles.backBtn} onClick={goToUserType}>
+        <button type="button" className="signup-modal-back-btn" style={styles.backBtn} onClick={goToUserType}>
           <ArrowLeftIcon /> Back
         </button>
       </form>
@@ -2072,12 +2192,12 @@ export default function SignUpLoginModal({
                 placeholder="Create a password"
                 style={{ ...styles.input, ...styles.inputWithIcon }}
                 onFocus={(e) => {
-                  e.target.style.borderColor = '#6366F1';
+                  e.target.style.borderColor = '#31135D';
                   e.target.style.backgroundColor = 'white';
                 }}
                 onBlur={(e) => {
-                  e.target.style.borderColor = '#e5e7eb';
-                  e.target.style.backgroundColor = '#f9fafb';
+                  e.target.style.borderColor = '#E7E0EC';
+                  e.target.style.backgroundColor = '#F7F2FA';
                 }}
               />
               <button
@@ -2139,11 +2259,11 @@ export default function SignUpLoginModal({
 
           <p style={styles.termsText}>
             By creating an account, you agree to our{' '}
-            <a href="/terms" target="_blank" style={{ color: '#6366F1' }}>Terms of Service</a> and{' '}
-            <a href="/privacy" target="_blank" style={{ color: '#6366F1' }}>Privacy Policy</a>
+            <a href="/terms" target="_blank" style={{ color: '#31135D' }}>Terms of Service</a> and{' '}
+            <a href="/privacy" target="_blank" style={{ color: '#31135D' }}>Privacy Policy</a>
           </p>
 
-          <button type="button" style={styles.backBtn} onClick={goToIdentity}>
+          <button type="button" className="signup-modal-back-btn" style={styles.backBtn} onClick={goToIdentity}>
             <ArrowLeftIcon /> Back
           </button>
         </form>
@@ -2211,7 +2331,7 @@ export default function SignUpLoginModal({
           <MailIcon /> Send me a magic login link instead
         </button>
 
-        <button type="button" style={styles.backBtn} onClick={goToLogin}>
+        <button type="button" className="signup-modal-back-btn" style={styles.backBtn} onClick={goToLogin}>
           <ArrowLeftIcon /> Back to login
         </button>
       </form>
@@ -2263,7 +2383,7 @@ export default function SignUpLoginModal({
           {isLoading ? 'Sending magic link...' : 'Send magic link'}
         </button>
 
-        <button type="button" style={styles.backBtn} onClick={goToLogin}>
+        <button type="button" className="signup-modal-back-btn" style={styles.backBtn} onClick={goToLogin}>
           <ArrowLeftIcon /> Back to login
         </button>
       </form>
@@ -2367,26 +2487,45 @@ export default function SignUpLoginModal({
 
   return (
     <>
-      <div style={styles.overlay} onClick={handleOverlayClick}>
-        <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+      <div
+        className="signup-modal-overlay"
+        style={styles.overlay}
+        onClick={handleOverlayClick}
+      >
+        <div
+          className="signup-modal-container"
+          style={styles.modal}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Mobile grab handle - Protocol Section 1 */}
+          <div className="signup-modal-grab-handle" style={styles.grabHandle} aria-hidden="true" />
+
           {/* Close button */}
           {!disableClose && (
-            <button style={styles.closeBtn} onClick={onClose} aria-label="Close">
-              <CloseIcon />
+            <button
+              className="signup-modal-close-btn"
+              style={styles.closeBtn}
+              onClick={onClose}
+              aria-label="Close modal"
+            >
+              <CloseIcon size={32} />
             </button>
           )}
 
-          {/* Render current view */}
-          {currentView === VIEWS.ENTRY && renderEntryView()}
-          {currentView === VIEWS.USER_TYPE && renderUserTypeView()}
-          {currentView === VIEWS.IDENTITY && renderIdentityView()}
-          {currentView === VIEWS.PASSWORD && renderPasswordView()}
-          {currentView === VIEWS.LOGIN && renderLoginView()}
-          {currentView === VIEWS.PASSWORD_RESET && renderPasswordResetView()}
-          {currentView === VIEWS.MAGIC_LINK && renderMagicLinkView()}
-          {currentView === VIEWS.RESET_SENT && renderResetSentView()}
-          {currentView === VIEWS.MAGIC_LINK_SENT && renderMagicLinkSentView()}
-          {currentView === VIEWS.SUCCESS && renderSuccessView()}
+          {/* Scrollable content area */}
+          <div style={styles.modalContent}>
+            {/* Render current view */}
+            {currentView === VIEWS.ENTRY && renderEntryView()}
+            {currentView === VIEWS.USER_TYPE && renderUserTypeView()}
+            {currentView === VIEWS.IDENTITY && renderIdentityView()}
+            {currentView === VIEWS.PASSWORD && renderPasswordView()}
+            {currentView === VIEWS.LOGIN && renderLoginView()}
+            {currentView === VIEWS.PASSWORD_RESET && renderPasswordResetView()}
+            {currentView === VIEWS.MAGIC_LINK && renderMagicLinkView()}
+            {currentView === VIEWS.RESET_SENT && renderResetSentView()}
+            {currentView === VIEWS.MAGIC_LINK_SENT && renderMagicLinkSentView()}
+            {currentView === VIEWS.SUCCESS && renderSuccessView()}
+          </div>
         </div>
       </div>
 
@@ -2395,14 +2534,16 @@ export default function SignUpLoginModal({
 
       {/* Duplicate email confirmation modal */}
       {duplicateEmailData.showModal && (
-        <div style={styles.overlay} onClick={() => setDuplicateEmailData({ email: '', showModal: false })}>
-          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <div className="signup-modal-overlay" style={styles.overlay} onClick={() => setDuplicateEmailData({ email: '', showModal: false })}>
+          <div className="signup-modal-container" style={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className="signup-modal-grab-handle" style={styles.grabHandle} aria-hidden="true" />
             <button
+              className="signup-modal-close-btn"
               style={styles.closeBtn}
               onClick={() => setDuplicateEmailData({ email: '', showModal: false })}
-              aria-label="Close"
+              aria-label="Close modal"
             >
-              <CloseIcon />
+              <CloseIcon size={32} />
             </button>
 
             <div style={styles.logoContainer}>
@@ -2445,14 +2586,16 @@ export default function SignUpLoginModal({
 
       {/* User not found modal (for OAuth login when account doesn't exist) */}
       {userNotFoundData.showModal && (
-        <div style={styles.overlay} onClick={() => setUserNotFoundData({ email: '', showModal: false })}>
-          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <div className="signup-modal-overlay" style={styles.overlay} onClick={() => setUserNotFoundData({ email: '', showModal: false })}>
+          <div className="signup-modal-container" style={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className="signup-modal-grab-handle" style={styles.grabHandle} aria-hidden="true" />
             <button
+              className="signup-modal-close-btn"
               style={styles.closeBtn}
               onClick={() => setUserNotFoundData({ email: '', showModal: false })}
-              aria-label="Close"
+              aria-label="Close modal"
             >
-              <CloseIcon />
+              <CloseIcon size={32} />
             </button>
 
             <div style={styles.logoContainer}>

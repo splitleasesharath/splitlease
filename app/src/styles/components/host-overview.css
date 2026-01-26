@@ -259,9 +259,9 @@
    ============================================================================ */
 
 .listings-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
-  gap: var(--ho-spacing-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ho-spacing-md);
 }
 
 .manuals-grid {
@@ -534,180 +534,205 @@
   cursor: pointer;
 }
 
-/* Listing Card */
+/* ============================================================================
+   LISTING CARD - NEW HORIZONTAL DESIGN
+   Two-row layout:
+   Row 1: Thumbnail | Title/Location | Delete icon
+   Row 2: Manage/Preview buttons | Proposals badge | Create House Manual link
+   ============================================================================ */
+
 .listing-card {
   background-color: var(--ho-color-white);
-  padding: 0;
+  border: 1px solid var(--ho-color-border-light);
+  border-radius: var(--ho-radius-large);
+  padding: var(--ho-spacing-lg) var(--ho-spacing-xl);
   overflow: hidden;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 120px;
 }
 
-/* Listing Card - Image Section */
-.listing-card__image-section {
-  width: 200px;
-  min-width: 200px;
-  height: auto;
-  min-height: 160px;
-  position: relative;
-  background-color: var(--ho-color-off-white);
+.listing-card--horizontal {
+  /* Additional styles for horizontal variant */
+}
+
+/* Row 1: Header with thumbnail, title, and delete */
+.listing-card__header-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ho-spacing-md);
+  width: 100%;
+}
+
+/* Thumbnail */
+.listing-card__thumbnail {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  border-radius: var(--ho-radius-medium);
+  overflow: hidden;
+  background-color: var(--ho-color-light-gray);
   flex-shrink: 0;
 }
 
-.listing-card__images {
-  width: 100%;
-  height: 100%;
-  position: relative;
-}
-
-.listing-card__image {
+.listing-card__thumbnail-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  position: absolute;
-  top: 0;
-  left: 0;
 }
 
-.listing-card__image-nav {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.9);
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  font-weight: bold;
-  color: var(--ho-color-text-primary);
-  transition: all var(--ho-transition-normal);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  z-index: 2;
-}
-
-.listing-card__image-nav:hover {
-  background-color: var(--ho-color-white);
-  transform: translateY(-50%) scale(1.05);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-}
-
-.listing-card__image-nav--prev {
-  left: var(--ho-spacing-xs);
-}
-
-.listing-card__image-nav--next {
-  right: var(--ho-spacing-xs);
-}
-
-.listing-card__image-counter {
-  position: absolute;
-  bottom: var(--ho-spacing-xs);
-  right: var(--ho-spacing-xs);
-  background-color: rgba(0, 0, 0, 0.6);
-  color: white;
-  padding: 2px var(--ho-spacing-sm);
-  border-radius: var(--ho-radius-small);
-  font-size: 11px;
-  font-weight: 500;
-  z-index: 2;
-}
-
-.listing-card__image-placeholder {
+.listing-card__thumbnail-placeholder {
   width: 100%;
   height: 100%;
-  min-height: 160px;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--ho-spacing-xs);
-  color: var(--ho-color-text-secondary);
-  background-color: var(--ho-color-light-gray);
+  color: var(--ho-color-text-muted);
 }
 
-.listing-card__image-placeholder svg {
-  width: 36px;
-  height: 36px;
+.listing-card__thumbnail-placeholder svg {
+  width: 24px;
+  height: 24px;
   opacity: 0.4;
 }
 
-.listing-card__image-placeholder span {
-  font-size: 12px;
-}
-
-.listing-card__content {
-  display: flex;
-  flex-direction: row;
+/* Title Section */
+.listing-card__title-section {
   flex: 1;
   min-width: 0;
-}
-
-.listing-card__left {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: var(--ho-spacing-md);
-  padding: var(--ho-spacing-lg) var(--ho-spacing-md);
-  min-width: 240px;
-}
-
-.listing-card__right {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--ho-spacing-lg) var(--ho-spacing-md);
-  background-color: var(--ho-color-light-gray);
-  min-width: 120px;
-}
-
-.listing-card__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: var(--ho-spacing-sm);
-}
-
-.listing-card__info {
-  flex: 1;
-  min-width: 0;
+  gap: 2px;
 }
 
 .listing-card__name {
   font-size: 16px;
-  font-weight: 600;
-  margin-bottom: var(--ho-spacing-xs);
+  font-weight: 500;
   color: var(--ho-color-text-primary);
-  line-height: 1.3;
+  line-height: 1.4;
+  margin: 0;
+  /* Truncate long titles with ellipsis */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.listing-card__location,
-.listing-card__status {
-  font-size: 13px;
+.listing-card__location {
+  font-size: 14px;
   color: var(--ho-color-text-secondary);
-  margin-bottom: 2px;
+  margin: 0;
 }
 
+/* Delete Button */
 .listing-card__delete {
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 18px;
-  padding: 2px;
-  opacity: 0.5;
-  transition: opacity var(--ho-transition-normal);
+  padding: var(--ho-spacing-xs);
+  color: var(--ho-color-text-muted);
+  opacity: 0.6;
+  transition: all var(--ho-transition-normal);
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--ho-radius-small);
 }
 
 .listing-card__delete:hover {
   opacity: 1;
+  color: var(--ho-color-danger);
+  background-color: rgba(220, 53, 69, 0.08);
 }
 
+.listing-card__delete svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Row 2: Actions - positioned at bottom */
+.listing-card__actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ho-spacing-md);
+  flex-wrap: wrap;
+  margin-top: auto;
+  padding-top: var(--ho-spacing-md);
+}
+
+/* Left actions: Manage and Preview buttons */
+.listing-card__actions-left {
+  display: flex;
+  align-items: center;
+  gap: var(--ho-spacing-sm);
+}
+
+/* Right actions: Proposals badge and House Manual link */
+.listing-card__actions-right {
+  display: flex;
+  align-items: center;
+  gap: var(--ho-spacing-lg);
+}
+
+/* Proposals Button with Badge */
+.listing-card__proposals-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ho-spacing-sm);
+  background-color: var(--ho-color-light-purple-bg);
+  color: var(--ho-color-primary-purple);
+  border: 1px solid var(--ho-color-purple-border);
+  border-radius: var(--ho-radius-pill);
+  padding: var(--ho-spacing-sm) var(--ho-spacing-lg);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--ho-transition-normal);
+}
+
+.listing-card__proposals-btn:hover {
+  background-color: var(--ho-color-purple-selected);
+  border-color: var(--ho-color-primary-purple);
+}
+
+/* Proposals Count Badge */
+.listing-card__proposals-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background-color: var(--ho-color-secondary-purple);
+  color: white;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Create House Manual Link */
+.listing-card__house-manual-link {
+  background: none;
+  border: none;
+  color: var(--ho-color-primary-purple);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: var(--ho-spacing-sm) 0;
+  transition: all var(--ho-transition-normal);
+  white-space: nowrap;
+}
+
+.listing-card__house-manual-link:hover {
+  color: var(--ho-color-secondary-purple);
+  text-decoration: underline;
+}
+
+/* Legacy styles - kept for backwards compatibility */
 .listing-card__badges {
   display: flex;
   gap: var(--ho-spacing-sm);
@@ -751,89 +776,6 @@
   background-color: transparent;
   color: var(--ho-color-danger);
   border: 1px solid var(--ho-color-danger);
-}
-
-.listing-card__actions {
-  display: flex;
-  gap: var(--ho-spacing-xs);
-  flex-wrap: nowrap;
-  margin-top: auto;
-}
-
-.listing-card__actions .btn {
-  padding: var(--ho-spacing-xs) var(--ho-spacing-sm);
-  font-size: 12px;
-  min-height: 30px;
-  white-space: nowrap;
-}
-
-/* Listing Card Pricing */
-.listing-card__pricing {
-  text-align: center;
-}
-
-.listing-card__pricing--empty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.listing-card__pricing-main {
-  display: flex;
-  flex-direction: row;
-  align-items: baseline;
-  justify-content: center;
-  gap: 2px;
-  margin-bottom: var(--ho-spacing-xs);
-  white-space: nowrap;
-}
-
-.listing-card__price {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--ho-color-text-primary);
-  line-height: 1.1;
-}
-
-.listing-card__period {
-  font-size: 13px;
-  color: var(--ho-color-text-secondary);
-}
-
-.listing-card__pricing-label {
-  font-size: 11px;
-  color: var(--ho-color-text-secondary);
-  margin-bottom: var(--ho-spacing-xs);
-  padding-bottom: var(--ho-spacing-xs);
-  border-bottom: 1px solid var(--ho-color-border-light);
-}
-
-.listing-card__pricing-details {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.listing-card__pricing-item {
-  display: flex;
-  justify-content: center;
-  gap: 4px;
-  font-size: 11px;
-}
-
-.listing-card__pricing-item .label {
-  color: var(--ho-color-text-secondary);
-}
-
-.listing-card__pricing-item .value {
-  font-weight: 600;
-  color: var(--ho-color-text-primary);
-}
-
-.listing-card__pricing-empty {
-  font-size: 13px;
-  color: var(--ho-color-text-secondary);
-  font-style: italic;
 }
 
 /* Claim Listing Card */
@@ -1524,41 +1466,61 @@
     padding: var(--ho-spacing-lg);
   }
 
+  /* New horizontal listing card responsive */
   .listing-card {
-    flex-direction: column;
-  }
-
-  .listing-card__image-section {
-    width: 100%;
-    min-width: 100%;
-    height: 140px;
-    min-height: 140px;
-  }
-
-  .listing-card__image {
-    position: relative;
-  }
-
-  .listing-card__content {
-    flex-direction: column;
-  }
-
-  .listing-card__left {
     padding: var(--ho-spacing-md);
+    gap: var(--ho-spacing-md);
   }
 
-  .listing-card__right {
+  .listing-card__header-row {
+    gap: var(--ho-spacing-sm);
+  }
+
+  .listing-card__thumbnail {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+  }
+
+  .listing-card__name {
+    font-size: 13px;
+    -webkit-line-clamp: 2;
+  }
+
+  .listing-card__location {
+    font-size: 12px;
+  }
+
+  .listing-card__actions-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--ho-spacing-sm);
+  }
+
+  .listing-card__actions-left {
     width: 100%;
-    padding: var(--ho-spacing-md);
   }
 
-  .listing-card__actions,
+  .listing-card__actions-left .btn {
+    flex: 1;
+  }
+
+  .listing-card__actions-right {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .listing-card__proposals-btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .listing-card__house-manual-link {
+    font-size: 12px;
+  }
+
   .house-manual-card__actions {
     flex-direction: row;
-  }
-
-  .listing-card__actions .btn {
-    flex: 1;
   }
 
   .house-manual-card__actions .btn {

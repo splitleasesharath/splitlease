@@ -1,0 +1,491 @@
+/**
+ * EditProposalModal.css - Protocol-Compliant Styling
+ *
+ * Design System: POPUP_REPLICATION_PROTOCOL
+ * - Monochromatic purple (NO GREEN, NO YELLOW)
+ * - Pill-shaped buttons (100px radius)
+ * - Mobile bottom sheet at <480px
+ *
+ * NOTE: !important used throughout to ensure protocol styles override
+ * any conflicting Tailwind or inherited styles
+ */
+
+/* ============================================
+   OVERLAY
+   ============================================ */
+.edit-proposal-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 50 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background-color: rgba(0, 0, 0, 0.5) !important;
+  padding: 1rem !important;
+  overflow-y: auto !important;
+  animation: editProposalFadeIn 0.3s ease-out !important;
+}
+
+/* ============================================
+   MODAL CONTAINER
+   ============================================ */
+.edit-proposal-modal {
+  position: relative !important;
+  width: 100% !important;
+  max-width: 672px !important;
+  max-height: 90vh !important;
+  background: #FFFFFF !important;
+  border-radius: 16px !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+  overflow: hidden !important;
+  animation: editProposalScaleIn 0.3s ease-out !important;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+.edit-proposal-header {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  padding: 1.25rem 1.5rem !important;
+  border-bottom: 1px solid #E7E0EC !important;
+  background: #FFFFFF !important;
+}
+
+.edit-proposal-header-content {
+  flex: 1 !important;
+}
+
+.edit-proposal-title {
+  font-size: 1.125rem !important;
+  font-weight: 600 !important;
+  color: #31135D !important;
+  margin: 0 !important;
+}
+
+.edit-proposal-subtitle {
+  font-size: 0.875rem !important;
+  color: #6B6B6B !important;
+  margin: 0.25rem 0 0 0 !important;
+}
+
+.edit-proposal-close-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 32px !important;
+  height: 32px !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 50% !important;
+  cursor: pointer !important;
+  color: #6B6B6B !important;
+  transition: all 0.15s ease !important;
+  flex-shrink: 0 !important;
+  margin-left: 1rem !important;
+}
+
+.edit-proposal-close-btn:hover {
+  background: #F7F2FA !important;
+  color: #31135D !important;
+}
+
+/* ============================================
+   FORM BODY
+   ============================================ */
+.edit-proposal-body {
+  padding: 1.5rem !important;
+  max-height: 60vh !important;
+  overflow-y: auto !important;
+}
+
+.edit-proposal-form-grid {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 1.5rem !important;
+}
+
+@media (min-width: 768px) {
+  .edit-proposal-form-grid--two-col {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+/* ============================================
+   FORM FIELDS
+   ============================================ */
+.edit-proposal-field {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.edit-proposal-label {
+  display: block !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  color: #31135D !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.edit-proposal-input,
+.edit-proposal-select {
+  width: 100% !important;
+  padding: 0.625rem 0.875rem !important;
+  border: 1px solid #E7E0EC !important;
+  border-radius: 8px !important;
+  font-size: 0.9375rem !important;
+  color: #31135D !important;
+  background: #FFFFFF !important;
+  transition: all 0.15s ease !important;
+}
+
+.edit-proposal-input:focus,
+.edit-proposal-select:focus {
+  outline: none !important;
+  border-color: #5B5FCF !important;
+  box-shadow: 0 0 0 3px rgba(91, 95, 207, 0.15) !important;
+}
+
+.edit-proposal-readonly {
+  background: #F7F2FA !important;
+  color: #6B6B6B !important;
+  cursor: not-allowed !important;
+}
+
+.edit-proposal-error-text {
+  font-size: 0.8125rem !important;
+  color: #DC3545 !important;
+  margin-top: 0.25rem !important;
+}
+
+/* ============================================
+   DAY SELECTOR
+   ============================================ */
+.edit-proposal-days-container {
+  display: flex !important;
+  gap: 0.5rem !important;
+  justify-content: center !important;
+  flex-wrap: wrap !important;
+}
+
+.edit-proposal-day-btn {
+  width: 48px !important;
+  height: 48px !important;
+  border-radius: 50% !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  border: 2px solid #E7E0EC !important;
+  background: #FFFFFF !important;
+  color: #6B6B6B !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+.edit-proposal-day-btn:hover:not(.edit-proposal-day-btn--selected) {
+  border-color: #5B5FCF !important;
+  background: #F7F2FA !important;
+}
+
+.edit-proposal-day-btn--selected {
+  background: #5B5FCF !important;
+  border-color: #5B5FCF !important;
+  color: #FFFFFF !important;
+}
+
+/* ============================================
+   PRICING SUMMARY
+   ============================================ */
+.edit-proposal-pricing {
+  background: #F7F2FA !important;
+  border-radius: 12px !important;
+  padding: 1rem !important;
+}
+
+.edit-proposal-pricing-title {
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  color: #31135D !important;
+  margin: 0 0 0.75rem 0 !important;
+}
+
+.edit-proposal-pricing-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding: 0.375rem 0 !important;
+}
+
+.edit-proposal-pricing-label {
+  font-size: 0.875rem !important;
+  color: #6B6B6B !important;
+}
+
+.edit-proposal-pricing-value {
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  color: #31135D !important;
+}
+
+.edit-proposal-pricing-total {
+  border-top: 1px solid #E7E0EC !important;
+  margin-top: 0.5rem !important;
+  padding-top: 0.75rem !important;
+}
+
+.edit-proposal-pricing-total .edit-proposal-pricing-label {
+  font-weight: 600 !important;
+  color: #31135D !important;
+}
+
+.edit-proposal-pricing-total .edit-proposal-pricing-value {
+  font-size: 1.125rem !important;
+  font-weight: 700 !important;
+  color: #5B5FCF !important;
+}
+
+/* ============================================
+   ERROR SUMMARY
+   ============================================ */
+.edit-proposal-error-summary {
+  background: rgba(220, 53, 69, 0.08) !important;
+  border: 1px solid #DC3545 !important;
+  border-radius: 12px !important;
+  padding: 1rem !important;
+}
+
+.edit-proposal-error-summary-title {
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  color: #DC3545 !important;
+  margin: 0 0 0.5rem 0 !important;
+}
+
+.edit-proposal-error-summary-list {
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.edit-proposal-error-summary-list li {
+  font-size: 0.875rem !important;
+  color: #DC3545 !important;
+  padding: 0.125rem 0 !important;
+}
+
+/* ============================================
+   FOOTER / BUTTONS
+   ============================================ */
+.edit-proposal-footer {
+  display: flex !important;
+  flex-direction: column-reverse !important;
+  gap: 0.75rem !important;
+  padding: 1rem 1.5rem !important;
+  background: #F7F2FA !important;
+  border-top: 1px solid #E7E0EC !important;
+}
+
+@media (min-width: 640px) {
+  .edit-proposal-footer {
+    flex-direction: row !important;
+    justify-content: flex-end !important;
+  }
+}
+
+.edit-proposal-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 12px 24px !important;
+  font-size: 0.9375rem !important;
+  font-weight: 600 !important;
+  border-radius: 100px !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  min-height: 44px !important;
+  border: 2px solid transparent !important;
+}
+
+.edit-proposal-btn:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+}
+
+.edit-proposal-btn--primary {
+  background: #5B5FCF !important;
+  color: #FFFFFF !important;
+  border-color: #5B5FCF !important;
+}
+
+.edit-proposal-btn--primary:hover:not(:disabled) {
+  background: #6D31C2 !important;
+  border-color: #6D31C2 !important;
+}
+
+.edit-proposal-btn--cancel {
+  background: transparent !important;
+  color: #6B6B6B !important;
+  border-color: #E7E0EC !important;
+}
+
+.edit-proposal-btn--cancel:hover:not(:disabled) {
+  background: #FFFFFF !important;
+  border-color: #6B6B6B !important;
+}
+
+/* ============================================
+   NON-EDITABLE STATE
+   ============================================ */
+.edit-proposal-modal--non-editable {
+  max-width: 400px !important;
+  text-align: center !important;
+  padding: 2rem !important;
+}
+
+.edit-proposal-modal--non-editable .edit-proposal-title {
+  margin-bottom: 0.75rem !important;
+}
+
+.edit-proposal-non-editable-text {
+  font-size: 0.9375rem !important;
+  color: #6B6B6B !important;
+  margin: 0 0 1.5rem 0 !important;
+  line-height: 1.5 !important;
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+@keyframes editProposalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes editProposalScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes editProposalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================
+   MOBILE BOTTOM SHEET (<480px)
+   ============================================ */
+@media (max-width: 480px) {
+  .edit-proposal-overlay {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+
+  .edit-proposal-modal {
+    max-width: 100% !important;
+    max-height: 90vh !important;
+    border-radius: 24px 24px 0 0 !important;
+    animation: editProposalSlideUp 0.3s ease-out !important;
+  }
+
+  /* Grab Handle */
+  .edit-proposal-modal::before {
+    content: '' !important;
+    display: block !important;
+    width: 36px !important;
+    height: 4px !important;
+    background: #E7E0EC !important;
+    border-radius: 2px !important;
+    margin: 12px auto 0 auto !important;
+  }
+
+  .edit-proposal-header {
+    padding-top: 0.75rem !important;
+  }
+
+  .edit-proposal-body {
+    max-height: 50vh !important;
+  }
+
+  .edit-proposal-day-btn {
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 0.8125rem !important;
+  }
+
+  .edit-proposal-footer {
+    padding: 1rem !important;
+  }
+
+  .edit-proposal-btn {
+    width: 100% !important;
+  }
+}
+
+/* ============================================
+   REACT-DATEPICKER PROTOCOL OVERRIDES
+   ============================================ */
+.edit-proposal-modal .react-datepicker-wrapper {
+  width: 100% !important;
+}
+
+.edit-proposal-modal .react-datepicker__input-container input {
+  width: 100% !important;
+  padding: 0.625rem 0.875rem !important;
+  border: 1px solid #E7E0EC !important;
+  border-radius: 8px !important;
+  font-size: 0.9375rem !important;
+  color: #31135D !important;
+  background: #FFFFFF !important;
+  transition: all 0.15s ease !important;
+}
+
+.edit-proposal-modal .react-datepicker__input-container input:focus {
+  outline: none !important;
+  border-color: #5B5FCF !important;
+  box-shadow: 0 0 0 3px rgba(91, 95, 207, 0.15) !important;
+}
+
+.edit-proposal-modal .react-datepicker {
+  font-family: inherit !important;
+  border: 1px solid #E7E0EC !important;
+  border-radius: 12px !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+}
+
+.edit-proposal-modal .react-datepicker__header {
+  background: #F7F2FA !important;
+  border-bottom: 1px solid #E7E0EC !important;
+}
+
+.edit-proposal-modal .react-datepicker__current-month {
+  color: #31135D !important;
+  font-weight: 600 !important;
+}
+
+.edit-proposal-modal .react-datepicker__day--selected,
+.edit-proposal-modal .react-datepicker__day--keyboard-selected {
+  background: #5B5FCF !important;
+  border-radius: 50% !important;
+}
+
+.edit-proposal-modal .react-datepicker__day:hover {
+  background: #F7F2FA !important;
+  border-radius: 50% !important;
+}

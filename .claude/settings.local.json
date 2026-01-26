@@ -35,7 +35,8 @@
       "Bash(start:*)",
       "Bash(echo:*)",
       "Bash(bun --version:*)",
-      "Bash(where:*)"
+      "Bash(where:*)",
+      "Bash(bun run lint:*)"
     ],
     "deny": [],
     "ask": []

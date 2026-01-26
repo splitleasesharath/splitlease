@@ -1062,10 +1062,14 @@ Send to (415) 555-5555 and guest@mail.com`}
 
       <TopicIndicators detectedTopics={detectedTopics} />
 
-      <div className="freeform-animation-message">
-        <p className="freeform-helper-text">
-          💡 Include your email and phone number for faster processing
-        </p>
+      <div className="info-banner">
+        <div className="info-banner-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" fill="#31135D" />
+            <text x="12" y="16" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">!</text>
+          </svg>
+        </div>
+        <span className="info-banner-text">Include your email and phone number for faster processing</span>
       </div>
     </div>
   );
@@ -1645,15 +1649,21 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
         className="ai-signup-modal"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Mobile grab handle */}
+        <div className="modal-grab-handle" aria-hidden="true" />
+
         {/* Header */}
         <div className="ai-signup-header">
           <div className="ai-signup-icon-wrapper">
             <svg
               className="ai-signup-icon"
+              width="24"
+              height="24"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
+              aria-hidden="true"
             >
               <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
               <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
@@ -1661,14 +1671,26 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
             </svg>
           </div>
           <h2 id="modal-title" className="ai-signup-title">
-            Market Research for Lodging, Storage, Transport, Restaurants and more
+            <span className="title-desktop">Market Research for Lodging, Storage, Transport, Restaurants and more</span>
+            <span className="title-mobile">Market Research</span>
           </h2>
           <button
             className="ai-signup-close-button"
             onClick={onClose}
             aria-label="Close modal"
           >
-            ×
+            <svg
+              width="32"
+              height="32"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              aria-hidden="true"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
           </button>
         </div>
 
@@ -1738,7 +1760,11 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
       </div>
 
       <style>{`
-        /* Overlay and Modal */
+        /* ============================================
+           POPUP REPLICATION PROTOCOL - Compliant CSS
+           ============================================ */
+
+        /* Overlay and Modal - Core Architecture (Section 1) */
         .ai-signup-overlay {
           position: fixed;
           inset: 0;
@@ -1751,22 +1777,29 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
         }
 
         .ai-signup-modal {
+          display: flex;
+          flex-direction: column;
           background: white;
           border-radius: 16px;
           width: 100%;
           max-width: 600px;
-          max-height: 90vh;
-          overflow-y: auto;
+          max-height: 92vh; /* Protocol: 92vh max-height */
           box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         }
 
-        /* Header */
+        /* Mobile grab handle - hidden on desktop */
+        .modal-grab-handle {
+          display: none;
+        }
+
+        /* Header - Component Spec Section 4A */
         .ai-signup-header {
+          flex-shrink: 0; /* Protocol: fixed header */
           display: flex;
           align-items: center;
           gap: 16px;
-          padding: 24px;
-          border-bottom: 1px solid #e2e8f0;
+          padding: 16px; /* Protocol: reduced from 24px */
+          border-bottom: 1px solid #E7E0EC;
         }
 
         .ai-signup-icon-wrapper {
@@ -1774,9 +1807,9 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
         }
 
         .ai-signup-icon {
-          width: 32px;
-          height: 32px;
-          color: #31135D;
+          width: 24px; /* Protocol: 24px desktop */
+          height: 24px;
+          color: #31135D; /* Protocol: Primary Purple */
         }
 
         .ai-signup-title {
@@ -1788,12 +1821,15 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
           line-height: 1.4;
         }
 
+        /* Responsive title - desktop vs mobile */
+        .title-desktop { display: inline; }
+        .title-mobile { display: none; }
+
         .ai-signup-close-button {
           flex-shrink: 0;
           background: none;
           border: none;
-          font-size: 32px;
-          color: #718096;
+          color: #31135D; /* Protocol: Primary Purple */
           cursor: pointer;
           padding: 0;
           width: 32px;
@@ -1801,29 +1837,36 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
           display: flex;
           align-items: center;
           justify-content: center;
-          border-radius: 4px;
+          border-radius: 8px;
           transition: all 0.2s;
         }
 
         .ai-signup-close-button:hover {
-          background: #f7fafc;
-          color: #2d3748;
+          background: #F7F2FA; /* Protocol: Light Purple Background */
         }
 
-        /* Content */
+        .ai-signup-close-button svg {
+          width: 32px; /* Protocol: 32x32 close icon */
+          height: 32px;
+        }
+
+        /* Content - Scrollable body */
         .ai-signup-content {
-          padding: 24px;
+          flex-grow: 1;
+          overflow-y: auto;
+          -webkit-overflow-scrolling: touch; /* Protocol: smooth mobile scroll */
+          padding: 16px; /* Protocol: standardized spacing */
           min-height: 300px;
         }
 
-        /* Error */
+        /* Error - Using Emergency Red outlined only */
         .ai-signup-error {
-          margin: 0 24px;
+          margin: 0 16px 16px;
           padding: 12px 16px;
-          background: #fff5f5;
-          border: 1px solid #fc8181;
+          background: white; /* Protocol: white/transparent bg for danger */
+          border: 1px solid #DC3545; /* Protocol: Emergency Red outlined */
           border-radius: 8px;
-          color: #c53030;
+          color: #DC3545;
           font-size: 14px;
         }
 
@@ -1831,25 +1874,29 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
         .freeform-container {
           display: flex;
           flex-direction: column;
-          gap: 16px;
+          gap: 8px; /* Protocol: 8px section gaps */
+        }
+
+        .freeform-header {
+          margin-bottom: 8px;
         }
 
         .freeform-instruction {
           margin: 0;
           font-size: 15px;
-          color: #4a5568;
+          color: #49454F;
           line-height: 1.6;
         }
 
         .freeform-textarea {
           width: 100%;
           padding: 12px;
-          border: 1px solid #cbd5e0;
+          border: 1px solid #E7E0EC;
           border-radius: 8px;
           font-size: 15px;
           font-family: inherit;
           resize: vertical;
-          min-height: 200px;
+          min-height: 180px;
           transition: border-color 0.2s, box-shadow 0.2s;
         }
 
@@ -1859,18 +1906,12 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
           box-shadow: 0 0 0 3px rgba(49, 19, 93, 0.1);
         }
 
-        .freeform-helper-text {
-          margin: 0;
-          font-size: 14px;
-          color: #718096;
-        }
-
-        /* Topic Indicators */
+        /* Topic Indicators - NO GREEN (Section 2) */
         .topic-indicators {
           display: flex;
           flex-wrap: wrap;
           gap: 8px;
-          padding: 12px 0;
+          padding: 8px 0;
         }
 
         .topic-chip {
@@ -1880,29 +1921,58 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
           padding: 6px 12px;
           font-size: 13px;
           font-weight: 500;
-          color: #a0aec0;
-          background: #f7fafc;
-          border: 1px solid #e2e8f0;
+          color: #49454F; /* Protocol: Ghost text color */
+          background: #F7F2FA; /* Protocol: Light Purple Background */
+          border: 1px solid #E7E0EC;
           border-radius: 16px;
           transition: all 0.3s ease;
         }
 
         .topic-chip.topic-detected {
-          color: #22543d;
-          background: #c6f6d5;
-          border-color: #68d391;
+          color: #31135D; /* Protocol: Primary Purple */
+          background: #F7F2FA; /* Protocol: Light Purple Background */
+          border-color: #5B5FCF; /* Protocol: Positive/Action Purple */
         }
 
         .topic-checkmark {
           font-weight: 700;
-          color: #38a169;
+          color: #5B5FCF; /* Protocol: Positive/Action Purple - NO GREEN */
+        }
+
+        /* Info Banner - Component Spec Section 4C */
+        .info-banner {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px;
+          background: #F7F2FA; /* Protocol: Light Purple Background */
+          border: 1px solid #E7E0EC;
+          border-radius: 8px;
+          margin-top: 8px;
+        }
+
+        .info-banner-icon {
+          flex-shrink: 0;
+          width: 24px;
+          height: 24px;
+        }
+
+        .info-banner-icon svg {
+          width: 24px;
+          height: 24px;
+        }
+
+        .info-banner-text {
+          font-size: 14px;
+          color: #49454F;
+          line-height: 1.4;
         }
 
         /* Contact Form */
         .contact-container {
           display: flex;
           flex-direction: column;
-          gap: 20px;
+          gap: 16px;
         }
 
         .contact-heading {
@@ -1921,16 +1991,16 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
         .contact-label {
           font-size: 14px;
           font-weight: 600;
-          color: #2d3748;
+          color: #31135D;
         }
 
         .contact-required {
-          color: #e53e3e;
+          color: #DC3545; /* Protocol: Emergency Red */
         }
 
         .contact-input {
           padding: 10px 14px;
-          border: 1px solid #cbd5e0;
+          border: 1px solid #E7E0EC;
           border-radius: 8px;
           font-size: 15px;
           font-family: inherit;
@@ -1946,7 +2016,7 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
         .contact-disclaimer {
           margin: 0;
           font-size: 14px;
-          color: #718096;
+          color: #49454F;
           line-height: 1.5;
         }
 
@@ -1956,7 +2026,7 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          padding: 40px 20px;
+          padding: 24px 16px;
           text-align: center;
         }
 
@@ -1974,13 +2044,13 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
           margin: 0 0 8px 0;
           font-size: 20px;
           font-weight: 600;
-          color: #1a202c;
+          color: #31135D;
         }
 
         .parsing-sub-message {
           margin: 0;
           font-size: 14px;
-          color: #718096;
+          color: #49454F;
         }
 
         /* Loading Stage */
@@ -1989,7 +2059,7 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          padding: 40px 20px;
+          padding: 24px 16px;
           text-align: center;
         }
 
@@ -2007,29 +2077,27 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
           margin: 0 0 8px 0;
           font-size: 20px;
           font-weight: 600;
-          color: #1a202c;
+          color: #31135D;
         }
 
         .loading-sub-message {
           margin: 0;
           font-size: 14px;
-          color: #718096;
+          color: #49454F;
         }
 
-        
-        /* Loading Spinner Fallback - shown underneath Lottie as backup */
+        /* Loading Spinner Fallback */
         .loading-spinner-fallback {
           position: absolute;
           width: 60px;
           height: 60px;
-          border: 4px solid #e2e8f0;
+          border: 4px solid #E7E0EC;
           border-top-color: #31135D;
           border-radius: 50%;
           animation: spinner-rotate 1s linear infinite;
           z-index: 0;
         }
 
-        /* Hide spinner when Lottie animation is loaded */
         .parsing-lottie-wrapper > div:first-child:not(:empty) ~ .loading-spinner-fallback,
         .loading-lottie-wrapper > div:first-child:not(:empty) ~ .loading-spinner-fallback {
           display: none;
@@ -2045,7 +2113,7 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          padding: 40px 20px;
+          padding: 24px 16px;
           text-align: center;
         }
 
@@ -2072,49 +2140,55 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
         .final-sub-message {
           margin: 0;
           font-size: 14px;
-          color: #718096;
+          color: #49454F;
         }
 
-        /* Navigation Buttons */
+        /* Navigation Buttons - Footer (Section 4B) */
         .nav-container {
+          flex-shrink: 0; /* Protocol: fixed footer */
           display: flex;
           gap: 12px;
           justify-content: flex-end;
-          padding: 16px 24px;
-          border-top: 1px solid #e2e8f0;
+          padding: 16px; /* Protocol: equal to header */
+          border-top: 1px solid #E7E0EC;
         }
 
         .nav-back-button,
         .nav-next-button {
-          padding: 10px 20px;
-          border-radius: 8px;
+          padding: 12px 24px;
+          border-radius: 100px; /* Protocol: pill-shaped buttons */
           font-size: 15px;
           font-weight: 600;
           cursor: pointer;
           transition: all 0.2s;
-          border: none;
           font-family: inherit;
           display: flex;
           align-items: center;
           gap: 8px;
         }
 
+        /* Back button - Ghost style (Section 4B) */
         .nav-back-button {
-          background: #e2e8f0;
-          color: #2d3748;
+          background: transparent;
+          border: 1px solid #E7E0EC;
+          color: #49454F;
         }
 
         .nav-back-button:hover:not(:disabled) {
-          background: #cbd5e0;
+          background: #F7F2FA;
+          border-color: #31135D;
+          color: #31135D;
         }
 
+        /* Next/Submit button - Primary style (Section 4B) */
         .nav-next-button {
-          background: #31135D;
+          background: #31135D; /* Protocol: Primary Purple */
           color: white;
+          border: none;
         }
 
         .nav-next-button:hover:not(:disabled) {
-          background: #522580;
+          background: #6D31C2; /* Protocol: Secondary Purple for hover */
         }
 
         .nav-back-button:disabled,
@@ -2138,18 +2212,19 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
 
         /* Final Button */
         .ai-signup-final-button-wrapper {
-          padding: 16px 24px;
-          border-top: 1px solid #e2e8f0;
+          flex-shrink: 0;
+          padding: 16px;
+          border-top: 1px solid #E7E0EC;
           display: flex;
           justify-content: center;
         }
 
         .ai-signup-final-close-button {
-          padding: 10px 32px;
+          padding: 12px 32px;
           background: #31135D;
           color: white;
           border: none;
-          border-radius: 8px;
+          border-radius: 100px; /* Protocol: pill-shaped */
           font-size: 15px;
           font-weight: 600;
           cursor: pointer;
@@ -2157,22 +2232,102 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
         }
 
         .ai-signup-final-close-button:hover {
-          background: #522580;
+          background: #6D31C2;
         }
 
-        /* Responsive */
-        @media (max-width: 640px) {
+        /* ============================================
+           Mobile Bottom-Sheet Mode (Section 1)
+           ============================================ */
+        @media (max-width: 480px) {
+          .ai-signup-overlay {
+            align-items: flex-end; /* Protocol: bottom-sheet positioning */
+            padding: 0;
+          }
+
           .ai-signup-modal {
-            max-height: 95vh;
+            border-radius: 24px 24px 0 0; /* Protocol: top corners only */
+            max-width: 100%;
+            max-height: 92vh;
+            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); /* Protocol: slide-up animation */
+          }
+
+          /* Mobile grab handle - visible on mobile */
+          .modal-grab-handle {
+            display: block;
+            width: 36px; /* Protocol: 36x4px */
+            height: 4px;
+            background: #E7E0EC;
+            border-radius: 2px;
+            margin: 8px auto 0;
+            flex-shrink: 0;
+          }
+
+          /* Mobile header adjustments */
+          .ai-signup-header {
+            padding: 12px 16px;
+            gap: 12px;
+          }
+
+          .ai-signup-icon {
+            width: 20px; /* Protocol: 20px mobile */
+            height: 20px;
+          }
+
+          .ai-signup-title {
+            font-size: 18px; /* Protocol: 18px */
+            font-weight: 400; /* Protocol: weight 400, NOT bold */
+          }
+
+          /* Show short title on mobile */
+          .title-desktop { display: none; }
+          .title-mobile { display: inline; }
+
+          /* Mobile close button - larger touch target */
+          .ai-signup-close-button {
+            width: 36px;
+            height: 36px;
+          }
+
+          .ai-signup-close-button svg {
+            width: 36px;
+            height: 36px;
+            stroke-width: 2.5;
+          }
+
+          /* Mobile content */
+          .ai-signup-content {
+            padding: 16px;
+          }
+
+          /* Mobile footer - extra bottom padding for safe area */
+          .nav-container {
+            padding: 12px 16px 20px; /* Protocol: 12px top, 20px bottom */
+          }
+
+          .ai-signup-final-button-wrapper {
+            padding: 12px 16px 20px;
+          }
+
+          /* Smaller textarea on mobile */
+          .freeform-textarea {
+            min-height: 150px;
+          }
+        }
+
+        @keyframes slideUp {
+          from { transform: translateY(100%); }
+          to { transform: translateY(0); }
+        }
+
+        /* Tablet breakpoint */
+        @media (min-width: 481px) and (max-width: 640px) {
+          .ai-signup-modal {
+            max-width: 100%;
+            margin: 0 16px;
           }
 
           .ai-signup-title {
             font-size: 16px;
-          }
-
-          .ai-signup-icon {
-            width: 24px;
-            height: 24px;
           }
         }
       `}</style>

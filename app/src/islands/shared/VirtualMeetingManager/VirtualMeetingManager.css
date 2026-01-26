@@ -1,21 +1,25 @@
 /**
- * Virtual Meeting Manager Styles
- * Based on Split Lease design system
+ * Virtual Meeting Manager Styles - v2.0 PROTOCOL REDESIGN
+ *
+ * Design: POPUP_REPLICATION_PROTOCOL - Monochromatic purple (NO GREEN, NO YELLOW)
+ * Colors: Uses --protocol-* CSS variables for consistency
+ * Buttons: Pill-shaped (100px radius)
+ * Mobile: Bottom sheet at <480px with slide-up animation
  */
 
 @import url('https://fonts.googleapis.com/css2?family=Alata&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap');
 
 :root {
-  --vm-purple-accent: rgb(92, 32, 182);
+  --vm-purple-accent: var(--protocol-secondary, #6D31C2);
   --vm-disabled-gray: rgb(221, 221, 221);
-  --vm-selected-slots-bg: rgb(247, 248, 249);
+  --vm-selected-slots-bg: var(--protocol-surface, #F7F2FA);
   --vm-submit-disabled: rgb(104, 104, 104);
-  /* Cancel Modal specific */
-  --vm-cancel-purple: #6f34bf;
-  --vm-cancel-danger: #c82333;
-  --vm-cancel-gray: #424242;
-  --vm-cancel-card-bg: #f7f8f9;
+  /* Cancel Modal specific - use protocol danger (outlined only per protocol) */
+  --vm-cancel-purple: var(--protocol-secondary, #6D31C2);
+  --vm-cancel-danger: var(--protocol-danger, #DC3545);
+  --vm-cancel-gray: var(--protocol-text-secondary, #49454F);
+  --vm-cancel-card-bg: var(--protocol-surface, #F7F2FA);
 }
 
 /* ============================================
@@ -24,33 +28,57 @@
 
 .vm-overlay {
   position: fixed;
-  top: 70px; /* Below header */
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  inset: 0;
+  background: var(--protocol-overlay, rgba(0, 0, 0, 0.5));
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  z-index: 1000;
-  padding: 20px;
+  z-index: var(--z-modal, 10000);
+  padding: var(--protocol-space-md, 16px);
   overflow-y: auto;
+  animation: vmFadeIn var(--protocol-transition-slow, 0.3s ease-out);
+}
+
+@keyframes vmFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes vmScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes vmSlideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
 }
 
 .vm-container {
-  background: white;
-  border-radius: 16px;
-  padding: 24px 32px;
-  width: auto;
+  background: var(--protocol-white, white);
+  border-radius: var(--protocol-radius-modal, 16px);
+  padding: var(--protocol-space-lg, 24px);
+  width: 100%;
   max-width: 480px;
   min-height: auto;
-  max-height: calc(100vh - 130px);
+  max-height: 92vh;
   overflow-y: auto;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   position: relative;
   display: flex;
   flex-direction: column;
-  font-family: 'Alata', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  animation: vmScaleIn var(--protocol-transition-slow, 0.3s ease-out);
 }
 
 /* ============================================
@@ -148,111 +176,114 @@
 }
 
 .vm-button-primary {
-  background: var(--color-primary, #31135d);
-  color: white;
+  background: var(--protocol-action, #5B5FCF);
+  color: var(--protocol-white, white);
   padding: 12px 24px;
-  border-radius: 8px;
+  border-radius: var(--protocol-radius-button, 100px);
   border: none;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all var(--protocol-transition, 0.2s ease);
   flex: 1;
 }
 
 .vm-button-primary:hover:not(:disabled) {
-  background: var(--color-primary-hover, #1f0b38);
+  background: var(--protocol-action-hover, #4A4EBF);
 }
 
 .vm-button-primary:disabled {
-  background: #ccc;
+  background: var(--protocol-action-disabled, #B8BAE0);
   cursor: not-allowed;
 }
 
+/* Decline button: Use protocol danger outlined style per protocol rules */
 .vm-button-decline {
-  background: #ffb3ba;
-  color: #dc2626;
+  background: transparent;
+  color: var(--protocol-danger, #DC3545);
   padding: 12px 24px;
-  border-radius: 8px;
-  border: none;
+  border-radius: var(--protocol-radius-button, 100px);
+  border: 2px solid var(--protocol-danger, #DC3545);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all var(--protocol-transition, 0.2s ease);
   flex: 1;
 }
 
 .vm-button-decline:hover {
-  background: #ffa0a8;
+  background: var(--protocol-danger-hover, rgba(220, 53, 69, 0.1));
 }
 
+/* Danger button: OUTLINED per protocol (danger = outlined only, never solid) */
 .vm-button-danger {
-  background: var(--vm-cancel-danger, #c82333);
-  color: white;
-  padding: 0;
-  width: 128px;
-  height: 32px;
-  border-radius: 20px;
-  border: none;
+  background: transparent;
+  color: var(--protocol-danger, #DC3545);
+  padding: 12px 24px;
+  min-width: 128px;
+  height: auto;
+  border-radius: var(--protocol-radius-button, 100px);
+  border: 2px solid var(--protocol-danger, #DC3545);
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   font-family: 'DM Sans', sans-serif;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all var(--protocol-transition, 0.2s ease);
   flex: none;
 }
 
 .vm-button-danger:hover {
-  background: #a71d2a;
+  background: var(--protocol-danger-hover, rgba(220, 53, 69, 0.1));
 }
 
 .vm-button-danger:disabled {
-  background: #ccc;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
+/* Outline button: Secondary style per protocol */
 .vm-button-outline {
-  background: white;
-  color: var(--vm-cancel-purple, #6f34bf);
-  padding: 0;
-  width: 128px;
-  height: 32px;
-  border-radius: 20px;
-  border: 2px solid var(--vm-cancel-purple, #6f34bf);
+  background: transparent;
+  color: var(--protocol-primary, #31135D);
+  padding: 12px 24px;
+  min-width: 128px;
+  height: auto;
+  border-radius: var(--protocol-radius-button, 100px);
+  border: 2px solid var(--protocol-primary, #31135D);
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   font-family: 'DM Sans', sans-serif;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--protocol-transition, 0.2s ease);
   flex: none;
 }
 
 .vm-button-outline:hover {
-  background: #f5f0ff;
+  background: var(--protocol-surface, #F7F2FA);
 }
 
+/* Success button: Primary action style per protocol */
 .vm-button-success {
-  background: #ffffff;
-  color: #333333;
+  background: var(--protocol-action, #5B5FCF);
+  color: var(--protocol-white, white);
   padding: 12px 24px;
-  border-radius: 8px;
-  border: 2px solid var(--vm-purple-accent, rgb(92, 32, 182));
+  border-radius: var(--protocol-radius-button, 100px);
+  border: none;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--protocol-transition, 0.2s ease);
   width: 100%;
-  font-family: 'Alata', sans-serif;
+  font-family: 'Inter', -apple-system, sans-serif;
 }
 
 .vm-button-success:hover:not(:disabled) {
-  background: #f5f5f5;
+  background: var(--protocol-action-hover, #4A4EBF);
 }
 
 .vm-button-success:disabled {
-  background: var(--vm-submit-disabled, rgb(104, 104, 104));
-  color: white;
-  border-color: var(--vm-submit-disabled, rgb(104, 104, 104));
+  background: var(--protocol-action-disabled, #B8BAE0);
+  color: var(--protocol-white, white);
   cursor: not-allowed;
 }
 
@@ -554,18 +585,38 @@
    RESPONSIVE DESIGN
    ============================================ */
 
-@media (max-width: 520px) {
+/* Tablet */
+@media (max-width: 768px) {
+  .vm-container {
+    max-width: 95%;
+  }
+}
+
+/* Mobile Bottom Sheet (< 480px) - Per Protocol */
+@media (max-width: 480px) {
   .vm-overlay {
-    top: 60px; /* Smaller header on mobile */
-    padding: 10px;
+    align-items: flex-end;
+    padding: 0;
   }
 
   .vm-container {
     width: 100%;
     max-width: 100%;
-    padding: 16px;
-    border-radius: 12px;
-    max-height: calc(100vh - 80px);
+    border-radius: var(--protocol-radius-modal-mobile, 24px) var(--protocol-radius-modal-mobile, 24px) 0 0;
+    max-height: 90vh;
+    padding: var(--protocol-space-md, 16px);
+    animation: vmSlideUp var(--protocol-transition-slow, 0.3s ease-out);
+  }
+
+  /* Mobile Grab Handle */
+  .vm-container::before {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 4px;
+    background: var(--protocol-border-light, #E7E0EC);
+    border-radius: 2px;
+    margin: 0 auto var(--protocol-space-sm, 8px);
   }
 
   .vm-button-group {
@@ -656,8 +707,9 @@
   text-align: center;
 }
 
+/* Success icon: Use protocol action color (NO GREEN per protocol) */
 .vm-success-modal-icon {
-  color: #059669;
+  color: var(--protocol-action, #5B5FCF);
   margin-bottom: 16px;
 }
 
@@ -682,20 +734,19 @@
 }
 
 .vm-success-modal-btn {
-  background: var(--vm-purple-accent, #5C20B6);
-  color: white;
+  background: var(--protocol-action, #5B5FCF);
+  color: var(--protocol-white, white);
   border: none;
-  border-radius: 10px;
+  border-radius: var(--protocol-radius-button, 100px);
   padding: 12px 32px;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s ease, transform 0.1s ease;
+  transition: all var(--protocol-transition, 0.2s ease);
 }
 
 .vm-success-modal-btn:hover {
-  background: #4a1a94;
-  transform: translateY(-1px);
+  background: var(--protocol-action-hover, #4A4EBF);
 }
 
 /* Referral section */
