@@ -284,12 +284,13 @@ export default function ReferralModal({ isOpen, onClose, referralCode = 'yournam
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
     }
-
+    // Only restore on cleanup, not when isOpen changes to false
+    // Use '' instead of 'unset' for proper mobile behavior
     return () => {
-      document.body.style.overflow = 'unset';
+      if (isOpen) {
+        document.body.style.overflow = '';
+      }
     };
   }, [isOpen]);
 
