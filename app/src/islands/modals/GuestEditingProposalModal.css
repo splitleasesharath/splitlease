@@ -1212,11 +1212,7 @@ dd.gep-detail-value {
   border-radius: 0;
   padding: 5px 0;
   box-sizing: border-box;
-  border-bottom: 1px solid var(--gep-border-light);
-}
-
-.rpb-row:last-of-type {
-  border-bottom: none;
+  /* Removed border-bottom - dividers between sections use .rpb-divider instead */
 }
 
 .rpb-row--white {
