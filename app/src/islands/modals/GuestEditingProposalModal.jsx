@@ -612,9 +612,6 @@ export default function GuestEditingProposalModal({
   // House rules visibility
   const [isHouseRulesVisible, setIsHouseRulesVisible] = useState(false)
 
-  // Schedule and financial section hover state
-  const [isScheduleHovered, setIsScheduleHovered] = useState(false)
-
   // Open for first time flag for initial state setup
   const [openForFirstTime, setOpenForFirstTime] = useState(true)
 
@@ -632,7 +629,6 @@ export default function GuestEditingProposalModal({
   const showMainView = view !== 'cancel'
   const showEditingPortion = view === 'editing'
   const showBreakdownDetails = view === 'general' || view === 'pristine'
-  const showScheduleFinancial = isStatusAccepted || view === 'editing' || isInternalUsage
   const showButtons = view === 'editing' || view === 'general' || view === 'pristine' || isStatusAccepted || isInternalUsage
   const isPristine = view === 'pristine'
 
@@ -688,15 +684,6 @@ export default function GuestEditingProposalModal({
       handleClose()
     }
   }, [view, handleClose])
-
-  // Handle schedule and financial click
-  const handleScheduleFinancialClick = useCallback(() => {
-    if (view !== 'editing') {
-      setView('editing')
-    } else {
-      setView('general')
-    }
-  }, [view])
 
   // Handle "Edit Proposal" button click from pristine state
   const handleStartEditing = useCallback(() => {
@@ -1146,27 +1133,6 @@ export default function GuestEditingProposalModal({
                   onHouseRulesClick={handleHouseRulesClick}
                   pageWidth={pageWidth}
                 />
-              </div>
-            )}
-
-            {/* Schedule and financial section - conditionally visible */}
-            {showScheduleFinancial && (
-              <div
-                className={`gep-schedule-financial ${isScheduleHovered ? 'gep-schedule-financial--hovered' : ''}`}
-                onClick={handleScheduleFinancialClick}
-                onMouseEnter={() => setIsScheduleHovered(true)}
-                onMouseLeave={() => setIsScheduleHovered(false)}
-              >
-                <div className="gep-schedule-financial-content">
-                  <span className="gep-schedule-financial-label">
-                    Edit Proposal Terms (Nights, Weeks, Move-in date)
-                  </span>
-                  <ChevronRight
-                    className={`gep-expand-icon ${view === 'editing' ? 'gep-expand-icon--expanded' : ''}`}
-                    size={24}
-                    strokeWidth={2}
-                  />
-                </div>
               </div>
             )}
 
