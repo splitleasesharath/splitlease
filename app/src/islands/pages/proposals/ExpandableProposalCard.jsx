@@ -15,6 +15,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import MatchReasonCard from './MatchReasonCard.jsx';
 import NegotiationSummarySection from './NegotiationSummarySection.jsx';
+import CounterofferSummarySection from './CounterofferSummarySection.jsx';
 import {
   DAY_ABBREVS,
   DAY_NAMES,
@@ -39,6 +40,7 @@ import { goToRentalApplication, getListingUrlWithProposalContext } from '../../.
 import HostProfileModal from '../../modals/HostProfileModal.jsx';
 import GuestEditingProposalModal from '../../modals/GuestEditingProposalModal.jsx';
 import CancelProposalModal from '../../modals/CancelProposalModal.jsx';
+import CompareTermsModal from '../../modals/CompareTermsModal.jsx';
 import NotInterestedModal from '../../shared/SuggestedProposals/components/NotInterestedModal.jsx';
 import VirtualMeetingManager from '../../shared/VirtualMeetingManager/VirtualMeetingManager.jsx';
 import FullscreenProposalMapModal from '../../modals/FullscreenProposalMapModal.jsx';
@@ -95,16 +97,24 @@ function getAllDaysWithSelection(daysSelected) {
  * Get check-in to checkout day range string
  *
  * Priority order:
- * 1. Use explicit check in/out day fields if available (most reliable)
- * 2. Fall back to deriving from Days Selected array
+ * 1. For counteroffers: Use HC (host counteroffer) fields first
+ * 2. Use explicit check in/out day fields if available
+ * 3. Fall back to deriving from Days Selected array
  *
  * Days Selected represents the range from check-in to checkout (inclusive).
  * Check-in = first day, Checkout = last day in the selection.
  */
 function getCheckInOutRange(proposal) {
-  // Priority 1: Use explicit check-in/check-out day fields if available
-  const checkInDay = proposal['check in day'] || proposal['hc check in day'];
-  const checkOutDay = proposal['check out day'] || proposal['hc check out day'];
+  const isCounteroffer = proposal['counter offer happened'];
+
+  // Priority 1: For counteroffers, prefer HC fields
+  // Priority 2: Use explicit check-in/check-out day fields
+  const checkInDay = isCounteroffer
+    ? (proposal['hc check in day'] ?? proposal['check in day'])
+    : (proposal['check in day'] ?? proposal['hc check in day']);
+  const checkOutDay = isCounteroffer
+    ? (proposal['hc check out day'] ?? proposal['check out day'])
+    : (proposal['check out day'] ?? proposal['hc check out day']);
 
   if (checkInDay != null && checkOutDay != null) {
     const checkInIndex = typeof checkInDay === 'number' ? checkInDay : parseInt(checkInDay, 10);
@@ -170,6 +180,82 @@ function getCheckInOutRange(proposal) {
   }
 
   // Standard case (no wrap-around): check-in is first day, checkout is last day
+  const checkInDayIndex = sorted[0];
+  const checkOutDayIndex = sorted[sorted.length - 1];
+
+  return `${DAY_NAMES[checkInDayIndex]} to ${DAY_NAMES[checkOutDayIndex]}`;
+}
+
+/**
+ * Get the ORIGINAL check-in to checkout day range string (before any counteroffer)
+ * Used for strikethrough comparison when a counteroffer changes the schedule
+ */
+function getOriginalCheckInOutRange(proposal) {
+  // Use original check-in/check-out day fields (not HC fields)
+  const checkInDay = proposal['check in day'];
+  const checkOutDay = proposal['check out day'];
+
+  if (checkInDay != null && checkOutDay != null) {
+    const checkInIndex = typeof checkInDay === 'number' ? checkInDay : parseInt(checkInDay, 10);
+    const checkOutIndex = typeof checkOutDay === 'number' ? checkOutDay : parseInt(checkOutDay, 10);
+
+    if (!isNaN(checkInIndex) && !isNaN(checkOutIndex) &&
+        checkInIndex >= 0 && checkInIndex <= 6 &&
+        checkOutIndex >= 0 && checkOutIndex <= 6) {
+      return `${DAY_NAMES[checkInIndex]} to ${DAY_NAMES[checkOutIndex]}`;
+    }
+  }
+
+  // Fall back to original Days Selected array
+  let daysSelected = proposal['Days Selected'] || [];
+  if (typeof daysSelected === 'string') {
+    try {
+      daysSelected = JSON.parse(daysSelected);
+    } catch (e) {
+      daysSelected = [];
+    }
+  }
+
+  if (!Array.isArray(daysSelected) || daysSelected.length === 0) return null;
+
+  const dayIndices = daysSelected.map(day => {
+    if (typeof day === 'number') return day;
+    if (typeof day === 'string') {
+      const trimmed = day.trim();
+      const numericValue = parseInt(trimmed, 10);
+      if (!isNaN(numericValue) && String(numericValue) === trimmed) {
+        return numericValue;
+      }
+      const jsIndex = DAY_NAMES.indexOf(trimmed);
+      return jsIndex >= 0 ? jsIndex : -1;
+    }
+    return -1;
+  }).filter(idx => idx >= 0 && idx <= 6);
+
+  if (dayIndices.length === 0) return null;
+
+  const sorted = [...dayIndices].sort((a, b) => a - b);
+
+  // Handle wrap-around case
+  const hasLowNumbers = sorted.some(d => d <= 2);
+  const hasHighNumbers = sorted.some(d => d >= 4);
+
+  if (hasLowNumbers && hasHighNumbers && sorted.length < 7) {
+    let gapIndex = -1;
+    for (let i = 1; i < sorted.length; i++) {
+      if (sorted[i] - sorted[i - 1] > 1) {
+        gapIndex = i;
+        break;
+      }
+    }
+
+    if (gapIndex !== -1) {
+      const checkInDayIndex = sorted[gapIndex];
+      const checkOutDayIndex = sorted[gapIndex - 1];
+      return `${DAY_NAMES[checkInDayIndex]} to ${DAY_NAMES[checkOutDayIndex]}`;
+    }
+  }
+
   const checkInDayIndex = sorted[0];
   const checkOutDayIndex = sorted[sorted.length - 1];
 
@@ -431,6 +517,7 @@ export default function ExpandableProposalCard({
   const [showMapModal, setShowMapModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showNotInterestedModal, setShowNotInterestedModal] = useState(false);
+  const [showCompareTermsModal, setShowCompareTermsModal] = useState(false);
   const [isNotInterestedProcessing, setIsNotInterestedProcessing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
@@ -456,30 +543,55 @@ export default function ExpandableProposalCard({
   const hostName = getHostDisplayName(host);
   const hostPhoto = getHostProfilePhoto(host);
 
-  // Schedule
-  let daysSelected = proposal?.['Days Selected'] || proposal?.hcDaysSelected || [];
-  if (typeof daysSelected === 'string') {
-    try { daysSelected = JSON.parse(daysSelected); } catch (e) { daysSelected = []; }
-  }
-  const allDays = getAllDaysWithSelection(daysSelected);
-  const nightsPerWeek = proposal?.['nights per week (num)'] || daysSelected.length;
-  const reservationWeeks = proposal?.['Reservation Span (Weeks)'] || proposal?.['hc reservation span (weeks)'] || 4;
-  const checkInOutRange = getCheckInOutRange(proposal);
-
-  // Pricing
+  // Counteroffer flag
   const isCounteroffer = proposal?.['counter offer happened'];
-  const nightlyPrice = isCounteroffer
-    ? proposal?.['hc nightly price']
-    : proposal?.['proposal nightly price'];
-  const totalPrice = isCounteroffer
-    ? proposal?.['hc total price']
-    : proposal?.['Total Price for Reservation (guest)'];
-  const originalTotalPrice = isCounteroffer ? proposal?.['Total Price for Reservation (guest)'] : null;
+
+  // Original values (guest's proposal)
+  let originalDaysSelected = proposal?.['Days Selected'] || [];
+  if (typeof originalDaysSelected === 'string') {
+    try { originalDaysSelected = JSON.parse(originalDaysSelected); } catch (e) { originalDaysSelected = []; }
+  }
+  const originalNightsPerWeek = proposal?.['nights per week (num)'] || originalDaysSelected.length;
+  const originalReservationWeeks = proposal?.['Reservation Span (Weeks)'] || 4;
+  const originalNightlyPrice = proposal?.['proposal nightly price'] || 0;
+  const originalTotalPrice = proposal?.['Total Price for Reservation (guest)'] || 0;
+  const originalMoveInStart = proposal?.['Move in range start'];
+
+  // HC values (host counteroffer) - only if counteroffer happened
+  let hcDaysSelected = proposal?.['hc days selected'] || [];
+  if (typeof hcDaysSelected === 'string') {
+    try { hcDaysSelected = JSON.parse(hcDaysSelected); } catch (e) { hcDaysSelected = []; }
+  }
+  const hcNightsPerWeek = proposal?.['hc nights per week'] || hcDaysSelected.length;
+  const hcReservationWeeks = proposal?.['hc reservation span (weeks)'];
+  const hcNightlyPrice = proposal?.['hc nightly price'];
+  const hcTotalPrice = proposal?.['hc total price'];
+  const hcMoveInDate = proposal?.['hc move in date'];
+
+  // Active values (what to display as current - prefer HC if counteroffer)
+  const daysSelected = isCounteroffer && hcDaysSelected.length > 0 ? hcDaysSelected : originalDaysSelected;
+  const allDays = getAllDaysWithSelection(daysSelected);
+  const nightsPerWeek = isCounteroffer && hcNightsPerWeek ? hcNightsPerWeek : originalNightsPerWeek;
+  const reservationWeeks = isCounteroffer && hcReservationWeeks ? hcReservationWeeks : originalReservationWeeks;
+  const nightlyPrice = isCounteroffer && hcNightlyPrice != null ? hcNightlyPrice : originalNightlyPrice;
+  const totalPrice = isCounteroffer && hcTotalPrice != null ? hcTotalPrice : originalTotalPrice;
+  const checkInOutRange = getCheckInOutRange(proposal);
+  const originalCheckInOutRange = getOriginalCheckInOutRange(proposal);
   const cleaningFee = proposal?.['cleaning fee'] || 0;
 
+  // Comparison flags - detect which values changed
+  const durationChanged = isCounteroffer && hcReservationWeeks != null && hcReservationWeeks !== originalReservationWeeks;
+  const nightlyPriceChanged = isCounteroffer && hcNightlyPrice != null && hcNightlyPrice !== originalNightlyPrice;
+  const totalPriceChanged = isCounteroffer && hcTotalPrice != null && hcTotalPrice !== originalTotalPrice;
+  const moveInChanged = isCounteroffer && hcMoveInDate && hcMoveInDate !== originalMoveInStart;
+  const daysChanged = isCounteroffer && hcDaysSelected.length > 0 &&
+    JSON.stringify([...hcDaysSelected].sort()) !== JSON.stringify([...originalDaysSelected].sort());
+  const scheduleChanged = daysChanged && originalCheckInOutRange && checkInOutRange !== originalCheckInOutRange;
+
   // Dates
-  const moveInStart = proposal?.['Move in range start'];
+  const moveInStart = isCounteroffer && hcMoveInDate ? hcMoveInDate : originalMoveInStart;
   const anticipatedMoveIn = formatDate(moveInStart);
+  const originalMoveInDisplay = moveInChanged ? formatDate(originalMoveInStart) : null;
   const checkInTime = listing?.['Check in time'] || '2:00 pm';
   const checkOutTime = listing?.['Check Out time'] || '11:00 am';
 
@@ -489,6 +601,9 @@ export default function ExpandableProposalCard({
 
   // Negotiation summaries
   const negotiationSummaries = proposal?.negotiationSummaries || [];
+
+  // Counteroffer summary (SplitBot message explaining what changed)
+  const counterofferSummary = proposal?.counterofferSummary || null;
 
   // Status flags
   const isSuggested = isSLSuggested(status);
@@ -652,6 +767,11 @@ export default function ExpandableProposalCard({
             <NegotiationSummarySection summaries={negotiationSummaries} />
           )}
 
+          {/* Counteroffer Summary Section - for proposals with host counteroffer */}
+          {isCounteroffer && counterofferSummary && (
+            <CounterofferSummarySection summary={counterofferSummary} />
+          )}
+
           {/* Status Banner */}
           <StatusBanner status={status} cancelReason={cancelReason} isCounteroffer={isCounteroffer} />
 
@@ -717,19 +837,47 @@ export default function ExpandableProposalCard({
           <div className="epc-info-grid">
             <div className="epc-info-item">
               <div className="epc-info-label">Ideal Move-in</div>
-              <div className="epc-info-value">{anticipatedMoveIn || 'TBD'}</div>
+              <div className="epc-info-value">
+                {moveInChanged && originalMoveInDisplay && (
+                  <span className="epc-strikethrough">{originalMoveInDisplay}</span>
+                )}
+                <span className={moveInChanged ? 'epc-changed-value' : ''}>
+                  {anticipatedMoveIn || 'TBD'}
+                </span>
+              </div>
             </div>
             <div className="epc-info-item">
               <div className="epc-info-label">Duration</div>
-              <div className="epc-info-value">{reservationWeeks} weeks</div>
+              <div className="epc-info-value">
+                {durationChanged && (
+                  <span className="epc-strikethrough">{originalReservationWeeks} weeks</span>
+                )}
+                <span className={durationChanged ? 'epc-changed-value' : ''}>
+                  {reservationWeeks} weeks
+                </span>
+              </div>
             </div>
             <div className="epc-info-item">
               <div className="epc-info-label">Schedule</div>
-              <div className="epc-info-value">{checkInOutRange || 'Flexible'}</div>
+              <div className="epc-info-value">
+                {scheduleChanged && (
+                  <span className="epc-strikethrough">{originalCheckInOutRange}</span>
+                )}
+                <span className={scheduleChanged ? 'epc-changed-value' : ''}>
+                  {checkInOutRange || 'Flexible'}
+                </span>
+              </div>
             </div>
             <div className="epc-info-item">
               <div className="epc-info-label">Nights/week</div>
-              <div className="epc-info-value">{nightsPerWeek} nights</div>
+              <div className="epc-info-value">
+                {daysChanged && (
+                  <span className="epc-strikethrough">{originalNightsPerWeek} nights</span>
+                )}
+                <span className={daysChanged ? 'epc-changed-value' : ''}>
+                  {nightsPerWeek} nights
+                </span>
+              </div>
             </div>
           </div>
 
@@ -755,7 +903,7 @@ export default function ExpandableProposalCard({
             </div>
             <div className="epc-days-info">
               <div className="epc-days-count">
-                {daysSelected.length} days, {nightsPerWeek} nights
+                {nightsPerWeek + 1} days, {nightsPerWeek} nights
                 {someNightsUnavailable && (
                   <span className="epc-nights-warning" title="Some nights unavailable">⚠</span>
                 )}
@@ -767,7 +915,15 @@ export default function ExpandableProposalCard({
           {/* Pricing Row */}
           <div className="epc-pricing-row">
             <div className="epc-pricing-breakdown">
-              <span>{formatPrice(nightlyPrice)}/night</span>
+              <span>
+                {nightlyPriceChanged && (
+                  <span className="epc-strikethrough">{formatPrice(originalNightlyPrice)}</span>
+                )}
+                <span className={nightlyPriceChanged ? 'epc-changed-value' : ''}>
+                  {formatPrice(nightlyPrice)}
+                </span>
+                /night
+              </span>
               <span>×</span>
               <span>{nightsPerWeek} nights</span>
               <span>×</span>
@@ -782,11 +938,13 @@ export default function ExpandableProposalCard({
             <div className="epc-pricing-total-area">
               <div className="epc-pricing-total-label">
                 Estimated Total
-                {originalTotalPrice && (
+                {totalPriceChanged && (
                   <span className="epc-pricing-original">{formatPrice(originalTotalPrice)}</span>
                 )}
               </div>
-              <div className="epc-pricing-total">{formatPrice(totalPrice)}</div>
+              <div className={`epc-pricing-total ${totalPriceChanged ? 'epc-changed-value' : ''}`}>
+                {formatPrice(totalPrice)}
+              </div>
             </div>
           </div>
 
@@ -845,7 +1003,11 @@ export default function ExpandableProposalCard({
             {/* Guest Action 2 */}
             {buttonConfig?.guestAction2?.visible && (
               <button
-                className={`epc-btn ${buttonConfig.guestAction2.action === 'reject_suggestion' ? 'epc-btn--not-interested' : 'epc-btn--outline'}`}
+                className={`epc-btn ${
+                  buttonConfig.guestAction2.action === 'reject_suggestion' ? 'epc-btn--not-interested' :
+                  buttonConfig.guestAction2.action === 'review_counteroffer' ? 'epc-btn--attention' :
+                  'epc-btn--outline'
+                }`}
                 onClick={() => {
                   if (buttonConfig.guestAction2.action === 'see_details') {
                     setProposalDetailsModalInitialView('pristine');
@@ -854,6 +1016,8 @@ export default function ExpandableProposalCard({
                     goToRentalApplication(proposal._id);
                   } else if (buttonConfig.guestAction2.action === 'reject_suggestion') {
                     setShowNotInterestedModal(true);
+                  } else if (buttonConfig.guestAction2.action === 'review_counteroffer') {
+                    setShowCompareTermsModal(true);
                   }
                 }}
               >
@@ -961,6 +1125,18 @@ export default function ExpandableProposalCard({
         currentProposalId={proposal._id}
         onProposalSelect={onProposalSelect}
       />
+
+      {/* Compare Terms Modal - for proposals with counteroffer */}
+      {showCompareTermsModal && isCounteroffer && (
+        <CompareTermsModal
+          proposal={proposal}
+          onClose={() => setShowCompareTermsModal(false)}
+          onAcceptCounteroffer={() => {
+            setShowCompareTermsModal(false);
+            window.location.reload();
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -127,6 +127,7 @@ export function ProposalCardBody({ proposal, handlers = {} }) {
         onEditCounter={() => handlers.onEditCounter?.(proposal)}
         onWithdraw={() => handlers.onWithdraw?.(proposal)}
         onRemove={() => handlers.onRemove?.(proposal)}
+        onRequestRentalApp={() => handlers.onRequestRentalApp?.(proposal)}
       />
     </div>
   );

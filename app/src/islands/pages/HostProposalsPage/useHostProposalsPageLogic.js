@@ -18,6 +18,7 @@ import { isHost } from '../../../logic/rules/users/isHost.js';
 import { getAllHouseRules } from '../../shared/EditListingDetails/services/houseRulesService.js';
 import { getVMStateInfo, VM_STATES } from '../../../logic/rules/proposals/virtualMeetingRules.js';
 import { DAYS_OF_WEEK, nightNamesToIndices } from '../../shared/HostEditingProposal/types.js';
+import { showToast } from '../../shared/Toast.jsx';
 
 // ============================================================================
 // DATA NORMALIZERS
@@ -521,7 +522,15 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
           "Comment",
           "Created Date",
           "Modified Date",
-          "virtual meeting"
+          "virtual meeting",
+          "counter offer happened",
+          "hc reservation span (weeks)",
+          "hc nightly price",
+          "hc total price",
+          "hc move in date",
+          "hc check in day",
+          "hc check out day",
+          "hc nights per week"
         `)
         .eq('Listing', listingId)
         .neq('Deleted', true)
@@ -732,7 +741,7 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
 
     } catch (err) {
       console.error('Failed to delete proposal:', err);
-      alert('Failed to delete proposal. Please try again.');
+      showToast({ title: 'Error', content: 'Failed to delete proposal. Please try again.', type: 'error' });
     }
   }, []);
 
@@ -762,12 +771,12 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
       }
 
       handleCloseModal();
-      alert('Proposal accepted successfully!');
+      showToast({ title: 'Success!', content: 'Proposal accepted successfully!', type: 'success' });
       console.log('[useHostProposalsPageLogic] Proposal accepted:', proposal._id);
 
     } catch (err) {
       console.error('Failed to accept proposal:', err);
-      alert('Failed to accept proposal. Please try again.');
+      showToast({ title: 'Error', content: 'Failed to accept proposal. Please try again.', type: 'error' });
     }
   }, [selectedListing, handleCloseModal]);
 
@@ -830,12 +839,17 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
    * - Frontend uses camelCase (numberOfWeeks, checkIn, etc.)
    * - Edge Function expects hc_ prefix snake_case (hc_reservation_span_weeks, hc_check_in, etc.)
    * - Day/night values come as strings ('Monday', 'Monday Night') and must be converted to indices
+   *
+   * IMPORTANT: ALL hc_ fields must be populated (with either new or original values)
+   * to enable strikethrough comparison in the UI. If a field wasn't changed,
+   * we copy the original value to the hc_ field.
    */
   const handleCounteroffer = useCallback(async (counterofferData) => {
     try {
       // Transform frontend field names to Edge Function expected format
       // The Edge Function expects hc_ prefixed snake_case fields
       const {
+        proposal,
         numberOfWeeks,
         checkIn,
         checkOut,
@@ -844,54 +858,62 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
         moveInDate
       } = counterofferData;
 
+      // Use the proposal from counterofferData or fall back to selectedProposal
+      const originalProposal = proposal || selectedProposal;
+
       console.log('[useHostProposalsPageLogic] Counteroffer input:', {
         checkIn, checkOut, nightsSelected, daysSelected
       });
 
-      // Build the payload with properly named fields
+      // Get original values from proposal for fields not being changed
+      const originalWeeks = originalProposal['Reservation Span (Weeks)'] || originalProposal.duration_weeks || 0;
+      const originalCheckIn = originalProposal['check in day'] ?? originalProposal.check_in_day;
+      const originalCheckOut = originalProposal['check out day'] ?? originalProposal.check_out_day;
+      const originalNights = originalProposal['Nights Selected (Nights list)'] || originalProposal.nights_selected || [];
+      const originalDays = originalProposal['Days Selected'] || originalProposal.days_selected || [];
+      const originalMoveIn = originalProposal['Move in range start'] || originalProposal.move_in_range_start;
+      const originalNightlyPrice = originalProposal['proposal nightly price'] || originalProposal.nightly_rate || 0;
+      const originalCleaningFee = originalProposal['cleaning fee'] || originalProposal.cleaning_fee || 0;
+      const originalDamageDeposit = originalProposal['damage deposit'] || originalProposal.damage_deposit || 0;
+      const originalTotalPrice = originalProposal['Total Price for Reservation (guest)'] || originalProposal.total_price || 0;
+      const originalFourWeekRent = originalProposal['4 week rent'] || originalProposal.four_week_rent || 0;
+
+      // Convert day/night values to indices
+      const convertedCheckIn = checkIn !== undefined ? dayNameToIndex(checkIn) : null;
+      const convertedCheckOut = checkOut !== undefined ? dayNameToIndex(checkOut) : null;
+      const convertedNights = nightsSelected !== undefined && Array.isArray(nightsSelected)
+        ? nightNamesToIndices(nightsSelected)
+        : null;
+      const convertedDays = daysSelected !== undefined && Array.isArray(daysSelected)
+        ? daysSelected.map(dayNameToIndex).filter(idx => idx !== null)
+        : null;
+      const convertedMoveIn = moveInDate !== undefined
+        ? (moveInDate instanceof Date ? moveInDate.toISOString().split('T')[0] : moveInDate)
+        : null;
+
+      // Build the payload with ALL hc_ fields (new value or original)
+      // This enables UI strikethrough comparison
       const payload = {
-        proposal_id: selectedProposal._id || selectedProposal.id,
-        status: 'Host Counteroffer Submitted / Awaiting Guest Review'
+        proposal_id: originalProposal._id || originalProposal.id,
+        status: 'Host Counteroffer Submitted / Awaiting Guest Review',
+
+        // Schedule fields - use new value if provided, otherwise copy original
+        hc_reservation_span_weeks: numberOfWeeks ?? originalWeeks,
+        hc_check_in: convertedCheckIn ?? (typeof originalCheckIn === 'number' ? originalCheckIn : parseInt(originalCheckIn, 10) || 0),
+        hc_check_out: convertedCheckOut ?? (typeof originalCheckOut === 'number' ? originalCheckOut : parseInt(originalCheckOut, 10) || 0),
+        hc_nights_selected: convertedNights ?? originalNights,
+        hc_days_selected: convertedDays ?? originalDays,
+        hc_move_in_date: convertedMoveIn ?? originalMoveIn,
+
+        // Financial fields - copy from original (host can't change these in current UI)
+        hc_nightly_price: parseFloat(originalNightlyPrice) || 0,
+        hc_cleaning_fee: parseFloat(originalCleaningFee) || 0,
+        hc_damage_deposit: parseFloat(originalDamageDeposit) || 0,
+        hc_total_price: parseFloat(originalTotalPrice) || 0,
+        hc_four_week_rent: parseFloat(originalFourWeekRent) || 0
       };
 
-      // Only include fields that were actually provided/changed
-      if (numberOfWeeks !== undefined) {
-        payload.hc_reservation_span_weeks = numberOfWeeks;
-      }
-      if (checkIn !== undefined) {
-        // checkIn comes as day name string ('Monday') - convert to 0-based index
-        const checkInIndex = dayNameToIndex(checkIn);
-        if (checkInIndex !== null) {
-          payload.hc_check_in = checkInIndex;
-        }
-      }
-      if (checkOut !== undefined) {
-        // checkOut comes as day name string ('Friday') - convert to 0-based index
-        const checkOutIndex = dayNameToIndex(checkOut);
-        if (checkOutIndex !== null) {
-          payload.hc_check_out = checkOutIndex;
-        }
-      }
-      if (nightsSelected !== undefined && Array.isArray(nightsSelected)) {
-        // nightsSelected comes as array of night names ['Monday Night', 'Tuesday Night']
-        // Convert to 0-based indices using nightNamesToIndices from types.js
-        payload.hc_nights_selected = nightNamesToIndices(nightsSelected);
-      }
-      if (daysSelected !== undefined && Array.isArray(daysSelected)) {
-        // daysSelected comes as array of day names ['Monday', 'Tuesday']
-        // Convert each to 0-based index
-        payload.hc_days_selected = daysSelected
-          .map(dayNameToIndex)
-          .filter(idx => idx !== null);
-      }
-      if (moveInDate !== undefined) {
-        // moveInDate should be ISO string
-        payload.hc_move_in_date = moveInDate instanceof Date
-          ? moveInDate.toISOString().split('T')[0]
-          : moveInDate;
-      }
-
-      console.log('[useHostProposalsPageLogic] Converted payload:', payload);
+      console.log('[useHostProposalsPageLogic] Converted payload with ALL hc_ fields:', payload);
 
       // Validate session exists before Edge Function call
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -938,15 +960,16 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
 
       setIsEditingProposal(false);
       setSelectedProposal(null);
-      alert('Counteroffer sent successfully!');
+      showToast({ title: 'Counteroffer Sent!', content: 'Your counteroffer has been submitted for guest review.', type: 'success' });
       console.log('[useHostProposalsPageLogic] Counteroffer sent:', selectedProposal._id);
 
     } catch (err) {
       console.error('Failed to send counteroffer:', err);
-      // Extract proper error message, avoiding [object Object] display
+      // Extract proper error message
       const errorMessage = err?.message || err?.error?.message || err?.error ||
         (typeof err === 'string' ? err : 'Failed to send counteroffer. Please try again.');
-      alert(typeof errorMessage === 'string' ? errorMessage : 'Failed to send counteroffer. Please try again.');
+      const displayMessage = typeof errorMessage === 'string' ? errorMessage : 'Failed to send counteroffer. Please try again.';
+      showToast({ title: 'Error', content: displayMessage, type: 'error' });
     }
   }, [selectedProposal, selectedListing]);
 
@@ -977,30 +1000,31 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
 
       setIsEditingProposal(false);
       setSelectedProposal(null);
-      alert('Proposal rejected.');
+      showToast({ title: 'Proposal Rejected', content: 'The proposal has been rejected.', type: 'info' });
       console.log('[useHostProposalsPageLogic] Proposal rejected from editing:', proposal._id);
 
     } catch (err) {
       console.error('Failed to reject proposal:', err);
-      alert('Failed to reject proposal. Please try again.');
+      showToast({ title: 'Error', content: 'Failed to reject proposal. Please try again.', type: 'error' });
     }
   }, [selectedListing]);
 
   /**
    * Handle alert notifications from editing component
-   * Supports both (message, type) and (title, content, type) signatures
+   * Supports object format { type, title, content } from HostEditingProposal
    */
-  const handleEditingAlert = useCallback((titleOrMessage, contentOrType = 'info', type) => {
-    // For now, use simple alert. Can be replaced with toast system later.
-    // Handle both (message, type) and (title, content, type) call signatures
-    if (type !== undefined) {
-      // Called with (title, content, type) - combine title and content
-      const title = titleOrMessage;
-      const content = contentOrType;
-      alert(`${title}\n\n${content}`);
-    } else {
-      // Called with (message, type) - just show message
-      alert(titleOrMessage);
+  const handleEditingAlert = useCallback((alertData) => {
+    // HostEditingProposal calls with object: { type, title, content }
+    if (alertData && typeof alertData === 'object') {
+      const toastType = alertData.type === 'information' ? 'info' : (alertData.type || 'info');
+      showToast({
+        title: alertData.title || 'Notification',
+        content: alertData.content || '',
+        type: toastType
+      });
+    } else if (typeof alertData === 'string') {
+      // Fallback for string messages
+      showToast({ title: alertData, type: 'info' });
     }
   }, []);
 
@@ -1010,7 +1034,7 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
   const handleSendMessage = useCallback((proposal) => {
     const guest = proposal.guest || proposal.Guest || proposal['Created By'] || {};
     const guestName = guest.firstName || guest['First Name'] || 'Guest';
-    alert(`Opening message thread with ${guestName}`);
+    showToast({ title: 'Opening Messages', content: `Opening message thread with ${guestName}`, type: 'info' });
     // TODO: Navigate to messaging or open message modal
   }, []);
 
@@ -1022,10 +1046,10 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
     try {
       // For now, just show a confirmation - can be connected to a notification system later
       console.log('[useHostProposalsPageLogic] Reminder requested for proposal:', proposal._id);
-      alert('Reminder feature coming soon! For urgent matters, please contact support@splitlease.com');
+      showToast({ title: 'Coming Soon', content: 'Reminder feature coming soon! For urgent matters, please contact support@splitlease.com', type: 'info' });
     } catch (err) {
       console.error('Failed to send reminder:', err);
-      alert('Failed to send reminder. Please try again.');
+      showToast({ title: 'Error', content: 'Failed to send reminder. Please try again.', type: 'error' });
     }
   }, []);
 
@@ -1101,7 +1125,7 @@ export function useHostProposalsPageLogic({ skipAuth = false } = {}) {
   const handleRequestRentalApp = useCallback((proposal) => {
     const guest = proposal.guest || proposal.Guest || proposal['Created By'] || {};
     const guestName = guest.firstName || guest['First Name'] || 'Guest';
-    alert(`Rental application request sent to ${guestName}! They will be notified to complete their application.`);
+    showToast({ title: 'Request Sent!', content: `Rental application request sent to ${guestName}! They will be notified to complete their application.`, type: 'success' });
     // TODO: Call API to send rental app request notification to guest
   }, []);
 

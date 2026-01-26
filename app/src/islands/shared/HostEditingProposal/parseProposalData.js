@@ -8,7 +8,7 @@
  * and testability.
  */
 
-import { nightIndicesToNames, findReservationSpanByWeeks, RESERVATION_SPANS } from './types'
+import { nightIndicesToNames, findReservationSpanByWeeks, RESERVATION_SPANS, getDayName } from './types'
 
 /**
  * Get a date value from proposal with fallback field name support
@@ -42,7 +42,12 @@ export function getProposalValue(proposal, field, fallback) {
  * @returns {string} The check-in day name (e.g., 'Monday')
  */
 export function extractCheckInDay(proposal) {
-  return proposal?.['check in day'] || proposal?.checkInDay || 'Monday'
+  const value = proposal?.['check in day'] ?? proposal?.checkInDay
+  // If value is a number or numeric string (day index), convert to day name
+  if (typeof value === 'number' || (typeof value === 'string' && /^\d$/.test(value))) {
+    return getDayName(Number(value)) || 'Monday'
+  }
+  return value || 'Monday'
 }
 
 /**
@@ -51,7 +56,12 @@ export function extractCheckInDay(proposal) {
  * @returns {string} The check-out day name (e.g., 'Friday')
  */
 export function extractCheckOutDay(proposal) {
-  return proposal?.['check out day'] || proposal?.checkOutDay || 'Friday'
+  const value = proposal?.['check out day'] ?? proposal?.checkOutDay
+  // If value is a number or numeric string (day index), convert to day name
+  if (typeof value === 'number' || (typeof value === 'string' && /^\d$/.test(value))) {
+    return getDayName(Number(value)) || 'Friday'
+  }
+  return value || 'Friday'
 }
 
 /**

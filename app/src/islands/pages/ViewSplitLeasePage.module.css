@@ -69,6 +69,20 @@
   color: #7C3AED;
 }
 
+.schedulePatternContent {
+  color: #6B21A8;
+  line-height: 1.4;
+}
+
+.schedulePatternWeeks {
+  font-weight: 700;
+  color: #7C3AED;
+}
+
+.schedulePatternSpan {
+  color: #6B21A8;
+}
+
 /* ============================================================================
    LOADING STATE
    ============================================================================ */

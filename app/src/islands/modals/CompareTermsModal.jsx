@@ -1,228 +1,419 @@
 /**
  * CompareTermsModal Component
  *
- * Side-by-side comparison of original proposal vs host counteroffer
- * Implements 7-step acceptance workflow from WORKFLOW-PASS2-ASSIMILATION.md
+ * Side-by-side comparison of original proposal vs host counteroffer.
+ * Follows Bubble spec styling and the Hollow Component pattern.
+ *
+ * Features:
+ * - Non-dismissible overlay (no Escape key, no overlay click)
+ * - Two-column comparison with day pills display
+ * - Reservation details section
+ * - Negotiation summary section (conditional)
+ * - Three action buttons: Cancel Proposal, Close, Accept Host Terms
+ * - "Check the full document" link
+ * - Nested CancelProposalModal for decline flow
  */
 
-import { useState } from 'react';
-import { supabase } from '../../lib/supabase.js';
+import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { useCompareTermsModalLogic } from './useCompareTermsModalLogic.js';
+import CancelProposalModal from './CancelProposalModal.jsx';
+import './CompareTermsModal.css';
 
-export default function CompareTermsModal({ proposal, onClose, onAcceptCounteroffer }) {
-  const [loading, setLoading] = useState(false);
+/**
+ * Day abbreviations for pill display
+ */
+const DAY_ABBREVS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
-  if (!proposal || !proposal['counter offer happened']) return null;
+/**
+ * DayPillsDisplay - Shows S M T W T F S with selected highlighting
+ *
+ * @param {Object} props
+ * @param {number[]} props.daysSelected - Array of selected day indices (0-6)
+ * @param {boolean} props.isCounteroffer - Whether this is for counteroffer column
+ */
+function DayPillsDisplay({ daysSelected = [], isCounteroffer = false }) {
+  const selectedSet = new Set(daysSelected);
 
-  /**
-   * Accept Counteroffer - 7-Step Workflow
-   * Per WORKFLOW-PASS2-ASSIMILATION.md lines 36-108
-   */
-  async function handleAcceptCounteroffer() {
-    setLoading(true);
+  return (
+    <div className="compare-terms-days" role="group" aria-label="Selected days of the week">
+      {DAY_ABBREVS.map((letter, index) => {
+        const isSelected = selectedSet.has(index);
+        let className = 'compare-terms-day-pill';
+        if (isSelected) {
+          className += isCounteroffer
+            ? ' compare-terms-day-pill--selected-counteroffer'
+            : ' compare-terms-day-pill--selected';
+        }
 
-    try {
-      // Step 1: Show success alert (48-hour timeline message)
-      // Will be shown at the end after successful completion
+        return (
+          <div
+            key={index}
+            className={className}
+            aria-label={`${['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][index]}${isSelected ? ', selected' : ''}`}
+          >
+            {letter}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
-      // Step 2-3: Calculate lease numbering format
-      const { count: leaseCount, error: countError } = await supabase
-        .from('bookings_leases')
-        .select('*', { count: 'exact', head: true });
+/**
+ * NegotiationSummaryBanner - Shows last negotiation summary
+ *
+ * @param {Object} props
+ * @param {Array} props.summaries - Array of negotiation summary objects
+ */
+function NegotiationSummaryBanner({ summaries = [] }) {
+  if (!summaries || summaries.length === 0) return null;
 
-      if (countError) throw countError;
+  // Get the most recent summary
+  const latestSummary = summaries[summaries.length - 1];
+  const summaryText = latestSummary?.summary || latestSummary?.text || latestSummary;
 
-      const numberOfZeros = leaseCount < 10 ? 4 : leaseCount < 100 ? 3 : 2;
+  if (!summaryText) return null;
 
-      // Step 4: Calculate 4-week compensation (from ORIGINAL proposal, not counteroffer)
-      const originalNightsPerWeek = proposal['nights per week (num)'] || 0;
-      const originalNightlyPrice = proposal['proposal nightly price'] || 0;
-      const fourWeekCompensation = originalNightsPerWeek * 4 * originalNightlyPrice;
+  return (
+    <div className="compare-terms-negotiation" role="status">
+      <svg
+        className="compare-terms-negotiation-icon"
+        viewBox="0 0 20 20"
+        fill="currentColor"
+        aria-hidden="true"
+      >
+        <path
+          fillRule="evenodd"
+          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+          clipRule="evenodd"
+        />
+      </svg>
+      <span className="compare-terms-negotiation-text">{summaryText}</span>
+    </div>
+  );
+}
 
-      // Step 5: Update proposal status
-      const { error: updateError } = await supabase
-        .from('proposal')
-        .update({
-          Status: 'Proposal or Counteroffer Accepted / Drafting Lease Documents',
-          'Modified Date': new Date().toISOString(),
-        })
-        .eq('_id', proposal._id);
-
-      if (updateError) throw updateError;
-
-      // Step 6: Calculate 4-week rent (from COUNTEROFFER terms)
-      const counterofferNightsPerWeek = proposal['hc nights per week'] || 0;
-      const counterofferNightlyPrice = proposal['hc nightly price'] || 0;
-      const fourWeekRent = counterofferNightsPerWeek * 4 * counterofferNightlyPrice;
-
-      // Step 7: Schedule backend API workflow CORE-create-lease
-      // NOTE: In Bubble, this would schedule an API workflow with +15 second delay
-      // For now, we'll create the lease record directly
-      // TODO: Implement proper backend API workflow scheduling in production
-
-      console.log('✅ Counteroffer accepted - Lease creation parameters:', {
-        proposalId: proposal._id,
-        numberOfZeros,
-        fourWeekRent,
-        isCounteroffer: 'yes',
-        fourWeekCompensation,
-      });
-
-      // Step 1 (delayed): Show success message
-      alert('We will work on drafting a lease for you. Please give us 48 hours to finalize your lease with the terms proposed by your host.');
-
-      if (onAcceptCounteroffer) onAcceptCounteroffer();
-      onClose();
-
-    } catch (error) {
-      console.error('❌ Error accepting counteroffer:', error);
-      alert('Failed to accept counteroffer. Please try again or contact support.');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  // Format currency
-  function formatCurrency(amount) {
-    if (!amount) return '$0';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  }
-
-  // Format date
-  function formatDate(dateString) {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString();
+/**
+ * HouseRulesDisplay - Shows house rules badges
+ *
+ * @param {Object} props
+ * @param {Array} props.rules - Array of house rule strings
+ */
+function HouseRulesDisplay({ rules = [] }) {
+  if (!rules || rules.length === 0) {
+    return <span className="compare-terms-no-rules">None specified</span>;
   }
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto" onClick={onClose}>
-      <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+    <div className="compare-terms-house-rules">
+      {rules.slice(0, 5).map((rule, index) => (
+        <span key={index} className="compare-terms-house-rule-badge">
+          {rule}
+        </span>
+      ))}
+      {rules.length > 5 && (
+        <span className="compare-terms-house-rule-badge">+{rules.length - 5} more</span>
+      )}
+    </div>
+  );
+}
 
-        <div
-          className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-6 text-center">
-              Compare Terms
-            </h3>
+/**
+ * ReservationDetailsTable - Side-by-side details comparison
+ *
+ * @param {Object} props
+ * @param {Object} props.original - Original terms
+ * @param {Object} props.counteroffer - Counteroffer terms
+ * @param {boolean} props.isExpanded - Whether to show all rows or only changed ones
+ */
+function ReservationDetailsTable({ original, counteroffer, isExpanded = false }) {
+  if (!original || !counteroffer) return null;
 
-            {/* Comparison Table */}
-            <div className="grid grid-cols-2 gap-6">
-              {/* Original Proposal */}
-              <div className="border-r pr-6">
-                <h4 className="font-semibold text-gray-700 mb-4 text-center">Your Original Proposal</h4>
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Move-in Date:</span>
-                    <span className="font-medium">{formatDate(proposal['Move in range start'])}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Duration:</span>
-                    <span className="font-medium">{proposal['Reservation Span (Weeks)']} weeks</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Nights/Week:</span>
-                    <span className="font-medium">{proposal['nights per week (num)']}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Schedule:</span>
-                    <span className="font-medium">{proposal['check in day']} - {proposal['check out day']}</span>
-                  </div>
-                  <div className="flex justify-between border-t pt-3">
-                    <span className="text-gray-600">Nightly Price:</span>
-                    <span className="font-medium">{formatCurrency(proposal['proposal nightly price'])}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Total Price:</span>
-                    <span className="font-semibold text-lg">{formatCurrency(proposal['Total Price for Reservation (guest)'])}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Cleaning Fee:</span>
-                    <span className="font-medium">{formatCurrency(proposal['cleaning fee'])}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Damage Deposit:</span>
-                    <span className="font-medium">{formatCurrency(proposal['damage deposit'])}</span>
-                  </div>
-                </div>
+  const rows = [
+    { label: 'Check-In Day', originalVal: original.checkInDayName, counterVal: counteroffer.checkInDayName },
+    { label: 'Check-Out Day', originalVal: original.checkOutDayName, counterVal: counteroffer.checkOutDayName },
+    { label: 'Price/Night', originalVal: original.nightlyPriceFormatted, counterVal: counteroffer.nightlyPriceFormatted },
+    { label: 'Nights Reserved', originalVal: original.nightsReserved, counterVal: counteroffer.nightsReserved },
+    { label: 'Duration', originalVal: `${original.reservationWeeks} weeks`, counterVal: `${counteroffer.reservationWeeks} weeks` },
+    { label: 'Total Price', originalVal: original.totalPriceFormatted, counterVal: counteroffer.totalPriceFormatted },
+    { label: 'Price/4 Weeks', originalVal: original.pricePerFourWeeksFormatted, counterVal: counteroffer.pricePerFourWeeksFormatted },
+    { label: 'Nights/4 Weeks', originalVal: original.nightsPerFourWeeks, counterVal: counteroffer.nightsPerFourWeeks },
+    { label: 'Maintenance Fee/4wks', originalVal: original.maintenanceFeePerFourWeeksFormatted || '$0', counterVal: counteroffer.maintenanceFeePerFourWeeksFormatted || '$0' },
+    { label: 'Damage Deposit', originalVal: original.damageDepositFormatted, counterVal: counteroffer.damageDepositFormatted },
+    { label: 'Initial Payment', originalVal: original.initialPaymentFormatted, counterVal: counteroffer.initialPaymentFormatted }
+  ];
+
+  // Filter to only changed rows if not expanded
+  const displayRows = isExpanded
+    ? rows
+    : rows.filter(row => String(row.originalVal) !== String(row.counterVal));
+
+  // Don't render if collapsed and no changes
+  if (!isExpanded && displayRows.length === 0) return null;
+
+  return (
+    <div className="compare-terms-details-section">
+      <h4 className="compare-terms-details-title">Reservation Details</h4>
+      <div className="compare-terms-details-table">
+        <div className="compare-terms-details-row compare-terms-details-row--header">
+          <div className="compare-terms-details-cell"></div>
+          <div className="compare-terms-details-cell">Your Terms</div>
+          <div className="compare-terms-details-cell">Host Terms</div>
+        </div>
+        {displayRows.map((row, index) => {
+          const isChanged = String(row.originalVal) !== String(row.counterVal);
+          return (
+            <div key={index} className="compare-terms-details-row">
+              <div className="compare-terms-details-cell compare-terms-details-cell--label">
+                {row.label}
               </div>
-
-              {/* Host Counteroffer */}
-              <div className="pl-6">
-                <h4 className="font-semibold text-gray-700 mb-4 text-center">Host's Counteroffer</h4>
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Move-in Date:</span>
-                    <span className="font-medium">{formatDate(proposal['hc move in date'])}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Duration:</span>
-                    <span className="font-medium">{proposal['hc reservation span (weeks)']} weeks</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Nights/Week:</span>
-                    <span className="font-medium">{proposal['hc nights per week']}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Schedule:</span>
-                    <span className="font-medium">{proposal['hc check in day']} - {proposal['hc check out day']}</span>
-                  </div>
-                  <div className="flex justify-between border-t pt-3">
-                    <span className="text-gray-600">Nightly Price:</span>
-                    <span className="font-medium">{formatCurrency(proposal['hc nightly price'])}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Total Price:</span>
-                    <span className="font-semibold text-lg">{formatCurrency(proposal['hc total price'])}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Cleaning Fee:</span>
-                    <span className="font-medium">{formatCurrency(proposal['hc cleaning fee'])}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Damage Deposit:</span>
-                    <span className="font-medium">{formatCurrency(proposal['hc damage deposit'])}</span>
-                  </div>
-                </div>
+              <div className="compare-terms-details-cell">
+                {row.originalVal}
+              </div>
+              <div className={`compare-terms-details-cell ${isChanged ? 'compare-terms-details-cell--changed' : ''}`}>
+                {row.counterVal}
               </div>
             </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
-            {/* Info Box */}
-            <div className="mt-6 p-4 bg-purple-50 rounded-lg">
-              <p className="text-sm text-purple-800">
-                <strong>Note:</strong> By accepting the counteroffer, you agree to the host's proposed terms.
-                We will begin drafting your lease within 48 hours.
-              </p>
+/**
+ * CompareTermsModal Component
+ *
+ * @param {Object} props
+ * @param {Object} props.proposal - Proposal object with original and HC terms
+ * @param {Function} props.onClose - Callback when modal closes
+ * @param {Function} props.onAcceptCounteroffer - Callback after successful acceptance
+ */
+export default function CompareTermsModal({ proposal, onClose, onAcceptCounteroffer }) {
+  // Use the logic hook (Hollow Component pattern)
+  const {
+    isAccepting,
+    isCancelling,
+    isLoading,
+    error,
+    originalTerms,
+    counterofferTerms,
+    negotiationSummaries,
+    houseRules,
+    listingInfo,
+    showCancelModal,
+    isExpanded,
+    handleAcceptCounteroffer,
+    handleCancelProposal,
+    handleCancelConfirm,
+    handleClose,
+    handleCloseCancelModal,
+    handleToggleExpanded
+  } = useCompareTermsModalLogic({
+    proposal,
+    onClose,
+    onAcceptCounteroffer,
+    onCancelProposal: () => {}
+  });
+
+  // Block Escape key dismissal
+  useEffect(() => {
+    function handleKeyDown(event) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown, true);
+    return () => document.removeEventListener('keydown', handleKeyDown, true);
+  }, []);
+
+  // Don't render if no proposal or no counteroffer
+  if (!proposal || !proposal['counter offer happened']) {
+    return null;
+  }
+
+  // Don't render if terms are not loaded
+  if (!originalTerms || !counterofferTerms) {
+    return null;
+  }
+
+  const modalContent = (
+    <div
+      className="compare-terms-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="compare-terms-title"
+    >
+      <div className="compare-terms-modal">
+        {/* Header */}
+        <div className="compare-terms-header">
+          <h2 id="compare-terms-title" className="compare-terms-title">
+            Compare Terms
+          </h2>
+          <button
+            className="compare-terms-close-btn"
+            onClick={handleClose}
+            disabled={isLoading}
+            aria-label="Close modal"
+          >
+            ×
+          </button>
+        </div>
+
+        {/* Scrollable Body */}
+        <div className="compare-terms-body">
+          {/* Error Message */}
+          {error && (
+            <div className="compare-terms-error" role="alert">
+              <span className="compare-terms-error-text">{error}</span>
+            </div>
+          )}
+
+          {/* Negotiation Summary */}
+          <NegotiationSummaryBanner summaries={negotiationSummaries} />
+
+          {/* Column Headers */}
+          <div className="compare-terms-columns-header">
+            <div className="compare-terms-column-title compare-terms-column-title--original">
+              Your Terms
+            </div>
+            <div className="compare-terms-column-title compare-terms-column-title--counteroffer">
+              Host Terms
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2">
+          {/* Terms Comparison Grid */}
+          <div className="compare-terms-grid">
+            {/* Original Terms Column */}
+            <div className="compare-terms-column">
+              <div className="compare-terms-row">
+                <span className="compare-terms-label">Move-in Date</span>
+                <span className="compare-terms-value">{originalTerms.moveInDisplay}</span>
+              </div>
+
+              <div className="compare-terms-row">
+                <span className="compare-terms-label">Duration</span>
+                <span className="compare-terms-value">{originalTerms.reservationWeeks} weeks</span>
+              </div>
+
+              <div className="compare-terms-row">
+                <span className="compare-terms-label">Schedule</span>
+                <DayPillsDisplay daysSelected={originalTerms.daysSelected} isCounteroffer={false} />
+              </div>
+
+              <div className="compare-terms-row">
+                <span className="compare-terms-label">Days/Nights</span>
+                <span className="compare-terms-value">
+                  {originalTerms.daysSelected.length + 1} days, {originalTerms.daysSelected.length} nights
+                </span>
+              </div>
+
+              <div className="compare-terms-row">
+                <span className="compare-terms-label">House Rules</span>
+                <HouseRulesDisplay rules={houseRules} />
+              </div>
+            </div>
+
+            {/* Counteroffer Terms Column */}
+            <div className="compare-terms-column">
+              <div className="compare-terms-row">
+                <span className="compare-terms-label">Move-in Date</span>
+                <span className="compare-terms-value compare-terms-value--highlight">
+                  {counterofferTerms.moveInDisplay}
+                </span>
+              </div>
+
+              <div className="compare-terms-row">
+                <span className="compare-terms-label">Duration</span>
+                <span className={`compare-terms-value ${counterofferTerms.reservationWeeks !== originalTerms.reservationWeeks ? 'compare-terms-value--highlight' : ''}`}>
+                  {counterofferTerms.reservationWeeks} weeks
+                </span>
+              </div>
+
+              <div className="compare-terms-row">
+                <span className="compare-terms-label">Schedule</span>
+                <DayPillsDisplay daysSelected={counterofferTerms.daysSelected} isCounteroffer={true} />
+              </div>
+
+              <div className="compare-terms-row">
+                <span className="compare-terms-label">Days/Nights</span>
+                <span className={`compare-terms-value ${counterofferTerms.daysSelected.length !== originalTerms.daysSelected.length ? 'compare-terms-value--highlight' : ''}`}>
+                  {counterofferTerms.daysSelected.length + 1} days, {counterofferTerms.daysSelected.length} nights
+                </span>
+              </div>
+
+              <div className="compare-terms-row">
+                <span className="compare-terms-label">House Rules</span>
+                <HouseRulesDisplay rules={houseRules} />
+              </div>
+            </div>
+          </div>
+
+          {/* Reservation Details Table */}
+          <ReservationDetailsTable
+            original={originalTerms}
+            counteroffer={counterofferTerms}
+            isExpanded={isExpanded}
+          />
+        </div>
+
+        {/* Footer */}
+        <div className="compare-terms-footer">
+          <div className="compare-terms-actions">
             <button
-              type="button"
-              onClick={handleAcceptCounteroffer}
-              disabled={loading}
-              className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none disabled:opacity-50 sm:w-auto sm:text-sm"
+              className="compare-terms-btn compare-terms-btn--cancel"
+              onClick={handleCancelProposal}
+              disabled={isLoading}
             >
-              {loading ? 'Processing...' : 'Accept Counteroffer'}
+              Cancel Proposal
             </button>
             <button
-              type="button"
-              onClick={onClose}
-              disabled={loading}
-              className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none disabled:opacity-50 sm:mt-0 sm:w-auto sm:text-sm"
+              className="compare-terms-btn compare-terms-btn--close"
+              onClick={handleClose}
+              disabled={isLoading}
             >
-              Decline
+              Close
+            </button>
+            <button
+              className="compare-terms-btn compare-terms-btn--accept"
+              onClick={handleAcceptCounteroffer}
+              disabled={isLoading}
+            >
+              {isAccepting ? 'Processing...' : 'Accept Host Terms'}
+            </button>
+          </div>
+
+          {/* Check the full document toggle */}
+          <div className="compare-terms-document-link">
+            <button
+              type="button"
+              onClick={handleToggleExpanded}
+              className="compare-terms-expand-btn"
+              disabled={isLoading}
+            >
+              {isExpanded ? 'Collapse to changes only' : 'Check the full document'}
             </button>
           </div>
         </div>
       </div>
+
+      {/* Nested Cancel Proposal Modal */}
+      {showCancelModal && (
+        <CancelProposalModal
+          isOpen={showCancelModal}
+          proposal={proposal}
+          userType="guest"
+          buttonText="Decline Counteroffer"
+          onClose={handleCloseCancelModal}
+          onConfirm={handleCancelConfirm}
+        />
+      )}
     </div>
   );
+
+  // Render via portal to escape parent CSS constraints
+  return createPortal(modalContent, document.body);
 }

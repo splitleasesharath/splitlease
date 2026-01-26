@@ -52,9 +52,12 @@ function getStatusBannerConfig(proposal) {
   const submittedAt = proposal?.created_at || proposal?.Created_Date;
   const timeAgo = submittedAt ? formatDistanceToNow(new Date(submittedAt)) : '';
 
+  // Get guest name for personalized messages
+  const guest = proposal?.guest || proposal?.Guest || proposal?.['Created By'] || {};
+  const guestName = guest?.firstName || guest?.['First Name'] || guest?.name || 'Guest';
+
   // Guest counteroffer
   if (proposal?.has_guest_counteroffer || proposal?.guest_counteroffer || proposal?.last_modified_by === 'guest') {
-    const guestName = proposal?.guest?.name || proposal?.guest?.first_name || 'Guest';
     return {
       variant: 'warning',
       icon: Repeat,
@@ -63,7 +66,30 @@ function getStatusBannerConfig(proposal) {
     };
   }
 
-  // Status-based configs
+  // Check for "Awaiting Rental Application" states (full Bubble status strings)
+  // These are proposals where the guest has submitted but hasn't completed their rental application yet
+  if (status === 'Proposal Submitted by guest - Awaiting Rental Application' ||
+      status === 'Proposal Submitted for guest by Split Lease - Awaiting Rental Application') {
+    return {
+      variant: 'action-needed',
+      icon: Clock,
+      title: 'Awaiting Rental Application',
+      message: `Waiting for ${guestName} to submit rental application`
+    };
+  }
+
+  // Check for pending confirmation state
+  if (status === 'Proposal Submitted for guest by Split Lease - Pending Confirmation' ||
+      status === 'Pending Confirmation') {
+    return {
+      variant: 'default',
+      icon: Clock,
+      title: 'Pending Confirmation',
+      message: `Waiting for ${guestName} to confirm proposal`
+    };
+  }
+
+  // Status-based configs (normalized keys)
   const configs = {
     proposal_submitted: {
       variant: 'action-needed',

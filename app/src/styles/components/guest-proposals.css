@@ -2550,6 +2550,88 @@
 }
 
 /* ============================================================================
+   COUNTEROFFER SUMMARY SECTION
+   Displays AI summary explaining what changed in a host counteroffer
+   ============================================================================ */
+
+.counteroffer-summary-section {
+  border: 1px solid #F59E0B;
+  border-radius: 10px;
+  margin: 12px 0;
+  overflow: hidden;
+  background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+}
+
+.counteroffer-summary-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.counteroffer-summary-toggle:hover {
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.counteroffer-summary-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.counteroffer-summary-label {
+  flex: 1;
+  text-align: left;
+  font-size: var(--gp-font-size-sm);
+  font-weight: 600;
+  color: #B45309;
+}
+
+.counteroffer-summary-chevron {
+  font-size: 10px;
+  color: #92400E;
+  transition: transform 0.2s ease-out;
+}
+
+.counteroffer-summary-chevron.expanded {
+  transform: rotate(180deg);
+}
+
+.counteroffer-summary-content {
+  padding: 16px;
+  background: var(--gp-white);
+  border-top: 1px solid #FCD34D;
+  animation: slideDown 0.2s ease-out;
+}
+
+.counteroffer-summary-content p {
+  font-size: var(--gp-font-size-sm);
+  color: var(--gp-text-secondary);
+  line-height: var(--gp-line-height-relaxed);
+  margin: 0;
+}
+
+.counteroffer-summary-content strong {
+  color: #92400E;
+  font-weight: 600;
+}
+
+@media (max-width: 480px) {
+  .counteroffer-summary-toggle {
+    padding: 10px 14px;
+  }
+
+  .counteroffer-summary-content {
+    padding: 14px;
+  }
+}
+
+/* ============================================================================
    EXPANDABLE PROPOSAL CARD (EPC) - Main Component
    ============================================================================ */
 
@@ -3006,6 +3088,45 @@
 }
 
 /* ============================================================================
+   EPC COUNTEROFFER VALUE COMPARISON (Strikethrough & Changed Values)
+   Shows original value struck through and new value highlighted
+   ============================================================================ */
+
+.epc-strikethrough {
+  color: var(--gp-text-muted);
+  text-decoration: line-through;
+  margin-right: 8px;
+  font-size: 0.9em;
+}
+
+.epc-changed-value {
+  color: #B45309;
+  font-weight: 600;
+}
+
+.epc-info-value .epc-strikethrough {
+  display: inline-block;
+}
+
+.epc-info-value .epc-changed-value {
+  display: inline-block;
+}
+
+/* Nightly price strikethrough in pricing breakdown */
+.epc-pricing-breakdown .epc-strikethrough {
+  margin-right: 4px;
+}
+
+.epc-pricing-breakdown .epc-changed-value {
+  color: #B45309;
+}
+
+/* Total price when changed */
+.epc-pricing-total.epc-changed-value {
+  color: #B45309;
+}
+
+/* ============================================================================
    EPC PROGRESS ROW
    ============================================================================ */
 
@@ -3120,6 +3241,16 @@
 
 .epc-btn--not-interested:hover {
   background: var(--gp-danger-bg);
+}
+
+.epc-btn--attention {
+  background: #f59e0b;
+  color: #ffffff;
+  border: 1px solid #d97706;
+}
+
+.epc-btn--attention:hover {
+  background: #d97706;
 }
 
 .epc-btn:disabled {

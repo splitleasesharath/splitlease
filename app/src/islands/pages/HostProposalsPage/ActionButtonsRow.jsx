@@ -55,6 +55,16 @@ function hasGuestCounteroffer(proposal) {
 }
 
 /**
+ * Check if proposal is awaiting rental application submission from guest
+ * @param {string} statusKey - The status key
+ * @returns {boolean} True if awaiting rental app
+ */
+function isAwaitingRentalApp(statusKey) {
+  return statusKey === 'Proposal Submitted by guest - Awaiting Rental Application' ||
+         statusKey === 'Proposal Submitted for guest by Split Lease - Awaiting Rental Application';
+}
+
+/**
  * ActionButtonsRow displays context-sensitive action buttons
  *
  * @param {Object} props
@@ -68,6 +78,7 @@ function hasGuestCounteroffer(proposal) {
  * @param {Function} props.onEditCounter - Edit counteroffer callback
  * @param {Function} props.onWithdraw - Withdraw counteroffer callback
  * @param {Function} props.onRemove - Remove proposal callback
+ * @param {Function} props.onRequestRentalApp - Request rental app reminder callback
  */
 export function ActionButtonsRow({
   proposal,
@@ -79,7 +90,8 @@ export function ActionButtonsRow({
   onScheduleMeeting,
   onEditCounter,
   onWithdraw,
-  onRemove
+  onRemove,
+  onRequestRentalApp
 }) {
   const statusKey = getStatusKey(proposal);
   const isGuestCounter = hasGuestCounteroffer(proposal);
@@ -111,6 +123,30 @@ export function ActionButtonsRow({
         >
           <X size={14} />
           Decline
+        </button>
+      </div>
+    );
+  }
+
+  // Awaiting Rental Application - guest needs to submit rental app before host can review
+  if (isAwaitingRentalApp(statusKey)) {
+    return (
+      <div className="hp7-actions-row">
+        <button
+          type="button"
+          className="hp7-btn hp7-btn-primary"
+          onClick={onRequestRentalApp}
+        >
+          <Bell size={14} />
+          Send Reminder
+        </button>
+        <button
+          type="button"
+          className="hp7-btn hp7-btn-ghost"
+          onClick={onMessage}
+        >
+          <MessageCircle size={14} />
+          Message
         </button>
       </div>
     );

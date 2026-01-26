@@ -765,6 +765,32 @@
 }
 
 /* ========================================
+   COUNTEROFFER STRIKETHROUGH COMPARISON
+   ======================================== */
+
+/* Original value with strikethrough */
+.hp7-strikethrough {
+  color: var(--hp7-text-muted);
+  text-decoration: line-through;
+  margin-right: 8px;
+  font-size: 0.9em;
+}
+
+/* Total strikethrough - smaller for the total row */
+.hp7-total-strikethrough {
+  font-size: 14px;
+  font-weight: 500;
+  display: block;
+  margin-bottom: 2px;
+}
+
+/* New counteroffer value - highlighted in amber */
+.hp7-changed-value {
+  color: var(--hp7-yellow-text);
+  font-weight: 600;
+}
+
+/* ========================================
    PROGRESS TRACKER
    ======================================== */
 .hp7-progress-row {

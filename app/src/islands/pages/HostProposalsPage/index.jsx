@@ -311,6 +311,10 @@ export default function HostProposalsPage() {
     // Remove proposal
     onRemove: (proposal) => {
       handleDeleteProposal(proposal);
+    },
+    // Request rental application (send reminder to guest)
+    onRequestRentalApp: (proposal) => {
+      handleRequestRentalApp(proposal);
     }
   }), [
     handleProposalClick,
@@ -319,7 +323,8 @@ export default function HostProposalsPage() {
     handleAcceptProposal,
     handleModifyProposal,
     handleRejectProposal,
-    handleDeleteProposal
+    handleDeleteProposal,
+    handleRequestRentalApp
   ]);
 
   // Handle listing change (also collapse any expanded card)

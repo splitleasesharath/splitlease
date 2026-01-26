@@ -667,6 +667,18 @@ export const routes = [
     hasDynamicSegment: false
   },
 
+  // ===== EXPERIENCE RESPONSES (ADMIN INTERNAL) =====
+  {
+    path: '/_internal/experience-responses',
+    file: 'experience-responses.html',
+    aliases: ['/_internal/experience-responses.html', '/experience-responses'],
+    protected: true,
+    adminOnly: true,
+    cloudflareInternal: false,
+    internalName: 'experience-responses-view',
+    hasDynamicSegment: false
+  },
+
   // ===== GUEST EMERGENCY SUBMISSION (PUBLIC) =====
   {
     path: '/report-emergency',

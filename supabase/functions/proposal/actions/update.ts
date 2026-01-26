@@ -41,6 +41,7 @@ import {
 import {
   createSplitBotMessage,
   findThreadByProposal,
+  getUserProfile,
 } from "../../_shared/messagingHelpers.ts";
 
 /**
@@ -212,8 +213,13 @@ export async function handleUpdate(
 
   if (input.hc_nightly_price !== undefined) {
     updates["hc nightly price"] = input.hc_nightly_price;
-    updates["counter offer happened"] = true;
     updatedFields.push("hc_nightly_price");
+  }
+
+  // Set "counter offer happened" flag when status changes to counteroffer
+  // This must be set regardless of which hc_ fields are provided
+  if (input.status === "Host Counteroffer Submitted / Awaiting Guest Review") {
+    updates["counter offer happened"] = true;
   }
   if (input.hc_days_selected !== undefined) {
     updates["hc days selected"] = input.hc_days_selected;
@@ -319,6 +325,10 @@ export async function handleUpdate(
       const threadId = await findThreadByProposal(supabase, input.proposal_id);
 
       if (threadId) {
+        // Fetch host name for the intro message
+        const hostProfile = await getUserProfile(supabase, proposalData["Host User"]);
+        const hostFirstName = hostProfile?.firstName || "The host";
+
         // Build context for AI summary
         const originalDays = proposalData["Days Selected"] as number[] || [];
         const counterDays = input.hc_days_selected || originalDays;
@@ -336,23 +346,27 @@ export async function handleUpdate(
           counterTotalPrice: input.hc_total_price || proposalData["Total Price for Reservation (guest)"] || 0,
         });
 
-        if (counterSummary) {
-          console.log(`[proposal:update] AI counteroffer summary generated, sending to guest...`);
+        // Build the full message with intro
+        const introMessage = `${hostFirstName} has reviewed your proposal and submitted a counteroffer. Please accept, decline, or request a virtual meeting to discuss.`;
 
-          // Send SplitBot message to guest with counteroffer summary
-          await createSplitBotMessage(supabase, {
-            threadId,
-            messageBody: counterSummary,
-            callToAction: "Respond to Counter Offer",
-            visibleToHost: false,
-            visibleToGuest: true,
-            recipientUserId: proposalData.Guest,
-          });
+        // Combine intro with AI summary (or use intro alone if summary failed)
+        const fullMessage = counterSummary
+          ? `${introMessage}\n\n${counterSummary}`
+          : introMessage;
 
-          console.log(`[proposal:update] Counteroffer summary sent to guest`);
-        } else {
-          console.log(`[proposal:update] AI counteroffer summary returned null, skipping message`);
-        }
+        console.log(`[proposal:update] Counteroffer message ready, sending to guest...`);
+
+        // Send SplitBot message to guest with counteroffer summary
+        await createSplitBotMessage(supabase, {
+          threadId,
+          messageBody: fullMessage,
+          callToAction: "Respond to Counter Offer",
+          visibleToHost: false,
+          visibleToGuest: true,
+          recipientUserId: proposalData.Guest,
+        });
+
+        console.log(`[proposal:update] Counteroffer message sent to guest`);
       } else {
         console.warn(`[proposal:update] No thread found for proposal, skipping counteroffer summary`);
       }

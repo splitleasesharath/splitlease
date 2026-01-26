@@ -108,6 +108,9 @@ export async function fetchProposalsByIds(proposalIds, currentUserId = null) {
       "damage deposit",
       "counter offer happened",
       "hc days selected",
+      "hc check in day",
+      "hc check out day",
+      "hc nights per week",
       "hc reservation span (weeks)",
       "hc total price",
       "hc nightly price",
@@ -487,6 +490,58 @@ export async function fetchProposalsByIds(proposalIds, currentUserId = null) {
     summaryMap.get(proposalId).push(summary);
   });
 
+  // Step 6.6: Fetch SplitBot counteroffer summary messages
+  // These are created when a host submits a counteroffer - stored in _message table
+  // Link: proposal._id -> thread."Proposal" -> _message."Associated Thread/Conversation"
+  console.log(`fetchProposalsByIds: Fetching counteroffer summaries for ${proposalIdsForSummaries.length} proposals`);
+
+  let counterofferSummaryMap = new Map();
+
+  if (proposalIdsForSummaries.length > 0) {
+    // First, fetch threads for all proposals
+    const { data: threadsData, error: threadsError } = await supabase
+      .from('thread')
+      .select('_id, "Proposal"')
+      .in('"Proposal"', proposalIdsForSummaries);
+
+    if (threadsError) {
+      console.error('fetchProposalsByIds: Error fetching threads:', threadsError);
+    } else if (threadsData && threadsData.length > 0) {
+      const threadIds = threadsData.map(t => t._id);
+      const threadToProposalMap = new Map(threadsData.map(t => [t._id, t.Proposal]));
+
+      // Fetch SplitBot counteroffer messages
+      const { data: counterofferMsgs, error: counterofferError } = await supabase
+        .from('_message')
+        .select(`
+          _id,
+          "Message Body",
+          "Call to Action",
+          "Associated Thread/Conversation",
+          "Created Date"
+        `)
+        .in('"Associated Thread/Conversation"', threadIds)
+        .eq('"is Split Bot"', true)
+        .eq('"Call to Action"', 'Respond to Counter Offer')
+        .order('"Created Date"', { ascending: false });
+
+      if (counterofferError) {
+        console.error('fetchProposalsByIds: Error fetching counteroffer messages:', counterofferError);
+      } else if (counterofferMsgs && counterofferMsgs.length > 0) {
+        console.log(`fetchProposalsByIds: Fetched ${counterofferMsgs.length} counteroffer summary messages`);
+
+        // Map messages to their proposals (take only the most recent per proposal)
+        counterofferMsgs.forEach(msg => {
+          const threadId = msg['Associated Thread/Conversation'];
+          const proposalId = threadToProposalMap.get(threadId);
+          if (proposalId && !counterofferSummaryMap.has(proposalId)) {
+            counterofferSummaryMap.set(proposalId, msg['Message Body']);
+          }
+        });
+      }
+    }
+  }
+
   // Step 7: Create lookup maps for efficient joining
   const listingMap = new Map((listings || []).map(l => [l._id, l]));
   // Key hosts by their _id (Host User column now contains user._id directly)
@@ -522,6 +577,8 @@ export async function fetchProposalsByIds(proposalIds, currentUserId = null) {
     const rentalApplication = rentalAppMap.get(proposal['rental application']) || null;
     // Lookup negotiation summaries
     const negotiationSummaries = summaryMap.get(proposal._id) || [];
+    // Lookup counteroffer summary (SplitBot message)
+    const counterofferSummary = counterofferSummaryMap.get(proposal._id) || null;
 
     // Resolve house rules IDs to names (from proposal, not listing)
     // House Rules field is stored as a JSON string array: "[\"id1\", \"id2\"]"
@@ -556,7 +613,8 @@ export async function fetchProposalsByIds(proposalIds, currentUserId = null) {
       virtualMeeting,
       rentalApplication,
       houseRules: houseRulesResolved,
-      negotiationSummaries
+      negotiationSummaries,
+      counterofferSummary
     };
   });
 

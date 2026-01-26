@@ -75,15 +75,44 @@ function getNightsPerWeek(proposal) {
 
 /**
  * InfoGrid displays proposal details in a grid layout
+ * Shows strikethrough comparison when counteroffer terms differ from original
  *
  * @param {Object} props
  * @param {Object} props.proposal - The proposal object
  */
 export function InfoGrid({ proposal }) {
-  const moveIn = proposal?.start_date || proposal?.move_in_date;
+  // Check if counteroffer happened
+  const isCounteroffer = proposal?.['counter offer happened'] ||
+    proposal?.counterOfferHappened ||
+    proposal?.counter_offer_happened;
+
+  // Original values (guest's proposal)
+  const originalMoveIn = proposal?.['Move in range start'] || proposal?.move_in_range_start;
+  const originalWeeks = proposal?.['Reservation Span (Weeks)'] || proposal?.reservation_span_weeks;
+  let originalDays = proposal?.['Days Selected'] || [];
+  if (typeof originalDays === 'string') {
+    try { originalDays = JSON.parse(originalDays); } catch { originalDays = []; }
+  }
+
+  // HC values (host counteroffer)
+  const hcMoveIn = proposal?.['hc move in date'];
+  const hcWeeks = proposal?.['hc reservation span (weeks)'];
+  let hcDays = proposal?.['hc days selected'] || [];
+  if (typeof hcDays === 'string') {
+    try { hcDays = JSON.parse(hcDays); } catch { hcDays = []; }
+  }
+
+  // Fallback values from normalized fields
+  const moveIn = proposal?.start_date || proposal?.move_in_date || (isCounteroffer && hcMoveIn ? hcMoveIn : originalMoveIn);
   const moveOut = proposal?.end_date || proposal?.move_out_date;
-  const weeks = proposal?.duration_weeks || proposal?.weeks || proposal?.total_weeks;
-  const daysSelected = proposal?.days_selected || proposal?.Days_Selected || [];
+  const weeks = proposal?.duration_weeks || proposal?.weeks || proposal?.total_weeks || (isCounteroffer && hcWeeks != null ? hcWeeks : originalWeeks);
+  const daysSelected = proposal?.days_selected || proposal?.Days_Selected || (isCounteroffer && hcDays.length > 0 ? hcDays : originalDays);
+
+  // Comparison flags - detect which values changed
+  const moveInChanged = isCounteroffer && hcMoveIn && hcMoveIn !== originalMoveIn;
+  const durationChanged = isCounteroffer && hcWeeks != null && hcWeeks !== originalWeeks;
+  const daysChanged = isCounteroffer && hcDays.length > 0 &&
+    JSON.stringify([...hcDays].sort()) !== JSON.stringify([...originalDays].sort());
 
   // Calculate duration from dates if not provided
   let duration = weeks;
@@ -98,7 +127,14 @@ export function InfoGrid({ proposal }) {
     <div className="hp7-info-grid">
       <div className="hp7-info-item">
         <div className="hp7-info-label">Move-in</div>
-        <div className="hp7-info-value">{formatDate(moveIn)}</div>
+        <div className="hp7-info-value">
+          {moveInChanged && (
+            <span className="hp7-strikethrough">{formatDate(originalMoveIn)}</span>
+          )}
+          <span className={moveInChanged ? 'hp7-changed-value' : ''}>
+            {formatDate(moveIn)}
+          </span>
+        </div>
       </div>
       <div className="hp7-info-item">
         <div className="hp7-info-label">Move-out</div>
@@ -106,15 +142,36 @@ export function InfoGrid({ proposal }) {
       </div>
       <div className="hp7-info-item">
         <div className="hp7-info-label">Duration</div>
-        <div className="hp7-info-value">{duration ? `${duration} weeks` : 'TBD'}</div>
+        <div className="hp7-info-value">
+          {durationChanged && (
+            <span className="hp7-strikethrough">{originalWeeks} weeks</span>
+          )}
+          <span className={durationChanged ? 'hp7-changed-value' : ''}>
+            {duration ? `${duration} weeks` : 'TBD'}
+          </span>
+        </div>
       </div>
       <div className="hp7-info-item">
         <div className="hp7-info-label">Schedule</div>
-        <div className="hp7-info-value">{formatScheduleRange(daysSelected)}</div>
+        <div className="hp7-info-value">
+          {daysChanged && (
+            <span className="hp7-strikethrough">{formatScheduleRange(originalDays)}</span>
+          )}
+          <span className={daysChanged ? 'hp7-changed-value' : ''}>
+            {formatScheduleRange(daysSelected)}
+          </span>
+        </div>
       </div>
       <div className="hp7-info-item">
         <div className="hp7-info-label">Nights</div>
-        <div className="hp7-info-value">{getNightsPerWeek(proposal)}</div>
+        <div className="hp7-info-value">
+          {daysChanged && (
+            <span className="hp7-strikethrough">{Math.max(0, originalDays.length - 1)}/week</span>
+          )}
+          <span className={daysChanged ? 'hp7-changed-value' : ''}>
+            {getNightsPerWeek(proposal)}
+          </span>
+        </div>
       </div>
     </div>
   );
