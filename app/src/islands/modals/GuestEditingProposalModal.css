@@ -782,17 +782,17 @@ dd.gep-detail-value {
   flex-shrink: 0 !important;
 }
 
-/* Vertical stacking for pristine state buttons */
+/* Pristine state buttons - side by side per protocol */
 .gep-buttons--vertical {
-  flex-direction: column !important;
+  flex-direction: row !important;
   align-items: center !important;
   justify-content: center !important;
   gap: 12px !important;
 }
 
 .gep-buttons--vertical .gep-button {
-  width: 100% !important;
-  max-width: 300px !important;
+  flex: 1 !important;
+  max-width: 200px !important;
   border-radius: 100px !important;
 }
 
