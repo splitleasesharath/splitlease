@@ -46,7 +46,7 @@ html {
   scroll-behavior: smooth;
   scroll-padding-top: 0;
   max-width: 100%;
-  overflow-x: hidden;
+  height: 100%;
 }
 
 * {
@@ -70,6 +70,9 @@ body {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
+  min-height: 100%;
+  height: auto;
+  touch-action: pan-x pan-y;
 }
 
 /* ========================================
