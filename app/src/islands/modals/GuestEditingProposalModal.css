@@ -921,17 +921,17 @@ dd.gep-detail-value {
   flex-wrap: wrap;
 }
 
-/* Day button - compact 44px touch targets */
+/* Day button - per design system: 52x52px, 17px font, 700 weight, 12px radius */
 .dns-day-btn {
-  width: 44px;
-  height: 44px;
-  min-width: 44px;
-  min-height: 44px;
-  border: 1px solid var(--gep-border-color);
-  border-radius: 8px;
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  min-height: 52px;
+  border: 2px solid #E7E0EC;
+  border-radius: 12px;
   background: var(--gep-bg-primary);
-  font-size: var(--gep-font-size-sm);
-  font-weight: 600;
+  font-size: 17px;
+  font-weight: 700;
   color: var(--gep-text-secondary);
   cursor: pointer;
   transition: all var(--gep-transition-fast);
@@ -941,23 +941,24 @@ dd.gep-detail-value {
 }
 
 .dns-day-btn:hover {
-  border-color: var(--gep-primary-color);
-  color: var(--gep-primary-color);
+  border-color: #31135D;
+  color: #31135D;
 }
 
 .dns-day-btn:focus-visible {
-  outline: var(--gep-focus-outline-width) solid var(--gep-primary-color);
+  outline: var(--gep-focus-outline-width) solid #6D31C2;
   outline-offset: var(--gep-focus-outline-offset);
 }
 
+/* Selected state: Primary Purple background per design system */
 .dns-day-btn--selected {
-  background: var(--gep-primary-color);
-  border-color: var(--gep-primary-color);
+  background: #31135D;
+  border-color: #31135D;
   color: white;
 }
 
 .dns-day-btn--selected:focus-visible {
-  outline-color: var(--gep-text-header);
+  outline-color: #6D31C2;
 }
 
 /* Schedule info container - combines check-in, check-out, and summary */
@@ -1469,17 +1470,18 @@ dd.gep-detail-value {
     font-size: 13px !important;
   }
 
-  /* Day buttons - maintain touch targets on mobile */
+  /* Day buttons - maintain 48px minimum touch target on mobile per design system */
   .dns-day-btn {
-    width: 44px;
-    height: 44px;
-    min-width: 44px;
-    min-height: 44px;
-    font-size: var(--gep-font-size-sm);
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
+    font-size: 15px;
+    border-radius: 12px;
   }
 
   .dns-day-grid {
-    gap: 6px;
+    gap: 4px;
     justify-content: space-between;
   }
 
