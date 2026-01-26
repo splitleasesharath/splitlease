@@ -33,6 +33,18 @@ export default function Footer() {
     checkAuth();
   }, []);
 
+  // Chrome mobile scroll fix - ensure scroll is enabled after mount
+  // This acts as a safety net in case any modal effects set overflow incorrectly
+  useEffect(() => {
+    // Small delay to run after all other effects
+    const timer = setTimeout(() => {
+      if (!showCreateListingModal && !showImportListingModal && !showReferralModal) {
+        document.body.style.overflow = '';
+      }
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Handle import submission (footer inline form)
   const handleImportSubmit = async () => {
     if (!importUrl.trim() || !importEmail.trim()) {

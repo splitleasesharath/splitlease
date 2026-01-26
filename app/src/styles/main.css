@@ -67,12 +67,18 @@ body {
   color: var(--text-dark);
   background-color: var(--bg-light);
   overflow-x: hidden;
-  overflow-y: auto;
+  overflow-y: scroll !important;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
   min-height: 100%;
   height: auto;
-  touch-action: pan-x pan-y;
+  touch-action: manipulation;
+  position: relative;
+}
+
+/* Chrome mobile scroll fix - force scrollable when no modal */
+html, body {
+  overscroll-behavior: auto;
 }
 
 /* ========================================
