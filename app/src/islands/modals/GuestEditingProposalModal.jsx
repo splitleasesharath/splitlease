@@ -1178,21 +1178,21 @@ export default function GuestEditingProposalModal({
           <div className={`gep-buttons ${view === 'pristine' ? 'gep-buttons--vertical' : ''}`}>
             {view === 'pristine' ? (
               /* Pristine state: User just opened modal, hasn't edited anything */
-              /* Edit Proposal on top, Close on bottom - stacked vertically */
+              /* Close first, Edit Proposal second - side by side */
               <>
-                <button
-                  type="button"
-                  className="gep-button gep-button--primary"
-                  onClick={handleStartEditing}
-                >
-                  Edit Proposal
-                </button>
                 <button
                   type="button"
                   className="gep-button gep-button--secondary"
                   onClick={handleClose}
                 >
                   Close
+                </button>
+                <button
+                  type="button"
+                  className="gep-button gep-button--primary"
+                  onClick={handleStartEditing}
+                >
+                  Edit Proposal
                 </button>
               </>
             ) : view === 'editing' ? (
