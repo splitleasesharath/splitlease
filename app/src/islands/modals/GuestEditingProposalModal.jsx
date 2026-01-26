@@ -25,7 +25,7 @@
  */
 
 import { useState, useCallback, useMemo, useEffect } from 'react'
-import { X, ChevronLeft, ChevronRight, FileText, Calendar, HelpCircle } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, FileText, HelpCircle } from 'lucide-react'
 import { executeCancelProposal } from '../../logic/workflows/proposals/cancelProposalWorkflow.js'
 import CancelProposalModal from './CancelProposalModal.jsx'
 import './GuestEditingProposalModal.css'
@@ -981,21 +981,16 @@ export default function GuestEditingProposalModal({
                 {/* Move-In Date Section */}
                 <div className="gep-form-section">
                   <label htmlFor="gep-move-in-date" className="gep-form-label">Move-In Date</label>
-                  <div className="gep-date-input-container">
-                    <input
-                      type="date"
-                      id="gep-move-in-date"
-                      className="gep-date-input"
-                      value={formState.moveInDate instanceof Date && !isNaN(formState.moveInDate)
-                        ? formState.moveInDate.toISOString().split('T')[0]
-                        : ''}
-                      onChange={handleMoveInDateChange}
-                      aria-describedby="gep-move-in-display"
-                    />
-                    <button type="button" className="gep-calendar-button" aria-label="Open calendar picker">
-                      <Calendar size={20} strokeWidth={2} aria-hidden="true" />
-                    </button>
-                  </div>
+                  <input
+                    type="date"
+                    id="gep-move-in-date"
+                    className="gep-date-input"
+                    value={formState.moveInDate instanceof Date && !isNaN(formState.moveInDate)
+                      ? formState.moveInDate.toISOString().split('T')[0]
+                      : ''}
+                    onChange={handleMoveInDateChange}
+                    aria-describedby="gep-move-in-display"
+                  />
                   <p id="gep-move-in-display" className="gep-date-display" aria-live="polite">
                     Move-in: {formatDate(formState.moveInDate, isSmallScreen)}
                   </p>
