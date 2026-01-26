@@ -1141,7 +1141,7 @@ export default function GuestEditingProposalModal({
 
         {/* Buttons section - OUTSIDE gep-main-view so they stay pinned at bottom */}
         {showMainView && showButtons && (
-          <div className={`gep-buttons ${view === 'pristine' ? 'gep-buttons--vertical' : ''}`}>
+          <div className="gep-buttons">
             {view === 'pristine' ? (
               /* Pristine state: User just opened modal, hasn't edited anything */
               /* Close first, Edit Proposal second - side by side */

@@ -783,6 +783,7 @@ dd.gep-detail-value {
 
 /* =====================================================
    BUTTONS SECTION - V5 Balanced
+   All states use centered, equal-width buttons
    ===================================================== */
 
 .gep-buttons {
@@ -790,18 +791,17 @@ dd.gep-detail-value {
   flex-direction: row !important;
   gap: 12px !important;
   padding: 16px !important;
-  justify-content: flex-end !important;
+  justify-content: center !important;
+  align-items: center !important;
   background: #F7F2FA !important;
   border-top: 1px solid #E7E0EC !important;
   flex-shrink: 0 !important;
 }
 
-/* Pristine state buttons - match other states per protocol */
-.gep-buttons--vertical {
-  flex-direction: row !important;
-  align-items: center !important;
-  justify-content: flex-end !important;
-  gap: 12px !important;
+/* All buttons in footer: equal width, centered */
+.gep-buttons .gep-button {
+  flex: 1 !important;
+  max-width: 200px !important;
 }
 
 .gep-button {
