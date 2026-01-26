@@ -917,9 +917,9 @@ dd.gep-detail-value {
 /* Day grid - single row of 7 buttons, no wrapping */
 .dns-day-grid {
   display: flex;
-  gap: 6px;
+  gap: 2px;
   flex-wrap: nowrap;
-  justify-content: space-between;
+  justify-content: flex-start;
 }
 
 /* Day button - per design system: 12px radius, 700 weight, flexible width for single row */
