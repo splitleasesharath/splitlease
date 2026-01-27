@@ -120,7 +120,7 @@ export function useSearchPageLogic() {
   const urlFilters = useMemo(() => parseUrlToFilters(), [])
 
   // Filter State (initialized from URL if available)
-  const [selectedBorough, setSelectedBorough] = useState(urlFilters.selectedBorough)
+  const [selectedBoroughs, setSelectedBoroughs] = useState(urlFilters.selectedBoroughs)
   const [selectedNeighborhoods, setSelectedNeighborhoods] = useState(
     urlFilters.selectedNeighborhoods
   )
@@ -325,10 +325,11 @@ export function useSearchPageLogic() {
    * Infrastructure layer - Supabase query building.
    */
   const fetchListings = useCallback(async () => {
-    if (boroughs.length === 0 || !selectedBorough) return
+    // Wait for boroughs to load (needed for ID lookup when filtering)
+    if (boroughs.length === 0) return
 
     // Performance optimization: Prevent duplicate fetches
-    const fetchParams = `${selectedBorough}-${selectedNeighborhoods.join(',')}-${weekPattern}-${priceTier}-${sortBy}`
+    const fetchParams = `${selectedBoroughs.join(',')}-${selectedNeighborhoods.join(',')}-${weekPattern}-${priceTier}-${sortBy}`
 
     if (fetchInProgressRef.current) {
       logger.debug('Skipping duplicate fetch - already in progress')
@@ -347,9 +348,6 @@ export function useSearchPageLogic() {
     setError(null)
 
     try {
-      const borough = boroughs.find((b) => b.value === selectedBorough)
-      if (!borough) throw new Error('Borough not found')
-
       // Build Supabase query
       let query = supabase
         .from('listing')
@@ -357,10 +355,19 @@ export function useSearchPageLogic() {
         .eq('"Complete"', true)
         .or('"Active".eq.true,"Active".is.null')
         .eq('Deleted', false)
-        .eq('"Location - Borough"', borough.id)
         .or(
           '"Location - Address".not.is.null,"Location - slightly different address".not.is.null'
         )
+
+      // Apply borough filter only when boroughs are selected (empty = show all)
+      if (selectedBoroughs.length > 0) {
+        const selectedBoroughIds = selectedBoroughs
+          .map(value => boroughs.find(b => b.value === value)?.id)
+          .filter(Boolean)
+        if (selectedBoroughIds.length > 0) {
+          query = query.in('"Location - Borough"', selectedBoroughIds)
+        }
+      }
 
       // Apply week pattern filter
       if (weekPattern !== 'every-week') {
@@ -458,7 +465,7 @@ export function useSearchPageLogic() {
     }
   }, [
     boroughs,
-    selectedBorough,
+    selectedBoroughs,
     selectedNeighborhoods,
     weekPattern,
     priceTier,
@@ -638,23 +645,17 @@ export function useSearchPageLogic() {
 
         setBoroughs(boroughList)
 
-        // Only set default borough if not already set from URL
-        if (!selectedBorough) {
-          const manhattan = boroughList.find((b) => b.value === 'manhattan')
-          if (manhattan) {
-            setSelectedBorough(manhattan.value)
-          }
-        } else {
-          // Validate borough from URL exists
-          const boroughExists = boroughList.find((b) => b.value === selectedBorough)
-          if (!boroughExists) {
-            logger.warn(`Borough "${selectedBorough}" from URL not found, defaulting to Manhattan`)
-            const manhattan = boroughList.find((b) => b.value === 'manhattan')
-            if (manhattan) {
-              setSelectedBorough(manhattan.value)
-            }
+        // Validate boroughs from URL exist (remove invalid ones)
+        if (selectedBoroughs.length > 0) {
+          const validBoroughs = selectedBoroughs.filter(value =>
+            boroughList.some(b => b.value === value)
+          )
+          if (validBoroughs.length !== selectedBoroughs.length) {
+            logger.warn('Some boroughs from URL not found, filtering to valid ones')
+            setSelectedBoroughs(validBoroughs)
           }
         }
+        // Empty selectedBoroughs is valid - means "all boroughs"
       } catch (err) {
         logger.error('Failed to load boroughs:', err)
       }
@@ -663,24 +664,30 @@ export function useSearchPageLogic() {
     loadBoroughs()
   }, [])
 
-  // Load neighborhoods when borough changes
+  // Load neighborhoods when selected boroughs change
   useEffect(() => {
     const loadNeighborhoods = async () => {
-      if (!selectedBorough || boroughs.length === 0) return
-
-      const borough = boroughs.find((b) => b.value === selectedBorough)
-      if (!borough) {
-        logger.warn('Borough not found for value:', selectedBorough)
-        return
-      }
+      if (boroughs.length === 0) return
 
       try {
-        const { data, error } = await supabase
+        let query = supabase
           .schema('reference_table')
           .from('zat_geo_hood_mediumlevel')
           .select('_id, Display, "Geo-Borough"')
-          .eq('"Geo-Borough"', borough.id)
           .order('Display', { ascending: true })
+
+        // If boroughs are selected, filter neighborhoods to those boroughs
+        // If no boroughs selected (all boroughs), load all neighborhoods
+        if (selectedBoroughs.length > 0) {
+          const selectedBoroughIds = selectedBoroughs
+            .map(value => boroughs.find(b => b.value === value)?.id)
+            .filter(Boolean)
+          if (selectedBoroughIds.length > 0) {
+            query = query.in('"Geo-Borough"', selectedBoroughIds)
+          }
+        }
+
+        const { data, error } = await query
 
         if (error) throw error
 
@@ -693,14 +700,22 @@ export function useSearchPageLogic() {
           }))
 
         setNeighborhoods(neighborhoodList)
-        setSelectedNeighborhoods([]) // Clear selections when borough changes
+
+        // Clear neighborhood selections that are no longer valid for the selected boroughs
+        if (selectedNeighborhoods.length > 0) {
+          const validNeighborhoodIds = new Set(neighborhoodList.map(n => n.id))
+          const stillValidNeighborhoods = selectedNeighborhoods.filter(id => validNeighborhoodIds.has(id))
+          if (stillValidNeighborhoods.length !== selectedNeighborhoods.length) {
+            setSelectedNeighborhoods(stillValidNeighborhoods)
+          }
+        }
       } catch (err) {
         logger.error('Failed to load neighborhoods:', err)
       }
     }
 
     loadNeighborhoods()
-  }, [selectedBorough, boroughs])
+  }, [selectedBoroughs, boroughs])
 
   // Fetch listings when filters change
   useEffect(() => {
@@ -761,7 +776,7 @@ export function useSearchPageLogic() {
     }
 
     const filters = {
-      selectedBorough,
+      selectedBoroughs,
       weekPattern,
       priceTier,
       sortBy,
@@ -769,14 +784,14 @@ export function useSearchPageLogic() {
     }
 
     updateUrlParams(filters, false)
-  }, [selectedBorough, weekPattern, priceTier, sortBy, selectedNeighborhoods])
+  }, [selectedBoroughs, weekPattern, priceTier, sortBy, selectedNeighborhoods])
 
   // Watch for browser back/forward navigation
   useEffect(() => {
     const cleanup = watchUrlChanges((newFilters) => {
       logger.debug('URL changed via browser navigation, updating filters:', newFilters)
 
-      setSelectedBorough(newFilters.selectedBorough)
+      setSelectedBoroughs(newFilters.selectedBoroughs)
       setWeekPattern(newFilters.weekPattern)
       setPriceTier(newFilters.priceTier)
       setSortBy(newFilters.sortBy)
@@ -806,16 +821,13 @@ export function useSearchPageLogic() {
   }, [fallbackLoadedCount, fallbackListings])
 
   const handleResetFilters = useCallback(() => {
-    const manhattan = boroughs.find((b) => b.value === 'manhattan')
-    if (manhattan) {
-      setSelectedBorough(manhattan.value)
-    }
+    setSelectedBoroughs([]) // Empty = all boroughs
     setSelectedNeighborhoods([])
     setWeekPattern('every-week')
     setPriceTier('all')
     setSortBy('recommended')
     setNeighborhoodSearch('')
-  }, [boroughs])
+  }, [])
 
   // Modal handlers
   const handleOpenContactModal = useCallback((listing) => {
@@ -890,7 +902,7 @@ export function useSearchPageLogic() {
     neighborhoods: filteredNeighborhoods,
 
     // Filter State
-    selectedBorough,
+    selectedBoroughs,
     selectedNeighborhoods,
     weekPattern,
     priceTier,
@@ -917,7 +929,7 @@ export function useSearchPageLogic() {
     mapRef,
 
     // Filter Handlers
-    setSelectedBorough,
+    setSelectedBoroughs,
     setSelectedNeighborhoods,
     setWeekPattern,
     setPriceTier,

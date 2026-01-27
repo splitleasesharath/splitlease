@@ -28,12 +28,36 @@ export function parseUrlToFilters() {
   const params = new URLSearchParams(window.location.search);
 
   return {
-    selectedBorough: sanitizeUrlParam(params.get('borough'), 'string') || DEFAULTS.DEFAULT_BOROUGH,
+    selectedBoroughs: parseBoroughsParam(params.get('boroughs')),
     weekPattern: sanitizeUrlParam(params.get('weekly-frequency'), 'string') || DEFAULTS.DEFAULT_WEEK_PATTERN,
     priceTier: sanitizeUrlParam(params.get('pricetier'), 'string') || DEFAULTS.DEFAULT_PRICE_TIER,
     sortBy: sanitizeUrlParam(params.get('sort'), 'string') || DEFAULTS.DEFAULT_SORT_BY,
     selectedNeighborhoods: parseNeighborhoodsParam(params.get('neighborhoods'))
   };
+}
+
+/**
+ * Parse boroughs parameter from URL
+ * Format: "manhattan,brooklyn,queens" (comma-separated borough values)
+ * @param {string|null} boroughsParam - The boroughs parameter from URL
+ * @returns {Array<string>} Array of borough values
+ */
+function parseBoroughsParam(boroughsParam) {
+  if (!boroughsParam) {
+    return [];
+  }
+
+  try {
+    const boroughs = boroughsParam
+      .split(',')
+      .map(b => b.trim())
+      .filter(b => b.length > 0);
+
+    return boroughs;
+  } catch (error) {
+    console.error('Failed to parse boroughs parameter:', error);
+    return [];
+  }
 }
 
 /**
@@ -68,9 +92,9 @@ function parseNeighborhoodsParam(neighborhoodsParam) {
 export function serializeFiltersToUrl(filters) {
   const params = new URLSearchParams();
 
-  // Add borough parameter (only if not default)
-  if (filters.selectedBorough && filters.selectedBorough !== DEFAULTS.DEFAULT_BOROUGH) {
-    params.set('borough', filters.selectedBorough);
+  // Add boroughs parameter (only if not empty - empty means "all boroughs")
+  if (filters.selectedBoroughs && filters.selectedBoroughs.length > 0) {
+    params.set('boroughs', filters.selectedBoroughs.join(','));
   }
 
   // Add week pattern parameter (only if not default)
@@ -160,7 +184,7 @@ export function watchUrlChanges(callback) {
  */
 function getDefaultFilters() {
   return {
-    selectedBorough: DEFAULTS.DEFAULT_BOROUGH,
+    selectedBoroughs: [],
     weekPattern: DEFAULTS.DEFAULT_WEEK_PATTERN,
     priceTier: DEFAULTS.DEFAULT_PRICE_TIER,
     sortBy: DEFAULTS.DEFAULT_SORT_BY,
