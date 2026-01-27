@@ -93,12 +93,6 @@ export default function MessageThread({
     leaseId: threadInfo?.lease_id,
   };
 
-  // Auto-scroll to bottom when messages change or typing indicator appears
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages, isOtherUserTyping]);
 
   // Group messages by date for date separators
   let lastDateKey = '';

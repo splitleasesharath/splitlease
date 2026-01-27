@@ -1,46 +1,50 @@
 /**
  * Guest Proposals Page Styles
  *
- * V6 Accessible Design (WCAG AAA)
- * - Elderly-friendly base font 17px for comfortable reading
+ * Design System: SPLIT_LEASE_DESIGN_SYSTEM
+ * - Monochromatic Purple (NO GREEN, NO YELLOW)
+ * - Elderly-friendly base font 17px
  * - WCAG AAA high contrast text colors (4.5:1 minimum)
- * - 48px minimum touch targets for accessibility
- * - 36px pricing for prominence
- * - Clear focus states for keyboard navigation
- * - Reduced motion support
+ * - 48px minimum touch targets
+ * - Pill-shaped buttons (100px radius)
+ * - 52x52px day pills
+ * - Clear focus states (3px outline, 3px offset)
  */
 
 /* ============================================================================
-   DESIGN SYSTEM VARIABLES - ACCESSIBLE
+   DESIGN SYSTEM VARIABLES - SPLIT LEASE DESIGN SYSTEM
+   STRICT RULE: NO GREEN, NO YELLOW anywhere in the UI
    ============================================================================ */
 
 :root {
-  /* Primary Brand Colors */
-  --gp-purple-dark: #31135D;
-  --gp-purple-primary: #6D31C2;
-  --gp-purple-light: #8C68EE;
-  --gp-purple-bg: #f8f5ff;
+  /* ===== PURPLE PALETTE (Monochromatic) ===== */
+  --gp-purple-dark: #31135D;       /* Primary Purple - headers, primary buttons, icons */
+  --gp-purple-primary: #6D31C2;    /* Secondary Purple - accents, focus rings */
+  --gp-purple-action: #5B5FCF;     /* Action Purple - replaces ALL success/positive states */
+  --gp-purple-bg: #F7F2FA;         /* Light Purple Background - banners, hovers */
+  --gp-purple-tint: #f8f5ff;       /* Light Purple Tint - subtle backgrounds */
 
-  /* Text Colors - WCAG AAA High Contrast */
-  --gp-text: #111111;              /* Near black for maximum contrast */
-  --gp-text-secondary: #374151;    /* Dark gray, 4.5:1+ contrast */
-  --gp-text-muted: #4b5563;        /* Medium gray, meets AA */
+  /* ===== TEXT COLORS (WCAG AAA High Contrast) ===== */
+  --gp-text: #111111;              /* Primary Text - body, headings */
+  --gp-text-secondary: #374151;    /* Secondary Text - supporting content */
+  --gp-text-muted: #4b5563;        /* Muted Text - meta info, timestamps */
+  --gp-text-ghost: #49454F;        /* Ghost Text - ghost button text */
 
-  /* Background & Border - Soft and refined */
-  --gp-border: #e5e7eb;
-  --gp-border-light: #f0f0f0;
+  /* ===== UI COLORS ===== */
+  --gp-border: #E7E0EC;            /* Border Light - card borders, dividers */
+  --gp-border-light: #E7E0EC;
   --gp-bg: #fafafa;
   --gp-white: #fff;
 
-  /* Semantic Colors - High Contrast */
-  --gp-success: #047857;           /* Darker green for contrast */
-  --gp-success-bg: #d1fae5;
-  --gp-danger: #b91c1c;            /* Darker red for contrast */
-  --gp-danger-bg: #fee2e2;
-  --gp-warning: #b45309;           /* Darker orange for contrast */
-  --gp-warning-bg: #fef3c7;
+  /* ===== STATUS COLORS (NO GREEN) ===== */
+  --gp-success: #5B5FCF;           /* Use Action Purple for success (NOT green) */
+  --gp-success-bg: #F7F2FA;        /* Light purple background for success */
+  --gp-danger: #DC3545;            /* Danger/Error - OUTLINED ONLY, never filled */
+  --gp-danger-bg: transparent;     /* Danger uses transparent bg with outline */
+  --gp-warning: var(--gp-purple-dark);  /* Warning uses dark purple (NO YELLOW) */
+  --gp-warning-bg: var(--gp-purple-bg);    /* Warning background uses purple */
 
-  /* Typography - ELDERLY-FRIENDLY SIZES */
+  /* ===== TYPOGRAPHY ===== */
   --gp-font-size-sm: 15px;         /* Minimum readable size */
   --gp-font-size-base: 17px;       /* Comfortable reading for elderly */
   --gp-font-size-md: 18px;
@@ -49,22 +53,38 @@
   --gp-font-size-2xl: 36px;        /* Prominent values */
   --gp-font-size-label: 14px;      /* Labels never below 14px */
 
-  /* Line Heights - Relaxed for readability */
+  /* ===== LINE HEIGHTS ===== */
   --gp-line-height-tight: 1.3;
-  --gp-line-height-normal: 1.6;    /* Increased from 1.5 */
-  --gp-line-height-relaxed: 1.8;   /* Increased from 1.6 */
+  --gp-line-height-normal: 1.6;
+  --gp-line-height-relaxed: 1.8;
 
-  /* Touch Targets - WCAG 2.2 Enhanced */
+  /* ===== TOUCH TARGETS ===== */
   --gp-min-touch-target: 48px;     /* Minimum 48px for accessibility */
+  --gp-min-row-height: 88px;       /* Interactive rows/cards */
+  --gp-min-pill-size: 52px;        /* Day pills */
 
-  /* Focus States - Visible 3px outline */
+  /* ===== BORDERS ===== */
+  --gp-border-radius-sm: 8px;
+  --gp-border-radius-md: 12px;
+  --gp-border-radius-lg: 24px;
+  --gp-border-radius-pill: 100px;  /* Pill-shaped buttons - ALWAYS */
+
+  /* ===== FOCUS STATES (3px outline, 3px offset) ===== */
   --gp-focus-ring: 0 0 0 4px rgba(109, 49, 194, 0.5);
   --gp-focus-outline: 3px solid var(--gp-purple-primary);
   --gp-focus-outline-offset: 3px;
 
-  /* Transitions */
+  /* ===== TRANSITIONS ===== */
   --gp-transition-fast: 150ms ease;
   --gp-transition-normal: 200ms ease;
+  --gp-transition-slow: 250ms ease;
+
+  /* ===== SPACING (8/16/24 scale) ===== */
+  --gp-spacing-sm: 8px;
+  --gp-spacing-md: 12px;
+  --gp-spacing-lg: 16px;
+  --gp-spacing-xl: 20px;
+  --gp-spacing-2xl: 24px;
 }
 
 /* ============================================================================
@@ -108,8 +128,8 @@
 }
 
 .spinner {
-  border: 4px solid #E5E7EB;
-  border-top: 4px solid var(--color-primary, #6B4EFF);
+  border: 4px solid var(--gp-border);
+  border-top: 4px solid var(--gp-purple-action);
   border-radius: 50%;
   width: 50px;
   height: 50px;
@@ -135,8 +155,8 @@
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background-color: #FEE2E2;
-  color: #DC2626;
+  background-color: var(--gp-purple-bg);
+  color: var(--gp-danger);
   font-size: 2rem;
   font-weight: bold;
   display: flex;
@@ -146,28 +166,28 @@
 }
 
 .error-state h2 {
-  color: #DC2626;
+  color: var(--gp-danger);
   margin-bottom: 1rem;
 }
 
 .error-state .error-message {
-  color: #6B7280;
+  color: var(--gp-text-muted);
   margin-bottom: 1.5rem;
 }
 
 .retry-button {
   padding: 0.75rem 1.5rem;
-  background: var(--color-primary, #6B4EFF);
+  background: var(--gp-purple-action);
   color: white;
   border: none;
-  border-radius: 0.5rem;
+  border-radius: var(--gp-border-radius-pill);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .retry-button:hover {
-  background: var(--color-primary-hover, #5840E0);
+  background: var(--gp-purple-dark);
 }
 
 /* ============================================================================
@@ -214,7 +234,7 @@
   align-items: center;
   justify-content: center;
   font-size: 32px;
-  color: var(--gp-purple-primary);
+  color: var(--gp-purple-action);
 }
 
 /* ============================================================================
@@ -278,7 +298,7 @@
 }
 
 .proposal-row.active {
-  border-color: var(--gp-purple-primary);
+  border-color: var(--gp-purple-action);
   border-width: 2px;
   background: var(--gp-purple-bg);
 }
@@ -322,7 +342,7 @@
 }
 
 .proposal-status.attention {
-  color: var(--gp-purple-primary);
+  color: var(--gp-purple-action);
   background: var(--gp-purple-bg);
 }
 
@@ -332,18 +352,18 @@
 }
 
 .proposal-status.action-required {
-  color: #92400E;
-  background: #FEF3C7;
+  color: var(--gp-purple-dark);
+  background: var(--gp-purple-bg);
   font-weight: 600;
   animation: pulse-attention 2s ease-in-out infinite;
 }
 
 @keyframes pulse-attention {
   0%, 100% {
-    box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.4);
+    box-shadow: 0 0 0 0 rgba(109, 49, 194, 0.4);
   }
   50% {
-    box-shadow: 0 0 0 4px rgba(217, 119, 6, 0);
+    box-shadow: 0 0 0 4px rgba(109, 49, 194, 0);
   }
 }
 
@@ -386,7 +406,7 @@
 }
 
 .status-banner.attention {
-  background: #fef3c7;
+  background: var(--gp-purple-bg);
 }
 
 .status-banner.cancelled {
@@ -402,7 +422,7 @@
   justify-content: center;
   font-size: 14px;
   font-weight: 600;
-  background: var(--gp-purple-primary);
+  background: var(--gp-purple-action);
   color: white;
   flex-shrink: 0;
 }
@@ -412,7 +432,7 @@
 }
 
 .status-banner.attention .status-icon {
-  background: #f59e0b;
+  background: var(--gp-purple-action);
 }
 
 .status-banner.cancelled .status-icon {
@@ -433,7 +453,7 @@
 }
 
 .status-banner.attention .status-text strong {
-  color: #92400e;
+  color: var(--gp-purple-dark);
 }
 
 .status-banner.cancelled .status-text strong {
@@ -512,7 +532,7 @@
 .link-item {
   font-size: var(--gp-font-size-sm);
   font-weight: 500;
-  color: var(--gp-purple-primary);
+  color: var(--gp-purple-action);
   text-decoration: none;
   padding: 8px 14px;
   border-radius: 20px;
@@ -560,15 +580,15 @@
 }
 
 /* ============================================================================
-   DAYS ROW - V5 Style (44x44 pills - balanced)
+   DAYS ROW - Design System (52x52 pills per spec)
    ============================================================================ */
 
 .days-row {
   display: flex;
   align-items: center;
-  padding: 20px 24px;
+  padding: var(--gp-spacing-xl) var(--gp-spacing-2xl);
   border-bottom: 1px solid var(--gp-border-light);
-  gap: 16px;
+  gap: var(--gp-spacing-lg);
 }
 
 .days-label {
@@ -581,24 +601,32 @@
 
 .days-pills {
   display: flex;
-  gap: 8px;
+  gap: var(--gp-spacing-sm);
 }
 
+/* Day Pills - 52x52px per design system, 12px radius */
 .day-pill {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
+  width: var(--gp-min-pill-size);
+  height: var(--gp-min-pill-size);
+  border-radius: var(--gp-border-radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--gp-font-size-sm);
-  font-weight: 600;
-  background: var(--gp-bg);
+  font-size: var(--gp-font-size-base);
+  font-weight: 700;
+  background: var(--gp-white);
   color: var(--gp-text-muted);
-  border: 1px solid var(--gp-border);
-  transition: all 0.15s;
+  border: 2px solid var(--gp-border);
+  transition: all var(--gp-transition-fast);
+  cursor: default;
 }
 
+.day-pill:focus-visible {
+  outline: var(--gp-focus-outline);
+  outline-offset: var(--gp-focus-outline-offset);
+}
+
+/* Selected state: Primary Purple background per design system */
 .day-pill.selected {
   background: var(--gp-purple-dark);
   border-color: var(--gp-purple-dark);
@@ -655,7 +683,7 @@
 .pricing-total {
   font-size: var(--gp-font-size-2xl);
   font-weight: 700;
-  color: var(--gp-purple-primary);
+  color: var(--gp-purple-action);
 }
 
 /* ============================================================================
@@ -691,7 +719,7 @@
 }
 
 .progress-step.current .progress-dot {
-  background: var(--gp-purple-primary);
+  background: var(--gp-purple-action);
   width: 12px;
   height: 12px;
   box-shadow: 0 0 0 4px rgba(109, 49, 194, 0.15);
@@ -725,75 +753,88 @@
 }
 
 /* ============================================================================
-   ACTIONS ROW - V5 Style (balanced touch targets)
+   ACTIONS ROW - Design System (Pill-shaped buttons, 48px touch targets)
    ============================================================================ */
 
 .actions-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  padding: 24px;
+  gap: var(--gp-spacing-md);
+  padding: var(--gp-spacing-2xl);
   align-items: center;
 }
 
-/* V5 Button base styles */
+/* Button base styles - PILL-SHAPED (100px radius) per design system */
 .actions-row .btn {
-  padding: 12px 20px;
+  min-height: var(--gp-min-touch-target);
+  min-width: 120px;
+  padding: var(--gp-spacing-lg) var(--gp-spacing-2xl);
   font-size: var(--gp-font-size-base);
   font-weight: 600;
-  border-radius: 10px;
+  border-radius: var(--gp-border-radius-pill);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--gp-transition-fast);
   text-decoration: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  border: none;
+  gap: var(--gp-spacing-sm);
+  border: 2px solid transparent;
   font-family: inherit;
   white-space: nowrap;
   flex: 0 0 auto;
   width: auto;
 }
 
+.actions-row .btn:focus-visible {
+  outline: var(--gp-focus-outline);
+  outline-offset: var(--gp-focus-outline-offset);
+}
+
+/* Primary Button - Solid purple */
 .actions-row .btn-primary {
-  background: var(--gp-purple-primary);
+  background: var(--gp-purple-dark);
   color: white;
+  border-color: var(--gp-purple-dark);
 }
 
 .actions-row .btn-primary:hover {
-  background: var(--gp-purple-dark);
+  background: var(--gp-purple-action);
+  border-color: var(--gp-purple-action);
 }
 
+/* Secondary/Outline Button - Purple outline */
 .actions-row .btn-outline {
   background: transparent;
-  color: var(--gp-purple-primary);
-  border: 2px solid var(--gp-purple-primary);
+  color: var(--gp-purple-dark);
+  border: 2px solid var(--gp-purple-dark);
 }
 
 .actions-row .btn-outline:hover {
   background: var(--gp-purple-bg);
 }
 
+/* Ghost Button - Light border, muted text */
 .actions-row .btn-ghost {
   background: transparent;
-  color: var(--gp-text-secondary);
+  color: var(--gp-text-ghost);
   border: 1px solid var(--gp-border);
 }
 
 .actions-row .btn-ghost:hover {
-  border-color: var(--gp-text-secondary);
-  color: var(--gp-text);
+  background: var(--gp-purple-bg);
+  color: var(--gp-purple-dark);
 }
 
+/* Danger Button - OUTLINED ONLY per design system (never filled) */
 .actions-row .btn-danger {
   background: transparent;
   color: var(--gp-danger);
-  border: 1px solid var(--gp-danger);
+  border: 2px solid var(--gp-danger);
 }
 
 .actions-row .btn-danger:hover {
-  background: var(--gp-danger-bg);
+  background: rgba(220, 53, 69, 0.1);
 }
 
 /* VM button text states */
@@ -802,7 +843,7 @@
   border: none;
   color: var(--gp-danger);
   font-weight: 600;
-  padding: 12px 16px;
+  padding: var(--gp-spacing-md) var(--gp-spacing-lg);
   cursor: default;
 }
 
@@ -811,7 +852,7 @@
 }
 
 .actions-row .btn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
@@ -845,7 +886,7 @@
   font-family: "Open Sans", sans-serif;
   font-size: 22px;
   font-weight: 600;
-  color: #4F46E5;
+  color: var(--gp-purple-dark);
   letter-spacing: -1px;
   line-height: 1.5;
   margin: 0 0 0;
@@ -855,7 +896,7 @@
   font-family: 'Inter', sans-serif;
   font-size: 15px;
   font-weight: 400;
-  color: #6B7280;
+  color: var(--gp-text-muted);
   line-height: 1.28;
   margin: 0 0 10px 0;
 }
@@ -883,14 +924,14 @@
 }
 
 .btn-primary-v2 {
-  background-color: #6366F1;
+  background-color: var(--gp-purple-action);
   color: white;
   border: none;
-  box-shadow: 0 2px 4px 0 #aaa;
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.15);
 }
 
 .btn-primary-v2:hover {
-  background-color: #4F46E5;
+  background-color: var(--gp-purple-dark);
 }
 
 .btn-map {
@@ -914,18 +955,18 @@
   font-family: 'DM Sans', sans-serif;
   font-size: 14px;
   font-weight: 600;
-  color: #6B4EFF;
+  color: var(--gp-purple-action);
   line-height: 1.25;
   margin-bottom: 2px;
 }
 
 .schedule-text .label {
-  color: #000;
+  color: var(--gp-text);
   font-weight: 400;
 }
 
 .schedule-text.primary {
-  color: #6B4EFF;
+  color: var(--gp-purple-action);
 }
 
 /* Day Badges Row */
@@ -945,13 +986,13 @@
   font-family: 'Inter', sans-serif;
   font-size: 14px;
   font-weight: 500;
-  background-color: #B2B2B2;
-  color: #424242;
+  background-color: var(--gp-border-light);
+  color: var(--gp-text-secondary);
   transition: all 0.2s;
 }
 
 .day-badge-v2.selected {
-  background-color: #4B47CE;
+  background-color: var(--gp-purple-action);
   color: white;
 }
 
@@ -984,7 +1025,7 @@
   font-family: 'Inter', sans-serif;
   font-size: 12px;
   font-weight: 500;
-  color: #4F46E5;
+  color: var(--gp-purple-action);
   text-decoration: none;
   line-height: 1.6;
 }
@@ -1003,7 +1044,7 @@
   font-family: 'Inter', sans-serif;
   font-size: 12px;
   font-weight: 500;
-  color: #4F46E5;
+  color: var(--gp-purple-action);
   background: none;
   border: none;
   padding: 0;
@@ -1091,7 +1132,7 @@
 }
 
 .host-avatar-placeholder {
-  background: #6B4EFF;
+  background: var(--gp-purple-action);
   color: white;
   display: flex;
   align-items: center;
@@ -1107,38 +1148,39 @@
   font-family: 'Inter', sans-serif;
   font-size: 14px;
   font-weight: 700;
-  color: #424242;
+  color: var(--gp-text-secondary);
 }
 
 .btn-host {
   height: 37px;
   padding: 0 16px;
-  border-radius: 8px;
+  border-radius: var(--gp-border-radius-pill);
   font-family: 'Inter', sans-serif;
   font-size: 14px;
   font-weight: 400;
   cursor: pointer;
   border: none;
-  box-shadow: 0 2px 4px 0 #aaa;
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.15);
   min-width: 102px;
 }
 
 .btn-host-profile {
-  background-color: #6366F1;
+  background-color: var(--gp-purple-action);
   color: white;
 }
 
 .btn-host-profile:hover {
-  background-color: #4F46E5;
+  background-color: var(--gp-purple-dark);
 }
 
 .btn-host-message {
-  background-color: #A5B4FC;
-  color: white;
+  background-color: var(--gp-purple-bg);
+  color: var(--gp-purple-dark);
 }
 
 .btn-host-message:hover {
-  background-color: #818CF8;
+  background-color: var(--gp-purple-action);
+  color: white;
 }
 
 /* ============================================================================
@@ -1223,241 +1265,296 @@
 }
 
 /* ============================================================================
-   VIRTUAL MEETING BUTTON STATES
-   Implements 8 Bubble conditionals for VM button lifecycle
+   VIRTUAL MEETING BUTTON STATES - Design System
+   NO GREEN, NO YELLOW - Use purple monochromatic palette
+   Pill-shaped (100px radius), 48px minimum height
    ============================================================================ */
 
-/* Virtual Meeting Request - Default state (no VM exists) */
+/* Base button styling for all action buttons */
+.btn-action-bar {
+  min-height: var(--gp-min-touch-target);
+  border-radius: var(--gp-border-radius-pill);
+  font-weight: 600;
+  transition: all var(--gp-transition-fast);
+}
+
+.btn-action-bar:focus-visible {
+  outline: var(--gp-focus-outline);
+  outline-offset: var(--gp-focus-outline-offset);
+}
+
+/* Virtual Meeting Request - Primary action (purple) */
 .btn-vm-request {
-  background-color: var(--color-primary, #6B4EFF);
+  background-color: var(--gp-purple-dark);
   color: white;
+  border-radius: var(--gp-border-radius-pill);
 }
 
 .btn-vm-request:hover:not(:disabled) {
-  background-color: var(--color-primary-hover, #5840E0);
+  background-color: var(--gp-purple-action);
 }
 
-/* Respond to VM Request - Blue (action needed from other party) */
+/* Respond to VM Request - Action Purple */
 .btn-vm-respond {
-  background-color: #3B82F6;
+  background-color: var(--gp-purple-action);
   color: white;
+  border-radius: var(--gp-border-radius-pill);
 }
 
 .btn-vm-respond:hover:not(:disabled) {
-  background-color: #2563EB;
+  background-color: var(--gp-purple-dark);
 }
 
-/* Virtual Meeting Requested - Gray (waiting for response, disabled) */
+/* Virtual Meeting Requested - Muted state (waiting) */
 .btn-vm-requested {
-  background-color: #9CA3AF;
-  color: white;
+  background-color: var(--gp-border);
+  color: var(--gp-text-muted);
   cursor: not-allowed;
+  border-radius: var(--gp-border-radius-pill);
 }
 
-/* Virtual Meeting Accepted - Green (accepted but not yet confirmed by SL) */
+/* Virtual Meeting Accepted - Action Purple (NO GREEN) */
 .btn-vm-accepted {
-  background-color: #10B981;
+  background-color: var(--gp-purple-action);
   color: white;
   cursor: not-allowed;
+  border-radius: var(--gp-border-radius-pill);
 }
 
-/* Meeting Confirmed - Darker green (confirmed by SL, clickable for details) */
+/* Meeting Confirmed - Primary Purple (NO GREEN) */
 .btn-vm-confirmed {
-  background-color: #059669;
+  background-color: var(--gp-purple-dark);
   color: white;
+  border-radius: var(--gp-border-radius-pill);
 }
 
 .btn-vm-confirmed:hover:not(:disabled) {
-  background-color: #047857;
+  background-color: var(--gp-purple-action);
 }
 
 .btn-vm-confirmed:disabled {
-  background-color: #10B981;
+  background-color: var(--gp-purple-action);
   cursor: not-allowed;
 }
 
-/* Virtual Meeting Declined - Red outline (can request alternative times) */
+/* Virtual Meeting Declined - Danger OUTLINED (never filled) */
 .btn-vm-declined {
   background-color: transparent;
-  color: #DB2E2E;
-  font-weight: bold;
-  border: 1px solid #DB2E2E;
+  color: var(--gp-danger);
+  font-weight: 600;
+  border: 2px solid var(--gp-danger);
+  border-radius: var(--gp-border-radius-pill);
 }
 
 .btn-vm-declined:hover:not(:disabled) {
-  background-color: #FEE2E2;
+  background-color: rgba(220, 53, 69, 0.1);
 }
 
-/* Go to Leases - Green (for completed proposals) */
+/* Go to Leases - Action Purple (NO GREEN) */
 .btn-go-to-leases {
-  background-color: #39873D;
+  background-color: var(--gp-purple-action);
   color: white;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  border-radius: var(--gp-border-radius-pill);
 }
 
 .btn-go-to-leases:hover {
-  background-color: #2D6B30;
+  background-color: var(--gp-purple-dark);
 }
 
-/* Remind Split Lease - Green */
+/* Remind Split Lease - Secondary Outline */
 .btn-remind {
-  background-color: #39873D;
-  color: white;
+  background-color: transparent;
+  color: var(--gp-purple-dark);
+  border: 2px solid var(--gp-purple-dark);
+  border-radius: var(--gp-border-radius-pill);
 }
 
 .btn-remind:hover {
-  background-color: #2D6B30;
+  background-color: var(--gp-purple-bg);
 }
 
-/* Modify Proposal - Green (matches Bubble design) */
+/* Modify Proposal - Primary Purple (NO GREEN) */
 .btn-modify-proposal {
-  background-color: #39873D;
+  background-color: var(--gp-purple-dark);
   color: white;
+  border-radius: var(--gp-border-radius-pill);
 }
 
 .btn-modify-proposal:hover {
-  background-color: #2D6B30;
+  background-color: var(--gp-purple-action);
 }
 
-/* Cancel Proposal - Red */
+/* Cancel Proposal - Danger OUTLINED (never filled) */
 .btn-cancel-proposal {
-  background-color: #EF4444;
-  color: white;
+  background-color: transparent;
+  color: var(--gp-danger);
+  border: 2px solid var(--gp-danger);
+  border-radius: var(--gp-border-radius-pill);
 }
 
 .btn-cancel-proposal:hover {
-  background-color: #DC2626;
+  background-color: rgba(220, 53, 69, 0.1);
 }
 
-/* Delete Proposal - Red */
+/* Delete Proposal - Danger OUTLINED (never filled) */
 .btn-delete-proposal {
-  background-color: #EF4444;
-  color: white;
+  background-color: transparent;
+  color: var(--gp-danger);
+  border: 2px solid var(--gp-danger);
+  border-radius: var(--gp-border-radius-pill);
 }
 
 .btn-delete-proposal:hover {
-  background-color: #DC2626;
+  background-color: rgba(220, 53, 69, 0.1);
 }
 
-/* Accept Counteroffer - Green */
+/* Accept Counteroffer - Action Purple (NO GREEN) */
 .btn-accept-counteroffer {
-  background-color: #39873D;
+  background-color: var(--gp-purple-action);
   color: white;
+  border-radius: var(--gp-border-radius-pill);
 }
 
 .btn-accept-counteroffer:hover {
-  background-color: #2D6B30;
+  background-color: var(--gp-purple-dark);
 }
 
-/* Interested - Green (for SL-suggested proposals) */
+/* Interested - Action Purple (NO GREEN) */
 .btn-interested {
-  background-color: #39873D;
+  background-color: var(--gp-purple-action);
   color: white;
+  border-radius: var(--gp-border-radius-pill);
 }
 
 .btn-interested:hover {
-  background-color: #2D6B30;
+  background-color: var(--gp-purple-dark);
 }
 
-/* Primary Action - Green (default for guest action 1) */
+/* Primary Action - Primary Purple (NO GREEN) */
 .btn-primary-action {
-  background-color: #39873D;
+  background-color: var(--gp-purple-dark);
   color: white;
+  border-radius: var(--gp-border-radius-pill);
 }
 
 .btn-primary-action:hover {
-  background-color: #2D6B30;
+  background-color: var(--gp-purple-action);
 }
 
-/* Not Interested - Gray with red border (for SL-suggested proposals) */
+/* Not Interested - Danger OUTLINED (never filled) */
 .btn-not-interested {
-  background-color: #F3F4F6;
-  color: #DC2626;
-  border: 1px solid #DC2626;
+  background-color: transparent;
+  color: var(--gp-danger);
+  border: 2px solid var(--gp-danger);
+  border-radius: var(--gp-border-radius-pill);
 }
 
 .btn-not-interested:hover {
-  background-color: #FEE2E2;
+  background-color: rgba(220, 53, 69, 0.1);
 }
 
-/* Review Host Terms - Yellow/Orange (for counteroffer review) */
+/* Review Host Terms - Secondary Purple outline (NO YELLOW) */
 .btn-review-terms {
-  background-color: #FEF3C7;
-  color: #92400E;
-  border: 1px solid #F59E0B;
+  background-color: var(--gp-purple-bg);
+  color: var(--gp-purple-dark);
+  border: 2px solid var(--gp-purple-action);
+  border-radius: var(--gp-border-radius-pill);
 }
 
 .btn-review-terms:hover {
-  background-color: #FDE68A;
+  background-color: var(--gp-purple-tint);
 }
 
-/* See Details - Blue (informational) */
+/* See Details - Ghost button */
 .btn-see-details {
-  background-color: #EBF5FF;
-  color: #1D4ED8;
-  border: 1px solid #3B82F6;
+  background-color: transparent;
+  color: var(--gp-purple-dark);
+  border: 1px solid var(--gp-border);
+  border-radius: var(--gp-border-radius-pill);
 }
 
 .btn-see-details:hover {
-  background-color: #DBEAFE;
+  background-color: var(--gp-purple-bg);
 }
 
-/* Verify Identity - Blue (action required) */
+/* Verify Identity - Action Purple */
 .btn-verify-identity {
-  background-color: #3B82F6;
+  background-color: var(--gp-purple-action);
   color: white;
+  border-radius: var(--gp-border-radius-pill);
 }
 
 .btn-verify-identity:hover {
-  background-color: #2563EB;
+  background-color: var(--gp-purple-dark);
 }
 
-/* Secondary Action - Gray (default for guest action 2) */
+/* Secondary Action - Ghost style with pill shape */
 .btn-secondary-action {
-  background-color: #F3F4F6;
-  color: #374151;
-  border: 1px solid #D4D4D4;
+  background-color: transparent;
+  color: var(--gp-text-secondary);
+  border: 1px solid var(--gp-border);
+  border-radius: var(--gp-border-radius-pill);
 }
 
 .btn-secondary-action:hover {
-  background-color: #E5E7EB;
+  background-color: var(--gp-purple-bg);
 }
 
-/* See House Manual - Purple (non-clickable for late-stage proposals) */
+.btn-secondary-action:focus-visible {
+  outline: var(--gp-focus-outline);
+  outline-offset: var(--gp-focus-outline-offset);
+}
+
+/* See House Manual - Secondary Purple with pill shape */
 .btn-house-manual {
-  background-color: #6D31C2;
+  background-color: var(--gp-purple-action);
   color: white;
   cursor: default;
+  border-radius: var(--gp-border-radius-pill);
 }
 
 .btn-house-manual:disabled {
-  background-color: #6D31C2;
+  background-color: var(--gp-purple-action);
   color: white;
   opacity: 1;
 }
 
-/* Reject Modified Terms - Red outline (for counteroffer rejection) */
+/* Reject Modified Terms - OUTLINED ONLY (per protocol) */
 .btn-reject-terms {
-  background-color: #FEE2E2;
-  color: #DC2626;
-  border: 1px solid #DC2626;
+  background-color: transparent;
+  color: var(--gp-danger);
+  border: 2px solid var(--gp-danger);
+  border-radius: var(--gp-border-radius-pill);
 }
 
 .btn-reject-terms:hover {
-  background-color: #FECACA;
+  background-color: rgba(220, 53, 69, 0.1);
 }
 
-/* Reject Proposal - Red (for SL-suggested proposals) */
+.btn-reject-terms:focus-visible {
+  outline: var(--gp-focus-outline);
+  outline-offset: var(--gp-focus-outline-offset);
+}
+
+/* Reject Proposal - OUTLINED ONLY (per protocol, never filled) */
 .btn-reject-proposal {
-  background-color: #EF4444;
-  color: white;
+  background-color: transparent;
+  color: var(--gp-danger);
+  border: 2px solid var(--gp-danger);
+  border-radius: var(--gp-border-radius-pill);
 }
 
 .btn-reject-proposal:hover {
-  background-color: #DC2626;
+  background-color: rgba(220, 53, 69, 0.1);
+}
+
+.btn-reject-proposal:focus-visible {
+  outline: var(--gp-focus-outline);
+  outline-offset: var(--gp-focus-outline-offset);
 }
 
 /* ============================================================================
@@ -1465,14 +1562,14 @@
    ============================================================================ */
 
 .inline-progress-tracker {
-  padding: 10px 15px 20px;
+  padding: var(--gp-spacing-sm) var(--gp-spacing-md) var(--gp-spacing-lg);
 }
 
 .progress-line-container {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 8px;
+  margin-bottom: var(--gp-spacing-sm);
 }
 
 .progress-node-wrapper {
@@ -1483,7 +1580,7 @@
 .progress-connector {
   width: 100px;
   height: 7px;
-  background-color: #D4D4D4;
+  background-color: var(--gp-border-light);
   border-radius: 0;
 }
 
@@ -1495,8 +1592,8 @@
 .progress-node {
   width: 26px;
   height: 26px;
-  border-radius: 100px;
-  background-color: #DEDEDE;
+  border-radius: var(--gp-border-radius-pill);
+  background-color: var(--gp-border-light);
   flex-shrink: 0;
 }
 
@@ -1513,9 +1610,9 @@
 .progress-label {
   width: 120px;
   font-family: 'DM Sans', sans-serif;
-  font-size: 12px;
+  font-size: var(--gp-font-size-xs);
   font-weight: 500;
-  color: #D4D4D4;
+  color: var(--gp-border-light);
   text-align: center;
   letter-spacing: -1px;
   line-height: 1.5;
@@ -1751,12 +1848,12 @@
   width: 20px;
   height: 20px;
   flex-shrink: 0;
-  color: var(--gp-purple-primary);
+  color: var(--gp-purple-action);
 }
 
 .vm-section-message-row svg rect,
 .vm-section-message-row svg line {
-  stroke: var(--gp-purple-primary);
+  stroke: var(--gp-purple-action);
 }
 
 .vm-section-message {
@@ -1839,7 +1936,7 @@
 
 .vm-section-badge-pending {
   background: var(--gp-purple-bg);
-  color: var(--gp-purple-primary);
+  color: var(--gp-purple-action);
 }
 
 .vm-section-badge-confirmed {
@@ -1870,7 +1967,7 @@
 
 /* Respond state - Primary purple */
 .vm-section-primary-btn--respond {
-  background: var(--gp-purple-primary);
+  background: var(--gp-purple-action);
   color: white;
 }
 
@@ -1881,8 +1978,8 @@
 /* Details state - Outline */
 .vm-section-primary-btn--details {
   background: transparent;
-  color: var(--gp-purple-primary);
-  border: 1px solid var(--gp-purple-primary);
+  color: var(--gp-purple-action);
+  border: 1px solid var(--gp-purple-action);
 }
 
 .vm-section-primary-btn--details:hover {
@@ -1891,7 +1988,7 @@
 
 /* Join state - Primary purple */
 .vm-section-primary-btn--join {
-  background: var(--gp-purple-primary);
+  background: var(--gp-purple-action);
   color: white;
 }
 
@@ -1909,8 +2006,8 @@
 /* Expired state - Outline danger */
 .vm-section-primary-btn--expired {
   background: transparent;
-  color: var(--gp-purple-primary);
-  border: 1px solid var(--gp-purple-primary);
+  color: var(--gp-purple-action);
+  border: 1px solid var(--gp-purple-action);
 }
 
 .vm-section-primary-btn--expired:hover {
@@ -1924,7 +2021,7 @@
 .vm-section-date-pill--booked {
   background: var(--gp-purple-bg);
   color: var(--gp-purple-dark);
-  border-color: var(--gp-purple-primary);
+  border-color: var(--gp-purple-action);
   font-weight: 600;
 }
 
@@ -2018,31 +2115,33 @@
 }
 
 .btn-primary {
-  background: var(--color-primary, #6B4EFF);
+  background: var(--gp-purple-action);
   color: white;
 }
 
 .btn-primary:hover {
-  background: var(--color-primary-hover, #5840E0);
+  background: var(--gp-purple-dark);
 }
 
 .btn-secondary {
-  background: #F3F4F6;
-  color: var(--color-text-primary, #31135D);
-  border: 1px solid #D4D4D4;
+  background: var(--gp-purple-bg);
+  color: var(--gp-purple-dark);
+  border: 1px solid var(--gp-border);
 }
 
 .btn-secondary:hover {
-  background: #E5E7EB;
+  background: var(--gp-border);
 }
 
+/* Danger buttons are OUTLINED ONLY per protocol */
 .btn-danger {
-  background: #DC2626;
-  color: white;
+  background: transparent;
+  color: var(--gp-danger);
+  border: 2px solid var(--gp-danger);
 }
 
 .btn-danger:hover {
-  background: #B91C1C;
+  background: rgba(220, 53, 69, 0.1);
 }
 
 /* ============================================================================
@@ -2165,7 +2264,7 @@
   padding: 0;
   font-size: var(--gp-font-size-sm);
   font-weight: 600;
-  color: var(--gp-purple-primary);
+  color: var(--gp-purple-action);
   cursor: pointer;
   transition: color 0.15s;
 }
@@ -2176,7 +2275,7 @@
 
 .proposal-details-rules-count {
   background: var(--gp-purple-bg);
-  color: var(--gp-purple-primary);
+  color: var(--gp-purple-action);
   font-size: var(--gp-font-size-label);
   font-weight: 600;
   padding: 4px 10px;
@@ -2261,7 +2360,7 @@
 .proposal-details-pricing-total .proposal-details-pricing-value {
   font-size: var(--gp-font-size-md);
   font-weight: 700;
-  color: var(--gp-purple-primary);
+  color: var(--gp-purple-action);
 }
 
 .proposal-details-pricing-note {
@@ -2295,8 +2394,8 @@
 /* Secondary button - Outlined */
 .proposal-details-footer-btn--secondary {
   background: transparent;
-  color: var(--gp-purple-primary);
-  border: 2px solid var(--gp-purple-primary);
+  color: var(--gp-purple-action);
+  border: 2px solid var(--gp-purple-action);
 }
 
 .proposal-details-footer-btn--secondary:hover {
@@ -2305,9 +2404,9 @@
 
 /* Primary button - Solid */
 .proposal-details-footer-btn--primary {
-  background: var(--gp-purple-primary);
+  background: var(--gp-purple-action);
   color: white;
-  border: 2px solid var(--gp-purple-primary);
+  border: 2px solid var(--gp-purple-action);
 }
 
 .proposal-details-footer-btn--primary:hover {
@@ -2368,7 +2467,7 @@
 
 .section-header--suggested .section-header__icon {
   background: var(--gp-purple-bg);
-  color: var(--gp-purple-primary);
+  color: var(--gp-purple-action);
 }
 
 .section-header--user .section-header__icon {
@@ -2412,7 +2511,7 @@
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background: var(--gp-purple-primary);
+  background: var(--gp-purple-action);
   color: white;
   display: flex;
   align-items: center;
@@ -2449,7 +2548,7 @@
 
 .match-tag {
   background: white;
-  color: var(--gp-purple-primary);
+  color: var(--gp-purple-action);
   font-size: var(--gp-font-size-label);
   font-weight: 600;
   padding: 6px 12px;
@@ -2495,7 +2594,7 @@
   text-align: left;
   font-size: var(--gp-font-size-sm);
   font-weight: 600;
-  color: var(--gp-purple-primary);
+  color: var(--gp-purple-action);
 }
 
 .negotiation-summary-chevron {
@@ -2555,11 +2654,11 @@
    ============================================================================ */
 
 .counteroffer-summary-section {
-  border: 1px solid #F59E0B;
+  border: 1px solid var(--gp-purple-action);
   border-radius: 10px;
   margin: 12px 0;
   overflow: hidden;
-  background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+  background: linear-gradient(135deg, var(--gp-purple-tint) 0%, var(--gp-purple-bg) 100%);
 }
 
 .counteroffer-summary-toggle {
@@ -2576,7 +2675,7 @@
 }
 
 .counteroffer-summary-toggle:hover {
-  background: rgba(245, 158, 11, 0.1);
+  background: rgba(109, 49, 194, 0.1);
 }
 
 .counteroffer-summary-icon {
@@ -2589,12 +2688,12 @@
   text-align: left;
   font-size: var(--gp-font-size-sm);
   font-weight: 600;
-  color: #B45309;
+  color: var(--gp-purple-dark);
 }
 
 .counteroffer-summary-chevron {
   font-size: 10px;
-  color: #92400E;
+  color: var(--gp-purple-dark);
   transition: transform 0.2s ease-out;
 }
 
@@ -2605,7 +2704,7 @@
 .counteroffer-summary-content {
   padding: 16px;
   background: var(--gp-white);
-  border-top: 1px solid #FCD34D;
+  border-top: 1px solid var(--gp-border);
   animation: slideDown 0.2s ease-out;
 }
 
@@ -2617,7 +2716,7 @@
 }
 
 .counteroffer-summary-content strong {
-  color: #92400E;
+  color: var(--gp-purple-dark);
   font-weight: 600;
 }
 
@@ -2649,7 +2748,7 @@
 }
 
 .epc-card.expanded {
-  border-color: var(--gp-purple-primary);
+  border-color: var(--gp-purple-action);
   box-shadow: 0 4px 20px rgba(109, 49, 194, 0.1);
 }
 
@@ -2658,7 +2757,7 @@
 }
 
 .epc-card.suggested.expanded {
-  border-color: var(--gp-purple-primary);
+  border-color: var(--gp-purple-action);
 }
 
 /* ============================================================================
@@ -2722,7 +2821,7 @@
 }
 
 .epc-status.attention {
-  color: var(--gp-purple-primary);
+  color: var(--gp-purple-action);
   background: var(--gp-purple-bg);
 }
 
@@ -2732,8 +2831,8 @@
 }
 
 .epc-status.action-required {
-  color: #92400E;
-  background: #FEF3C7;
+  color: var(--gp-purple-dark);
+  background: var(--gp-purple-bg);
   font-weight: 600;
   animation: pulse-attention 2s ease-in-out infinite;
 }
@@ -2783,7 +2882,7 @@
 }
 
 .epc-status-banner.attention {
-  background: #fef3c7;
+  background: var(--gp-purple-bg);
 }
 
 .epc-status-banner.cancelled {
@@ -2799,7 +2898,7 @@
   justify-content: center;
   font-size: 12px;
   font-weight: 600;
-  background: var(--gp-purple-primary);
+  background: var(--gp-purple-action);
   color: white;
   flex-shrink: 0;
 }
@@ -2809,7 +2908,7 @@
 }
 
 .epc-status-banner.attention .epc-status-icon {
-  background: #f59e0b;
+  background: var(--gp-purple-action);
 }
 
 .epc-status-banner.cancelled .epc-status-icon {
@@ -2872,7 +2971,7 @@
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background-color: var(--gp-purple-primary);
+  background-color: var(--gp-purple-action);
   color: white;
   display: flex;
   align-items: center;
@@ -2907,7 +3006,7 @@
 .epc-link-item {
   font-size: var(--gp-font-size-sm);
   font-weight: 500;
-  color: var(--gp-purple-primary);
+  color: var(--gp-purple-action);
   text-decoration: none;
   padding: 6px 12px;
   border-radius: 16px;
@@ -3084,7 +3183,7 @@
 .epc-pricing-total {
   font-size: var(--gp-font-size-xl);
   font-weight: 700;
-  color: var(--gp-purple-primary);
+  color: var(--gp-purple-action);
 }
 
 /* ============================================================================
@@ -3100,7 +3199,7 @@
 }
 
 .epc-changed-value {
-  color: #B45309;
+  color: var(--gp-purple-action);
   font-weight: 600;
 }
 
@@ -3118,12 +3217,12 @@
 }
 
 .epc-pricing-breakdown .epc-changed-value {
-  color: #B45309;
+  color: var(--gp-purple-action);
 }
 
 /* Total price when changed */
 .epc-pricing-total.epc-changed-value {
-  color: #B45309;
+  color: var(--gp-purple-action);
 }
 
 /* ============================================================================
@@ -3194,7 +3293,7 @@
 }
 
 .epc-btn--primary {
-  background: var(--gp-purple-primary);
+  background: var(--gp-purple-action);
   color: white;
 }
 
@@ -3204,8 +3303,8 @@
 
 .epc-btn--outline {
   background: transparent;
-  color: var(--gp-purple-primary);
-  border: 1px solid var(--gp-purple-primary);
+  color: var(--gp-purple-action);
+  border: 1px solid var(--gp-purple-action);
 }
 
 .epc-btn--outline:hover {
@@ -3244,13 +3343,13 @@
 }
 
 .epc-btn--attention {
-  background: #f59e0b;
+  background: var(--gp-purple-action);
   color: #ffffff;
-  border: 1px solid #d97706;
+  border: 1px solid var(--gp-purple-dark);
 }
 
 .epc-btn--attention:hover {
-  background: #d97706;
+  background: var(--gp-purple-dark);
 }
 
 .epc-btn:disabled {
@@ -3429,7 +3528,7 @@
   top: -100%;
   left: 16px;
   padding: 16px 24px;
-  background: var(--gp-purple-primary);
+  background: var(--gp-purple-action);
   color: white;
   text-decoration: none;
   font-weight: 600;

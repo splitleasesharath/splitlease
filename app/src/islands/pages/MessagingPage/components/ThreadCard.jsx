@@ -37,6 +37,9 @@ export default function ThreadCard({ thread, isSelected, onClick }) {
     ? `You: ${thread.last_message_preview || ''}`
     : thread.last_message_preview || 'No messages yet';
 
+  // Build accessible label for screen readers
+  const ariaLabel = `Conversation with ${thread.contact_name || 'Unknown Contact'}${thread.property_name ? `, about ${thread.property_name}` : ''}${thread.unread_count > 0 ? `, ${thread.unread_count} unread messages` : ''}`;
+
   return (
     <div
       className={`thread-card ${isSelected ? 'thread-card--selected' : ''} ${thread.unread_count > 0 ? 'thread-card--unread' : ''}`}
@@ -50,6 +53,7 @@ export default function ThreadCard({ thread, isSelected, onClick }) {
         }
       }}
       aria-selected={isSelected}
+      aria-label={ariaLabel}
     >
       {/* Avatar */}
       <div className="thread-card__avatar-container">
