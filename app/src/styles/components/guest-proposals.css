@@ -2164,12 +2164,13 @@
   flex-shrink: 0;
 }
 
-/* Info section: Name · Status · Times */
+/* Info section: Name · Status · Times - grows to push button right */
 .vm-elegant-info {
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 13px;
+  flex: 1;
 }
 
 .vm-elegant-name {
