@@ -15,9 +15,11 @@ import { useDeviceDetection } from '../../../../hooks/useDeviceDetection.js';
 
 /**
  * Builds a Google Static Maps URL for mini-map display
+ * Uses window.ENV.GOOGLE_MAPS_API_KEY (runtime config pattern)
  */
 const buildStaticMapUrl = ({ lat, lng, width = 280, height = 320, zoom = 14 }) => {
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  // Access API key from runtime config (window.ENV) set by config.js
+  const apiKey = typeof window !== 'undefined' ? window.ENV?.GOOGLE_MAPS_API_KEY : null;
   if (!apiKey || !lat || !lng) return null;
 
   const markerColor = '6366F1'; // Purple without #
@@ -159,8 +161,24 @@ const FavoritesCardV3 = ({
 }) => {
   const [imageError, setImageError] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [configLoaded, setConfigLoaded] = useState(!!window.ENV?.GOOGLE_MAPS_API_KEY);
 
   const { isMobile, isSmallMobile, isTouchDevice, isTablet } = useDeviceDetection();
+
+  // Re-render when config.js loads window.ENV
+  useEffect(() => {
+    if (configLoaded) return;
+
+    const handleConfigLoad = () => setConfigLoaded(true);
+    window.addEventListener('env-config-loaded', handleConfigLoad);
+
+    // Check if already loaded
+    if (window.ENV?.GOOGLE_MAPS_API_KEY) {
+      setConfigLoaded(true);
+    }
+
+    return () => window.removeEventListener('env-config-loaded', handleConfigLoad);
+  }, [configLoaded]);
 
   const photos = listing.images || [];
   const hasProposal = !!proposalForListing;
