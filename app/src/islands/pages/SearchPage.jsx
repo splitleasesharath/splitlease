@@ -586,7 +586,7 @@ export default function SearchPage() {
   }, []);
 
   const clearAllFilters = useCallback(() => {
-    setSelectedBorough('all');
+    setSelectedBoroughs([]);
     setSelectedNeighborhoods([]);
     setPriceTier('all');
     setWeekPattern('every-week');

@@ -2581,8 +2581,8 @@ export default function ViewSplitLeasePage() {
         />
       )}
 
-      {/* Mobile Bottom Booking Bar - hide when proposal modal or photo gallery is open */}
-      {isMobile && !isProposalModalOpen && !showPhotoModal && (
+      {/* Mobile Bottom Booking Bar - hide when proposal modal, photo gallery, or auth modal is open */}
+      {isMobile && !isProposalModalOpen && !showPhotoModal && !showAuthModal && (
         <>
           {/* Overlay when expanded */}
           {mobileBookingExpanded && (
@@ -2599,6 +2599,7 @@ export default function ViewSplitLeasePage() {
 
           {/* Bottom Bar */}
           <div
+            className="mobile-bottom-booking-bar"
             style={{
               position: 'fixed',
               bottom: 0,

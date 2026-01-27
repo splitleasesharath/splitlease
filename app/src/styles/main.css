@@ -1457,3 +1457,24 @@ video {
     scrollbar-color: #888 #f1f1f1;
 }
 
+/* ========================================
+   MODAL STATE MANAGEMENT
+   Hide fixed UI elements when auth modal is open
+   ======================================== */
+
+body.auth-modal-open .mobile-bottom-booking-bar {
+    display: none !important;
+}
+
+body.auth-modal-open .ai-signup-overlay {
+    display: none !important;
+}
+
+body.auth-modal-open .floating-badge {
+    display: none !important;
+}
+
+body.auth-modal-open .market-popup-container {
+    display: none !important;
+}
+
