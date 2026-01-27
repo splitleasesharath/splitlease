@@ -17,7 +17,15 @@ import ProposalSuccessModal from '../../modals/ProposalSuccessModal.jsx';
 import SignUpLoginModal from '../../shared/SignUpLoginModal.jsx';
 import EmptyState from './components/EmptyState';
 import FavoritesCardV2 from './components/FavoritesCardV2.jsx';
+import FavoritesCardV3 from './components/FavoritesCardV3.jsx';
 import { getFavoritedListingIds, removeFromFavorites } from './favoritesApi';
+
+/**
+ * CARD VERSION TOGGLE
+ * Set to true to use the new horizontal card with mini-map (V3)
+ * Set to false to revert to the original vertical card (V2)
+ */
+const USE_CARD_V3 = true;
 import { checkAuthStatus, validateTokenAndFetchUser, getSessionId } from '../../../lib/auth/tokenValidation.js';
 import { logoutUser } from '../../../lib/auth/logout.js';
 import { fetchProposalsByGuest, fetchLastProposalDefaults } from '../../../lib/proposalDataFetcher.js';
@@ -67,19 +75,45 @@ async function fetchInformationalTexts() {
 /**
  * ListingsGridV2 - Grid using pure inline styles (no CSS conflicts)
  */
-function ListingsGridV2({ listings, onOpenContactModal, isLoggedIn, onToggleFavorite, userId, proposalsByListingId, onCreateProposal, onPhotoClick, viewMode }) {
+function ListingsGridV2({ listings, onOpenContactModal, isLoggedIn, onToggleFavorite, userId, proposalsByListingId, onCreateProposal, onPhotoClick, onMapClick, viewMode }) {
   const isGrid = viewMode === 'grid';
-  
+
+  // V3 uses a single-column layout (horizontal cards stack vertically)
+  const gridStyles = USE_CARD_V3
+    ? {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px',
+        padding: '0',
+      }
+    : {
+        display: isGrid ? 'grid' : 'flex',
+        flexDirection: isGrid ? 'initial' : 'column',
+        gridTemplateColumns: isGrid ? 'repeat(auto-fill, minmax(320px, 1fr))' : 'none',
+        gap: '20px',
+        padding: '0',
+      };
+
   return (
-    <div style={{
-      display: isGrid ? 'grid' : 'flex',
-      flexDirection: isGrid ? 'initial' : 'column',
-      gridTemplateColumns: isGrid ? 'repeat(auto-fill, minmax(320px, 1fr))' : 'none',
-      gap: '20px',
-      padding: '0',
-    }}>
+    <div style={gridStyles}>
       {listings.map((listing) => {
         const proposalForListing = proposalsByListingId?.get(listing.id) || null;
+
+        // Use V3 (horizontal with map) or V2 (vertical) based on toggle
+        if (USE_CARD_V3) {
+          return (
+            <FavoritesCardV3
+              key={listing.id}
+              listing={listing}
+              onToggleFavorite={onToggleFavorite}
+              userId={userId}
+              proposalForListing={proposalForListing}
+              onOpenCreateProposalModal={onCreateProposal}
+              onMapClick={onMapClick}
+            />
+          );
+        }
+
         return (
           <FavoritesCardV2
             key={listing.id}
@@ -1111,6 +1145,7 @@ const FavoriteListingsPage = () => {
                   proposalsByListingId={proposalsByListingId}
                   onCreateProposal={handleOpenProposalModal}
                   onPhotoClick={handlePhotoGalleryOpen}
+                  onMapClick={() => setMobileMapVisible(true)}
                   viewMode={viewMode}
                 />
               )}
