@@ -83,9 +83,9 @@
   right: 0;
   background-color: #ffffff;
   border: 1px solid #E5E7EB;
-  border-radius: 16px;
+  border-radius: 12px;
   box-shadow: 0 8px 32px rgba(49, 19, 93, 0.15);
-  padding: 16px;
+  padding: 12px;
   z-index: 1000;
   animation: datePickerSlideDown 0.2s ease-out;
   isolation: isolate;
@@ -98,11 +98,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 
 .custom-date-picker__month-year {
-  font-size: 16px;
+  font-size: 13px;
   font-weight: 600;
   color: #111827;
 }
@@ -111,10 +111,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   background: transparent;
   color: #6B7280;
   cursor: pointer;
@@ -127,10 +127,10 @@
 }
 
 .custom-date-picker__nav svg {
-  width: 20px !important;
-  height: 20px !important;
-  min-width: 20px !important;
-  min-height: 20px !important;
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  min-height: 16px !important;
   flex-shrink: 0 !important;
 }
 
@@ -138,24 +138,24 @@
 .custom-date-picker__weekdays {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
-  margin-bottom: 8px;
+  gap: 2px;
+  margin-bottom: 4px;
   width: 100%;
 }
 
 .custom-date-picker__weekday {
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 500;
   color: #9CA3AF;
   text-align: center;
-  padding: 4px 0;
+  padding: 2px 0;
 }
 
 /* Day grid */
 .custom-date-picker__grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
+  gap: 2px;
   background-color: #ffffff;
   width: 100%;
 }
@@ -170,11 +170,12 @@
   border: none;
   border-radius: 50%;
   background: transparent;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
   color: #374151;
   cursor: pointer;
   transition: all 0.15s ease;
+  padding: 0;
 }
 
 .custom-date-picker__day:hover:not(.custom-date-picker__day--disabled):not(.custom-date-picker__day--selected) {
@@ -195,11 +196,11 @@
 .custom-date-picker__day--today::after {
   content: '';
   position: absolute;
-  bottom: 4px;
+  bottom: 2px;
   left: 50%;
   transform: translateX(-50%);
-  width: 4px;
-  height: 4px;
+  width: 3px;
+  height: 3px;
   border-radius: 50%;
   background: #31135d;
 }

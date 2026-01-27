@@ -227,14 +227,14 @@ export default function CustomDatePicker({
               aria-label="Previous month"
             >
               <svg
-                width="20"
-                height="20"
+                width="16"
+                height="16"
                 viewBox="0 0 20 20"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth="2"
+                strokeWidth="2.5"
                 aria-hidden="true"
-                style={{ width: 20, height: 20, minWidth: 20, minHeight: 20, flexShrink: 0 }}
+                style={{ width: 16, height: 16, minWidth: 16, minHeight: 16, flexShrink: 0 }}
               >
                 <path d="M12 14L8 10L12 6" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
@@ -249,14 +249,14 @@ export default function CustomDatePicker({
               aria-label="Next month"
             >
               <svg
-                width="20"
-                height="20"
+                width="16"
+                height="16"
                 viewBox="0 0 20 20"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth="2"
+                strokeWidth="2.5"
                 aria-hidden="true"
-                style={{ width: 20, height: 20, minWidth: 20, minHeight: 20, flexShrink: 0 }}
+                style={{ width: 16, height: 16, minWidth: 16, minHeight: 16, flexShrink: 0 }}
               >
                 <path d="M8 6L12 10L8 14" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
