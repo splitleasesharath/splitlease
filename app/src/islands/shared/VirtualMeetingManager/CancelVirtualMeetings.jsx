@@ -56,7 +56,24 @@ export default function CancelVirtualMeetings({
     <div className="vm-cancel-container">
       <div className="vm-header">
         <div className="vm-header-title">
-          <span className="vm-icon">&#128465;</span>
+          <svg
+            className="vm-icon"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#31135D"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+            style={{ width: 24, height: 24, minWidth: 24, minHeight: 24, flexShrink: 0 }}
+          >
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            <line x1="10" y1="11" x2="10" y2="17" />
+            <line x1="14" y1="11" x2="14" y2="17" />
+          </svg>
           <h2 className="vm-title">Cancel Virtual Meeting?</h2>
         </div>
       </div>
@@ -68,7 +85,24 @@ export default function CancelVirtualMeetings({
       {/* Meeting Info Card */}
       <div className="vm-meeting-info-card">
         <div className="vm-meeting-info-content">
-          <span className="vm-meeting-info-icon">&#128197;</span>
+          <svg
+            className="vm-meeting-info-icon"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#6D31C2"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+            style={{ width: 24, height: 24, minWidth: 24, minHeight: 24, flexShrink: 0 }}
+          >
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+          </svg>
           <div className="vm-meeting-info-details">
             <h3 className="vm-meeting-info-title">
               Meeting with {participantName}

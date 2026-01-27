@@ -70,14 +70,27 @@ export default function DetailsOfProposalAndVM({
 
   return (
     <div className="vm-details-container">
-      {/* Header with Close Button */}
+      {/* Header - Close button is in parent VirtualMeetingManager */}
       <div className="vm-header">
         <div className="vm-header-title">
+          <svg
+            className="vm-icon"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#31135D"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+            style={{ width: 24, height: 24, minWidth: 24, minHeight: 24, flexShrink: 0 }}
+          >
+            <path d="M15.6 11.6L22 7v10l-6.4-4.6a1 1 0 0 1 0-1.8z" />
+            <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+          </svg>
           <h2 className="vm-title">Virtual Meeting Details</h2>
         </div>
-        <button className="vm-close-btn" onClick={onClose}>
-          &times;
-        </button>
       </div>
 
       {/* Guest Profile Photo */}
@@ -135,12 +148,17 @@ export default function DetailsOfProposalAndVM({
           height="20"
           viewBox="0 0 24 24"
           fill="none"
-          xmlns="http://www.w3.org/2000/svg"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+          style={{ width: 20, height: 20, minWidth: 20, minHeight: 20, flexShrink: 0 }}
         >
-          <path
-            d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zM5 8V6h14v2H5z"
-            fill="currentColor"
-          />
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+          <line x1="16" y1="2" x2="16" y2="6" />
+          <line x1="8" y1="2" x2="8" y2="6" />
+          <line x1="3" y1="10" x2="21" y2="10" />
         </svg>
         Click to add this meeting to your calendar
       </button>
@@ -157,10 +175,17 @@ export default function DetailsOfProposalAndVM({
             width="18"
             height="18"
             viewBox="0 0 24 24"
-            fill="currentColor"
-            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+            style={{ width: 18, height: 18, minWidth: 18, minHeight: 18, flexShrink: 0 }}
           >
-            <path d="M15 12c0 1.657-1.343 3-3 3s-3-1.343-3-3c0-1.657 1.343-3 3-3s3 1.343 3 3zm9-.449s-4.252 8.449-11.985 8.449c-7.18 0-12.015-8.449-12.015-8.449s4.446-7.551 12.015-7.551c7.694 0 11.985 7.551 11.985 7.551zm-7 .449c0-2.757-2.243-5-5-5s-5 2.243-5 5 2.243 5 5 5 5-2.243 5-5z" />
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+            <polyline points="15 3 21 3 21 9" />
+            <line x1="10" y1="14" x2="21" y2="3" />
           </svg>
           Google Meet Link
         </a>

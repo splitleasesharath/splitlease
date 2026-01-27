@@ -72,11 +72,42 @@ export default function BookVirtualMeeting({
             disabled={isLoading}
             aria-label="Go back"
           >
-            &larr;
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+              style={{ width: 24, height: 24, minWidth: 24, minHeight: 24, flexShrink: 0 }}
+            >
+              <line x1="19" y1="12" x2="5" y2="12" />
+              <polyline points="12 19 5 12 12 5" />
+            </svg>
           </button>
         )}
         <div className="vm-header-title">
-          <span className="vm-icon">&#128197;</span>
+          <svg
+            className="vm-icon"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#31135D"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+            style={{ width: 24, height: 24, minWidth: 24, minHeight: 24, flexShrink: 0 }}
+          >
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+          </svg>
           <h2 className="vm-title">
             {isSuggesting ? 'Suggest Alternative Times' : 'Request Virtual Meeting'}
           </h2>

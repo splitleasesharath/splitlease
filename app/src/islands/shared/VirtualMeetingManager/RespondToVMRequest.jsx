@@ -85,7 +85,24 @@ export default function RespondToVMRequest({
     <div className="vm-respond-container">
       <div className="vm-header">
         <div className="vm-header-title">
-          <span className="vm-icon">&#128197;</span>
+          <svg
+            className="vm-icon"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#31135D"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+            style={{ width: 24, height: 24, minWidth: 24, minHeight: 24, flexShrink: 0 }}
+          >
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+          </svg>
           <h2 className="vm-title">Virtual Meeting Response</h2>
         </div>
       </div>
