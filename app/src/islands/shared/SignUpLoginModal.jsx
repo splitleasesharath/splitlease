@@ -1052,11 +1052,13 @@ export default function SignUpLoginModal({
     if (isOpen) {
       document.addEventListener('keydown', handleEscape);
       document.body.style.overflow = 'hidden';
+      document.body.classList.add('auth-modal-open');
     }
 
     return () => {
       document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = '';
+      document.body.classList.remove('auth-modal-open');
     };
   }, [isOpen, disableClose, onClose]);
 

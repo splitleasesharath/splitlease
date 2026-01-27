@@ -274,6 +274,30 @@ export default function VirtualMeetingManager({
   return (
     <div className="vm-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="vm-container">
+        {/* Close Button - Protocol compliant SVG */}
+        <button
+          type="button"
+          className="vm-close-btn"
+          onClick={onClose}
+          aria-label="Close"
+        >
+          <svg
+            width="32"
+            height="32"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+            style={{ width: 32, height: 32, minWidth: 32, minHeight: 32, flexShrink: 0 }}
+          >
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+
         {/* Global Error/Success Messages */}
         {error && <div className="vm-error">{error}</div>}
         {success && <div className="vm-success">{success}</div>}

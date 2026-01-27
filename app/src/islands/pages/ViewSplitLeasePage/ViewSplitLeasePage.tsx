@@ -59,6 +59,7 @@ import { LoadingState } from './components/LoadingState.jsx';
 import { ErrorState } from './components/ErrorState.jsx';
 import { PhotoGallery } from './components/PhotoGallery.jsx';
 import { SchedulePatternHighlight } from './components/SchedulePatternHighlight.jsx';
+import CustomDatePicker from '../../shared/CustomDatePicker';
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -1789,45 +1790,12 @@ export default function ViewSplitLeasePage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
             </label>
-            <div style={{ position: 'relative', marginBottom: '8px' }}>
-              <input
-                type="date"
+            <div style={{ marginBottom: '8px' }}>
+              <CustomDatePicker
                 value={moveInDate || ''}
-                min={minMoveInDate}
-                onChange={(e) => setMoveInDate(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  border: '2px solid #E5E7EB',
-                  borderRadius: '10px',
-                  fontSize: '15px',
-                  fontWeight: '500',
-                  color: '#111827',
-                  transition: 'all 0.2s ease',
-                  cursor: 'pointer',
-                  background: 'white',
-                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.borderColor = '#31135d';
-                  e.target.style.boxShadow = '0 4px 6px rgba(49, 19, 93, 0.1)';
-                }}
-                onMouseLeave={(e) => {
-                  if (document.activeElement !== e.target) {
-                    e.target.style.borderColor = '#E5E7EB';
-                    e.target.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)';
-                  }
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = '#31135d';
-                  e.target.style.boxShadow = '0 0 0 4px rgba(49, 19, 93, 0.15)';
-                  e.target.style.transform = 'translateY(-1px)';
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = '#E5E7EB';
-                  e.target.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)';
-                  e.target.style.transform = '';
-                }}
+                onChange={setMoveInDate}
+                minDate={minMoveInDate}
+                placeholder="Select move-in date"
               />
             </div>
             <div style={{
@@ -2613,8 +2581,8 @@ export default function ViewSplitLeasePage() {
         />
       )}
 
-      {/* Mobile Bottom Booking Bar - hide when proposal modal or photo gallery is open */}
-      {isMobile && !isProposalModalOpen && !showPhotoModal && (
+      {/* Mobile Bottom Booking Bar - hide when proposal modal, photo gallery, or auth modal is open */}
+      {isMobile && !isProposalModalOpen && !showPhotoModal && !showAuthModal && (
         <>
           {/* Overlay when expanded */}
           {mobileBookingExpanded && (
@@ -2631,6 +2599,7 @@ export default function ViewSplitLeasePage() {
 
           {/* Bottom Bar */}
           <div
+            className="mobile-bottom-booking-bar"
             style={{
               position: 'fixed',
               bottom: 0,
@@ -2783,21 +2752,11 @@ export default function ViewSplitLeasePage() {
                   }}>
                     Ideal Move-In
                   </label>
-                  <input
-                    type="date"
+                  <CustomDatePicker
                     value={moveInDate || ''}
-                    min={minMoveInDate}
-                    onChange={(e) => setMoveInDate(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      border: '2px solid #E5E7EB',
-                      borderRadius: '10px',
-                      fontSize: '16px',
-                      fontWeight: '500',
-                      color: '#111827',
-                      boxSizing: 'border-box'
-                    }}
+                    onChange={setMoveInDate}
+                    minDate={minMoveInDate}
+                    placeholder="Select move-in date"
                   />
                 </div>
 

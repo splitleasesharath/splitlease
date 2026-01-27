@@ -1364,6 +1364,177 @@
   text-align: center;
 }
 
+/* ============================================================================
+   BOROUGH MULTI-SELECT FILTER STYLES
+   Mirror the neighborhood filter styles for consistent UX
+   ============================================================================ */
+
+.borough-search-group {
+  position: relative;
+  width: 100%;
+}
+
+.borough-search-group > label {
+  display: none;
+}
+
+/* "All Boroughs" button state */
+.borough-all-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.borough-all-btn:hover {
+  border-color: var(--secondary-purple, #6D31C2);
+}
+
+.borough-all-btn svg {
+  opacity: 0.5;
+}
+
+/* Chips row for selected boroughs */
+.borough-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-top: 0.5rem;
+}
+
+.borough-chip-compact {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  background: var(--secondary-purple, #6D31C2);
+  color: white;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.borough-chip-compact button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  color: white;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.borough-chip-compact button:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+/* Add more button */
+.borough-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 2px dashed #d1d5db;
+  background: white;
+  border-radius: 9999px;
+  font-size: 18px;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.borough-add-btn:hover {
+  border-color: var(--secondary-purple, #6D31C2);
+  color: var(--secondary-purple, #6D31C2);
+  background: #f5f3ff;
+}
+
+/* Search dropdown */
+.borough-search-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 320px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 9999;
+}
+
+.borough-dropdown-search {
+  padding: 0.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  background: white;
+}
+
+.borough-search-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+}
+
+.borough-search-input:focus {
+  outline: none;
+  border-color: var(--secondary-purple, #6D31C2);
+  box-shadow: 0 0 0 3px rgba(109, 49, 194, 0.1);
+}
+
+.borough-search-option {
+  display: block;
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border: none;
+  background: transparent;
+  text-align: left;
+  font-size: 0.875rem;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.borough-search-option:hover {
+  background: #f5f3ff;
+}
+
+.borough-search-option:focus {
+  outline: none;
+  background: #ede9fe;
+}
+
+.borough-search-empty {
+  padding: 0.75rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
 /* Mobile adjustments for compact search filter */
 @media (max-width: 768px) {
   .inline-filters .neighborhood-search-group {
@@ -2798,6 +2969,37 @@
   }
 
   .mobile-filter-group .neighborhood-search-dropdown {
+    position: relative;
+    margin-top: 8px;
+    max-height: 200px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Borough filter adjustments for mobile sheet */
+  .mobile-filter-group .borough-search-group {
+    width: 100%;
+    max-width: 100%;
+    min-width: 100%;
+  }
+
+  .mobile-filter-group .borough-all-btn {
+    padding: 14px 16px;
+    font-size: 16px;
+    border-radius: 12px;
+  }
+
+  .mobile-filter-group .borough-search-input {
+    padding: 14px 16px;
+    font-size: 16px;
+    border-radius: 12px;
+  }
+
+  .mobile-filter-group .borough-chips-row {
+    margin-top: 8px;
+  }
+
+  .mobile-filter-group .borough-search-dropdown {
     position: relative;
     margin-top: 8px;
     max-height: 200px;

@@ -4,39 +4,117 @@
 export function PhotoGallery({ photos, listingName, onPhotoClick, isMobile }) {
   const photoCount = photos.length;
 
-  // On mobile: always show single image with "Show all" button
+  // On mobile: hero image on left, two stacked smaller images on right
   if (isMobile) {
+    const hasMorePhotos = photoCount > 3;
+
+    const mobileImageStyle = {
+      cursor: 'pointer',
+      borderRadius: '8px',
+      overflow: 'hidden',
+      position: 'relative'
+    };
+
+    const mobileImgStyle = {
+      width: '100%',
+      height: '100%',
+      objectFit: 'cover',
+      display: 'block'
+    };
+
+    // Single photo: full width
+    if (photoCount === 1) {
+      return (
+        <div className="vsl-gallery" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '4px' }}>
+          <div onClick={() => onPhotoClick(0)} style={{ ...mobileImageStyle, height: '280px' }}>
+            <img
+              src={photos[0].Photo}
+              alt={`${listingName} - main`}
+              style={mobileImgStyle}
+            />
+          </div>
+        </div>
+      );
+    }
+
+    // Two photos: side by side
+    if (photoCount === 2) {
+      return (
+        <div className="vsl-gallery" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
+          {photos.map((photo, idx) => (
+            <div key={photo._id || idx} onClick={() => onPhotoClick(idx)} style={{ ...mobileImageStyle, height: '200px' }}>
+              <img
+                src={photo['Photo (thumbnail)'] || photo.Photo}
+                alt={`${listingName} - ${idx + 1}`}
+                style={mobileImgStyle}
+              />
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    // 3+ photos: Hero + 2 Side (Zillow Style) - CSS Grid with aspect-ratio
+    // Grid spans hero across both rows, side images fill remaining cells
     return (
-      <div className="vsl-gallery" style={{ position: 'relative' }}>
+      <div
+        className="vsl-gallery"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '2fr 1fr',
+          gridTemplateRows: '1fr 1fr',
+          gap: '2px',
+          aspectRatio: '3 / 2',
+          borderRadius: '12px',
+          overflow: 'hidden'
+        }}
+      >
+        {/* Hero image - spans both rows */}
         <div
           onClick={() => onPhotoClick(0)}
-          style={{
-            cursor: 'pointer',
-            borderRadius: '12px',
-            overflow: 'hidden',
-            height: '280px'
-          }}
+          style={{ ...mobileImageStyle, gridRow: '1 / -1', borderRadius: 0 }}
         >
           <img
             src={photos[0].Photo}
             alt={`${listingName} - main`}
-            className="vsl-gallery-image"
+            style={mobileImgStyle}
           />
         </div>
-        {photoCount > 1 && (
-          <button
-            onClick={() => onPhotoClick(0)}
-            className="vsl-gallery-show-all"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="3" y="3" width="7" height="7" rx="1" />
-              <rect x="14" y="3" width="7" height="7" rx="1" />
-              <rect x="3" y="14" width="7" height="7" rx="1" />
-              <rect x="14" y="14" width="7" height="7" rx="1" />
-            </svg>
-            Show all {photoCount}
-          </button>
-        )}
+
+        {/* Top right image */}
+        <div onClick={() => onPhotoClick(1)} style={{ ...mobileImageStyle, borderRadius: 0 }}>
+          <img
+            src={photos[1]['Photo (thumbnail)'] || photos[1].Photo}
+            alt={`${listingName} - 2`}
+            style={mobileImgStyle}
+          />
+        </div>
+
+        {/* Bottom right image with "Show all" overlay if more photos */}
+        <div onClick={() => onPhotoClick(2)} style={{ ...mobileImageStyle, borderRadius: 0 }}>
+          <img
+            src={photos[2]['Photo (thumbnail)'] || photos[2].Photo}
+            alt={`${listingName} - 3`}
+            style={mobileImgStyle}
+          />
+          {hasMorePhotos && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onPhotoClick(0);
+              }}
+              className="vsl-gallery-show-all"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="3" width="7" height="7" rx="1" />
+                <rect x="14" y="3" width="7" height="7" rx="1" />
+                <rect x="3" y="14" width="7" height="7" rx="1" />
+                <rect x="14" y="14" width="7" height="7" rx="1" />
+              </svg>
+              +{photoCount - 3} more
+            </button>
+          )}
+        </div>
       </div>
     );
   }

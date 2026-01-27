@@ -36,7 +36,8 @@
       "Bash(echo:*)",
       "Bash(bun --version:*)",
       "Bash(where:*)",
-      "Bash(bun run lint:*)"
+      "Bash(bun run lint:*)",
+      "Read(//c/Users/Split Lease/My Drive \\(splitleaseteam@gmail.com\\)/_Agent Context and Tools/SL22/Design/2026/Ongoing Projects/image grid/**)"
     ],
     "deny": [],
     "ask": []

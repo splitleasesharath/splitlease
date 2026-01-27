@@ -2097,6 +2097,224 @@
 }
 
 /* ============================================================================
+   VM ELEGANT SECTION - Minimal inline design with video icon
+   ============================================================================ */
+
+.vm-elegant-wrapper {
+  margin-top: 24px;
+}
+
+.vm-elegant-heading {
+  font-size: var(--gp-font-size-sm);
+  font-weight: 600;
+  color: var(--gp-text-muted);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.vm-elegant-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Elegant Card - Minimal rounded row */
+.vm-elegant-card {
+  background: var(--gp-white);
+  border: 1px solid var(--gp-border-light);
+  border-radius: 10px;
+  transition: all 0.15s ease;
+  width: 50%;
+  min-width: 320px;
+  max-width: 100%;
+}
+
+.vm-elegant-card:hover {
+  border-color: var(--gp-border);
+}
+
+.vm-elegant-card--expanded {
+  border-color: var(--gp-purple-action);
+  background: var(--gp-purple-bg);
+}
+
+/* Main row - inline layout */
+.vm-elegant-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.vm-elegant-row:focus-visible {
+  outline: 2px solid var(--gp-purple-action);
+  outline-offset: -2px;
+  border-radius: 10px;
+}
+
+/* Video icon */
+.vm-elegant-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gp-purple-action);
+  flex-shrink: 0;
+}
+
+/* Info section: Name · Status · Times - grows to push button right */
+.vm-elegant-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  flex: 1;
+}
+
+.vm-elegant-name {
+  font-weight: 600;
+  color: var(--gp-purple-dark);
+  white-space: nowrap;
+}
+
+.vm-elegant-dot {
+  color: var(--gp-text-muted);
+  font-weight: 400;
+}
+
+.vm-elegant-status {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Status colors - inherit from badge classes */
+.vm-elegant-status.vm-section-badge-waiting {
+  color: var(--gp-text-muted);
+}
+
+.vm-elegant-status.vm-section-badge-pending {
+  color: var(--gp-purple-action);
+}
+
+.vm-elegant-status.vm-section-badge-confirmed {
+  color: var(--gp-success);
+}
+
+.vm-elegant-status.vm-section-badge-expired {
+  color: var(--gp-danger);
+}
+
+.vm-elegant-times {
+  color: var(--gp-text-muted);
+  white-space: nowrap;
+}
+
+/* Action button - small pill */
+.vm-elegant-btn {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--gp-purple-action);
+  background: transparent;
+  color: var(--gp-purple-action);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.vm-elegant-btn:hover {
+  background: var(--gp-purple-action);
+  color: white;
+}
+
+/* Chevron */
+.vm-elegant-chevron {
+  display: flex;
+  align-items: center;
+  color: var(--gp-text-muted);
+  flex-shrink: 0;
+  margin-left: -4px;
+}
+
+.vm-compact-chevron {
+  transition: transform 0.2s ease;
+}
+
+.vm-compact-chevron--expanded {
+  transform: rotate(180deg);
+}
+
+/* Expanded details */
+.vm-elegant-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 12px 10px 38px; /* Align with text after icon */
+  animation: vm-elegant-fade 0.15s ease-out;
+}
+
+@keyframes vm-elegant-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.vm-elegant-pill {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: var(--gp-white);
+  border: 1px solid var(--gp-border);
+  color: var(--gp-text);
+}
+
+.vm-elegant-pill--booked {
+  background: var(--gp-white);
+  color: var(--gp-purple-dark);
+  border-color: var(--gp-purple-action);
+  font-weight: 600;
+}
+
+.vm-elegant-pill--expired {
+  background: var(--gp-danger-bg);
+  color: var(--gp-danger);
+  border-color: transparent;
+  text-decoration: line-through;
+  opacity: 0.8;
+}
+
+/* Mobile: tighter spacing */
+@media (max-width: 480px) {
+  .vm-elegant-row {
+    padding: 8px 10px;
+    gap: 6px;
+  }
+
+  .vm-elegant-info {
+    font-size: 12px;
+    gap: 4px;
+  }
+
+  .vm-elegant-btn {
+    font-size: 11px;
+    padding: 5px 10px;
+  }
+
+  .vm-elegant-details {
+    padding: 0 10px 8px 32px;
+  }
+
+  .vm-elegant-pill {
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+}
+
+/* ============================================================================
    LEGACY STYLES (kept for backward compatibility with other components)
    ============================================================================ */
 

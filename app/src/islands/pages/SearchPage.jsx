@@ -43,6 +43,7 @@ import ProposalSuccessModal from '../modals/ProposalSuccessModal.jsx';
 import CompactScheduleIndicator from './SearchPage/components/CompactScheduleIndicator.jsx';
 import MobileFilterBar from './SearchPage/components/MobileFilterBar.jsx';
 import { NeighborhoodSearchFilter } from './SearchPage/components/NeighborhoodFilters.jsx';
+import { BoroughSearchFilter } from './SearchPage/components/BoroughFilters.jsx';
 import PropertyCard from '../shared/ListingCard/PropertyCard.jsx';
 import UsabilityPopup from '../shared/UsabilityPopup/UsabilityPopup.jsx';
 
@@ -233,7 +234,7 @@ export default function SearchPage() {
     boroughs,
     neighborhoods,
     // Filters
-    selectedBorough,
+    selectedBoroughs,
     selectedNeighborhoods,
     weekPattern,
     priceTier,
@@ -253,7 +254,7 @@ export default function SearchPage() {
     // Refs
     mapRef,
     // Handlers
-    setSelectedBorough,
+    setSelectedBoroughs,
     setSelectedNeighborhoods,
     setWeekPattern,
     setPriceTier,
@@ -375,16 +376,20 @@ export default function SearchPage() {
   const activeFilterTags = useMemo(() => {
     const tags = [];
 
-    if (selectedBorough && selectedBorough !== 'all' && selectedBorough !== '') {
-      const boroughName = boroughs.find(b => b.value === selectedBorough)?.name;
-      if (boroughName && boroughName !== 'All Boroughs') {
-        tags.push({
-          id: 'borough',
-          icon: 'map-pin',
-          label: boroughName,
-          onRemove: () => setSelectedBorough('all')
-        });
-      }
+    // Borough tag(s) - show when specific boroughs are selected
+    if (selectedBoroughs.length > 0) {
+      const boroughNames = selectedBoroughs
+        .map(value => boroughs.find(b => b.value === value)?.name)
+        .filter(Boolean);
+      const label = boroughNames.length > 2
+        ? `${boroughNames.slice(0, 2).join(', ')} +${boroughNames.length - 2}`
+        : boroughNames.join(', ');
+      tags.push({
+        id: 'boroughs',
+        icon: 'map-pin',
+        label: label || `${selectedBoroughs.length} boroughs`,
+        onRemove: () => setSelectedBoroughs([])
+      });
     }
 
     if (selectedNeighborhoods.length > 0) {
@@ -433,7 +438,7 @@ export default function SearchPage() {
     }
 
     return tags;
-  }, [selectedBorough, selectedNeighborhoods, priceTier, weekPattern, boroughs, neighborhoods]);
+  }, [selectedBoroughs, selectedNeighborhoods, priceTier, weekPattern, boroughs, neighborhoods]);
 
   // Determine if "Create Proposal" button should be visible
   const showCreateProposalButton = useMemo(() => {
@@ -581,7 +586,7 @@ export default function SearchPage() {
   }, []);
 
   const clearAllFilters = useCallback(() => {
-    setSelectedBorough('all');
+    setSelectedBoroughs([]);
     setSelectedNeighborhoods([]);
     setPriceTier('all');
     setWeekPattern('every-week');
@@ -943,27 +948,15 @@ export default function SearchPage() {
 
             <div className="filter-popup-body">
               {/* Row 1: Borough, Week Pattern, Price Range - 3 column grid */}
-              {/* Borough Select */}
+              {/* Borough Multi-Select */}
               <div className="filter-popup-group">
                 <label className="filter-popup-label">BOROUGH</label>
-                <select
-                  className="filter-popup-select"
-                  value={selectedBorough}
-                  onChange={(e) => setSelectedBorough(e.target.value)}
-                >
-                  {boroughs.length === 0 ? (
-                    <option value="">Loading...</option>
-                  ) : (
-                    <>
-                      <option value="all">All Boroughs</option>
-                      {boroughs.map(borough => (
-                        <option key={borough.id} value={borough.value}>
-                          {borough.name}
-                        </option>
-                      ))}
-                    </>
-                  )}
-                </select>
+                <BoroughSearchFilter
+                  boroughs={boroughs}
+                  selectedBoroughs={selectedBoroughs}
+                  onBoroughsChange={setSelectedBoroughs}
+                  searchInputId="boroughSearchPopup"
+                />
               </div>
 
               {/* Week Pattern */}
@@ -1056,27 +1049,15 @@ export default function SearchPage() {
 
                 {/* Body - Scrollable */}
                 <div className="mobile-filter-body">
-                  {/* Borough Select */}
+                  {/* Borough Multi-Select */}
                   <div className="mobile-filter-group">
                     <label className="mobile-filter-label">BOROUGH</label>
-                    <select
-                      className="mobile-filter-select"
-                      value={selectedBorough}
-                      onChange={(e) => setSelectedBorough(e.target.value)}
-                    >
-                      {boroughs.length === 0 ? (
-                        <option value="">Loading...</option>
-                      ) : (
-                        <>
-                          <option value="all">All Boroughs</option>
-                          {boroughs.map(borough => (
-                            <option key={borough.id} value={borough.value}>
-                              {borough.name}
-                            </option>
-                          ))}
-                        </>
-                      )}
-                    </select>
+                    <BoroughSearchFilter
+                      boroughs={boroughs}
+                      selectedBoroughs={selectedBoroughs}
+                      onBoroughsChange={setSelectedBoroughs}
+                      searchInputId="boroughSearchMobile"
+                    />
                   </div>
 
                   {/* Week Pattern */}
@@ -1146,7 +1127,7 @@ export default function SearchPage() {
           {/* Results header */}
           <div className={`results-header ${mobileHeaderHidden ? 'results-header--hidden' : ''} ${desktopHeaderCollapsed ? 'results-header--desktop-hidden' : ''}`}>
             <span className="results-count">
-              <strong>{allListings.length} listings</strong> in {selectedBorough === 'all' ? 'NYC' : (boroughs.find(b => b.value === selectedBorough)?.name || 'NYC')}
+              <strong>{allListings.length} listings</strong> in {selectedBoroughs.length === 0 ? 'NYC' : selectedBoroughs.length === 1 ? (boroughs.find(b => b.value === selectedBoroughs[0])?.name || 'NYC') : `${selectedBoroughs.length} boroughs`}
             </span>
             <select
               className="sort-select"
@@ -1308,7 +1289,7 @@ export default function SearchPage() {
             listings={allActiveListings}
             filteredListings={allListings}
             selectedListing={null}
-            selectedBorough={selectedBorough}
+            selectedBorough={selectedBoroughs.length > 0 ? selectedBoroughs[0] : null}
             selectedNightsCount={selectedNightsCount}
             onMarkerClick={scrollToListingCard}
             onMessageClick={handleOpenContactModal}
@@ -1432,7 +1413,7 @@ export default function SearchPage() {
               listings={allActiveListings}
               filteredListings={allListings}
               selectedListing={null}
-              selectedBorough={selectedBorough}
+              selectedBorough={selectedBoroughs.length > 0 ? selectedBoroughs[0] : null}
               selectedNightsCount={selectedNightsCount}
               onMarkerClick={() => {}}
               onMessageClick={handleOpenContactModal}

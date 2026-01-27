@@ -27,6 +27,9 @@ const MOBILE_BREAKPOINT = 768;
 // Tablet breakpoint for more granular detection if needed
 const TABLET_BREAKPOINT = 1024;
 
+// Small mobile breakpoint for compact styling
+const SMALL_MOBILE_BREAKPOINT = 480;
+
 /**
  * Hook to detect if current viewport is mobile-sized
  * @returns {boolean} True if viewport width <= 768px
@@ -111,6 +114,48 @@ export function useIsTablet() {
 }
 
 /**
+ * Hook to detect if current viewport is small mobile-sized
+ * @returns {boolean} True if viewport width <= 480px
+ */
+export function useIsSmallMobile() {
+  const [isSmallMobile, setIsSmallMobile] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth <= SMALL_MOBILE_BREAKPOINT;
+  });
+
+  useEffect(() => {
+    const checkSmallMobile = () => {
+      setIsSmallMobile(window.innerWidth <= SMALL_MOBILE_BREAKPOINT);
+    };
+
+    checkSmallMobile();
+    window.addEventListener('resize', checkSmallMobile);
+
+    return () => window.removeEventListener('resize', checkSmallMobile);
+  }, []);
+
+  return isSmallMobile;
+}
+
+/**
+ * Hook to detect if device has touch capability
+ * @returns {boolean} True if device supports touch
+ */
+export function useIsTouchDevice() {
+  const [isTouchDevice, setIsTouchDevice] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  });
+
+  useEffect(() => {
+    // Re-check on mount in case SSR value was wrong
+    setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
+  }, []);
+
+  return isTouchDevice;
+}
+
+/**
  * Hook returning device type string
  * Useful for analytics or conditional rendering
  *
@@ -135,18 +180,23 @@ export function useDeviceDetection() {
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
   const isDesktop = useIsDesktop();
+  const isSmallMobile = useIsSmallMobile();
+  const isTouchDevice = useIsTouchDevice();
 
   return {
     isMobile,
     isTablet,
     isDesktop,
-    deviceType: isMobile ? 'mobile' : isTablet ? 'tablet' : 'desktop',
+    isSmallMobile,
+    isTouchDevice,
+    deviceType: isMobile ? (isSmallMobile ? 'small-mobile' : 'mobile') : isTablet ? 'tablet' : 'desktop',
     breakpoints: {
       mobile: MOBILE_BREAKPOINT,
-      tablet: TABLET_BREAKPOINT
+      tablet: TABLET_BREAKPOINT,
+      smallMobile: SMALL_MOBILE_BREAKPOINT
     }
   };
 }
 
 // Export constants for direct use
-export { MOBILE_BREAKPOINT, TABLET_BREAKPOINT };
+export { MOBILE_BREAKPOINT, TABLET_BREAKPOINT, SMALL_MOBILE_BREAKPOINT };
