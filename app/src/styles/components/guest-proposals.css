@@ -2097,184 +2097,148 @@
 }
 
 /* ============================================================================
-   VM COMPACT SECTION - Collapsible Summary Rows
-   Space-efficient design for mobile
+   VM ELEGANT SECTION - Minimal inline design with video icon
    ============================================================================ */
 
-.vm-compact-wrapper {
-  margin-top: 32px;
+.vm-elegant-wrapper {
+  margin-top: 24px;
 }
 
-.vm-compact-heading {
-  font-size: var(--gp-font-size-lg);
-  font-weight: 700;
-  color: var(--gp-purple-dark);
-  margin-bottom: 12px;
-}
-
-.vm-compact-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-/* Compact Card - Single row by default */
-.vm-compact-card {
-  background: var(--gp-white);
-  border: 1px solid var(--gp-border);
-  border-radius: 12px;
-  overflow: hidden;
-  transition: box-shadow 0.15s ease;
-}
-
-.vm-compact-card:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-}
-
-.vm-compact-card--expanded {
-  border-color: var(--gp-purple-action);
-}
-
-/* Main summary row */
-.vm-compact-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  min-height: 56px;
-}
-
-/* Left section: Avatar + Name */
-.vm-compact-identity {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-  flex-shrink: 1;
-}
-
-.vm-compact-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  overflow: hidden;
-  flex-shrink: 0;
-  background: var(--gp-border-light);
-}
-
-.vm-compact-avatar-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.vm-compact-name {
+.vm-elegant-heading {
   font-size: var(--gp-font-size-sm);
   font-weight: 600;
-  color: var(--gp-purple-dark);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: var(--gp-text-muted);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-/* Center section: Badge + Times */
-.vm-compact-status {
+.vm-elegant-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Elegant Card - Minimal rounded row */
+.vm-elegant-card {
+  background: var(--gp-white);
+  border: 1px solid var(--gp-border-light);
+  border-radius: 10px;
+  transition: all 0.15s ease;
+}
+
+.vm-elegant-card:hover {
+  border-color: var(--gp-border);
+}
+
+.vm-elegant-card--expanded {
+  border-color: var(--gp-purple-action);
+  background: var(--gp-purple-bg);
+}
+
+/* Main row - inline layout */
+.vm-elegant-row {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex: 1;
-  min-width: 0;
-  justify-content: center;
+  padding: 10px 12px;
+  cursor: pointer;
+  user-select: none;
 }
 
-.vm-compact-badge {
-  font-size: 11px;
+.vm-elegant-row:focus-visible {
+  outline: 2px solid var(--gp-purple-action);
+  outline-offset: -2px;
+  border-radius: 10px;
+}
+
+/* Video icon */
+.vm-elegant-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gp-purple-action);
+  flex-shrink: 0;
+}
+
+/* Info section: Name · Status · Times */
+.vm-elegant-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+
+.vm-elegant-name {
   font-weight: 600;
-  padding: 4px 10px;
-  border-radius: 12px;
+  color: var(--gp-purple-dark);
   white-space: nowrap;
 }
 
-/* Reuse existing badge colors */
-.vm-compact-badge.vm-section-badge-waiting {
-  background: var(--gp-border-light);
+.vm-elegant-dot {
+  color: var(--gp-text-muted);
+  font-weight: 400;
+}
+
+.vm-elegant-status {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Status colors - inherit from badge classes */
+.vm-elegant-status.vm-section-badge-waiting {
   color: var(--gp-text-muted);
 }
 
-.vm-compact-badge.vm-section-badge-pending {
-  background: var(--gp-purple-bg);
+.vm-elegant-status.vm-section-badge-pending {
   color: var(--gp-purple-action);
 }
 
-.vm-compact-badge.vm-section-badge-confirmed {
-  background: var(--gp-success-bg);
+.vm-elegant-status.vm-section-badge-confirmed {
   color: var(--gp-success);
 }
 
-.vm-compact-badge.vm-section-badge-expired {
-  background: var(--gp-danger-bg);
+.vm-elegant-status.vm-section-badge-expired {
   color: var(--gp-danger);
 }
 
-.vm-compact-times {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: var(--gp-font-size-xs);
+.vm-elegant-times {
   color: var(--gp-text-muted);
   white-space: nowrap;
 }
 
-.vm-compact-times svg {
-  color: var(--gp-purple-action);
-  flex-shrink: 0;
-}
-
-/* Right section: Actions */
-.vm-compact-actions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-}
-
-.vm-compact-btn {
-  font-size: var(--gp-font-size-xs);
+/* Action button - small pill */
+.vm-elegant-btn {
+  font-size: 12px;
   font-weight: 600;
-  padding: 8px 14px;
-  border-radius: 8px;
+  padding: 6px 12px;
+  border-radius: 6px;
   border: 1px solid var(--gp-purple-action);
   background: transparent;
   color: var(--gp-purple-action);
   cursor: pointer;
   transition: all 0.15s;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.vm-compact-btn:hover {
-  background: var(--gp-purple-bg);
+.vm-elegant-btn:hover {
+  background: var(--gp-purple-action);
+  color: white;
 }
 
-.vm-compact-expand-btn {
+/* Chevron */
+.vm-elegant-chevron {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  border: none;
-  background: transparent;
   color: var(--gp-text-muted);
-  cursor: pointer;
-  transition: all 0.15s;
+  flex-shrink: 0;
+  margin-left: -4px;
 }
 
-.vm-compact-expand-btn:hover {
-  background: var(--gp-border-light);
-  color: var(--gp-text);
-}
-
-/* Chevron rotation */
 .vm-compact-chevron {
   transition: transform 0.2s ease;
 }
@@ -2283,79 +2247,69 @@
   transform: rotate(180deg);
 }
 
-/* Expanded details section */
-.vm-compact-details {
+/* Expanded details */
+.vm-elegant-details {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  padding: 12px 16px;
-  padding-top: 0;
-  border-top: none;
-  animation: vm-slide-down 0.2s ease-out;
+  gap: 6px;
+  padding: 0 12px 10px 38px; /* Align with text after icon */
+  animation: vm-elegant-fade 0.15s ease-out;
 }
 
-@keyframes vm-slide-down {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+@keyframes vm-elegant-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-.vm-compact-date-pill {
-  font-size: var(--gp-font-size-xs);
+.vm-elegant-pill {
+  font-size: 11px;
   font-weight: 500;
-  padding: 6px 12px;
-  border-radius: 16px;
-  background: var(--gp-bg);
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: var(--gp-white);
   border: 1px solid var(--gp-border);
   color: var(--gp-text);
 }
 
-.vm-compact-date-pill--booked {
-  background: var(--gp-purple-bg);
+.vm-elegant-pill--booked {
+  background: var(--gp-white);
   color: var(--gp-purple-dark);
   border-color: var(--gp-purple-action);
   font-weight: 600;
 }
 
-.vm-compact-date-pill--expired {
+.vm-elegant-pill--expired {
   background: var(--gp-danger-bg);
   color: var(--gp-danger);
-  border-color: var(--gp-danger);
+  border-color: transparent;
   text-decoration: line-through;
-  opacity: 0.7;
+  opacity: 0.8;
 }
 
-/* Mobile responsive - Stack on very small screens */
+/* Mobile: tighter spacing */
 @media (max-width: 480px) {
-  .vm-compact-row {
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 12px;
+  .vm-elegant-row {
+    padding: 8px 10px;
+    gap: 6px;
   }
 
-  .vm-compact-identity {
-    flex: 1;
-    min-width: 100px;
+  .vm-elegant-info {
+    font-size: 12px;
+    gap: 4px;
   }
 
-  .vm-compact-status {
-    order: 3;
-    flex: 1 1 100%;
-    justify-content: flex-start;
-    margin-top: 4px;
+  .vm-elegant-btn {
+    font-size: 11px;
+    padding: 5px 10px;
   }
 
-  .vm-compact-actions {
-    margin-left: auto;
+  .vm-elegant-details {
+    padding: 0 10px 8px 32px;
   }
 
-  .vm-compact-details {
-    padding: 8px 12px 12px;
+  .vm-elegant-pill {
+    font-size: 10px;
+    padding: 3px 8px;
   }
 }
 

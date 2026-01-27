@@ -28,36 +28,25 @@ import {
   areAllDatesExpired
 } from '../../../logic/rules/proposals/virtualMeetingRules.js';
 
-// Calendar icon SVG (inline to match Bubble's design)
-const CalendarIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2"/>
-    <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" strokeWidth="2"/>
-    <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-    <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+// Video camera icon for virtual meetings
+const VideoIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2" y="5" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="2"/>
+    <path d="M16 9.5l4-2.5v10l-4-2.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
 
-// Chevron icon for expand/collapse
+// Chevron icon for expand/collapse (smaller)
 const ChevronIcon = ({ isExpanded }) => (
   <svg
-    width="20"
-    height="20"
+    width="16"
+    height="16"
     viewBox="0 0 24 24"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
     className={`vm-compact-chevron ${isExpanded ? 'vm-compact-chevron--expanded' : ''}`}
   >
     <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-
-// Default profile icon (compact size for summary row)
-const DefaultProfileIcon = () => (
-  <svg width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="24" cy="24" r="24" fill="#E8E8E8"/>
-    <circle cx="24" cy="18" r="8" fill="#6B4EFF"/>
-    <path d="M8 42c0-8.837 7.163-16 16-16s16 7.163 16 16" fill="#6B4EFF"/>
   </svg>
 );
 
@@ -368,8 +357,8 @@ function getTimesLabel(count, vmState) {
 }
 
 /**
- * Single Virtual Meeting Card - Compact Expandable Version
- * Shows a single-line summary that expands to reveal date details
+ * Single Virtual Meeting Card - Elegant Compact Version
+ * Clean single-line with video icon, expands on click
  */
 function VirtualMeetingCard({ proposal, currentUserId, onOpenVMModal, isExpanded, onToggleExpand }) {
   const listing = proposal.listing;
@@ -385,7 +374,6 @@ function VirtualMeetingCard({ proposal, currentUserId, onOpenVMModal, isExpanded
 
   // Get host name for display (just first name for compact view)
   const hostName = host?.['Name - First'] || host?.['Name - Full']?.split(' ')[0] || 'Host';
-  const listingName = listing?.Name || 'Listing';
 
   // Get suggested dates/times
   const suggestedDates = parseSuggestedDates(vm?.['suggested dates and times']);
@@ -406,82 +394,83 @@ function VirtualMeetingCard({ proposal, currentUserId, onOpenVMModal, isExpanded
   // Has expandable content?
   const hasExpandableContent = bookedDate || suggestedDates.length > 0;
 
-  return (
-    <div className={`vm-compact-card ${isExpanded ? 'vm-compact-card--expanded' : ''}`}>
-      {/* Collapsed summary row */}
-      <div className="vm-compact-row">
-        {/* Left: Avatar + Name */}
-        <div className="vm-compact-identity">
-          <div className="vm-compact-avatar">
-            {host?.['Profile Photo'] ? (
-              <img
-                src={host['Profile Photo']}
-                alt={hostName}
-                className="vm-compact-avatar-img"
-              />
-            ) : (
-              <DefaultProfileIcon />
-            )}
-          </div>
-          <span className="vm-compact-name">{hostName}</span>
-        </div>
+  // Handle row click - toggle expand
+  const handleRowClick = () => {
+    if (hasExpandableContent) {
+      onToggleExpand();
+    }
+  };
 
-        {/* Center: Badge + Times count */}
-        <div className="vm-compact-status">
+  return (
+    <div className={`vm-elegant-card ${isExpanded ? 'vm-elegant-card--expanded' : ''}`}>
+      {/* Main row - clickable to expand */}
+      <div
+        className="vm-elegant-row"
+        onClick={handleRowClick}
+        role={hasExpandableContent ? 'button' : undefined}
+        tabIndex={hasExpandableContent ? 0 : undefined}
+        onKeyDown={(e) => e.key === 'Enter' && handleRowClick()}
+      >
+        {/* Video icon */}
+        <span className="vm-elegant-icon">
+          <VideoIcon />
+        </span>
+
+        {/* Info: Name · Status · Times */}
+        <div className="vm-elegant-info">
+          <span className="vm-elegant-name">{hostName}</span>
           {badge && (
-            <span className={`vm-compact-badge ${badge.className}`}>
-              {badge.text}
-            </span>
+            <>
+              <span className="vm-elegant-dot">·</span>
+              <span className={`vm-elegant-status ${badge.className}`}>
+                {badge.text}
+              </span>
+            </>
           )}
           {timesCount > 0 && (
-            <span className="vm-compact-times">
-              <CalendarIcon />
-              {timesLabel}
-            </span>
+            <>
+              <span className="vm-elegant-dot">·</span>
+              <span className="vm-elegant-times">{timesLabel}</span>
+            </>
           )}
         </div>
 
-        {/* Right: Action button + Expand chevron */}
-        <div className="vm-compact-actions">
-          <button
-            className="vm-compact-btn"
-            onClick={(e) => {
-              e.stopPropagation();
-              onOpenVMModal(proposal, buttonView);
-            }}
-          >
-            {compactButtonText}
-          </button>
-          {hasExpandableContent && (
-            <button
-              className="vm-compact-expand-btn"
-              onClick={onToggleExpand}
-              aria-expanded={isExpanded}
-              aria-label={isExpanded ? 'Collapse details' : 'Expand details'}
-            >
-              <ChevronIcon isExpanded={isExpanded} />
-            </button>
-          )}
-        </div>
+        {/* Action button */}
+        <button
+          className="vm-elegant-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenVMModal(proposal, buttonView);
+          }}
+        >
+          {compactButtonText}
+        </button>
+
+        {/* Chevron */}
+        {hasExpandableContent && (
+          <span className="vm-elegant-chevron">
+            <ChevronIcon isExpanded={isExpanded} />
+          </span>
+        )}
       </div>
 
       {/* Expanded content: Date pills */}
       {isExpanded && hasExpandableContent && (
-        <div className="vm-compact-details">
+        <div className="vm-elegant-details">
           {bookedDate ? (
-            <div className="vm-compact-date-pill vm-compact-date-pill--booked">
+            <span className="vm-elegant-pill vm-elegant-pill--booked">
               {formatDateTime(bookedDate)}
-            </div>
+            </span>
           ) : (
             suggestedDates.map((dateTime, index) => {
               const isDateExpired = !isFutureDateTime(dateTime);
               return (
-                <div
+                <span
                   key={index}
-                  className={`vm-compact-date-pill ${isDateExpired ? 'vm-compact-date-pill--expired' : ''}`}
+                  className={`vm-elegant-pill ${isDateExpired ? 'vm-elegant-pill--expired' : ''}`}
                 >
                   {formatDateTime(dateTime)}
-                </div>
+                </span>
               );
             })
           )}
@@ -543,12 +532,12 @@ export default function VirtualMeetingsSection({ proposals, currentUserId }) {
   };
 
   return (
-    <div className="vm-compact-wrapper">
+    <div className="vm-elegant-wrapper">
       {/* Section Title */}
-      <h2 className="vm-compact-heading">Virtual Meetings</h2>
+      <h2 className="vm-elegant-heading">Virtual Meetings</h2>
 
-      {/* Compact Virtual Meeting Cards */}
-      <div className="vm-compact-list">
+      {/* Elegant Virtual Meeting Cards */}
+      <div className="vm-elegant-list">
         {proposalsWithActiveVM.map((proposal) => (
           <VirtualMeetingCard
             key={proposal._id}
