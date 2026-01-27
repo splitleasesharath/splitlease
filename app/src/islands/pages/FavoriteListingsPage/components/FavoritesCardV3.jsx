@@ -216,6 +216,18 @@ const FavoritesCardV3 = ({
     zoom: 14
   }) : null;
 
+  // Debug: Log map URL status (remove after debugging)
+  useEffect(() => {
+    console.log('🗺️ FavoritesCardV3 Map Debug:', {
+      listingId: listing.id,
+      hasCoordinates,
+      coordinates,
+      apiKeyExists: !!window.ENV?.GOOGLE_MAPS_API_KEY,
+      configLoaded,
+      mapUrl: mapUrl ? mapUrl.substring(0, 100) + '...' : null
+    });
+  }, [listing.id, hasCoordinates, configLoaded, mapUrl]);
+
   // Responsive values
   const isDesktop = !isMobile && !isTablet;
   const showMap = isDesktop || isTablet;
