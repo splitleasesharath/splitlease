@@ -13,7 +13,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { Send, Zap, Calendar, Coffee, Clock, X } from 'lucide-react';
+import { Send, Zap, Calendar, Coffee, Clock } from 'lucide-react';
 import { supabase } from '../../lib/supabase.js';
 import { formatHostName } from '../../logic/processors/display/formatHostName.js';
 
@@ -753,7 +753,27 @@ export default function ContactHostMessaging({ isOpen, onClose, listing, onLogin
               onMouseEnter={(e) => e.target.style.background = '#F7F2FA'}
               onMouseLeave={(e) => e.target.style.background = 'transparent'}
             >
-              <X size={20} color="#49454F" />
+              {/* Close icon with full defensive sizing per POPUP_REPLICATION_PROTOCOL */}
+              <svg
+                className="close-icon"
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+                strokeWidth="2.5"
+                fill="none"
+                stroke="#49454F"
+                aria-hidden="true"
+                style={{
+                  width: 32,
+                  height: 32,
+                  minWidth: 32,
+                  minHeight: 32,
+                  flexShrink: 0
+                }}
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
             </button>
           </div>
 
