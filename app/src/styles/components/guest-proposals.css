@@ -2119,13 +2119,14 @@
   gap: 6px;
 }
 
-/* Elegant Card - Minimal rounded row, content-width */
+/* Elegant Card - Minimal rounded row */
 .vm-elegant-card {
   background: var(--gp-white);
   border: 1px solid var(--gp-border-light);
   border-radius: 10px;
   transition: all 0.15s ease;
-  width: fit-content;
+  width: 50%;
+  min-width: 320px;
   max-width: 100%;
 }
 
