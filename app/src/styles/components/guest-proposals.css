@@ -2119,12 +2119,14 @@
   gap: 6px;
 }
 
-/* Elegant Card - Minimal rounded row */
+/* Elegant Card - Minimal rounded row, content-width */
 .vm-elegant-card {
   background: var(--gp-white);
   border: 1px solid var(--gp-border-light);
   border-radius: 10px;
   transition: all 0.15s ease;
+  width: fit-content;
+  max-width: 100%;
 }
 
 .vm-elegant-card:hover {
@@ -2166,10 +2168,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  flex: 1;
-  min-width: 0;
   font-size: 13px;
-  flex-wrap: wrap;
 }
 
 .vm-elegant-name {
