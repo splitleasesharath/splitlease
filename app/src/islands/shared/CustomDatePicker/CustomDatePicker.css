@@ -71,13 +71,14 @@
   top: calc(100% + 8px);
   left: 0;
   right: 0;
-  background: white;
+  background-color: #ffffff;
   border: 1px solid #E5E7EB;
   border-radius: 16px;
   box-shadow: 0 8px 32px rgba(49, 19, 93, 0.15);
   padding: 16px;
-  z-index: 100;
+  z-index: 1000;
   animation: datePickerSlideDown 0.2s ease-out;
+  isolation: isolate;
 }
 
 /* Header with month navigation */
@@ -134,6 +135,7 @@
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 4px;
+  background-color: #ffffff;
 }
 
 /* Day buttons */
