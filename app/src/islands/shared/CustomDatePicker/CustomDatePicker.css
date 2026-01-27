@@ -18,6 +18,12 @@
   width: 100%;
 }
 
+.custom-date-picker *,
+.custom-date-picker *::before,
+.custom-date-picker *::after {
+  box-sizing: border-box;
+}
+
 /* Input trigger */
 .custom-date-picker__input {
   display: flex;
@@ -79,6 +85,8 @@
   z-index: 1000;
   animation: datePickerSlideDown 0.2s ease-out;
   isolation: isolate;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 /* Header with month navigation */
@@ -120,6 +128,7 @@
   grid-template-columns: repeat(7, 1fr);
   gap: 4px;
   margin-bottom: 8px;
+  width: 100%;
 }
 
 .custom-date-picker__weekday {
@@ -136,6 +145,7 @@
   grid-template-columns: repeat(7, 1fr);
   gap: 4px;
   background-color: #ffffff;
+  width: 100%;
 }
 
 /* Day buttons */
