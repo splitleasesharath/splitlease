@@ -199,11 +199,13 @@ export default function CustomDatePicker({
           height="20"
           viewBox="0 0 20 20"
           fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          aria-hidden="true"
+          style={{ width: 20, height: 20, minWidth: 20, minHeight: 20, flexShrink: 0 }}
         >
           <path
             d="M6 8L10 12L14 8"
-            stroke="currentColor"
-            strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
@@ -224,8 +226,17 @@ export default function CustomDatePicker({
               onClick={goToPrevMonth}
               aria-label="Previous month"
             >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M12 14L8 10L12 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden="true"
+                style={{ width: 20, height: 20, minWidth: 20, minHeight: 20, flexShrink: 0 }}
+              >
+                <path d="M12 14L8 10L12 6" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
             <span className="custom-date-picker__month-year">
@@ -237,8 +248,17 @@ export default function CustomDatePicker({
               onClick={goToNextMonth}
               aria-label="Next month"
             >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M8 6L12 10L8 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden="true"
+                style={{ width: 20, height: 20, minWidth: 20, minHeight: 20, flexShrink: 0 }}
+              >
+                <path d="M8 6L12 10L8 14" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
           </div>

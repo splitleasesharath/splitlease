@@ -63,7 +63,11 @@
 
 .custom-date-picker__icon {
   color: #6B7280;
-  flex-shrink: 0;
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px !important;
+  min-height: 20px !important;
+  flex-shrink: 0 !important;
   transition: transform 0.2s ease;
 }
 
@@ -120,6 +124,14 @@
 .custom-date-picker__nav:hover {
   background: #F3F4F6;
   color: #31135d;
+}
+
+.custom-date-picker__nav svg {
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px !important;
+  min-height: 20px !important;
+  flex-shrink: 0 !important;
 }
 
 /* Weekday headers */
