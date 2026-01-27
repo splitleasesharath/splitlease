@@ -30,17 +30,31 @@ import {
 
 // Calendar icon SVG (inline to match Bubble's design)
 const CalendarIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="3" y="4" width="18" height="18" rx="2" stroke="#6B4EFF" strokeWidth="2"/>
-    <line x1="3" y1="10" x2="21" y2="10" stroke="#6B4EFF" strokeWidth="2"/>
-    <line x1="8" y1="2" x2="8" y2="6" stroke="#6B4EFF" strokeWidth="2" strokeLinecap="round"/>
-    <line x1="16" y1="2" x2="16" y2="6" stroke="#6B4EFF" strokeWidth="2" strokeLinecap="round"/>
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2"/>
+    <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" strokeWidth="2"/>
+    <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+    <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
   </svg>
 );
 
-// Default profile icon (matching Bubble's COLOR-1.svg)
+// Chevron icon for expand/collapse
+const ChevronIcon = ({ isExpanded }) => (
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={`vm-compact-chevron ${isExpanded ? 'vm-compact-chevron--expanded' : ''}`}
+  >
+    <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+// Default profile icon (compact size for summary row)
 const DefaultProfileIcon = () => (
-  <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <svg width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
     <circle cx="24" cy="24" r="24" fill="#E8E8E8"/>
     <circle cx="24" cy="18" r="8" fill="#6B4EFF"/>
     <path d="M8 42c0-8.837 7.163-16 16-16s16 7.163 16 16" fill="#6B4EFF"/>
@@ -323,10 +337,41 @@ function filterProposalsWithActiveVM(proposals) {
 }
 
 /**
- * Single Virtual Meeting Card
- * Now state-aware: displays different content based on VM state
+ * Get compact action button text (shorter for inline display)
  */
-function VirtualMeetingCard({ proposal, currentUserId, onOpenVMModal }) {
+function getCompactButtonText(vmState) {
+  switch (vmState) {
+    case VM_STATES.REQUESTED_BY_OTHER:
+      return 'Respond';
+    case VM_STATES.BOOKED_AWAITING_CONFIRMATION:
+      return 'View Details';
+    case VM_STATES.CONFIRMED:
+      return 'Join Meeting';
+    case VM_STATES.EXPIRED:
+      return 'Request New';
+    case VM_STATES.REQUESTED_BY_ME:
+      return 'Cancel';
+    default:
+      return 'View';
+  }
+}
+
+/**
+ * Get the count label for suggested dates
+ */
+function getTimesLabel(count, vmState) {
+  if (vmState === VM_STATES.CONFIRMED || vmState === VM_STATES.BOOKED_AWAITING_CONFIRMATION) {
+    return 'Scheduled';
+  }
+  if (count === 1) return '1 time';
+  return `${count} times`;
+}
+
+/**
+ * Single Virtual Meeting Card - Compact Expandable Version
+ * Shows a single-line summary that expands to reveal date details
+ */
+function VirtualMeetingCard({ proposal, currentUserId, onOpenVMModal, isExpanded, onToggleExpand }) {
   const listing = proposal.listing;
   const host = listing?.host;
   const vm = proposal.virtualMeeting;
@@ -338,133 +383,123 @@ function VirtualMeetingCard({ proposal, currentUserId, onOpenVMModal }) {
   const vmState = getVirtualMeetingState(normalizedVM, currentUserId);
   const vmStateInfo = getVMStateInfo(normalizedVM, currentUserId);
 
-  // Get host name and listing name for display
-  const hostName = host?.['Name - First'] || host?.['Name - Full'] || 'Host';
+  // Get host name for display (just first name for compact view)
+  const hostName = host?.['Name - First'] || host?.['Name - Full']?.split(' ')[0] || 'Host';
   const listingName = listing?.Name || 'Listing';
-  const displayTitle = `${hostName} - ${listingName}`;
 
-  // Get proposal creation date for disambiguation when multiple proposals exist for same listing
-  const proposalDate = formatShortDate(proposal['Created Date'] || proposal.createdDate);
-  const proposalSubtitle = proposalDate ? `Proposal from ${proposalDate}` : null;
-  // Get suggested dates/times using the shared parser
+  // Get suggested dates/times
   const suggestedDates = parseSuggestedDates(vm?.['suggested dates and times']);
-
-  // Get booked date if available
   const bookedDate = normalizedVM?.bookedDate;
 
+  // Calculate times count
+  const timesCount = bookedDate ? 1 : suggestedDates.length;
+
   // Get state-specific configurations
-  const messageText = getCardMessage(vmState, hostName);
   const badge = getStateBadge(vmState);
   const primaryButton = getPrimaryButtonConfig(vmStateInfo, vmState);
+  const compactButtonText = getCompactButtonText(vmState);
+  const timesLabel = getTimesLabel(timesCount, vmState);
 
-  // Determine which dates to show:
-  // - If booked, show single booked date
-  // - Otherwise show suggested dates
-  const showBookedDate = !!bookedDate;
-  const showSuggestedDates = !bookedDate && suggestedDates.length > 0;
+  // Determine button action view
+  const buttonView = primaryButton?.view || (vmState === VM_STATES.REQUESTED_BY_ME ? 'cancel' : 'details');
+
+  // Has expandable content?
+  const hasExpandableContent = bookedDate || suggestedDates.length > 0;
 
   return (
-    <div className="vm-section-card">
-      <div className="vm-section-card-content">
-        {/* Header row with icon and text */}
-        <div className="vm-section-header-row">
-          {/* Profile icon/image */}
-          <div className="vm-section-profile-icon">
+    <div className={`vm-compact-card ${isExpanded ? 'vm-compact-card--expanded' : ''}`}>
+      {/* Collapsed summary row */}
+      <div className="vm-compact-row">
+        {/* Left: Avatar + Name */}
+        <div className="vm-compact-identity">
+          <div className="vm-compact-avatar">
             {host?.['Profile Photo'] ? (
               <img
                 src={host['Profile Photo']}
                 alt={hostName}
-                className="vm-section-profile-img"
+                className="vm-compact-avatar-img"
               />
             ) : (
               <DefaultProfileIcon />
             )}
           </div>
-
-          {/* Text content */}
-          <div className="vm-section-text-content">
-            <div className="vm-section-title-row">
-              <div className="vm-section-title">{displayTitle}</div>
-              {/* State badge */}
-              {badge && (
-                <span className={`vm-section-badge ${badge.className}`}>
-                  {badge.text}
-                </span>
-              )}
-            </div>
-            {/* Proposal date subtitle for disambiguation */}
-            {proposalSubtitle && (
-              <div className="vm-section-subtitle">{proposalSubtitle}</div>
-            )}
-            <div className="vm-section-message-row">
-              <CalendarIcon />
-              <span className="vm-section-message">{messageText}</span>
-            </div>
-          </div>
+          <span className="vm-compact-name">{hostName}</span>
         </div>
 
-        {/* Booked date (single date when meeting is scheduled) */}
-        {showBookedDate && (
-          <div className="vm-section-dates-row">
-            <div className="vm-section-date-pill vm-section-date-pill--booked">
+        {/* Center: Badge + Times count */}
+        <div className="vm-compact-status">
+          {badge && (
+            <span className={`vm-compact-badge ${badge.className}`}>
+              {badge.text}
+            </span>
+          )}
+          {timesCount > 0 && (
+            <span className="vm-compact-times">
+              <CalendarIcon />
+              {timesLabel}
+            </span>
+          )}
+        </div>
+
+        {/* Right: Action button + Expand chevron */}
+        <div className="vm-compact-actions">
+          <button
+            className="vm-compact-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenVMModal(proposal, buttonView);
+            }}
+          >
+            {compactButtonText}
+          </button>
+          {hasExpandableContent && (
+            <button
+              className="vm-compact-expand-btn"
+              onClick={onToggleExpand}
+              aria-expanded={isExpanded}
+              aria-label={isExpanded ? 'Collapse details' : 'Expand details'}
+            >
+              <ChevronIcon isExpanded={isExpanded} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Expanded content: Date pills */}
+      {isExpanded && hasExpandableContent && (
+        <div className="vm-compact-details">
+          {bookedDate ? (
+            <div className="vm-compact-date-pill vm-compact-date-pill--booked">
               {formatDateTime(bookedDate)}
             </div>
-          </div>
-        )}
-
-        {/* Suggested dates/times (when not yet booked) */}
-        {showSuggestedDates && (
-          <div className="vm-section-dates-row">
-            {suggestedDates.map((dateTime, index) => {
-              const isExpired = !isFutureDateTime(dateTime);
+          ) : (
+            suggestedDates.map((dateTime, index) => {
+              const isDateExpired = !isFutureDateTime(dateTime);
               return (
                 <div
                   key={index}
-                  className={`vm-section-date-pill ${isExpired ? 'vm-section-date-pill--expired' : ''}`}
+                  className={`vm-compact-date-pill ${isDateExpired ? 'vm-compact-date-pill--expired' : ''}`}
                 >
                   {formatDateTime(dateTime)}
                 </div>
               );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Action bar - dynamic buttons based on state */}
-      <div className={`vm-section-action-bar ${primaryButton ? 'vm-section-action-bar--multi' : ''}`}>
-        {/* Primary action button */}
-        {primaryButton && (
-          <button
-            className={primaryButton.className}
-            onClick={() => !primaryButton.disabled && onOpenVMModal(proposal, primaryButton.view)}
-            disabled={primaryButton.disabled}
-          >
-            {primaryButton.text}
-          </button>
-        )}
-
-        {/* Cancel button - always show unless VM is confirmed or expired */}
-        {vmState !== VM_STATES.CONFIRMED && vmState !== VM_STATES.EXPIRED && (
-          <button
-            className="vm-section-cancel-btn"
-            onClick={() => onOpenVMModal(proposal, 'cancel')}
-          >
-            {vmState === VM_STATES.REQUESTED_BY_ME ? 'Cancel Request' : 'Cancel Virtual Meeting'}
-          </button>
-        )}
-      </div>
+            })
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
 /**
- * Virtual Meetings Section
- * Main exported component
+ * Virtual Meetings Section - Compact Version
+ * Shows collapsible summary rows for each virtual meeting
  */
 export default function VirtualMeetingsSection({ proposals, currentUserId }) {
   const [showVMModal, setShowVMModal] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState(null);
   const [vmInitialView, setVmInitialView] = useState('');
+  const [expandedCardId, setExpandedCardId] = useState(null);
 
   // Filter to only proposals with active virtual meetings
   const proposalsWithActiveVM = useMemo(() => {
@@ -496,6 +531,11 @@ export default function VirtualMeetingsSection({ proposals, currentUserId }) {
     window.location.reload();
   };
 
+  // Handler for toggling card expansion
+  const handleToggleExpand = (proposalId) => {
+    setExpandedCardId(prev => prev === proposalId ? null : proposalId);
+  };
+
   // Construct current user object for VirtualMeetingManager
   const currentUser = {
     _id: currentUserId,
@@ -503,18 +543,20 @@ export default function VirtualMeetingsSection({ proposals, currentUserId }) {
   };
 
   return (
-    <div className="vm-section-wrapper">
+    <div className="vm-compact-wrapper">
       {/* Section Title */}
-      <h2 className="vm-section-heading">Virtual Meetings</h2>
+      <h2 className="vm-compact-heading">Virtual Meetings</h2>
 
-      {/* Virtual Meeting Cards */}
-      <div className="vm-section-list">
+      {/* Compact Virtual Meeting Cards */}
+      <div className="vm-compact-list">
         {proposalsWithActiveVM.map((proposal) => (
           <VirtualMeetingCard
             key={proposal._id}
             proposal={proposal}
             currentUserId={currentUserId}
             onOpenVMModal={handleOpenVMModal}
+            isExpanded={expandedCardId === proposal._id}
+            onToggleExpand={() => handleToggleExpand(proposal._id)}
           />
         ))}
       </div>
