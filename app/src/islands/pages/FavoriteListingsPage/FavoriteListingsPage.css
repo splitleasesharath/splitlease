@@ -61,7 +61,7 @@
    PAGE CONTAINER
    ============================================ */
 .favorites-page {
-  padding-top: 0 !important; /* Sub-header handles spacing now */
+  padding-top: 0; /* Sub-header handles spacing now */
   margin: 0;
   min-height: 100vh;
   width: 100%;
@@ -143,9 +143,9 @@
    Map aligns with cards (both start below sub-header)
    ============================================ */
 .favorites-page .two-column-layout {
-  display: grid !important;
-  grid-template-columns: 1fr 400px !important; /* Map width from mockup */
-  gap: 24px !important;
+  display: grid;
+  grid-template-columns: 1fr 400px; /* Map width from mockup */
+  gap: 24px;
   max-width: 1400px;
   margin: 0 auto;
   padding: 24px 24px 300px; /* Top gap + generous bottom padding for footer */
@@ -160,11 +160,11 @@
 }
 
 .favorites-page .map-column {
-  width: 400px !important; /* Map width from mockup */
+  width: 400px; /* Map width from mockup */
   flex-shrink: 0;
   position: sticky;
   top: 160px; /* Aligned with cards below sub-header */
-  margin-top: 70px !important; /* Push map down to align with first card */
+  margin-top: 70px; /* Push map down to align with first card */
   height: calc(100vh - 212px); /* Viewport minus headers */
   background: white;
   border-radius: 16px;
@@ -176,11 +176,11 @@
    CARD WRAPPER - Force zero padding to override global styles
    ============================================ */
 .favorites-card-wrapper {
-  padding: 0 !important;
-  margin: 0 !important;
-  box-shadow: none !important;
-  border-radius: 24px !important;
-  background: transparent !important;
+  padding: 0;
+  margin: 0;
+  box-shadow: none;
+  border-radius: 24px;
+  background: transparent;
 }
 
 /* ============================================
@@ -456,7 +456,7 @@
   }
 
   .favorites-page .two-column-layout {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: 1fr;
   }
 
   .favorites-page .map-column {

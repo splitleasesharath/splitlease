@@ -5,7 +5,8 @@
  * Refined heart button, host section, and button styles.
  */
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, memo } from 'react';
+import { useDeviceDetection } from '../../../../hooks/useDeviceDetection.js';
 
 /**
  * FavoriteButtonWithConfirm - Favorite button with confirmation popup
@@ -95,7 +96,8 @@ const FavoriteButtonWithConfirm = ({ listingId, userId, onConfirmRemove }) => {
     },
     cancelBtn: {
       flex: 1,
-      padding: '8px 12px',
+      padding: '10px 12px',
+      minHeight: '44px',
       borderRadius: '8px',
       border: '1px solid #E2E8F0',
       background: 'white',
@@ -103,10 +105,14 @@ const FavoriteButtonWithConfirm = ({ listingId, userId, onConfirmRemove }) => {
       fontSize: '13px',
       fontWeight: 600,
       cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     removeBtn: {
       flex: 1,
-      padding: '8px 12px',
+      padding: '10px 12px',
+      minHeight: '44px',
       borderRadius: '8px',
       border: 'none',
       background: '#EF4444',
@@ -114,6 +120,9 @@ const FavoriteButtonWithConfirm = ({ listingId, userId, onConfirmRemove }) => {
       fontSize: '13px',
       fontWeight: 600,
       cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
   };
 
@@ -162,6 +171,9 @@ const FavoritesCardV2 = ({
   const hasProposal = !!proposalForListing;
   const isNewListing = listing.isNew;
 
+  // Responsive design hook
+  const { isMobile, isSmallMobile, isTouchDevice } = useDeviceDetection();
+
   const handleCardClick = () => {
     if (onPhotoClick && photos.length > 0) {
       onPhotoClick(listing, currentPhotoIndex);
@@ -194,13 +206,15 @@ const FavoritesCardV2 = ({
       all: 'unset', // RESET EVERYTHING
       display: isGrid ? 'block' : 'flex',
       background: 'white',
-      borderRadius: '24px',
+      borderRadius: isSmallMobile ? '16px' : isMobile ? '20px' : '24px',
       overflow: 'hidden',
-      boxShadow: isHovered ? '0 20px 40px rgba(0,0,0,0.08)' : '0 4px 12px rgba(0,0,0,0.03)',
-      transition: 'all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)',
+      boxShadow: (isHovered && !isTouchDevice)
+        ? '0 20px 40px rgba(0,0,0,0.08)'
+        : '0 4px 12px rgba(0,0,0,0.03)',
+      transition: isTouchDevice ? 'none' : 'all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)',
       cursor: 'pointer',
       flexDirection: isGrid ? 'column' : 'row',
-      transform: isHovered ? 'translateY(-8px)' : 'none',
+      transform: (isHovered && !isTouchDevice) ? 'translateY(-8px)' : 'none',
       fontFamily: "'Inter', sans-serif",
       border: '1px solid #D1D5DB',
       padding: 0,
@@ -209,9 +223,11 @@ const FavoritesCardV2 = ({
     },
     imageSection: {
       position: 'relative',
-      height: isGrid ? '240px' : 'auto',
-      width: isGrid ? '100%' : '280px',
-      minWidth: isGrid ? 'auto' : '280px',
+      height: isGrid
+        ? (isSmallMobile ? '160px' : isMobile ? '180px' : '240px')
+        : 'auto',
+      width: isGrid ? '100%' : (isMobile ? '200px' : '280px'),
+      minWidth: isGrid ? 'auto' : (isMobile ? '200px' : '280px'),
       overflow: 'hidden',
     },
     image: {
@@ -258,22 +274,22 @@ const FavoritesCardV2 = ({
       borderRadius: '4px',
     },
     cardContent: {
-      padding: '24px',
+      padding: isSmallMobile ? '12px' : isMobile ? '16px' : '24px',
       flex: 1,
       display: 'flex',
       flexDirection: 'column',
-      gap: '12px',
+      gap: isSmallMobile ? '8px' : isMobile ? '10px' : '12px',
     },
     cardLocation: {
       display: 'flex',
       alignItems: 'center',
-      gap: '6px',
-      fontSize: '13px',
+      gap: isMobile ? '4px' : '6px',
+      fontSize: isSmallMobile ? '11px' : isMobile ? '12px' : '13px',
       color: '#6366F1',
       fontWeight: 600,
     },
     cardTitle: {
-      fontSize: '18px',
+      fontSize: isSmallMobile ? '15px' : isMobile ? '16px' : '18px',
       fontWeight: 700,
       color: '#0F172A',
       margin: 0,
@@ -286,15 +302,15 @@ const FavoritesCardV2 = ({
       margin: '4px 0',
     },
     hostAvatar: {
-      width: '32px',
-      height: '32px',
+      width: isSmallMobile ? '28px' : '32px',
+      height: isSmallMobile ? '28px' : '32px',
       borderRadius: '50%',
       background: '#6366F1',
       color: 'white',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      fontSize: '12px',
+      fontSize: isSmallMobile ? '10px' : '12px',
       fontWeight: 700,
     },
     hostName: {
@@ -342,7 +358,7 @@ const FavoritesCardV2 = ({
       fontWeight: 500,
     },
     priceValue: {
-      fontSize: '22px',
+      fontSize: isSmallMobile ? '18px' : isMobile ? '20px' : '22px',
       fontWeight: 800,
       color: '#0F172A',
     },
@@ -352,13 +368,17 @@ const FavoritesCardV2 = ({
       color: '#64748B',
     },
     actionBtn: {
-      padding: '12px 24px',
-      borderRadius: '12px',
-      fontSize: '14px',
+      padding: isSmallMobile ? '12px 20px' : isMobile ? '14px 24px' : '14px 28px',
+      minHeight: '44px', // Touch target accessibility
+      borderRadius: isSmallMobile ? '10px' : '12px',
+      fontSize: isSmallMobile ? '13px' : '14px',
       fontWeight: 700,
       cursor: 'pointer',
-      transition: 'all 0.2s ease',
+      transition: isTouchDevice ? 'none' : 'all 0.2s ease',
       border: 'none',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     actionBtnPrimary: {
       background: '#6366F1',
@@ -376,8 +396,8 @@ const FavoritesCardV2 = ({
       className="favorites-card-wrapper"
       style={styles.card}
       onClick={handleCardClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={() => !isTouchDevice && setIsHovered(true)}
+      onMouseLeave={() => !isTouchDevice && setIsHovered(false)}
     >
       <div style={styles.imageSection}>
         <img
@@ -462,4 +482,12 @@ const FavoritesCardV2 = ({
   );
 };
 
-export default FavoritesCardV2;
+export default memo(FavoritesCardV2, (prevProps, nextProps) => {
+  // Custom comparison - only re-render if these props change
+  return (
+    prevProps.listing?.id === nextProps.listing?.id &&
+    prevProps.proposalForListing?._id === nextProps.proposalForListing?._id &&
+    prevProps.viewMode === nextProps.viewMode &&
+    prevProps.userId === nextProps.userId
+  );
+});
